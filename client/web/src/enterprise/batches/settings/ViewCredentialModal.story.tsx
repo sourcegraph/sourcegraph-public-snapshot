@@ -16,7 +16,7 @@ const { add } = storiesOf('web/batches/settings/ViewCredentialModal', module)
 
 const credential: BatchChangesCredentialFields = {
     id: '123',
-    createdAt: new Date().toISOString(),
+    isSiteCredential: false,
     sshPublicKey:
         'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
 }

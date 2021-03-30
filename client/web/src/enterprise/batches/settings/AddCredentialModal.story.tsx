@@ -21,7 +21,7 @@ add('Requires SSH - step 1', () => {
         (): Promise<BatchChangesCredentialFields> =>
             Promise.resolve({
                 id: '123',
-                createdAt: new Date().toISOString(),
+                isSiteCredential: false,
                 sshPublicKey:
                     'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
             }),

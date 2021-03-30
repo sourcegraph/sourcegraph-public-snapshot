@@ -31,15 +31,6 @@ func (r printableRank) String() string {
 	return strconv.Itoa(*r.value)
 }
 
-type printableTime struct{ value *time.Time }
-
-func (r printableTime) String() string {
-	if r.value == nil {
-		return "nil"
-	}
-	return fmt.Sprintf("%v", *r.value)
-}
-
 // makeCommit formats an integer as a 40-character git commit hash.
 func makeCommit(i int) string {
 	return fmt.Sprintf("%040d", i)
@@ -311,30 +302,6 @@ func toCommitGraphView(uploads []Upload) *commitgraph.CommitGraphView {
 	}
 
 	return commitGraphView
-}
-
-func scanVisibleUploads(rows *sql.Rows, queryErr error) (_ map[string][]commitgraph.UploadMeta, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	uploadMeta := map[string][]commitgraph.UploadMeta{}
-	for rows.Next() {
-		var commit string
-		var uploadID int
-		var distance uint32
-		if err := rows.Scan(&commit, &uploadID, &distance); err != nil {
-			return nil, err
-		}
-
-		uploadMeta[commit] = append(uploadMeta[commit], commitgraph.UploadMeta{
-			UploadID: uploadID,
-			Distance: distance,
-		})
-	}
-
-	return uploadMeta, nil
 }
 
 func getVisibleUploads(t testing.TB, db *sql.DB, repositoryID int, commits []string) map[string][]int {

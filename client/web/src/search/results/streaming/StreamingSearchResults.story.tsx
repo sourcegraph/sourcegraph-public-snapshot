@@ -15,6 +15,7 @@ import {
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULT,
 } from '../../../../../shared/src/util/searchTestHelpers'
+import { AuthenticatedUser } from '../../../auth'
 
 const history = createBrowserHistory()
 history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
@@ -82,9 +83,43 @@ add('no results', () => {
     return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
 })
 
-add('diffs tab selected', () => (
+add('diffs tab selected, code monitoring enabled, user logged in', () => (
     <WebStory>
-        {() => <StreamingSearchResults {...defaultProps} parsedSearchQuery="r:golang/oauth2 test f:travis type:diff" />}
+        {() => (
+            <StreamingSearchResults
+                {...defaultProps}
+                parsedSearchQuery="r:golang/oauth2 test f:travis type:diff"
+                enableCodeMonitoring={true}
+                authenticatedUser={
+                    {
+                        url: '/users/alice',
+                        displayName: 'Alice',
+                        username: 'alice',
+                        email: 'alice@email.test',
+                    } as AuthenticatedUser
+                }
+            />
+        )}
+    </WebStory>
+))
+
+add('code tab selected, code monitoring enabled, user logged in', () => (
+    <WebStory>
+        {() => (
+            <StreamingSearchResults
+                {...defaultProps}
+                parsedSearchQuery="r:golang/oauth2 test f:travis"
+                enableCodeMonitoring={true}
+                authenticatedUser={
+                    {
+                        url: '/users/alice',
+                        displayName: 'Alice',
+                        username: 'alice',
+                        email: 'alice@email.test',
+                    } as AuthenticatedUser
+                }
+            />
+        )}
     </WebStory>
 ))
 

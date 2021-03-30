@@ -24,11 +24,9 @@ import (
 
 // SyncRegistry manages a changesetSyncer per code host
 type SyncRegistry struct {
-	ctx                  context.Context
-	syncStore            SyncStore
-	repoStore            RepoStore
-	externalServiceStore ExternalServiceStore
-	httpFactory          *httpcli.Factory
+	ctx         context.Context
+	syncStore   SyncStore
+	httpFactory *httpcli.Factory
 
 	// Used to receive high priority sync requests
 	priorityNotify chan []int64
@@ -38,25 +36,28 @@ type SyncRegistry struct {
 	syncers map[string]*changesetSyncer
 }
 
-type RepoStore interface {
-	Get(ctx context.Context, id api.RepoID) (*types.Repo, error)
-}
-
-type ExternalServiceStore interface {
-	List(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
+type SyncStore interface {
+	ListCodeHosts(ctx context.Context, opts store.ListCodeHostsOpts) ([]*batches.CodeHost, error)
+	ListChangesetSyncData(context.Context, store.ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error)
+	GetChangeset(context.Context, store.GetChangesetOpts) (*batches.Changeset, error)
+	UpdateChangeset(ctx context.Context, cs *batches.Changeset) error
+	UpsertChangesetEvents(ctx context.Context, cs ...*batches.ChangesetEvent) error
+	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*store.SiteCredential, error)
+	Transact(context.Context) (*store.Store, error)
+	Repos() *database.RepoStore
+	ExternalServices() *database.ExternalServiceStore
+	Clock() func() time.Time
 }
 
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
 // when external services are changed, added or removed.
-func NewSyncRegistry(ctx context.Context, cstore SyncStore, repoStore RepoStore, esStore ExternalServiceStore, cf *httpcli.Factory) *SyncRegistry {
+func NewSyncRegistry(ctx context.Context, cstore SyncStore, cf *httpcli.Factory) *SyncRegistry {
 	r := &SyncRegistry{
-		ctx:                  ctx,
-		syncStore:            cstore,
-		repoStore:            repoStore,
-		externalServiceStore: esStore,
-		httpFactory:          cf,
-		priorityNotify:       make(chan []int64, 500),
-		syncers:              make(map[string]*changesetSyncer),
+		ctx:            ctx,
+		syncStore:      cstore,
+		httpFactory:    cf,
+		priorityNotify: make(chan []int64, 500),
+		syncers:        make(map[string]*changesetSyncer),
 	}
 
 	if err := r.syncCodeHosts(ctx); err != nil {
@@ -91,13 +92,11 @@ func (s *SyncRegistry) Add(codeHost *batches.CodeHost) {
 	ctx, cancel := context.WithCancel(s.ctx)
 
 	syncer := &changesetSyncer{
-		syncStore:            s.syncStore,
-		httpFactory:          s.httpFactory,
-		reposStore:           s.repoStore,
-		externalServiceStore: s.externalServiceStore,
-		codeHostURL:          syncerKey,
-		cancel:               cancel,
-		priorityNotify:       make(chan []int64, 500),
+		syncStore:      s.syncStore,
+		httpFactory:    s.httpFactory,
+		codeHostURL:    syncerKey,
+		cancel:         cancel,
+		priorityNotify: make(chan []int64, 500),
 	}
 
 	s.syncers[syncerKey] = syncer
@@ -208,10 +207,8 @@ func (s *SyncRegistry) syncCodeHosts(ctx context.Context) error {
 // A changesetSyncer periodically syncs metadata of changesets
 // saved in the database.
 type changesetSyncer struct {
-	syncStore            SyncStore
-	httpFactory          *httpcli.Factory
-	reposStore           RepoStore
-	externalServiceStore ExternalServiceStore
+	syncStore   SyncStore
+	httpFactory *httpcli.Factory
 
 	codeHostURL string
 
@@ -265,17 +262,6 @@ func init() {
 		Name: "src_repoupdater_changeset_syncer_behind_schedule",
 		Help: "The number of changesets behind schedule",
 	}, []string{"codehost"})
-}
-
-type SyncStore interface {
-	ListCodeHosts(ctx context.Context, opts store.ListCodeHostsOpts) ([]*batches.CodeHost, error)
-	ListChangesetSyncData(context.Context, store.ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error)
-	GetChangeset(context.Context, store.GetChangesetOpts) (*batches.Changeset, error)
-	UpdateChangeset(ctx context.Context, cs *batches.Changeset) error
-	UpsertChangesetEvents(ctx context.Context, cs ...*batches.ChangesetEvent) error
-	Transact(context.Context) (*store.Store, error)
-	Repos() *database.RepoStore
-	Clock() func() time.Time
 }
 
 // Run will start the process of changeset syncing. It is long running
@@ -425,18 +411,12 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	repo, err := s.reposStore.Get(ctx, cs.RepoID)
+	repo, err := s.syncStore.Repos().Get(ctx, cs.RepoID)
 	if err != nil {
 		return err
 	}
 
-	externalService, err := loadExternalService(ctx, s.externalServiceStore, repo)
-	if err != nil {
-		return err
-	}
-
-	sourcer := repos.NewSourcer(s.httpFactory)
-	source, err := buildChangesetSource(sourcer, externalService)
+	source, err := loadChangesetSource(ctx, repos.NewSourcer(s.httpFactory), s.syncStore, repo)
 	if err != nil {
 		return err
 	}
@@ -485,23 +465,52 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source repos.Change
 	return tx.UpsertChangesetEvents(ctx, events...)
 }
 
-// buildChangesetSource returns a ChangesetSource for the given external service.
-func buildChangesetSource(
-	sourcer repos.Sourcer,
-	extSvc *types.ExternalService,
-) (repos.ChangesetSource, error) {
-	sources, err := sourcer(extSvc)
+// loadChangesetSource get an authenticated ChangesetSource for the given repo
+// to load the changeset state from.
+func loadChangesetSource(ctx context.Context, sourcer repos.Sourcer, s SyncStore, r *types.Repo) (repos.ChangesetSource, error) {
+	// First, we need to find an arbitrary external service associated with the repo.
+	// The logic in loadExternalService is a bit more complicated than it needs to be,
+	// because we want to maintain compatibility with the previous behavior of always
+	// syncing with an external service config, when no site-credential is configured.
+	// In 3.28, this is set to disappear, as we will completely disable using external
+	// service tokens for Batch Changes.
+	externalService, err := loadExternalService(ctx, s, r)
+	if err != nil {
+		return nil, err
+	}
+
+	// Then, use the external service to build a ChangesetSource.
+	sources, err := sourcer(externalService)
 	if err != nil {
 		return nil, err
 	}
 	if len(sources) != 1 {
-		return nil, fmt.Errorf("got no Source for external service %q", extSvc.Kind)
+		return nil, fmt.Errorf("got no Source for external service of kind %q", externalService.Kind)
+	}
+	source := sources[0]
+
+	// Try to find a site-credential. If one is configured, use that for syncing the changeset.
+	siteCredential, err := s.GetSiteCredential(ctx, store.GetSiteCredentialOpts{
+		ExternalServiceType: r.ExternalRepo.ServiceType,
+		ExternalServiceID:   r.ExternalRepo.ServiceID,
+	})
+	if err != nil && err != store.ErrNoResults {
+		return nil, err
+	}
+	if siteCredential != nil {
+		userSource, ok := source.(repos.UserSource)
+		if !ok {
+			return nil, fmt.Errorf("cannot create UserSource from external service of kind %q", externalService.Kind)
+		}
+		source, err = userSource.WithAuthenticator(siteCredential.Credential)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	source, ok := sources[0].(repos.ChangesetSource)
+	ccs, ok := source.(repos.ChangesetSource)
 	if !ok {
-		return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", extSvc.Kind)
+		return nil, fmt.Errorf("cannot create ChangesetSource from external service of kind %q", externalService.Kind)
 	}
-
-	return source, nil
+	return ccs, nil
 }

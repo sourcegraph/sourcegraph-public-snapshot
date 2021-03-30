@@ -31,14 +31,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-type mockNamespaceStore struct {
-	GetByNameMock func(ctx context.Context, name string) (*database.Namespace, error)
-}
-
-func (ns *mockNamespaceStore) GetByName(ctx context.Context, name string) (*database.Namespace, error) {
-	return ns.GetByNameMock(ctx, name)
-}
-
 func TestRevisionValidation(t *testing.T) {
 	// mocks a repo repoFoo with revisions revBar and revBas
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
