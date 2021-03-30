@@ -3,19 +3,18 @@ import React from 'react'
 import { of } from 'rxjs'
 import { ExternalServiceKind } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
-import { BatchChangesSettingsArea } from './BatchChangesSettingsArea'
+import { BatchChangesSiteConfigSettingsArea } from './BatchChangesSiteConfigSettingsArea'
 
-const { add } = storiesOf('web/batches/settings/BatchChangesSettingsArea', module).addDecorator(story => (
+const { add } = storiesOf('web/batches/settings/BatchChangesSiteConfigSettingsArea', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
 ))
 
 add('Overview', () => (
     <EnterpriseWebStory>
         {props => (
-            <BatchChangesSettingsArea
+            <BatchChangesSiteConfigSettingsArea
                 {...props}
-                user={{ id: 'user-id-1' }}
-                queryUserBatchChangesCodeHosts={() =>
+                queryGlobalBatchChangesCodeHosts={() =>
                     of({
                         totalCount: 3,
                         pageInfo: {
@@ -36,12 +35,7 @@ add('Overview', () => (
                                 requiresSSH: false,
                             },
                             {
-                                credential: {
-                                    id: '123',
-                                    isSiteCredential: true,
-                                    sshPublicKey:
-                                        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-                                },
+                                credential: null,
                                 externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
                                 externalServiceURL: 'https://bitbucket.sgdev.org/',
                                 requiresSSH: true,
@@ -57,10 +51,9 @@ add('Overview', () => (
 add('Config added', () => (
     <EnterpriseWebStory>
         {props => (
-            <BatchChangesSettingsArea
+            <BatchChangesSiteConfigSettingsArea
                 {...props}
-                user={{ id: 'user-id-2' }}
-                queryUserBatchChangesCodeHosts={() =>
+                queryGlobalBatchChangesCodeHosts={() =>
                     of({
                         totalCount: 3,
                         pageInfo: {
@@ -71,7 +64,7 @@ add('Config added', () => (
                             {
                                 credential: {
                                     id: '123',
-                                    isSiteCredential: false,
+                                    isSiteCredential: true,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                 },
@@ -82,7 +75,7 @@ add('Config added', () => (
                             {
                                 credential: {
                                     id: '123',
-                                    isSiteCredential: false,
+                                    isSiteCredential: true,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                 },
@@ -93,7 +86,7 @@ add('Config added', () => (
                             {
                                 credential: {
                                     id: '123',
-                                    isSiteCredential: false,
+                                    isSiteCredential: true,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                 },
