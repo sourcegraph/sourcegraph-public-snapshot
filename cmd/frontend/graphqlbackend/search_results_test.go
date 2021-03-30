@@ -1390,7 +1390,9 @@ func commitResult(urlKey string) *CommitSearchResultResolver {
 	return &CommitSearchResultResolver{
 		gitCommitResolver: &GitCommitResolver{
 			repoResolver: &RepositoryResolver{
-				name: api.RepoName(urlKey),
+				RepoMatch: result.RepoMatch{
+					Name: api.RepoName(urlKey),
+				},
 			},
 		},
 	}
@@ -1403,7 +1405,9 @@ func diffResult(urlKey string) *CommitSearchResultResolver {
 		},
 		gitCommitResolver: &GitCommitResolver{
 			repoResolver: &RepositoryResolver{
-				name: api.RepoName(urlKey),
+				RepoMatch: result.RepoMatch{
+					Name: api.RepoName(urlKey),
+				},
 			},
 		},
 	}

@@ -122,7 +122,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 	refByName := func(name string) *repositoryTextSearchIndexedRef {
 		possibleRefNames := []string{"refs/heads/" + name, "refs/tags/" + name}
 		for _, ref := range possibleRefNames {
-			if _, err := git.ResolveRevision(ctx, r.repo.name, ref, git.ResolveRevisionOptions{NoEnsureRevision: true}); err == nil {
+			if _, err := git.ResolveRevision(ctx, r.repo.RepoName(), ref, git.ResolveRevisionOptions{NoEnsureRevision: true}); err == nil {
 				name = ref
 				break
 			}

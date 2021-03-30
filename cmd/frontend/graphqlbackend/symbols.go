@@ -194,7 +194,7 @@ func computeSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitResolver
 	searchArgs := search.SymbolsParameters{
 		CommitID:        api.CommitID(commit.oid),
 		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
-		Repo:            commit.repoResolver.name,
+		Repo:            commit.repoResolver.RepoName(),
 		IncludePatterns: includePatternsSlice,
 	}
 	if query != nil {
