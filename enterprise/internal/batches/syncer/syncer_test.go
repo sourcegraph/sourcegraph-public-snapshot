@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestChangesetPriorityQueue(t *testing.T) {
@@ -377,20 +376,4 @@ func (m MockSyncStore) Clock() func() time.Time {
 
 func (m MockSyncStore) ListCodeHosts(ctx context.Context, opts store.ListCodeHostsOpts) ([]*batches.CodeHost, error) {
 	return m.listCodeHosts(ctx, opts)
-}
-
-type MockRepoStore struct {
-	get func(ctx context.Context, id api.RepoID) (*types.Repo, error)
-}
-
-func (m MockRepoStore) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
-	return m.get(ctx, id)
-}
-
-type MockExternalServiceStore struct {
-	list func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
-}
-
-func (m MockExternalServiceStore) List(ctx context.Context, args database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-	return m.list(ctx, args)
 }
