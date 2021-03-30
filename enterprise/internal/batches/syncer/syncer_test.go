@@ -311,10 +311,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	type tokenValidator interface {
-		ValidateToken(ctx context.Context) error
-	}
-	if err := src.ChangesetSource.(tokenValidator).ValidateToken(ctx); err == nil {
+	if err := src.ValidateAuthenticator(ctx); err == nil {
 		t.Fatal("unexpected nil error")
 	} else if have, want := err.Error(), "Bearer 123"; have != want {
 		t.Fatalf("invalid token used, want=%q have=%q", want, have)
@@ -326,7 +323,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := src.ChangesetSource.(tokenValidator).ValidateToken(ctx); err == nil {
+	if err := src.ValidateAuthenticator(ctx); err == nil {
 		t.Fatal("unexpected nil error")
 	} else if have, want := err.Error(), "Bearer 456"; have != want {
 		t.Fatalf("invalid token used, want=%q have=%q", want, have)

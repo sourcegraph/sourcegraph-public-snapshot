@@ -542,6 +542,32 @@ type usernameSource interface {
 
 var _ usernameSource = &repos.BitbucketServerSource{}
 
+// ValidateAuthenticator creates a ChangesetSource, configures it with the given
+// authenticator and validates it can correctly access the remote server.
+func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
+	if Mocks.ValidateAuthenticator != nil {
+		return Mocks.ValidateAuthenticator(ctx, externalServiceID, externalServiceType, a)
+	}
+
+	srcer := sources.NewSourcer(s.sourcer, s.store)
+	css, err := srcer.ForExternalService(ctx, store.GetExternalServiceIDsOpts{
+		ExternalServiceType: externalServiceType,
+		ExternalServiceID:   externalServiceID,
+	})
+	if err != nil {
+		return err
+	}
+	css, err = css.WithAuthenticator(a)
+	if err != nil {
+		return err
+	}
+
+	if err := css.ValidateAuthenticator(ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
 // ErrChangesetsToDetachNotFound can be returned by (*Service).DetachChangesets
 // if the number of changesets returned from the database doesn't match the
 // number if IDs passed in.
@@ -612,3 +638,13 @@ func (s *Service) DetachChangesets(ctx context.Context, batchChangeID int64, ids
 
 	return nil
 }
+
+type ServiceMocks struct {
+	ValidateAuthenticator func(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error
+}
+
+func (sm ServiceMocks) Reset() {
+	sm.ValidateAuthenticator = nil
+}
+
+var Mocks ServiceMocks = ServiceMocks{}
