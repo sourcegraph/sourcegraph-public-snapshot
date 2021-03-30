@@ -115,7 +115,7 @@ const config = {
       ],
     }),
     new webpack.IgnorePlugin(/\.flow$/, /.*/),
-    new WebpackManifestPlugin(),
+    new WebpackManifestPlugin({ writeToFileEmit: true, fileName: 'webpack.manifest.json' }),
     ...(shouldAnalyze ? [new BundleAnalyzerPlugin()] : []),
   ],
   resolve: {
@@ -166,6 +166,7 @@ const config = {
       {
         test: /\.(sass|scss)$/,
         use: [
+          // Use style-loader for local development as it is significantly faster.
           mode === 'production' ? MiniCssExtractPlugin.loader : 'style-loader',
           'css-loader',
           'postcss-loader',

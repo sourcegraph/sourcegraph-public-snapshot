@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
@@ -62,10 +61,12 @@ type Metadata struct {
 }
 
 type WebpackManifest struct {
-	// AppBundleName contains the file name of the main
+	// AppJSBundlePath contains the file name of the main
 	// Webpack bundle that serves as the entrypoint
 	// for the webapp code.
-	AppBundleName string `json:"app.js"`
+	AppJSBundlePath string `json:"app.js"`
+	// Main CSS bundle, only present in production
+	AppCSSBundlePath *string `json:"app.css"`
 }
 
 func loadManifest() (*WebpackManifest, error) {
@@ -83,7 +84,6 @@ type Common struct {
 	Injected InjectedHTML
 	Metadata *Metadata
 	Context  jscontext.JSContext
-	AssetURL string
 	Title    string
 	Error    *pageError
 
@@ -155,7 +155,6 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			BodyBottom: template.HTML(conf.Get().HtmlBodyBottom),
 		},
 		Context:  jscontext.NewJSContextFromRequest(r),
-		AssetURL: assetsutil.URL("").String(),
 		Title:    title,
 		Manifest: manifest,
 		Metadata: &Metadata{
