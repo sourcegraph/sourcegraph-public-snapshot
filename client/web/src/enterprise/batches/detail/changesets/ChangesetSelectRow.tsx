@@ -23,7 +23,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                     id="deselect-all"
                     type="checkbox"
                     className="btn"
-                    checked={true}
+                    checked={selected.size > 0}
                     onChange={deselectAll}
                     data-tooltip="Click to deselect all"
                 />
