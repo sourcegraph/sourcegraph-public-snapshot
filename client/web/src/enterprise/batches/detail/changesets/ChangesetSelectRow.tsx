@@ -19,7 +19,14 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
     <>
         <div className="row align-items-center no-gutters">
             <div className="ml-2 col-auto">
-                <input id="deselect-all" type="checkbox" className="btn" checked={true} onChange={deselectAll} />
+                <input
+                    id="deselect-all"
+                    type="checkbox"
+                    className="btn"
+                    checked={true}
+                    onChange={deselectAll}
+                    data-tooltip="Click to deselect all"
+                />
             </div>
             <div className="ml-2 col">
                 {selected.size} archived {pluralize('changeset', selected.size)} selected for detaching.

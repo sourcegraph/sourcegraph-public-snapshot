@@ -70,7 +70,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
         [isExpanded]
     )
 
-    const selected = isSelected && isSelected(node.id)
+    const selected = isSelected?.(node.id)
     const toggleSelected = useCallback((): void => {
         if (onSelect !== undefined) {
             onSelect(node.id, !selected)
@@ -87,6 +87,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                         className="btn"
                         checked={selected}
                         onChange={toggleSelected}
+                        data-tooltip="Click to select changeset for detaching from batch change"
                     />
                 </div>
             )}
