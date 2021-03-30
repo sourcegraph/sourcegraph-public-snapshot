@@ -31,6 +31,7 @@ import { EmptyChangesetSearchElement } from './EmptyChangesetSearchElement'
 import { EmptyArchivedChangesetListElement } from './EmptyArchivedChangesetListElement'
 import { ChangesetSelectRow } from './ChangesetSelectRow'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     batchChangeID: Scalars['ID']
@@ -71,16 +72,23 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     enableSelect,
 }) => {
     const [selectedChangesets, setSelectedChangesets] = useState<Set<string>>(new Set())
-    const onSelect = (id: string, selected: boolean): void => {
-        if (selected) {
-            setSelectedChangesets(() => new Set([...selectedChangesets, id]))
-        } else {
-            setSelectedChangesets(new Set([...selectedChangesets].filter(selectedId => selectedId !== id)))
-        }
-    }
+    const onSelect = useCallback(
+        (id: string, selected: boolean): void => {
+            if (selected) {
+                setSelectedChangesets(previous => new Set(previous).add(id))
+            } else {
+                setSelectedChangesets(previous => {
+                    const newSet = new Set(previous)
+                    newSet.delete(id)
+                    return newSet
+                })
+            }
+        },
+        [setSelectedChangesets]
+    )
 
-    const deselectAll = useCallback((): void => setSelectedChangesets(new Set([])), [setSelectedChangesets])
-    const changesetSelected = (id: string): boolean => selectedChangesets.has(id)
+    const deselectAll = useCallback((): void => setSelectedChangesets(new Set()), [setSelectedChangesets])
+    const changesetSelected = useCallback((id: string): boolean => selectedChangesets.has(id), [selectedChangesets])
 
     const [isSubmittingSelected, setIsSubmittingSelected] = useState<boolean | Error>(false)
     const onSubmitSelected = useCallback(async () => {
@@ -100,7 +108,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
             deselectAll()
             telemetryService.logViewEvent('BatchChangeDetailsPageDetachArchivedChangesets')
         } catch (error) {
-            setIsSubmittingSelected(error)
+            setIsSubmittingSelected(asError(error))
         }
     }, [batchChangeID, selectedChangesets, setIsSubmittingSelected, deselectAll, telemetryService])
 
@@ -228,7 +236,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     listComponent="div"
                     listClassName={
                         enableSelect
-                            ? 'batch-change-changesets__grid-with-checkboxes mb-3'
+                            ? 'batch-change-changesets__grid--with-checkboxes mb-3'
                             : 'batch-change-changesets__grid mb-3'
                     }
                     headComponent={

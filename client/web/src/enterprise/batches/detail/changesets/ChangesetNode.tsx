@@ -18,7 +18,7 @@ export interface ChangesetNodeProps extends ThemeProps {
     location: H.Location
     enableSelect?: boolean
     onSelect?: (id: string, selected: boolean) => void
-    isSelected: (id: string) => boolean
+    isSelected?: (id: string) => boolean
     extensionInfo?: {
         hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     } & ExtensionsControllerProps

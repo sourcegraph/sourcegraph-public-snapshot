@@ -10,7 +10,7 @@ export interface HiddenExternalChangesetNodeProps {
 
 export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternalChangesetNodeProps> = ({
     node,
-    enableSelect,
+    enableSelect = false,
 }) => (
     <>
         {enableSelect && <span className="d-none d-sm-block" />}
