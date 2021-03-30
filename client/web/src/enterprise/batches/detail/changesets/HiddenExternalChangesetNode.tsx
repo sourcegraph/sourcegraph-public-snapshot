@@ -13,7 +13,18 @@ export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternal
     enableSelect = false,
 }) => (
     <>
-        {enableSelect && <span className="d-none d-sm-block" />}
+        {enableSelect && (
+            <div className="p-2">
+                <input
+                    id={`select-changeset-${node.id}`}
+                    type="checkbox"
+                    className="btn"
+                    checked={false}
+                    disabled={true}
+                    data-tooltip="You can't select this changeset to detach it due to lacking permissions"
+                />
+            </div>
+        )}
         <span className="d-none d-sm-block" />
         <ChangesetStatusCell
             state={node.state}
