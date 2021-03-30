@@ -209,7 +209,6 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                 let newLastDeletionIndex
                 if (current.kind === DiffHunkLineType.DELETED) {
                     if (last?.kind === DiffHunkLineType.DELETED) {
-                        debugger
                         newLastDeletionIndex = lastDeletionIndex
                     } else {
                         newLastDeletionIndex = i
