@@ -33,10 +33,10 @@ func newStreamClient() (*streamClient, error) {
 	}, nil
 }
 
-func (s *streamClient) search(ctx context.Context, query string) ([]streamhttp.EventMatch, *metrics, error) {
+func (s *streamClient) search(ctx context.Context, query string) (*metrics, error) {
 	req, err := streamhttp.NewRequest(s.endpoint, query)
 	if err != nil {
-		return nil, nil, fmt.Errorf("create request: %w", err)
+		return nil, fmt.Errorf("create request: %w", err)
 	}
 	req = req.WithContext(ctx)
 	req.Header.Set("Authorization", "token "+s.token)
@@ -46,7 +46,7 @@ func (s *streamClient) search(ctx context.Context, query string) ([]streamhttp.E
 	start := time.Now()
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -58,12 +58,16 @@ func (s *streamClient) search(ctx context.Context, query string) ([]streamhttp.E
 	}
 
 	if err := dec.ReadAll(resp.Body); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	m := &metrics{
 		took:  time.Since(start).Milliseconds(),
 		trace: resp.Header.Get("x-trace"),
 	}
-	return res, m, nil
+	return m, nil
+}
+
+func (s *streamClient) clientType() string {
+	return "stream"
 }

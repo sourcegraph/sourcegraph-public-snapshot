@@ -41,49 +41,65 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		panic(err)
 	}
 
-OUTER:
-	for {
-		log15.Info("new iteration")
-		for _, group := range config.Groups {
-			log15.Info("new group", "group", group.Name)
-			for _, qc := range group.Queries {
-				if len(qc.Protocols) == 0 {
-					qc.Protocols = allProtocols
-				}
+	clientForProtocol := func(p Protocol) genericClient {
+		switch p {
+		case Batch:
+			return bc
+		case Stream:
+			return sc
+		}
+		return nil
+	}
 
-				for _, api := range qc.Protocols {
-					switch api {
-					case Batch:
-						_, m, err := bc.search(ctx, qc.Query)
-						if err != nil {
-							log15.Error(err.Error())
-						} else {
-							log15.Info("metrics", "group", group.Name, "query", qc.Query, "trace", m.trace, "duration_ms", m.took)
-							durationSearchHistogram.WithLabelValues(group.Name, "batch").Observe(float64(m.took))
-						}
-					case Stream:
-						_, m, err := sc.search(ctx, qc.Query)
-						if err != nil {
-							log15.Error(err.Error())
-						} else {
-							log15.Info("metrics", "group", group.Name, "query", qc.Query, "trace", m.trace, "duration_ms", m.took)
-							durationSearchHistogram.WithLabelValues(group.Name, "stream").Observe(float64(m.took))
-						}
-					}
-				}
+	loopSearch := func(ctx context.Context, c genericClient, group string, qc QueryConfig) {
+		ticker := time.NewTicker(300 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			m, err := c.search(ctx, qc.Query)
+			if err != nil {
+				log15.Error(err.Error())
+			} else {
+				log15.Info("metrics", "group", group, "query", qc.Query, "trace", m.trace, "duration_ms", m.took)
+				durationSearchHistogram.WithLabelValues(group, c.clientType()).Observe(float64(m.took))
+			}
+
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
 			}
 		}
+	}
 
-		select {
-		case <-ctx.Done():
-			break OUTER
-		case <-time.After(300 * time.Second):
+	scheduleQuery := func(ctx context.Context, group string, qc QueryConfig) {
+		if len(qc.Protocols) == 0 {
+			qc.Protocols = allProtocols
+		}
+
+		for _, protocol := range qc.Protocols {
+			client := clientForProtocol(protocol)
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				loopSearch(ctx, client, group, qc)
+			}()
+		}
+	}
+
+	for _, group := range config.Groups {
+		for _, qc := range group.Queries {
+			scheduleQuery(ctx, group.Name, qc)
 		}
 	}
 }
 
-func startServer(wg *sync.WaitGroup) *http.Server {
+type genericClient interface {
+	search(ctx context.Context, query string) (*metrics, error)
+	clientType() string
+}
 
+func startServer(wg *sync.WaitGroup) *http.Server {
 	http.HandleFunc("/health", health)
 	http.Handle("/metrics", promhttp.Handler())
 
@@ -99,7 +115,6 @@ func startServer(wg *sync.WaitGroup) *http.Server {
 }
 
 func main() {
-
 	logDir := os.Getenv(envLogDir)
 	if logDir == "" {
 		logDir = "."
