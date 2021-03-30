@@ -32,7 +32,7 @@ export interface WebIntegrationTestContext
 }
 
 const getAppBundle = (): string => {
-    const manifestFile = path.resolve(__dirname, '../../../../ui/assets/manifest.json')
+    const manifestFile = path.resolve(__dirname, '../../../../ui/assets/webpack.manifest.json')
     // eslint-disable-next-line no-sync
     const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf-8')) as Record<string, string>
     return manifest['app.js']
