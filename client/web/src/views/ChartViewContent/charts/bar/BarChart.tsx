@@ -9,7 +9,6 @@ import classnames from 'classnames'
 import { range } from 'lodash'
 import React, { ReactElement, useCallback, useMemo } from 'react'
 import { BarChartContent } from 'sourcegraph'
-
 import { onDatumClick } from '../types'
 
 const DEFAULT_PADDING = { top: 20, right: 20, bottom: 25, left: 40 }

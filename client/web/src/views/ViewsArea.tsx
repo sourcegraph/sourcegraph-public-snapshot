@@ -32,6 +32,7 @@ interface Props
  * if it exists.
  */
 export const ViewsArea: React.FunctionComponent<Props> = ({ match, ...outerProps }) => {
+    console.log('ViewsArea render')
     const getViewForID = useCallback(
         (id: string, queryParameters: Record<string, string>) =>
             from(outerProps.extensionsController.extHostAPI).pipe(
@@ -39,6 +40,7 @@ export const ViewsArea: React.FunctionComponent<Props> = ({ match, ...outerProps
                     wrapRemoteObservable(extensionHostAPI.getGlobalPageViews(queryParameters))
                 ),
                 map(views => {
+                    console.log({ views });
                     const viewByID = views.find(view => view.id === id)
                     if (!viewByID || isErrorLike(viewByID.view)) {
                         return null

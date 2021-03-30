@@ -1,4 +1,5 @@
 import { ParentSize } from '@visx/responsive'
+import { EventEmitterProvider } from '@visx/xychart'
 import React, { ReactElement } from 'react'
 
 import { DEFAULT_LINE_STROKE } from './colors'
@@ -14,11 +15,16 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
     const hasLegend = props.series.every(line => !!line.name)
 
     if (!hasLegend) {
-        return <LineChartContent {...props} />
+        return (
+            <EventEmitterProvider>
+                <LineChartContent {...props} />
+            <EventEmitterProvider/>
+        )
     }
 
     return (
-        /* eslint-disable-next-line react/forbid-dom-props */
+                <EventEmitterProvider>
+                    {/* eslint-disable-next-line react/forbid-dom-props */}
         <div style={{ width, height }} className="line-chart">
             {/*
                 In case if we have a legend to render we have to have responsive container for chart
@@ -41,5 +47,6 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
                 ))}
             </ul>
         </div>
+                    <EventEmitterProvider/>
     )
 }

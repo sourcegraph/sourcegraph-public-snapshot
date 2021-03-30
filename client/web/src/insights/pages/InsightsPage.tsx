@@ -38,6 +38,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
         props.telemetryService.log('InsightAddMoreClick')
     }, [props.telemetryService])
 
+    console.log({views})
     return (
         <div className="w-100">
             <Page>

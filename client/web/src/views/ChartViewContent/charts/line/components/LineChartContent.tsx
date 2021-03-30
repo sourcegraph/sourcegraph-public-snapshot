@@ -13,7 +13,6 @@ import { timeFormat } from 'd3-time-format'
 import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useEffect } from 'react'
 import { LineChartContent as LineChartContentType } from 'sourcegraph'
 import { useThrottledCallback } from 'use-debounce'
-
 import { onDatumClick } from '../../types'
 import { DEFAULT_LINE_STROKE } from '../colors'
 import { generateAccessors } from '../helpers/generate-accessors'
