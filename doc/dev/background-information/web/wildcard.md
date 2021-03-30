@@ -63,7 +63,6 @@ return (
 )
 ```
 
-
 #### Component
 
 Now we have extracted our state and behaviour into separate hooks, our UI component should just focus on displaying simple elements with specific styles. It should be able to make use of our hooks to enhance these elements with more complex behavior and state.
