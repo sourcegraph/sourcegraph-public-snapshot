@@ -215,9 +215,11 @@ The output will be in `browser/build`:
 
 ## Create a zip of the browser extension source code
 
-This will pull the source code at a given revision (by default, the `bext/branch` on GitHub) and create a zip of the source code, which can then be used to reproduce the exact build.
+The `yarn run create-source-zip` command will create a `sourcegraph.zip`, an archive of the source that can be used to do a build of the browser extension.
 
-See
+This will pull the source code at a given revision (by default, the `bext/branch` on GitHub) and create a zip of the source code, which can then be used to reproduce the exact build. Some directories of the repo, which are not relevant to the browser extension, are excluded from the archive.
+
+See [scripts/create-source-zip.js](scripts/create-source-zip.js).
 
 Use this process to create a source code zip to attach to a Firefox add-on submission.
 
