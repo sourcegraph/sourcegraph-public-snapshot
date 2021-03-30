@@ -167,92 +167,149 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
     let newLine = hunk.newRange.startLine
 
     const lines = hunk.highlight.lines.map(line => {
-        if (line.kind !== DiffHunkLineType.ADDED) {
+        if (line.kind === DiffHunkLineType.DELETED) {
             oldLine++
             line.line = oldLine - 1
             line.oldLine = oldLine - 1
         }
-        if (line.kind !== DiffHunkLineType.DELETED) {
+        if (line.kind === DiffHunkLineType.ADDED) {
             newLine++
             line.line = newLine - 1
             line.newLine = newLine - 1
         }
+        if (line.kind === DiffHunkLineType.UNCHANGED) {
+            oldLine++
+            newLine++
+            line.line = newLine - 1
+            line.newLine = newLine - 1
+            line.oldLine = oldLine - 1
+        }
+
         return line
     })
 
-    const grouped = mapValues(groupBy(lines, 'line'))
+    const zipChanges = () => {
+        const [result] = lines.reduce(
+            ([result, last, lastDeletionIndex], current, i) => {
+                if (!last) {
+                    result.push(current)
+                    return [result, current, current.kind === DiffHunkLineType.DELETED ? i : -1]
+                }
 
-    const result = Object.keys(grouped).map(x => {
-        // if (grouped[x].length === 1 && grouped[x][0].kind === DiffHunkLineType.ADDED) {}
-        return (
-            <tr>
-                {grouped[x].length === 1 && grouped[x][0].kind === DiffHunkLineType.ADDED ? (
-                    <>
-                        <td />
-                        <td />
-                        <LineGroup
-                            className="diff-hunk__line--addition"
-                            dataPart="head"
-                            key={`${grouped[x][0].newLine}${grouped[x][0].html}`}
-                            line={grouped[x][0].newLine}
-                            html={grouped[x][0].html}
-                            decorations={decorations}
-                            isLightTheme={isLightTheme}
-                        />
-                    </>
-                ) : (
-                    grouped[x].map((l, index) => {
-                        // const oldAnchor = `${fileDiffAnchor}L${oldLine - 1}`
-                        // const newAnchor = `${fileDiffAnchor}R${newLine - 1}`
-                        if (l.kind === DiffHunkLineType.UNCHANGED) {
+                if (current.kind === DiffHunkLineType.ADDED && lastDeletionIndex >= 0) {
+                    result.splice(lastDeletionIndex + 1, 0, current)
+                    // The new `lastDeletionIndex` may be out of range, but `splice` will fix it
+                    return [result, current, lastDeletionIndex + 2]
+                }
+
+                result.push(current)
+
+                // Keep the `lastDeletionIndex` if there are lines of deletions,
+                // otherwise update it to the new deletion line
+                let newLastDeletionIndex
+                if (current.kind === DiffHunkLineType.DELETED) {
+                    if (last?.kind === DiffHunkLineType.DELETED) {
+                        debugger
+                        newLastDeletionIndex = lastDeletionIndex
+                    } else {
+                        newLastDeletionIndex = i
+                    }
+                }
+                return [result, current, newLastDeletionIndex]
+            },
+            [[], null, -1]
+        )
+        return result
+    }
+
+    const groupElements = () => {
+        const elements = []
+
+        // This could be a very complex reduce call, use `for` loop seems to make it a little more readable
+        for (let i = 0; i < zipChanges().length; i++) {
+            const current = zipChanges()[i]
+
+            // A normal change is displayed on both side
+            if (current.kind === DiffHunkLineType.UNCHANGED) {
+                elements.push([current, current])
+            } else if (current.kind === DiffHunkLineType.DELETED) {
+                const next = zipChanges()[i + 1]
+                // If an insert change is following a delete change, they should be displayed side by side
+                if (next?.kind === DiffHunkLineType.ADDED) {
+                    i = i + 1
+                    elements.push([current, next])
+                } else {
+                    elements.push([current, null])
+                }
+            } else {
+                elements.push([null, current])
+            }
+        }
+
+        return elements
+    }
+
+    const singleHunk = () => {
+        return groupElements().map(elements => {
+            return (
+                <tr>
+                    {elements.map((line, index) => {
+                        if (!line)
                             return (
-                                <React.Fragment key={`${l.newLine}${l.html}`}>
-                                    <LineGroup
-                                        dataPart="base"
-                                        line={l.newLine}
-                                        html={l.html}
-                                        decorations={decorations}
-                                        isLightTheme={isLightTheme}
-                                    />
-                                    <LineGroup
-                                        dataPart="head"
-                                        line={l.oldLine}
-                                        html={l.html}
-                                        decorations={decorations}
-                                        isLightTheme={isLightTheme}
-                                    />
-                                </React.Fragment>
+                                <>
+                                    <td />
+                                    <td />
+                                </>
                             )
-                        } else if (l.kind === DiffHunkLineType.DELETED) {
-                            return (
-                                <LineGroup
-                                    className="diff-hunk__line--deletion"
-                                    dataPart="base"
-                                    key={`${l.oldLine}${l.html}`}
-                                    line={l.oldLine}
-                                    html={l.html}
-                                    decorations={decorations}
-                                    isLightTheme={isLightTheme}
-                                />
-                            )
-                        } else if (l.kind === DiffHunkLineType.ADDED) {
+                        if (line.kind === DiffHunkLineType.ADDED) {
                             return (
                                 <LineGroup
                                     className="diff-hunk__line--addition"
                                     dataPart="head"
-                                    key={`${l.newLine}${l.html}`}
-                                    line={l.newLine}
-                                    html={l.html}
+                                    key={`${line.newLine}${line.html}`}
+                                    line={line.newLine}
+                                    html={line.html}
                                     decorations={decorations}
                                     isLightTheme={isLightTheme}
                                 />
                             )
                         }
-                    })
-                )}
-            </tr>
-        )
-    })
+
+                        if (line.kind === DiffHunkLineType.DELETED) {
+                            return (
+                                <LineGroup
+                                    className="diff-hunk__line--deletion"
+                                    dataPart="base"
+                                    key={`${line.newLine}${line.html}`}
+                                    line={line.oldLine}
+                                    html={line.html}
+                                    decorations={decorations}
+                                    isLightTheme={isLightTheme}
+                                />
+                            )
+                        }
+
+                        if (line.kind === DiffHunkLineType.UNCHANGED) {
+                            let l = elements[index + 1] ? line.oldLine : line.newLine
+                            return (
+                                <LineGroup
+                                    className="diff-hunk__line"
+                                    dataPart="base"
+                                    key={`${line.newLine}${line.html}`}
+                                    line={l}
+                                    html={line.html}
+                                    decorations={decorations}
+                                    isLightTheme={isLightTheme}
+                                />
+                            )
+                        } else {
+                            return null
+                        }
+                    })}
+                </tr>
+            )
+        })
+    }
 
     return (
         <>
@@ -262,7 +319,7 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                 contentClassName="diff-hunk__content"
                 lineNumbers={lineNumbers}
             />
-            {result}
+            {singleHunk()}
         </>
     )
 }
