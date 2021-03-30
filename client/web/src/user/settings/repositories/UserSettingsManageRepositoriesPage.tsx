@@ -634,7 +634,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         })}
                     >
                         {(selectionState.repos.size > 0 && (
-                            <small>{`${selectionState.repos.size} repositories selected`}</small>
+                            <small>{`${selectionState.repos.size} ${
+                                selectionState.repos.size === 1 ? 'repository' : 'repositories'
+                            } selected`}</small>
                         )) || <small>Select all</small>}
                     </label>
                 </td>
