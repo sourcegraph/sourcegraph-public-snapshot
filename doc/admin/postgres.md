@@ -7,9 +7,9 @@ Sourcegraph uses several PostgreSQL databases to support various functionality. 
 
 ## Version requirements
 
-> NOTE: ⚠️ From **3.27** onwards we will only support versions **starting from 12**.
+We support any version **starting from 12**.
 
-We support any version **starting from 9.6**.
+> NOTE: ⚠️ Version **3.26** required only Postgres 9.6. Check your database version before upgrading.
 
 ## Role requirements
 

@@ -19,7 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- The minimum supported version of Postgres has been bumped from `9.6` to `12`. The upgrade procedure is mostly automated for existing deployments. Please refer to [this page](https://docs.sourcegraph.com/admin/postgres) for detailed instructions.
 
 ### Fixed
 
