@@ -3,6 +3,7 @@ import React from 'react'
 import webStyles from '../../SourcegraphWebApp.scss';
 import { PieExample } from './PieChart';
 import { LineChartExample } from './LineChart';
+import { XYChartExample } from './LineXYChart';
 
 const { add } = storiesOf('web/VisxCharts', module).addDecorator(story => (
     <>
@@ -18,4 +19,8 @@ add('Pie chart', () => (
 
 add('Line chart', () => (
     <LineChartExample width={550} height={350} />
+))
+
+add('XY line chart with tooltip', () => (
+    <XYChartExample  width={550} height={350} />
 ))
