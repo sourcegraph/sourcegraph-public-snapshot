@@ -630,7 +630,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 }
 
-func TestExecutor_LoadAuthenticator(t *testing.T) {
+func TestLoadAuthenticator(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	db := dbtesting.GetDB(t)
 
@@ -647,11 +647,9 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	userBatchChange := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-batch-change", user.ID, batchSpec.ID)
 
 	t.Run("imported changeset uses global token", func(t *testing.T) {
-		a, err := (&executor{
-			ch: &batches.Changeset{
-				OwnedByBatchChangeID: 0,
-			},
-		}).loadAuthenticator(ctx)
+		a, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+			OwnedByBatchChangeID: 0,
+		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -661,25 +659,18 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	})
 
 	t.Run("owned by missing batch change", func(t *testing.T) {
-		_, err := (&executor{
-			ch: &batches.Changeset{
-				OwnedByBatchChangeID: 1234,
-			},
-			tx: cstore,
-		}).loadAuthenticator(ctx)
+		_, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+			OwnedByBatchChangeID: 1234,
+		}, repo)
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 
 	t.Run("owned by admin user without credential", func(t *testing.T) {
-		a, err := (&executor{
-			ch: &batches.Changeset{
-				OwnedByBatchChangeID: adminBatchChange.ID,
-			},
-			repo: repo,
-			tx:   cstore,
-		}).loadAuthenticator(ctx)
+		a, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+			OwnedByBatchChangeID: adminBatchChange.ID,
+		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -689,13 +680,9 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	})
 
 	t.Run("owned by normal user without credential", func(t *testing.T) {
-		_, err := (&executor{
-			ch: &batches.Changeset{
-				OwnedByBatchChangeID: userBatchChange.ID,
-			},
-			repo: repo,
-			tx:   cstore,
-		}).loadAuthenticator(ctx)
+		_, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+			OwnedByBatchChangeID: userBatchChange.ID,
+		}, repo)
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
@@ -712,13 +699,9 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		a, err := (&executor{
-			ch: &batches.Changeset{
-				OwnedByBatchChangeID: adminBatchChange.ID,
-			},
-			repo: repo,
-			tx:   cstore,
-		}).loadAuthenticator(ctx)
+		a, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+			OwnedByBatchChangeID: adminBatchChange.ID,
+		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -738,13 +721,9 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		a, err := (&executor{
-			ch: &batches.Changeset{
-				OwnedByBatchChangeID: userBatchChange.ID,
-			},
-			repo: repo,
-			tx:   cstore,
-		}).loadAuthenticator(ctx)
+		a, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+			OwnedByBatchChangeID: userBatchChange.ID,
+		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}

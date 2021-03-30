@@ -182,11 +182,22 @@ func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.External
 // reconciling the current changeset. It will return nil, nil if the code host's
 // global configuration should be used (ie the applying user is an admin and
 // doesn't have a credential configured for the code host, or the changeset
-// isn't owned by a batch change).
+// isn't owned by a batch change, and no site credential is configured).
 func loadAuthenticator(ctx context.Context, s *store.Store, ch *batches.Changeset, r *types.Repo) (auth.Authenticator, error) {
 	if ch.OwnedByBatchChangeID == 0 {
+		cred, err := s.GetSiteCredential(ctx, store.GetSiteCredentialOpts{
+			ExternalServiceType: r.ExternalRepo.ServiceType,
+			ExternalServiceID:   r.ExternalRepo.ServiceID,
+		})
+		if err != nil && err != store.ErrNoResults {
+			return nil, err
+		}
 		// Unowned changesets are imported, and therefore don't need to use a user
-		// credential, since reconciliation isn't a mutating process.
+		// credential, since reconciliation isn't a mutating process. We try to use
+		// a site-credential, but it's ok if it doesn't exist.
+		if cred != nil {
+			return cred.Credential, nil
+		}
 		return nil, nil
 	}
 
@@ -206,8 +217,20 @@ func loadAuthenticator(ctx context.Context, s *store.Store, ch *batches.Changese
 	})
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			// We need to check if the user is an admin: if they are, then
-			// we can use the nil return from loadUserCredential() to fall
+			// If no user-credential exists, we check for a site-credential.
+			siteCred, err := s.GetSiteCredential(ctx, store.GetSiteCredentialOpts{
+				ExternalServiceType: r.ExternalRepo.ServiceType,
+				ExternalServiceID:   r.ExternalRepo.ServiceID,
+			})
+			if err != nil && err != store.ErrNoResults {
+				return nil, err
+			}
+			if siteCred != nil {
+				return siteCred.Credential, nil
+			}
+
+			// If neither exist, we need to check if the user is an admin: if they are,
+			// then we can use the nil return from loadUserCredential() to fall
 			// back to the global credentials used for the code host. If
 			// not, then we need to error out.
 			user, err := database.UsersWith(s).GetByID(ctx, batchChange.LastApplierID)
