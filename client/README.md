@@ -10,6 +10,7 @@
 - **shared**: Contains common TypeScript/React/SCSS client code shared between the browser extension and the web app. Everything in this package is code-host agnostic.
 - **branded**: Contains React components and implements the visual design language we use across our web app and e.g. in the options menu of the browser extension. Over time, components from `shared` and `branded` packages should be moved into the `wildcard` package.
 - **wildcard**: Package that encapsulates storybook configuration and contains our Wildcard design system components. If we're using a component in two or more different areas (e.g. `web-app` and `browser-extension`) then it should live in the `wildcard` package. Otherwise the components should be better colocated with the code where they're actually used.
+- **storybook**: Storybook configuration.
 
 ## Further migration plan
 
