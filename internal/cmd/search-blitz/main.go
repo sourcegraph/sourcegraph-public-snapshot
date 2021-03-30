@@ -52,7 +52,10 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 	}
 
 	loopSearch := func(ctx context.Context, c genericClient, group string, qc QueryConfig) {
-		ticker := time.NewTicker(300 * time.Second)
+		if qc.Interval == 0 {
+			qc.Interval = time.Minute
+		}
+		ticker := time.NewTicker(qc.Interval)
 		defer ticker.Stop()
 
 		for {
