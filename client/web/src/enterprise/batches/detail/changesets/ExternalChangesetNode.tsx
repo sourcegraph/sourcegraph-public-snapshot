@@ -79,7 +79,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
 
     return (
         <>
-            {enableSelect && viewerCanAdminister && (
+            {enableSelect && (
                 <div className="p-2">
                     <input
                         id={`select-changeset-${node.id}`}
@@ -87,6 +87,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                         className="btn"
                         checked={selected}
                         onChange={toggleSelected}
+                        disabled={!viewerCanAdminister}
                         data-tooltip="Click to select changeset for detaching from batch change"
                     />
                 </div>
