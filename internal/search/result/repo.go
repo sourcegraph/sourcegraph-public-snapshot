@@ -17,4 +17,8 @@ func (r RepoMatch) Limit(limit int) int {
 	return limit - 1
 }
 
+func (r *RepoMatch) ResultCount() int {
+	return 1
+}
+
 func (r *RepoMatch) searchResultMarker() {}
