@@ -1,12 +1,9 @@
 package syncer
 
 import (
-	"container/heap"
 	"context"
 	"testing"
 	"time"
-
-	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -15,101 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
-func TestChangesetPriorityQueue(t *testing.T) {
+func TestSyncerRun(t *testing.T) {
 	t.Parallel()
 
-	assertOrder := func(t *testing.T, q *changesetPriorityQueue, expected []int64) {
-		t.Helper()
-		ids := make([]int64, len(q.items))
-		for i := range ids {
-			ids[i] = q.items[i].changesetID
-		}
-		if diff := cmp.Diff(expected, ids); diff != "" {
-			t.Fatal(diff)
-		}
-	}
-
-	now := time.Now()
-	q := newChangesetPriorityQueue()
-
-	items := []scheduledSync{
-		{
-			changesetID: 1,
-			nextSync:    now,
-			priority:    priorityNormal,
-		},
-		{
-			changesetID: 2,
-			nextSync:    now,
-			priority:    priorityHigh,
-		},
-		{
-			changesetID: 3,
-			nextSync:    now.Add(-1 * time.Minute),
-			priority:    priorityNormal,
-		},
-		{
-			changesetID: 4,
-			nextSync:    now.Add(-2 * time.Hour),
-			priority:    priorityNormal,
-		},
-		{
-			changesetID: 5,
-			nextSync:    now.Add(1 * time.Hour),
-			priority:    priorityNormal,
-		},
-	}
-
-	for i := range items {
-		q.Upsert(items[i])
-	}
-
-	assertOrder(t, q, []int64{2, 4, 3, 1, 5})
-
-	// Set item to high priority
-	q.Upsert(scheduledSync{
-		changesetID: 4,
-		nextSync:    now.Add(-2 * time.Hour),
-		priority:    priorityHigh,
-	})
-
-	assertOrder(t, q, []int64{4, 2, 3, 1, 5})
-
-	// Can't reduce priority of existing item
-	q.Upsert(scheduledSync{
-		changesetID: 4,
-		nextSync:    now.Add(-2 * time.Hour),
-		priority:    priorityNormal,
-	})
-
-	if q.Len() != len(items) {
-		t.Fatalf("Expected %d, got %d", q.Len(), len(items))
-	}
-
-	assertOrder(t, q, []int64{4, 2, 3, 1, 5})
-
-	for i := 0; i < len(items); i++ {
-		peeked, ok := q.Peek()
-		if !ok {
-			t.Fatalf("Queue should not be empty")
-		}
-		item := heap.Pop(q).(scheduledSync)
-		if peeked.changesetID != item.changesetID {
-			t.Fatalf("Peeked and Popped item should have the same id")
-		}
-	}
-
-	// Len() should be zero after all items popped
-	if q.Len() != 0 {
-		t.Fatalf("Expected %d, got %d", q.Len(), 0)
-	}
-}
-
-func TestSyncerRun(t *testing.T) {
 	t.Run("Sync due", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		now := time.Now()
-		store := MockSyncStore{
+		syncStore := MockSyncStore{
 			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error) {
 				return []*batches.ChangesetSyncData{
 					{
@@ -126,7 +35,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &changesetSyncer{
-			syncStore:        store,
+			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 		}
@@ -143,7 +52,7 @@ func TestSyncerRun(t *testing.T) {
 		defer cancel()
 		now := time.Now()
 		updateCalled := false
-		store := MockSyncStore{
+		syncStore := MockSyncStore{
 			getChangeset: func(context.Context, store.GetChangesetOpts) (*batches.Changeset, error) {
 				// Return ErrNoResults, which is the result you get when the changeset preconditions aren't met anymore.
 				// The sync data checks for the reconciler state and if it changed since the sync data was loaded,
@@ -169,7 +78,7 @@ func TestSyncerRun(t *testing.T) {
 			},
 		}
 		syncer := &changesetSyncer{
-			syncStore:        store,
+			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 		}
 		syncer.Run(ctx)
@@ -182,7 +91,7 @@ func TestSyncerRun(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 		now := time.Now()
-		store := MockSyncStore{
+		syncStore := MockSyncStore{
 			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error) {
 				return []*batches.ChangesetSyncData{
 					{
@@ -200,7 +109,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &changesetSyncer{
-			syncStore:        store,
+			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 		}
@@ -213,7 +122,7 @@ func TestSyncerRun(t *testing.T) {
 	t.Run("Priority added", func(t *testing.T) {
 		// Empty schedule but then we add an item
 		ctx, cancel := context.WithCancel(context.Background())
-		store := MockSyncStore{
+		syncStore := MockSyncStore{
 			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error) {
 				return []*batches.ChangesetSyncData{}, nil
 			},
@@ -223,7 +132,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &changesetSyncer{
-			syncStore:        store,
+			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 			priorityNotify:   make(chan []int64, 1),
@@ -265,7 +174,7 @@ func TestSyncRegistry(t *testing.T) {
 		},
 	}
 
-	r := NewSyncRegistry(ctx, syncStore, nil, nil, nil)
+	r := NewSyncRegistry(ctx, syncStore, nil)
 
 	assertSyncerCount := func(want int) {
 		r.mu.Lock()
@@ -306,7 +215,6 @@ func TestSyncRegistry(t *testing.T) {
 	// with a custom sync func
 	syncer := &changesetSyncer{
 		syncStore:   syncStore,
-		reposStore:  nil,
 		codeHostURL: "https://example.com/",
 		syncFunc: func(ctx context.Context, id int64) error {
 			syncChan <- id
@@ -362,12 +270,22 @@ func (m MockSyncStore) UpsertChangesetEvents(ctx context.Context, cs ...*batches
 	return m.upsertChangesetEvents(ctx, cs...)
 }
 
+func (m MockSyncStore) GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*store.SiteCredential, error) {
+	return nil, nil
+}
+
 func (m MockSyncStore) Transact(ctx context.Context) (*store.Store, error) {
 	return m.transact(ctx)
 }
 
 func (m MockSyncStore) Repos() *database.RepoStore {
-	return database.GlobalRepos
+	// Return a RepoStore with a nil DB, so tests will fail when a mock is missing.
+	return database.Repos(nil)
+}
+
+func (m MockSyncStore) ExternalServices() *database.ExternalServiceStore {
+	// Return a ExternalServiceStore with a nil DB, so tests will fail when a mock is missing.
+	return database.ExternalServices(nil)
 }
 
 func (m MockSyncStore) Clock() func() time.Time {
