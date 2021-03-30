@@ -12,10 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -255,7 +255,7 @@ func TestSyncRegistry(t *testing.T) {
 
 func TestLoadChangesetSource(t *testing.T) {
 	ctx := context.Background()
-	sourcer := repos.NewSourcer(httpcli.NewFactory(
+	cf := httpcli.NewFactory(
 		func(cli httpcli.Doer) httpcli.Doer {
 			return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
 				// Don't actually execute the request, just dump the authorization header
@@ -264,7 +264,7 @@ func TestLoadChangesetSource(t *testing.T) {
 			})
 		},
 		httpcli.NewTimeoutOpt(1*time.Second),
-	))
+	)
 
 	externalService := types.ExternalService{
 		ID:          1,
@@ -307,11 +307,14 @@ func TestLoadChangesetSource(t *testing.T) {
 	}
 
 	// If no site-credential exists, the token from the external service should be used.
-	src, err := loadChangesetSource(ctx, sourcer, syncStore, repo)
+	src, err := loadChangesetSource(ctx, cf, syncStore, repo)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := src.(*repos.GithubSource).ValidateToken(ctx); err == nil {
+	type tokenValidator interface {
+		ValidateToken(ctx context.Context) error
+	}
+	if err := src.ChangesetSource.(tokenValidator).ValidateToken(ctx); err == nil {
 		t.Fatal("unexpected nil error")
 	} else if have, want := err.Error(), "Bearer 123"; have != want {
 		t.Fatalf("invalid token used, want=%q have=%q", want, have)
@@ -319,11 +322,11 @@ func TestLoadChangesetSource(t *testing.T) {
 
 	// If one exists, prefer that one over the external service config ones.
 	hasCredential = true
-	src, err = loadChangesetSource(ctx, sourcer, syncStore, repo)
+	src, err = loadChangesetSource(ctx, cf, syncStore, repo)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := src.(*repos.GithubSource).ValidateToken(ctx); err == nil {
+	if err := src.ChangesetSource.(tokenValidator).ValidateToken(ctx); err == nil {
 		t.Fatal("unexpected nil error")
 	} else if have, want := err.Error(), "Bearer 456"; have != want {
 		t.Fatalf("invalid token used, want=%q have=%q", want, have)
@@ -337,6 +340,7 @@ type MockSyncStore struct {
 	updateChangeset       func(context.Context, *batches.Changeset) error
 	upsertChangesetEvents func(context.Context, ...*batches.ChangesetEvent) error
 	getSiteCredential     func(ctx context.Context, opts store.GetSiteCredentialOpts) (*store.SiteCredential, error)
+	getExternalServiceIDs func(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
 	transact              func(context.Context) (*store.Store, error)
 }
 
@@ -360,6 +364,10 @@ func (m MockSyncStore) GetSiteCredential(ctx context.Context, opts store.GetSite
 	return m.getSiteCredential(ctx, opts)
 }
 
+func (m MockSyncStore) GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error) {
+	return m.getExternalServiceIDs(ctx, opts)
+}
+
 func (m MockSyncStore) Transact(ctx context.Context) (*store.Store, error) {
 	return m.transact(ctx)
 }
@@ -372,6 +380,16 @@ func (m MockSyncStore) Repos() *database.RepoStore {
 func (m MockSyncStore) ExternalServices() *database.ExternalServiceStore {
 	// Return a ExternalServiceStore with a nil DB, so tests will fail when a mock is missing.
 	return database.ExternalServices(nil)
+}
+
+func (m MockSyncStore) UserCredentials() *database.UserCredentialsStore {
+	// Return a UserCredentialsStore with a nil DB, so tests will fail when a mock is missing.
+	return database.UserCredentials(nil)
+}
+
+func (m MockSyncStore) DB() dbutil.DB {
+	// Return a nil DB, so tests will fail when a mock is missing.
+	return nil
 }
 
 func (m MockSyncStore) Clock() func() time.Time {

@@ -2,7 +2,6 @@ package syncer
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -12,11 +11,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -47,6 +48,9 @@ type SyncStore interface {
 	Repos() *database.RepoStore
 	ExternalServices() *database.ExternalServiceStore
 	Clock() func() time.Time
+	DB() dbutil.DB
+	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
+	UserCredentials() *database.UserCredentialsStore
 }
 
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
@@ -416,7 +420,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	source, err := loadChangesetSource(ctx, repos.NewSourcer(s.httpFactory), s.syncStore, repo)
+	source, err := loadChangesetSource(ctx, s.httpFactory, s.syncStore, repo)
 	if err != nil {
 		return err
 	}
@@ -426,7 +430,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 
 // SyncChangeset refreshes the metadata of the given changeset and
 // updates them in the database.
-func SyncChangeset(ctx context.Context, syncStore SyncStore, source repos.ChangesetSource, repo *types.Repo, c *batches.Changeset) (err error) {
+func SyncChangeset(ctx context.Context, syncStore SyncStore, source *sources.BatchesSource, repo *types.Repo, c *batches.Changeset) (err error) {
 	repoChangeset := &repos.Changeset{Repo: repo, Changeset: c}
 	if err := source.LoadChangeset(ctx, repoChangeset); err != nil {
 		_, ok := err.(repos.ChangesetNotFoundError)
@@ -465,52 +469,15 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source repos.Change
 	return tx.UpsertChangesetEvents(ctx, events...)
 }
 
-// loadChangesetSource get an authenticated ChangesetSource for the given repo
-// to load the changeset state from.
-func loadChangesetSource(ctx context.Context, sourcer repos.Sourcer, s SyncStore, r *types.Repo) (repos.ChangesetSource, error) {
-	// First, we need to find an arbitrary external service associated with the repo.
-	// The logic in loadExternalService is a bit more complicated than it needs to be,
-	// because we want to maintain compatibility with the previous behavior of always
-	// syncing with an external service config, when no site-credential is configured.
-	// In 3.28, this is set to disappear, as we will completely disable using external
-	// service tokens for Batch Changes.
-	externalService, err := loadExternalService(ctx, s, r)
+func loadChangesetSource(ctx context.Context, cf *httpcli.Factory, syncStore SyncStore, repo *types.Repo) (*sources.BatchesSource, error) {
+	srcer := sources.NewSourcer(repos.NewSourcer(cf), syncStore)
+	// This is a ChangesetSource authenticated with the external service
+	// token.
+	source, err := srcer.ForRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
-
-	// Then, use the external service to build a ChangesetSource.
-	sources, err := sourcer(externalService)
-	if err != nil {
-		return nil, err
-	}
-	if len(sources) != 1 {
-		return nil, fmt.Errorf("got no Source for external service of kind %q", externalService.Kind)
-	}
-	source := sources[0]
-
-	// Try to find a site-credential. If one is configured, use that for syncing the changeset.
-	siteCredential, err := s.GetSiteCredential(ctx, store.GetSiteCredentialOpts{
-		ExternalServiceType: r.ExternalRepo.ServiceType,
-		ExternalServiceID:   r.ExternalRepo.ServiceID,
-	})
-	if err != nil && err != store.ErrNoResults {
-		return nil, err
-	}
-	if siteCredential != nil {
-		userSource, ok := source.(repos.UserSource)
-		if !ok {
-			return nil, fmt.Errorf("cannot create UserSource from external service of kind %q", externalService.Kind)
-		}
-		source, err = userSource.WithAuthenticator(siteCredential.Credential)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	ccs, ok := source.(repos.ChangesetSource)
-	if !ok {
-		return nil, fmt.Errorf("cannot create ChangesetSource from external service of kind %q", externalService.Kind)
-	}
-	return ccs, nil
+	// Try to use a site credential. If none is present, this falls back to
+	// the external service config. This code path should error in the future.
+	return source.WithSiteAuthenticator(ctx, repo)
 }
