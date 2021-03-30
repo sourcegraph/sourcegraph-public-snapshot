@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func TestSyncerRun(t *testing.T) {
@@ -251,6 +252,7 @@ type MockSyncStore struct {
 	getChangeset          func(context.Context, store.GetChangesetOpts) (*batches.Changeset, error)
 	updateChangeset       func(context.Context, *batches.Changeset) error
 	upsertChangesetEvents func(context.Context, ...*batches.ChangesetEvent) error
+	getSiteCredential     func(ctx context.Context, opts store.GetSiteCredentialOpts) (*store.SiteCredential, error)
 	transact              func(context.Context) (*store.Store, error)
 }
 
@@ -271,7 +273,7 @@ func (m MockSyncStore) UpsertChangesetEvents(ctx context.Context, cs ...*batches
 }
 
 func (m MockSyncStore) GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*store.SiteCredential, error) {
-	return nil, nil
+	return m.getSiteCredential(ctx, opts)
 }
 
 func (m MockSyncStore) Transact(ctx context.Context) (*store.Store, error) {
@@ -289,7 +291,7 @@ func (m MockSyncStore) ExternalServices() *database.ExternalServiceStore {
 }
 
 func (m MockSyncStore) Clock() func() time.Time {
-	return time.Now
+	return timeutil.Now
 }
 
 func (m MockSyncStore) ListCodeHosts(ctx context.Context, opts store.ListCodeHostsOpts) ([]*batches.CodeHost, error) {

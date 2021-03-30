@@ -485,7 +485,7 @@ func loadChangesetSource(ctx context.Context, sourcer repos.Sourcer, s SyncStore
 		return nil, err
 	}
 	if len(sources) != 1 {
-		return nil, fmt.Errorf("got no Source for external service %q", externalService.Kind)
+		return nil, fmt.Errorf("got no Source for external service of kind %q", externalService.Kind)
 	}
 	source := sources[0]
 
