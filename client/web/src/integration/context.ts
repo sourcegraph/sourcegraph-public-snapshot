@@ -31,8 +31,10 @@ export interface WebIntegrationTestContext
     overrideSearchStreamEvents: (overrides: SearchEvent[]) => void
 }
 
+const rootDirectory = path.resolve(__dirname, '..', '..', '..', '..')
+const manifestFile = path.resolve(rootDirectory, 'ui/assets/webpack.manifest.json')
+
 const getAppBundle = (): string => {
-    const manifestFile = path.resolve(__dirname, '../../../../ui/assets/webpack.manifest.json')
     // eslint-disable-next-line no-sync
     const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf-8')) as Record<string, string>
     return manifest['app.js']

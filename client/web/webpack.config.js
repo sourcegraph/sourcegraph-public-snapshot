@@ -78,9 +78,9 @@ const config = {
   },
   output: {
     path: path.join(rootDirectory, 'ui', 'assets'),
-    // Prevent potential memory leak: https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
+    // Prevent memory leak: https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
     filename: mode === 'production' ? 'scripts/[name].[contenthash].bundle.js' : 'scripts/[name].bundle.js',
-    chunkFilename: 'scripts/[id]-[contenthash].chunk.js',
+    chunkFilename: mode === 'production' ? 'scripts/[id]-[contenthash].chunk.js' : 'scripts/[id].chunk.js',
     publicPath: '/.assets/',
     globalObject: 'self',
     pathinfo: false,
@@ -94,7 +94,7 @@ const config = {
       },
     }),
     new MiniCssExtractPlugin({
-      // Prevent potential memory leak: https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
+      // Prevent memory leak: https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
       filename: mode === 'production' ? 'styles/[name].[contenthash].bundle.css' : 'styles/[name].bundle.css',
     }),
     new OptimizeCssAssetsPlugin(),
