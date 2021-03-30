@@ -101,7 +101,10 @@ type LineMatch struct {
 func (fm *FileMatch) Select(t filter.SelectPath) Match {
 	switch t.Type {
 	case filter.Repository:
-		return (*RepoMatch)(fm.Repo)
+		return &RepoMatch{
+			Name: fm.Repo.Name,
+			ID:   fm.Repo.ID,
+		}
 	case filter.File:
 		fm.LineMatches = nil
 		fm.Symbols = nil

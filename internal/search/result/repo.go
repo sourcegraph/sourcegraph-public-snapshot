@@ -1,15 +1,21 @@
 package result
 
 import (
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type RepoMatch struct {
-	types.RepoName
+	Name api.RepoName
+	ID   api.RepoID
 
-	// Rev optionally specifies a revision to go to
+	// rev optionally specifies a revision to go to for search results.
 	Rev string
+}
+
+func (r RepoMatch) Limit(limit int) int {
+	// Always represents one result and limit > 0 so we just return limit - 1.
+	return limit - 1
 }
 
 func (r *RepoMatch) ResultCount() int {

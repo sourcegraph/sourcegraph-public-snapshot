@@ -50,13 +50,13 @@ func (r *CommitSearchResultResolver) Select(path filter.SelectPath) SearchResult
 	switch v := match.(type) {
 	case *result.CommitMatch:
 		return &CommitSearchResultResolver{
-			CommitMatch: *v,
-			db: r.db,
+			CommitMatch:       *v,
+			db:                r.db,
 			gitCommitResolver: r.gitCommitResolver,
 		}
 	case *result.RepoMatch:
 		return NewRepositoryResolver(r.db, &types.Repo{
-			ID: v.ID,
+			ID:   v.ID,
 			Name: v.Name,
 		})
 	}

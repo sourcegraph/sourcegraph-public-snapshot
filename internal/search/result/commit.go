@@ -43,7 +43,10 @@ func (r *CommitMatch) Limit(limit int) int {
 func (r *CommitMatch) Select(path filter.SelectPath) Match {
 	switch path.Type {
 	case filter.Repository:
-		return &RepoMatch{RepoName: r.RepoName}
+		return &RepoMatch{
+			Name: r.RepoName.Name,
+			ID:   r.RepoName.ID,
+		}
 	case filter.Commit:
 		return r
 	}
