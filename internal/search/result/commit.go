@@ -38,3 +38,5 @@ func (r *CommitMatch) Limit(limit int) int {
 	}
 	return limit - len(r.Body.Highlights)
 }
+
+func (r *CommitMatch) searchResultMarker() {}

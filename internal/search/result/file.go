@@ -23,6 +23,8 @@ type FileMatch struct {
 	InputRev *string `json:"-"`
 }
 
+func (fm *FileMatch) searchResultMarker() {}
+
 func (fm *FileMatch) URL() string {
 	var b strings.Builder
 	var ref string

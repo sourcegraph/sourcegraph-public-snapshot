@@ -1,6 +1,8 @@
 package result
 
-import "github.com/sourcegraph/sourcegraph/internal/api"
+import (
+	"github.com/sourcegraph/sourcegraph/internal/api"
+)
 
 type RepoMatch struct {
 	Name api.RepoName
@@ -14,3 +16,5 @@ func (r RepoMatch) Limit(limit int) int {
 	// Always represents one result and limit > 0 so we just return limit - 1.
 	return limit - 1
 }
+
+func (r *RepoMatch) searchResultMarker() {}
