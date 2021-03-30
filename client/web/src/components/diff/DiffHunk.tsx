@@ -10,7 +10,7 @@ import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { property, isDefined } from '../../../../shared/src/util/types'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
-
+import { groupBy, mapValues } from 'lodash'
 interface DiffBoundaryProps extends FileDiffHunkFields {
     lineNumberClassName: string
     contentClassName: string
@@ -25,7 +25,7 @@ const diffHunkTypeIndicators: Record<DiffHunkLineType, string> = {
 
 const DiffBoundary: React.FunctionComponent<DiffBoundaryProps> = props => (
     <tr className="diff-boundary">
-        {props.lineNumbers && <td className={`diff-boundary__num ${props.lineNumberClassName}`} colSpan={2} />}
+        {props.lineNumbers && <td className={`diff-boundary__num ${props.lineNumberClassName}`} colSpan={0} />}
         <td className={`diff-boundary__content ${props.contentClassName}`} data-diff-marker=" ">
             {props.oldRange.lines !== undefined && props.newRange.lines !== undefined && (
                 <code>
@@ -37,10 +37,29 @@ const DiffBoundary: React.FunctionComponent<DiffBoundaryProps> = props => (
     </tr>
 )
 
+interface Line extends FileDiffHunkFields {
+    highlight: {
+        aborted: boolean
+        lines: Array<{
+            kind: DiffHunkLineType
+            html: string
+            line: number
+            oldLine: number
+            newLine: number
+        }>
+    }
+}
+
+interface LineCounter {
+    line: number
+    dataPart: string
+    className?: string
+}
+
 interface DiffHunkProps extends ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
     fileDiffAnchor: string
-    hunk: FileDiffHunkFields
+    hunk: Line
     lineNumbers: boolean
     decorations: Record<'head' | 'base', DecorationMapByLine>
     location: H.Location
@@ -51,6 +70,87 @@ interface DiffHunkProps extends ThemeProps {
      * @default true
      */
     persistLines?: boolean
+}
+
+const LineCounter: React.FunctionComponent<LineCounter> = ({ line, dataPart, className }) => {
+    return (
+        <td
+            className={`diff-hunk__num ${className}`}
+            data-line={line}
+            data-part={dataPart}
+            // id={oldAnchor}
+            // onClick={() => persistLines && history.push({ hash: oldAnchor })}
+        />
+    )
+}
+
+const LineContent: React.FunctionComponent<any> = ({
+    kind,
+    decorations,
+    line,
+    isLightTheme,
+    html,
+    className,
+}: {
+    decorations: any
+    kind: DiffHunkLineType
+    html: string
+    line: number
+    isLightTheme: any
+    className?: string
+}) => {
+    const decorationsForLine = [
+        // If the line was deleted, look for decorations in the base revision
+        ...((kind === DiffHunkLineType.DELETED && decorations.base.get(line)) || []),
+        // If the line wasn't deleted, look for decorations in the head revision
+        ...((kind !== DiffHunkLineType.DELETED && decorations.head.get(line)) || []),
+    ]
+
+    const lineStyle = decorationsForLine
+        .filter(decoration => decoration.isWholeLine)
+        .map(decoration => decorationStyleForTheme(decoration, isLightTheme))
+        .reduce((style, decoration) => ({ ...style, ...decoration }), {})
+
+    return (
+        <td
+            className={`diff-hunk__content ${className}`}
+            /* eslint-disable-next-line react/forbid-dom-props */
+            style={lineStyle}
+            data-diff-marker={diffHunkTypeIndicators[kind]}
+        >
+            <div className="d-inline-block" dangerouslySetInnerHTML={{ __html: html }} />
+            {decorationsForLine.filter(property('after', isDefined)).map((decoration, index) => {
+                const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
+                return (
+                    <React.Fragment key={index}>
+                        {' '}
+                        <LinkOrSpan
+                            to={decoration.after.linkURL}
+                            data-tooltip={decoration.after.hoverMessage}
+                            style={style}
+                        >
+                            {decoration.after.contentText}
+                        </LinkOrSpan>
+                    </React.Fragment>
+                )
+            })}
+        </td>
+    )
+}
+
+const LineGroup: React.FunctionComponent<any> = ({ decorations, isLightTheme, line, html, dataPart, className }) => {
+    return (
+        <>
+            <LineCounter line={line} dataPart={dataPart} className={className} />
+            <LineContent
+                className={className}
+                decorations={decorations}
+                isLightTheme={isLightTheme}
+                line={line}
+                html={html}
+            />
+        </>
+    )
 }
 
 export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
@@ -65,6 +165,95 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
 }) => {
     let oldLine = hunk.oldRange.startLine
     let newLine = hunk.newRange.startLine
+
+    const lines = hunk.highlight.lines.map(line => {
+        if (line.kind !== DiffHunkLineType.ADDED) {
+            oldLine++
+            line.line = oldLine - 1
+            line.oldLine = oldLine - 1
+        }
+        if (line.kind !== DiffHunkLineType.DELETED) {
+            newLine++
+            line.line = newLine - 1
+            line.newLine = newLine - 1
+        }
+        return line
+    })
+
+    const grouped = mapValues(groupBy(lines, 'line'))
+
+    const result = Object.keys(grouped).map(x => {
+        // if (grouped[x].length === 1 && grouped[x][0].kind === DiffHunkLineType.ADDED) {}
+        return (
+            <tr>
+                {grouped[x].length === 1 && grouped[x][0].kind === DiffHunkLineType.ADDED ? (
+                    <>
+                        <td />
+                        <td />
+                        <LineGroup
+                            className="diff-hunk__line--addition"
+                            dataPart="head"
+                            key={`${grouped[x][0].newLine}${grouped[x][0].html}`}
+                            line={grouped[x][0].newLine}
+                            html={grouped[x][0].html}
+                            decorations={decorations}
+                            isLightTheme={isLightTheme}
+                        />
+                    </>
+                ) : (
+                    grouped[x].map((l, index) => {
+                        // const oldAnchor = `${fileDiffAnchor}L${oldLine - 1}`
+                        // const newAnchor = `${fileDiffAnchor}R${newLine - 1}`
+                        if (l.kind === DiffHunkLineType.UNCHANGED) {
+                            return (
+                                <React.Fragment key={`${l.newLine}${l.html}`}>
+                                    <LineGroup
+                                        dataPart="base"
+                                        line={l.newLine}
+                                        html={l.html}
+                                        decorations={decorations}
+                                        isLightTheme={isLightTheme}
+                                    />
+                                    <LineGroup
+                                        dataPart="head"
+                                        line={l.oldLine}
+                                        html={l.html}
+                                        decorations={decorations}
+                                        isLightTheme={isLightTheme}
+                                    />
+                                </React.Fragment>
+                            )
+                        } else if (l.kind === DiffHunkLineType.DELETED) {
+                            return (
+                                <LineGroup
+                                    className="diff-hunk__line--deletion"
+                                    dataPart="base"
+                                    key={`${l.oldLine}${l.html}`}
+                                    line={l.oldLine}
+                                    html={l.html}
+                                    decorations={decorations}
+                                    isLightTheme={isLightTheme}
+                                />
+                            )
+                        } else if (l.kind === DiffHunkLineType.ADDED) {
+                            return (
+                                <LineGroup
+                                    className="diff-hunk__line--addition"
+                                    dataPart="head"
+                                    key={`${l.newLine}${l.html}`}
+                                    line={l.newLine}
+                                    html={l.html}
+                                    decorations={decorations}
+                                    isLightTheme={isLightTheme}
+                                />
+                            )
+                        }
+                    })
+                )}
+            </tr>
+        )
+    })
+
     return (
         <>
             <DiffBoundary
@@ -73,98 +262,7 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                 contentClassName="diff-hunk__content"
                 lineNumbers={lineNumbers}
             />
-            {hunk.highlight.lines.map((line, index) => {
-                if (line.kind !== DiffHunkLineType.ADDED) {
-                    oldLine++
-                }
-                if (line.kind !== DiffHunkLineType.DELETED) {
-                    newLine++
-                }
-                const oldAnchor = `${fileDiffAnchor}L${oldLine - 1}`
-                const newAnchor = `${fileDiffAnchor}R${newLine - 1}`
-                const decorationsForLine = [
-                    // If the line was deleted, look for decorations in the base revision
-                    ...((line.kind === DiffHunkLineType.DELETED && decorations.base.get(oldLine - 1)) || []),
-                    // If the line wasn't deleted, look for decorations in the head revision
-                    ...((line.kind !== DiffHunkLineType.DELETED && decorations.head.get(newLine - 1)) || []),
-                ]
-                const lineStyle = decorationsForLine
-                    .filter(decoration => decoration.isWholeLine)
-                    .map(decoration => decorationStyleForTheme(decoration, isLightTheme))
-                    .reduce((style, decoration) => ({ ...style, ...decoration }), {})
-                return (
-                    <tr
-                        key={index}
-                        className={`diff-hunk__line ${
-                            line.kind === DiffHunkLineType.UNCHANGED ? 'diff-hunk__line--both' : ''
-                        } ${line.kind === DiffHunkLineType.DELETED ? 'diff-hunk__line--deletion' : ''} ${
-                            line.kind === DiffHunkLineType.ADDED ? 'diff-hunk__line--addition' : ''
-                        } ${
-                            (line.kind !== DiffHunkLineType.ADDED && location.hash === '#' + oldAnchor) ||
-                            (line.kind !== DiffHunkLineType.DELETED && location.hash === '#' + newAnchor)
-                                ? 'diff-hunk__line--active'
-                                : ''
-                        }`}
-                    >
-                        {lineNumbers && (
-                            <>
-                                {line.kind !== DiffHunkLineType.ADDED ? (
-                                    // TODO: Improve accessibility
-                                    // https://github.com/sourcegraph/sourcegraph/issues/19272
-                                    <td
-                                        className="diff-hunk__num"
-                                        data-line={oldLine - 1}
-                                        data-part="base"
-                                        id={oldAnchor}
-                                        onClick={() => persistLines && history.push({ hash: oldAnchor })}
-                                    />
-                                ) : (
-                                    <td className="diff-hunk__num diff-hunk__num--empty" />
-                                )}
-
-                                {line.kind !== DiffHunkLineType.DELETED ? (
-                                    // TODO: Improve accessibility
-                                    // https://github.com/sourcegraph/sourcegraph/issues/19272
-                                    <td
-                                        className="diff-hunk__num"
-                                        data-line={newLine - 1}
-                                        data-part="head"
-                                        id={newAnchor}
-                                        onClick={() => persistLines && history.push({ hash: newAnchor })}
-                                    />
-                                ) : (
-                                    <td className="diff-hunk__num diff-hunk__num--empty" />
-                                )}
-                            </>
-                        )}
-
-                        {/* Needed for decorations */}
-                        <td
-                            className="diff-hunk__content"
-                            /* eslint-disable-next-line react/forbid-dom-props */
-                            style={lineStyle}
-                            data-diff-marker={diffHunkTypeIndicators[line.kind]}
-                        >
-                            <div className="d-inline-block" dangerouslySetInnerHTML={{ __html: line.html }} />
-                            {decorationsForLine.filter(property('after', isDefined)).map((decoration, index) => {
-                                const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
-                                return (
-                                    <React.Fragment key={index}>
-                                        {' '}
-                                        <LinkOrSpan
-                                            to={decoration.after.linkURL}
-                                            data-tooltip={decoration.after.hoverMessage}
-                                            style={style}
-                                        >
-                                            {decoration.after.contentText}
-                                        </LinkOrSpan>
-                                    </React.Fragment>
-                                )
-                            })}
-                        </td>
-                    </tr>
-                )
-            })}
+            {result}
         </>
     )
 }
