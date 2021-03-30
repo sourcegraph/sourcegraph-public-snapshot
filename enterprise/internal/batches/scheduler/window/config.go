@@ -125,10 +125,42 @@ func (cfg *Configuration) currentFor(now time.Time) (*Window, *time.Duration) {
 }
 
 // Estimate attempts to estimate when the given entry in a queue of changesets
-// to be reconciled would be reconciled.
-func (cfg *Configuration) Estimate(history History, n int) time.Time {
-	// TODO: replace with real logic.
-	return time.Now()
+// to be reconciled would be reconciled. nil indicates that there is no
+// reasonable estimate, either because all windows are zero or the estimate is
+// too far in the future to be reliable.
+func (cfg *Configuration) Estimate(n int) *time.Time {
+	// Roughly speaking, we iterate over schedules until we reach the one that
+	// would include the given entry.
+	rem := n
+	at := time.Now()
+	until := at.Add(7 * 24 * time.Hour)
+	for at.Before(until) {
+		schedule := cfg.scheduleAt(at, false)
+
+		// An unlimited schedule means that the reconciliation will happen
+		// immediately.
+		if schedule.total() == -1 {
+			return &at
+		}
+
+		rem -= schedule.total()
+		if rem < 0 {
+			// Try to figure out approximately where in the schedule this will
+			// fall.
+			perc := float64(schedule.total()) - (float64(+rem) / float64(schedule.total()))
+			duration := time.Duration(float64(schedule.ValidUntil().Sub(at)) * perc)
+			at.Add(duration)
+			return &at
+		} else if rem == 0 {
+			// Special case: this will be the very last entry to be reconciled.
+			at = schedule.ValidUntil()
+			return &at
+		}
+
+		at = schedule.ValidUntil()
+	}
+
+	return nil
 }
 
 // HasRolloutWindows returns true if one or more windows have been defined.
@@ -137,100 +169,54 @@ func (cfg *Configuration) HasRolloutWindows() bool {
 }
 
 // Schedule calculates a schedule for the near future (most likely about a
-// minute), based on the history. If nil is returned, then an unlimited number
-// of changesets may be reconciled.
-func (cfg *Configuration) Schedule(history History) Schedule {
+// minute), based on the history.
+func (cfg *Configuration) Schedule() Schedule {
 	cfg.mu.RLock()
 	defer cfg.mu.RUnlock()
 
-	// Special cases. So many special cases.
-
-	// Firstly, if there are no rollout windows, then we just return nil and the
-	// scheduler can do what it wants.
+	// If there are no rollout windows, then we return an unlimited schedule and
+	// have the scheduler check back in periodically in case the configuration
+	// updated. Ten minutes is probably safe enough.
 	if !cfg.HasRolloutWindows() {
-		return nil
+		return newSchedule(time.Now(), 10*time.Minute, rate{n: -1})
 	}
 
-	now := time.Now()
-	window, validity := cfg.currentFor(now)
+	return cfg.scheduleAt(time.Now(), true)
+}
 
-	// Next up, no window means a zero schedule should be returned until the
-	// next window change.
+func (cfg *Configuration) scheduleAt(at time.Time, minimal bool) Schedule {
+	window, validity := cfg.currentFor(at)
+
+	// No window means a zero schedule should be returned until the next window
+	// change.
 	if window == nil {
 		if validity != nil {
-			return &zeroSchedule{baseSchedule{base: now, duration: *validity}}
-		} else {
-			// We should always have a validity in this case, but let's be
-			// defensive if we don't for some reason. The scheduler can check
-			// back in a minute.
-			return &zeroSchedule{baseSchedule{base: now, duration: 1 * time.Minute}}
+			if *validity >= 1*time.Minute && minimal {
+				return newSchedule(at, 1*time.Minute, rate{n: 0})
+			}
+			return newSchedule(at, *validity, rate{n: 0})
 		}
+		// We should always have a validity in this case, but let's be defensive
+		// if we don't for some reason. The scheduler can check back in a
+		// minute.
+		return newSchedule(at, 1*time.Minute, rate{n: 0})
 	}
 
 	// OK, so we have a rollout window. It may or may not have an expiry. Either
 	// way, let's calculate how long we'd want to schedule in an ideal world.
-	// For per-second or per-minute rates, this is super easy: we can return a
-	// schedule with an increment of one minute, in which case we can ignore the
-	// expiry: even if it's within the next minute, the next check will kick in
-	// the new window and its rate without any complication, since windows only
-	// have per-minute resolution.
-	//
-	// TODO: an obvious improvement here is to set the duration to be the full
-	// validity, if present.
-	if window.rate.unit == ratePerSecond {
-		return &linearSchedule{
-			baseSchedule: baseSchedule{base: now, duration: 1 * time.Minute},
-			n:            window.rate.n * 60,
+	if validity == nil {
+		if window.rate.unit == ratePerHour {
+			return newSchedule(at, 1*time.Hour, window.rate)
 		}
-	} else if window.rate.unit == ratePerMinute {
-		return &linearSchedule{
-			baseSchedule: baseSchedule{base: now, duration: 1 * time.Minute},
-			n:            window.rate.n,
-		}
+		// We never really want to have less than a minute's worth of schedule
+		// in this case: we want to check occasionally for updated
+		// configurations, but don't want to calculate every time the scheduler
+		// needs a changeset.
+		return newSchedule(at, 1*time.Minute, window.rate)
 	}
 
-	// The rate here is per-hour, which means that we have to provide a longer
-	// schedule increment, which in turn means that we have to factor the expiry
-	// in. Let's figure out how long we want to have this schedule run in an
-	// ideal world, and then we can work backwards from there.
-	//
-	// Let's flip it upside down and reverse it: how long should we wait between
-	// reconciliations?
-	perN := (1 * time.Hour) / time.Duration(window.rate.n)
-
-	// If it's more than a minute, then we're only ever going to provide a
-	// schedule that allows for zero or one reconcile.
-	if perN > 1*time.Minute {
-		// One ping only, Vasily.
-		if validity == nil || *validity >= perN {
-			return &linearSchedule{
-				baseSchedule: baseSchedule{base: now, duration: perN},
-				n:            1,
-			}
-		}
-		// The rollout window is going to change. We could do something
-		// complicated here like look ahead, or try to round and hope for the
-		// best, but instead, let's be conservative and not allow something to
-		// be scheduled and have the scheduler come back when the rollout window
-		// changes.
-		return &zeroSchedule{baseSchedule{base: now, duration: *validity}}
-	}
-
-	// If it's less than a minute, then we're getting perilously close to having
-	// to use some floating point maths. Let's set up a schedule for as far as
-	// we can if there's a defined validity, otherwise we'll set up the next
-	// hour.
-	if validity == nil || *validity >= 1*time.Hour {
-		return &linearSchedule{
-			baseSchedule: baseSchedule{base: now, duration: 1 * time.Hour},
-			n:            window.rate.n,
-		}
-	}
-
-	return &linearSchedule{
-		baseSchedule: baseSchedule{base: now, duration: *validity},
-		n:            int(float64(window.rate.n) * (float64(*validity) / float64(1*time.Hour))),
-	}
+	// TODO: minimise if needed.
+	return newSchedule(at, *validity, window.rate)
 }
 
 func (cfg *Configuration) update(raw *[]*schema.BatchChangeRolloutWindow) error {

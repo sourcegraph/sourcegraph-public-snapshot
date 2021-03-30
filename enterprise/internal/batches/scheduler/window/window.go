@@ -1,6 +1,7 @@
 package window
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -65,6 +66,10 @@ type rate struct {
 	unit rateUnit
 }
 
+func (r rate) IsUnlimited() bool {
+	return r.n == -1
+}
+
 type rateUnit int
 
 const (
@@ -72,6 +77,19 @@ const (
 	ratePerMinute
 	ratePerHour
 )
+
+func (ru rateUnit) AsDuration() time.Duration {
+	switch ru {
+	case ratePerSecond:
+		return time.Second
+	case ratePerMinute:
+		return time.Minute
+	case ratePerHour:
+		return time.Hour
+	default:
+		panic(fmt.Sprintf("invalid rateUnit value: %v", ru))
+	}
+}
 
 func parseRateUnit(raw string) (rateUnit, error) {
 	// We're not going to replicate the full schema validation regex here; we'll
