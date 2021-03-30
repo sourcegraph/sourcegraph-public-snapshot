@@ -553,7 +553,11 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.setState({ hasUserAddedRepositories: userRepoCount > 0 })
     }
 
-    private canShowSearchContext = (): boolean => this.state.showSearchContext && this.state.hasUserAddedRepositories
+    private hasUserDefinedSearchContexts = (): boolean =>
+        !!this.state.availableSearchContexts.find(context => !context.autoDefined)
+
+    private canShowSearchContext = (): boolean =>
+        this.state.showSearchContext && (this.state.hasUserAddedRepositories || this.hasUserDefinedSearchContexts())
 
     private getSelectedSearchContextSpec = (): string | undefined =>
         this.canShowSearchContext() ? this.state.selectedSearchContextSpec : undefined

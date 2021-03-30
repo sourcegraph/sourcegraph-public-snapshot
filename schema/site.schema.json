@@ -389,6 +389,13 @@
       "default": 5,
       "group": "External services"
     },
+    "gitMaxCodehostRequestsPerSecond": {
+      "description": "Maximum number of remote code host git operations (e.g. clone or ls-remote) to be run per second per gitserver. Default is -1, which is unlimited.",
+      "type": "integer",
+      "!go": { "pointer": true },
+      "default": -1,
+      "group": "External services"
+    },
     "repoListUpdateInterval": {
       "description": "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
       "type": "integer",

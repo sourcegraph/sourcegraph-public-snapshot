@@ -13,6 +13,7 @@
     `email` (required): user.email<br>
     `login` (optional): user.login<br>
     `displayName` (optional): user.firstName<br>
+  * **Name ID**: `email`
 1. Click "Next".
 1. Select "I'm an Okta customer adding an internal app" and click "Finish".
 1. In the Settings panel on the next page, find the "Identity Provider metadata" link and record its URL. ![Identity Provider metadata link](https://user-images.githubusercontent.com/1646931/71300825-63ada600-234d-11ea-858a-a489d8a79168.png)

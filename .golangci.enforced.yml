@@ -2,7 +2,6 @@
 # Eventually, the goal is to unify this with .golangci.yml.
 # https://github.com/sourcegraph/sourcegraph/issues/18720
 
-
 # See explanation of linters at https://golangci-lint.run/usage/linters/
 linters:
   disable-all: true
@@ -17,6 +16,8 @@ linters:
     - bodyclose
     - deadcode
     - gocritic
+    - govet
+    - staticcheck
 
 linters-settings:
   gocritic:
@@ -28,14 +29,12 @@ linters-settings:
       - exitAfterDefer    # Only occurs in auxiliary tools
       - ifElseChain       # Noisy for not much gain
       - singleCaseSwitch  # Noisy for not much gain
+  govet:
+      disable:
+          - composites
 
 issues:
   exclude-rules:
-    # Excluded generated bindata.go from gocritic lints
-    - path: cmd/server/shared/assets/bindata.go
-      linters:
-        - gocritic
-
     # Exclude bodyclose lint from tests because leaking connections in tests
     # is a non-issue, and checking that adds unnecessary noise
     - path: _test\.go

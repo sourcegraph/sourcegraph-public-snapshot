@@ -33,6 +33,7 @@ const (
 	graphQLRequestNameKey
 	originKey
 	sourceKey
+	GraphQLQueryKey
 )
 
 // trackOrigin specifies a URL value. When an incoming request has the request header "Origin" set

@@ -36,6 +36,8 @@ type searchAlert struct {
 	priority int
 }
 
+func (a searchAlert) PrometheusType() string { return a.prometheusType }
+
 func (a searchAlert) Title() string { return a.title }
 
 func (a searchAlert) Description() *string {
@@ -118,7 +120,6 @@ func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Opt
 		DB:               r.db,
 		Zoekt:            r.zoekt,
 		DefaultReposFunc: database.DefaultRepos(r.db).List,
-		NamespaceStore:   database.Namespaces(r.db),
 	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0

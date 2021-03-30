@@ -319,7 +319,7 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 	}
 
 	return &batchChangesCodeHostConnectionResolver{
-		userID:                actor.UID,
+		userID:                &actor.UID,
 		onlyWithoutCredential: args.OnlyWithoutCredential,
 		store:                 r.store,
 		opts: store.ListCodeHostsOpts{

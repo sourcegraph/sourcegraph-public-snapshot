@@ -57,6 +57,22 @@ Triggers:
 
 ```
 
+# Table "public.batch_changes_site_credentials"
+```
+        Column         |           Type           | Collation | Nullable |                          Default                           
+-----------------------+--------------------------+-----------+----------+------------------------------------------------------------
+ id                    | bigint                   |           | not null | nextval('batch_changes_site_credentials_id_seq'::regclass)
+ external_service_type | text                     |           | not null | 
+ external_service_id   | text                     |           | not null | 
+ credential            | text                     |           | not null | 
+ created_at            | timestamp with time zone |           | not null | now()
+ updated_at            | timestamp with time zone |           | not null | now()
+Indexes:
+    "batch_changes_site_credentials_pkey" PRIMARY KEY, btree (id)
+    "batch_changes_site_credentials_unique" UNIQUE, btree (external_service_type, external_service_id)
+
+```
+
 # Table "public.batch_specs"
 ```
       Column       |           Type           | Collation | Nullable |                 Default                 
@@ -509,8 +525,6 @@ Indexes:
 Foreign-key constraints:
     "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
     "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
-Triggers:
-    trig_soft_delete_orphan_repo_by_external_service_repo AFTER DELETE ON external_service_repos FOR EACH STATEMENT EXECUTE FUNCTION soft_delete_orphan_repo_by_external_service_repos()
 
 ```
 

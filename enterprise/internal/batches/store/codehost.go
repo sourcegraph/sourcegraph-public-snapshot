@@ -31,7 +31,7 @@ func (s *Store) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) ([]*b
 }
 
 var listCodeHostsQueryFmtstr = `
--- source: enterprise/internal/batches/store_codehost.go:ListCodeHosts
+-- source: enterprise/internal/batches/store/codehost.go:ListCodeHosts
 SELECT
 	repo.external_service_type, repo.external_service_id, COUNT(esr.external_service_id) > 0 AS ssh_required
 FROM repo
@@ -101,7 +101,7 @@ func (s *Store) GetExternalServiceID(ctx context.Context, opts GetExternalServic
 }
 
 const getExternalServiceIDQueryFmtstr = `
--- source: enterprise/internal/batches/store_codehost.go:GetExternalServiceID
+-- source: enterprise/internal/batches/store/codehost.go:GetExternalServiceID
 SELECT
 	external_services.id
 FROM external_services

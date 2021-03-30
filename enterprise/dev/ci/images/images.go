@@ -47,6 +47,7 @@ var SourcegraphDockerImages = []string{
 	"cadvisor",
 	"indexed-searcher",
 	"postgres-11.4",
+	"postgres-12.6",
 	"redis-cache",
 	"redis_exporter",
 	"redis-store",

@@ -70,6 +70,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             setSelectedTab('changesets')
             const urlParameters = new URLSearchParams(location.search)
             urlParameters.delete('tab')
+            removeConnectionParameters(urlParameters)
             if (location.search !== urlParameters.toString()) {
                 history.replace({ ...location, search: urlParameters.toString() })
             }
@@ -82,6 +83,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             setSelectedTab('chart')
             const urlParameters = new URLSearchParams(location.search)
             urlParameters.set('tab', 'chart')
+            removeConnectionParameters(urlParameters)
             if (location.search !== urlParameters.toString()) {
                 history.replace({ ...location, search: urlParameters.toString() })
             }
@@ -94,6 +96,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             setSelectedTab('spec')
             const urlParameters = new URLSearchParams(location.search)
             urlParameters.set('tab', 'spec')
+            removeConnectionParameters(urlParameters)
             if (location.search !== urlParameters.toString()) {
                 history.replace({ ...location, search: urlParameters.toString() })
             }
@@ -106,6 +109,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             setSelectedTab('archived')
             const urlParameters = new URLSearchParams(location.search)
             urlParameters.set('tab', 'archived')
+            removeConnectionParameters(urlParameters)
             if (location.search !== urlParameters.toString()) {
                 history.replace({ ...location, search: urlParameters.toString() })
             }
@@ -118,8 +122,10 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             <div className="overflow-auto mb-2">
                 <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                     <li className="nav-item">
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a
                             href=""
+                            role="button"
                             onClick={onSelectChangesets}
                             className={classNames('nav-link', selectedTab === 'changesets' && 'active')}
                         >
@@ -128,8 +134,10 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                         </a>
                     </li>
                     <li className="nav-item test-batches-chart-tab">
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a
                             href=""
+                            role="button"
                             onClick={onSelectChart}
                             className={classNames('nav-link', selectedTab === 'chart' && 'active')}
                         >
@@ -137,8 +145,10 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                         </a>
                     </li>
                     <li className="nav-item test-batches-spec-tab">
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a
                             href=""
+                            role="button"
                             onClick={onSelectSpec}
                             className={classNames('nav-link', selectedTab === 'spec' && 'active')}
                         >
@@ -147,8 +157,10 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                     </li>
                     {archiveEnabled && (
                         <li className="nav-item">
+                            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                             <a
                                 href=""
+                                role="button"
                                 onClick={onSelectArchived}
                                 className={classNames('nav-link', selectedTab === 'archived' && 'active')}
                             >
@@ -215,4 +227,16 @@ function selectedTabFromLocation(locationSearch: string, archiveEnabled: boolean
         return archiveEnabled ? 'archived' : 'changesets'
     }
     return 'changesets'
+}
+
+function removeConnectionParameters(parameters: URLSearchParams): void {
+    if (parameters.has('visible')) {
+        parameters.delete('visible')
+    }
+    if (parameters.has('first')) {
+        parameters.delete('first')
+    }
+    if (parameters.has('after')) {
+        parameters.delete('after')
+    }
 }

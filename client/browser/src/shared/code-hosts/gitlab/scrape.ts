@@ -116,6 +116,11 @@ const getFilePathFromElement = (element: HTMLElement): string => {
         throw new Error('Unable to get file paths from code view: no file title')
     }
 
+    // Deleted files in MRs include " deleted" after the filepath of deleted files
+    if (filePath.endsWith(' deleted')) {
+        return filePath.slice(0, -8)
+    }
+
     return filePath
 }
 

@@ -784,20 +784,34 @@ func TestGetAffiliatedSyncErrors(t *testing.T) {
 		return svc
 	}
 
+	countErrors := func(results map[int64]string) int {
+		var errorCount int
+		for _, v := range results {
+			if len(v) > 0 {
+				errorCount++
+			}
+		}
+		return errorCount
+	}
+
 	siteLevel := createService(nil, "GITHUB #1")
 	adminOwned := createService(admin, "GITHUB #2")
 	userOwned := createService(user2, "GITHUB #3")
 
 	// Listing errors now should return an empty map as none have been added yet
-	failures, err := ExternalServices(db).GetAffiliatedSyncErrors(ctx, admin)
+	results, err := ExternalServices(db).GetAffiliatedSyncErrors(ctx, admin)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(failures) > 0 {
-		t.Fatal("Expected zero errors")
+	if len(results) != 2 {
+		t.Fatalf("Expected 2 results, got %d", len(results))
+	}
+	errorCount := countErrors(results)
+	if errorCount != 0 {
+		t.Fatal("Expected 0 errors")
 	}
 
-	// Add two failures
+	// Add two failures for the same service
 	failure1 := "oops"
 	_, err = db.Exec(`
 INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
@@ -816,14 +830,18 @@ VALUES ($1,'errored', now(), $2)
 	}
 
 	// We should get the latest failure
-	failures, err = ExternalServices(db).GetAffiliatedSyncErrors(ctx, admin)
+	results, err = ExternalServices(db).GetAffiliatedSyncErrors(ctx, admin)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(failures) != 1 {
-		t.Fatal("Expected 1 failure")
+	if len(results) != 2 {
+		t.Fatalf("Expected 2 results, got %d", len(results))
 	}
-	failure := failures[siteLevel.ID]
+	errorCount = countErrors(results)
+	if errorCount != 1 {
+		t.Fatal("Expected 1 error")
+	}
+	failure := results[siteLevel.ID]
 	if failure != failure2 {
 		t.Fatalf("Want %q, got %q", failure2, failure)
 	}
@@ -837,21 +855,29 @@ VALUES ($1,'errored', now(), $2)
 		t.Fatal(err)
 	}
 
-	failures, err = ExternalServices(db).GetAffiliatedSyncErrors(ctx, admin)
+	results, err = ExternalServices(db).GetAffiliatedSyncErrors(ctx, admin)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(failures) != 2 {
-		t.Fatal("Expected 2 failure")
+	if len(results) != 2 {
+		t.Fatal("Expected 2 results")
+	}
+	errorCount = countErrors(results)
+	if errorCount != 2 {
+		t.Fatal("Expected 2 errors")
 	}
 
 	// User should not see any failures as they don't own any services
-	failures, err = ExternalServices(db).GetAffiliatedSyncErrors(ctx, user2)
+	results, err = ExternalServices(db).GetAffiliatedSyncErrors(ctx, user2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(failures) != 0 {
-		t.Fatal("Expected 0 failure")
+	if len(results) != 1 {
+		t.Fatal("Expected 1 result")
+	}
+	errorCount = countErrors(results)
+	if errorCount != 0 {
+		t.Fatal("Expected 0 errors")
 	}
 
 	// Add a failure to user service
@@ -865,14 +891,18 @@ VALUES ($1,'errored', now(), $2)
 	}
 
 	// We should get the latest failure
-	failures, err = ExternalServices(db).GetAffiliatedSyncErrors(ctx, user2)
+	results, err = ExternalServices(db).GetAffiliatedSyncErrors(ctx, user2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(failures) != 1 {
-		t.Fatal("Expected 1 failure")
+	if len(results) != 1 {
+		t.Fatal("Expected 1 result")
 	}
-	failure = failures[userOwned.ID]
+	errorCount = countErrors(results)
+	if errorCount != 1 {
+		t.Fatal("Expected 1 error")
+	}
+	failure = results[userOwned.ID]
 	if failure != failure3 {
 		t.Fatalf("Want %q, got %q", failure3, failure)
 	}

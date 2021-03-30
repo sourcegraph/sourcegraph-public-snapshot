@@ -374,7 +374,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 	t.Run("Get", func(t *testing.T) {
 		t.Run("ByID", func(t *testing.T) {
 			want := cs[0]
-			opts := CountBatchChangeOpts{ID: want.ID}
+			opts := GetBatchChangeOpts{ID: want.ID}
 
 			have, err := s.GetBatchChange(ctx, opts)
 			if err != nil {
@@ -388,7 +388,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 
 		t.Run("ByBatchSpecID", func(t *testing.T) {
 			want := cs[0]
-			opts := CountBatchChangeOpts{BatchSpecID: want.BatchSpecID}
+			opts := GetBatchChangeOpts{BatchSpecID: want.BatchSpecID}
 
 			have, err := s.GetBatchChange(ctx, opts)
 			if err != nil {
@@ -403,7 +403,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		t.Run("ByName", func(t *testing.T) {
 			want := cs[0]
 
-			have, err := s.GetBatchChange(ctx, CountBatchChangeOpts{Name: want.Name})
+			have, err := s.GetBatchChange(ctx, GetBatchChangeOpts{Name: want.Name})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -420,7 +420,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 				}
 
 				want := c
-				opts := CountBatchChangeOpts{NamespaceUserID: c.NamespaceUserID}
+				opts := GetBatchChangeOpts{NamespaceUserID: c.NamespaceUserID}
 
 				have, err := s.GetBatchChange(ctx, opts)
 				if err != nil {
@@ -440,7 +440,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 				}
 
 				want := c
-				opts := CountBatchChangeOpts{NamespaceOrgID: c.NamespaceOrgID}
+				opts := GetBatchChangeOpts{NamespaceOrgID: c.NamespaceOrgID}
 
 				have, err := s.GetBatchChange(ctx, opts)
 				if err != nil {
@@ -454,7 +454,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		})
 
 		t.Run("NoResults", func(t *testing.T) {
-			opts := CountBatchChangeOpts{ID: 0xdeadbeef}
+			opts := GetBatchChangeOpts{ID: 0xdeadbeef}
 
 			_, have := s.GetBatchChange(ctx, opts)
 			want := ErrNoResults
@@ -620,7 +620,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 			}
 
 			// And getting the batch change by its ID also shouldn't work.
-			if _, err := s.GetBatchChange(ctx, CountBatchChangeOpts{ID: ownedBatchChange.ID}); err == nil || err != ErrNoResults {
+			if _, err := s.GetBatchChange(ctx, GetBatchChangeOpts{ID: ownedBatchChange.ID}); err == nil || err != ErrNoResults {
 				t.Fatalf("got invalid error, want=%+v have=%+v", ErrNoResults, err)
 			}
 

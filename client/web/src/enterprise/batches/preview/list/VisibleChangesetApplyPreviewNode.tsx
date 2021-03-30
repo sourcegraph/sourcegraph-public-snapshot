@@ -191,8 +191,10 @@ const ExpandedSection: React.FunctionComponent<
             <div className="overflow-auto mb-4">
                 <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                     <li className="nav-item">
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a
                             href=""
+                            role="button"
                             onClick={onSelectDiff}
                             className={classNames(
                                 'nav-link',
@@ -209,8 +211,10 @@ const ExpandedSection: React.FunctionComponent<
                         </a>
                     </li>
                     <li className="nav-item">
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a
                             href=""
+                            role="button"
                             onClick={onSelectDescription}
                             className={classNames(
                                 'nav-link',
@@ -227,8 +231,10 @@ const ExpandedSection: React.FunctionComponent<
                         </a>
                     </li>
                     <li className="nav-item">
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                         <a
                             href=""
+                            role="button"
                             onClick={onSelectCommits}
                             className={classNames(
                                 'nav-link',

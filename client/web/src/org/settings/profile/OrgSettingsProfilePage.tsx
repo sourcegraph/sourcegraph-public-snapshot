@@ -81,8 +81,9 @@ export const OrgSettingsProfilePage: React.FunctionComponent<Props> = ({ org, on
             </p>
             <Form className="org-settings-profile-page" onSubmit={onSubmit}>
                 <div className="form-group">
-                    <label>Display name</label>
+                    <label htmlFor="org-settings-profile-page-display-name">Display name</label>
                     <input
+                        id="org-settings-profile-page-display-name"
                         type="text"
                         className="form-control org-settings-profile-page__display-name"
                         placeholder="Organization name"

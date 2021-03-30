@@ -644,7 +644,7 @@ func setBasicAuth(u *url.URL, extSvcType, username, password string) error {
 }
 
 type getBatchChanger interface {
-	GetBatchChange(ctx context.Context, opts store.CountBatchChangeOpts) (*batches.BatchChange, error)
+	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*batches.BatchChange, error)
 }
 
 func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*batches.BatchChange, error) {
@@ -652,7 +652,7 @@ func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*batche
 		return nil, errors.New("changeset has no owning batch change")
 	}
 
-	batchChange, err := tx.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
+	batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: id})
 	if err != nil && err != store.ErrNoResults {
 		return nil, errors.Wrapf(err, "retrieving owning batch change: %d", id)
 	} else if batchChange == nil {

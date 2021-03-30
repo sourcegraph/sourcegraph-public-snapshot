@@ -185,7 +185,7 @@ func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 // If it doesn't exist yet, both return values are nil.
 // It accepts a *store.Store so that it can be used inside a transaction.
 func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *batches.BatchSpec) (*batches.BatchChange, error) {
-	opts := store.CountBatchChangeOpts{
+	opts := store.GetBatchChangeOpts{
 		Name:            spec.Spec.Name,
 		NamespaceUserID: spec.NamespaceUserID,
 		NamespaceOrgID:  spec.NamespaceOrgID,
@@ -256,7 +256,7 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 	}
 	defer func() { err = tx.Done(err) }()
 
-	batchChange, err = tx.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: opts.BatchChangeID})
+	batchChange, err = tx.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: opts.BatchChangeID})
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +297,7 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 		tr.Finish()
 	}()
 
-	batchChange, err = s.store.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
+	batchChange, err = s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: id})
 	if err != nil {
 		return nil, errors.Wrap(err, "getting batch change")
 	}
@@ -347,7 +347,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		tr.Finish()
 	}()
 
-	batchChange, err := s.store.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
+	batchChange, err := s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: id})
 	if err != nil {
 		return err
 	}

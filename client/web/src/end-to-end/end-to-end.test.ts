@@ -917,7 +917,7 @@ describe('e2e test suite', () => {
                 await driver.page.waitForSelector('#repo-revision-popover', { visible: true })
                 await driver.page.click('#repo-revision-popover')
                 // Click "Tags" tab
-                await driver.page.click('.revisions-popover .tab-bar__tab:nth-child(2)')
+                await driver.page.click('.revisions-popover [data-test-tab="tags"]')
                 await driver.page.waitForSelector('a.git-ref-node[href*="0.5.0"]', { visible: true })
                 await driver.page.click('a.git-ref-node[href*="0.5.0"]')
                 await driver.assertWindowLocation('/github.com/sourcegraph/go-diff@v0.5.0/-/blob/diff/diff.go')

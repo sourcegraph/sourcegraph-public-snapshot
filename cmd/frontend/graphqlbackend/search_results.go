@@ -24,12 +24,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -329,10 +329,18 @@ loop:
 	return sparkline, nil
 }
 
-var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_graphql_search_response",
-	Help: "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
-}, []string{"status", "alert_type", "source", "request_name"})
+var (
+	searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_graphql_search_response",
+		Help: "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
+	}, []string{"status", "alert_type", "source", "request_name"})
+
+	searchLatencyHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_search_response_latency_seconds",
+		Help:    "Search response latencies in seconds that have ended in the given status (success, error, timeout, partial_timeout).",
+		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	}, []string{"status", "alert_type", "source", "request_name"})
+)
 
 // LogSearchLatency records search durations in the event database. This
 // function may only be called after a search result is performed, because it
@@ -800,77 +808,83 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	srr, err := r.resultsRecursive(ctx, r.Plan)
 	elapsed := time.Since(start)
 
-	var status, alertType string
-	incCounter := func() {
-		searchResponseCounter.WithLabelValues(
-			status,
-			alertType,
-			string(trace.RequestSource(ctx)),
-			trace.GraphQLRequestName(ctx),
-		).Inc()
+	// For streams we write logs in streamHandler.
+	if r.stream != nil {
+		return srr, err
 	}
 
-	if err != nil {
-		// Record what type of response we sent back via Prometheus.
-		status = "error"
-		if err == context.DeadlineExceeded {
-			status = "timeout"
-		}
-		incCounter()
-	} else {
+	if srr != nil {
 		srr.elapsed = elapsed
-
-		// Log latency for batch searches. For streams we interpret latency differently
-		// and it makes more sense to log it in streamHandler.
-		if r.stream == nil {
-			LogSearchLatency(ctx, r.db, r.SearchInputs, srr.ElapsedMilliseconds())
-		}
-
-		// Record what type of response we sent back via Prometheus.
-		switch {
-		case srr.allReposTimedout():
-			status = "timeout"
-		case srr.Stats.Status.Any(search.RepoStatusTimedout):
-			status = "partial_timeout"
-		case srr.alert != nil:
-			status = "alert"
-			alertType = srr.alert.prometheusType
-		default:
-			status = "success"
-		}
-		incCounter()
+		LogSearchLatency(ctx, r.db, r.SearchInputs, srr.ElapsedMilliseconds())
 	}
 
-	isSlow := time.Since(start) > logSlowSearchesThreshold()
-	if honey.Enabled() || isSlow {
-		var act actor.Actor
-		if a := actor.FromContext(ctx); a != nil {
-			act = *a
-		}
+	var status, alertType string
+	status = DetermineStatusForLogs(srr, err)
+	if srr != nil && srr.alert != nil {
+		alertType = srr.alert.PrometheusType()
+	}
 
-		ev := honey.Event("search")
-		ev.AddField("query", r.rawQuery())
-		ev.AddField("actor_uid", act.UID)
-		ev.AddField("actor_internal", act.Internal)
-		ev.AddField("type", trace.GraphQLRequestName(ctx))
-		ev.AddField("source", string(trace.RequestSource(ctx)))
-		ev.AddField("status", status)
-		ev.AddField("alert_type", alertType)
-		ev.AddField("duration_ms", elapsed.Milliseconds())
+	requestSource := string(trace.RequestSource(ctx))
+	requestName := trace.GraphQLRequestName(ctx)
+
+	searchResponseCounter.WithLabelValues(
+		status,
+		alertType,
+		requestSource,
+		requestName,
+	).Inc()
+
+	searchLatencyHistogram.WithLabelValues(
+		status,
+		alertType,
+		requestSource,
+		requestName,
+	).Observe(elapsed.Seconds())
+
+	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
+	if honey.Enabled() || isSlow {
+		var n int
 		if srr != nil {
-			ev.AddField("result_size", len(srr.SearchResults))
+			n = len(srr.SearchResults)
 		}
+		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
+			OriginalQuery: r.rawQuery(),
+			Typ:           requestName,
+			Source:        requestSource,
+			Status:        status,
+			AlertType:     alertType,
+			DurationMs:    elapsed.Milliseconds(),
+			ResultSize:    n,
+		})
 
 		if honey.Enabled() {
 			_ = ev.Send()
 		}
 
 		if isSlow {
-			log15.Warn("slow search request", mapToLog15Ctx(ev.Fields())...)
+			log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
 		}
 	}
-
 	return srr, err
+}
+
+// DetermineStatusForLogs determines the final status of a search for logging
+// purposes.
+func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
+	switch {
+	case err == context.DeadlineExceeded:
+		return "timeout"
+	case err != nil:
+		return "error"
+	case srr.allReposTimedout():
+		return "timeout"
+	case srr.Stats.Status.Any(search.RepoStatusTimedout):
+		return "partial_timeout"
+	case srr.alert != nil:
+		return "alert"
+	default:
+		return "success"
+	}
 }
 
 func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) (srr *SearchResultsResolver, err error) {
@@ -1705,7 +1719,7 @@ func (r *searchResolver) isGlobalSearch() bool {
 		return false
 	}
 	querySearchContextSpec, _ := r.Query.StringValue(query.FieldContext)
-	if envvar.SourcegraphDotComMode() && !searchcontexts.IsGlobalSearchContextSpec(querySearchContextSpec) {
+	if !searchcontexts.IsGlobalSearchContextSpec(querySearchContextSpec) {
 		return false
 	}
 	return len(r.Query.Values(query.FieldRepo)) == 0 && len(r.Query.Values(query.FieldRepoGroup)) == 0 && len(r.Query.Values(query.FieldRepoHasFile)) == 0
@@ -2105,33 +2119,4 @@ func orderedFuzzyRegexp(pieces []string) string {
 		return pieces[0]
 	}
 	return "(" + strings.Join(pieces, ").*?(") + ")"
-}
-
-// logSlowSearchesThreshold returns the minimum duration configured in site
-// settings for logging slow searches.
-func logSlowSearchesThreshold() time.Duration {
-	ms := conf.Get().ObservabilityLogSlowSearches
-	if ms == 0 {
-		return time.Duration(math.MaxInt64)
-	}
-	return time.Duration(ms) * time.Millisecond
-}
-
-// mapToLog15Ctx translates a map to log15 context fields.
-func mapToLog15Ctx(m map[string]interface{}) []interface{} {
-	// sort so its stable
-	keys := make([]string, len(m))
-	i := 0
-	for k := range m {
-		keys[i] = k
-		i++
-	}
-	sort.Strings(keys)
-	ctx := make([]interface{}, len(m)*2)
-	for i, k := range keys {
-		j := i * 2
-		ctx[j] = k
-		ctx[j+1] = m[k]
-	}
-	return ctx
 }

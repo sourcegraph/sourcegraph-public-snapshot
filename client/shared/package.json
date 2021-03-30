@@ -1,12 +1,17 @@
 {
   "private": true,
+  "name": "@sourcegraph/shared",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
   "scripts": {
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "stylelint": "stylelint 'src/**/*.scss' --quiet",
     "test": "jest",
     "graphql": "gulp graphQlSchema",
     "schema": "gulp schema",
-    "watch-schema": "gulp watchSchema"
+    "graphql-operations": "gulp graphQlOperations",
+    "watch-schema": "gulp watchSchema",
+    "download-puppeteer-browser":"TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" ts-node ./scripts/download-puppeteer-browser.ts"
   },
   "sideEffects": true
 }

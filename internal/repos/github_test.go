@@ -823,3 +823,28 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 		}
 	})
 }
+
+func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
+	svc := &types.ExternalService{
+		Kind: extsvc.KindGitHub,
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: os.Getenv("GITHUB_TOKEN"),
+		}),
+	}
+
+	githubSrc, err := NewGithubSource(svc, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, r := range []*github.Repository{
+		{IsDisabled: true},
+		{IsLocked: true},
+		{IsDisabled: true, IsLocked: true},
+	} {
+		if !githubSrc.excludes(r) {
+			t.Errorf("GitHubSource should exclude %+v", r)
+		}
+	}
+}

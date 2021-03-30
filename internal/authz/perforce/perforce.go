@@ -202,7 +202,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		}
 
 		// e.g. read user alice * //Sourcegraph/...
-		fields := strings.Split(scanner.Text(), " ")
+		fields := strings.Split(line, " ")
 		if len(fields) < 5 {
 			continue
 		}
@@ -369,7 +369,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 		}
 
 		// e.g. write user alice * //Sourcegraph/...
-		fields := strings.Split(scanner.Text(), " ")
+		fields := strings.Split(line, " ")
 		if len(fields) < 5 {
 			continue
 		}

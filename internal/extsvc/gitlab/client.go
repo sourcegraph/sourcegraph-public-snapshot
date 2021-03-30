@@ -267,6 +267,16 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	return &cc
 }
 
+func (c *Client) ValidateToken(ctx context.Context) error {
+	req, err := http.NewRequest(http.MethodGet, "user", nil)
+	if err != nil {
+		return err
+	}
+	v := struct{}{}
+	_, _, err = c.do(ctx, req, &v)
+	return err
+}
+
 type HTTPError struct {
 	code int
 	body []byte
