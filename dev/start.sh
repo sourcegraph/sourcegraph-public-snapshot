@@ -34,11 +34,11 @@ fi
 
 # Verify postgresql config.
 hash psql 2>/dev/null || {
-  # "brew install postgresql@9.6" does not put psql on the $PATH by default;
+  # "brew install postgres" does not put psql on the $PATH by default;
   # try to fix this automatically if we can.
   hash brew 2>/dev/null && {
-    if [[ -x "$(brew --prefix)/opt/postgresql@9.6/bin/psql" ]]; then
-      PATH="$(brew --prefix)/opt/postgresql@9.6/bin:$PATH"
+    if [[ -x "$(brew --prefix)/opt/postgres/bin/psql" ]]; then
+      PATH="$(brew --prefix)/opt/postgres/bin:$PATH"
       export PATH
     fi
   }
