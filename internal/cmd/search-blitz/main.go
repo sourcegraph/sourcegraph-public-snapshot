@@ -59,7 +59,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		defer ticker.Stop()
 
 		for {
-			m, err := c.search(ctx, qc.Query)
+			m, err := c.search(ctx, qc.Query, qc.Name)
 			if err != nil {
 				log15.Error(err.Error())
 			} else {
@@ -98,7 +98,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 }
 
 type genericClient interface {
-	search(ctx context.Context, query string) (*metrics, error)
+	search(ctx context.Context, query, queryName string) (*metrics, error)
 	clientType() string
 }
 

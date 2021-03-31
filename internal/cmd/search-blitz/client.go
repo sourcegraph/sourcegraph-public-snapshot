@@ -39,7 +39,7 @@ func newClient() (*client, error) {
 	}, nil
 }
 
-func (s *client) search(ctx context.Context, query string) (*metrics, error) {
+func (s *client) search(ctx context.Context, query, queryName string) (*metrics, error) {
 	var body bytes.Buffer
 	m := &metrics{}
 	if err := json.NewEncoder(&body).Encode(map[string]interface{}{
@@ -56,7 +56,7 @@ func (s *client) search(ctx context.Context, query string) (*metrics, error) {
 
 	req.Header.Set("Authorization", "token "+s.token)
 	req.Header.Set("X-Sourcegraph-Should-Trace", "true")
-	req.Header.Set("User-Agent", "SearchBlitz (monitoring)")
+	req.Header.Set("User-Agent", fmt.Sprintf("SearchBlitz (%s)", queryName))
 
 	start := time.Now()
 	resp, err := s.client.Do(req)
