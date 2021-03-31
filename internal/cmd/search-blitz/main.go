@@ -152,7 +152,7 @@ func main() {
 // SignalSensitiveContext returns a background context that is canceled after receiving an
 // interrupt or terminate signal. A second signal will abort the program. This function returns
 // the context and a function that should be  deferred by the caller to clean up internal channels.
-func SignalSensitiveContext() (context.Context, func()) {
+func SignalSensitiveContext() (ctx context.Context, cleanup func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	signals := make(chan os.Signal, 1)
