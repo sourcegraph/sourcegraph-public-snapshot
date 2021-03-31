@@ -23,31 +23,10 @@
     "clean": "rm -rf build/ dist/ *.zip *.xpi .checksum",
     "test": "jest --testPathIgnorePatterns end-to-end",
     "test-e2e": "mocha './src/end-to-end/**/*.test.ts'",
-    "bundlesize": "GITHUB_TOKEN= bundlesize",
     "create-source-zip": "node scripts/create-source-zip"
   },
   "browserslist": [
     "last 3 Chrome versions",
     "last 3 Firefox versions"
-  ],
-  "bundlesize": [
-    {
-      "path": "./build/dist/js/background.bundle.js"
-    },
-    {
-      "path": "./build/dist/js/inject.bundle.js"
-    },
-    {
-      "path": "./build/dist/js/integration.bundle.js"
-    },
-    {
-      "path": "./build/dist/js/phabricator.bundle.js"
-    },
-    {
-      "path": "./build/dist/css/style.bundle.css"
-    },
-    {
-      "path": "./build/dist/css/branded-style.bundle.css"
-    }
   ]
 }
