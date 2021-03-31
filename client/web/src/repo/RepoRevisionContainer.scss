@@ -8,6 +8,10 @@
 @import './commits/RepositoryCommitsPage';
 
 .repo-revision-container {
+    * {
+        font-size: 2rem !important;
+    }
+
     flex: 1 1 auto;
 
     display: flex;

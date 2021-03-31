@@ -1,6 +1,10 @@
 @import '../components/ConnectionPopover';
 
 .revisions-popover {
+    * {
+        font-size: 2rem !important;
+    }
+
     isolation: isolate;
     width: 35rem;
 
