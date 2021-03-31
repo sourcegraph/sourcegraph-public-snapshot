@@ -328,7 +328,7 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 
 		stats, err = handleRepoSearchResult(op.RepoRevs, limitHit, !event.Complete, searchErr)
 		if err != nil {
-			return errors.Wrapf(err, "failed to search commit %s", op.RepoRevs.String())
+			return errors.Wrapf(err, "failed to search commit %s %s", errorName(op.Diff), op.RepoRevs.String())
 		}
 
 		// Only send if we have something to report back.
@@ -346,6 +346,13 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 	}
 
 	return nil
+}
+
+func errorName(diff bool) string {
+	if diff {
+		return "diffs"
+	}
+	return "commits"
 }
 
 func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *search.CommitParameters, repoName types.RepoName, rawResults []*git.LogCommitSearchResult) ([]*CommitSearchResultResolver, error) {
@@ -513,8 +520,6 @@ func resolveCommitParameters(ctx context.Context, tp *search.TextParameters) (*s
 type searchCommitsInReposParameters struct {
 	TraceName string
 
-	ErrorName string
-
 	// CommitParams are the base commit parameters passed to
 	// searchCommitsInRepoStream. For each repository revision this is copied
 	// with the RepoRevs field set.
@@ -560,7 +565,6 @@ func searchCommitsInRepos(ctx context.Context, db dbutil.DB, args *search.TextPa
 func searchCommitDiffsInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel Sender) error {
 	return searchCommitsInRepos(ctx, db, args, searchCommitsInReposParameters{
 		TraceName:     "searchCommitDiffsInRepos",
-		ErrorName:     "diffs",
 		ResultChannel: resultChannel,
 		CommitParams: search.CommitParameters{
 			PatternInfo: args.PatternInfo,
@@ -579,7 +583,6 @@ func searchCommitLogInRepos(ctx context.Context, db dbutil.DB, args *search.Text
 
 	return searchCommitsInRepos(ctx, db, args, searchCommitsInReposParameters{
 		TraceName:     "searchCommitLogsInRepos",
-		ErrorName:     "commits",
 		ResultChannel: resultChannel,
 		CommitParams: search.CommitParameters{
 			PatternInfo:        args.PatternInfo,
