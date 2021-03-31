@@ -13,15 +13,12 @@ type ChangesetRewirer struct {
 	// The mappings need to be hydrated for the ChangesetRewirer to consume them.
 	mappings      store.RewirerMappings
 	batchChangeID int64
-	// feature flag that can be removed once this is the default behaviour
-	archiveInsteadOfDetach bool
 }
 
-func New(mappings store.RewirerMappings, batchChangeID int64, archive bool) *ChangesetRewirer {
+func New(mappings store.RewirerMappings, batchChangeID int64) *ChangesetRewirer {
 	return &ChangesetRewirer{
-		mappings:               mappings,
-		batchChangeID:          batchChangeID,
-		archiveInsteadOfDetach: archive,
+		mappings:      mappings,
+		batchChangeID: batchChangeID,
 	}
 }
 
@@ -156,11 +153,10 @@ func (r *ChangesetRewirer) attachTrackingChangeset(changeset *batches.Changeset)
 
 func (r *ChangesetRewirer) closeChangeset(changeset *batches.Changeset) {
 	reset := false
-	archive := false
-	if changeset.CurrentSpecID != 0 && changeset.OwnedByBatchChangeID == r.batchChangeID {
+	if changeset.CurrentSpecID != 0 && changeset.OwnedByBatchChangeID == r.batchChangeID && changeset.Published() {
 		// If we have a current spec ID and the changeset was created by
-		// _this_ batch change that means we should detach and close it.
-		if changeset.Published() {
+		// _this_ batch change that means we should archive it.
+
 			// Store the current spec also as the previous spec.
 			//
 			// Why?
@@ -186,18 +182,15 @@ func (r *ChangesetRewirer) closeChangeset(changeset *batches.Changeset) {
 				changeset.PreviousSpecID = changeset.CurrentSpecID
 			}
 
-			if r.archiveInsteadOfDetach {
+			// If we're here we want to archive the changeset or it's archived
+			// already and we don't want to detach it.
+			if !changeset.ArchivedIn(r.batchChangeID) {
 				changeset.Archive(r.batchChangeID)
-				archive = true
+				changeset.Closing = true
+				reset = true
 			}
-
-			changeset.Closing = true
-			reset = true
-		}
-	}
-
-	// Disassociate the changeset with the batch change.
-	if !archive {
+		} else {
+		// If not, we simply detach it
 		if wasAttached := changeset.Detach(r.batchChangeID); wasAttached {
 			reset = true
 		}
