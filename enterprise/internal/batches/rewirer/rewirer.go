@@ -157,39 +157,39 @@ func (r *ChangesetRewirer) closeChangeset(changeset *batches.Changeset) {
 		// If we have a current spec ID and the changeset was created by
 		// _this_ batch change that means we should archive it.
 
-			// Store the current spec also as the previous spec.
-			//
-			// Why?
-			//
-			// When a changeset with (prev: A, curr: B) should be closed but
-			// closing failed, it will still have (prev: A, curr: B) set.
-			//
-			// If someone then applies a new batch spec and re-attaches that
-			// changeset with changeset spec C, the changeset would end up with
-			// (prev: A, curr: C), because we don't rotate specs on errors in
-			// `updateChangesetToNewSpec`.
-			//
-			// That would mean, though, that the delta between A and C tells us
-			// to repush and update the changeset on the code host, in addition
-			// to 'reopen', which would actually be the only required action.
-			//
-			// So, when we mark a changeset as to-be-closed, we also rotate the
-			// specs, so that it changeset is saved as (prev: B, curr: B) and
-			// when somebody re-attaches it it's (prev: B, curr: C).
-			// But we only rotate the spec, if applying the currentSpecID was
-			// successful:
-			if changeset.ReconcilerState == batches.ReconcilerStateCompleted {
-				changeset.PreviousSpecID = changeset.CurrentSpecID
-			}
+		// Store the current spec also as the previous spec.
+		//
+		// Why?
+		//
+		// When a changeset with (prev: A, curr: B) should be closed but
+		// closing failed, it will still have (prev: A, curr: B) set.
+		//
+		// If someone then applies a new batch spec and re-attaches that
+		// changeset with changeset spec C, the changeset would end up with
+		// (prev: A, curr: C), because we don't rotate specs on errors in
+		// `updateChangesetToNewSpec`.
+		//
+		// That would mean, though, that the delta between A and C tells us
+		// to repush and update the changeset on the code host, in addition
+		// to 'reopen', which would actually be the only required action.
+		//
+		// So, when we mark a changeset as to-be-closed, we also rotate the
+		// specs, so that it changeset is saved as (prev: B, curr: B) and
+		// when somebody re-attaches it it's (prev: B, curr: C).
+		// But we only rotate the spec, if applying the currentSpecID was
+		// successful:
+		if changeset.ReconcilerState == batches.ReconcilerStateCompleted {
+			changeset.PreviousSpecID = changeset.CurrentSpecID
+		}
 
-			// If we're here we want to archive the changeset or it's archived
-			// already and we don't want to detach it.
-			if !changeset.ArchivedIn(r.batchChangeID) {
-				changeset.Archive(r.batchChangeID)
-				changeset.Closing = true
-				reset = true
-			}
-		} else {
+		// If we're here we want to archive the changeset or it's archived
+		// already and we don't want to detach it.
+		if !changeset.ArchivedIn(r.batchChangeID) {
+			changeset.Archive(r.batchChangeID)
+			changeset.Closing = true
+			reset = true
+		}
+	} else {
 		// If not, we simply detach it
 		if wasAttached := changeset.Detach(r.batchChangeID); wasAttached {
 			reset = true
