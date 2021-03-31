@@ -310,18 +310,13 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 	for event := range events {
 		timedOut = timedOut || !event.Complete || ctx.Err() == context.DeadlineExceeded
 
-		results, err = logCommitSearchResultsToResolvers(ctx, db, &op, repoName, event.Results)
+		results = logCommitSearchResultsToResolvers(ctx, db, &op, repoName, event.Results)
 		if len(results) > 0 {
 			resultCount += len(event.Results)
 			limitHit = resultCount > int(op.PatternInfo.FileMatchLimit)
 		}
 
-		var searchErr error
-		if err != nil {
-			searchErr = err
-		} else {
-			searchErr = event.Error
-		}
+		searchErr := event.Error
 		if searchErr != nil {
 			tr.LogFields(otlog.String("repo", string(op.RepoRevs.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 		}
@@ -355,9 +350,9 @@ func errorName(diff bool) string {
 	return "commits"
 }
 
-func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *search.CommitParameters, repoName types.RepoName, rawResults []*git.LogCommitSearchResult) ([]*CommitSearchResultResolver, error) {
+func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *search.CommitParameters, repoName types.RepoName, rawResults []*git.LogCommitSearchResult) []*CommitSearchResultResolver {
 	if len(rawResults) == 0 {
-		return nil, nil
+		return nil
 	}
 
 	results := make([]*CommitSearchResultResolver, len(rawResults))
@@ -413,7 +408,7 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 		}
 	}
 
-	return results, nil
+	return results
 }
 
 func cleanDiffPreview(highlights []result.HighlightedRange, rawDiffResult string) (string, []result.HighlightedRange) {
