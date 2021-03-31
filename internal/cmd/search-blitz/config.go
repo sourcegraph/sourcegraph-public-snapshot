@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type Config struct {
 	Groups []QueryGroupConfig
@@ -14,6 +17,9 @@ type QueryGroupConfig struct {
 type QueryConfig struct {
 	Query string
 	Name  string
+
+	// An unset interval defaults to 1m
+	Interval time.Duration
 
 	// An empty value for Protocols means "all"
 	Protocols []Protocol
