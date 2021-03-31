@@ -32,12 +32,12 @@ func (k *Key) ID(ctx context.Context) (string, error) {
 func (k *Key) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
 	block, err := aes.NewCipher(k.secret)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating AES cipher")
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating GCM block cipher")
 	}
 
 	nonce := make([]byte, gcm.NonceSize())
@@ -64,16 +64,12 @@ func (k *Key) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
 func (k *Key) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Secret, error) {
 	block, err := aes.NewCipher(k.secret)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating AES cipher")
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, err
-	}
-
-	if len(ciphertext) < gcm.NonceSize() {
-		return nil, errors.New("malformed ciphertext")
+		return nil, errors.Wrap(err, "creating GCM block cipher")
 	}
 
 	buf, err := base64.StdEncoding.DecodeString(string(ciphertext))
@@ -91,7 +87,10 @@ func (k *Key) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Secre
 		return nil, errors.New("invalid key name, are you trying to decrypt something with the wrong key?")
 	}
 
-	plaintext, err := gcm.Open(nil, ciphertext[:gcm.NonceSize()], ciphertext[gcm.NonceSize():], nil)
+	if len(ev.Ciphertext) < gcm.NonceSize() {
+		return nil, errors.New("malformed ciphertext")
+	}
+	plaintext, err := gcm.Open(nil, ev.Ciphertext[:gcm.NonceSize()], ev.Ciphertext[gcm.NonceSize():], nil)
 	if err != nil {
 		return nil, err
 	}

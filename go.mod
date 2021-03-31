@@ -162,6 +162,7 @@ require (
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/stretchr/objx v0.3.0 // indirect
+	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/stripe/stripe-go v70.15.0+incompatible
 	github.com/temoto/robotstxt v1.1.1
 	github.com/throttled/throttled/v2 v2.7.1
