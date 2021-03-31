@@ -21,7 +21,7 @@ export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternal
                     className="btn"
                     checked={false}
                     disabled={true}
-                    data-tooltip="You can't select this changeset to detach it due to lacking permissions"
+                    data-tooltip="You do not have permission to detach this changeset"
                 />
             </div>
         )}

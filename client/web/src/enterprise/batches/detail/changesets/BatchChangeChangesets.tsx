@@ -95,7 +95,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
         if (
             !confirm(
                 `Are you sure you want to detach ${selectedChangesets.size} ${pluralize(
-                    'changesets',
+                    'changeset',
                     selectedChangesets.size
                 )}?`
             )
