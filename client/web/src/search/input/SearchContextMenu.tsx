@@ -1,6 +1,6 @@
-import * as H from 'history'
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { ISearchContext } from '../../../../shared/src/graphql/schema'
+import { useObservable } from '../../../../shared/src/util/useObservable'
+import { Link } from '../../../../shared/src/components/Link'
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, {
@@ -70,7 +70,6 @@ const SearchContextMenuItem: React.FunctionComponent<{
 
 export interface SearchContextMenuProps
     extends Omit<SearchContextProps, 'showSearchContext' | 'setSelectedSearchContextSpec'> {
-    history: H.History
     fetchAutoDefinedSearchContexts: typeof _fetchAutoDefinedSearchContexts
     fetchSearchContexts: typeof _fetchSearchContexts
     closeMenu: () => void
@@ -81,7 +80,6 @@ const getFirstMenuItem = (): HTMLButtonElement | null =>
     document.querySelector('.search-context-menu__item:first-child')
 
 export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> = ({
-    history,
     selectedSearchContextSpec,
     defaultSearchContextSpec,
     selectSearchContextSpec,
@@ -172,13 +170,6 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         [closeMenu]
     )
 
-    // Clicking on a regular link with to="/contexts" does not close the menu,
-    // has to be done manually
-    const onManageButtonClick = useCallback(() => {
-        closeMenu()
-        history.push('/contexts')
-    }, [closeMenu, history])
-
     return (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <div className="search-context-menu" onKeyDown={onMenuKeyDown}>
@@ -222,13 +213,13 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                     Reset
                 </button>
                 <span className="flex-grow-1" />
-                <button
-                    type="button"
+                <Link
+                    to="/contexts"
                     className="btn btn-link btn-sm search-context-menu__footer-button"
-                    onClick={onManageButtonClick}
+                    onClick={closeMenu}
                 >
                     Manage
-                </button>
+                </Link>
             </div>
         </div>
     )

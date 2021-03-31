@@ -1,6 +1,5 @@
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { mount } from 'enzyme'
-import { createMemoryHistory } from 'history'
 import React, { ChangeEvent } from 'react'
 import { DropdownItem, DropdownMenu, UncontrolledDropdown } from 'reactstrap'
 import { of } from 'rxjs'
@@ -60,7 +59,6 @@ const mockFetchSearchContexts = (first: number, query?: string, after?: string) 
 
 describe('SearchContextMenu', () => {
     const defaultProps: SearchContextMenuProps = {
-        history: createMemoryHistory(),
         defaultSearchContextSpec: 'global',
         selectedSearchContextSpec: 'global',
         selectSearchContextSpec: () => {},
