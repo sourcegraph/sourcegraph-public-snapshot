@@ -39,19 +39,19 @@ func newClient() (*client, error) {
 	}, nil
 }
 
-func (s *client) search(ctx context.Context, query string) (*result, *metrics, error) {
+func (s *client) search(ctx context.Context, query string) (*metrics, error) {
 	var body bytes.Buffer
 	m := &metrics{}
 	if err := json.NewEncoder(&body).Encode(map[string]interface{}{
 		"query":     graphQLQuery,
 		"variables": map[string]string{"query": query},
 	}); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", s.url(), ioutil.NopCloser(&body))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	req.Header.Set("Authorization", "token "+s.token)
@@ -63,7 +63,7 @@ func (s *client) search(ctx context.Context, query string) (*result, *metrics, e
 	m.took = time.Since(start).Milliseconds()
 
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -71,7 +71,7 @@ func (s *client) search(ctx context.Context, query string) (*result, *metrics, e
 	case 200:
 		break
 	default:
-		return nil, nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	m.trace = resp.Header.Get("x-trace")
@@ -79,11 +79,15 @@ func (s *client) search(ctx context.Context, query string) (*result, *metrics, e
 	// Decode the response.
 	respDec := rawResult{Data: result{}}
 	if err := json.NewDecoder(resp.Body).Decode(&respDec); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return &respDec.Data, m, nil
+	return m, nil
 }
 
 func (s *client) url() string {
-	return s.endpoint + "/.api/graphql"
+	return s.endpoint + "/.api/graphql?SearchBlitz"
+}
+
+func (s *client) clientType() string {
+	return "batch"
 }
