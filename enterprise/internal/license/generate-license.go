@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"time"
 
@@ -59,7 +58,7 @@ func main() {
 	if *privateKeyFile == "" {
 		log.Fatal("A private key file must be explicitly indicated, but was not.")
 	}
-	b, err = ioutil.ReadFile(*privateKeyFile)
+	b, err = os.ReadFile(*privateKeyFile)
 	if err != nil {
 		log.Fatalf("Unable to read private key: %v\n", err)
 	}

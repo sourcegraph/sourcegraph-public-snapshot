@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -538,7 +537,7 @@ func (s *Server) tempDir(prefix string) (name string, err error) {
 		return "", err
 	}
 
-	return ioutil.TempDir(dir, prefix)
+	return os.MkdirTemp(dir, prefix)
 }
 
 func (s *Server) ignorePath(path string) bool {
@@ -1706,7 +1705,7 @@ func removeBadRefs(ctx context.Context, dir GitDir) {
 func ensureHEAD(dir GitDir) {
 	head, err := os.Stat(dir.Path("HEAD"))
 	if os.IsNotExist(err) || head.Size() == 0 {
-		ioutil.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0600)
+		os.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0600)
 	}
 }
 
@@ -1915,7 +1914,7 @@ const headFileRefPrefix = "ref: "
 // It just reads the .git/HEAD file from the bare git repository directory.
 func quickSymbolicRefHead(dir GitDir) (string, error) {
 	// See if HEAD contains a commit hash and fail if so.
-	head, err := ioutil.ReadFile(dir.Path("HEAD"))
+	head, err := os.ReadFile(dir.Path("HEAD"))
 	if err != nil {
 		return "", err
 	}
@@ -1936,7 +1935,7 @@ func quickSymbolicRefHead(dir GitDir) (string, error) {
 // It just reads the relevant files from the bare git repository directory.
 func quickRevParseHead(dir GitDir) (string, error) {
 	// See if HEAD contains a commit hash and return it if so.
-	head, err := ioutil.ReadFile(dir.Path("HEAD"))
+	head, err := os.ReadFile(dir.Path("HEAD"))
 	if err != nil {
 		return "", err
 	}
@@ -1956,7 +1955,7 @@ func quickRevParseHead(dir GitDir) (string, error) {
 		return "", fmt.Errorf("invalid ref format: %s", headRef)
 	}
 	headRefFile := dir.Path(filepath.FromSlash(string(headRef)))
-	if refs, err := ioutil.ReadFile(headRefFile); err == nil {
+	if refs, err := os.ReadFile(headRefFile); err == nil {
 		return string(bytes.TrimSpace(refs)), nil
 	}
 

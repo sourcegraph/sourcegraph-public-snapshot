@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -114,14 +113,14 @@ func main() {
 
 	newLogger := func(prefix string) *log.Logger {
 		if *globalQuiet {
-			return log.New(ioutil.Discard, "", log.LstdFlags)
+			return log.New(io.Discard, "", log.LstdFlags)
 		}
 		return log.New(os.Stderr, prefix, log.LstdFlags)
 	}
 
 	newVerbose := func(prefix string) *log.Logger {
 		if !*globalVerbose {
-			return log.New(ioutil.Discard, "", log.LstdFlags)
+			return log.New(io.Discard, "", log.LstdFlags)
 		}
 		return log.New(os.Stderr, prefix, log.LstdFlags)
 	}
@@ -129,7 +128,7 @@ func main() {
 	globalSnapshotter := func() (*Snapshotter, error) {
 		var s Snapshotter
 		if *globalConfig != "" {
-			b, err := ioutil.ReadFile(*globalConfig)
+			b, err := os.ReadFile(*globalConfig)
 			if err != nil {
 				return nil, fmt.Errorf("could read configuration at %s: %w", *globalConfig, err)
 			}

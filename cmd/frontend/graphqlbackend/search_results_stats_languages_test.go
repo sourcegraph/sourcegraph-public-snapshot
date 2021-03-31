@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
@@ -39,7 +38,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		default:
 			panic("unhandled mock NewFileReader " + name)
 		}
-		return ioutil.NopCloser(bytes.NewReader(data)), nil
+		return io.NopCloser(bytes.NewReader(data)), nil
 	}
 	const wantDefaultBranchRef = "refs/heads/foo"
 	git.Mocks.ExecSafe = func(params []string) (stdout, stderr []byte, exitCode int, err error) {

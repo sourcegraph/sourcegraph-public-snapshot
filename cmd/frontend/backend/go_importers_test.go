@@ -3,7 +3,6 @@ package backend
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -80,7 +79,7 @@ type mockRoundTripper struct {
 func (t mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	return &http.Response{
 		StatusCode: http.StatusOK,
-		Body:       ioutil.NopCloser(bytes.NewBufferString(t.response)),
+		Body:       io.NopCloser(bytes.NewBufferString(t.response)),
 		Header:     make(http.Header),
 	}, nil
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -69,7 +68,7 @@ func readFileBytes(ctx context.Context, repo api.RepoName, commit api.CommitID, 
 	if maxBytes > 0 {
 		r = io.LimitReader(r, maxBytes)
 	}
-	data, err := ioutil.ReadAll(r)
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -100,7 +99,7 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 
 	if resp.StatusCode != http.StatusOK {
 		// best-effort inclusion of body in error message
-		body, _ := ioutil.ReadAll(io.LimitReader(resp.Body, 200))
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
 		return nil, errors.Errorf("RepoLookup for %+v failed with http status %d: %s", args, resp.StatusCode, string(body))
 	}
 
@@ -147,7 +146,7 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*pro
 	}
 	defer resp.Body.Close()
 
-	bs, err := ioutil.ReadAll(resp.Body)
+	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response body")
 	}
@@ -177,7 +176,7 @@ func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
 	}
 	defer resp.Body.Close()
 
-	bs, err := ioutil.ReadAll(resp.Body)
+	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return errors.Wrap(err, "failed to read response body")
 	}
@@ -202,7 +201,7 @@ func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncR
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	bs, err := ioutil.ReadAll(resp.Body)
+	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return errors.Wrap(err, "read response body")
 	}
@@ -229,7 +228,7 @@ func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalServic
 	}
 	defer resp.Body.Close()
 
-	bs, err := ioutil.ReadAll(resp.Body)
+	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response body")
 	}
@@ -263,7 +262,7 @@ func (c *Client) RepoExternalServices(ctx context.Context, id api.RepoID) ([]api
 	}
 	defer resp.Body.Close()
 
-	bs, err := ioutil.ReadAll(resp.Body)
+	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response body")
 	}
@@ -292,7 +291,7 @@ func (c *Client) ExcludeRepo(ctx context.Context, id api.RepoID) (*protocol.Excl
 	}
 	defer resp.Body.Close()
 
-	bs, err := ioutil.ReadAll(resp.Body)
+	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response body")
 	}

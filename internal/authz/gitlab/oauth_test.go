@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"testing"
 
@@ -83,7 +82,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 				return &http.Response{
 					Status:     http.StatusText(http.StatusOK),
 					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewReader([]byte(body))),
+					Body:       io.NopCloser(bytes.NewReader([]byte(body))),
 				}, nil
 			},
 		},
@@ -176,7 +175,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 				return &http.Response{
 					Status:     http.StatusText(http.StatusOK),
 					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewReader([]byte(body))),
+					Body:       io.NopCloser(bytes.NewReader([]byte(body))),
 				}, nil
 			},
 		},

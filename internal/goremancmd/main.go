@@ -4,7 +4,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -16,7 +15,7 @@ func do() error {
 		return fmt.Errorf("USAGE: %s Procfile", os.Args[0])
 	}
 
-	procfile, err := ioutil.ReadFile(os.Args[1])
+	procfile, err := os.ReadFile(os.Args[1])
 	if err != nil {
 		return err
 	}

@@ -7,7 +7,6 @@
 package gosrc
 
 import (
-	"io/ioutil"
 	"net/http"
 	"reflect"
 	"runtime"
@@ -26,7 +25,7 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 	resp := &http.Response{
 		StatusCode: statusCode,
-		Body:       ioutil.NopCloser(strings.NewReader(body)),
+		Body:       io.NopCloser(strings.NewReader(body)),
 	}
 	return resp, nil
 }

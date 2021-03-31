@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -76,14 +75,14 @@ func getOrUpdateLastUpdateTime(update bool) (time.Time, error) {
 
 	if update {
 		now := time.Now().UTC()
-		if err := ioutil.WriteFile(lastUpdateFile, []byte(now.Format(time.RFC3339)), os.ModePerm); err != nil {
+		if err := os.WriteFile(lastUpdateFile, []byte(now.Format(time.RFC3339)), os.ModePerm); err != nil {
 			return time.Time{}, err
 		}
 
 		return now, nil
 	}
 
-	content, err := ioutil.ReadFile(lastUpdateFile)
+	content, err := os.ReadFile(lastUpdateFile)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -166,7 +165,7 @@ func updateTestFixtures() (trackingIssues []*Issue, issues []*Issue, pullRequest
 }
 
 func readFixturesFile() (trackingIssues []*Issue, issues []*Issue, pullRequests []*PullRequest, _ error) {
-	contents, err := ioutil.ReadFile(filepath.Join("testdata", "fixtures.json"))
+	contents, err := os.ReadFile(filepath.Join("testdata", "fixtures.json"))
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -189,5 +188,5 @@ func writeFixturesFile(trackingIssues []*Issue, issues []*Issue, pullRequests []
 		return err
 	}
 
-	return ioutil.WriteFile(filepath.Join("testdata", "fixtures.json"), contents, os.ModePerm)
+	return os.WriteFile(filepath.Join("testdata", "fixtures.json"), contents, os.ModePerm)
 }

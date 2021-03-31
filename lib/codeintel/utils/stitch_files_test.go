@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,7 +14,7 @@ import (
 
 func TestStitchMultipart(t *testing.T) {
 	for _, compress := range []bool{true, false} {
-		tempDir, err := ioutil.TempDir("", "codeintel-")
+		tempDir, err := os.MkdirTemp("", "codeintel-")
 		if err != nil {
 			t.Fatalf("unexpected error creating temp directory: %s", err)
 		}
@@ -44,7 +43,7 @@ func TestStitchMultipart(t *testing.T) {
 				t.Fatalf("unexpected error closing gzip writer: %s", err)
 			}
 
-			if err := ioutil.WriteFile(partFilename(i), buf.Bytes(), os.ModePerm); err != nil {
+			if err := os.WriteFile(partFilename(i), buf.Bytes(), os.ModePerm); err != nil {
 				t.Fatalf("unexpected error writing file: %s", err)
 			}
 		}
@@ -64,7 +63,7 @@ func TestStitchMultipart(t *testing.T) {
 			t.Fatalf("unexpected error opening gzip reader: %s", err)
 		}
 
-		contents, err := ioutil.ReadAll(gzipReader)
+		contents, err := io.ReadAll(gzipReader)
 		if err != nil {
 			t.Fatalf("unexpected error reading file: %s", err)
 		}

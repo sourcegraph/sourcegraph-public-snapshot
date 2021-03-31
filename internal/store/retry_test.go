@@ -1,7 +1,6 @@
 package store
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -50,7 +49,7 @@ func TestGetZipFileWithRetry(t *testing.T) {
 			tries := 0
 			get := func() (string, *ZipFile, error) {
 				var err error
-				tmp, err = ioutil.TempFile("", "")
+				tmp, err = os.CreateTemp("", "")
 				if err != nil {
 					t.Fatalf("TempFile(%v)", err)
 				}

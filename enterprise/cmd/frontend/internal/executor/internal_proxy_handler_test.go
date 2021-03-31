@@ -2,7 +2,6 @@ package executor
 
 import (
 	"bytes"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -177,7 +176,7 @@ func TestReverseProxyRedirectWithPayload(t *testing.T) {
 			return
 		}
 
-		contents, err := ioutil.ReadAll(r.Body)
+		contents, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return

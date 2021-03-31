@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -257,7 +256,7 @@ var postUpdateHook = []byte("#!/bin/sh\nexec git update-server-info\n")
 // for background.
 func configurePostUpdateHook(logger *log.Logger, gitDir string) error {
 	postUpdatePath := filepath.Join(gitDir, "hooks", "post-update")
-	if b, _ := ioutil.ReadFile(postUpdatePath); bytes.Equal(b, postUpdateHook) {
+	if b, _ := os.ReadFile(postUpdatePath); bytes.Equal(b, postUpdateHook) {
 		return nil
 	}
 
@@ -270,7 +269,7 @@ func configurePostUpdateHook(logger *log.Logger, gitDir string) error {
 	if err := os.MkdirAll(filepath.Dir(postUpdatePath), 0755); err != nil {
 		return errors.Wrap(err, "create git hooks dir")
 	}
-	if err := ioutil.WriteFile(postUpdatePath, postUpdateHook, 0755); err != nil {
+	if err := os.WriteFile(postUpdatePath, postUpdateHook, 0755); err != nil {
 		return errors.Wrap(err, "setting post-update hook")
 	}
 

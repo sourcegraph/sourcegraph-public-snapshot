@@ -2,7 +2,6 @@ package testutil
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -19,12 +18,12 @@ func AssertGolden(t testing.TB, path string, update bool, want interface{}) {
 		if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 			t.Fatalf("failed to update golden file %q: %s", path, err)
 		}
-		if err := ioutil.WriteFile(path, data, 0640); err != nil {
+		if err := os.WriteFile(path, data, 0640); err != nil {
 			t.Fatalf("failed to update golden file %q: %s", path, err)
 		}
 	}
 
-	golden, err := ioutil.ReadFile(path)
+	golden, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("failed to read golden file %q: %s", path, err)
 	}

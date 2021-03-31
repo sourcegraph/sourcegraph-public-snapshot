@@ -4,13 +4,12 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"testing"
 )
 
 func TestOpen(t *testing.T) {
-	dir, err := ioutil.TempDir("", "diskcache_test")
+	dir, err := os.MkdirTemp("", "diskcache_test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,12 +25,12 @@ func TestOpen(t *testing.T) {
 		calledFetcher := false
 		f, err := store.Open(context.Background(), "key", func(ctx context.Context) (io.ReadCloser, error) {
 			calledFetcher = true
-			return ioutil.NopCloser(bytes.NewReader([]byte(want))), nil
+			return io.NopCloser(bytes.NewReader([]byte(want))), nil
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
-		got, err := ioutil.ReadAll(f.File)
+		got, err := io.ReadAll(f.File)
 		if err != nil {
 			t.Fatal(err)
 		}

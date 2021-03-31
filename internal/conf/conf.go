@@ -3,7 +3,6 @@ package conf
 
 import (
 	"context"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -200,7 +199,7 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 				time.Sleep(1 * time.Second)
 				continue
 			}
-			if err := ioutil.WriteFile(siteConfigEscapeHatchPath, []byte(config.Site), 0644); err != nil {
+			if err := os.WriteFile(siteConfigEscapeHatchPath, []byte(config.Site), 0644); err != nil {
 				log15.Error("config: failed to write site config file, trying again in 1s", "error", err)
 				time.Sleep(1 * time.Second)
 				continue
@@ -214,7 +213,7 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 		for {
 			// If the file changes from what we last wrote, an admin made an edit to the file and
 			// we should propagate it to the database for them.
-			newFileContents, err := ioutil.ReadFile(siteConfigEscapeHatchPath)
+			newFileContents, err := os.ReadFile(siteConfigEscapeHatchPath)
 			if err != nil {
 				log15.Error("config: failed to read site config from disk, trying again in 1s", "path", siteConfigEscapeHatchPath)
 				time.Sleep(1 * time.Second)
@@ -249,7 +248,7 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 				continue
 			}
 			if newDBConfig.Site != lastKnownDBContents {
-				if err := ioutil.WriteFile(siteConfigEscapeHatchPath, []byte(newDBConfig.Site), 0644); err != nil {
+				if err := os.WriteFile(siteConfigEscapeHatchPath, []byte(newDBConfig.Site), 0644); err != nil {
 					log15.Error("config: failed to write site config file, trying again in 1s", "error", err)
 					time.Sleep(1 * time.Second)
 					continue

@@ -3,7 +3,6 @@ package util
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	"io/ioutil"
 	"os"
 )
 
@@ -17,7 +16,7 @@ func WriteKeyTempFile(namePrefix string, keyData []byte) (filename string, tmp *
 	_, _ = hasher.Write([]byte(namePrefix))
 	hash := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 
-	tmpfile, err := ioutil.TempFile("", "go-vcs-"+hash+"-")
+	tmpfile, err := os.CreateTemp("", "go-vcs-"+hash+"-")
 	if err != nil {
 		return "", nil, err
 	}

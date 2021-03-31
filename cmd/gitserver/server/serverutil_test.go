@@ -1,7 +1,6 @@
 package server
 
 import (
-	"io/ioutil"
 	"net/http/httptest"
 	"os"
 	"os/exec"
@@ -225,7 +224,7 @@ func TestProgressWriter(t *testing.T) {
 }
 
 func TestUpdateFileIfDifferent(t *testing.T) {
-	dir, err := ioutil.TempDir("", t.Name())
+	dir, err := os.MkdirTemp("", t.Name())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -234,13 +233,13 @@ func TestUpdateFileIfDifferent(t *testing.T) {
 	target := filepath.Join(dir, "sg_refhash")
 
 	write := func(content string) {
-		err := ioutil.WriteFile(target, []byte(content), 0600)
+		err := os.WriteFile(target, []byte(content), 0600)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 	read := func() string {
-		b, err := ioutil.ReadFile(target)
+		b, err := os.ReadFile(target)
 		if err != nil {
 			t.Fatal(err)
 		}

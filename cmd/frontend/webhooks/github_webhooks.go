@@ -3,7 +3,6 @@ package webhooks
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"sync"
@@ -39,7 +38,7 @@ type GitHubWebhook struct {
 }
 
 func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log15.Error("Error parsing github webhook event", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)

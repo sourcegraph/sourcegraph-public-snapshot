@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -41,7 +40,7 @@ func TestAdjustPosition(t *testing.T) {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
 		}
 
-		return ioutil.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
+		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	}
 
 	posIn := lsifstore.Position{Line: 302, Character: 15}
@@ -70,7 +69,7 @@ func TestAdjustPositionEmptyDiff(t *testing.T) {
 		git.Mocks.ExecReader = nil
 	})
 	git.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
-		return ioutil.NopCloser(bytes.NewReader(nil)), nil
+		return io.NopCloser(bytes.NewReader(nil)), nil
 	}
 
 	posIn := lsifstore.Position{Line: 10, Character: 15}
@@ -102,7 +101,7 @@ func TestAdjustPositionReverse(t *testing.T) {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
 		}
 
-		return ioutil.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
+		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	}
 
 	posIn := lsifstore.Position{Line: 302, Character: 15}
@@ -136,7 +135,7 @@ func TestAdjustRange(t *testing.T) {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
 		}
 
-		return ioutil.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
+		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	}
 
 	rIn := lsifstore.Range{
@@ -171,7 +170,7 @@ func TestAdjustRangeEmptyDiff(t *testing.T) {
 		git.Mocks.ExecReader = nil
 	})
 	git.Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
-		return ioutil.NopCloser(bytes.NewReader(nil)), nil
+		return io.NopCloser(bytes.NewReader(nil)), nil
 	}
 
 	rIn := lsifstore.Range{
@@ -206,7 +205,7 @@ func TestAdjustRangeReverse(t *testing.T) {
 			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
 		}
 
-		return ioutil.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
+		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	}
 
 	rIn := lsifstore.Range{

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -27,7 +26,7 @@ func (t handlerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	rw.Body = new(bytes.Buffer)
 	if req.Body == nil {
 		// For server requests the Request Body is always non-nil.
-		req.Body = ioutil.NopCloser(bytes.NewReader(nil))
+		req.Body = io.NopCloser(bytes.NewReader(nil))
 	}
 	t.Handler.ServeHTTP(rw, req)
 	return rw.Result(), nil
@@ -48,8 +47,8 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	resp, err := c.Client.Do(req)
 	if resp != nil && resp.Body != nil {
 		defer resp.Body.Close()
-		body, _ := ioutil.ReadAll(resp.Body)
-		resp.Body = ioutil.NopCloser(bytes.NewReader(body))
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body = io.NopCloser(bytes.NewReader(body))
 	}
 	if err != nil {
 		return resp, err

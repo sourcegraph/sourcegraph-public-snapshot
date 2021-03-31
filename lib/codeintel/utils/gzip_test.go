@@ -3,7 +3,6 @@ package codeintelutils
 import (
 	"bytes"
 	"compress/gzip"
-	"io/ioutil"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -15,7 +14,7 @@ func TestGzip(t *testing.T) {
 		uncompressed = append(uncompressed, byte(i))
 	}
 
-	contents, err := ioutil.ReadAll(Gzip(bytes.NewReader(uncompressed)))
+	contents, err := io.ReadAll(Gzip(bytes.NewReader(uncompressed)))
 	if err != nil {
 		t.Fatalf("unexpected error reading from gzip reader: %s", err)
 	}
@@ -24,7 +23,7 @@ func TestGzip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error creating gzip.Reader: %s", err)
 	}
-	decompressed, err := ioutil.ReadAll(gzipReader)
+	decompressed, err := io.ReadAll(gzipReader)
 	if err != nil {
 		t.Fatalf("unexpected error reading from gzip.Reader: %s", err)
 	}

@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"regexp"
 	"sort"
 	"strconv"
@@ -84,7 +83,7 @@ func TestS3UnmanagedInit(t *testing.T) {
 func TestS3Get(t *testing.T) {
 	s3Client := NewMockS3API()
 	s3Client.GetObjectFunc.SetDefaultReturn(&s3.GetObjectOutput{
-		Body: ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))),
+		Body: io.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))),
 	}, nil)
 
 	client := newS3WithClients(s3Client, nil, "test-bucket", time.Hour*24, false, newOperations(&observation.TestContext))
@@ -94,7 +93,7 @@ func TestS3Get(t *testing.T) {
 	}
 	defer rc.Close()
 
-	contents, err := ioutil.ReadAll(rc)
+	contents, err := io.ReadAll(rc)
 	if err != nil {
 		t.Fatalf("unexpected error reading object: %s", err)
 	}
@@ -146,7 +145,7 @@ func TestS3GetTransientErrors(t *testing.T) {
 	}
 	defer rc.Close()
 
-	contents, err := ioutil.ReadAll(rc)
+	contents, err := io.ReadAll(rc)
 	if err != nil {
 		t.Fatalf("unexpected error reading object: %s", err)
 	}
@@ -175,7 +174,7 @@ func TestS3GetReadNothingLoop(t *testing.T) {
 	}
 	defer rc.Close()
 
-	if _, err := ioutil.ReadAll(rc); err != errNoDownloadProgress {
+	if _, err := io.ReadAll(rc); err != errNoDownloadProgress {
 		t.Fatalf("unexpected error reading object. want=%q have=%q", errNoDownloadProgress, err)
 	}
 }
@@ -201,7 +200,7 @@ func fullContentsS3API() *MockS3API {
 		}
 
 		out := &s3.GetObjectOutput{
-			Body: ioutil.NopCloser(bytes.NewReader(fullContents[offset:])),
+			Body: io.NopCloser(bytes.NewReader(fullContents[offset:])),
 		}
 
 		return out, nil
@@ -217,7 +216,7 @@ func TestS3Upload(t *testing.T) {
 		// Synchronously read the reader so that we trigger the
 		// counting reader inside the Upload method and test the
 		// count.
-		contents, err := ioutil.ReadAll(input.Body)
+		contents, err := io.ReadAll(input.Body)
 		if err != nil {
 			return err
 		}
@@ -364,7 +363,7 @@ func TestS3Combine(t *testing.T) {
 func TestS3Delete(t *testing.T) {
 	s3Client := NewMockS3API()
 	s3Client.GetObjectFunc.SetDefaultReturn(&s3.GetObjectOutput{
-		Body: ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))),
+		Body: io.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))),
 	}, nil)
 
 	client := testS3Client(s3Client, nil)

@@ -3,7 +3,6 @@ package graph
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -79,7 +78,7 @@ var extractionControlMap = map[bool]struct {
 
 // extractImports returns a set of package paths that are imported by this file.
 func extractImports(path string) (map[string]struct{}, error) {
-	contents, err := ioutil.ReadFile(path)
+	contents, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

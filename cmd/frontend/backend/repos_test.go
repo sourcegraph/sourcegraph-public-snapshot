@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -159,7 +158,7 @@ func TestReposGetInventory(t *testing.T) {
 		default:
 			panic("unhandled mock ReadFile " + name)
 		}
-		return ioutil.NopCloser(bytes.NewReader(data)), nil
+		return io.NopCloser(bytes.NewReader(data)), nil
 	}
 	defer git.ResetMocks()
 

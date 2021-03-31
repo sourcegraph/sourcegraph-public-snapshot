@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"flag"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -195,7 +194,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = ioutil.WriteFile(fixtureFile, data, 0666)
+					err = os.WriteFile(fixtureFile, data, 0666)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -377,7 +376,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = ioutil.WriteFile(fixtureFile, data, 0666)
+					err = os.WriteFile(fixtureFile, data, 0666)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -430,7 +429,7 @@ type webhookTestCase struct {
 func loadWebhookTestCase(t testing.TB, path string) webhookTestCase {
 	t.Helper()
 
-	bs, err := ioutil.ReadFile(path)
+	bs, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}

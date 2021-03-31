@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -145,7 +144,7 @@ func (s *Server) cleanupRepos(addrs []string) {
 			reason = "old"
 		}
 		if time.Since(recloneTime) > repoTTLGC+jitterDuration(string(dir), repoTTLGC/4) {
-			if gclog, err := ioutil.ReadFile(dir.Path("gc.log")); err == nil && len(gclog) > 0 {
+			if gclog, err := os.ReadFile(dir.Path("gc.log")); err == nil && len(gclog) > 0 {
 				reason = fmt.Sprintf("git gc %s", string(bytes.TrimSpace(gclog)))
 			}
 		}
@@ -287,7 +286,7 @@ func (s *Server) cleanupRepos(addrs []string) {
 
 	if b, err := json.Marshal(stats); err != nil {
 		log15.Error("cleanup: failed to marshal periodic stats", "error", err)
-	} else if err = ioutil.WriteFile(filepath.Join(s.ReposDir, reposStatsName), b, 0666); err != nil {
+	} else if err = os.WriteFile(filepath.Join(s.ReposDir, reposStatsName), b, 0666); err != nil {
 		log15.Error("cleanup: failed to write periodic stats", "error", err)
 	}
 
@@ -579,7 +578,7 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 		// Rename the current tmp file so we can asynchronously remove it. Use
 		// a consistent pattern so if we get interrupted, we can clean it
 		// another time.
-		oldTmp, err := ioutil.TempDir(s.ReposDir, oldPrefix)
+		oldTmp, err := os.MkdirTemp(s.ReposDir, oldPrefix)
 		if err != nil {
 			return "", err
 		}
@@ -595,7 +594,7 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 	}
 
 	// Asynchronously remove old temporary directories
-	files, err := ioutil.ReadDir(s.ReposDir)
+	files, err := os.ReadDir(s.ReposDir)
 	if err != nil {
 		log15.Error("failed to do tmp cleanup", "error", err)
 	} else {

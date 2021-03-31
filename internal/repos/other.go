@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -157,7 +156,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 	}
 	defer resp.Body.Close()
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response from src-expose")
 	}

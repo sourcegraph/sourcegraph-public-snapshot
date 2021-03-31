@@ -2,7 +2,6 @@ package testing
 
 import (
 	"io"
-	"io/ioutil"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -70,7 +69,7 @@ index 884601b..c4886d5 100644
 			}
 			return nil, errors.New("cannot handle non-diff command in mock ExecReader")
 		}
-		return ioutil.NopCloser(strings.NewReader(testGitHubDiff)), nil
+		return io.NopCloser(strings.NewReader(testGitHubDiff)), nil
 	}
 
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {

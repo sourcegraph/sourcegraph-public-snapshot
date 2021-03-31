@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -41,7 +40,7 @@ func TestGitServiceHandlers(t *testing.T) {
 
 		resp := w.Result()
 		if resp.StatusCode != http.StatusTemporaryRedirect {
-			body, _ := ioutil.ReadAll(resp.Body)
+			body, _ := io.ReadAll(resp.Body)
 			t.Errorf("expected redirect for %q, got status %d. Body: %s", target, resp.StatusCode, body)
 			continue
 		}
@@ -123,7 +122,7 @@ func TestReposIndex(t *testing.T) {
 			}
 
 			resp := w.Result()
-			body, _ := ioutil.ReadAll(resp.Body)
+			body, _ := io.ReadAll(resp.Body)
 
 			if resp.StatusCode != http.StatusOK {
 				t.Errorf("got status %v", resp.StatusCode)

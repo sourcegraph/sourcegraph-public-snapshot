@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -49,7 +48,7 @@ func TestContext_Entries(t *testing.T) {
 			default:
 				panic("unhandled mock ReadFile " + path)
 			}
-			return ioutil.NopCloser(bytes.NewReader(data)), nil
+			return io.NopCloser(bytes.NewReader(data)), nil
 		},
 		CacheGet: func(e os.FileInfo) (Inventory, bool) {
 			cacheGetCalls = append(cacheGetCalls, e.Name())

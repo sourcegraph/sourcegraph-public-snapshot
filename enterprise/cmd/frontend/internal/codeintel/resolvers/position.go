@@ -3,7 +3,6 @@ package resolvers
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	"strconv"
 	"strings"
 
@@ -129,7 +128,7 @@ func (p *positionAdjuster) readHunks(ctx context.Context, repo *types.Repo, sour
 	}
 	defer reader.Close()
 
-	output, err := ioutil.ReadAll(reader)
+	output, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}

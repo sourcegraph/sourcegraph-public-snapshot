@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -53,7 +52,7 @@ func addReposCommand() {
 		Config      Config `json:"Config"`
 	}
 
-	byteValue, _ := ioutil.ReadAll(jsonFile)
+	byteValue, _ := io.ReadAll(jsonFile)
 
 	var externalsvcs []ExternalSvc
 

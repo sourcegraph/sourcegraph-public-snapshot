@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"sync/atomic"
 	"testing"
@@ -65,7 +64,7 @@ func TestPrepareZip(t *testing.T) {
 	// use the disk cache.
 	onDisk := false
 	for i := 0; i < 500; i++ {
-		files, _ := ioutil.ReadDir(s.Path)
+		files, _ := os.ReadDir(s.Path)
 		if len(files) != 0 {
 			onDisk = true
 			break
@@ -106,7 +105,7 @@ func TestPrepareZip_errHeader(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		return ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
+		return io.NopCloser(bytes.NewReader(buf.Bytes())), nil
 	}
 	_, err := s.PrepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
 	if got, want := errors.Cause(err).Error(), tar.ErrHeader.Error(); got != want {
@@ -149,7 +148,7 @@ func TestIngoreSizeMax(t *testing.T) {
 }
 
 func tmpStore(t *testing.T) (*Store, func()) {
-	d, err := ioutil.TempDir("", "store_test")
+	d, err := os.MkdirTemp("", "store_test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,5 +164,5 @@ func emptyTar(t *testing.T) io.ReadCloser {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return ioutil.NopCloser(bytes.NewReader(buf.Bytes()))
+	return io.NopCloser(bytes.NewReader(buf.Bytes()))
 }

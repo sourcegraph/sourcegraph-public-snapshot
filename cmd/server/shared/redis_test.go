@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,7 +18,7 @@ func TestRedisFixAOF(t *testing.T) {
 		t.Skip("redis-check-aof not on path: ", err)
 	}
 
-	dataDir, err := ioutil.TempDir("", t.Name())
+	dataDir, err := os.MkdirTemp("", t.Name())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +34,7 @@ func TestRedisFixAOF(t *testing.T) {
 	bad := b.Bytes()
 	bad = bad[:len(bad)-4]
 	aofPath := filepath.Join(dataDir, "appendonly.aof")
-	if err := ioutil.WriteFile(aofPath, bad, 0600); err != nil {
+	if err := os.WriteFile(aofPath, bad, 0600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -47,7 +46,7 @@ func TestRedisFixAOF(t *testing.T) {
 			dataDir: filepath.Base(dataDir),
 		})
 
-		got, err := ioutil.ReadFile(aofPath)
+		got, err := os.ReadFile(aofPath)
 		if err != nil {
 			t.Fatal(err)
 		}

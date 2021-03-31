@@ -3,7 +3,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -36,7 +35,7 @@ func clean(base string) error {
 		return len(dirs[j]) < len(dirs[i])
 	})
 	for _, dir := range dirs {
-		d, err := ioutil.ReadDir(dir)
+		d, err := os.ReadDir(dir)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -60,7 +59,7 @@ func build(base string) error {
 	// github.com/sourcegraph/src-cli/cmd/src@main`, but we're not quite there
 	// yet.
 
-	dir, err := ioutil.TempDir("", "src-cli-doc-gen")
+	dir, err := os.MkdirTemp("", "src-cli-doc-gen")
 	if err != nil {
 		return errors.Wrap(err, "creating temporary directory")
 	}
@@ -88,7 +87,7 @@ func build(base string) error {
 	// here as well.
 	//
 	// In summary, this is _hilariously_ cursed.
-	if err := ioutil.WriteFile("go.mod", []byte(`module github.com/sourcegraph/sourcegraph/doc/cli/references
+	if err := os.WriteFile("go.mod", []byte(`module github.com/sourcegraph/sourcegraph/doc/cli/references
 
 replace github.com/gosuri/uilive v0.0.4 => github.com/mrnugget/uilive v0.0.4-fix-escape
 

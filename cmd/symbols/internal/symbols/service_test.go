@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
 	"net/http/httptest"
 	"os"
 	"reflect"
@@ -59,7 +58,7 @@ func TestIsLiteralEquality(t *testing.T) {
 func TestService(t *testing.T) {
 	sqliteutil.MustRegisterSqlite3WithPcre()
 
-	tmpDir, err := ioutil.TempDir("", "")
+	tmpDir, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,7 +166,7 @@ func createTar(files map[string]string) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
+	return io.NopCloser(bytes.NewReader(buf.Bytes())), nil
 }
 
 type mockParser []string

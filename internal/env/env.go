@@ -4,7 +4,6 @@ import (
 	"expvar"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -80,7 +79,7 @@ func init() {
 	lvlFilterStderr := func(maxLvl log15.Lvl) io.Writer {
 		// Note that log15 values look like e.g. LvlCrit == 0, LvlDebug == 4
 		if lvl > maxLvl {
-			return ioutil.Discard
+			return io.Discard
 		}
 		return os.Stderr
 	}

@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -213,7 +212,7 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 		// Replace the body of the request with a reader that will produce all of the same
 		// content: all of the data that was already read from r.Body, plus the remaining
 		// content from r.Body.
-		r.Body = ioutil.NopCloser(io.MultiReader(bytes.NewReader(buf.Bytes()), r.Body))
+		r.Body = io.NopCloser(io.MultiReader(bytes.NewReader(buf.Bytes()), r.Body))
 	}
 
 	tx, err := h.dbStore.Transact(ctx)

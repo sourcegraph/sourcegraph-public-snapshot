@@ -2,7 +2,6 @@ package search
 
 import (
 	"context"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -29,7 +28,7 @@ func TestServeStream_empty(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := ioutil.ReadAll(res.Body)
+	b, err := io.ReadAll(res.Body)
 	res.Body.Close()
 	if err != nil {
 		t.Fatal(err)

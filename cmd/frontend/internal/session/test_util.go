@@ -1,7 +1,6 @@
 package session
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -11,7 +10,7 @@ import (
 
 func ResetMockSessionStore(t *testing.T) (cleanup func()) {
 	var err error
-	tempdir, err := ioutil.TempDir("", "sourcegraph-oidc-test")
+	tempdir, err := os.MkdirTemp("", "sourcegraph-oidc-test")
 	if err != nil {
 		return func() {}
 	}

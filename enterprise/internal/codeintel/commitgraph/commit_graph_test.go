@@ -6,7 +6,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"sort"
 	"strconv"
@@ -240,7 +239,7 @@ func readBenchmarkFile(path string) ([]byte, error) {
 	}
 	defer r.Close()
 
-	contents, err := ioutil.ReadAll(r)
+	contents, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}

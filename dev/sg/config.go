@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 
 	"github.com/pkg/errors"
@@ -15,7 +14,7 @@ func ParseConfigFile(name string) (*Config, error) {
 	}
 	defer file.Close()
 
-	data, err := ioutil.ReadAll(file)
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading configuration file")
 	}

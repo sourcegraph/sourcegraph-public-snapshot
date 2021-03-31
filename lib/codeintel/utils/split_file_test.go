@@ -1,7 +1,6 @@
 package codeintelutils
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -9,7 +8,7 @@ import (
 )
 
 func TestSplitFile(t *testing.T) {
-	f, err := ioutil.TempFile("", "")
+	f, err := os.CreateTemp("", "")
 	if err != nil {
 		t.Fatalf("unexpected error creating temp file: %s", err)
 	}
@@ -34,7 +33,7 @@ func TestSplitFile(t *testing.T) {
 
 	var contents []byte
 	for _, file := range files {
-		temp, err := ioutil.ReadFile(file)
+		temp, err := os.ReadFile(file)
 		if err != nil {
 			t.Fatalf("unexpected error reading file: %s", err)
 		}

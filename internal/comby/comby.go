@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -72,7 +71,7 @@ func waitForCompletion(cmd *exec.Cmd, stdout, stderr io.ReadCloser, w io.Writer)
 	// Read stderr in goroutine so we don't potentially block reading stdout
 	stderrMsgC := make(chan []byte, 1)
 	go func() {
-		msg, _ := ioutil.ReadAll(stderr)
+		msg, _ := io.ReadAll(stderr)
 		stderrMsgC <- msg
 		close(stderrMsgC)
 	}()

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"strings"
 	"testing"
 	"time"
@@ -49,7 +48,7 @@ func TestRepositoryComparison(t *testing.T) {
 		if len(args) < 1 && args[0] != "diff" {
 			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
 		}
-		return ioutil.NopCloser(strings.NewReader(testDiff + testCopyDiff)), nil
+		return io.NopCloser(strings.NewReader(testDiff + testCopyDiff)), nil
 	}
 	t.Cleanup(func() { git.Mocks.ExecReader = nil })
 

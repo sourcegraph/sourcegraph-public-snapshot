@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -148,7 +147,7 @@ var getRest = func(r *http.Request) string {
 // 307 Temporary Redirect can be followed when making POST requests. This is necessary to
 // properly proxy git service operations without being redirected to an inaccessible API.
 func makeProxyRequest(r *http.Request, target *url.URL) (*http.Request, error) {
-	content, err := ioutil.ReadAll(r.Body)
+	content, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +163,7 @@ func makeProxyRequest(r *http.Request, target *url.URL) (*http.Request, error) {
 	}
 
 	copyHeader(req.Header, r.Header)
-	req.GetBody = func() (io.ReadCloser, error) { return ioutil.NopCloser(bytes.NewReader(content)), nil }
+	req.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(content)), nil }
 	return req, nil
 }
 

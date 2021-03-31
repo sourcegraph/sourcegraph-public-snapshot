@@ -3,7 +3,6 @@ package worker
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -90,8 +89,8 @@ func makeTemporaryDirectory() (string, error) {
 		if err := os.MkdirAll(tempdir, os.ModePerm); err != nil {
 			return "", err
 		}
-		return ioutil.TempDir(tempdir, "")
+		return os.MkdirTemp(tempdir, "")
 	}
 
-	return ioutil.TempDir("", "")
+	return os.MkdirTemp("", "")
 }

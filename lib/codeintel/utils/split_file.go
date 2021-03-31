@@ -3,7 +3,6 @@ package codeintelutils
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/hashicorp/go-multierror"
@@ -47,7 +46,7 @@ func SplitReaderIntoFiles(r io.ReaderAt, maxPayloadSize int) (files []string, _ 
 	makeNextReader := SplitReader(r, maxPayloadSize)
 
 	for {
-		partFile, err := ioutil.TempFile("", "")
+		partFile, err := os.CreateTemp("", "")
 		if err != nil {
 			return nil, nil, err
 		}

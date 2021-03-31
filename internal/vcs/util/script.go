@@ -1,7 +1,6 @@
 package util
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -20,7 +19,7 @@ func ScriptFile(prefix string) (filePath string, rootPath string, err error) {
 		suffix = ".bat"
 	}
 
-	tempDir, err := ioutil.TempDir("", prefix)
+	tempDir, err := os.MkdirTemp("", prefix)
 	if err != nil {
 		return "", "", err
 	}
@@ -29,7 +28,7 @@ func ScriptFile(prefix string) (filePath string, rootPath string, err error) {
 
 // Wrapper around ioutil.WriteFile that updates permissions regardless if file existed before
 func WriteFileWithPermissions(file string, content []byte, perm os.FileMode) error {
-	err := ioutil.WriteFile(file, content, perm)
+	err := os.WriteFile(file, content, perm)
 	if err != nil {
 		return err
 	}

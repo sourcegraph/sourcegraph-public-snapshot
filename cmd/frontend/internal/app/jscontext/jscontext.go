@@ -4,7 +4,6 @@ package jscontext
 
 import (
 	"bytes"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -219,7 +218,7 @@ func isBot(userAgent string) bool {
 }
 
 func likelyDockerOnMac() bool {
-	data, err := ioutil.ReadFile("/proc/cmdline")
+	data, err := os.ReadFile("/proc/cmdline")
 	if err != nil {
 		return false // permission errors, or maybe not a Linux OS, etc. Assume we're not docker for mac.
 	}

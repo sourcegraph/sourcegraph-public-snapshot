@@ -3,7 +3,6 @@ package monitoring
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -64,7 +63,7 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 			}
 			// #nosec G306  prometheus runs as nobody
 			generatedDashboard := container.Name + ".json"
-			err = ioutil.WriteFile(filepath.Join(opts.GrafanaDir, generatedDashboard), data, os.ModePerm)
+			err = os.WriteFile(filepath.Join(opts.GrafanaDir, generatedDashboard), data, os.ModePerm)
 			if err != nil {
 				clog.Crit("Could not write dashboard to output", "error", err)
 				return err
@@ -100,7 +99,7 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 			}
 			fileName := strings.ReplaceAll(container.Name, "-", "_") + alertRulesFileSuffix
 			generatedAssets = append(generatedAssets, fileName)
-			err = ioutil.WriteFile(filepath.Join(opts.PrometheusDir, fileName), data, os.ModePerm)
+			err = os.WriteFile(filepath.Join(opts.PrometheusDir, fileName), data, os.ModePerm)
 			if err != nil {
 				clog.Crit("Could not write rules to output", "error", err)
 				return err
@@ -141,7 +140,7 @@ func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Containe
 			{path: filepath.Join(opts.DocsDir, alertSolutionsFile), data: docs.alertSolutions.Bytes()},
 			{path: filepath.Join(opts.DocsDir, dashboardsDocsFile), data: docs.dashboards.Bytes()},
 		} {
-			err = ioutil.WriteFile(docOut.path, docOut.data, os.ModePerm)
+			err = os.WriteFile(docOut.path, docOut.data, os.ModePerm)
 			if err != nil {
 				logger.Crit("Could not write docs to path", "path", docOut.path, "error", err)
 				return err

@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -841,7 +840,7 @@ func gitLabTestSetup(t *testing.T, db *sql.DB) *store.Store {
 // body, and generates a test error if the substring is not found. This is
 // mostly useful to look for wrapped errors in the output.
 func assertBodyIncludes(t *testing.T, r io.Reader, want string) {
-	body, err := ioutil.ReadAll(r)
+	body, err := io.ReadAll(r)
 	if err != nil {
 		t.Fatal(err)
 	}
