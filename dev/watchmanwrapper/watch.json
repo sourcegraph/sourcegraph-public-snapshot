@@ -11,9 +11,7 @@
         ["suffix", "go"],
         ["name", "cmd/frontend/graphqlbackend/schema.graphql", "wholename"],
         ["dirname", "monitoring"],
-        ["match", "schema/*.json", "wholename"],
-        ["match", "cmd/frontend/internal/app/ui/app.html", "wholename"],
-        ["match", "ui/assets/webpack.manifest.json", "wholename"]
+        ["match", "schema/*.json", "wholename"]
       ]
     ],
     "fields": ["name"]
