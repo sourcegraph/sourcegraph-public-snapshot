@@ -95,14 +95,14 @@ func (s *UserExternalAccountsStore) maybeEncryptAccountData(ctx context.Context,
 	var err error
 
 	if data.AuthData != nil {
-		enc.AuthData, keyIdent, err = keyring.MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
+		enc.AuthData, keyIdent, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
 		if err != nil {
 			return nil, "", err
 		}
 	}
 
 	if data.Data != nil {
-		enc.Data, keyIdent, err = keyring.MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.Data))
+		enc.Data, keyIdent, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.Data))
 		if err != nil {
 			return nil, "", err
 		}
@@ -114,11 +114,11 @@ func (s *UserExternalAccountsStore) maybeEncryptAccountData(ctx context.Context,
 func (s *UserExternalAccountsStore) maybeDecryptAccountData(ctx context.Context, data *encryptedAccountData, keyIdent string) (extsvc.AccountData, error) {
 	var acc extsvc.AccountData
 
-	decryptedAuthData, err := keyring.MaybeDecrypt(ctx, s.getEncryptionKey(), data.AuthData, keyIdent)
+	decryptedAuthData, err := MaybeDecrypt(ctx, s.getEncryptionKey(), data.AuthData, keyIdent)
 	if err != nil {
 		return extsvc.AccountData{}, err
 	}
-	decryptedData, err := keyring.MaybeDecrypt(ctx, s.getEncryptionKey(), data.Data, keyIdent)
+	decryptedData, err := MaybeDecrypt(ctx, s.getEncryptionKey(), data.Data, keyIdent)
 	if err != nil {
 		return extsvc.AccountData{}, err
 	}
@@ -501,4 +501,40 @@ type MockExternalAccounts struct {
 	Count                func(ExternalAccountsListOptions) (int, error)
 	TouchExpired         func(ctx context.Context, id int32) error
 	TouchLastValid       func(ctx context.Context, id int32) error
+}
+
+// MaybeEncrypt encrypts data with the given key returns the id of the key. If the key is nil, it returns the data unchanged.
+func MaybeEncrypt(ctx context.Context, key encryption.Key, data string) (maybeEncryptedData, keyID string, err error) {
+	var keyIdent string
+
+	if key != nil {
+		encrypted, err := key.Encrypt(ctx, []byte(data))
+		if err != nil {
+			return "", "", err
+		}
+		data = string(encrypted)
+		keyIdent, err = key.ID(ctx)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
+	return data, keyIdent, nil
+}
+
+// MaybeDecrypt decrypts data with the given key if keyIdent is not empty.
+func MaybeDecrypt(ctx context.Context, key encryption.Key, data, keyIdent string) (string, error) {
+	if keyIdent == "" {
+		// data is not encrypted, return plaintext
+		return data, nil
+	}
+	if key == nil {
+		return data, fmt.Errorf("couldn't decrypt encrypted data, key is nil")
+	}
+	decrypted, err := key.Decrypt(ctx, []byte(data))
+	if err != nil {
+		return data, err
+	}
+
+	return decrypted.Secret(), nil
 }
