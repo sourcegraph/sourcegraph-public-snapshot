@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math/rand"
 	"strings"
 	"testing"
 	"time"
@@ -36,14 +37,18 @@ func TestRepo(t *testing.T, store *database.ExternalServiceStore, serviceKind st
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 
+	return TestRepoWithExternalService(&svc, rand.Int())
+}
+
+func TestRepoWithExternalService(svc *types.ExternalService, id int) *types.Repo {
 	return &types.Repo{
-		Name:    api.RepoName(fmt.Sprintf("repo-%d", svc.ID)),
-		URI:     fmt.Sprintf("repo-%d", svc.ID),
+		Name:    api.RepoName(fmt.Sprintf("repo-%d", id)),
+		URI:     fmt.Sprintf("repo-%d", id),
 		Private: true,
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          fmt.Sprintf("external-id-%d", svc.ID),
-			ServiceType: extsvc.KindToType(serviceKind),
-			ServiceID:   fmt.Sprintf("https://%s.com/", strings.ToLower(serviceKind)),
+			ID:          fmt.Sprintf("external-id-%d", id),
+			ServiceType: extsvc.KindToType(svc.Kind),
+			ServiceID:   fmt.Sprintf("https://%s.com/", strings.ToLower(svc.Kind)),
 		},
 		Sources: map[string]*types.SourceInfo{
 			svc.URN(): {
@@ -82,7 +87,7 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, count int)
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepo(t, esStore, extsvc.KindGitHub)
+		r := TestRepoWithExternalService(ext, rand.Int())
 		r.Sources = map[string]*types.SourceInfo{ext.URN(): {
 			ID:       ext.URN(),
 			CloneURL: "https://secrettoken@github.com/" + string(r.Name),
@@ -119,7 +124,7 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepo(t, esStore, extsvc.KindGitLab)
+		r := TestRepoWithExternalService(ext, rand.Int())
 		r.Sources = map[string]*types.SourceInfo{ext.URN(): {
 			ID:       ext.URN(),
 			CloneURL: "https://git:gitlab-token@gitlab.com/" + string(r.Name),
@@ -211,7 +216,7 @@ func createBbsRepos(t *testing.T, ctx context.Context, db dbutil.DB, ext *types.
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepo(t, esStore, extsvc.KindBitbucketServer)
+		r := TestRepoWithExternalService(ext, rand.Int())
 		r.Sources = map[string]*types.SourceInfo{
 			ext.URN(): {
 				ID:       ext.URN(),
