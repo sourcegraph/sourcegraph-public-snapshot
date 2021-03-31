@@ -17,7 +17,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
@@ -141,7 +140,14 @@ func listNonMigrationTables(db *sql.DB) (_ []string, err error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+		if rowErr := rows.Err(); rowErr != nil && err == nil {
+			err = rowErr
+		}
+	}()
 
 	var tables []string
 	for rows.Next() {
