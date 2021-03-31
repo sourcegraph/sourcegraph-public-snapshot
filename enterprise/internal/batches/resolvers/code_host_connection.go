@@ -13,7 +13,7 @@ import (
 )
 
 type batchChangesCodeHostConnectionResolver struct {
-	userID                int32
+	userID                *int32
 	onlyWithoutCredential bool
 	opts                  store.ListCodeHostsOpts
 	limitOffset           database.LimitOffset
@@ -22,7 +22,7 @@ type batchChangesCodeHostConnectionResolver struct {
 	once          sync.Once
 	chs           []*batches.CodeHost
 	chsPage       []*batches.CodeHost
-	credsByIDType map[idType]*database.UserCredential
+	credsByIDType map[idType]graphqlbackend.BatchChangesCredentialResolver
 	chsErr        error
 }
 
@@ -69,7 +69,7 @@ func (c *batchChangesCodeHostConnectionResolver) Nodes(ctx context.Context) ([]g
 	return nodes, nil
 }
 
-func (c *batchChangesCodeHostConnectionResolver) compute(ctx context.Context) (all, page []*batches.CodeHost, credsByIDType map[idType]*database.UserCredential, err error) {
+func (c *batchChangesCodeHostConnectionResolver) compute(ctx context.Context) (all, page []*batches.CodeHost, credsByIDType map[idType]graphqlbackend.BatchChangesCredentialResolver, err error) {
 	c.once.Do(func() {
 		// Don't pass c.limitOffset here, as we want all code hosts for the totalCount anyways.
 		c.chs, c.chsErr = c.store.ListCodeHosts(ctx, c.opts)
@@ -77,20 +77,41 @@ func (c *batchChangesCodeHostConnectionResolver) compute(ctx context.Context) (a
 			return
 		}
 
-		// Fetch all user credentials to avoid N+1 per credential resolver.
-		creds, _, err := c.store.UserCredentials().List(ctx, database.UserCredentialsListOpts{Scope: database.UserCredentialScope{Domain: database.UserCredentialDomainBatches, UserID: c.userID}})
+		// Fetch all credentials to avoid N+1 per credential resolver.
+		var userCreds []*database.UserCredential
+		if c.userID != nil {
+			userCreds, _, err = c.store.UserCredentials().List(ctx, database.UserCredentialsListOpts{Scope: database.UserCredentialScope{
+				Domain: database.UserCredentialDomainBatches,
+				UserID: *c.userID,
+			}})
+			if err != nil {
+				c.chsErr = err
+				return
+			}
+		}
+		siteCreds, _, err := c.store.ListSiteCredentials(ctx, store.ListSiteCredentialsOpts{})
 		if err != nil {
 			c.chsErr = err
 			return
 		}
 
-		c.credsByIDType = make(map[idType]*database.UserCredential)
-		for _, cred := range creds {
+		c.credsByIDType = make(map[idType]graphqlbackend.BatchChangesCredentialResolver)
+		for _, cred := range userCreds {
 			t := idType{
 				externalServiceID:   cred.ExternalServiceID,
 				externalServiceType: cred.ExternalServiceType,
 			}
-			c.credsByIDType[t] = cred
+			c.credsByIDType[t] = &batchChangesUserCredentialResolver{credential: cred}
+		}
+		for _, cred := range siteCreds {
+			t := idType{
+				externalServiceID:   cred.ExternalServiceID,
+				externalServiceType: cred.ExternalServiceType,
+			}
+			if _, ok := c.credsByIDType[t]; ok {
+				continue
+			}
+			c.credsByIDType[t] = &batchChangesSiteCredentialResolver{credential: cred}
 		}
 
 		if c.onlyWithoutCredential {
@@ -133,20 +154,4 @@ func (c *batchChangesCodeHostConnectionResolver) compute(ctx context.Context) (a
 type idType struct {
 	externalServiceID   string
 	externalServiceType string
-}
-
-type emptyBatchChangesCodeHostConnectionResolver struct{}
-
-var _ graphqlbackend.BatchChangesCodeHostConnectionResolver = &emptyBatchChangesCodeHostConnectionResolver{}
-
-func (c *emptyBatchChangesCodeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return int32(0), nil
-}
-
-func (c *emptyBatchChangesCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
-}
-
-func (c emptyBatchChangesCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchChangesCodeHostResolver, error) {
-	return []graphqlbackend.BatchChangesCodeHostResolver{}, nil
 }

@@ -256,6 +256,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
               undefined
             : undefined
 
+        const selectedSearchContextSpec = localStorage.getItem(LAST_SEARCH_CONTEXT_KEY) || 'global'
+
         this.state = {
             themePreference: readStoredThemePreference(),
             systemIsLightTheme: !this.darkThemeMediaList.matches,
@@ -273,7 +275,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showOnboardingTour: false,
             showSearchContext: false,
             availableSearchContexts: [],
-            selectedSearchContextSpec: 'global',
+            selectedSearchContextSpec,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
             showEnterpriseHomePanels: false,
@@ -355,20 +357,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                     const hasUserAddedRepositories = userRepositories !== null && userRepositories.nodes.length > 0
                     this.setState({ hasUserAddedRepositories })
                 })
-        )
-
-        this.subscriptions.add(
-            authenticatedUser.subscribe(authenticatedUser => {
-                if (authenticatedUser === null) {
-                    return
-                }
-                const previousSearchContextSpec = localStorage.getItem(LAST_SEARCH_CONTEXT_KEY)
-                const context = `@${authenticatedUser.username}`
-                this.setState({
-                    defaultSearchContextSpec: context,
-                    selectedSearchContextSpec: previousSearchContextSpec || context,
-                })
-            })
         )
 
         /**

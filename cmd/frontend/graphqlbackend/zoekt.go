@@ -38,7 +38,6 @@ type indexedRequestType string
 const (
 	textRequest   indexedRequestType = "text"
 	symbolRequest indexedRequestType = "symbol"
-	fileRequest   indexedRequestType = "file"
 )
 
 // indexedSearchRequest is responsible for translating a Sourcegraph search
@@ -198,17 +197,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c Sender) error {
 		since = s.since
 	}
 
-	var zoektStream func(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Sender) error
-	switch s.typ {
-	case textRequest, symbolRequest:
-		zoektStream = zoektSearch
-	case fileRequest:
-		zoektStream = zoektSearchHEADOnlyFiles
-	default:
-		return fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
-	}
-
-	return zoektStream(ctx, s.db, s.args, s.repos, s.typ, since, c)
+	return zoektSearch(ctx, s.db, s.args, s.repos, s.typ, since, c)
 }
 
 // zoektSearch searches repositories using zoekt.
@@ -701,9 +690,9 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 
 		unindexedRevs := indexed.Add(reporev, repo)
 		if len(unindexedRevs) > 0 {
-			copy := *reporev
+			copy := reporev.Copy()
 			copy.Revs = unindexedRevs
-			unindexed = append(unindexed, &copy)
+			unindexed = append(unindexed, copy)
 		}
 	}
 

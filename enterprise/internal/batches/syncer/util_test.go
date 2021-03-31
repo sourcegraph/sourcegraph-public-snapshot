@@ -3,57 +3,42 @@ package syncer
 import (
 	"context"
 	"testing"
-	"time"
 
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestLoadExternalService(t *testing.T) {
-	ctx := context.Background()
-	now := time.Now()
+	t.Parallel()
 
-	db := dbtesting.GetDB(t)
-	esStore := database.ExternalServices(db)
-	repoStore := database.Repos(db)
-	user := ct.CreateTestUser(t, db, false)
+	ctx := context.Background()
 
 	noToken := types.ExternalService{
+		ID:          1,
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub no token",
 		Config:      `{"url": "https://github.com", "authorization": {}}`,
-		CreatedAt:   now,
-		UpdatedAt:   now,
 	}
 	userOwnedWithToken := types.ExternalService{
+		ID:              2,
 		Kind:            extsvc.KindGitHub,
 		DisplayName:     "GitHub user owned",
-		NamespaceUserID: user.ID,
+		NamespaceUserID: 1234,
 		Config:          `{"url": "https://github.com", "token": "123", "authorization": {}}`,
-		CreatedAt:       now,
-		UpdatedAt:       now,
 	}
 	withToken := types.ExternalService{
+		ID:          3,
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub token",
 		Config:      `{"url": "https://github.com", "token": "123", "authorization": {}}`,
-		CreatedAt:   now,
-		UpdatedAt:   now,
 	}
 	withTokenNewer := types.ExternalService{
+		ID:          4,
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub newer token",
 		Config:      `{"url": "https://github.com", "token": "123456", "authorization": {}}`,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
-
-	if err := esStore.Upsert(ctx, &noToken, &userOwnedWithToken, &withToken, &withTokenNewer); err != nil {
-		t.Fatalf("failed to insert external service: %v", err)
 	}
 
 	repo := &types.Repo{
@@ -85,12 +70,28 @@ func TestLoadExternalService(t *testing.T) {
 		},
 	}
 
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatalf("failed to insert repo: %v", err)
+	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		sources := make([]*types.ExternalService, 0)
+		if _, ok := repo.Sources[noToken.URN()]; ok {
+			sources = append(sources, &noToken)
+		}
+		if _, ok := repo.Sources[userOwnedWithToken.URN()]; ok {
+			sources = append(sources, &userOwnedWithToken)
+		}
+		if _, ok := repo.Sources[withToken.URN()]; ok {
+			sources = append(sources, &withToken)
+		}
+		if _, ok := repo.Sources[withTokenNewer.URN()]; ok {
+			sources = append(sources, &withTokenNewer)
+		}
+		return sources, nil
 	}
+	t.Cleanup(func() {
+		database.Mocks.ExternalServices.List = nil
+	})
 
 	// Expect the newest public external service with a token to be returned.
-	svc, err := loadExternalService(ctx, esStore, repo)
+	svc, err := loadExternalService(ctx, &MockSyncStore{}, repo)
 	if err != nil {
 		t.Fatalf("invalid error, expected nil, got %v", err)
 	}
@@ -99,13 +100,9 @@ func TestLoadExternalService(t *testing.T) {
 	}
 
 	// Now delete the global external services and expect the user owned external service to be returned.
-	if err := esStore.Delete(ctx, withTokenNewer.ID); err != nil {
-		t.Fatalf("failed to delete external service: %v", err)
-	}
-	if err := esStore.Delete(ctx, withToken.ID); err != nil {
-		t.Fatalf("failed to delete external service: %v", err)
-	}
-	svc, err = loadExternalService(ctx, esStore, repo)
+	delete(repo.Sources, withTokenNewer.URN())
+	delete(repo.Sources, withToken.URN())
+	svc, err = loadExternalService(ctx, &MockSyncStore{}, repo)
 	if err != nil {
 		t.Fatalf("invalid error, expected nil, got %v", err)
 	}

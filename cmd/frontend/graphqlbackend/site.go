@@ -52,9 +52,8 @@ func (r *schemaResolver) Site() *siteResolver {
 }
 
 type siteResolver struct {
-	db     dbutil.DB
-	parent *schemaResolver
-	gqlID  string // == singletonSiteGQLID, not the site ID
+	db    dbutil.DB
+	gqlID string // == singletonSiteGQLID, not the site ID
 }
 
 func (r *siteResolver) ID() graphql.ID { return marshalSiteGQLID(r.gqlID) }

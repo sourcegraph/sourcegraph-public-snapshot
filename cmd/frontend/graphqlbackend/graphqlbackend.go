@@ -64,7 +64,7 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 		ctx, finish = trace.OpenTracingTracer{}.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
 
-	ctx = context.WithValue(ctx, "graphql-query", queryString)
+	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
 
 	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
 

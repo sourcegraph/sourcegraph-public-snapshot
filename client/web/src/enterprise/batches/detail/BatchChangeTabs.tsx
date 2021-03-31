@@ -70,6 +70,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             setSelectedTab('changesets')
             const urlParameters = new URLSearchParams(location.search)
             urlParameters.delete('tab')
+            removeConnectionParameters(urlParameters)
             if (location.search !== urlParameters.toString()) {
                 history.replace({ ...location, search: urlParameters.toString() })
             }
@@ -82,6 +83,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             setSelectedTab('chart')
             const urlParameters = new URLSearchParams(location.search)
             urlParameters.set('tab', 'chart')
+            removeConnectionParameters(urlParameters)
             if (location.search !== urlParameters.toString()) {
                 history.replace({ ...location, search: urlParameters.toString() })
             }
@@ -94,6 +96,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             setSelectedTab('spec')
             const urlParameters = new URLSearchParams(location.search)
             urlParameters.set('tab', 'spec')
+            removeConnectionParameters(urlParameters)
             if (location.search !== urlParameters.toString()) {
                 history.replace({ ...location, search: urlParameters.toString() })
             }
@@ -106,6 +109,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             setSelectedTab('archived')
             const urlParameters = new URLSearchParams(location.search)
             urlParameters.set('tab', 'archived')
+            removeConnectionParameters(urlParameters)
             if (location.search !== urlParameters.toString()) {
                 history.replace({ ...location, search: urlParameters.toString() })
             }
@@ -223,4 +227,16 @@ function selectedTabFromLocation(locationSearch: string, archiveEnabled: boolean
         return archiveEnabled ? 'archived' : 'changesets'
     }
     return 'changesets'
+}
+
+function removeConnectionParameters(parameters: URLSearchParams): void {
+    if (parameters.has('visible')) {
+        parameters.delete('visible')
+    }
+    if (parameters.has('first')) {
+        parameters.delete('first')
+    }
+    if (parameters.has('after')) {
+        parameters.delete('after')
+    }
 }

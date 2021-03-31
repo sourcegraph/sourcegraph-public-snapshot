@@ -950,7 +950,6 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 		results             []SearchResultResolver
 		searchResultsCommon streaming.Stats
 		alert               *searchAlert
-		start               time.Time
 	}
 	tests := []struct {
 		name   string

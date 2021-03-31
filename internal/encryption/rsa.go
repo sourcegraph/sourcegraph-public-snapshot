@@ -34,6 +34,7 @@ func GenerateRSAKey() (key *RSAKey, err error) {
 	passphrase := randID.String()
 
 	// And encrypt the private key using that pass phrase.
+	//nolint:staticcheck // See issue #19489
 	block, err := x509.EncryptPEMBlock(
 		rand.Reader,
 		"RSA PRIVATE KEY",

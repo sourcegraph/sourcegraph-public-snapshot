@@ -34,50 +34,11 @@
         text-decoration: none;
     }
 
-    &__pages {
-        display: flex;
-        align-items: baseline;
-        width: 80%;
-        flex-wrap: wrap;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    &__pageend {
-        margin-left: 0.5rem;
-        margin-right: 0.5rem;
-    }
-
-    &__page {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 3px;
-        background-color: var(--color-bg-2);
-        margin-right: 0.25rem;
-        margin-bottom: 0.25rem;
-        width: 1.5rem;
-        height: 1.5rem;
-        font-size: 0.75rem;
-        &--active {
-            background-color: inherit;
-        }
-        &:hover {
-            background-color: var(--color-bg-1);
-        }
-    }
-
-    &__chevron {
-        &--inactive {
-            fill: var(--border-color-2);
-        }
-    }
-
     &__filter-input {
         max-width: 30% !important;
     }
 
-    &__text-coming-soon {
+    &__text-disabled {
         color: var(--color-text-3);
     }
 }

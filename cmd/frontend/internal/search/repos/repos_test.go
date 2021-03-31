@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 	"reflect"
 	"sort"
 	"testing"
@@ -27,15 +28,7 @@ var dsn = flag.String("dsn", "", "Database connection string to use in integrati
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	m.Run()
-}
-
-type mockNamespaceStore struct {
-	GetByNameMock func(ctx context.Context, name string) (*database.Namespace, error)
-}
-
-func (ns *mockNamespaceStore) GetByName(ctx context.Context, name string) (*database.Namespace, error) {
-	return ns.GetByNameMock(ctx, name)
+	os.Exit(m.Run())
 }
 
 func TestRevisionValidation(t *testing.T) {

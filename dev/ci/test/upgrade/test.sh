@@ -35,6 +35,33 @@ set -x
 docker container stop sourcegraph-old
 sleep 5
 
+# Migrate DB if on version < 3.27.0
+regex="3\.26\.[0-9]"
+OLD=11
+NEW=12
+SRC_DIR=/tmp/sourcegraph
+if [[ $MINIMUM_UPGRADEABLE_VERSION =~ $regex ]]; then
+  docker run \
+    -w /tmp/upgrade \
+    -v "$SRC_DIR/data/postgres-$NEW-upgrade:/tmp/upgrade" \
+    -v "$SRC_DIR/data/postgresql:/var/lib/postgresql/$OLD/data" \
+    -v "$SRC_DIR/data/postgresql-$NEW:/var/lib/postgresql/$NEW/data" \
+    "tianon/postgres-upgrade:$OLD-to-$NEW"
+
+  mv "$SRC_DIR/data/"{postgresql,postgresql-$OLD}
+  mv "$SRC_DIR/data/"{postgresql-$NEW,postgresql}
+
+  curl -fsSL -o "$SRC_DIR/data/postgres-$NEW-upgrade/optimize.sh" https://raw.githubusercontent.com/sourcegraph/sourcegraph/master/cmd/server/rootfs/postgres-optimize.sh
+
+  docker run \
+    --entrypoint "/bin/bash" \
+    -w /tmp/upgrade \
+    -v "$SRC_DIR/data/postgres-$NEW-upgrade:/tmp/upgrade" \
+    -v "$SRC_DIR/data/postgresql:/var/lib/postgresql/data" \
+    "postgres:$NEW" \
+    -c 'chown -R postgres $PGDATA . && gosu postgres bash ./optimize.sh $PGDATA'
+fi
+
 # Upgrade to current candidate image. Capture logs for the attempted upgrade.
 CONTAINER=sourcegraph-new
 docker_logs() {

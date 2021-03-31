@@ -342,21 +342,6 @@ func (m *mockGitLab) ListUsers(c *gitlab.Client, ctx context.Context, urlStr str
 	return pagedUsers, nextPageURL, nil
 }
 
-type mockCache map[string]string
-
-func (m mockCache) Get(key string) ([]byte, bool) {
-	v, ok := m[key]
-	return []byte(v), ok
-}
-
-func (m mockCache) Set(key string, b []byte) {
-	m[key] = string(b)
-}
-
-func (m mockCache) Delete(key string) {
-	delete(m, key)
-}
-
 type mockAuthnProvider struct {
 	configID  providers.ConfigID
 	serviceID string

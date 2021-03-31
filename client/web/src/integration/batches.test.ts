@@ -765,7 +765,7 @@ describe('Batches', () => {
                                     credential: isCreated
                                         ? {
                                               id: '123',
-                                              createdAt: new Date().toISOString(),
+                                              isSiteCredential: false,
                                               sshPublicKey: 'ssh-rsa randorandorandorando',
                                           }
                                         : null,
@@ -780,7 +780,7 @@ describe('Batches', () => {
                     return {
                         createBatchChangesCredential: {
                             id: '123',
-                            createdAt: new Date().toISOString(),
+                            isSiteCredential: false,
                             sshPublicKey: 'ssh-rsa randorandorandorando',
                         },
                     }

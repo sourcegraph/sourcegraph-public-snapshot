@@ -77,7 +77,7 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 	}
 
 	// Figure out which authenticator we should use to modify the changeset.
-	e.au, err = e.loadAuthenticator(ctx)
+	e.au, err = loadAuthenticator(ctx, e.tx, e.ch, e.repo)
 	if err != nil {
 		return err
 	}
@@ -182,35 +182,60 @@ func (e *executor) buildChangesetSource(repo *types.Repo, extSvc *types.External
 // reconciling the current changeset. It will return nil, nil if the code host's
 // global configuration should be used (ie the applying user is an admin and
 // doesn't have a credential configured for the code host, or the changeset
-// isn't owned by a batch change).
-func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, error) {
-	if e.ch.OwnedByBatchChangeID == 0 {
+// isn't owned by a batch change, and no site credential is configured).
+func loadAuthenticator(ctx context.Context, s *store.Store, ch *batches.Changeset, r *types.Repo) (auth.Authenticator, error) {
+	if ch.OwnedByBatchChangeID == 0 {
+		cred, err := s.GetSiteCredential(ctx, store.GetSiteCredentialOpts{
+			ExternalServiceType: r.ExternalRepo.ServiceType,
+			ExternalServiceID:   r.ExternalRepo.ServiceID,
+		})
+		if err != nil && err != store.ErrNoResults {
+			return nil, err
+		}
 		// Unowned changesets are imported, and therefore don't need to use a user
-		// credential, since reconciliation isn't a mutating process.
+		// credential, since reconciliation isn't a mutating process. We try to use
+		// a site-credential, but it's ok if it doesn't exist.
+		if cred != nil {
+			return cred.Credential, nil
+		}
 		return nil, nil
 	}
 
 	// If the changeset is owned by a batch change, we want to reconcile using
 	// the user's credentials, which means we need to know which user last
 	// applied the owning batch change. Let's go find out.
-	batchChange, err := loadBatchChange(ctx, e.tx, e.ch.OwnedByBatchChangeID)
+	batchChange, err := loadBatchChange(ctx, s, ch.OwnedByBatchChangeID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load owning batch change")
 	}
 
-	cred, err := e.tx.UserCredentials().GetByScope(ctx, database.UserCredentialScope{
+	cred, err := s.UserCredentials().GetByScope(ctx, database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainBatches,
 		UserID:              batchChange.LastApplierID,
-		ExternalServiceType: e.repo.ExternalRepo.ServiceType,
-		ExternalServiceID:   e.repo.ExternalRepo.ServiceID,
+		ExternalServiceType: r.ExternalRepo.ServiceType,
+		ExternalServiceID:   r.ExternalRepo.ServiceID,
 	})
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			// We need to check if the user is an admin: if they are, then
-			// we can use the nil return from loadUserCredential() to fall
+			// If no user-credential exists, we check for a site-credential.
+			siteCred, err := s.GetSiteCredential(ctx, store.GetSiteCredentialOpts{
+				ExternalServiceType: r.ExternalRepo.ServiceType,
+				ExternalServiceID:   r.ExternalRepo.ServiceID,
+			})
+			if err != nil && err != store.ErrNoResults {
+				return nil, err
+			}
+			if siteCred != nil {
+				return siteCred.Credential, nil
+			}
+
+			// If neither exist, we need to check if the user is an admin: if they are,
+			// then we can use the nil return from loadUserCredential() to fall
 			// back to the global credentials used for the code host. If
 			// not, then we need to error out.
-			user, err := database.UsersWith(e.tx).GetByID(ctx, batchChange.LastApplierID)
+			// Once we tackle https://github.com/sourcegraph/sourcegraph/issues/16814,
+			// this code path should be removed.
+			user, err := database.UsersWith(s).GetByID(ctx, batchChange.LastApplierID)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load user applying the batch change")
 			}
@@ -219,7 +244,7 @@ func (e *executor) loadAuthenticator(ctx context.Context) (auth.Authenticator, e
 				return nil, nil
 			}
 
-			return nil, ErrMissingCredentials{repo: string(e.repo.Name)}
+			return nil, ErrMissingCredentials{repo: string(r.Name)}
 		}
 		return nil, errors.Wrap(err, "failed to load user credential")
 	}
@@ -644,7 +669,7 @@ func setBasicAuth(u *url.URL, extSvcType, username, password string) error {
 }
 
 type getBatchChanger interface {
-	GetBatchChange(ctx context.Context, opts store.CountBatchChangeOpts) (*batches.BatchChange, error)
+	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*batches.BatchChange, error)
 }
 
 func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*batches.BatchChange, error) {
@@ -652,7 +677,7 @@ func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*batche
 		return nil, errors.New("changeset has no owning batch change")
 	}
 
-	batchChange, err := tx.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
+	batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: id})
 	if err != nil && err != store.ErrNoResults {
 		return nil, errors.Wrapf(err, "retrieving owning batch change: %d", id)
 	} else if batchChange == nil {

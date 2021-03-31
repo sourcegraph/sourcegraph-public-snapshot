@@ -200,7 +200,7 @@ func TestService(t *testing.T) {
 			t.Fatalf("batch change not deleted: %s", err)
 		}
 
-		_, err := s.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: batchChange.ID})
+		_, err := s.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChange.ID})
 		if err != nil && err != store.ErrNoResults {
 			t.Fatalf("want batch change to be deleted, but was not: %e", err)
 		}

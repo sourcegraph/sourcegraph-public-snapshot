@@ -1,63 +1,40 @@
-linters-settings:
-  dupl:
-    threshold: 100
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - dupImport # https://github.com/go-critic/go-critic/issues/845
-      - ifElseChain
-      - octalLiteral
-      - whyNoLint
-      - wrapperFunc
-  golint:
-    min-confidence: 0
-  govet:
-    check-shadowing: false
-  maligned:
-    suggest-new: true
-  misspell:
-    locale: US
-  nolintlint:
-    allow-leading-space: true # don't require machine-readable nolint directives (i.e. with no leading space)
-    allow-unused: false # report any unused nolint directives
-    require-explanation: false # don't require an explanation for nolint directives
-    require-specific: false # don't require nolint directives to be specific about which linter is being skipped
-
 # See explanation of linters at https://golangci-lint.run/usage/linters/
 linters:
   disable-all: true
   enable:
     - bodyclose
-    - deadcode
-    - dogsled
-    - dupl
-    - errcheck
     - gocritic
     - goimports
-    - golint
-    - goprintffuncname
-    - gosec
     - gosimple
     - govet
     - ineffassign
-    - interfacer
-    - nakedret
     - nolintlint
-    - rowserrcheck
     - staticcheck
-    - structcheck
-    - stylecheck
     - typecheck
     - unconvert
-    - unparam
     - unused
-    - varcheck
-    - whitespace
+
+linters-settings:
+  gocritic:
+    disabled-checks:
+      - appendAssign      # Too many false positives
+      - assignOp          # Maybe worth adding, but likely not worth the noise
+      - commentFormatting # No strong benefit
+      - deprecatedComment # Unnecessary
+      - exitAfterDefer    # Only occurs in auxiliary tools
+      - ifElseChain       # Noisy for not much gain
+      - singleCaseSwitch  # Noisy for not much gain
+  govet:
+      disable:
+          - composites
+
+issues:
+  exclude-rules:
+    # Exclude bodyclose lint from tests because leaking connections in tests
+    # is a non-issue, and checking that adds unnecessary noise
+    - path: _test\.go
+      linters:
+        - bodyclose
 
 run:
   timeout: 5m

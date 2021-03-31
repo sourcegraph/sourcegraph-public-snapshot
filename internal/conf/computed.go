@@ -379,3 +379,14 @@ func ExternalServiceUserMode() ExternalServiceMode {
 		return ExternalServiceModeDisabled
 	}
 }
+
+// GitMaxCodehostRequestsPerSecond returns maximum number of remote code host
+// git operations to be run per second per gitserver. If not set, it returns the
+// default value -1.
+func GitMaxCodehostRequestsPerSecond() int {
+	val := Get().GitMaxCodehostRequestsPerSecond
+	if val == nil || *val < -1 {
+		return -1
+	}
+	return *val
+}

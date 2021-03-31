@@ -16,7 +16,7 @@ const { add } = storiesOf('web/batches/settings/RemoveCredentialModal', module)
 
 const credential = {
     id: '123',
-    createdAt: new Date().toISOString(),
+    isSiteCredential: false,
     sshPublicKey:
         'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
 }

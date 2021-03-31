@@ -242,3 +242,16 @@ func pruneUserCredentials(t *testing.T, db dbutil.DB) {
 		}
 	}
 }
+
+func pruneSiteCredentials(t *testing.T, cstore *store.Store) {
+	t.Helper()
+	creds, _, err := cstore.ListSiteCredentials(context.Background(), store.ListSiteCredentialsOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range creds {
+		if err := cstore.DeleteSiteCredential(context.Background(), c.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
