@@ -6,7 +6,7 @@ import { VersionContext } from '../schema/site.schema'
 import { SearchPatternType } from '../../../shared/src/graphql-operations'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { ISavedSearch, ISearchContext } from '../../../shared/src/graphql/schema'
+import { ISavedSearch } from '../../../shared/src/graphql/schema'
 import { EventLogResult, resolveSearchContextSpec } from './backend'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
 import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
@@ -180,7 +180,6 @@ export interface OnboardingTourProps {
 
 export interface SearchContextProps {
     showSearchContext: boolean
-    availableSearchContexts: ISearchContext[]
     defaultSearchContextSpec: string
     selectedSearchContextSpec?: string
     setSelectedSearchContextSpec: (spec: string) => void

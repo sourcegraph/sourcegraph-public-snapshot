@@ -19,7 +19,6 @@ exports[`GlobalNavbar default 1`] = `
   >
     <SearchNavbarItem
       authenticatedUser={null}
-      availableSearchContexts={Array []}
       caseSensitive={false}
       copyQueryButton={false}
       defaultSearchContextSpec=""

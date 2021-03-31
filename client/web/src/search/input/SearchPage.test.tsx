@@ -49,7 +49,6 @@ describe('SearchPage', () => {
         showSearchContext: false,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
-        availableSearchContexts: [],
         defaultSearchContextSpec: '',
         showRepogroupHomepage: false,
         showEnterpriseHomePanels: false,

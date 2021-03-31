@@ -49,7 +49,6 @@ const defaultProps = (
     showSearchContext: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
-    availableSearchContexts: [],
     defaultSearchContextSpec: '',
     showOnboardingTour: false,
     isLightTheme: props.isLightTheme,

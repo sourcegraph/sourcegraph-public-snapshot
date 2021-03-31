@@ -539,6 +539,7 @@ describe('Search', () => {
                         spec: 'global',
                         description: '',
                         autoDefined: true,
+                        repositories: [],
                     },
                     {
                         __typename: 'SearchContext',
@@ -546,6 +547,7 @@ describe('Search', () => {
                         spec: '@test',
                         description: '',
                         autoDefined: true,
+                        repositories: [],
                     },
                 ],
             }),

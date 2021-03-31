@@ -41,7 +41,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     showSearchContext: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => {},
-    availableSearchContexts: [],
     defaultSearchContextSpec: '',
     showRepogroupHomepage: false,
     showEnterpriseHomePanels: false,

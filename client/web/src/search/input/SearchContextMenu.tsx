@@ -1,3 +1,6 @@
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, {
@@ -11,6 +14,10 @@ import React, {
 } from 'react'
 import { DropdownItem } from 'reactstrap'
 import { SearchContextProps } from '..'
+import {
+    fetchAutoDefinedSearchContexts as _fetchAutoDefinedSearchContexts,
+    fetchSearchContexts as _fetchSearchContexts,
+} from '../backend'
 
 const HighlightedSearchTerm: React.FunctionComponent<{ text: string; searchFilter: string }> = ({
     text,
@@ -63,6 +70,8 @@ const SearchContextMenuItem: React.FunctionComponent<{
 
 export interface SearchContextMenuProps
     extends Omit<SearchContextProps, 'showSearchContext' | 'setSelectedSearchContextSpec'> {
+    fetchAutoDefinedSearchContexts: typeof _fetchAutoDefinedSearchContexts
+    fetchSearchContexts: typeof _fetchSearchContexts
     closeMenu: () => void
     selectSearchContextSpec: (spec: string) => void
 }
@@ -71,10 +80,11 @@ const getFirstMenuItem = (): HTMLButtonElement | null =>
     document.querySelector('.search-context-menu__item:first-child')
 
 export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> = ({
-    availableSearchContexts,
     selectedSearchContextSpec,
     defaultSearchContextSpec,
     selectSearchContextSpec,
+    fetchAutoDefinedSearchContexts,
+    fetchSearchContexts,
     closeMenu,
 }) => {
     const inputElement = useRef<HTMLInputElement | null>(null)
@@ -130,10 +140,24 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         []
     )
 
+    const autoDefinedSearchContexts = useObservable(fetchAutoDefinedSearchContexts)
+    const filteredAutoDefinedSearchContexts = useMemo(
+        () =>
+            autoDefinedSearchContexts?.filter(context =>
+                context.spec.toLowerCase().includes(searchFilter.toLowerCase())
+            ),
+        [autoDefinedSearchContexts, searchFilter]
+    )
+
+    const filteredUserDefinedSearchContexts = useObservable(
+        useMemo(() => fetchSearchContexts(10, searchFilter), [fetchSearchContexts, searchFilter])
+    )
     const filteredList = useMemo(
         () =>
-            availableSearchContexts.filter(context => context.spec.toLowerCase().includes(searchFilter.toLowerCase())),
-        [availableSearchContexts, searchFilter]
+            (filteredAutoDefinedSearchContexts ?? []).concat(
+                (filteredUserDefinedSearchContexts?.nodes as ISearchContext[]) ?? []
+            ),
+        [filteredAutoDefinedSearchContexts, filteredUserDefinedSearchContexts]
     )
 
     const onMenuKeyDown = useCallback(
@@ -189,6 +213,9 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                     Reset
                 </button>
                 <span className="flex-grow-1" />
+                <Link to="/contexts" className="btn btn-link btn-sm search-context-menu__footer-button">
+                    Manage
+                </Link>
             </div>
         </div>
     )
