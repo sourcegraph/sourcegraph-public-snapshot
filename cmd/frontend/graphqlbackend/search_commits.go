@@ -303,13 +303,11 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 		repoName = *op.RepoRevs.Repo
 	}
 
+	var results []*CommitSearchResultResolver
 	for event := range events {
-		// If the result is incomplete, git log timed out and the client
-		// should be notified of that.
-		timedOut = !event.Complete
+		timedOut = timedOut || !event.Complete
 
-		// Convert the results into resolvers and send them.
-		results, err := logCommitSearchResultsToResolvers(ctx, db, &op, repoName, event.Results)
+		results, err = logCommitSearchResultsToResolvers(ctx, db, &op, repoName, event.Results)
 		if len(results) > 0 {
 			resultCount += len(event.Results)
 			limitHit = resultCount > int(op.PatternInfo.FileMatchLimit)
@@ -323,7 +321,9 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 			status = status & search.RepoStatusLimitHit
 		}
 
-		if timedOut {
+		// If the result is incomplete, git log timed out and the client
+		// should be notified of that.
+		if !event.Complete {
 			status = status & search.RepoStatusTimedout
 		}
 
