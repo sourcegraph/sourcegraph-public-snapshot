@@ -22,16 +22,16 @@ type searchContextResolver struct {
 	db dbutil.DB
 }
 
-type searchContextRepositoryResolver struct {
+type searchContextRepositoryRevisionsResolver struct {
 	repository *RepositoryResolver
 	revisions  []string
 }
 
-func (r *searchContextRepositoryResolver) Repository(ctx context.Context) *RepositoryResolver {
+func (r *searchContextRepositoryRevisionsResolver) Repository(ctx context.Context) *RepositoryResolver {
 	return r.repository
 }
 
-func (r *searchContextRepositoryResolver) Revisions(ctx context.Context) []string {
+func (r *searchContextRepositoryRevisionsResolver) Revisions(ctx context.Context) []string {
 	return r.revisions
 }
 
@@ -108,9 +108,9 @@ func (r *searchContextResolver) Spec(ctx context.Context) string {
 	return searchcontexts.GetSearchContextSpec(r.sc)
 }
 
-func (r *searchContextResolver) Repositories(ctx context.Context) ([]*searchContextRepositoryResolver, error) {
+func (r *searchContextResolver) Repositories(ctx context.Context) ([]*searchContextRepositoryRevisionsResolver, error) {
 	if searchcontexts.IsAutoDefinedSearchContext(r.sc) {
-		return []*searchContextRepositoryResolver{}, nil
+		return []*searchContextRepositoryRevisionsResolver{}, nil
 	}
 
 	repoRevs, err := database.SearchContexts(r.db).GetSearchContextRepositoryRevisions(ctx, r.sc.ID)
@@ -118,9 +118,9 @@ func (r *searchContextResolver) Repositories(ctx context.Context) ([]*searchCont
 		return nil, err
 	}
 
-	searchContextRepositories := make([]*searchContextRepositoryResolver, len(repoRevs))
+	searchContextRepositories := make([]*searchContextRepositoryRevisionsResolver, len(repoRevs))
 	for idx, repoRev := range repoRevs {
-		searchContextRepositories[idx] = &searchContextRepositoryResolver{NewRepositoryResolver(r.db, repoRev.Repo.ToRepo()), repoRev.Revisions}
+		searchContextRepositories[idx] = &searchContextRepositoryRevisionsResolver{NewRepositoryResolver(r.db, repoRev.Repo.ToRepo()), repoRev.Revisions}
 	}
 	return searchContextRepositories, nil
 }
