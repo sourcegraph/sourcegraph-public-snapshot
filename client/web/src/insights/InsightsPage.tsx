@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { useObservable } from '../../../shared/src/util/useObservable'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { ViewGrid, ViewGridProps } from '../repo/tree/ViewGrid'
-import { InsightsIcon } from './icon'
+import { InsightsViewGrid, InsightsViewGridProps } from './components/InsightsViewGrid/InsightsViewGrid'
+import { InsightsIcon } from './components'
 import PlusIcon from 'mdi-react/PlusIcon'
 import { Link } from '../../../shared/src/components/Link'
 import GearIcon from 'mdi-react/GearIcon'
@@ -11,12 +11,12 @@ import { PageHeader } from '../components/PageHeader'
 import { FeedbackBadge } from '../components/FeedbackBadge'
 import { Page } from '../components/Page'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
-import { getCombinedViews } from './backend'
+import { getCombinedViews } from './core/backend'
 import { from } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
 
-interface InsightsPageProps extends ExtensionsControllerProps, Omit<ViewGridProps, 'views'>, TelemetryProps {}
+interface InsightsPageProps extends ExtensionsControllerProps, Omit<InsightsViewGridProps, 'views'>, TelemetryProps {}
 
 export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
     const views = useObservable(
@@ -70,7 +70,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
                         <LoadingSpinner className="my-4" />
                     </div>
                 ) : (
-                    <ViewGrid {...props} views={views} />
+                    <InsightsViewGrid {...props} views={views} />
                 )}
             </Page>
         </div>

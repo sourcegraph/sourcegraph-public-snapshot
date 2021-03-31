@@ -22,7 +22,7 @@ import { Link } from '../../../../shared/src/components/Link'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
-import { ViewGrid } from '../../repo/tree/ViewGrid'
+import { InsightsViewGrid } from '../../insights/components/InsightsViewGrid/InsightsViewGrid'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { EMPTY, from } from 'rxjs'
@@ -36,7 +36,7 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { HomePanels } from '../panels/HomePanels'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
-import { getCombinedViews } from '../../insights/backend'
+import { getCombinedViews } from '../../insights/core/backend'
 import { switchMap } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
 
@@ -118,7 +118,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 })}
             >
                 <SearchPageInput {...props} source="home" />
-                {views && <ViewGrid {...props} className="mt-5" views={views} />}
+                {views && <InsightsViewGrid {...props} className="mt-5" views={views} />}
             </div>
             {props.isSourcegraphDotCom &&
                 props.showRepogroupHomepage &&

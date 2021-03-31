@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash'
-import { isSettingsValid, Settings, SettingsCascadeOrError } from '../../../shared/src/settings/settings'
-import { TelemetryService } from '../../../shared/src/telemetry/telemetryService'
+import { isSettingsValid, Settings, SettingsCascadeOrError } from '@sourcegraph/shared/out/src/settings/settings'
+import { TelemetryService } from '@sourcegraph/shared/out/src/telemetry/telemetryService'
 
 export function logCodeInsightsChanges(
     oldSettingsCascade: SettingsCascadeOrError<Settings>,
