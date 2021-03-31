@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
-import { Observable, of } from 'rxjs'
+import { Observable } from 'rxjs'
 import { ActivationProps } from '../../shared/src/components/activation/Activation'
 import { FetchFileParameters } from '../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
@@ -42,7 +42,7 @@ import {
     MutableVersionContextProps,
     parseSearchURL,
     SearchContextProps,
-    isSearchContextSpecAvailable,
+    getGlobalSearchContext,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -69,9 +69,6 @@ import { useObservable } from '../../shared/src/util/useObservable'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
 import { CodeMonitoringProps } from './code-monitoring'
 import { UserRepositoriesUpdateProps } from './util'
-import { FilterKind, findFilter } from '../../shared/src/search/query/validate'
-import { FilterType } from '../../shared/src/search/query/filters'
-import { omitContextFilter } from '../../shared/src/search/query/transformer'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -160,7 +157,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         caseSensitive: currentCaseSensitive,
         versionContext: currentVersionContext,
         selectedSearchContextSpec,
-        availableSearchContexts,
         location,
         setParsedSearchQuery,
         setPatternType,
@@ -173,30 +169,11 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         location.search,
     ])
 
-    const [globalContextFilter, searchContextSpec] = useMemo(() => {
-        const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global)
-        const searchContextSpec = globalContextFilter?.value ? globalContextFilter.value.value : undefined
-        return [globalContextFilter, searchContextSpec]
-    }, [query])
-
-    const isSearchContextAvailable = useObservable(
-        useMemo(
-            () =>
-                globalContextFilter && searchContextSpec ? isSearchContextSpecAvailable(searchContextSpec) : of(false),
-            [globalContextFilter, searchContextSpec]
-        )
-    )
+    const searchContextSpec = useMemo(() => getGlobalSearchContext(query)?.spec, [query])
 
     useEffect(() => {
-        let finalQuery = query
-        if (globalContextFilter && isSearchContextAvailable) {
-            // If a global search context spec is available to the user, we omit it from the
-            // query and move it to the search contexts dropdown
-            finalQuery = omitContextFilter(finalQuery, globalContextFilter)
-        }
-
-        if (finalQuery !== currentQuery) {
-            setParsedSearchQuery(finalQuery)
+        if (query !== currentQuery) {
+            setParsedSearchQuery(query)
         }
 
         // Only override filters from URL if there is a search query
@@ -235,9 +212,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         setVersionContext,
         versionContext,
         setSelectedSearchContextSpec,
-        availableSearchContexts,
-        globalContextFilter,
-        isSearchContextAvailable,
         searchContextSpec,
     ])
 
