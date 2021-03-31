@@ -3,7 +3,11 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go/gqltesting"
@@ -15,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -826,5 +831,30 @@ func TestExternalServices_PageInfo(t *testing.T) {
 				t.Fatalf("PageInfo mismatch (-want +got):\n%s", diff)
 			}
 		})
+	}
+}
+
+func TestSyncExternalService_ContextTimeout(t *testing.T) {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Sleep for longer than the timeout for syncExternalService
+		// to trigger a context deadline exceeded error.
+		time.Sleep(400 * time.Millisecond)
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	t.Cleanup(func() { s.Close() })
+
+	ctx := context.Background()
+	svc := &types.ExternalService{}
+
+	err := syncExternalService(ctx, svc, 200*time.Millisecond, repoupdater.NewClient(s.URL))
+
+	if err == nil {
+		t.Error("Expected error but got nil")
+	}
+
+	expected := "context deadline exceeded"
+	if !strings.Contains(err.Error(), expected) {
+		t.Errorf("Expected error: %q, but got %v", expected, err)
 	}
 }
