@@ -9,5 +9,4 @@ Important commands are expose via root `package.json`:
 ```sh
 yarn storybook
 yarn build-storybook
-yarn cover-storybook
 ```

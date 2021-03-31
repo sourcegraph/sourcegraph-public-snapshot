@@ -9,7 +9,6 @@
     "eslint": "eslint --cache 'src/**/*.[jt]s?(x)'",
     "start": "start-storybook -p 9001 -c ./src -s ./assets",
     "build": "build-storybook -c ./src -s ./assets",
-    "cover": "nyc --hook-require=false yarn jest ./src/coverage",
     "test": "jest"
   }
 }

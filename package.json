@@ -29,7 +29,7 @@
     "cover-e2e": "nyc --hook-require=false --silent=true yarn test-e2e",
     "storybook": "yarn workspace @sourcegraph/storybook run start",
     "build-storybook": "yarn workspace @sourcegraph/storybook run build",
-    "cover-storybook": "yarn workspace @sourcegraph/storybook run cover",
+    "cover-storybook": "nyc --hook-require=false yarn jest client/storybook/src/coverage",
     "deduplicate": "yarn-deduplicate -s fewer",
     "release": "cd dev/release && yarn run release",
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",

@@ -11,7 +11,6 @@ import { recordCoverage } from '@sourcegraph/shared/src/testing/coverage'
 initStoryshots({
     configPath: path.resolve(__dirname),
     suite: 'Storybook',
-    framework: 'react',
     test: puppeteerTest({
         storybookUrl: pathToFileURL(path.resolve(__dirname, '../storybook-static')).href,
         testBody: async page => {
