@@ -47,23 +47,28 @@ OUTER:
 		for _, group := range config.Groups {
 			log15.Info("new group", "group", group.Name)
 			for _, qc := range group.Queries {
-				if qc.SearchType.HasBatch() {
-					_, m, err := bc.search(ctx, qc.Query)
-					if err != nil {
-						log15.Error(err.Error())
-					} else {
-						log15.Info("metrics", "group", group.Name, "query", qc.Query, "trace", m.trace, "duration_ms", m.took)
-						durationSearchHistogram.WithLabelValues(group.Name, "batch").Observe(float64(m.took))
-					}
+				if len(qc.Protocols) == 0 {
+					qc.Protocols = allProtocols
 				}
 
-				if qc.SearchType.HasStream() {
-					_, m, err := sc.search(ctx, qc.Query)
-					if err != nil {
-						log15.Error(err.Error())
-					} else {
-						log15.Info("metrics", "group", group.Name, "query", qc.Query, "trace", m.trace, "duration_ms", m.took)
-						durationSearchHistogram.WithLabelValues(group.Name, "stream").Observe(float64(m.took))
+				for _, api := range qc.Protocols {
+					switch api {
+					case Batch:
+						_, m, err := bc.search(ctx, qc.Query)
+						if err != nil {
+							log15.Error(err.Error())
+						} else {
+							log15.Info("metrics", "group", group.Name, "query", qc.Query, "trace", m.trace, "duration_ms", m.took)
+							durationSearchHistogram.WithLabelValues(group.Name, "batch").Observe(float64(m.took))
+						}
+					case Stream:
+						_, m, err := sc.search(ctx, qc.Query)
+						if err != nil {
+							log15.Error(err.Error())
+						} else {
+							log15.Info("metrics", "group", group.Name, "query", qc.Query, "trace", m.trace, "duration_ms", m.took)
+							durationSearchHistogram.WithLabelValues(group.Name, "stream").Observe(float64(m.took))
+						}
 					}
 				}
 			}
