@@ -3246,13 +3246,13 @@ type SearchContext implements Node {
     """
     Repositories and their revisions that will be searched when querying.
     """
-    repositories: [SearchContextRepository!]!
+    repositories: [SearchContextRepositoryRevisions!]!
 }
 
 """
 (experimental) Specifies a set of revisions to be searched within a repository.
 """
-type SearchContextRepository {
+type SearchContextRepositoryRevisions {
     """
     The repository to be searched.
     """

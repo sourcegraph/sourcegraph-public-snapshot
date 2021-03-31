@@ -261,6 +261,13 @@ export function fetchSearchContexts(
                         spec
                         description
                         autoDefined
+                        repositories {
+                            __typename
+                            repository {
+                                name
+                            }
+                            revisions
+                        }
                     }
                     pageInfo {
                         endCursor
