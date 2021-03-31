@@ -209,6 +209,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                     queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                     onlyArchived={true}
+                    enableSelect={true}
                 />
             )}
         </>

@@ -295,16 +295,6 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 		return nil, backend.ErrNotAuthenticated
 	}
 
-	// Short path for site-admins when OnlyWithoutCredential is true: It will always be an empty list.
-	if args.OnlyWithoutCredential {
-		if authErr := backend.CheckCurrentUserIsSiteAdmin(ctx); authErr == nil {
-			// For site-admins never return anything
-			return &emptyBatchChangesCodeHostConnectionResolver{}, nil
-		} else if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
-			return nil, authErr
-		}
-	}
-
 	specs, _, err := r.store.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{BatchSpecID: r.batchSpec.ID})
 	if err != nil {
 		return nil, err

@@ -102,11 +102,6 @@ func scanFirstIndex(rows *sql.Rows, err error) (Index, bool, error) {
 }
 
 // scanFirstIndexInterface scans a slice of indexes from the return value of `*Store.query` and returns the first.
-func scanFirstIndexInterface(rows *sql.Rows, err error) (interface{}, bool, error) {
-	return scanFirstIndex(rows, err)
-}
-
-// scanFirstIndexInterface scans a slice of indexes from the return value of `*Store.query` and returns the first.
 func scanFirstIndexRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	return scanFirstIndex(rows, err)
 }

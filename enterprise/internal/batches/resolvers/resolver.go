@@ -1058,6 +1058,48 @@ func (r *Resolver) deleteBatchChangesSiteCredential(ctx context.Context, credent
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.DetachChangesetsArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.DetachChangesets", fmt.Sprintf("BatchChange: %q, Changesets: %s", args.BatchChange, args.Changesets))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := batchChangesEnabled(ctx); err != nil {
+		return nil, err
+	}
+
+	batchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchChangeID == 0 {
+		return nil, ErrIDIsZero{}
+	}
+
+	var changesetIDs []int64
+	for _, raw := range args.Changesets {
+		id, err := unmarshalChangesetID(raw)
+		if err != nil {
+			return nil, err
+		}
+
+		if id == 0 {
+			return nil, ErrIDIsZero{}
+		}
+
+		changesetIDs = append(changesetIDs, id)
+	}
+
+	// 🚨 SECURITY: DetachChangeset checks whether current user is authorized.
+	svc := service.New(r.store)
+	if err = svc.DetachChangesets(ctx, batchChangeID, changesetIDs); err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
 func parseBatchChangeState(s *string) (batches.BatchChangeState, error) {
 	if s == nil {
 		return batches.BatchChangeStateAny, nil

@@ -14,3 +14,10 @@ export const BatchChangeChangesetsHeader: React.FunctionComponent<BatchChangeCha
         <h5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Changes</h5>
     </>
 )
+
+export const BatchChangeChangesetsHeaderWithCheckboxes: React.FunctionComponent<BatchChangeChangesetsHeaderProps> = () => (
+    <>
+        <span className="d-none d-md-block" />
+        <BatchChangeChangesetsHeader />
+    </>
+)
