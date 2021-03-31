@@ -34,7 +34,7 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                     <>
                         <PageTitle title={searchContextOrError.spec} />
                         <h1>{searchContextOrError.spec}</h1>
-                        <div className="mb-2">{searchContextOrError.description}</div>
+                        <div className="mb-2">Description: {searchContextOrError.description}</div>
                         <ul className="list-group list-group-flush">
                             {searchContextOrError.repositories.map(repo => (
                                 <li className="list-group-item mb-1" key={repo.repository.name}>

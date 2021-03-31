@@ -1,4 +1,5 @@
 import { storiesOf } from '@storybook/react'
+import { createMemoryHistory } from 'history'
 import React from 'react'
 import { Observable, of } from 'rxjs'
 import { WebStory } from '../../components/WebStory'
@@ -20,6 +21,7 @@ const { add } = storiesOf('web/search/input/SearchContextMenu', module)
     ))
 
 const defaultProps: SearchContextMenuProps = {
+    history: createMemoryHistory(),
     fetchAutoDefinedSearchContexts: of([
         {
             __typename: 'SearchContext',

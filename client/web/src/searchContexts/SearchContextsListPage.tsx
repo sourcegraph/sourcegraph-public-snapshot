@@ -73,7 +73,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                     >
                         history={props.history}
                         location={props.location}
-                        defaultFirst={2}
+                        defaultFirst={10}
                         queryConnection={queryConnection}
                         hideSearch={false}
                         nodeComponent={SearchContextNode}
