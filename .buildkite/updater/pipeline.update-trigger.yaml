@@ -1,6 +1,6 @@
 steps:
-- trigger: 'ds-updater-test-cron-non-gitserver'
-  label: ':k8s: :arrows_counterclockwise: :construction: Trigger update pipeline for deploy-sourcegraph-updater-test (non gitserver)'
+- trigger: 'ds-updater-test-image-updater'
+  label: ':k8s: :arrows_counterclockwise: :construction: Trigger update pipeline for deploy-sourcegraph-updater-test'
   branches: 'master'
   async: true
   env:
