@@ -102,34 +102,34 @@ add('Line chart', () => (
 //         }}
 //     />
 // ))
-//
-// add('Pie chart', () => (
-//     <ChartViewContent
-//         {...commonProps}
-//         content={{
-//             chart: 'pie',
-//             pies: [
-//                 {
-//                     dataKey: 'value',
-//                     nameKey: 'name',
-//                     fillKey: 'fill',
-//                     linkURLKey: 'linkURL',
-//                     data: [
-//                         {
-//                             name: 'Covered',
-//                             value: 0.3,
-//                             fill: 'var(--success)',
-//                             linkURL: '#Covered',
-//                         },
-//                         {
-//                             name: 'Not covered',
-//                             value: 0.7,
-//                             fill: 'var(--danger)',
-//                             linkURL: '#Not_covered',
-//                         },
-//                     ],
-//                 },
-//             ],
-//         }}
-//     />
-// ))
+
+add('Pie chart', () => (
+    <ChartViewContent
+        {...commonProps}
+        content={{
+            chart: 'pie',
+            pies: [
+                {
+                    dataKey: 'value',
+                    nameKey: 'name',
+                    fillKey: 'fill',
+                    linkURLKey: 'linkURL',
+                    data: [
+                        {
+                            name: 'Covered',
+                            value: 0.3,
+                            fill: 'var(--success)',
+                            linkURL: '#Covered',
+                        },
+                        {
+                            name: 'Not covered',
+                            value: 0.7,
+                            fill: 'var(--danger)',
+                            linkURL: '#Not_covered',
+                        },
+                    ],
+                },
+            ],
+        }}
+    />
+))

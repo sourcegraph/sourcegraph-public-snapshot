@@ -1,61 +1,33 @@
-import React from 'react';
+import React, {ReactElement, useCallback} from 'react';
+import { PieChartContent } from 'sourcegraph';
 import Pie, { ProvidedProps, PieArcDatum } from '@visx/shape/lib/shapes/Pie';
-import { scaleOrdinal } from '@visx/scale';
 import { Group } from '@visx/group';
-// TODO Replace import below on standard visx/annotation package
-import { Annotation, Connector, Label } from './annotation';
-import browserUsage, { BrowserUsage as Browsers } from '@visx/mock-data/lib/mocks/browserUsage';
+import { Annotation, Connector } from '@visx/annotation';
 import { Arc as ArcType } from 'd3-shape';
 
-// data and types
-type BrowserNames = keyof Browsers;
+// Replace import below on standard @visx/annotation package
+// when ticket about bad label positioning will be resolve
+// https://github.com/airbnb/visx/issues/1126
+import { Label } from '../../annotation/Label';
 
-interface BrowserUsage {
-    label: BrowserNames;
-    usage: number;
-}
+const DEFAULT_MARGIN = { top: 20, right: 20, bottom: 20, left: 20 };
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-const browserNames = Object.keys(browserUsage[0]).filter(k => k !== 'date' && browserUsage[0][k] > 5) as BrowserNames[];
-const browsers: BrowserUsage[] = browserNames.map(name => ({
-    label: name,
-    usage: Number(browserUsage[0][name]),
-}));
-
-// accessor functions
-const usage = (data: BrowserUsage): number => data.usage;
-
-// color scales
-const getBrowserColor = scaleOrdinal({
-    domain: browserNames,
-    range: [
-        'red',
-        'green',
-        'pink',
-        'wheat',
-        'darkgreen',
-    ],
-});
-
-const defaultMargin = { top: 20, right: 20, bottom: 20, left: 20 };
-
-export type PieProps = {
+export interface PieChartProps extends PieChartContent<any> {
     width: number;
     height: number;
-    margin?: typeof defaultMargin;
-};
+    margin?: typeof DEFAULT_MARGIN;
+}
 
-export function PieExample(props: PieProps) {
+export function PieChart(props: PieChartProps): ReactElement | null {
     const {
         width,
         height,
-        margin = defaultMargin,
+        margin = DEFAULT_MARGIN,
+        pies
     } = props;
 
-    if (width < 10) {
-        return null;
-    }
+    const content = pies[0];
+    const { data, dataKey, nameKey, fillKey = '' } = content;
 
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
@@ -64,21 +36,41 @@ export function PieExample(props: PieProps) {
     const centerY = innerHeight / 2;
     const centerX = innerWidth / 2;
 
+    // accessor
+    const usage = useCallback(
+        (data: any): number => data[dataKey],
+        [dataKey]
+    );
+
+    const getKey = useCallback(
+        (arc: PieArcDatum<any>): string => arc.data[nameKey],
+        [nameKey]
+    );
+
+    const getFillColor = useCallback(
+        (arc: PieArcDatum<any>): string => arc.data[fillKey] ?? 'grayscale',
+        [fillKey]
+    );
+
+    if (width < 10) {
+        return null;
+    }
+
     return (
         <svg width={width} height={height}>
             <Group top={centerY + margin.top} left={centerX + margin.left}>
                 <Pie
-                    data={browsers}
+                    data={data}
                     pieValue={usage}
                     outerRadius={radius}
                     cornerRadius={3}
                     padRadius={30}
                 >
                     {pie => (
-                        <PieArcs<BrowserUsage>
+                        <PieArcs
                             {...pie}
-                            getKey={arc => arc.data.label}
-                            getColor={arc => getBrowserColor(arc.data.label)}
+                            getKey={getKey}
+                            getColor={getFillColor}
                         />
                     )}
                 </Pie>
@@ -88,14 +80,13 @@ export function PieExample(props: PieProps) {
 }
 
 // Components helpers
-
 type AnimatedPieProps<Datum> = ProvidedProps<Datum> & {
     getKey: (d: PieArcDatum<Datum>) => string;
     getColor: (d: PieArcDatum<Datum>) => string;
     onClickDatum?: (d: PieArcDatum<Datum>) => void;
 };
 
-function PieArcs<Datum>(props: AnimatedPieProps<Datum>) {
+function PieArcs<Datum>(props: AnimatedPieProps<Datum>): ReactElement {
     const {
         arcs,
         path,
@@ -105,14 +96,15 @@ function PieArcs<Datum>(props: AnimatedPieProps<Datum>) {
 
     return (
         <g>
-            { arcs.map(arc =>
-                <PieArc
-                    key={getKey(arc)}
-                    arc={arc}
-                    path={path}
-                    getColor={getColor}
-                    getKey={getKey}/>
-            )
+            {
+                arcs.map(arc =>
+                    <PieArc
+                        key={getKey(arc)}
+                        arc={arc}
+                        path={path}
+                        getColor={getColor}
+                        getKey={getKey}/>
+                )
             }
         </g>
     );
@@ -125,7 +117,7 @@ interface PieArcProps<Datum> {
     arc: PieArcDatum<Datum>;
 }
 
-function PieArc<Datum>(props: PieArcProps<Datum>) {
+function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
     const { path, arc, getColor, getKey} = props;
     const pathValue = path(arc) ?? '';
     const middleAngle = Math.PI / 2 - (arc.startAngle + ((arc.endAngle - arc.startAngle) / 2));
@@ -145,7 +137,7 @@ function PieArc<Datum>(props: PieArcProps<Datum>) {
             <path
                 d={pathValue}
                 fill={getColor(arc)}
-                stroke={'white'}
+                stroke='white'
                 strokeWidth={1}
             />
             <Annotation
@@ -154,7 +146,7 @@ function PieArc<Datum>(props: PieArcProps<Datum>) {
                 dx={labelX}
                 dy={labelY}
             >
-                <Connector type={"line"} />
+                <Connector type='line' />
                 <Label
                     showBackground={false}
                     showAnchorLine={false}
@@ -162,7 +154,7 @@ function PieArc<Datum>(props: PieArcProps<Datum>) {
                     subtitle={`${arc.value}%`} />
             </Annotation>
 
-            <circle r={4} fill={'black'} cx={surfaceX + labelX} cy={surfaceY + labelY}/>
+            <circle r={4} fill="black" cx={surfaceX + labelX} cy={surfaceY + labelY}/>
         </g>
     );
 }
