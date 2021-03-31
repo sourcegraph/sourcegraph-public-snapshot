@@ -5,17 +5,10 @@ import (
 	"math/rand"
 	"testing"
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func TestLock(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
+	_, store := testStore(t)
 	key := rand.Intn(1000)
 
 	// Start txn before acquiring locks outside of txn
@@ -52,12 +45,7 @@ func TestLock(t *testing.T) {
 }
 
 func TestLockBlockingAcquire(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
-
+	_, store := testStore(t)
 	key := rand.Intn(1000)
 
 	// Start txn before acquiring locks outside of txn

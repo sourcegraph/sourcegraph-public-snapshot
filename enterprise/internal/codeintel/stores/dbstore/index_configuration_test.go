@@ -7,17 +7,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func TestGetRepositoriesWithIndexConfiguration(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db, store := testStore(t)
 
 	for _, repositoryID := range []int{42, 43, 44, 45, 46} {
 		query := sqlf.Sprintf(
@@ -25,7 +18,7 @@ func TestGetRepositoriesWithIndexConfiguration(t *testing.T) {
 			repositoryID,
 			fmt.Sprintf("github.com/baz/honk%2d", repositoryID),
 		)
-		if _, err := dbconn.Global.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error inserting repo: %s", err)
 		}
 	}
@@ -37,7 +30,7 @@ func TestGetRepositoriesWithIndexConfiguration(t *testing.T) {
 			repositoryID,
 			[]byte(`test`),
 		)
-		if _, err := dbconn.Global.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error inserting repo: %s", err)
 		}
 	}
@@ -58,11 +51,7 @@ func TestGetRepositoriesWithIndexConfiguration(t *testing.T) {
 }
 
 func TestGetIndexConfigurationByRepositoryID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db, store := testStore(t)
 
 	expectedConfigurationData := []byte(`{
 		"foo": "bar",
@@ -74,7 +63,7 @@ func TestGetIndexConfigurationByRepositoryID(t *testing.T) {
 		42,
 		"github.com/baz/honk",
 	)
-	if _, err := dbconn.Global.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error inserting repo: %s", err)
 	}
 
@@ -84,7 +73,7 @@ func TestGetIndexConfigurationByRepositoryID(t *testing.T) {
 		42,
 		expectedConfigurationData,
 	)
-	if _, err := dbconn.Global.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error inserting repo: %s", err)
 	}
 

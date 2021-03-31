@@ -10,17 +10,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestDiagnosticsCountMigrator(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := NewStore(dbconn.Global, &observation.TestContext)
+	_, store := testStore(t)
 	migrator := NewDiagnosticsCountMigrator(store)
 	serializer := newSerializer()
 

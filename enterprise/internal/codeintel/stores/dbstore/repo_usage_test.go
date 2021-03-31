@@ -7,17 +7,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func TestRepoUsageStatistics(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db, store := testStore(t)
 
 	insertEvent := func(url, name string, count int) {
 		query := sqlf.Sprintf(`
@@ -26,7 +19,7 @@ func TestRepoUsageStatistics(t *testing.T) {
 		`, name, url)
 
 		for i := 0; i < count; i++ {
-			if _, err := dbconn.Global.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+			if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 				t.Fatalf("unexpected error inserting event record: %s", err)
 			}
 		}
@@ -59,7 +52,7 @@ func TestRepoUsageStatistics(t *testing.T) {
 	for i, name := range repos {
 		query := sqlf.Sprintf(`INSERT INTO repo (id, name, uri) VALUES (%s, %s, %s)`, i+1, name, name)
 
-		if _, err := dbconn.Global.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error inserting repo: %s", err)
 		}
 	}
@@ -71,7 +64,7 @@ func TestRepoUsageStatistics(t *testing.T) {
 		"github.com/baz/honk",
 		time.Now(),
 	)
-	if _, err := dbconn.Global.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error inserting repo: %s", err)
 	}
 

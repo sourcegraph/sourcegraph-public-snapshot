@@ -5,19 +5,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestDatabaseRanges(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	populateTestStore(t)
-	store := NewStore(dbconn.Global, &observation.TestContext)
+	db, store := testStore(t)
+	populateTestIndex(t, db)
 
 	//   20: // NewWriter creates a new Writer.
 	//   21: func NewWriter(w io.Writer, addContents bool) *Writer {

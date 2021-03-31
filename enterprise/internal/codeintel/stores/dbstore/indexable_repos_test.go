@@ -6,16 +6,10 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func TestIndexableRepositories(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	_, store := testStore(t)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Hour)
@@ -61,11 +55,7 @@ func TestIndexableRepositories(t *testing.T) {
 }
 
 func TestIndexableRepositoriesMinimumTimeSinceLastEnqueue(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	_, store := testStore(t)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Hour)
@@ -106,11 +96,7 @@ func TestIndexableRepositoriesMinimumTimeSinceLastEnqueue(t *testing.T) {
 }
 
 func TestIndexableRepositoriesMinimumSearchAndPreciseCount(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	_, store := testStore(t)
 
 	updates := []UpdateableIndexableRepository{
 		{RepositoryID: 1, SearchCount: intptr(10), PreciseCount: intptr(30)},
@@ -147,11 +133,7 @@ func TestIndexableRepositoriesMinimumSearchAndPreciseCount(t *testing.T) {
 }
 
 func TestIndexableRepositoriesMinimumSearchRatio(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	_, store := testStore(t)
 
 	updates := []UpdateableIndexableRepository{
 		{RepositoryID: 1, SearchCount: intptr(10)},                           // 100%
@@ -186,11 +168,7 @@ func TestIndexableRepositoriesMinimumSearchRatio(t *testing.T) {
 }
 
 func TestIndexableRepositoriesEnabled(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	_, store := testStore(t)
 
 	updates := []UpdateableIndexableRepository{
 		{RepositoryID: 1},
@@ -230,11 +208,7 @@ func TestIndexableRepositoriesEnabled(t *testing.T) {
 }
 
 func TestResetIndexableRepositories(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	_, store := testStore(t)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Hour)

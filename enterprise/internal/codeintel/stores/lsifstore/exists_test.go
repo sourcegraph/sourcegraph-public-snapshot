@@ -3,19 +3,11 @@ package lsifstore
 import (
 	"context"
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestDatabaseExists(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	populateTestStore(t)
-	store := NewStore(dbconn.Global, &observation.TestContext)
+	db, store := testStore(t)
+	populateTestIndex(t, db)
 
 	testCases := []struct {
 		path     string

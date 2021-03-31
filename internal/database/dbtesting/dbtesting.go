@@ -17,6 +17,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
@@ -94,39 +95,72 @@ func GetDB(t testing.TB) *sql.DB {
 	return dbconn.Global
 }
 
-func emptyDBPreserveSchema(t testing.TB, d *sql.DB) {
-	_, err := d.Exec(`SELECT * FROM schema_migrations`)
-	if err != nil {
-		t.Fatalf("Table schema_migrations not found: %v", err)
+// TODO - clean this up, migrate all users to it
+func GetDB2(t testing.TB, suffix string, tables []string) *sql.DB {
+	useFastPasswordMocks()
+
+	if testing.Short() {
+		t.Skip()
 	}
 
+	connectOnce.Do(func() {
+		connectErr = initTest(suffix)
+	})
+	if connectErr != nil {
+		// only ignore connection errors if not on CI
+		if os.Getenv("CI") == "" {
+			t.Skip("Could not connect to DB", connectErr)
+		}
+		t.Fatal("Could not connect to DB", connectErr)
+	}
+
+	for _, f := range BeforeTest {
+		f()
+	}
+
+	db := dbconn.Global
+	truncateTables(t, db, tables)
+	return db
+}
+
+func emptyDBPreserveSchema(t testing.TB, db *sql.DB) {
+	tables, err := listNonMigrationTables(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	truncateTables(t, db, tables)
+}
+
+func listNonMigrationTables(db *sql.DB) (_ []string, err error) {
 	var conds []string
 	conds = append(conds, fmt.Sprintf("table_name != '%s'", dbconn.Frontend.MigrationsTable))
 	conds = append(conds, fmt.Sprintf("table_name != '%s'", dbconn.CodeIntel.MigrationsTable))
 
-	rows, err := d.Query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND " + strings.Join(conds, " AND "))
+	rows, err := db.Query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND " + strings.Join(conds, " AND "))
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
 	var tables []string
 	for rows.Next() {
 		var table string
 		if err := rows.Scan(&table); err != nil {
-			t.Fatal(err)
+			return nil, err
 		}
 		tables = append(tables, table)
 	}
-	if err := rows.Close(); err != nil {
-		t.Fatal(err)
-	}
-	if err := rows.Err(); err != nil {
-		t.Fatal(err)
-	}
+
+	return tables, nil
+}
+
+func truncateTables(t testing.TB, db *sql.DB, tables []string) {
 	if testing.Verbose() {
-		t.Logf("Truncating all %d tables", len(tables))
+		t.Logf("Truncating %d tables", len(tables))
 	}
-	_, err = d.Exec("TRUNCATE " + strings.Join(tables, ", ") + " RESTART IDENTITY")
-	if err != nil {
+
+	if _, err := db.Exec("TRUNCATE " + strings.Join(tables, ", ") + " RESTART IDENTITY CASCADE"); err != nil {
 		t.Fatal(err)
 	}
 }

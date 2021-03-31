@@ -20,16 +20,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func TestHasRepository(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db, store := testStore(t)
 
 	testCases := []struct {
 		repositoryID int
@@ -40,8 +34,8 @@ func TestHasRepository(t *testing.T) {
 		{52, false},
 	}
 
-	insertUploads(t, dbconn.Global, Upload{ID: 1, RepositoryID: 50})
-	insertUploads(t, dbconn.Global, Upload{ID: 2, RepositoryID: 51, State: "deleted"})
+	insertUploads(t, db, Upload{ID: 1, RepositoryID: 50})
+	insertUploads(t, db, Upload{ID: 2, RepositoryID: 51, State: "deleted"})
 
 	for _, testCase := range testCases {
 		name := fmt.Sprintf("repositoryID=%d", testCase.repositoryID)
@@ -59,11 +53,7 @@ func TestHasRepository(t *testing.T) {
 }
 
 func TestHasCommit(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db, store := testStore(t)
 
 	testCases := []struct {
 		repositoryID int
@@ -75,8 +65,8 @@ func TestHasCommit(t *testing.T) {
 		{51, makeCommit(1), false},
 	}
 
-	insertNearestUploads(t, dbconn.Global, 50, map[string][]commitgraph.UploadMeta{makeCommit(1): {{UploadID: 42, Distance: 1}}})
-	insertNearestUploads(t, dbconn.Global, 51, map[string][]commitgraph.UploadMeta{makeCommit(2): {{UploadID: 43, Distance: 2}}})
+	insertNearestUploads(t, db, 50, map[string][]commitgraph.UploadMeta{makeCommit(1): {{UploadID: 42, Distance: 1}}})
+	insertNearestUploads(t, db, 51, map[string][]commitgraph.UploadMeta{makeCommit(2): {{UploadID: 43, Distance: 2}}})
 
 	for _, testCase := range testCases {
 		name := fmt.Sprintf("repositoryID=%d commit=%s", testCase.repositoryID, testCase.commit)
@@ -94,14 +84,10 @@ func TestHasCommit(t *testing.T) {
 }
 
 func TestMarkRepositoryAsDirty(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db, store := testStore(t)
 
 	for _, id := range []int{50, 51, 52} {
-		insertRepo(t, dbconn.Global, id, "")
+		insertRepo(t, db, id, "")
 	}
 
 	for _, repositoryID := range []int{50, 51, 52, 51, 52} {
@@ -127,17 +113,12 @@ func TestMarkRepositoryAsDirty(t *testing.T) {
 }
 
 func TestSkipsDeletedRepositories(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+	db, store := testStore(t)
 
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	insertRepo(t, db, 50, "should not be dirty")
+	deleteRepo(t, db, 50, time.Now())
 
-	insertRepo(t, dbconn.Global, 50, "should not be dirty")
-	deleteRepo(t, dbconn.Global, 50, time.Now())
-
-	insertRepo(t, dbconn.Global, 51, "should be dirty")
+	insertRepo(t, db, 51, "should be dirty")
 
 	// NOTE: We did not insert 52, so it should not show up as dirty, even though we mark it below.
 
@@ -164,11 +145,7 @@ func TestSkipsDeletedRepositories(t *testing.T) {
 }
 
 func TestCommitGraphMetadata(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db, store := testStore(t)
 
 	if err := store.MarkRepositoryAsDirty(context.Background(), 50); err != nil {
 		t.Errorf("unexpected error marking repository as dirty: %s", err)
@@ -176,7 +153,7 @@ func TestCommitGraphMetadata(t *testing.T) {
 
 	updatedAt := time.Unix(1587396557, 0).UTC()
 	query := sqlf.Sprintf("INSERT INTO lsif_dirty_repositories VALUES (%s, %s, %s, %s)", 51, 10, 10, updatedAt)
-	if _, err := dbconn.Global.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error inserting commit graph metadata: %s", err)
 	}
 
@@ -209,11 +186,7 @@ func TestCommitGraphMetadata(t *testing.T) {
 }
 
 func TestCalculateVisibleUploads(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db, store := testStore(t)
 
 	// This database has the following commit graph:
 	//
@@ -226,7 +199,7 @@ func TestCalculateVisibleUploads(t *testing.T) {
 		{ID: 2, Commit: makeCommit(3)},
 		{ID: 3, Commit: makeCommit(7)},
 	}
-	insertUploads(t, dbconn.Global, uploads...)
+	insertUploads(t, db, uploads...)
 
 	graph := gitserver.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(8), makeCommit(6)}, " "),
@@ -253,21 +226,17 @@ func TestCalculateVisibleUploads(t *testing.T) {
 		makeCommit(7): {3},
 		makeCommit(8): {1},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50, keysOf(expectedVisibleUploads))); diff != "" {
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff([]int{1}, getUploadsVisibleAtTip(t, dbconn.Global, 50)); diff != "" {
+	if diff := cmp.Diff([]int{1}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
 	}
 }
 
 func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db, store := testStore(t)
 
 	// This database has the following commit graph:
 	//
@@ -280,7 +249,7 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 	uploads := []Upload{
 		{ID: 1, Commit: makeCommit(2)},
 	}
-	insertUploads(t, dbconn.Global, uploads...)
+	insertUploads(t, db, uploads...)
 
 	graph := gitserver.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(8), makeCommit(7)}, " "),
@@ -301,21 +270,17 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 		makeCommit(2): {1},
 		makeCommit(3): {1},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50, keysOf(expectedVisibleUploads))); diff != "" {
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff([]int{1}, getUploadsVisibleAtTip(t, dbconn.Global, 50)); diff != "" {
+	if diff := cmp.Diff([]int{1}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
 	}
 }
 
 func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db, store := testStore(t)
 
 	// This database has the following commit graph:
 	//
@@ -325,7 +290,7 @@ func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
 		{ID: 1, Commit: makeCommit(2), Root: "root1/"},
 		{ID: 2, Commit: makeCommit(2), Root: "root2/"},
 	}
-	insertUploads(t, dbconn.Global, uploads...)
+	insertUploads(t, db, uploads...)
 
 	graph := gitserver.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
@@ -339,21 +304,17 @@ func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
 	expectedVisibleUploads := map[string][]int{
 		makeCommit(2): {1, 2},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50, keysOf(expectedVisibleUploads))); diff != "" {
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff([]int{1, 2}, getUploadsVisibleAtTip(t, dbconn.Global, 50)); diff != "" {
+	if diff := cmp.Diff([]int{1, 2}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
 	}
 }
 
 func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db, store := testStore(t)
 
 	// This database has the following commit graph:
 	//
@@ -386,7 +347,7 @@ func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
 		{ID: 8, Commit: makeCommit(5), Indexer: "lsif-go", Root: "root2/"},
 		{ID: 9, Commit: makeCommit(6), Indexer: "lsif-go", Root: "root1/"},
 	}
-	insertUploads(t, dbconn.Global, uploads...)
+	insertUploads(t, db, uploads...)
 
 	graph := gitserver.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
@@ -409,21 +370,17 @@ func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
 		makeCommit(5): {1, 2, 6, 7, 8},
 		makeCommit(6): {1, 2, 7, 8, 9},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50, keysOf(expectedVisibleUploads))); diff != "" {
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff([]int{1, 2, 7, 8, 9}, getUploadsVisibleAtTip(t, dbconn.Global, 50)); diff != "" {
+	if diff := cmp.Diff([]int{1, 2, 7, 8, 9}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
 	}
 }
 
 func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db, store := testStore(t)
 
 	// This database has the following commit graph:
 	//
@@ -439,7 +396,7 @@ func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
 		{ID: 7, Commit: makeCommit(3), Root: "root3/", Indexer: "idx2"},
 		{ID: 8, Commit: makeCommit(4), Root: "root4/", Indexer: "idx2"},
 	}
-	insertUploads(t, dbconn.Global, uploads...)
+	insertUploads(t, db, uploads...)
 
 	graph := gitserver.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
@@ -460,28 +417,24 @@ func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
 		makeCommit(4): {1, 2, 3, 4, 5, 6, 7, 8},
 		makeCommit(5): {1, 2, 3, 4, 5, 6, 7, 8},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, dbconn.Global, 50, keysOf(expectedVisibleUploads))); diff != "" {
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff([]int{1, 2, 3, 4, 5, 6, 7, 8}, getUploadsVisibleAtTip(t, dbconn.Global, 50)); diff != "" {
+	if diff := cmp.Diff([]int{1, 2, 3, 4, 5, 6, 7, 8}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
 	}
 }
 
 func TestCalculateVisibleUploadsResetsDirtyFlag(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db, store := testStore(t)
 
 	uploads := []Upload{
 		{ID: 1, Commit: makeCommit(1)},
 		{ID: 2, Commit: makeCommit(2)},
 		{ID: 3, Commit: makeCommit(3)},
 	}
-	insertUploads(t, dbconn.Global, uploads...)
+	insertUploads(t, db, uploads...)
 
 	graph := gitserver.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
@@ -547,8 +500,7 @@ func keysOf(m map[string][]int) (keys []string) {
 //
 
 func BenchmarkCalculateVisibleUploads(b *testing.B) {
-	dbtesting.SetupGlobalTestDB(b)
-	store := testStore()
+	db, store := testStore(b)
 
 	graph, err := readBenchmarkCommitGraph()
 	if err != nil {
@@ -559,7 +511,7 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	if err != nil {
 		b.Fatalf("unexpected error reading benchmark uploads: %s", err)
 	}
-	insertUploads(b, dbconn.Global, uploads...)
+	insertUploads(b, db, uploads...)
 
 	b.ResetTimer()
 	b.ReportAllocs()
