@@ -288,42 +288,14 @@ type searchCommitsInRepoEvent struct {
 	Error error
 }
 
-// searchCommitsInRepoStream searchs for commits based on op.
-//
-// The returned channel must be read until closed, otherwise you may leak
-// resources.
-func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.CommitParameters) chan searchCommitsInRepoEvent {
-	c := make(chan searchCommitsInRepoEvent)
-	go func() {
-		defer close(c)
-		_, _, _ = doSearchCommitsInRepoStream(ctx, db, op, c)
-	}()
-
-	return c
-}
-
-func doSearchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.CommitParameters, c chan searchCommitsInRepoEvent) (limitHit, timedOut bool, err error) {
+// searchCommitsInRepoStream searches for commits based on op.
+func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.CommitParameters, s Sender) (limitHit, timedOut bool, err error) {
 	resultCount := 0
 	tr, ctx := trace.New(ctx, "searchCommitsInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v", op.RepoRevs, op.PatternInfo))
 	defer func() {
 		tr.LazyPrintf("%d results, limitHit=%v, timedOut=%v", resultCount, limitHit, timedOut)
 		tr.SetError(err)
 		tr.Finish()
-	}()
-
-	// This defer will read the named return values. This is a convenient way
-	// to send errors down the channel, since we only want to do this once.
-	empty := true
-	defer func() {
-		// Send a final event if we had an error or if we hadn't sent down the
-		// channel.
-		if err != nil || empty {
-			c <- searchCommitsInRepoEvent{
-				LimitHit: limitHit,
-				TimedOut: timedOut,
-				Error:    err,
-			}
-		}
 	}()
 
 	diffParameters, err := commitParametersToDiffParameters(ctx, &op)
@@ -352,21 +324,36 @@ func doSearchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Co
 	}
 
 	for event := range events {
-		// if the result is incomplete, git log timed out and the client
+		// If the result is incomplete, git log timed out and the client
 		// should be notified of that.
 		timedOut = !event.Complete
 
 		// Convert the results into resolvers and send them.
 		results, err := logCommitSearchResultsToResolvers(ctx, db, &op, repoName, event.Results)
 		if len(results) > 0 {
-			empty = false
 			resultCount += len(event.Results)
 			limitHit = resultCount > int(op.PatternInfo.FileMatchLimit)
-			c <- searchCommitsInRepoEvent{
-				Results:  results,
-				LimitHit: limitHit,
-				TimedOut: timedOut,
-			}
+		}
+
+		var stats streaming.Stats
+		var status search.RepoStatus
+
+		if limitHit {
+			stats.IsLimitHit = true
+			status = status & search.RepoStatusLimitHit
+		}
+
+		if timedOut {
+			status = status & search.RepoStatusTimedout
+		}
+
+		// Only write if we have something to report back.
+		if len(results) > 0 || status != 0 {
+			stats.Status = search.RepoStatusSingleton(op.RepoRevs.Repo.ID, status)
+			s.Send(SearchEvent{
+				Results: commitSearchResultsToSearchResults(results),
+				Stats:   stats,
+			})
 		}
 		if err != nil {
 			return limitHit, timedOut, err
@@ -571,37 +558,7 @@ func searchCommitsInRepos(ctx context.Context, db dbutil.DB, args *search.TextPa
 	repoSearch := func(ctx context.Context, repoRev *search.RepositoryRevisions) (limitHit, timedOut bool, err error) {
 		commitParams := params.CommitParams
 		commitParams.RepoRevs = repoRev
-
-		// We use the stream so we can optionally send down resultChannel.
-		for event := range searchCommitsInRepoStream(ctx, db, commitParams) {
-			if params.ResultChannel != nil {
-				var stats streaming.Stats
-				var status search.RepoStatus
-				if event.LimitHit {
-					stats.IsLimitHit = true
-					status = status & search.RepoStatusLimitHit
-				}
-				if event.TimedOut {
-					status = status & search.RepoStatusTimedout
-				}
-				// Only write if we have something to report back
-				if len(event.Results) > 0 || status != 0 {
-					stats.Status = search.RepoStatusSingleton(repoRev.Repo.ID, status)
-					params.ResultChannel.Send(SearchEvent{
-						Results: commitSearchResultsToSearchResults(event.Results),
-						Stats:   stats,
-					})
-				}
-			}
-
-			limitHit = limitHit || event.LimitHit
-			timedOut = timedOut || event.TimedOut
-			if event.Error != nil {
-				err = event.Error
-			}
-		}
-
-		return
+		return searchCommitsInRepoStream(ctx, db, commitParams, params.ResultChannel)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
