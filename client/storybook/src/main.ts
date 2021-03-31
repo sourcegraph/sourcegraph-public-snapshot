@@ -6,11 +6,12 @@ import { Configuration, DefinePlugin, ProgressPlugin, RuleSetRule } from 'webpac
 
 const rootPath = path.resolve(__dirname, '../../../')
 const monacoEditorPaths = [path.resolve(rootPath, 'node_modules', 'monaco-editor')]
+const storiesGlob = path.resolve(rootPath, 'client/**/*.story.tsx')
 
 const shouldMinify = !!process.env.MINIFY
 
 const config = {
-    stories: ['../../**/*.story.tsx'],
+    stories: [storiesGlob],
     addons: [
         '@storybook/addon-knobs',
         '@storybook/addon-actions',
