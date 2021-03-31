@@ -930,6 +930,9 @@
       "properties": {
         "externalServiceKey": {
           "$ref": "#/definitions/EncryptionKey"
+        },
+        "userExternalAccountKey": {
+          "$ref": "#/definitions/EncryptionKey"
         }
       }
     },
