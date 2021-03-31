@@ -91,24 +91,24 @@ func (s *UserExternalAccountsStore) getEncryptionKey() encryption.Key {
 // maybeEncryptAccountData encrypts and returns user auth data if an encryption.Key is configured
 func (s *UserExternalAccountsStore) maybeEncryptAccountData(ctx context.Context, data extsvc.AccountData) (*encryptedAccountData, string, error) {
 	var enc encryptedAccountData
-	var keyIdent string
+	var keyID string
 	var err error
 
 	if data.AuthData != nil {
-		enc.AuthData, keyIdent, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
+		enc.AuthData, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
 		if err != nil {
 			return nil, "", err
 		}
 	}
 
 	if data.Data != nil {
-		enc.Data, keyIdent, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.Data))
+		enc.Data, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.Data))
 		if err != nil {
 			return nil, "", err
 		}
 	}
 
-	return &enc, keyIdent, nil
+	return &enc, keyID, nil
 }
 
 func (s *UserExternalAccountsStore) maybeDecryptAccountData(ctx context.Context, data *encryptedAccountData, keyIdent string) (extsvc.AccountData, error) {
