@@ -205,6 +205,11 @@ type DetachChangesetsArgs struct {
 	Changesets  []graphql.ID
 }
 
+type CommentOnAllChangesetsOfBatchChangeArgs struct {
+	BatchChange graphql.ID
+	Comment     string
+}
+
 type BatchChangesResolver interface {
 	//
 	// MUTATIONS
@@ -253,6 +258,8 @@ type BatchChangesResolver interface {
 
 	BatchChangesCredentialByID(ctx context.Context, id graphql.ID) (BatchChangesCredentialResolver, error)
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
+
+	CommentOnAllChangesetsOfBatchChange(ctx context.Context, args *CommentOnAllChangesetsOfBatchChangeArgs) (*EmptyResponse, error)
 }
 
 type BatchSpecResolver interface {
@@ -803,5 +810,9 @@ func (defaultBatchChangesResolver) BatchChangesCredentialByID(ctx context.Contex
 }
 
 func (defaultBatchChangesResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error) {
+	return nil, batchChangesOnlyInEnterprise
+}
+
+func (defaultBatchChangesResolver) CommentOnAllChangesetsOfBatchChange(ctx context.Context, args *CommentOnAllChangesetsOfBatchChangeArgs) (*EmptyResponse, error) {
 	return nil, batchChangesOnlyInEnterprise
 }

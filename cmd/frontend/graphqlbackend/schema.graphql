@@ -9921,6 +9921,8 @@ extend type Mutation {
     """
     deleteBatchChange(batchChange: ID!): EmptyResponse
 
+    commentOnAllChangesetsOfBatchChange(batchChange: ID!, comment: String!): EmptyResponse
+
     """
     Create a new credential for the given user for the given code host.
     If another token for that code host already exists, an error with the error code

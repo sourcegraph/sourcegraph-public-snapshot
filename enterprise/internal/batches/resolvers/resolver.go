@@ -1154,3 +1154,33 @@ const defaultMaxFirstParam = 10000
 func validateFirstParamDefaults(first int32) error {
 	return validateFirstParam(first, defaultMaxFirstParam)
 }
+
+func (r *Resolver) CommentOnAllChangesetsOfBatchChange(ctx context.Context, args *graphqlbackend.CommentOnAllChangesetsOfBatchChangeArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CommentOnAllChangesetsOfBatchChange", fmt.Sprintf("BatchChange: %q", args.BatchChange))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := batchChangesEnabled(ctx); err != nil {
+		return nil, err
+	}
+
+	if args.Comment == "" {
+		return nil, errors.New("comment cannot be empty")
+	}
+
+	dbID, err := unmarshalBatchChangeID(args.BatchChange)
+	if err != nil {
+		return nil, err
+	}
+
+	if dbID == 0 {
+		return nil, ErrIDIsZero{}
+	}
+
+	svc := service.New(r.store)
+	if err := svc.CommentOnAllChangesetsOfBatchChange(ctx, dbID, args.Comment); err != nil {
+		return nil, err
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}

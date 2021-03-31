@@ -1,7 +1,7 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -9,9 +9,11 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import { ErrorAlert } from '../../../components/alerts'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
@@ -24,6 +26,7 @@ import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
     deleteBatchChange as _deleteBatchChange,
+    commentOnAllChangesetsOfBatchChange,
 } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
@@ -94,6 +97,25 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             [namespaceID, batchChangeName, fetchBatchChangeByNamespace]
         )
     )
+    const [comment, setComment] = useState<string>('')
+    const onChangeComment = useCallback<React.ChangeEventHandler<HTMLTextAreaElement>>(
+        event => {
+            setComment(event.target.value)
+        },
+        [setComment]
+    )
+    const [isCommenting, setIsCommenting] = useState<boolean | ErrorLike>(false)
+    const onSubmitComment = useCallback(async () => {
+        // nothing
+        setIsCommenting(true)
+        try {
+            await commentOnAllChangesetsOfBatchChange(batchChange!.id, comment)
+            setIsCommenting(false)
+            setComment('')
+        } catch (error) {
+            setIsCommenting(asError(error))
+        }
+    }, [setIsCommenting, batchChange, comment])
 
     // Is loading.
     if (batchChange === undefined) {
@@ -154,6 +176,22 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 className="mb-3"
             />
             <Description history={history} description={batchChange.description} />
+            <h4>Comment on all changesets</h4>
+            <textarea
+                rows={8}
+                className="form-control w-100 text-monospace mb-2"
+                value={comment}
+                onChange={onChangeComment}
+            />
+            <button
+                type="button"
+                className="btn btn-primary mb-3"
+                disabled={isCommenting === true}
+                onClick={onSubmitComment}
+            >
+                {isCommenting === true && <LoadingSpinner className="icon-inline" />} Add comment
+            </button>
+            {isErrorLike(isCommenting) && <ErrorAlert error={isCommenting} />}
             <BatchChangeTabs
                 batchChange={batchChange}
                 changesetsCount={batchChange.changesetsStats.total - batchChange.changesetsStats.archived}
