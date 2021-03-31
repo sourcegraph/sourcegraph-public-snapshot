@@ -7,6 +7,7 @@ import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, of, timer } from 'rxjs'
 import { catchError, concatMap, delay, map, repeatWhen, takeWhile } from 'rxjs/operators'
+import * as semver from 'semver'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { useObservable } from '../../../shared/src/util/useObservable'
@@ -373,15 +374,12 @@ interface Version {
 
 /** Extract the major and minor semver numbers from the given version string. */
 const extract = (version: string): Version | undefined => {
-    const match = version.match(/^(\d+)\.(\d+)(\.|$)/)
-    if (!match) {
+    const semVer = semver.parse(version)
+    if (semVer === null) {
         return undefined
     }
 
-    return {
-        major: parseInt(match[1], 10),
-        minor: parseInt(match[2], 10),
-    }
+    return { major: semVer.major, minor: semVer.minor }
 }
 
 /** Return a copy of the given version with the minor value bumped by delta. */

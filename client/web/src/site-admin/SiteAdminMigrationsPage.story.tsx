@@ -91,7 +91,7 @@ add('3.27.2', () => (
 
 const migrations = [
     {
-        id: '',
+        id: 'migration-a',
         team: 'code-intelligence',
         component: 'lsif_data_documents',
         description: 'Denormalize diagnostic counts',
@@ -105,7 +105,7 @@ const migrations = [
         errors: [],
     },
     {
-        id: '',
+        id: 'migration-b',
         team: 'search',
         component: 'zoekt indexes',
         description: 'Apply rot13 to zoekt shards',
@@ -124,7 +124,7 @@ const migrations = [
         ],
     },
     {
-        id: '',
+        id: 'migration-c',
         team: 'code-intelligence',
         component: 'main-db',
         description: 'Compress lsif_nearest_uploads',
@@ -138,7 +138,7 @@ const migrations = [
         errors: [],
     },
     {
-        id: '',
+        id: 'migration-d',
         team: 'code-insights',
         component: 'codeinsights-db',
         description: 'Reticulate the hypertables',
@@ -152,7 +152,7 @@ const migrations = [
         errors: [],
     },
     {
-        id: '',
+        id: 'migration-e',
         team: 'moonshots',
         component: 'gitcoin',
         description: 'Use blockchain as a cache?',
