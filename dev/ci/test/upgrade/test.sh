@@ -7,16 +7,6 @@ cd "$root_dir"
 
 set -ex
 
-dev/ci/test/setup-display.sh
-
-cleanup() {
-  cd "$root_dir"
-  dev/ci/test/cleanup-display.sh
-}
-trap cleanup EXIT
-
-# ==========================
-
 # Run and initialize an old Sourcegraph release
 IMAGE=sourcegraph/server:$MINIMUM_UPGRADEABLE_VERSION ./dev/run-server-image.sh -d --name sourcegraph-old
 sleep 15
