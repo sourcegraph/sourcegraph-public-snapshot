@@ -115,11 +115,7 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<SiteAdminMigration
     return (
         <div className="site-admin-migrations-page">
             {isErrorLike(migrationsOrError) ? (
-                <ErrorAlert
-                    prefix="Error loading out of band migrations"
-                    error={migrationsOrError}
-                    history={props.history}
-                />
+                <ErrorAlert prefix="Error loading out of band migrations" error={migrationsOrError} />
             ) : migrationsOrError === undefined ? (
                 <LoadingSpinner className="icon-inline" />
             ) : (
@@ -135,14 +131,14 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<SiteAdminMigration
 
                     <MigrationBanners migrations={migrationsOrError} fetchSiteUpdateCheck={fetchSiteUpdateCheck} />
 
-                    <div className="list-group position-relative">
-                        <FilteredConnection<OutOfBandMigrationFields, Omit<SiteAdminMigrationNodeProps, 'node'>>
+                    <div className="list-group">
+                        <FilteredConnection<OutOfBandMigrationFields, Omit<MigrationNodeProps, 'node'>>
                             listComponent="div"
                             listClassName="site-admin-migrations__grid mb-3"
                             noun="migration"
                             pluralNoun="migrations"
                             queryConnection={queryMigrations}
-                            nodeComponent={SiteAdminMigrationNode}
+                            nodeComponent={MigrationNode}
                             nodeComponentProps={{ now }}
                             history={props.history}
                             location={props.location}
@@ -156,12 +152,12 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<SiteAdminMigration
     )
 }
 
-export interface MigrationBannersProps {
+interface MigrationBannersProps {
     migrations: OutOfBandMigrationFields[]
     fetchSiteUpdateCheck?: () => Observable<{ productVersion: string }>
 }
 
-export const MigrationBanners: React.FunctionComponent<MigrationBannersProps> = ({
+const MigrationBanners: React.FunctionComponent<MigrationBannersProps> = ({
     migrations,
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
 }) => {
@@ -183,9 +179,10 @@ export const MigrationBanners: React.FunctionComponent<MigrationBannersProps> = 
         bumpMinor(productVersion, -DOWNGRADE_RANGE)
     )
 
-    return invalidMigrations.length > 0 ? (
-        <MigrationInvalidBanner migrations={invalidMigrations} />
-    ) : (
+    if (invalidMigrations.length > 0) {
+        return <MigrationInvalidBanner migrations={invalidMigrations} />
+    }
+    return (
         <>
             {invalidMigrationsAfterUpgrade.length > 0 && (
                 <MigrationUpgradeWarningBanner migrations={invalidMigrationsAfterUpgrade} />
@@ -197,99 +194,83 @@ export const MigrationBanners: React.FunctionComponent<MigrationBannersProps> = 
     )
 }
 
-export interface MigrationInvalidBannerProps {
+interface MigrationInvalidBannerProps {
     migrations: OutOfBandMigrationFields[]
 }
 
-export const MigrationInvalidBanner: React.FunctionComponent<MigrationInvalidBannerProps> = ({ migrations }) => (
+const MigrationInvalidBanner: React.FunctionComponent<MigrationInvalidBannerProps> = ({ migrations }) => (
     <div className="alert alert-danger">
-        <span className="icon-inline">
-            <ErrorIcon />
-        </span>
-        <span className="ml-2">
-            <span>
-                <strong>Contact support.</strong> The following migrations are not in the expected state. You have
-                partially migrated or un-migrated data in a format that is incompatible with the currently deployed
-                version of Sourcegraph.{' '}
-                <strong>
-                    Continuing to run your instance in this state will result in errors and possible data loss.
-                </strong>
-            </span>
+        <p>
+            <ErrorIcon className="icon-inline mr-2" />
+            <strong>Contact support.</strong> The following migrations are not in the expected state. You have partially
+            migrated or un-migrated data in a format that is incompatible with the currently deployed version of
+            Sourcegraph.{' '}
+            <strong>Continuing to run your instance in this state will result in errors and possible data loss.</strong>
+        </p>
 
-            <ul className="pt-2">
-                {migrations.map(migration => (
-                    <li>{migration.description}</li>
-                ))}
-            </ul>
-        </span>
+        <ul className="mb-0">
+            {migrations.map(migration => (
+                <li key={migration.id}>{migration.description}</li>
+            ))}
+        </ul>
     </div>
 )
 
-export interface MigrationUpgradeWarningBannerProps {
+interface MigrationUpgradeWarningBannerProps {
     migrations: OutOfBandMigrationFields[]
 }
 
-export const MigrationUpgradeWarningBanner: React.FunctionComponent<MigrationUpgradeWarningBannerProps> = ({
-    migrations,
-}) => (
+const MigrationUpgradeWarningBanner: React.FunctionComponent<MigrationUpgradeWarningBannerProps> = ({ migrations }) => (
     <div className="alert alert-warning">
-        <span className="icon-inline">
-            <WarningIcon className="text-warning" />
-        </span>
-        <span className="ml-2">
-            <span>
-                The next version of Sourcegraph removes support for reading an old data format. Your Sourcegraph
-                instance must complete the following migrations to ensure your data remains readable.{' '}
-                <strong>If you upgrade your Sourcegraph instance now, you may corrupt or lose data.</strong>
-            </span>
-
-            <ul className="pt-2">
-                {migrations.map(migration => (
-                    <li>{migration.description}</li>
-                ))}
-            </ul>
-
-            <span>Contact support if these migrations are not making progress or if there are associated errors.</span>
-        </span>
+        <p>
+            <WarningIcon className="icon-inline mr-2" />
+            The next version of Sourcegraph removes support for reading an old data format. Your Sourcegraph instance
+            must complete the following migrations to ensure your data remains readable.{' '}
+            <strong>If you upgrade your Sourcegraph instance now, you may corrupt or lose data.</strong>
+        </p>
+        <ul>
+            {migrations.map(migration => (
+                <li key={migration.id}>{migration.description}</li>
+            ))}
+        </ul>
+        <span>Contact support if these migrations are not making progress or if there are associated errors.</span>
     </div>
 )
 
-export interface MigrationDowngradeWarningBannerProps {
+interface MigrationDowngradeWarningBannerProps {
     migrations: OutOfBandMigrationFields[]
 }
 
-export const MigrationDowngradeWarningBanner: React.FunctionComponent<MigrationDowngradeWarningBannerProps> = ({
+const MigrationDowngradeWarningBanner: React.FunctionComponent<MigrationDowngradeWarningBannerProps> = ({
     migrations,
 }) => (
     <div className="alert alert-warning">
-        <span className="icon-inline">
-            <WarningIcon className="text-warning" />
-        </span>
-        <span className="ml-2">
+        <p>
+            <WarningIcon className="icon-inline mr-2" />
             <span>
                 The previous version of Sourcegraph does not support reading data that has been migrated into a new
                 format. Your Sourcegraph instance must undo the following migrations to ensure your data can be read by
                 the previous version.{' '}
                 <strong>If you downgrade your Sourcegraph instance now, you may corrupt or lose data.</strong>
             </span>
+        </p>
 
-            <ul className="pt-2">
-                {migrations.map(migration => (
-                    <li>{migration.description}</li>
-                ))}
-            </ul>
+        <ul>
+            {migrations.map(migration => (
+                <li key={migration.id}>{migration.description}</li>
+            ))}
+        </ul>
 
-            <span>Contact support for assistance with downgrading your instance.</span>
-        </span>
+        <span>Contact support for assistance with downgrading your instance.</span>
     </div>
 )
 
-export interface SiteAdminMigrationNodeProps {
+interface MigrationNodeProps {
     node: OutOfBandMigrationFields
     now?: () => Date
 }
 
-export const SiteAdminMigrationNode: React.FunctionComponent<SiteAdminMigrationNodeProps> = ({ node, now }) => (
+const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now }) => (
     <>
         <span className="site-admin-migration-node__separator" />
 
@@ -298,8 +279,8 @@ export const SiteAdminMigrationNode: React.FunctionComponent<SiteAdminMigrationN
                 <h3>{node.description}</h3>
 
                 <p className="m-0">
-                    <span className="text-muted">Team</span> {node.team}{' '}
-                    <span className="text-muted">is migrating data in</span> {node.component}
+                    <span className="text-muted">Team</span> <strong>{node.team}</strong>{' '}
+                    <span className="text-muted">is migrating data in</span> <strong>{node.component}</strong>
                     <span className="text-muted">.</span>
                 </p>
 
@@ -321,9 +302,11 @@ export const SiteAdminMigrationNode: React.FunctionComponent<SiteAdminMigrationN
         <span className="d-none d-md-inline site-admin-migration-node__progress">
             <div className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
                 <div>
-                    <span className="mr-1">
-                        {node.applyReverse ? <ArrowLeftBoldIcon className="text-danger" /> : <ArrowRightBoldIcon />}
-                    </span>
+                    {node.applyReverse ? (
+                        <ArrowLeftBoldIcon className="icon-inline mr-1 text-danger" />
+                    ) : (
+                        <ArrowRightBoldIcon className="icon-inline mr-1" />
+                    )}
                     {Math.floor(node.progress * 100)}%
                 </div>
 
@@ -347,7 +330,9 @@ export const SiteAdminMigrationNode: React.FunctionComponent<SiteAdminMigrationN
                             <span className="text-muted">Last updated</span>
                         </div>
                         <div className="text-center">
-                            <Timestamp date={node.lastUpdated} now={now} noAbout={true} />{' '}
+                            <small>
+                                <Timestamp date={node.lastUpdated} now={now} noAbout={true} />
+                            </small>
                         </div>
                     </>
                 )}
@@ -356,7 +341,7 @@ export const SiteAdminMigrationNode: React.FunctionComponent<SiteAdminMigrationN
 
         {node.errors.length > 0 && (
             <Collapsible
-                title={`Recent errors (${node.errors.length})`}
+                title={<strong>Recent errors ({node.errors.length})</strong>}
                 className="site-admin-migration-node__errors p-0 font-weight-normal"
                 buttonClassName="mb-0"
                 titleAtStart={true}
