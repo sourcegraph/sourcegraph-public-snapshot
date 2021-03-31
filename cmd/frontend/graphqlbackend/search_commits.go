@@ -13,6 +13,7 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/xeonx/timeago"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/pkg/errors"
 
@@ -269,7 +270,8 @@ func commitParametersToDiffParameters(ctx context.Context, op *search.CommitPara
 }
 
 // searchCommitsInRepoStream searches for commits based on op.
-func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.CommitParameters, s Sender) (limitHit, timedOut bool, err error) {
+func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.CommitParameters, s Sender) (err error) {
+	var timedOut, limitHit bool
 	resultCount := 0
 	tr, ctx := trace.New(ctx, "searchCommitsInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v", op.RepoRevs, op.PatternInfo))
 	defer func() {
@@ -280,7 +282,7 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 
 	diffParameters, err := commitParametersToDiffParameters(ctx, &op)
 	if err != nil {
-		return false, false, err
+		return err
 	}
 
 	// Cancel context so we can stop RawLogDiffSearchOptions if we return
@@ -304,8 +306,9 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 	}
 
 	var results []*CommitSearchResultResolver
+	var stats streaming.Stats
 	for event := range events {
-		timedOut = timedOut || !event.Complete
+		timedOut = timedOut || !event.Complete || ctx.Err() == context.DeadlineExceeded
 
 		results, err = logCommitSearchResultsToResolvers(ctx, db, &op, repoName, event.Results)
 		if len(results) > 0 {
@@ -313,44 +316,36 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 			limitHit = resultCount > int(op.PatternInfo.FileMatchLimit)
 		}
 
-		var stats streaming.Stats
-		var status search.RepoStatus
-
-		if limitHit {
-			stats.IsLimitHit = true
-			status = status & search.RepoStatusLimitHit
+		var searchErr error
+		if err != nil {
+			searchErr = err
+		} else {
+			searchErr = event.Error
+		}
+		if searchErr != nil {
+			tr.LogFields(otlog.String("repo", string(op.RepoRevs.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 		}
 
-		// If the result is incomplete, git log timed out and the client
-		// should be notified of that.
-		if !event.Complete {
-			status = status & search.RepoStatusTimedout
+		stats, err = handleRepoSearchResult(op.RepoRevs, limitHit, !event.Complete, searchErr)
+		if err != nil {
+			return errors.Wrapf(err, "failed to search commit %s", op.RepoRevs.String())
 		}
 
-		// Only write if we have something to report back.
-		if len(results) > 0 || status != 0 {
-			stats.Status = search.RepoStatusSingleton(op.RepoRevs.Repo.ID, status)
+		// Only send if we have something to report back.
+		if len(results) > 0 || !stats.Zero() {
 			s.Send(SearchEvent{
 				Results: commitSearchResultsToSearchResults(results),
 				Stats:   stats,
 			})
-		}
-		if err != nil {
-			return limitHit, timedOut, err
 		}
 
 		// If we have hit the limit we stop (after we sent the above results).
 		if limitHit {
 			break
 		}
-
-		// If we have an error, stop and report it.
-		if event.Error != nil {
-			return limitHit, timedOut, event.Error
-		}
 	}
 
-	return limitHit, timedOut, nil
+	return nil
 }
 
 func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *search.CommitParameters, repoName types.RepoName, rawResults []*git.LogCommitSearchResult) ([]*CommitSearchResultResolver, error) {
@@ -535,51 +530,30 @@ func searchCommitsInRepos(ctx context.Context, db dbutil.DB, args *search.TextPa
 		tr.Finish()
 	}()
 
-	repoSearch := func(ctx context.Context, repoRev *search.RepositoryRevisions) (limitHit, timedOut bool, err error) {
+	repoSearch := func(ctx context.Context, repoRev *search.RepositoryRevisions) error {
 		commitParams := params.CommitParams
 		commitParams.RepoRevs = repoRev
 		return searchCommitsInRepoStream(ctx, db, commitParams, params.ResultChannel)
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	var wg sync.WaitGroup
-	var mu sync.Mutex
+	g, ctx := errgroup.WithContext(ctx)
 	for _, repoRev := range args.Repos {
 		// Skip the repo if no revisions were resolved for it
 		if len(repoRev.Revs) == 0 {
 			continue
 		}
 
-		wg.Add(1)
-		go func(repoRev *search.RepositoryRevisions) {
-			defer wg.Done()
-			repoLimitHit, repoTimedOut, searchErr := repoSearch(ctx, repoRev)
-			if ctx.Err() == context.Canceled {
-				// Our request has been canceled (either because another one of args.repos had a
-				// fatal error, or otherwise), so we can just ignore these results.
-				return
-			}
-			repoTimedOut = repoTimedOut || ctx.Err() == context.DeadlineExceeded
-			if searchErr != nil {
-				tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
-			}
-			mu.Lock()
-			defer mu.Unlock()
-			repoCommon, fatalErr := handleRepoSearchResult(repoRev, repoLimitHit, repoTimedOut, searchErr)
-			if fatalErr != nil {
-				err = errors.Wrapf(searchErr, "failed to search commit %s %s", params.ErrorName, repoRev.String())
-				cancel()
-			}
-			params.ResultChannel.Send(SearchEvent{
-				Stats: repoCommon,
+		rr := repoRev
+		g.Go(
+			func() error {
+				err = repoSearch(ctx, rr)
+				if err != nil {
+					tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.String("err", err.Error()), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
+				}
+				return err
 			})
-		}(repoRev)
 	}
-	wg.Wait()
-
-	return err
+	return g.Wait()
 }
 
 // searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
