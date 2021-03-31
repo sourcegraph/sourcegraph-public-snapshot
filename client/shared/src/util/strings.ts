@@ -22,6 +22,8 @@ export function numberWithCommas(number: string | number): string {
 }
 
 export function pluralize(string: string, count: number | bigint, plural = string + 's'): string {
+    // Support count as type bigint https://github.com/sourcegraph/sourcegraph/pull/16345#discussion_r534055393
+    // TODO: Better fix
     // eslint-disable-next-line eqeqeq
     return count == 1 ? string : plural
 }

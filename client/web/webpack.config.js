@@ -12,7 +12,7 @@ const { ESBuildPlugin, ESBuildMinifyPlugin } = require('esbuild-loader')
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 logger.info('Using mode', mode)
 
-const devtool = mode === 'production' ? 'source-map' : 'eval'
+const devtool = mode === 'production' ? 'source-map' : 'cheap-module-eval-source-map'
 
 const shouldAnalyze = process.env.WEBPACK_ANALYZER === '1'
 if (shouldAnalyze) {
@@ -28,6 +28,7 @@ const enterpriseDirectory = path.resolve(__dirname, 'src', 'enterprise')
 
 const extensionHostWorker = /main\.worker\.ts$/
 
+// TODO Use browserslist
 const esbuildTarget = ['chrome87', 'chrome86', 'edge87', 'firefox84', 'firefox83', 'safari14', 'safari13.1', 'safari13']
 
 /** @type {import('webpack').Configuration} */
@@ -88,18 +89,20 @@ const config = {
     }),
     ...(shouldAnalyze ? [new BundleAnalyzerPlugin()] : []),
   ],
-  resolve: {
-    extensions: ['.mjs', '.ts', '.tsx', '.js'],
-    mainFields: ['es2015', 'module', 'browser', 'main'],
-    // alias: {
-    //   // react-visibility-sensor's main field points to a UMD bundle instead of ESM
-    //   // https://github.com/joshwnj/react-visibility-sensor/issues/148
-    //   'react-visibility-sensor': path.resolve(
-    //     rootDirectory,
-    //     'node_modules/react-visibility-sensor/visibility-sensor.js'
-    //   ),
-    // },
-  },
+  // TODO: Migrate from react-visibility-sensor to react-intersection-observer
+  // https://github.com/sourcegraph/sourcegraph/issues/9550
+  // resolve: {
+  //   extensions: ['.mjs', '.ts', '.tsx', '.js'],
+  //   mainFields: ['es2015', 'module', 'browser', 'main'],
+  //   alias: {
+  //     // react-visibility-sensor's main field points to a UMD bundle instead of ESM
+  //     // https://github.com/joshwnj/react-visibility-sensor/issues/148
+  //     'react-visibility-sensor': path.resolve(
+  //       rootDirectory,
+  //       'node_modules/react-visibility-sensor/visibility-sensor.js'
+  //     ),
+  //   },
+  // },
   module: {
     rules: [
       {
