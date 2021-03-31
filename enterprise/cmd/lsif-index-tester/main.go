@@ -29,11 +29,6 @@ type projectResult struct {
 	testResult testSuiteResult
 }
 
-type indexerResult struct {
-	usage  usageStats
-	output string
-}
-
 type usageStats struct {
 	// Memory usage in kilobytes by child process.
 	memory int64
@@ -167,7 +162,7 @@ func testProject(ctx context.Context, indexer []string, project, name string) (p
 		return projectResult{
 			name:    name,
 			success: false,
-			output:  string(result.output),
+			output:  result.output,
 		}, err
 	}
 
