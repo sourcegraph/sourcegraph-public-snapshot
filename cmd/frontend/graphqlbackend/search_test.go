@@ -342,7 +342,7 @@ func TestExactlyOneRepo(t *testing.T) {
 func TestQuoteSuggestions(t *testing.T) {
 	t.Run("regex error", func(t *testing.T) {
 		raw := "*"
-		_, err := query.Pipeline(query.InitRegexp(raw))
+		_, err := search.Pipeline(query.InitRegexp(raw))
 		if err == nil {
 			t.Fatalf("error returned from query.ParseRegexp(%q) is nil", raw)
 		}
@@ -463,7 +463,7 @@ func TestVersionContext(t *testing.T) {
 	}}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			plan, err := query.Pipeline(query.InitLiteral(tc.searchQuery))
+			plan, err := search.Pipeline(query.InitLiteral(tc.searchQuery))
 			if err != nil {
 				t.Fatal(err)
 			}

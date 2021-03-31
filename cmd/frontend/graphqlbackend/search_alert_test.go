@@ -345,7 +345,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
 			setMockResolveRepositories(test.repoRevs)
-			plan, err := query.Pipeline(
+			plan, err := search.Pipeline(
 				query.InitRegexp(test.query),
 				query.With(test.globbing, query.Globbing),
 			)

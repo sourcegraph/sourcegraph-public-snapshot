@@ -837,7 +837,7 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	ctx := context.Background()
 
-	p, err := query.Pipeline(query.InitLiteral(`foobar index:only count:350`))
+	p, err := search.Pipeline(query.InitLiteral(`foobar index:only count:350`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1060,7 +1060,7 @@ func TestGetExactFilePatterns(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {
-			plan, err := query.Pipeline(query.InitLiteral(tt.in), query.Globbing)
+			plan, err := search.Pipeline(query.InitLiteral(tt.in), query.Globbing)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1270,7 +1270,7 @@ func TestEvaluateAnd(t *testing.T) {
 			}
 			defer func() { database.Mocks = database.MockStores{} }()
 
-			p, err := query.Pipeline(query.InitLiteral(tt.query))
+			p, err := search.Pipeline(query.InitLiteral(tt.query))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1339,7 +1339,7 @@ func TestSearchContext(t *testing.T) {
 
 	for _, tt := range tts {
 		t.Run(tt.name, func(t *testing.T) {
-			p, err := query.Pipeline(query.InitLiteral(tt.searchQuery))
+			p, err := search.Pipeline(query.InitLiteral(tt.searchQuery))
 			if err != nil {
 				t.Fatal(err)
 			}

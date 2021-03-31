@@ -148,7 +148,7 @@ func (b Basic) String() string {
 type Q []Node
 
 func (q Q) String() string {
-	return toString(q)
+	return ToString(q)
 }
 
 func (q Q) RegexpPatterns(field string) (values, negatedValues []string) {

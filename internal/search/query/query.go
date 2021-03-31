@@ -9,13 +9,13 @@ processing logic driven by external options.
 */
 
 // A step performs a transformation on nodes, which may fail.
-type step func(nodes []Node) ([]Node, error)
+type Step func(nodes []Node) ([]Node, error)
 
 // A pass is a step that never fails.
-type pass func(nodes []Node) []Node
+type Pass func(nodes []Node) []Node
 
 // sequence sequences zero or more steps to create a single step.
-func sequence(steps ...step) step {
+func Sequence(steps ...Step) Step {
 	return func(nodes []Node) ([]Node, error) {
 		var err error
 		for _, step := range steps {
@@ -29,7 +29,7 @@ func sequence(steps ...step) step {
 }
 
 // succeeds converts a sequence of passes into a single step.
-func succeeds(passes ...pass) step {
+func succeeds(passes ...Pass) Step {
 	return func(nodes []Node) ([]Node, error) {
 		for _, pass := range passes {
 			nodes = pass(nodes)
@@ -40,7 +40,7 @@ func succeeds(passes ...pass) step {
 
 // With returns step if enabled is true. Use it to compose a pipeline that
 // conditionally run steps.
-func With(enabled bool, step step) step {
+func With(enabled bool, step Step) Step {
 	if !enabled {
 		return identity
 	}
@@ -49,8 +49,8 @@ func With(enabled bool, step step) step {
 
 // For runs processing steps for a given search type. This includes
 // normalization, substitution for whitespace, and pattern labeling.
-func For(searchType SearchType) step {
-	var processType step
+func For(searchType SearchType) Step {
+	var processType Step
 	switch searchType {
 	case SearchTypeLiteral:
 		processType = succeeds(substituteConcat(space))
@@ -60,34 +60,34 @@ func For(searchType SearchType) step {
 		processType = succeeds(labelStructural, ellipsesForHoles, substituteConcat(space))
 	}
 	normalize := succeeds(LowercaseFieldNames, SubstituteAliases(searchType))
-	return sequence(normalize, processType)
+	return Sequence(normalize, processType)
 }
 
 // Init creates a step from an input string and search type. It parses the
 // initial input string.
-func Init(in string, searchType SearchType) step {
+func Init(in string, searchType SearchType) Step {
 	parser := func([]Node) ([]Node, error) {
 		return Parse(in, searchType)
 	}
-	return sequence(parser, For(searchType))
+	return Sequence(parser, For(searchType))
 }
 
 // InitLiteral is Init where SearchType is Literal.
-func InitLiteral(in string) step {
+func InitLiteral(in string) Step {
 	return Init(in, SearchTypeLiteral)
 }
 
 // InitRegexp is Init where SearchType is Regex.
-func InitRegexp(in string) step {
+func InitRegexp(in string) Step {
 	return Init(in, SearchTypeRegex)
 }
 
 // InitStructural is Init where SearchType is Structural.
-func InitStructural(in string) step {
+func InitStructural(in string) Step {
 	return Init(in, SearchTypeStructural)
 }
 
-func Run(step step) ([]Node, error) {
+func Run(step Step) ([]Node, error) {
 	return step(nil)
 }
 
@@ -122,26 +122,5 @@ func ToPlan(disjuncts [][]Node) (Plan, error) {
 		}
 		plan = append(plan, *basic)
 	}
-	return plan, nil
-}
-
-// Pipeline processes zero or more steps to produce a query. The first step must
-// be Init, otherwise this function is a no-op.
-func Pipeline(steps ...step) (Plan, error) {
-	nodes, err := sequence(steps...)(nil)
-	if err != nil {
-		return nil, err
-	}
-
-	disjuncts := Dnf(nodes)
-	if err := Validate(disjuncts); err != nil {
-		return nil, err
-	}
-
-	plan, err := ToPlan(disjuncts)
-	if err != nil {
-		return nil, err
-	}
-	plan = MapPlan(plan, ConcatRevFilters)
 	return plan, nil
 }

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+
+	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 func toJSON(node query.Node) interface{} {
@@ -92,7 +94,7 @@ func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *struct {
 
 	globbing := getBoolPtr(settings.SearchGlobbing, false)
 
-	plan, err := query.Pipeline(
+	plan, err := search.Pipeline(
 		query.Init(args.Query, searchType),
 		query.With(globbing, query.Globbing),
 	)
