@@ -14,8 +14,8 @@ import (
 // loadExternalService looks up all external services that are connected to the given repo.
 // The first external service to have a token configured will be returned then.
 // If no external service matching the above criteria is found, an error is returned.
-func loadExternalService(ctx context.Context, esStore ExternalServiceStore, repo *types.Repo) (*types.ExternalService, error) {
-	es, err := esStore.List(ctx, database.ExternalServicesListOptions{
+func loadExternalService(ctx context.Context, s SyncStore, repo *types.Repo) (*types.ExternalService, error) {
+	es, err := s.ExternalServices().List(ctx, database.ExternalServicesListOptions{
 		// Consider all available external services for this repo.
 		IDs: repo.ExternalServiceIDs(),
 	})

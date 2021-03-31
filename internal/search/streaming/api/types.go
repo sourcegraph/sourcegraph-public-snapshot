@@ -58,25 +58,25 @@ const (
 	DocumentMatchLimit SkippedReason = "document-match-limit"
 	// ShardMatchLimit is when we found too many matches in a
 	// shard/repository, so we stopped searching it.
-	ShardMatchLimit = "shard-match-limit"
+	ShardMatchLimit SkippedReason = "shard-match-limit"
 	// RepositoryLimit is when we did not search a repository because the set
 	// of repositories to search was too large.
-	RepositoryLimit = "repository-limit"
+	RepositoryLimit SkippedReason = "repository-limit"
 	// ShardTimeout is when we ran out of time before searching a
 	// shard/repository.
-	ShardTimeout = "shard-timeout"
+	ShardTimeout SkippedReason = "shard-timeout"
 	// RepositoryCloning is when we could not search a repository because it
 	// is not cloned.
-	RepositoryCloning = "repository-cloning"
+	RepositoryCloning SkippedReason = "repository-cloning"
 	// RepositoryMissing is when we could not search a repository because it
 	// is not cloned and we failed to find it on the remote code host.
-	RepositoryMissing = "repository-missing"
+	RepositoryMissing SkippedReason = "repository-missing"
 	// ExcludedFork is when we did not search a repository because it is a
 	// fork.
-	ExcludedFork = "repository-fork"
+	ExcludedFork SkippedReason = "repository-fork"
 	// ExcludedArchive is when we did not search a repository because it is
 	// archived.
-	ExcludedArchive = "excluded-archive"
+	ExcludedArchive SkippedReason = "excluded-archive"
 )
 
 // SkippedSeverity is an enum for Skipped.Severity.
@@ -84,5 +84,5 @@ type SkippedSeverity string
 
 const (
 	SeverityInfo SkippedSeverity = "info"
-	SeverityWarn                 = "warn"
+	SeverityWarn SkippedSeverity = "warn"
 )

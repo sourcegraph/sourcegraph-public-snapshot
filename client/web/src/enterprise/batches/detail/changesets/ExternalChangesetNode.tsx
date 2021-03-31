@@ -30,6 +30,9 @@ import SyncIcon from 'mdi-react/SyncIcon'
 export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ExternalChangesetFields
     viewerCanAdminister: boolean
+    enableSelect?: boolean
+    onSelect?: (id: string, selected: boolean) => void
+    isSelected?: (id: string) => boolean
     history: H.History
     location: H.Location
     extensionInfo?: {
@@ -44,6 +47,9 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
 export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNodeProps> = ({
     node: initialNode,
     viewerCanAdminister,
+    enableSelect,
+    onSelect,
+    isSelected,
     isLightTheme,
     history,
     location,
@@ -64,8 +70,28 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
         [isExpanded]
     )
 
+    const selected = isSelected?.(node.id)
+    const toggleSelected = useCallback((): void => {
+        if (onSelect !== undefined) {
+            onSelect(node.id, !selected)
+        }
+    }, [onSelect, selected, node.id])
+
     return (
         <>
+            {enableSelect && (
+                <div className="p-2">
+                    <input
+                        id={`select-changeset-${node.id}`}
+                        type="checkbox"
+                        className="btn"
+                        checked={selected}
+                        onChange={toggleSelected}
+                        disabled={!viewerCanAdminister}
+                        data-tooltip="Click to select changeset for detaching from batch change"
+                    />
+                </div>
+            )}
             <button
                 type="button"
                 className="btn btn-icon test-batches-expand-changeset d-none d-sm-block"

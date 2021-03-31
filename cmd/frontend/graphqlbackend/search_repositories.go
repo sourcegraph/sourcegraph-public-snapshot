@@ -118,7 +118,7 @@ func repoRevsToSearchResultResolver(ctx context.Context, db dbutil.DB, repos []*
 		for _, rev := range revs {
 			rr := NewRepositoryResolver(db, r.Repo.ToRepo())
 			rr.icon = repoIcon
-			rr.rev = rev
+			rr.RepoMatch.Rev = rev
 			results = append(results, rr)
 		}
 	}

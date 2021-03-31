@@ -238,7 +238,6 @@ func TestStatusMessages(t *testing.T) {
 				idMapping[api.RepoName(lower)] = r.ID
 			}
 
-			var cloned []string
 			// Add gitserver_repos rows
 			for _, toClone := range tc.gitserverCloned {
 				toClone = strings.ToLower(toClone)
@@ -246,7 +245,6 @@ func TestStatusMessages(t *testing.T) {
 				if id == 0 {
 					continue
 				}
-				cloned = append(cloned, toClone)
 				if err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
 					RepoID:      id,
 					ShardID:     "test",

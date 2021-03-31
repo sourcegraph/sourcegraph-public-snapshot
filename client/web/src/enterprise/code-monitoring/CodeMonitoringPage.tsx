@@ -16,7 +16,6 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
-import { FeedbackBadge } from '../../components/FeedbackBadge'
 import { eventLogger } from '../../tracking/eventLogger'
 import {
     fetchUserCodeMonitors as _fetchUserCodeMonitors,
@@ -86,7 +85,6 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         <div className="code-monitoring-page">
             <PageTitle title="Code Monitoring" />
             <PageHeader
-                annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                 path={[
                     {
                         icon: CodeMonitoringLogo,

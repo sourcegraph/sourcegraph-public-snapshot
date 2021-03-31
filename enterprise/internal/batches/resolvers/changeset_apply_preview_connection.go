@@ -109,7 +109,6 @@ type changesetApplyPreviewConnectionStatsResolver struct {
 	sleep        int32
 	detach       int32
 	archive      int32
-	unpublished  int32
 
 	added    int32
 	modified int32
