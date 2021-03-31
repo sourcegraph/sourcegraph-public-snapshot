@@ -10,7 +10,9 @@ import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { property, isDefined } from '../../../../shared/src/util/types'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
-import { groupBy, mapValues } from 'lodash'
+import { useSplitDiff } from '@sourcegraph/wildcard/src/hooks'
+import { useHooksAddLineNumber } from '@sourcegraph/wildcard/src/hooks'
+
 interface DiffBoundaryProps extends FileDiffHunkFields {
     lineNumberClassName: string
     contentClassName: string
@@ -163,93 +165,15 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
     persistLines = true,
     isLightTheme,
 }) => {
-    let oldLine = hunk.oldRange.startLine
-    let newLine = hunk.newRange.startLine
-
-    const lines = hunk.highlight.lines.map(line => {
-        if (line.kind === DiffHunkLineType.DELETED) {
-            oldLine++
-            line.line = oldLine - 1
-            line.oldLine = oldLine - 1
-        }
-        if (line.kind === DiffHunkLineType.ADDED) {
-            newLine++
-            line.line = newLine - 1
-            line.newLine = newLine - 1
-        }
-        if (line.kind === DiffHunkLineType.UNCHANGED) {
-            oldLine++
-            newLine++
-            line.line = newLine - 1
-            line.newLine = newLine - 1
-            line.oldLine = oldLine - 1
-        }
-
-        return line
-    })
-
-    const zipChanges = () => {
-        const [result] = lines.reduce(
-            ([result, last, lastDeletionIndex], current, i) => {
-                if (!last) {
-                    result.push(current)
-                    return [result, current, current.kind === DiffHunkLineType.DELETED ? i : -1]
-                }
-
-                if (current.kind === DiffHunkLineType.ADDED && lastDeletionIndex >= 0) {
-                    result.splice(lastDeletionIndex + 1, 0, current)
-                    // The new `lastDeletionIndex` may be out of range, but `splice` will fix it
-                    return [result, current, lastDeletionIndex + 2]
-                }
-
-                result.push(current)
-
-                // Keep the `lastDeletionIndex` if there are lines of deletions,
-                // otherwise update it to the new deletion line
-                let newLastDeletionIndex
-                if (current.kind === DiffHunkLineType.DELETED) {
-                    if (last?.kind === DiffHunkLineType.DELETED) {
-                        newLastDeletionIndex = lastDeletionIndex
-                    } else {
-                        newLastDeletionIndex = i
-                    }
-                }
-                return [result, current, newLastDeletionIndex]
-            },
-            [[], null, -1]
-        )
-        return result
-    }
-
-    const groupElements = () => {
-        const elements = []
-
-        // This could be a very complex reduce call, use `for` loop seems to make it a little more readable
-        for (let i = 0; i < zipChanges().length; i++) {
-            const current = zipChanges()[i]
-
-            // A normal change is displayed on both side
-            if (current.kind === DiffHunkLineType.UNCHANGED) {
-                elements.push([current, current])
-            } else if (current.kind === DiffHunkLineType.DELETED) {
-                const next = zipChanges()[i + 1]
-                // If an insert change is following a delete change, they should be displayed side by side
-                if (next?.kind === DiffHunkLineType.ADDED) {
-                    i = i + 1
-                    elements.push([current, next])
-                } else {
-                    elements.push([current, null])
-                }
-            } else {
-                elements.push([null, current])
-            }
-        }
-
-        return elements
-    }
+    const { hunksWithLineNumber } = useHooksAddLineNumber(
+        hunk.highlight.lines,
+        hunk.newRange.startLine,
+        hunk.oldRange.startLine
+    )
+    const { diff } = useSplitDiff(hunksWithLineNumber)
 
     const singleHunk = () => {
-        return groupElements().map(elements => {
+        return diff.map(elements => {
             return (
                 <tr>
                     {elements.map((line, index) => {

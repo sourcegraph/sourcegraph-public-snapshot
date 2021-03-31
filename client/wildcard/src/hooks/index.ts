@@ -1,3 +1,5 @@
 export { useDebounce } from './useDebounce'
 export { useControlledState } from './useControlledState'
 export { useOffsetPagination } from './useOffsetPagination'
+export { useSplitDiff } from './useSplitDiff'
+export { useHooksAddLineNumber } from './useHooksAddLineNumber'
