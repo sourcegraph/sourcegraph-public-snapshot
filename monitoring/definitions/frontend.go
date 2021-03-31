@@ -745,6 +745,35 @@ func Frontend() *monitoring.Container {
 					},
 				},
 			},
+			{
+				Title: "Sentinel Search Queries",
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "90th_percentile_sentinel_search_request_duration",
+							Description: "90th percentile successful sentinel search request duration over 5m",
+							Query:       `histogram_quantile(0.90, sum by (le)(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[5m])))`,
+
+							Warning: monitoring.Alert().GreaterOrEqual(1.0, nil),
+							Panel:   monitoring.Panel().Unit(monitoring.Seconds),
+							Owner:   monitoring.ObservableOwnerSearch,
+							PossibleSolutions: `
+								- Check the associated panel that partitions this result by query to see if there is a particular query that regressed
+							`,
+						},
+						{
+							Name:        "90th_percentile_sentinel_search_request_duration_by_query",
+							Description: "90th percentile successful sentinel search request duration by query over 5m",
+							Query:       `histogram_quantile(0.90, sum by (source,le)(label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[5m]), "source", "$1", "source", "searchblitz_(.*)")))`,
+
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat(`{{ slice .source 1 }}`).Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservableOwnerSearch,
+							Interpretation: `Shows the search duration for sentinel queries by query so it's easier to pinpoint whether a specific query is having performance issues or whether the issues apply to all sentinel queries.`,
+						},
+					},
+				},
+			},
 		},
 	}
 }

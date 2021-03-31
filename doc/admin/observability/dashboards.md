@@ -706,6 +706,28 @@ This panel indicates percentage pods available.
 
 <br />
 
+### Frontend: Sentinel Search Queries
+
+#### frontend: 90th_percentile_sentinel_search_request_duration
+
+This panel indicates 90th percentile successful sentinel search request duration over 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-sentinel-search-request-duration).
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### frontend: 90th_percentile_sentinel_search_request_duration_by_query
+
+This panel indicates 90th percentile successful sentinel search request duration by query over 5m.
+
+Shows the search duration for sentinel queries by query so it`s easier to pinpoint whether a specific query is having performance issues or whether the issues apply to all sentinel queries.
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
 ## Git Server
 
 <p class="subtitle">Stores, manages, and operates Git repositories.</p>

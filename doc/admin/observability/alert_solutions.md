@@ -1413,6 +1413,29 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
+## frontend: 90th_percentile_sentinel_search_request_duration
+
+<p class="subtitle">90th percentile successful sentinel search request duration over 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> frontend: 1s+ 90th percentile successful sentinel search request duration over 5m
+
+**Possible solutions**
+
+- Check the associated panel that partitions this result by query to see if there is a particular query that regressed
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_90th_percentile_sentinel_search_request_duration"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
 ## gitserver: disk_space_remaining
 
 <p class="subtitle">disk space remaining by instance</p>
