@@ -546,7 +546,7 @@ func searchCommitsInRepos(ctx context.Context, db dbutil.DB, args *search.TextPa
 		rr := repoRev
 		g.Go(
 			func() error {
-				err = repoSearch(ctx, rr)
+				err := repoSearch(ctx, rr)
 				if err != nil {
 					tr.LogFields(otlog.String("repo", string(rr.Repo.Name)), otlog.String("err", err.Error()), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 				}
