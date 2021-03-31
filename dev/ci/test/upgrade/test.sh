@@ -4,6 +4,8 @@
 source /root/.profile
 root_dir="$(dirname "${BASH_SOURCE[0]}")/../../../.."
 cd "$root_dir"
+asdf install
+echo yes | gcloud auth configure-docker
 
 set -ex
 
