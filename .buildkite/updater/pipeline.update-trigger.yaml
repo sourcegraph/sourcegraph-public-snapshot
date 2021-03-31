@@ -1,7 +1,8 @@
 steps:
-- trigger: 'ds-updater-test-image-updater'
-  label: ':k8s: :arrows_counterclockwise: :construction: Trigger update pipeline for deploy-sourcegraph-updater-test'
-  branches: 'master'
-  async: true
-  env:
-    TARGET_COMMIT: "${BUILDKITE_COMMIT}"
+  - trigger: 'ds-updater-test-image-updater'
+    label: ':k8s: :arrows_counterclockwise: :construction: Trigger update pipeline for deploy-sourcegraph-updater-test'
+    branches: 'master'
+    async: true
+    build:
+      env:
+        TARGET_COMMIT: '${BUILDKITE_COMMIT}'
