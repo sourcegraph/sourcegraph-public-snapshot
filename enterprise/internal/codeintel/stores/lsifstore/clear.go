@@ -14,6 +14,7 @@ import (
 var tableNames = []string{
 	"lsif_data_metadata",
 	"lsif_data_documents",
+	"lsif_data_documents_schema_versions",
 	"lsif_data_result_chunks",
 	"lsif_data_definitions",
 	"lsif_data_references",

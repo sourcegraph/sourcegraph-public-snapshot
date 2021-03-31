@@ -11,14 +11,14 @@ import (
 
 type Store struct {
 	*basestore.Store
-	serializer *serializer
+	serializer *Serializer
 	operations *operations
 }
 
 func NewStore(db dbutil.DB, observationContext *observation.Context) *Store {
 	return &Store{
 		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{})),
-		serializer: newSerializer(),
+		serializer: NewSerializer(),
 		operations: newOperations(observationContext),
 	}
 }
