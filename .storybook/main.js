@@ -26,7 +26,7 @@ const config = {
     // Include sourcemaps
     config.mode = shouldMinify ? 'production' : 'development'
     config.devtool = shouldMinify ? 'source-map' : 'cheap-module-eval-source-map'
-    const definePlugin = config.plugins.find(plugin => plugin instanceof DefinePlugin)
+    const definePlugin = config.plugins.find(plugin => plugin.constructor.name === 'DefinePlugin')
     // @ts-ignore
     definePlugin.definitions.NODE_ENV = JSON.stringify(config.mode)
     // @ts-ignore
