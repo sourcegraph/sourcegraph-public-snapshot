@@ -1,7 +1,7 @@
 steps:
   - trigger: 'ds-updater-test-image-updater'
     label: ':k8s: :arrows_counterclockwise: :construction: Trigger update pipeline for deploy-sourcegraph-updater-test'
-    branches: 'master'
+    branches: 'main'
     async: true
     build:
       env:
