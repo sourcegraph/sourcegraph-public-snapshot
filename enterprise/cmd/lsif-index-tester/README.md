@@ -15,42 +15,43 @@ project_2
 Inside of each project, they should have:
 
 - `setup_indexer.sh`
-    - Bash script that setups up the project.
-    - Can install dependencies, build project, etc.
-    - This will be run every time before the indexer is run (so it can be worthwhile to make sure you cache the build if nothing changes)
+
+  - Bash script that setups up the project.
+  - Can install dependencies, build project, etc.
+  - This will be run every time before the indexer is run (so it can be worthwhile to make sure you cache the build if nothing changes)
 
 - `lsif_tests/`
-    - Within `lsif_tests/` you can have as many `.json` files as you'd like 
-    - Each `.json` file is a map that details different tests. See below for different support test tags.
-
+  - Within `lsif_tests/` you can have as many `.json` files as you'd like
+  - Each `.json` file is a map that details different tests. See below for different support test tags.
 
 ### Test: `textDocument/definition`
 
 ```json
 {
-    "textDocument/definition": [
-        {
-            "name": "other_simple",
-            "request": {
-                "textDocument": "src/uses_header.c",
-                "position": {
-                    "line": 6, "character": 8
-                }
-            },
-            "response": {
-                "textDocument": "src/uses_header.c",
-                "range": {
-                    "start": { "line": 10, "character": 5 },
-                    "end": { "line": 10, "character": 22}
-                }
-            }
+  "textDocument/definition": [
+    {
+      "name": "other_simple",
+      "request": {
+        "textDocument": "src/uses_header.c",
+        "position": {
+          "line": 6,
+          "character": 8
         }
-    ]
+      },
+      "response": {
+        "textDocument": "src/uses_header.c",
+        "range": {
+          "start": { "line": 10, "character": 5 },
+          "end": { "line": 10, "character": 22 }
+        }
+      }
+    }
+  ]
 }
 ```
 
 - `name`: String
-    - The name of the test. Used when printing output
+  - The name of the test. Used when printing output
 - `request`: `textDocument/request` request.
 - `reseponse`: expected `textDocument/response` response.
 
