@@ -268,26 +268,6 @@ func commitParametersToDiffParameters(ctx context.Context, op *search.CommitPara
 	}, nil
 }
 
-type searchCommitsInRepoEvent struct {
-	// Results are new commit results found.
-	Results []*CommitSearchResultResolver
-
-	// LimitHit is true if we stopped searching since we found FileMatchLimit
-	// results.
-	LimitHit bool
-
-	// TimedOut is true when the results may have been parsed from only
-	// partial output from the underlying git command (because, e.g., it timed
-	// out during execution and only returned partial output).
-	TimedOut bool
-
-	// Error is non-nil if an error occurred. It will be the last event if
-	// set.
-	//
-	// Note: Results will be empty if Error is set.
-	Error error
-}
-
 // searchCommitsInRepoStream searches for commits based on op.
 func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.CommitParameters, s Sender) (limitHit, timedOut bool, err error) {
 	resultCount := 0
