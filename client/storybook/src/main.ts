@@ -1,16 +1,15 @@
 import path from 'path'
 import { remove } from 'lodash'
 import TerserPlugin from 'terser-webpack-plugin'
-import { StorybookConfig } from '@storybook/core-common'
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
-import { DefinePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
+import { Configuration, DefinePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
 
 const rootPath = path.resolve(__dirname, '../../../')
 const monacoEditorPaths = [path.resolve(rootPath, 'node_modules', 'monaco-editor')]
 
 const shouldMinify = !!process.env.MINIFY
 
-const config: StorybookConfig = {
+const config = {
     stories: ['../../**/*.story.tsx'],
     addons: [
         '@storybook/addon-knobs',
@@ -20,7 +19,7 @@ const config: StorybookConfig = {
         '@storybook/addon-a11y',
     ],
 
-    webpackFinal: config => {
+    webpackFinal: (config: Configuration) => {
         // Include sourcemaps
         config.mode = shouldMinify ? 'production' : 'development'
         config.devtool = shouldMinify ? 'source-map' : 'cheap-module-eval-source-map'
