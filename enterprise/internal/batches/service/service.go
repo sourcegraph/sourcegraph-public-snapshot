@@ -578,7 +578,7 @@ func (s *Service) DetachChangesets(ctx context.Context, batchChangeID int64, ids
 	}()
 
 	// Load the BatchChange to check for admin rights.
-	batchChange, err := s.store.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: batchChangeID})
+	batchChange, err := s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChangeID})
 	if err != nil {
 		return err
 	}
