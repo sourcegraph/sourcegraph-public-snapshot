@@ -1,8 +1,10 @@
 import React, { FunctionComponent } from 'react';
-import {BarChartContent, ChartContent, LineChartContent} from 'sourcegraph';
+import {BarChartContent, ChartContent, LineChartContent, PieChartContent} from 'sourcegraph';
 import * as H from 'history';
 import { ParentSize } from '@visx/responsive';
+
 import { LineChart } from './charts/line/LineChart';
+import { PieChart } from './charts/pie/PieChart';
 
 /**
  * Displays chart view content.
@@ -24,7 +26,7 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = ({ con
     </>
 )
 
-export interface CartesianChartViewContentProps extends ChartViewContentProps {
+interface CartesianChartViewContentProps extends ChartViewContentProps {
     content: LineChartContent<any, string> | BarChartContent<any, string>;
 }
 
@@ -44,8 +46,18 @@ export const CartesianChartViewContent: FunctionComponent<CartesianChartViewCont
     );
 };
 
-export const PieChartViewContent: FunctionComponent<ChartViewContentProps> = props => {
+interface PieChartViewContentProps extends ChartViewContentProps {
+    content: PieChartContent<any>
+}
+
+export const PieChartViewContent: FunctionComponent<PieChartViewContentProps> = props => {
+    const { content } = props;
+
     return (
-        <div>Pie chart mock</div>
+        <div className="chart-view-content" >
+            <ParentSize className='chart-view-content__chart'>
+                { ({ width, height}) => <PieChart width={width} height={height} {...content} /> }
+            </ParentSize>
+        </div>
     );
 };
