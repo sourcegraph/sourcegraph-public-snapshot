@@ -40,7 +40,7 @@ import { QueryState } from '../helpers'
 import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
 import { SearchResultsStats } from './SearchResultsStats'
 import { SearchAlert } from './SearchAlert'
-import { CodeMonitoringProps } from '../../enterprise/code-monitoring'
+import { CodeMonitoringProps } from '../../code-monitoring'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&
@@ -58,7 +58,7 @@ export interface SearchResultsListProps
         PatternTypeProps,
         CaseSensitivityProps,
         VersionContextProps,
-        Pick<CodeMonitoringProps, 'enableCodeMonitoring'>,
+        CodeMonitoringProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     location: H.Location
     history: H.History
@@ -330,11 +330,11 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         return (
             <>
                 {this.state.didScrollToItem && (
-                    <div className="search-results-list__jump-to-top">
+                    <div className="search-results-list__jump-to-top d-flex align-items-center justify-content-center">
                         Scrolled to result {this.getCheckpoint()} based on URL.&nbsp;
-                        <a href="#" onClick={this.nextJumpToTopClick}>
+                        <button type="button" className="btn btn-link p-0" onClick={this.nextJumpToTopClick}>
                             Jump to top.
-                        </a>
+                        </button>
                     </div>
                 )}
 

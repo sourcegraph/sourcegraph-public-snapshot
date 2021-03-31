@@ -2,7 +2,7 @@ import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
 import { DismissibleAlert } from '../components/DismissibleAlert'
-import { isProductLicenseExpired, formatRelativeExpirationDate } from '../enterprise/productSubscription/helpers'
+import { isProductLicenseExpired, formatRelativeExpirationDate } from '../productSubscription/helpers'
 import { Link } from '../../../shared/src/components/Link'
 
 /**

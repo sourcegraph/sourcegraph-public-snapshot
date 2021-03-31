@@ -29,6 +29,12 @@ export const FileLocationsNotFound: React.FunctionComponent = () => (
     </div>
 )
 
+export const FileLocationsNoGroupSelected: React.FunctionComponent = () => (
+    <div className="file-locations__no-group-selected m-2">
+        <MapSearchIcon className="icon-inline" /> No locations found in the current repository
+    </div>
+)
+
 interface Props extends SettingsCascadeProps, VersionContextProps {
     location: H.Location
     /**
@@ -47,6 +53,9 @@ interface Props extends SettingsCascadeProps, VersionContextProps {
     isLightTheme: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+
+    /** Whether or not there are other groups in the parent container with results. */
+    parentContainerIsEmpty: boolean
 }
 
 const LOADING = 'loading' as const
@@ -116,7 +125,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
             return <LoadingSpinner className="icon-inline m-1" />
         }
         if (this.state.locationsOrError === null || this.state.locationsOrError.length === 0) {
-            return <FileLocationsNotFound />
+            return this.props.parentContainerIsEmpty ? <FileLocationsNotFound /> : <FileLocationsNoGroupSelected />
         }
 
         // Locations by fully qualified URI, like git://github.com/gorilla/mux?revision#mux.go

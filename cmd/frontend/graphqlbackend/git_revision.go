@@ -16,7 +16,7 @@ type gitRevSpecExpr struct {
 func (r *gitRevSpecExpr) Expr() string { return r.expr }
 
 func (r *gitRevSpecExpr) Object(ctx context.Context) (*gitObject, error) {
-	oid, err := git.ResolveRevision(ctx, r.repo.name, r.expr, git.ResolveRevisionOptions{})
+	oid, err := git.ResolveRevision(ctx, r.repo.RepoName(), r.expr, git.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -59,5 +59,5 @@ func (r *gitRevisionRange) MergeBase() *gitObject { return r.mergeBase }
 // For niceness/readability, we do NOT escape slashes but we do escape other characters like '#'
 // that are necessary for correctness.
 func escapePathForURL(path string) string {
-	return strings.Replace(url.PathEscape(path), "%2F", "/", -1)
+	return strings.ReplaceAll(url.PathEscape(path), "%2F", "/")
 }

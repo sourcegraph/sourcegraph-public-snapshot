@@ -170,11 +170,6 @@ func unredactField(old, new string, cfg interface{}, fields ...jsonStringField) 
 	if err := unmarshalConfig(old, cfg); err != nil {
 		return "", err
 	}
-	// now take copies of the unredacted fields from the old JSON
-	oldSecrets := []string{}
-	for _, field := range fields {
-		oldSecrets = append(oldSecrets, *field.ptr)
-	}
 
 	// and apply edits to update those fields in the new config
 	var err error
@@ -189,7 +184,7 @@ func unredactField(old, new string, cfg interface{}, fields ...jsonStringField) 
 		}
 		if stringValue != RedactedSecret {
 			// using unicode zero width space might mean the user includes it when editing still, we strip that out here
-			new, err = jsonc.Edit(new, strings.Replace(stringValue, RedactedSecret, "", -1), field.path)
+			new, err = jsonc.Edit(new, strings.ReplaceAll(stringValue, RedactedSecret, ""), field.path)
 			if err != nil {
 				return new, err
 			}

@@ -66,11 +66,11 @@ fi
 DBNAME='squasher'
 SERVER_VERSION=$(psql --version)
 
-if [ "${SERVER_VERSION}" != 9.6 ]; then
-  echo "running PostgreSQL 9.6 in docker since local version is ${SERVER_VERSION}"
-  docker image inspect postgres:9.6 >/dev/null || docker pull postgres:9.6
+if [ "${SERVER_VERSION}" != 12.6 ]; then
+  echo "running PostgreSQL 12.6 in docker since local version is ${SERVER_VERSION}"
+  docker image inspect postgres:12.6 >/dev/null || docker pull postgres:12.6
   docker rm --force "${DBNAME}" 2>/dev/null || true
-  docker run --rm --name "${DBNAME}" -p 5433:5432 -e POSTGRES_HOST_AUTH_METHOD=trust -d postgres:9.6
+  docker run --rm --name "${DBNAME}" -p 5433:5432 -e POSTGRES_HOST_AUTH_METHOD=trust -d postgres:12.6
 
   function kill() {
     docker kill "${DBNAME}" >/dev/null
@@ -143,9 +143,6 @@ EOL
 
 echo ""
 echo "squashed migrations written to ${VERSION}_squashed_migrations.{up,down}.sql"
-
-# Regenerate bindata
-go generate
 
 # Update test with new lowest migration
 sed -i '' "s/const FirstMigration = [0-9]*/const FirstMigration = ${VERSION}/" ./migrations_test.go

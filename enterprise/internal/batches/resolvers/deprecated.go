@@ -75,7 +75,7 @@ func (r *Resolver) CampaignsCodeHosts(ctx context.Context, args *graphqlbackend.
 	conn, err := r.BatchChangesCodeHosts(ctx, &graphqlbackend.ListBatchChangesCodeHostsArgs{
 		First:  args.First,
 		After:  args.After,
-		UserID: args.UserID,
+		UserID: &args.UserID,
 	})
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func (r *Resolver) CreateCampaignsCredential(ctx context.Context, args *graphqlb
 	return r.CreateBatchChangesCredential(ctx, &graphqlbackend.CreateBatchChangesCredentialArgs{
 		ExternalServiceKind: args.ExternalServiceKind,
 		ExternalServiceURL:  args.ExternalServiceURL,
-		User:                args.User,
+		User:                &args.User,
 		Credential:          args.Credential,
 	})
 }

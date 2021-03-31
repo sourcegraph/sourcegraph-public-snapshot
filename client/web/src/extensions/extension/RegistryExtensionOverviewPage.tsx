@@ -49,7 +49,7 @@ const RegistryExtensionOverviewIcon: React.FunctionComponent<Pick<Props, 'extens
     }, [manifest?.icon, manifest?.iconDark, isLightTheme])
 
     if (iconURL) {
-        return <img className="registry-extension-overview-page__icon mb-3" src={iconURL.href} aria-hidden="true" />
+        return <img className="registry-extension-overview-page__icon mb-3" src={iconURL.href} alt="" />
     }
 
     if (manifest?.publisher === 'sourcegraph') {

@@ -46,7 +46,7 @@ describe('PageSelector', () => {
         })
 
         it('will render correct elipsis', () => {
-            expect(queries.getAllByText('...', { selector: 'button' })).toHaveLength(1)
+            expect(queries.getByText('...', { selector: 'button' })).toBeInTheDocument()
         })
 
         it('will render correct pages', () => {
@@ -109,7 +109,7 @@ describe('PageSelector', () => {
             })
 
             it('will render correct elipsis', () => {
-                expect(queries.getAllByText('...', { selector: 'button' })).toHaveLength(1)
+                expect(queries.getByText('...', { selector: 'button' })).toBeInTheDocument()
             })
 
             it('will render correct pages', () => {
@@ -128,7 +128,7 @@ describe('PageSelector', () => {
         })
 
         it('will render no elipsis', () => {
-            expect(queries.queryAllByText('...', { selector: 'button' })).toHaveLength(0)
+            expect(queries.queryByText('...', { selector: 'button' })).not.toBeInTheDocument()
         })
 
         it('will render correct pages', () => {
@@ -153,7 +153,7 @@ describe('PageSelector', () => {
         })
 
         it('will render correct elipsis', () => {
-            expect(queries.getAllByText('...', { selector: 'button' })).toHaveLength(1)
+            expect(queries.getByText('...', { selector: 'button' })).toBeInTheDocument()
         })
 
         it('will render correct pages', () => {

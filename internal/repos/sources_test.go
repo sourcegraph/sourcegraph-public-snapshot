@@ -758,7 +758,7 @@ func TestSources_ListRepos(t *testing.T) {
 }
 
 func newClientFactory(t testing.TB, name string, mws ...httpcli.Middleware) (*httpcli.Factory, func(testing.TB)) {
-	cassete := filepath.Join("testdata", "sources", strings.Replace(name, " ", "-", -1))
+	cassete := filepath.Join("testdata", "sources", strings.ReplaceAll(name, " ", "-"))
 	rec := newRecorder(t, cassete, update(name))
 	mws = append(mws, httpcli.GitHubProxyRedirectMiddleware, gitserverRedirectMiddleware)
 	mw := httpcli.NewMiddleware(mws...)

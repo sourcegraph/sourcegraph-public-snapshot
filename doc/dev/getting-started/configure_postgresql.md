@@ -6,7 +6,7 @@ TODO: Can this be deprecated and/or combined in favor of [quickstart step 2](qui
 
 ### 1. Install PostgreSQL
 
-Install PostgreSQL `9.6`. See [PostgreSQL](../background-information/postgresql.md) for details.
+Install PostgreSQL `12`. See [PostgreSQL](../background-information/postgresql.md) for details.
 
 ### 2. Set up the user and database
 

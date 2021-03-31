@@ -29,7 +29,8 @@ func TestMiddleware(t *testing.T) {
 	}))
 
 	const headerName = "x-sso-user-header"
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{HttpHeader: &schema.HTTPHeaderAuthProvider{UsernameHeader: headerName}}}}})
+	const emailHeaderName = "x-sso-email-header"
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{HttpHeader: &schema.HTTPHeaderAuthProvider{UsernameHeader: headerName, EmailHeader: emailHeaderName}}}}})
 	defer conf.Mock(nil)
 
 	t.Run("not sent", func(t *testing.T) {
@@ -96,6 +97,70 @@ func TestMiddleware(t *testing.T) {
 				t.Errorf("got %q, want %q", op.UserProps.Username, wantNormalizedUsername)
 			}
 			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice_zhao" {
+				return 1, "", nil
+			}
+			return 0, "safeErr", fmt.Errorf("account %v not found in mock", op.ExternalAccount)
+		}
+		defer func() { auth.MockGetAndSaveUser = nil }()
+		handler.ServeHTTP(rr, req)
+		if got, want := rr.Body.String(), "user 1"; got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+		if !calledMock {
+			t.Error("!calledMock")
+		}
+	})
+
+	t.Run("sent, email", func(t *testing.T) {
+		rr := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/", nil)
+		req.Header.Set(emailHeaderName, "alice@example.com")
+		var calledMock bool
+		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+			calledMock = true
+			if got, want := op.UserProps.Username, "alice"; got != want {
+				t.Errorf("expected %v got %v", want, got)
+			}
+			if got, want := op.UserProps.Email, "alice@example.com"; got != want {
+				t.Errorf("expected %v got %v", want, got)
+			}
+			if got, want := op.UserProps.EmailIsVerified, true; got != want {
+				t.Errorf("expected %v got %v", want, got)
+			}
+			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice@example.com" {
+				return 1, "", nil
+			}
+			t.Log(op.ExternalAccount)
+			return 0, "safeErr", fmt.Errorf("account %v not found in mock", op.ExternalAccount)
+		}
+		defer func() { auth.MockGetAndSaveUser = nil }()
+		handler.ServeHTTP(rr, req)
+		if got, want := rr.Body.String(), "user 1"; got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+		if !calledMock {
+			t.Error("!calledMock")
+		}
+	})
+
+	t.Run("sent, email & username", func(t *testing.T) {
+		rr := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/", nil)
+		req.Header.Set(emailHeaderName, "alice@example.com")
+		req.Header.Set(headerName, "bob")
+		var calledMock bool
+		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+			calledMock = true
+			if got, want := op.UserProps.Username, "bob"; got != want {
+				t.Errorf("expected %v got %v", want, got)
+			}
+			if got, want := op.UserProps.Email, "alice@example.com"; got != want {
+				t.Errorf("expected %v got %v", want, got)
+			}
+			if got, want := op.UserProps.EmailIsVerified, true; got != want {
+				t.Errorf("expected %v got %v", want, got)
+			}
+			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice@example.com" {
 				return 1, "", nil
 			}
 			return 0, "safeErr", fmt.Errorf("account %v not found in mock", op.ExternalAccount)

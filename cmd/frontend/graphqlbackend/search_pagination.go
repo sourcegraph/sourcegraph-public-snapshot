@@ -191,7 +191,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	var alert *searchAlert
 
 	if len(resolved.MissingRepoRevs) > 0 {
-		alert = alertForMissingRepoRevs(r.db, r.PatternType, resolved.MissingRepoRevs)
+		alert = alertForMissingRepoRevs(r.PatternType, resolved.MissingRepoRevs)
 	}
 
 	log15.Info("next cursor for paginated search request",
@@ -203,7 +203,6 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 
 	return &SearchResultsResolver{
 		db:            r.db,
-		start:         start,
 		Stats:         common,
 		SearchResults: results,
 		alert:         alert,
@@ -267,7 +266,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search
 		// fileResults is not sorted so we must sort it now. fileCommon may or
 		// may not be sorted, but we do not rely on its order.
 		sort.Slice(fileResults, func(i, j int) bool {
-			return fileResults[i].URI < fileResults[j].URI
+			return fileResults[i].URL() < fileResults[j].URL()
 		})
 		results := make([]SearchResultResolver, 0, len(fileResults))
 		for _, r := range fileResults {

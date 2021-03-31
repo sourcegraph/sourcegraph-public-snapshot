@@ -62,19 +62,12 @@ import { globbingEnabledFromSettings } from './util/globbing'
 import {
     SITE_SUBJECT_NO_ADMIN,
     viewerSubjectFromSettings,
+    defaultCaseSensitiveFromSettings,
     defaultPatternTypeFromSettings,
     experimentalFeaturesFromSettings,
 } from './util/settings'
 import { SearchPatternType } from '../../shared/src/graphql-operations'
 import { HTTPStatusError } from '../../shared/src/backend/fetch'
-import {
-    createCodeMonitor,
-    deleteCodeMonitor,
-    fetchCodeMonitor,
-    fetchUserCodeMonitors,
-    toggleCodeMonitorEnabled,
-    updateCodeMonitor,
-} from './enterprise/code-monitoring/backend'
 import { aggregateStreamingSearch } from './search/stream'
 import { ISearchContext } from '../../shared/src/graphql/schema'
 import { logCodeInsightsChanges } from './insights/analytics'
@@ -262,6 +255,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
               undefined
             : undefined
 
+        const selectedSearchContextSpec = localStorage.getItem(LAST_SEARCH_CONTEXT_KEY) || 'global'
+
         this.state = {
             themePreference: readStoredThemePreference(),
             systemIsLightTheme: !this.darkThemeMediaList.matches,
@@ -279,7 +274,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showOnboardingTour: false,
             showSearchContext: false,
             availableSearchContexts: [],
-            selectedSearchContextSpec: 'global',
+            selectedSearchContextSpec,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
             showEnterpriseHomePanels: false,
@@ -311,6 +306,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                         authenticatedUser,
                         ...experimentalFeaturesFromSettings(settingsCascade),
                         globbing: globbingEnabledFromSettings(settingsCascade),
+                        searchCaseSensitivity:
+                            defaultCaseSensitiveFromSettings(settingsCascade) || state.searchCaseSensitivity,
                         searchPatternType: defaultPatternTypeFromSettings(settingsCascade) || state.searchPatternType,
                         viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
                     }))
@@ -352,20 +349,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                     const hasUserAddedRepositories = userRepositories !== null && userRepositories.nodes.length > 0
                     this.setState({ hasUserAddedRepositories })
                 })
-        )
-
-        this.subscriptions.add(
-            authenticatedUser.subscribe(authenticatedUser => {
-                if (authenticatedUser === null) {
-                    return
-                }
-                const previousSearchContextSpec = localStorage.getItem(LAST_SEARCH_CONTEXT_KEY)
-                const context = `@${authenticatedUser.username}`
-                this.setState({
-                    defaultSearchContextSpec: context,
-                    selectedSearchContextSpec: previousSearchContextSpec || context,
-                })
-            })
         )
 
         /**
@@ -495,12 +478,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     fetchSavedSearches={fetchSavedSearches}
                                     fetchRecentSearches={fetchRecentSearches}
                                     fetchRecentFileViews={fetchRecentFileViews}
-                                    createCodeMonitor={createCodeMonitor}
-                                    fetchUserCodeMonitors={fetchUserCodeMonitors}
-                                    fetchCodeMonitor={fetchCodeMonitor}
-                                    updateCodeMonitor={updateCodeMonitor}
-                                    deleteCodeMonitor={deleteCodeMonitor}
-                                    toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
                                     streamSearch={aggregateStreamingSearch}
                                     onUserRepositoriesUpdate={this.onUserRepositoriesUpdate}
                                 />
@@ -564,7 +541,11 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.setState({ hasUserAddedRepositories: userRepoCount > 0 })
     }
 
-    private canShowSearchContext = (): boolean => this.state.showSearchContext && this.state.hasUserAddedRepositories
+    private hasUserDefinedSearchContexts = (): boolean =>
+        !!this.state.availableSearchContexts.find(context => !context.autoDefined)
+
+    private canShowSearchContext = (): boolean =>
+        this.state.showSearchContext && (this.state.hasUserAddedRepositories || this.hasUserDefinedSearchContexts())
 
     private getSelectedSearchContextSpec = (): string | undefined =>
         this.canShowSearchContext() ? this.state.selectedSearchContextSpec : undefined

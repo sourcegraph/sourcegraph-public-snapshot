@@ -1482,7 +1482,7 @@ type Secret struct {
 }
 
 type SearchContext struct {
-	ID int32
+	ID int64
 	// Name contains the non-prefixed part of the search context spec.
 	// The name is a substring of the spec and it should NOT be used as the spec itself.
 	// The spec contains additional information (such as the @ prefix and the context namespace)
@@ -1492,6 +1492,21 @@ type SearchContext struct {
 	// @user/ctx1 -> ctx1, @org/ctx2 -> ctx2.
 	Name        string
 	Description string
-	UserID      int32 // if non-zero, the owner is this user. UserID/OrgID are mutually exclusive.
-	OrgID       int32 // if non-zero, the owner is this organization. UserID/OrgID are mutually exclusive.
+	// Public property controls the visibility of the search context. Public search context is available to
+	// any user on the instance. If a public search context contains private repositories, those are filtered out
+	// for unauthorized users. Private search contexts are only available to their owners. Private user search context
+	// is available only to the user, private org search context is available only to the members of the org, and private
+	// instance-level search contexts is available only to site-admins.
+	Public          bool
+	NamespaceUserID int32 // if non-zero, the owner is this user. NamespaceUserID/NamespaceOrgID are mutually exclusive.
+	NamespaceOrgID  int32 // if non-zero, the owner is this organization. NamespaceUserID/NamespaceOrgID are mutually exclusive.
+}
+
+// SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions
+// contained in a search context. It is made compatible with search.RepositoryRevisions, so it can be easily
+// converted when needed. We could use search.RepositoryRevisions directly instead, but it
+// introduces an import cycle with `internal/vcs/git` package when used in `internal/database/search_contexts.go`.
+type SearchContextRepositoryRevisions struct {
+	Repo      *RepoName
+	Revisions []string
 }

@@ -163,6 +163,10 @@ type Server struct {
 	cloneLimiter     *mutablelimiter.Limiter
 	cloneableLimiter *mutablelimiter.Limiter
 
+	// rpsLimiter limits the remote code host git operations done per second
+	// per gitserver instance
+	rpsLimiter *rate.Limiter
+
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
 }
@@ -247,6 +251,19 @@ func (s *Server) Handler() http.Handler {
 		}
 		s.cloneLimiter.SetLimit(limit)
 		s.cloneableLimiter.SetLimit(limit)
+	})
+
+	s.rpsLimiter = rate.NewLimiter(rate.Inf, 10)
+	setRPSLimiter := func() {
+		if maxRequestsPerSecond := conf.GitMaxCodehostRequestsPerSecond(); maxRequestsPerSecond == -1 {
+			// As a special case, -1 means no limiting
+			s.rpsLimiter.SetLimit(rate.Inf)
+		} else {
+			s.rpsLimiter.SetLimit(rate.Limit(maxRequestsPerSecond))
+		}
+	}
+	conf.Watch(func() {
+		setRPSLimiter()
 	})
 
 	mux := http.NewServeMux()
@@ -952,7 +969,7 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Make sure credentials are valid before heavier operation
-	err := p4pingWithLogin(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
+	err := p4pingWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -1068,6 +1085,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+req.P4Port,
 		"P4USER="+req.P4User,
+		"P4PASSWD="+req.P4Passwd,
 	)
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
@@ -1213,6 +1231,11 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", err // err will be a context error
 	}
 	defer cancel()
+
+	if err = s.rpsLimiter.Wait(ctx); err != nil {
+		return "", err
+	}
+
 	if err := syncer.IsCloneable(ctx, remoteURL); err != nil {
 		return "", fmt.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactor.redact(err.Error()))
 	}
@@ -1243,6 +1266,10 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 			return err
 		}
 		defer cancel1()
+
+		if err = s.rpsLimiter.Wait(ctx); err != nil {
+			return err
+		}
 
 		ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
 		defer cancel2()
@@ -1424,7 +1451,7 @@ func newURLRedactor(parsedURL *url.URL) *urlRedactor {
 // Sensitive strings are replaced with "<redacted>".
 func (r *urlRedactor) redact(message string) string {
 	for _, s := range r.sensitive {
-		message = strings.Replace(message, s, "<redacted>", -1)
+		message = strings.ReplaceAll(message, s, "<redacted>")
 	}
 	return message
 }
@@ -1578,6 +1605,10 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 		return err
 	}
 	defer cancel2()
+
+	if err = s.rpsLimiter.Wait(ctx); err != nil {
+		return err
+	}
 
 	repo = protocol.NormalizeRepo(repo)
 	dir := s.dir(repo)

@@ -9,6 +9,8 @@ If possible, we generally prefer to encode our best practices in ESLint configur
 For automatically detectable patterns, please see the documentation of our [ESLint configuration](https://github.com/sourcegraph/eslint-config#principles).
 Our code is also formatted automatically by [Prettier](https://prettier.io/) so we don't waste time bike-shedding formatting.
 
+Related pages: [Testing web code](../testing_web_code.md)
+
 ## `Subscription` bag
 
 Functions, classes or React class components often register external subscriptions, usually with RxJS.

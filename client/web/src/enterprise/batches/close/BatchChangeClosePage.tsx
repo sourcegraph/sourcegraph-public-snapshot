@@ -20,7 +20,7 @@ import { HeroPage } from '../../../components/HeroPage'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { BatchChangeInfoByline } from '../detail/BatchChangeInfoByline'
 import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { BatchChangesIcon } from '../icons'
+import { BatchChangesIcon } from '../../../batches/icons'
 import { PageHeader } from '../../../components/PageHeader'
 
 export interface BatchChangeClosePageProps

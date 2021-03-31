@@ -63,7 +63,7 @@ func NewRecorderOpt(rec *recorder.Recorder) httpcli.Opt {
 func NewGitHubRecorderFactory(t testing.TB, update bool, name string) (*httpcli.Factory, func()) {
 	t.Helper()
 
-	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))
+	cassete := filepath.Join("testdata/vcr/", strings.ReplaceAll(name, " ", "-"))
 
 	rec, err := NewRecorder(cassete, update, func(i *cassette.Interaction) error {
 		return nil

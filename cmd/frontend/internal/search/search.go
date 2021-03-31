@@ -15,13 +15,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -193,7 +197,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if repo, ok := result.ToRepository(); ok {
 				display = repo.Limit(display)
 
-				matchesAppend(fromRepository(repo))
+				matchesAppend(fromRepository(repo.RepoMatch))
 			}
 			if commit, ok := result.ToCommitSearchResult(); ok {
 				display = commit.Limit(display)
@@ -241,7 +245,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if alert := resultsResolver.Alert(); alert != nil {
+	alert := resultsResolver.Alert()
+	if alert != nil {
 		var pqs []streamhttp.ProposedQuery
 		if proposed := alert.ProposedQueries(); proposed != nil {
 			for _, pq := range *proposed {
@@ -259,6 +264,33 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_ = eventWriter.Event("progress", progress.Final())
+
+	var status, alertType string
+	status = graphqlbackend.DetermineStatusForLogs(resultsResolver, err)
+	if alert != nil {
+		alertType = alert.PrometheusType()
+	}
+
+	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
+	if honey.Enabled() || isSlow {
+		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
+			OriginalQuery: inputs.OriginalQuery,
+			Typ:           "stream",
+			Source:        string(trace.RequestSource(ctx)),
+			Status:        status,
+			AlertType:     alertType,
+			DurationMs:    time.Since(start).Milliseconds(),
+			ResultSize:    progress.MatchCount,
+		})
+
+		if honey.Enabled() {
+			_ = ev.Send()
+		}
+
+		if isSlow {
+			log15.Warn("streaming: slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
+		}
+	}
 }
 
 // startSearch will start a search. It returns the events channel which
@@ -404,15 +436,15 @@ func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []streamhttp.
 	}
 }
 
-func fromRepository(repo *graphqlbackend.RepositoryResolver) *streamhttp.EventRepoMatch {
+func fromRepository(rm result.RepoMatch) *streamhttp.EventRepoMatch {
 	var branches []string
-	if rev := repo.Rev(); rev != "" {
+	if rev := rm.Rev; rev != "" {
 		branches = []string{rev}
 	}
 
 	return &streamhttp.EventRepoMatch{
 		Type:       streamhttp.RepoMatchType,
-		Repository: repo.Name(),
+		Repository: string(rm.Name),
 		Branches:   branches,
 	}
 }
@@ -512,6 +544,8 @@ var metricLatency = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
 }, []string{"source"})
 
+var searchBlitzUserAgentRegexp = lazyregexp.New(`^SearchBlitz \(([^\)]+)\)$`)
+
 // GuessSource guesses the source the request came from (browser, other HTTP client, etc.)
 func GuessSource(r *http.Request) trace.SourceType {
 	userAgent := r.UserAgent()
@@ -528,5 +562,11 @@ func GuessSource(r *http.Request) trace.SourceType {
 			return trace.SourceBrowser
 		}
 	}
+
+	// We send some automated search requests in order to measure baseline search perf. Track the source of these.
+	if match := searchBlitzUserAgentRegexp.FindStringSubmatch(userAgent); match != nil {
+		return trace.SourceType("searchblitz_" + match[1])
+	}
+
 	return trace.SourceOther
 }

@@ -28,9 +28,6 @@ func InitBackgroundJobs(
 } {
 	cstore := store.New(db)
 
-	repoStore := cstore.Repos()
-	esStore := cstore.ExternalServices()
-
 	// We use an internal actor so that we can freely load dependencies from
 	// the database without repository permissions being enforced.
 	// We do check for repository permissions conciously in the Rewirer when
@@ -38,7 +35,7 @@ func InitBackgroundJobs(
 	// host, we manually check for BatchChangesCredentials.
 	ctx = actor.WithInternalActor(ctx)
 
-	syncRegistry := syncer.NewSyncRegistry(ctx, cstore, repoStore, esStore, cf)
+	syncRegistry := syncer.NewSyncRegistry(ctx, cstore, cf)
 
 	go goroutine.MonitorBackgroundRoutines(ctx, background.Routines(ctx, cstore, cf)...)
 

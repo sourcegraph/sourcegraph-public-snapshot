@@ -11,6 +11,7 @@ import { NotificationType, PanelViewData } from './extensionHostApi'
 import { createDecorationType } from './api/decorations'
 import { syncRemoteSubscription } from '../util'
 import { asError } from '../../util/errors'
+import { createStatusBarItemType } from './api/codeEditor'
 
 export interface InitResult {
     configuration: sourcegraph.ConfigurationService
@@ -201,6 +202,7 @@ export function createExtensionAPI(state: ExtensionHostState, mainAPI: Remote<Ma
             }
         },
         createDecorationType,
+        createStatusBarItemType,
     }
 
     // Commands

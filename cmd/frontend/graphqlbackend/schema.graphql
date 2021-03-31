@@ -1,7 +1,3 @@
-# Run this before committing changes to this file
-# go generate github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend
-# This will happen automatically if you are running ./dev/start.sh
-#
 # See docs/api.md for guidance on schema evolution.
 #
 schema {
@@ -721,6 +717,11 @@ type Mutation {
     exist and are cloned
     """
     SetUserPublicRepos(userID: ID!, repoURIs: [String!]!): EmptyResponse!
+
+    """
+    Converts a version context to an equivalent instance-level search context. Only available to site admins.
+    """
+    convertVersionContextToSearchContext(name: String!): SearchContext!
 }
 
 """
@@ -7674,6 +7675,16 @@ type CloningProgress {
 }
 
 """
+FOR INTERNAL USE ONLY: A status message produced when repositories are being indexed
+"""
+type IndexingProgress {
+    """
+    The message of this status message
+    """
+    message: String!
+}
+
+"""
 FOR INTERNAL USE ONLY: A status message produced when repositories could not
 be synced from an external service
 """
@@ -7702,7 +7713,7 @@ type SyncError {
 """
 FOR INTERNAL USE ONLY: A status message
 """
-union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
+union StatusMessage = CloningProgress | IndexingProgress | ExternalServiceSyncError | SyncError
 
 """
 An arbitrarily large integer encoded as a decimal string.
@@ -9059,6 +9070,10 @@ type ChangesetsStats {
     """
     processing: Int!
     """
+    The count of archived changesets.
+    """
+    archived: Int!
+    """
     The count of all changesets.
     """
     total: Int!
@@ -9173,6 +9188,10 @@ enum ChangesetSpecOperation {
     The changeset is removed from some of the associated batch changes.
     """
     DETACH
+    """
+    The changeset is kept in the batch change, but it's marked as archived.
+    """
+    ARCHIVE
 }
 
 """
@@ -9672,7 +9691,10 @@ type ChangesetApplyPreviewConnectionStats {
     The changeset is removed from some of the associated batch changes.
     """
     detach: Int!
-
+    """
+    The changeset will still be attached to the batch change but marked as archived.
+    """
+    archive: Int!
     """
     The amount of changesets that are added to the batch change in this operation.
     """
@@ -9846,9 +9868,9 @@ extend type Mutation {
     """
     createBatchChangesCredential(
         """
-        The user for which to create the credential.
+        The user for which to create the credential. If null is provided, a site-wide credential is created.
         """
-        user: ID!
+        user: ID
 
         """
         The kind of external service being configured.
@@ -9870,6 +9892,11 @@ extend type Mutation {
     Hard-deletes a given credential.
     """
     deleteBatchChangesCredential(batchChangesCredential: ID!): EmptyResponse!
+
+    """
+    Detach archived changesets from a batch change.
+    """
+    detachChangesets(batchChange: ID!, changesets: [ID!]!): EmptyResponse!
 }
 
 extend type Query {
@@ -9907,6 +9934,20 @@ extend type Query {
         """
         name: String!
     ): BatchChange
+
+    """
+    All globally configured code hosts usable with Batch Changes.
+    """
+    batchChangesCodeHosts(
+        """
+        Returns the first n code hosts from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): BatchChangesCodeHostConnection!
 }
 
 """
@@ -10043,6 +10084,10 @@ type BatchChange implements Node {
         Search for changesets matching this query. Queries may include quoted substrings to match phrases, and words may be preceded by - to negate them.
         """
         search: String
+        """
+        Only return changesets that are archived in this campaign.
+        """
+        onlyArchived: Boolean = false
     ): ChangesetConnection!
 
     """
@@ -10059,6 +10104,10 @@ type BatchChange implements Node {
         current time.
         """
         to: DateTime
+        """
+        Include archived changesets in the calculation.
+        """
+        includeArchived: Boolean = false
     ): [ChangesetCounts!]!
 
     """
@@ -10364,6 +10413,11 @@ type BatchChangesCredential implements Node {
     The date and time this token has been created at.
     """
     createdAt: DateTime!
+
+    """
+    Whether the configured credential is a site credential, that is available globally.
+    """
+    isSiteCredential: Boolean!
 }
 
 """

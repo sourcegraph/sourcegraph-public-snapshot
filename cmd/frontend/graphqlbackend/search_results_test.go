@@ -255,27 +255,6 @@ func TestSearchResults(t *testing.T) {
 			t.Error("calledSearchSymbols")
 		}
 	})
-
-	t.Run("test start time is not null when alert thrown", func(t *testing.T) {
-		mockDecodedViewerFinalSettings = &schema.Settings{}
-		defer func() { mockDecodedViewerFinalSettings = nil }()
-
-		for _, v := range searchVersions {
-			r, err := (&schemaResolver{db: db}).Search(context.Background(), &SearchArgs{Query: `repo:*`, Version: v})
-			if err != nil {
-				t.Fatal("Search:", err)
-			}
-
-			results, err := r.Results(context.Background())
-			if err != nil {
-				t.Fatal("Search: ", err)
-			}
-
-			if results.start.IsZero() {
-				t.Error("Start value is not set")
-			}
-		}
-	})
 }
 
 func TestOrderedFuzzyRegexp(t *testing.T) {
@@ -971,7 +950,6 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 		results             []SearchResultResolver
 		searchResultsCommon streaming.Stats
 		alert               *searchAlert
-		start               time.Time
 	}
 	tests := []struct {
 		name   string
@@ -1049,34 +1027,12 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 				SearchResults: tt.fields.results,
 				Stats:         tt.fields.searchResultsCommon,
 				alert:         tt.fields.alert,
-				start:         tt.fields.start,
 			}
 			if got := sr.ApproximateResultCount(); got != tt.want {
 				t.Errorf("searchResultsResolver.ApproximateResultCount() = %v, want %v", got, tt.want)
 			}
 		})
 	}
-}
-
-func TestSearchResolver_evaluateWarning(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
-	q, _ := query.ParseRegexp("file:foo or file:bar")
-	wantPrefix := "I'm having trouble understanding that query."
-	got, _ := (&searchResolver{db: db}).evaluate(context.Background(), q)
-	t.Run("warn for unsupported and/or query", func(t *testing.T) {
-		if !strings.HasPrefix(got.alert.description, wantPrefix) {
-			t.Fatalf("got alert description %s, want %s", got.alert.description, wantPrefix)
-		}
-	})
-
-	_, err := query.ParseRegexp("file:foo or or or")
-	gotAlert := alertForQuery(db, "", err)
-	t.Run("warn for unsupported ambiguous and/or query", func(t *testing.T) {
-		if !strings.HasPrefix(gotAlert.description, wantPrefix) {
-			t.Fatalf("got alert description %s, want %s", got.alert.description, wantPrefix)
-		}
-	})
 }
 
 func TestGetExactFilePatterns(t *testing.T) {
@@ -1433,7 +1389,9 @@ func commitResult(urlKey string) *CommitSearchResultResolver {
 	return &CommitSearchResultResolver{
 		gitCommitResolver: &GitCommitResolver{
 			repoResolver: &RepositoryResolver{
-				name: api.RepoName(urlKey),
+				RepoMatch: result.RepoMatch{
+					Name: api.RepoName(urlKey),
+				},
 			},
 		},
 	}
@@ -1446,7 +1404,9 @@ func diffResult(urlKey string) *CommitSearchResultResolver {
 		},
 		gitCommitResolver: &GitCommitResolver{
 			repoResolver: &RepositoryResolver{
-				name: api.RepoName(urlKey),
+				RepoMatch: result.RepoMatch{
+					Name: api.RepoName(urlKey),
+				},
 			},
 		},
 	}
@@ -1462,7 +1422,7 @@ func fileResult(db dbutil.DB, uri string, lineMatches []*result.LineMatch, symbo
 	return &FileMatchResolver{
 		db: db,
 		FileMatch: result.FileMatch{
-			URI:         uri,
+			Repo:        &types.RepoName{Name: api.RepoName(uri)},
 			LineMatches: lineMatches,
 			Symbols:     symbolMatches,
 		},
@@ -1472,7 +1432,7 @@ func fileResult(db dbutil.DB, uri string, lineMatches []*result.LineMatch, symbo
 func resultToString(r SearchResultResolver) string {
 	switch v := r.(type) {
 	case *FileMatchResolver:
-		return fmt.Sprintf("File:%s", v.URI)
+		return fmt.Sprintf("File:%s", v.URL())
 	case *RepositoryResolver:
 		return fmt.Sprintf("Repository:%s", v.URL())
 	case *CommitSearchResultResolver:
@@ -1522,7 +1482,7 @@ func TestUnionMerge(t *testing.T) {
 				},
 			},
 			right: SearchResultsResolver{db: db},
-			want:  autogold.Want("LeftOnly", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:a,symbols:[],lineMatches:[]}, Repo:/a"),
+			want:  autogold.Want("LeftOnly", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:git://a#,symbols:[],lineMatches:[]}, Repo:/a"),
 		},
 		{
 			left: SearchResultsResolver{db: db},
@@ -1535,7 +1495,7 @@ func TestUnionMerge(t *testing.T) {
 					fileResult(db, "a", nil, nil),
 				},
 			},
-			want: autogold.Want("RightOnly", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:a,symbols:[],lineMatches:[]}, Repo:/a"),
+			want: autogold.Want("RightOnly", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:git://a#,symbols:[],lineMatches:[]}, Repo:/a"),
 		},
 		{
 			left: SearchResultsResolver{db: db,
@@ -1554,7 +1514,7 @@ func TestUnionMerge(t *testing.T) {
 					fileResult(db, "b", nil, nil),
 				},
 			},
-			want: autogold.Want("MergeAllDifferent", "Commit:/a/-/commit/, Commit:/b/-/commit/, Diff:/a/-/commit/, Diff:/b/-/commit/, File{url:a,symbols:[],lineMatches:[]}, File{url:b,symbols:[],lineMatches:[]}, Repo:/a, Repo:/b"),
+			want: autogold.Want("MergeAllDifferent", "Commit:/a/-/commit/, Commit:/b/-/commit/, Diff:/a/-/commit/, Diff:/b/-/commit/, File{url:git://a#,symbols:[],lineMatches:[]}, File{url:git://b#,symbols:[],lineMatches:[]}, Repo:/a, Repo:/b"),
 		},
 		{
 			left: SearchResultsResolver{db: db,
@@ -1573,7 +1533,7 @@ func TestUnionMerge(t *testing.T) {
 					}, nil),
 				},
 			},
-			want: autogold.Want("MergeFileLineMatches", "File{url:b,symbols:[],lineMatches:[a,b,c,d]}"),
+			want: autogold.Want("MergeFileLineMatches", "File{url:git://b#,symbols:[],lineMatches:[a,b,c,d]}"),
 		},
 		{
 			left: SearchResultsResolver{db: db,
@@ -1592,7 +1552,7 @@ func TestUnionMerge(t *testing.T) {
 					}, nil),
 				},
 			},
-			want: autogold.Want("NoMergeFileSymbols", "File{url:a,symbols:[],lineMatches:[a,b]}, File{url:b,symbols:[],lineMatches:[c,d]}"),
+			want: autogold.Want("NoMergeFileSymbols", "File{url:git://a#,symbols:[],lineMatches:[a,b]}, File{url:git://b#,symbols:[],lineMatches:[c,d]}"),
 		},
 		{
 			left: SearchResultsResolver{db: db,
@@ -1611,7 +1571,7 @@ func TestUnionMerge(t *testing.T) {
 					}),
 				},
 			},
-			want: autogold.Want("MergeFileSymbols", "File{url:a,symbols:[a,b,c,d],lineMatches:[]}"),
+			want: autogold.Want("MergeFileSymbols", "File{url:git://a#,symbols:[a,b,c,d],lineMatches:[]}"),
 		},
 	}
 
@@ -1653,7 +1613,7 @@ func TestSearchResultDeduper(t *testing.T) {
 		},
 		{
 			[]SearchResultResolver{commitResult("a"), diffResult("a"), repoResult(db, "a"), fileResult(db, "a", nil, nil)},
-			autogold.Want("EachTypeSameURL", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:a,symbols:[],lineMatches:[]}, Repo:/a"),
+			autogold.Want("EachTypeSameURL", "Commit:/a/-/commit/, Diff:/a/-/commit/, File{url:git://a#,symbols:[],lineMatches:[]}, Repo:/a"),
 		},
 		{
 			[]SearchResultResolver{commitResult("a"), commitResult("b"), commitResult("a"), commitResult("b")},
@@ -1688,7 +1648,7 @@ func searchResultResolversToString(srrs []SearchResultResolver) string {
 			for _, line := range v.FileMatch.LineMatches {
 				lines = append(lines, line.Preview)
 			}
-			return fmt.Sprintf("File{url:%s,symbols:[%s],lineMatches:[%s]}", v.URI, strings.Join(symbols, ","), strings.Join(lines, ","))
+			return fmt.Sprintf("File{url:%s,symbols:[%s],lineMatches:[%s]}", v.URL(), strings.Join(symbols, ","), strings.Join(lines, ","))
 		case *CommitSearchResultResolver:
 			if v.DiffPreview() != nil {
 				return fmt.Sprintf("Diff:%s", v.URL())

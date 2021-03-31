@@ -61,22 +61,23 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                 specific data.
             </p>
             <h3>Most recent ping</h3>
-            <p>
-                {latestPing === undefined ? (
+            {latestPing === undefined ? (
+                <p>
                     <LoadingSpinner className="icon-inline" />
-                ) : isEmpty(latestPing) ? (
-                    <p>No recent ping data to display.</p>
-                ) : (
-                    <MonacoEditor
-                        {...props}
-                        language="json"
-                        options={options}
-                        height={300}
-                        editorWillMount={noop}
-                        value={JSON.stringify(latestPing, undefined, 4)}
-                    />
-                )}
-            </p>
+                </p>
+            ) : isEmpty(latestPing) ? (
+                <p>No recent ping data to display.</p>
+            ) : (
+                <MonacoEditor
+                    {...props}
+                    language="json"
+                    options={options}
+                    height={300}
+                    editorWillMount={noop}
+                    value={JSON.stringify(latestPing, undefined, 4)}
+                    className="mb-3"
+                />
+            )}
             <h3>Critical telemetry</h3>
             <p>
                 Critical telemetry includes only the high-level data below required for billing, support, updates, and

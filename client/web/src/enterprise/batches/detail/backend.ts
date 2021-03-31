@@ -24,6 +24,8 @@ import {
     ReenqueueChangesetResult,
     ChangesetFields,
     DeleteBatchChangeVariables,
+    DetachChangesetsVariables,
+    DetachChangesetsResult,
 } from '../../../graphql-operations'
 import { requestGraphQL } from '../../../backend/graphql'
 
@@ -36,6 +38,7 @@ const changesetsStatsFragment = gql`
         merged
         open
         unpublished
+        archived
     }
 `
 
@@ -202,6 +205,7 @@ export const queryChangesets = ({
     checkState,
     onlyPublishedByThisBatchChange,
     search,
+    onlyArchived,
 }: BatchChangeChangesetsVariables): Observable<
     (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets']
 > =>
@@ -216,6 +220,7 @@ export const queryChangesets = ({
                 $checkState: ChangesetCheckState
                 $onlyPublishedByThisBatchChange: Boolean
                 $search: String
+                $onlyArchived: Boolean
             ) {
                 node(id: $batchChange) {
                     __typename
@@ -228,6 +233,7 @@ export const queryChangesets = ({
                             checkState: $checkState
                             onlyPublishedByThisBatchChange: $onlyPublishedByThisBatchChange
                             search: $search
+                            onlyArchived: $onlyArchived
                         ) {
                             totalCount
                             pageInfo {
@@ -253,6 +259,7 @@ export const queryChangesets = ({
             checkState,
             onlyPublishedByThisBatchChange,
             search,
+            onlyArchived,
         }
     ).pipe(
         map(dataOrThrowErrors),
@@ -417,14 +424,15 @@ const changesetCountsOverTimeFragment = gql`
 
 export const queryChangesetCountsOverTime = ({
     batchChange,
+    includeArchived,
 }: ChangesetCountsOverTimeVariables): Observable<ChangesetCountsOverTimeFields[]> =>
     requestGraphQL<ChangesetCountsOverTimeResult, ChangesetCountsOverTimeVariables>(
         gql`
-            query ChangesetCountsOverTime($batchChange: ID!) {
+            query ChangesetCountsOverTime($batchChange: ID!, $includeArchived: Boolean!) {
                 node(id: $batchChange) {
                     __typename
                     ... on BatchChange {
-                        changesetCountsOverTime {
+                        changesetCountsOverTime(includeArchived: $includeArchived) {
                             ...ChangesetCountsOverTimeFields
                         }
                     }
@@ -433,7 +441,7 @@ export const queryChangesetCountsOverTime = ({
 
             ${changesetCountsOverTimeFragment}
         `,
-        { batchChange }
+        { batchChange, includeArchived }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
@@ -511,4 +519,18 @@ export async function getChangesetDiff(changeset: Scalars['ID']): Promise<string
             })
         )
         .toPromise()
+}
+
+export async function detachChangesets(batchChange: Scalars['ID'], changesets: Scalars['ID'][]): Promise<void> {
+    const result = await requestGraphQL<DetachChangesetsResult, DetachChangesetsVariables>(
+        gql`
+            mutation DetachChangesets($batchChange: ID!, $changesets: [ID!]!) {
+                detachChangesets(batchChange: $batchChange, changesets: $changesets) {
+                    alwaysNil
+                }
+            }
+        `,
+        { batchChange, changesets }
+    ).toPromise()
+    dataOrThrowErrors(result)
 }

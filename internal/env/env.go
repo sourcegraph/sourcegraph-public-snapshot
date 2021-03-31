@@ -55,7 +55,7 @@ var (
 func findName() (string, string) {
 	// Environment variable names can't contain, for instance, hyphens.
 	origName := filepath.Base(os.Args[0])
-	name := strings.Replace(origName, "-", "_", -1)
+	name := strings.ReplaceAll(origName, "-", "_")
 	if name == "" {
 		name = "unknown"
 	}

@@ -1,3 +1,5 @@
 src/schema/*
 src/graphql-operations.ts
 out/
+.eslintrc.js
+GH2SG.bookmarklet.js

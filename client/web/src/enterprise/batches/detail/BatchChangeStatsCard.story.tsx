@@ -19,6 +19,7 @@ add('All states', () => (
                     draft: 5,
                     open: 10,
                     total: 100,
+                    archived: 18,
                     unpublished: 55,
                 }}
                 diff={{ added: 1000, changed: 2000, deleted: 1000 }}
@@ -38,6 +39,7 @@ add('Batch change closed', () => (
                     merged: 10,
                     draft: 0,
                     open: 10,
+                    archived: 18,
                     total: 100,
                     unpublished: 60,
                 }}
@@ -58,6 +60,7 @@ add('Batch change done', () => (
                     merged: 80,
                     draft: 0,
                     open: 0,
+                    archived: 18,
                     total: 100,
                     unpublished: 0,
                 }}

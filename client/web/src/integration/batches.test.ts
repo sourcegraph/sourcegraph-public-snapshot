@@ -258,7 +258,16 @@ function mockCommonGraphQLResponses(
             batchChange: {
                 __typename: 'BatchChange',
                 id: 'change123',
-                changesetsStats: { closed: 2, deleted: 1, merged: 3, open: 8, total: 19, unpublished: 3, draft: 2 },
+                changesetsStats: {
+                    closed: 2,
+                    deleted: 1,
+                    merged: 3,
+                    open: 8,
+                    total: 19,
+                    archived: 18,
+                    unpublished: 3,
+                    draft: 2,
+                },
                 closedAt: null,
                 createdAt: subDays(new Date(), 5).toISOString(),
                 updatedAt: subDays(new Date(), 5).toISOString(),
@@ -564,7 +573,7 @@ describe('Batches', () => {
                                     reopen: 10,
                                     undraft: 10,
                                     update: 10,
-
+                                    archive: 10,
                                     added: 5,
                                     modified: 10,
                                     removed: 3,
@@ -680,7 +689,9 @@ describe('Batches', () => {
                 // Expect to be back at batch change overview page.
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change'
+                    testContext.driver.sourcegraphBaseUrl +
+                        namespaceURL +
+                        '/batch-changes/test-batch-change?archivedCount=10&archivedBy=spec123'
                 )
             })
         }
@@ -754,7 +765,7 @@ describe('Batches', () => {
                                     credential: isCreated
                                         ? {
                                               id: '123',
-                                              createdAt: new Date().toISOString(),
+                                              isSiteCredential: false,
                                               sshPublicKey: 'ssh-rsa randorandorandorando',
                                           }
                                         : null,
@@ -769,7 +780,7 @@ describe('Batches', () => {
                     return {
                         createBatchChangesCredential: {
                             id: '123',
-                            createdAt: new Date().toISOString(),
+                            isSiteCredential: false,
                             sshPublicKey: 'ssh-rsa randorandorandorando',
                         },
                     }

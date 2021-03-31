@@ -336,7 +336,7 @@ func TestUserCredentials_List(t *testing.T) {
 				UserID: user.ID,
 			},
 		},
-		"authenticator type": {AuthenticatorType: []UserCredentialType{UserCredentialTypeOAuthBearerToken}},
+		"authenticator type": {AuthenticatorType: []AuthenticatorType{AuthenticatorTypeOAuthBearerToken}},
 	} {
 		t.Run("multiple matches on "+name, func(t *testing.T) {
 			creds, next, err := UserCredentials(db).List(ctx, opts)
@@ -464,7 +464,9 @@ func createUserCredentialAuths(t *testing.T) map[string]auth.Authenticator {
 	for _, a := range []auth.Authenticator{
 		&auth.OAuthClient{Client: createOAuthClient(t, "abc", "def")},
 		&auth.BasicAuth{Username: "foo", Password: "bar"},
+		&auth.BasicAuthWithSSH{BasicAuth: auth.BasicAuth{Username: "foo", Password: "bar"}, PrivateKey: "private", PublicKey: "public", Passphrase: "pass"},
 		&auth.OAuthBearerToken{Token: "abcdef"},
+		&auth.OAuthBearerTokenWithSSH{OAuthBearerToken: auth.OAuthBearerToken{Token: "abcdef"}, PrivateKey: "private", PublicKey: "public", Passphrase: "pass"},
 		&bitbucketserver.SudoableOAuthClient{
 			Client:   auth.OAuthClient{Client: createOAuthClient(t, "ghi", "jkl")},
 			Username: "neo",

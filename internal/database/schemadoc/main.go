@@ -33,7 +33,7 @@ const containerName = "schemadoc"
 
 var logger = log.New(os.Stderr, "", log.LstdFlags)
 
-var versionRe = lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
+var versionRe = lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta(`12\.\d+`)))
 
 var databases = map[*dbconn.Database]string{
 	dbconn.Frontend:  "schema.md",
@@ -50,7 +50,7 @@ func main() {
 }
 
 func mainErr() error {
-	// Run pg9.6 locally if it exists
+	// Run pg12 locally if it exists
 	if version, _ := exec.Command("psql", "--version").CombinedOutput(); versionRe.Match(version) {
 		return mainLocal()
 	}
@@ -71,7 +71,7 @@ func mainLocal() error {
 }
 
 func mainContainer() error {
-	logger.Printf("Running PostgreSQL 9.6 in docker")
+	logger.Printf("Running PostgreSQL 12 in docker")
 
 	prefix, shutdown, err := startDocker()
 	if err != nil {
@@ -112,13 +112,13 @@ func generateAndWrite(database *dbconn.Database, dataSource string, commandPrefi
 }
 
 func startDocker() (commandPrefix []string, shutdown func(), _ error) {
-	if err := exec.Command("docker", "image", "inspect", "postgres:9.6").Run(); err != nil {
-		logger.Println("docker pull postgres9.6")
-		pull := exec.Command("docker", "pull", "postgres:9.6")
+	if err := exec.Command("docker", "image", "inspect", "postgres:12").Run(); err != nil {
+		logger.Println("docker pull postgres:12")
+		pull := exec.Command("docker", "pull", "postgres:12")
 		pull.Stdout = logger.Writer()
 		pull.Stderr = logger.Writer()
 		if err := pull.Run(); err != nil {
-			return nil, nil, errors.Wrap(err, "docker pull postgres9.6")
+			return nil, nil, errors.Wrap(err, "docker pull postgres:12")
 		}
 		logger.Println("docker pull complete")
 	}
@@ -126,7 +126,7 @@ func startDocker() (commandPrefix []string, shutdown func(), _ error) {
 	run := runWithPrefix(nil)
 
 	_, _ = run(true, "docker", "rm", "--force", containerName)
-	server := exec.Command("docker", "run", "--rm", "--name", containerName, "-e", "POSTGRES_HOST_AUTH_METHOD=trust", "-p", "5433:5432", "postgres:9.6")
+	server := exec.Command("docker", "run", "--rm", "--name", containerName, "-e", "POSTGRES_HOST_AUTH_METHOD=trust", "-p", "5433:5432", "postgres:12")
 	if err := server.Start(); err != nil {
 		return nil, nil, errors.Wrap(err, "docker run")
 	}

@@ -32,10 +32,6 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     settingsURL: string | null | undefined
 }
 
-const stopPropagation: React.MouseEventHandler<HTMLElement> = event => {
-    event.stopPropagation()
-}
-
 /** ms after which to remove visual feedback */
 const FEEDBACK_DELAY = 5000
 
@@ -170,16 +166,11 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                         'extension-card__shadow--show': showShadow,
                     })}
                 />
-                <div
-                    className="card-body extension-card__body d-flex position-relative"
-                    // Prevent toggle clicks from propagating to the stretched-link (and
-                    // navigating to the extension detail page).
-                    onClick={stopPropagation}
-                >
+                <div className="card-body extension-card__body d-flex position-relative">
                     {/* Item 1: Icon */}
                     <div className="flex-shrink-0 mr-2">
                         {icon ? (
-                            <img className="extension-card__icon" src={icon} />
+                            <img className="extension-card__icon" src={icon} alt="" />
                         ) : isSourcegraphExtension ? (
                             change === 'enabled' ? (
                                 <DefaultIconEnabled isLightTheme={isLightTheme} />

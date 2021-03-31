@@ -1,6 +1,8 @@
 {
   "private": true,
+  "name": "@sourcegraph/browser",
   "version": "1.0.0",
+  "license": "Apache-2.0",
   "engines": {
     "yarn": ">1.10.0"
   },

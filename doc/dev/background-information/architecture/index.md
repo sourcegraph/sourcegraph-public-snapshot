@@ -69,7 +69,7 @@ Sample use cases for this are for tracking migrations, usage of libraries across
 
 Code insights are currently feature-flagged - set `"experimentalFeatures": { "codeInsights": true }` in your user settings to enable them.
 
-Code insights currently work through [**extensions**](#sourcegraph-extension-api).
+Code insights currently work through [**extensions**](#extension-api).
 A code insight extension can register a _view provider_ that contributes a graph to either the repository/directory page, the [search homepage](https://sourcegraph.com/search), or the [global "Insights" dashboard](https://sourcegraph.com/insights) reachable from the navbar.
 It is called on-demand on the client (the browser) to return the data needed for the chart.
 _How_ that extension produces the data is up to the extension - it can run search queries, query code intelligence data or analyze Git data using the Sourcegraph GraphQL API, or it can query an external service using its public API, e.g. Codecov.
@@ -80,11 +80,11 @@ Just like other extensions, it's also possible to install and configure them org
 
 Because of code insights currently being run on-demand in the client, the performance of code insights is bound to the performance of the underlying data source.
 For example, search queries are relatively fast as long as the scope doesn't include many repositories, but performance degrades when trying to include a lot of repositories.
-We're actively working on removing this limitation. 
+We're actively working on removing this limitation.
 
 If you want to learn more about code insights:
 
-- [Code insights team page](https://about.sourcegraph.com/handbook/engineering/code-insights)
+- [Code insights team page](https://about.sourcegraph.com/handbook/engineering/web/code-insights)
 - [Code insights product document (PD)](https://docs.google.com/document/d/1d34gCpt_rUOMAun8phcjNsFofGaaA_N_8znmgaugdKw/edit)
 - [Original code insights RFC](https://docs.google.com/document/d/1EHzor6I1GhVVIpl70mH-c10b1tNEl_p1xRMJ9qHQfoc/edit)
 
@@ -157,9 +157,9 @@ If you want to learn more about src-cli:
 
 ## Editor extensions
 
-Sourcegraph editor extensions will bring Sourcegraph features like search, code intelligence, and Sourcegraph extensions into your IDE. (Switching between Sourcegraph and an IDE when viewing a file is separately powered by Sourcegraph extensions.) 
+Sourcegraph editor extensions will bring Sourcegraph features like search, code intelligence, and Sourcegraph extensions into your IDE. (Switching between Sourcegraph and an IDE when viewing a file is separately powered by Sourcegraph extensions.)
 
-The editor extension is still in the exploratory phase of determining priority and scope. For more information: 
+The editor extension is still in the exploratory phase of determining priority and scope. For more information:
 
 - [PD19: IDE Extension (Research & Exploration)](https://docs.google.com/document/d/1LpShKInGJo0BBDnRQW4yz4_CjhjK_FYcwse4LYXGImE/edit#)
 

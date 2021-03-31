@@ -38,7 +38,8 @@ const batchChangeDefaults: BatchChangeFields = {
         draft: 1,
         merged: 2,
         open: 2,
-        total: 10,
+        archived: 5,
+        total: 18,
         unpublished: 4,
     },
     createdAt: subDays(now, 5).toISOString(),
@@ -277,6 +278,7 @@ const stories: Record<string, { url: string; supersededBatchSpec?: boolean }> = 
     Overview: { url: '/users/alice/batch-changes/awesome-batch-change' },
     'Burndown chart': { url: '/users/alice/batch-changes/awesome-batch-change?tab=chart' },
     'Spec file': { url: '/users/alice/batch-changes/awesome-batch-change?tab=spec' },
+    Archived: { url: '/users/alice/batch-changes/awesome-batch-change?tab=archived' },
     'Superseded batch-spec': { url: '/users/alice/batch-changes/awesome-batch-change', supersededBatchSpec: true },
 }
 
@@ -302,6 +304,9 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
             }),
             [supersedingBatchSpec, viewerCanAdminister, isClosed]
         )
+
+        // Toggle feature flag on
+        window.context.experimentalFeatures = { archiveBatchChangeChangesets: true }
 
         const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
         return (

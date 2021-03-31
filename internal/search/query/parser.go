@@ -322,12 +322,6 @@ func ScanBalancedPattern(buf []byte) (scanned string, count int, ok bool) {
 
 	// looks ahead to see if there are any recognized fields or operators.
 	keepScanning := func() bool {
-		// Keep scanning in case we see a reserved predicate keyword, which may
-		// contain subsequent parantheses. TODO (@camdencheek) See #19075 for more info
-		if string(result) == "contains" {
-			return true
-		}
-
 		if field, _, _ := ScanField(buf); field != "" {
 			// This "pattern" contains a recognized field, reject it.
 			return false
@@ -405,6 +399,104 @@ loop:
 	}
 
 	return string(result), count, balanced == 0
+}
+
+// ScanPredicate scans for a predicate that exists in the predicate
+// registry. It takes the current field as context.
+func ScanPredicate(field string, buf []byte) (string, int, bool) {
+	fieldRegistry, ok := DefaultPredicateRegistry[field]
+	if !ok {
+		// This field has no registered predicates
+		return "", 0, false
+	}
+
+	predicateName, nameAdvance, ok := ScanPredicateName(fieldRegistry, buf)
+	if !ok {
+		return "", 0, false
+	}
+	buf = buf[nameAdvance:]
+
+	// If the predicate name isn't followed by a parenthesis, this
+	// isn't a predicate
+	if len(buf) == 0 || buf[0] != '(' {
+		return "", 0, false
+	}
+
+	params, paramsAdvance, ok := ScanBalancedParens(buf)
+	if !ok {
+		return "", 0, false
+	}
+
+	return predicateName + params, nameAdvance + paramsAdvance, true
+}
+
+// ScanPredicateName scans for a well-known predicate name for he given field
+func ScanPredicateName(fieldRegistry map[string]func() Predicate, buf []byte) (string, int, bool) {
+	var predicateName string
+	var advance int
+	for i, c := range buf {
+		if !unicode.IsLetter(rune(c)) {
+			predicateName = string(buf[:i])
+			advance = i
+			break
+		}
+	}
+
+	if _, ok := fieldRegistry[predicateName]; !ok {
+		// The string is not a predicate
+		return "", 0, false
+	}
+
+	return predicateName, advance, true
+}
+
+// ScanBalancedParens will return the full string including
+// and inside the parantheses that start with the first character.
+// This is different from ScanBalancedPattern because that attempts
+// to take into account whether the content looks like other filters.
+// In the case of predicates, we offload the job of parsing parameters
+// onto the predicates themselves, so we just want the full content
+// of the parameters, whatever it contains.
+func ScanBalancedParens(buf []byte) (string, int, bool) {
+	var r rune
+	var count int
+	var result []rune
+
+	next := func() rune {
+		r, advance := utf8.DecodeRune(buf)
+		count += advance
+		buf = buf[advance:]
+		result = append(result, r)
+		return r
+	}
+
+	r = next()
+	if r != '(' {
+		panic(fmt.Sprintf("ScanBalancedParens expects the input buffer to start with delimiter (, but it starts with %s.", string(r)))
+	}
+	balance := 1
+
+	for {
+		r = next()
+		if r == utf8.RuneError {
+			return "", 0, false
+		}
+		switch r {
+		case '(':
+			balance++
+		case ')':
+			balance--
+		case '\\':
+			// Consume the next escaped value since an escaped paren
+			// won't ever affect the balance
+			_ = next()
+		}
+		if balance == 0 {
+			break
+		}
+	}
+
+	return string(result), count, true
 }
 
 // ScanDelimited takes a delimited (e.g., quoted) value for some arbitrary
@@ -627,7 +719,7 @@ func (p *parser) TryParseDelimiter() (string, rune, bool) {
 // ParseFieldValue parses a value after a field like "repo:". It returns the
 // parsed value and whether it was quoted. If the value starts with a recognized
 // quoting delimiter but does not close it, an error is returned.
-func (p *parser) ParseFieldValue() (string, bool, error) {
+func (p *parser) ParseFieldValue(field string) (string, bool, error) {
 	delimited := func(delimiter rune) (string, bool, error) {
 		value, advance, err := ScanDelimited(p.buf[p.pos:], true, delimiter)
 		if err != nil {
@@ -642,13 +734,24 @@ func (p *parser) ParseFieldValue() (string, bool, error) {
 	if p.match(DQUOTE) {
 		return delimited('"')
 	}
+
+	value, advance, ok := ScanPredicate(field, p.buf[p.pos:])
+	if ok {
+		p.pos += advance
+		return value, false, nil
+	}
+
 	// First try scan a field value for cases like (a b repo:foo), where a
 	// trailing ) may be closing a group, and not part of the value.
-	value, advance, ok := ScanBalancedPattern(p.buf[p.pos:])
-	if !ok {
-		// The above failed, so attempt a best effort.
-		value, advance = ScanValue(p.buf[p.pos:], false)
+	value, advance, ok = ScanBalancedPattern(p.buf[p.pos:])
+	if ok {
+		p.pos += advance
+		return value, false, nil
+
 	}
+
+	// The above failed, so attempt a best effort.
+	value, advance = ScanValue(p.buf[p.pos:], false)
 	p.pos += advance
 	return value, false, nil
 }
@@ -734,7 +837,7 @@ func (p *parser) ParseParameter() (Parameter, bool, error) {
 	}
 
 	p.pos += advance
-	value, quoted, err := p.ParseFieldValue()
+	value, quoted, err := p.ParseFieldValue(field)
 	if err != nil {
 		return Parameter{}, false, err
 	}

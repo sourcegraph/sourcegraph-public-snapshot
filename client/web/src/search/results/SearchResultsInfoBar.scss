@@ -5,6 +5,7 @@
     align-self: stretch;
     color: #93a9c8;
     padding: 0.25rem 0.5rem;
+    // TODO(tj): might need to remove this for action items toggle
 
     .alert {
         margin-bottom: 0.5rem;
@@ -27,5 +28,11 @@
         display: flex;
         align-items: center;
         margin-right: 1rem;
+    }
+
+    &__divider {
+        height: 1rem;
+        border-right: 1px solid var(--border-color);
+        margin: 0 0.5rem;
     }
 }

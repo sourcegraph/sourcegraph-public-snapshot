@@ -194,37 +194,25 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 			BaseURI: baseURI,
 			Lang:    strings.ToLower(symbol.Language),
 		}
-		uri := makeFileMatchURI(repoResolver.URL(), inputRev, symbolRes.URI().Fragment)
-		if fileMatch, ok := fileMatchesByURI[uri]; ok {
-			fileMatch.FileMatch.Symbols = append(fileMatch.FileMatch.Symbols, symbolRes)
+		newFileMatchResolver := &FileMatchResolver{
+			db: db,
+			FileMatch: result.FileMatch{
+				Path:     symbolRes.Symbol.Path,
+				Symbols:  []*result.SymbolMatch{symbolRes},
+				Repo:     repoRevs.Repo,
+				CommitID: commitID,
+				InputRev: &inputRev,
+			},
+			RepoResolver: repoResolver,
+		}
+		if oldFileMatchResolver, ok := fileMatchesByURI[newFileMatchResolver.URL()]; ok {
+			oldFileMatchResolver.FileMatch.Symbols = append(oldFileMatchResolver.FileMatch.Symbols, symbolRes)
 		} else {
-			fileMatch := &FileMatchResolver{
-				db: db,
-				FileMatch: result.FileMatch{
-					Path:     symbolRes.Symbol.Path,
-					Symbols:  []*result.SymbolMatch{symbolRes},
-					URI:      uri,
-					Repo:     repoRevs.Repo,
-					CommitID: commitID,
-				},
-				RepoResolver: repoResolver,
-			}
-			fileMatchesByURI[uri] = fileMatch
-			fileMatches = append(fileMatches, fileMatch)
+			fileMatchesByURI[newFileMatchResolver.URL()] = newFileMatchResolver
+			fileMatches = append(fileMatches, newFileMatchResolver)
 		}
 	}
 	return fileMatches, err
-}
-
-// makeFileMatchURI makes a git://repo?rev#path URI from a symbol
-// search result to use in a fileMatchResolver
-func makeFileMatchURI(repoURL, inputRev, symbolFragment string) string {
-	uri := "git:/" + repoURL
-	if inputRev != "" {
-		uri += "?" + inputRev
-	}
-	uri += "#" + symbolFragment
-	return uri
 }
 
 // unescapePattern expects a regexp pattern of the form /^ ... $/ and unescapes

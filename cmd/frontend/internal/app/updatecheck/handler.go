@@ -35,17 +35,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.25.2")
+	latestReleaseDockerServerImageBuild = newBuild("3.26.1")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.25.2")
+	latestReleaseKubernetesBuild = newBuild("3.26.1")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.25.2")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.26.1")
 )
 
 func getLatestRelease(deployType string) build {
@@ -328,13 +328,11 @@ func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
 	if err != nil {
 		errorCounter.Inc()
 		log15.Warn("logPing.Marshal: failed to Marshal payload", "error", err)
-	} else {
-		if pubsub.Enabled() {
-			err := pubsub.Publish(pubSubPingsTopicID, string(message))
-			if err != nil {
-				errorCounter.Inc()
-				log15.Warn("pubsub.Publish: failed to Publish", "message", message, "error", err)
-			}
+	} else if pubsub.Enabled() {
+		err := pubsub.Publish(pubSubPingsTopicID, string(message))
+		if err != nil {
+			errorCounter.Inc()
+			log15.Warn("pubsub.Publish: failed to Publish", "message", message, "error", err)
 		}
 	}
 

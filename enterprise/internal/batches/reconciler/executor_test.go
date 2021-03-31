@@ -394,6 +394,44 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				DiffStat: state.DiffStat,
 			},
 		},
+		"archive open changeset": {
+			hasCurrentSpec: false,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: batches.ChangesetPublicationStatePublished,
+				ExternalID:       githubPR.ID,
+				ExternalBranch:   githubHeadRef,
+				ExternalState:    batches.ChangesetExternalStateOpen,
+				Closing:          true,
+				BatchChanges: []batches.BatchChangeAssoc{{
+					BatchChangeID: 1234, Archive: true, IsArchived: false,
+				}},
+			},
+			plan: &Plan{
+				Ops: Operations{
+					batches.ReconcilerOperationClose,
+					batches.ReconcilerOperationArchive,
+				},
+			},
+			// We return a closed GitHub PR here
+			sourcerMetadata: closedGitHubPR,
+
+			wantCloseOnCodeHost: true,
+
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: batches.ChangesetPublicationStatePublished,
+				Closing:          false,
+
+				ExternalID:     closedGitHubPR.ID,
+				ExternalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
+				ExternalState:  batches.ChangesetExternalStateClosed,
+
+				Title:    closedGitHubPR.Title,
+				Body:     closedGitHubPR.Body,
+				DiffStat: state.DiffStat,
+
+				ArchivedInOwnerBatchChange: true,
+			},
+		},
 	}
 
 	for name, tc := range tests {
@@ -417,7 +455,13 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			// Create the changeset with correct associations.
 			changesetOpts := tc.changeset
 			changesetOpts.Repo = rs[0].ID
-			changesetOpts.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
+			if len(changesetOpts.BatchChanges) != 0 {
+				for i := range changesetOpts.BatchChanges {
+					changesetOpts.BatchChanges[i].BatchChangeID = batchChange.ID
+				}
+			} else {
+				changesetOpts.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
+			}
 			changesetOpts.OwnedByBatchChange = batchChange.ID
 			if changesetSpec != nil {
 				changesetOpts.CurrentSpec = changesetSpec.ID
@@ -586,9 +630,10 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 }
 
-func TestExecutor_LoadAuthenticator(t *testing.T) {
+func TestLoadAuthenticator(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	db := dbtesting.GetDB(t)
+	token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 	cstore := store.New(db)
 
@@ -602,12 +647,10 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	adminBatchChange := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-batch-change", admin.ID, batchSpec.ID)
 	userBatchChange := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-batch-change", user.ID, batchSpec.ID)
 
-	t.Run("imported changeset uses global token", func(t *testing.T) {
-		a, err := (&executor{
-			ch: &batches.Changeset{
-				OwnedByBatchChangeID: 0,
-			},
-		}).loadAuthenticator(ctx)
+	t.Run("imported changeset uses global token when no site-credential exists", func(t *testing.T) {
+		a, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+			OwnedByBatchChangeID: 0,
+		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -616,26 +659,42 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 		}
 	})
 
+	t.Run("imported changeset uses site-credential when exists", func(t *testing.T) {
+		if err := cstore.CreateSiteCredential(ctx, &store.SiteCredential{
+			ExternalServiceType: repo.ExternalRepo.ServiceType,
+			ExternalServiceID:   repo.ExternalRepo.ServiceID,
+			Credential:          token,
+		}); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			ct.TruncateTables(t, db, "batch_changes_site_credentials")
+		})
+
+		a, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+			OwnedByBatchChangeID: 0,
+		}, repo)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if diff := cmp.Diff(token, a); diff != "" {
+			t.Errorf("unexpected authenticator:\n%s", diff)
+		}
+	})
+
 	t.Run("owned by missing batch change", func(t *testing.T) {
-		_, err := (&executor{
-			ch: &batches.Changeset{
-				OwnedByBatchChangeID: 1234,
-			},
-			tx: cstore,
-		}).loadAuthenticator(ctx)
+		_, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+			OwnedByBatchChangeID: 1234,
+		}, repo)
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 
 	t.Run("owned by admin user without credential", func(t *testing.T) {
-		a, err := (&executor{
-			ch: &batches.Changeset{
-				OwnedByBatchChangeID: adminBatchChange.ID,
-			},
-			repo: repo,
-			tx:   cstore,
-		}).loadAuthenticator(ctx)
+		a, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+			OwnedByBatchChangeID: adminBatchChange.ID,
+		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -645,20 +704,15 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	})
 
 	t.Run("owned by normal user without credential", func(t *testing.T) {
-		_, err := (&executor{
-			ch: &batches.Changeset{
-				OwnedByBatchChangeID: userBatchChange.ID,
-			},
-			repo: repo,
-			tx:   cstore,
-		}).loadAuthenticator(ctx)
+		_, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+			OwnedByBatchChangeID: userBatchChange.ID,
+		}, repo)
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 
 	t.Run("owned by admin user with credential", func(t *testing.T) {
-		token := &auth.OAuthBearerToken{Token: "abcdef"}
 		if _, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainBatches,
 			UserID:              admin.ID,
@@ -668,13 +722,9 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		a, err := (&executor{
-			ch: &batches.Changeset{
-				OwnedByBatchChangeID: adminBatchChange.ID,
-			},
-			repo: repo,
-			tx:   cstore,
-		}).loadAuthenticator(ctx)
+		a, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+			OwnedByBatchChangeID: adminBatchChange.ID,
+		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -684,7 +734,6 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 	})
 
 	t.Run("owned by normal user with credential", func(t *testing.T) {
-		token := &auth.OAuthBearerToken{Token: "abcdef"}
 		if _, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainBatches,
 			UserID:              user.ID,
@@ -693,14 +742,36 @@ func TestExecutor_LoadAuthenticator(t *testing.T) {
 		}, token); err != nil {
 			t.Fatal(err)
 		}
+		t.Cleanup(func() {
+			ct.TruncateTables(t, db, "user_credentials")
+		})
 
-		a, err := (&executor{
-			ch: &batches.Changeset{
-				OwnedByBatchChangeID: userBatchChange.ID,
-			},
-			repo: repo,
-			tx:   cstore,
-		}).loadAuthenticator(ctx)
+		a, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+			OwnedByBatchChangeID: userBatchChange.ID,
+		}, repo)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		if diff := cmp.Diff(token, a); diff != "" {
+			t.Errorf("unexpected authenticator:\n%s", diff)
+		}
+	})
+
+	t.Run("owned by user without credential falls back to site-credential", func(t *testing.T) {
+		if err := cstore.CreateSiteCredential(ctx, &store.SiteCredential{
+			ExternalServiceType: repo.ExternalRepo.ServiceType,
+			ExternalServiceID:   repo.ExternalRepo.ServiceID,
+			Credential:          token,
+		}); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			ct.TruncateTables(t, db, "batch_changes_site_credentials")
+		})
+
+		a, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+			OwnedByBatchChangeID: userBatchChange.ID,
+		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -923,7 +994,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 	defer func() { internalClient = api.InternalClient }()
 
 	fs := &FakeStore{
-		GetBatchChangeMock: func(ctx context.Context, opts store.CountBatchChangeOpts) (*batches.BatchChange, error) {
+		GetBatchChangeMock: func(ctx context.Context, opts store.GetBatchChangeOpts) (*batches.BatchChange, error) {
 			return &batches.BatchChange{ID: 1234, Name: "reconciler-test-batch-change"}, nil
 		},
 	}

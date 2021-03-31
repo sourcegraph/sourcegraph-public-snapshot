@@ -1,6 +1,5 @@
 {
   "extends": "../../tsconfig.json",
-  "references": [],
   "compilerOptions": {
     "lib": ["esnext"],
     "module": "commonjs",

@@ -18,4 +18,4 @@ else
 fi
 
 echo "--- lint"
-"./dev/golangci-lint.sh" --config .golangci.enforced.yml run "${pkgs[@]}"
+"./dev/golangci-lint.sh" --config .golangci.yml run "${pkgs[@]}"

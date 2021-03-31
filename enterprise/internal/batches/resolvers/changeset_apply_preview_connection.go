@@ -108,7 +108,7 @@ type changesetApplyPreviewConnectionStatsResolver struct {
 	reopen       int32
 	sleep        int32
 	detach       int32
-	unpublished  int32
+	archive      int32
 
 	added    int32
 	modified int32
@@ -147,6 +147,9 @@ func (r *changesetApplyPreviewConnectionStatsResolver) Sleep() int32 {
 }
 func (r *changesetApplyPreviewConnectionStatsResolver) Detach() int32 {
 	return r.detach
+}
+func (r *changesetApplyPreviewConnectionStatsResolver) Archive() int32 {
+	return r.archive
 }
 func (r *changesetApplyPreviewConnectionStatsResolver) Added() int32 {
 	return r.added
@@ -219,6 +222,8 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 				stats.sleep++
 			case batches.ReconcilerOperationDetach:
 				stats.detach++
+			case batches.ReconcilerOperationArchive:
+				stats.archive++
 			}
 		}
 	}
