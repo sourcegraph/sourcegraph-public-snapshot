@@ -404,17 +404,30 @@ loop:
 // ScanPredicate scans for a predicate that exists in the predicate
 // registry. It takes the current field as context.
 func ScanPredicate(field string, buf []byte) (string, int, bool) {
-	fieldRegistry, ok := DefaultPredicateRegistry[field]
+	_, ok := AllPredicates[field]
 	if !ok {
 		// This field has no registered predicates
 		return "", 0, false
 	}
 
-	predicateName, nameAdvance, ok := ScanPredicateName(fieldRegistry, buf)
+	// look ahead contiguous characters
+	var name string
+	var advance int
+	for i, c := range buf {
+		if !unicode.IsLetter(rune(c)) {
+			name = string(buf[:i])
+			advance = i
+			break
+		}
+	}
+
+	_, ok = AllPredicates[field][name]
 	if !ok {
+		// Not a recognized predicate for this field.
 		return "", 0, false
 	}
-	buf = buf[nameAdvance:]
+
+	buf = buf[advance:]
 
 	// If the predicate name isn't followed by a parenthesis, this
 	// isn't a predicate
@@ -427,27 +440,7 @@ func ScanPredicate(field string, buf []byte) (string, int, bool) {
 		return "", 0, false
 	}
 
-	return predicateName + params, nameAdvance + paramsAdvance, true
-}
-
-// ScanPredicateName scans for a well-known predicate name for he given field
-func ScanPredicateName(fieldRegistry map[string]func() Predicate, buf []byte) (string, int, bool) {
-	var predicateName string
-	var advance int
-	for i, c := range buf {
-		if !unicode.IsLetter(rune(c)) {
-			predicateName = string(buf[:i])
-			advance = i
-			break
-		}
-	}
-
-	if _, ok := fieldRegistry[predicateName]; !ok {
-		// The string is not a predicate
-		return "", 0, false
-	}
-
-	return predicateName, advance, true
+	return name + params, advance + paramsAdvance, true
 }
 
 // ScanBalancedParens will return the full string including

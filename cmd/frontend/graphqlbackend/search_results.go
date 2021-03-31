@@ -36,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -904,7 +905,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 	}
 
 	for _, q := range plan {
-		predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResultsResolver, error) {
+		predicatePlan, err := substitutePredicates(q, func(pred predicate.P) (*SearchResultsResolver, error) {
 			// Disable streaming for subqueries so we can use
 			// the results rather than sending them back to the caller
 			orig := r.stream
@@ -1005,7 +1006,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
 // are expanded using the doExpand function.
-func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*SearchResultsResolver, error)) (query.Plan, error) {
+func substitutePredicates(q query.Basic, evaluate func(predicate.P) (*SearchResultsResolver, error)) (query.Plan, error) {
 	var topErr error
 	success := false
 	newQ := query.MapParameter(q.ToParseTree(), func(field, value string, neg bool, ann query.Annotation) query.Node {
@@ -1020,13 +1021,13 @@ func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*Search
 			return orig
 		}
 
-		name, params, err := query.ParseAsPredicate(value)
+		name, params, err := predicate.ParseAsPredicate(value)
 		if err != nil {
 			// This doesn't look like a predicate, so skip it
 			return orig
 		}
 
-		predicate, err := query.DefaultPredicateRegistry.Get(field, name, params)
+		predicate, err := predicate.Registry.Get(field, name, params)
 		if err != nil {
 			topErr = err
 			return orig
