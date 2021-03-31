@@ -28,7 +28,6 @@ type Symbols = []Symbol
 type SymbolMatch struct {
 	Symbol  Symbol
 	BaseURI *gituri.URI
-	Lang    string
 }
 
 func (s *SymbolMatch) URI() *gituri.URI {
