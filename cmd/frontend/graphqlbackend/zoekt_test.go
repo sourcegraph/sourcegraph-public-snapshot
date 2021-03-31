@@ -1051,6 +1051,7 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		want[i].Parent = "parent"
 		want[i].ParentKind = "parentkind"
 		want[i].Path = "bar.go"
+		want[i].Language = "go"
 	}
 
 	if diff := cmp.Diff(want, symbols); diff != "" {
