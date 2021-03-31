@@ -561,10 +561,12 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
     private setSelectedSearchContextSpec = (spec: string): void => {
         const { defaultSearchContextSpec } = this.state
         this.subscriptions.add(
-            resolveSearchContextSpecOrDefault(spec, defaultSearchContextSpec).subscribe(resolvedSearchContextSpec => {
-                this.setState({ selectedSearchContextSpec: resolvedSearchContextSpec })
-                localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, resolvedSearchContextSpec)
-            })
+            resolveSearchContextSpecOrDefault({ spec, defaultSpec: defaultSearchContextSpec }).subscribe(
+                resolvedSearchContextSpec => {
+                    this.setState({ selectedSearchContextSpec: resolvedSearchContextSpec })
+                    localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, resolvedSearchContextSpec)
+                }
+            )
         )
     }
 }

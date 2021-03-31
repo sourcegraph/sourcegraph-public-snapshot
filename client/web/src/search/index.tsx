@@ -1,6 +1,7 @@
 import { escapeRegExp } from 'lodash'
 import { replaceRange } from '../../../shared/src/util/strings'
-import { discreteValueAliases, escapeSpaces } from '../../../shared/src/search/query/filters'
+import { discreteValueAliases, escapeSpaces, FilterType } from '../../../shared/src/search/query/filters'
+import { Filter } from '../../../shared/src/search/query/token'
 import { VersionContext } from '../schema/site.schema'
 import { SearchPatternType } from '../../../shared/src/graphql-operations'
 import { Observable } from 'rxjs'
@@ -10,6 +11,7 @@ import { EventLogResult, resolveSearchContextSpec } from './backend'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
 import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
 import { VersionContextProps } from '../../../shared/src/search/util'
+import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -230,10 +232,22 @@ export function resolveVersionContext(
     return versionContext
 }
 
-export function isSearchContextSpecAvailable(spec: string): Observable<boolean> {
-    return resolveSearchContextSpec(spec).pipe(map(searchContext => !!searchContext))
+export function getGlobalSearchContext(query: string): { filter: Filter; spec: string } | null {
+    const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global)
+    if (!globalContextFilter) {
+        return null
+    }
+    const searchContextSpec = globalContextFilter.value?.value || ''
+    return { filter: globalContextFilter, spec: searchContextSpec }
 }
 
-export function resolveSearchContextSpecOrDefault(spec: string, defaultSpec: string): Observable<string> {
-    return resolveSearchContextSpec(spec).pipe(map(searchContext => (searchContext ? searchContext.spec : defaultSpec)))
-}
+export const isSearchContextSpecAvailable = memoizeObservable(
+    (spec: string) => resolveSearchContextSpec(spec).pipe(map(searchContext => !!searchContext)),
+    parameters => parameters
+)
+
+export const resolveSearchContextSpecOrDefault = memoizeObservable(
+    ({ spec, defaultSpec }: { spec: string; defaultSpec: string }) =>
+        resolveSearchContextSpec(spec).pipe(map(searchContext => (searchContext ? searchContext.spec : defaultSpec))),
+    ({ spec, defaultSpec }) => `${spec}:${defaultSpec}`
+)
