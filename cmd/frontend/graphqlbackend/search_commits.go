@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -306,7 +305,6 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 	}
 
 	var results []*CommitSearchResultResolver
-	var stats streaming.Stats
 	for event := range events {
 		timedOut = timedOut || !event.Complete || ctx.Err() == context.DeadlineExceeded
 
@@ -321,7 +319,7 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 			tr.LogFields(otlog.String("repo", string(op.RepoRevs.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 		}
 
-		stats, err = handleRepoSearchResult(op.RepoRevs, limitHit, !event.Complete, searchErr)
+		stats, err := handleRepoSearchResult(op.RepoRevs, limitHit, !event.Complete, searchErr)
 		if err != nil {
 			return errors.Wrapf(err, "failed to search commit %s %s", errorName(op.Diff), op.RepoRevs.String())
 		}
@@ -544,14 +542,13 @@ func searchCommitsInRepos(ctx context.Context, db dbutil.DB, args *search.TextPa
 		}
 
 		rr := repoRev
-		g.Go(
-			func() error {
-				err := repoSearch(ctx, rr)
-				if err != nil {
-					tr.LogFields(otlog.String("repo", string(rr.Repo.Name)), otlog.String("err", err.Error()), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
-				}
-				return err
-			})
+		g.Go(func() error {
+			err := repoSearch(ctx, rr)
+			if err != nil {
+				tr.LogFields(otlog.String("repo", string(rr.Repo.Name)), otlog.String("err", err.Error()), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
+			}
+			return err
+		})
 	}
 	return g.Wait()
 }
