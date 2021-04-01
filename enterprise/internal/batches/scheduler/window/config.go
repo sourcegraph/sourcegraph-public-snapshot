@@ -48,6 +48,10 @@ func (cfg *Configuration) Estimate(now time.Time, n int) *time.Time {
 	cfg.mu.RLock()
 	defer cfg.mu.RUnlock()
 
+	if !cfg.HasRolloutWindows() {
+		return &now
+	}
+
 	// Roughly speaking, we iterate over schedules until we reach the one that
 	// would include the given entry.
 	rem := n
@@ -63,6 +67,11 @@ func (cfg *Configuration) Estimate(now time.Time, n int) *time.Time {
 		}
 
 		total := schedule.total()
+		if total == 0 {
+			at = schedule.ValidUntil()
+			continue
+		}
+
 		rem -= total
 		if rem < 0 {
 			// We know how many extra reconciliations will occur within this

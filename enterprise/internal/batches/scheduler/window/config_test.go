@@ -25,88 +25,135 @@ var (
 )
 
 func TestConfiguration_Estimate(t *testing.T) {
-	// Let's set up a configuration that looks roughly like this:
-	//
-	// |   Mon   |   Tue   |   Wed   |   Thu   |   Fri   |   Sat   |   Sun   |
-	// |---------|---------|---------|---------|---------|---------|---------|
-	// | 10/hour | 20/hour | 10/hour | 0       | 10/hour | 0       | ∞       |
-	makeWindow := func(day time.Weekday, n int) Window {
-		return Window{
-			days: newWeekdaySet(day),
-			rate: rate{n: n, unit: ratePerHour},
+	t.Run("no windows", func(t *testing.T) {
+		cfg := &Configuration{}
+		now := time.Now()
+
+		if have := cfg.Estimate(now, 1000); have == nil {
+			t.Error("unexpected nil estimate")
+		} else if *have != now {
+			t.Errorf("unexpected estimate: have=%v want=%v", *have, now)
 		}
-	}
-	cfg := &Configuration{
-		windows: []Window{
-			makeWindow(time.Monday, 10),
-			makeWindow(time.Tuesday, 20),
-			makeWindow(time.Wednesday, 10),
-			makeWindow(time.Thursday, 0),
-			makeWindow(time.Friday, 10),
-			// Saturday intentionally omitted.
-			makeWindow(time.Sunday, -1),
-		},
-	}
+	})
 
-	// For convenience, let's also set up a time at 12:00 each day.
-	var (
-		monday    = time.Date(2021, 4, 5, 12, 0, 0, 0, time.UTC)
-		tuesday   = time.Date(2021, 4, 6, 12, 0, 0, 0, time.UTC)
-		wednesday = time.Date(2021, 4, 7, 12, 0, 0, 0, time.UTC)
-		thursday  = time.Date(2021, 4, 8, 12, 0, 0, 0, time.UTC)
-		friday    = time.Date(2021, 4, 9, 12, 0, 0, 0, time.UTC)
-		saturday  = time.Date(2021, 4, 10, 12, 0, 0, 0, time.UTC)
-		sunday    = time.Date(2021, 4, 11, 12, 0, 0, 0, time.UTC)
-	)
-
-	for name, tc := range map[string]struct {
-		from time.Time
-		n    int
-		want time.Time
-	}{
-		"right now because the window is unlimited": {
-			from: sunday,
-			n:    1000,
-			want: sunday,
-		},
-		"right now because n is 0 and a window is open": {
-			from: monday,
-			n:    0,
-			want: monday,
-		},
-		"not right now, even though n is 0, because nothing is done until tomorrow": {
-			from: saturday,
-			n:    0,
-			want: sunday.Truncate(24 * time.Hour),
-		},
-		"in an hour": {
-			from: tuesday,
-			n:    20,
-			want: tuesday.Add(1 * time.Hour),
-		},
-		"at the very end of the day's schedule": {
-			from: wednesday,
-			n:    120,
-			want: thursday.Truncate(24 * time.Hour),
-		},
-		"the next time we schedule anything, plus an hour": {
-			from: thursday,
-			n:    10,
-			want: friday.Truncate(24 * time.Hour).Add(1 * time.Hour),
-		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			have := cfg.Estimate(tc.from, tc.n)
-			if have == nil {
-				t.Error("unexpected nil estimate")
-			} else if diff := time.Duration(math.Abs(float64(have.Sub(tc.want)))); diff > 1*time.Millisecond {
-				// There's some floating point maths involved in the estimation
-				// process, so we'll be happy if this is within a millisecond
-				// (which is still _wildly_ more accurate than any expectation).
-				t.Errorf("unexpected estimate: have=%v want=%v", *have, tc.want)
+	t.Run("multiple windows", func(t *testing.T) {
+		// Let's set up a configuration that looks roughly like this:
+		//
+		// |  Mon  |  Tue  |  Wed  |  Thu  |  Fri  |  Sat  |  Sun  |
+		// |-------|-------|-------|-------|-------|-------|-------|
+		// | 10/hr | 20/hr | 10/hr | 0     | 10/hr | 0     | ∞     |
+		makeWindow := func(day time.Weekday, n int) Window {
+			return Window{
+				days: newWeekdaySet(day),
+				rate: rate{n: n, unit: ratePerHour},
 			}
-		})
-	}
+		}
+		cfg := &Configuration{
+			windows: []Window{
+				makeWindow(time.Monday, 10),
+				makeWindow(time.Tuesday, 20),
+				makeWindow(time.Wednesday, 10),
+				makeWindow(time.Thursday, 0),
+				makeWindow(time.Friday, 10),
+				// Saturday intentionally omitted.
+				makeWindow(time.Sunday, -1),
+			},
+		}
+
+		// For convenience, let's also set up a time at 12:00 each day.
+		var (
+			monday    = time.Date(2021, 4, 5, 12, 0, 0, 0, time.UTC)
+			tuesday   = time.Date(2021, 4, 6, 12, 0, 0, 0, time.UTC)
+			wednesday = time.Date(2021, 4, 7, 12, 0, 0, 0, time.UTC)
+			thursday  = time.Date(2021, 4, 8, 12, 0, 0, 0, time.UTC)
+			friday    = time.Date(2021, 4, 9, 12, 0, 0, 0, time.UTC)
+			saturday  = time.Date(2021, 4, 10, 12, 0, 0, 0, time.UTC)
+			sunday    = time.Date(2021, 4, 11, 12, 0, 0, 0, time.UTC)
+		)
+
+		for name, tc := range map[string]struct {
+			now  time.Time
+			n    int
+			want time.Time
+		}{
+			"right now because the window is unlimited": {
+				now:  sunday,
+				n:    1000,
+				want: sunday,
+			},
+			"right now because n is 0 and a window is open": {
+				now:  monday,
+				n:    0,
+				want: monday,
+			},
+			"not right now, even though n is 0, because nothing is done until tomorrow": {
+				now:  saturday,
+				n:    0,
+				want: sunday.Truncate(24 * time.Hour),
+			},
+			"in an hour": {
+				now:  tuesday,
+				n:    20,
+				want: tuesday.Add(1 * time.Hour),
+			},
+			"at the very end of the day's schedule": {
+				now:  wednesday,
+				n:    120,
+				want: thursday.Truncate(24 * time.Hour),
+			},
+			"the next time we schedule anything, plus an hour": {
+				now:  thursday,
+				n:    10,
+				want: friday.Truncate(24 * time.Hour).Add(1 * time.Hour),
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				have := cfg.Estimate(tc.now, tc.n)
+				if have == nil {
+					t.Error("unexpected nil estimate")
+				} else if diff := time.Duration(math.Abs(float64(have.Sub(tc.want)))); diff > 1*time.Millisecond {
+					// There's some floating point maths involved in the
+					// estimation process, so we'll be happy if this is within a
+					// millisecond (which is still _wildly_ more accurate than
+					// any reasonable expectation).
+					t.Errorf("unexpected estimate: have=%v want=%v", *have, tc.want)
+				}
+			})
+		}
+	})
+
+	t.Run("nil estimates", func(t *testing.T) {
+		for name, tc := range map[string]struct {
+			cfg *Configuration
+			now time.Time
+			n   int
+		}{
+			"all zeroes": {
+				cfg: &Configuration{
+					windows: []Window{
+						{days: newWeekdaySet(), rate: rate{n: 0}},
+					},
+				},
+				now: time.Now(),
+				n:   0,
+			},
+			"more than a week in the future": {
+				cfg: &Configuration{
+					windows: []Window{
+						{days: newWeekdaySet(), rate: rate{n: 1, unit: ratePerHour}},
+					},
+				},
+				now: time.Now(),
+				n:   24*7 + 1,
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				if have := tc.cfg.Estimate(tc.now, tc.n); have != nil {
+					t.Errorf("unexpected non-nil estimate: %v", *have)
+				}
+			})
+		}
+	})
 }
 
 func TestConfiguration_currentFor(t *testing.T) {
