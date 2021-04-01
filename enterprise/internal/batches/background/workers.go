@@ -23,10 +23,10 @@ const reconcilerMaxNumRetries = 60
 // makes to process a changeset when it stalls (process crashes, etc.).
 const reconcilerMaxNumResets = 60
 
-// newWorker creates a dbworker.newWorker that fetches enqueued changesets
+// newReconcilerWorker creates a dbworker.newReconcilerWorker that fetches enqueued changesets
 // from the database and passes them to the changeset reconciler for
 // processing.
-func newWorker(
+func newReconcilerWorker(
 	ctx context.Context,
 	s *store.Store,
 	gitClient reconciler.GitserverClient,
@@ -42,14 +42,14 @@ func newWorker(
 		Metrics:     metrics.workerMetrics,
 	}
 
-	workerStore := createDBWorkerStore(s)
+	workerStore := createReconcilerDBWorkerStore(s)
 
 	worker := dbworker.NewWorker(ctx, workerStore, r.HandlerFunc(), options)
 	return worker
 }
 
-func newWorkerResetter(s *store.Store, metrics batchChangesMetrics) *dbworker.Resetter {
-	workerStore := createDBWorkerStore(s)
+func newReconcilerWorkerResetter(s *store.Store, metrics batchChangesMetrics) *dbworker.Resetter {
+	workerStore := createReconcilerDBWorkerStore(s)
 
 	options := dbworker.ResetterOptions{
 		Name:     "batches_reconciler_worker_resetter",
@@ -69,7 +69,7 @@ func scanFirstChangesetRecord(rows *sql.Rows, err error) (workerutil.Record, boo
 	return store.ScanFirstChangeset(rows, err)
 }
 
-func createDBWorkerStore(s *store.Store) dbworkerstore.Store {
+func createReconcilerDBWorkerStore(s *store.Store) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		Name:                 "batches_reconciler_worker_store",
 		TableName:            "changesets",
@@ -89,4 +89,46 @@ func createDBWorkerStore(s *store.Store) dbworkerstore.Store {
 		RetryAfter:    5 * time.Second,
 		MaxNumRetries: reconcilerMaxNumRetries,
 	})
+}
+
+// newBulkJobWorker creates a dbworker.Worker that fetches enqueued changeset_jobs
+// from the database and passes them to the bulk executor for processing.
+func newBulkJobWorker(
+	ctx context.Context,
+	s *store.Store,
+	sourcer repos.Sourcer,
+	// metrics batchChangesMetrics,
+) *workerutil.Worker {
+	r := &reconciler.Reconciler{Sourcer: sourcer, Store: s}
+
+	options := workerutil.WorkerOptions{
+		Name:        "batches_bulk_worker",
+		NumHandlers: 5,
+		Interval:    5 * time.Second,
+		// Metrics:     metrics.workerMetrics,
+	}
+
+	workerStore := createBulkJobDBWorkerStore(s)
+
+	worker := dbworker.NewWorker(ctx, workerStore, r.HandlerFunc(), options)
+	return worker
+}
+
+func createBulkJobDBWorkerStore(s *store.Store) dbworkerstore.Store {
+	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
+		Name:              "batches_bulk_worker_store",
+		TableName:         "changeset_jobs",
+		ColumnExpressions: store.ChangesetJobColumns,
+		Scan:              scanFirstChangesetJobRecord,
+
+		StalledMaxAge: 60 * time.Second,
+		MaxNumResets:  reconcilerMaxNumResets,
+
+		RetryAfter:    5 * time.Second,
+		MaxNumRetries: reconcilerMaxNumRetries,
+	})
+}
+
+func scanFirstChangesetJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+	return store.ScanFirstChangesetJob(rows, err)
 }

@@ -15,9 +15,10 @@ func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factor
 	metrics := newMetrics()
 
 	routines := []goroutine.BackgroundRoutine{
-		newWorker(ctx, batchesStore, gitserver.DefaultClient, sourcer, metrics),
-		newWorkerResetter(batchesStore, metrics),
+		newReconcilerWorker(ctx, batchesStore, gitserver.DefaultClient, sourcer, metrics),
+		newReconcilerWorkerResetter(batchesStore, metrics),
 		newSpecExpireWorker(ctx, batchesStore),
+		newBulkJobWorker(ctx, batchesStore, sourcer),
 	}
 	return routines
 }
