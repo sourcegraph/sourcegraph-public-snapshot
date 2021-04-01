@@ -768,7 +768,7 @@ func Frontend() *monitoring.Container {
 							Query:       `histogram_quantile(0.90, sum by (source,le)(label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[5m]), "source", "$1", "source", "searchblitz_(.*)")))`,
 
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat(`{{ slice .source 1 }}`).Unit(monitoring.Seconds),
+							Panel:          monitoring.Panel().Unit(monitoring.Seconds),
 							Owner:          monitoring.ObservableOwnerSearch,
 							Interpretation: `Shows the search duration for sentinel queries by query so it's easier to pinpoint whether a specific query is having performance issues or whether the issues apply to all sentinel queries.`,
 						},
