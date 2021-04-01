@@ -33,7 +33,7 @@ func newStreamClient() (*streamClient, error) {
 	}, nil
 }
 
-func (s *streamClient) search(ctx context.Context, query string) (*metrics, error) {
+func (s *streamClient) search(ctx context.Context, query, queryName string) (*metrics, error) {
 	req, err := streamhttp.NewRequest(s.endpoint, query)
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
@@ -41,7 +41,7 @@ func (s *streamClient) search(ctx context.Context, query string) (*metrics, erro
 	req = req.WithContext(ctx)
 	req.Header.Set("Authorization", "token "+s.token)
 	req.Header.Set("X-Sourcegraph-Should-Trace", "true")
-	req.Header.Set("User-Agent", "SearchBlitz (monitoring)")
+	req.Header.Set("User-Agent", fmt.Sprintf("SearchBlitz (%s)", queryName))
 
 	start := time.Now()
 	resp, err := s.client.Do(req)

@@ -205,7 +205,6 @@ type GitHubWebhook struct {
 
 type BitbucketServerWebhook struct {
 	*Webhook
-	Name string
 
 	// cache of config we've seen so that we can decide what changes
 	// need to be synced if any
@@ -768,10 +767,9 @@ func (h *GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 	}
 }
 
-func NewBitbucketServerWebhook(store *store.Store, name string) *BitbucketServerWebhook {
+func NewBitbucketServerWebhook(store *store.Store) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
 		Webhook:     &Webhook{store, store.ExternalServices(), store.Clock(), extsvc.TypeBitbucketServer},
-		Name:        name,
 		configCache: make(map[int64]*schema.BitbucketServerConnection),
 	}
 }
