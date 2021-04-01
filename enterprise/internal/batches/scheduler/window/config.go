@@ -1,6 +1,7 @@
 package window
 
 import (
+	"math"
 	"sync"
 	"time"
 
@@ -39,32 +40,112 @@ func ValidateConfiguration(raw *[]*schema.BatchChangeRolloutWindow) error {
 	}).update(raw)
 }
 
-// TODO: does this need to be public?
-func (cfg *Configuration) Current(now time.Time) *Window {
+// Estimate attempts to estimate when the given entry in a queue of changesets
+// to be reconciled would be reconciled. nil indicates that there is no
+// reasonable estimate, either because all windows are zero or the estimate is
+// too far in the future to be reliable.
+func (cfg *Configuration) Estimate(now time.Time, n int) *time.Time {
 	cfg.mu.RLock()
 	defer cfg.mu.RUnlock()
 
-	var window *Window
-	for i := range cfg.windows {
-		if cfg.windows[i].IsOpen(now) {
-			window = &cfg.windows[i]
+	// Roughly speaking, we iterate over schedules until we reach the one that
+	// would include the given entry.
+	rem := n
+	at := now
+	until := at.Add(7 * 24 * time.Hour)
+	for at.Before(until) {
+		schedule := cfg.scheduleAt(at, false)
+
+		// An unlimited schedule means that the reconciliation will happen
+		// immediately.
+		if schedule.total() == -1 {
+			return &at
 		}
+
+		total := schedule.total()
+		rem -= total
+		if rem < 0 {
+			// We know how many extra reconciliations will occur within this
+			// schedule, so we can use that calculate what percentage of the way
+			// into the window our target will be reconciled, then we can
+			// multiple the schedule duration by that to get the approximate
+			// time.
+			perc := 1.0 - math.Abs(float64(rem))/float64(total)
+			duration := time.Duration(float64(schedule.ValidUntil().Sub(at)) * perc)
+			at = at.Add(duration)
+			return &at
+		} else if rem == 0 {
+			// Special case: this will be the very last entry to be reconciled.
+			at = schedule.ValidUntil()
+			return &at
+		}
+
+		at = schedule.ValidUntil()
 	}
 
-	return window
+	return nil
+}
+
+// HasRolloutWindows returns true if one or more windows have been defined.
+func (cfg *Configuration) HasRolloutWindows() bool {
+	return len(cfg.windows) != 0
+}
+
+// Schedule calculates a schedule for the near future (most likely about a
+// minute), based on the history.
+func (cfg *Configuration) Schedule() Schedule {
+	cfg.mu.RLock()
+	defer cfg.mu.RUnlock()
+
+	// If there are no rollout windows, then we return an unlimited schedule and
+	// have the scheduler check back in periodically in case the configuration
+	// updated. Ten minutes is probably safe enough.
+	if !cfg.HasRolloutWindows() {
+		return newSchedule(time.Now(), 10*time.Minute, rate{n: -1})
+	}
+
+	return cfg.scheduleAt(time.Now(), true)
 }
 
 // currentFor returns the current rollout window, if any, and the duration for
-// which that window applies from now.
+// which that window applies from now. The duration will be nil if the current
+// window is applied forever.
 //
 // As this is an internal function, no locking is applied here.
 func (cfg *Configuration) currentFor(now time.Time) (*Window, *time.Duration) {
+	// If there are no rollout windows, there's no current window. This should
+	// be checked before entry, but let's at least not panic here.
+	if len(cfg.windows) == 0 {
+		return nil, nil
+	}
+
 	// Find the last matching window that is currently active.
-	var index int
+	index := -1
 	for i := range cfg.windows {
 		if cfg.windows[i].IsOpen(now) {
 			index = i
 		}
+	}
+	if index == -1 {
+		// No matching window, so let's figure out when the next window would
+		// open and return a nil window.
+		var next *time.Time
+		for i := range cfg.windows {
+			at := cfg.windows[i].NextOpenAfter(now)
+			if next == nil || at.Before(*next) {
+				next = &at
+			}
+		}
+
+		// If we never saw a time, that's weird, since this scenario shouldn't
+		// occur if there are windows defined, but let's just say nothing can
+		// happen forever for now.
+		if next == nil {
+			return nil, nil
+		}
+
+		duration := next.Sub(now)
+		return nil, &duration
 	}
 	window := &cfg.windows[index]
 
@@ -122,66 +203,6 @@ func (cfg *Configuration) currentFor(now time.Time) (*Window, *time.Duration) {
 	// return that.
 	d := end.Sub(now)
 	return window, &d
-}
-
-// Estimate attempts to estimate when the given entry in a queue of changesets
-// to be reconciled would be reconciled. nil indicates that there is no
-// reasonable estimate, either because all windows are zero or the estimate is
-// too far in the future to be reliable.
-func (cfg *Configuration) Estimate(n int) *time.Time {
-	// Roughly speaking, we iterate over schedules until we reach the one that
-	// would include the given entry.
-	rem := n
-	at := time.Now()
-	until := at.Add(7 * 24 * time.Hour)
-	for at.Before(until) {
-		schedule := cfg.scheduleAt(at, false)
-
-		// An unlimited schedule means that the reconciliation will happen
-		// immediately.
-		if schedule.total() == -1 {
-			return &at
-		}
-
-		rem -= schedule.total()
-		if rem < 0 {
-			// Try to figure out approximately where in the schedule this will
-			// fall.
-			perc := float64(schedule.total()) - (float64(+rem) / float64(schedule.total()))
-			duration := time.Duration(float64(schedule.ValidUntil().Sub(at)) * perc)
-			at.Add(duration)
-			return &at
-		} else if rem == 0 {
-			// Special case: this will be the very last entry to be reconciled.
-			at = schedule.ValidUntil()
-			return &at
-		}
-
-		at = schedule.ValidUntil()
-	}
-
-	return nil
-}
-
-// HasRolloutWindows returns true if one or more windows have been defined.
-func (cfg *Configuration) HasRolloutWindows() bool {
-	return len(cfg.windows) != 0
-}
-
-// Schedule calculates a schedule for the near future (most likely about a
-// minute), based on the history.
-func (cfg *Configuration) Schedule() Schedule {
-	cfg.mu.RLock()
-	defer cfg.mu.RUnlock()
-
-	// If there are no rollout windows, then we return an unlimited schedule and
-	// have the scheduler check back in periodically in case the configuration
-	// updated. Ten minutes is probably safe enough.
-	if !cfg.HasRolloutWindows() {
-		return newSchedule(time.Now(), 10*time.Minute, rate{n: -1})
-	}
-
-	return cfg.scheduleAt(time.Now(), true)
 }
 
 func (cfg *Configuration) scheduleAt(at time.Time, minimal bool) Schedule {
