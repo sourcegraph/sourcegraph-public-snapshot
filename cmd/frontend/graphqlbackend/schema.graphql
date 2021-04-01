@@ -481,7 +481,7 @@ type Mutation {
 
     Only site admins may perform this mutation.
     """
-    # 🚨 SECURITY: Only trusted users should be given site admin permissions.
+    # SECURITY: Only trusted users should be given site admin permissions.
     # Site admins have full access to the site configuration and other
     # sensitive data, and they can perform destructive actions such as
     # restarting the site.
