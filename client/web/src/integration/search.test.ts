@@ -496,6 +496,57 @@ describe('Search', () => {
 
             await percySnapshot(driver.page, 'Streaming diff search syntax highlighting')
         })
+
+        test('Streaming commit search syntax highlighting', async () => {
+            const searchStreamEvents: SearchEvent[] = [
+                {
+                    type: 'matches',
+                    data: [
+                        {
+                            type: 'commit',
+                            icon:
+                                'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4=',
+                            label:
+                                '[sourcegraph/sourcegraph](/github.com/sourcegraph/sourcegraph) › [Camden Cheek](/github.com/sourcegraph/sourcegraph/-/commit/f7d28599cad80e200913d9c4612618a73199bac1): [search: Incorporate search blitz (#19567)](/github.com/sourcegraph/sourcegraph/-/commit/f7d28599cad80e200913d9c4612618a73199bac1)',
+                            url:
+                                '/github.com/sourcegraph/sourcegraph/-/commit/f7d28599cad80e200913d9c4612618a73199bac1',
+                            detail:
+                                '[`f7d2859` 2 days ago](/github.com/sourcegraph/sourcegraph/-/commit/f7d28599cad80e200913d9c4612618a73199bac1)',
+                            content:
+                                '```COMMIT_EDITMSG\nsearch: Incorporate search blitz (#19567)\n\nIncorporates search blitz into sourcegraph/sourcegraph so it has access to the internal streaming client\n```',
+                            ranges: [
+                                [3, 37, 5],
+                                [3, 49, 5],
+                            ],
+                        },
+                    ],
+                },
+                { type: 'done', data: {} },
+            ]
+
+            const highlightResult: Partial<WebGraphQlOperations> = {
+                highlightCode: ({ isLightTheme }) => ({
+                    highlightCode: isLightTheme
+                        ? '<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#657b83;">search: Incorporate search blitz (#19567)\n</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#657b83;">\n</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#657b83;">Incorporates search blitz into sourcegraph/sourcegraph so it has access to the internal streaming client</span></div></td></tr></tbody></table>'
+                        : '<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#c0c5ce;">search: Incorporate search blitz (#19567)\n</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#c0c5ce;">\n</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#c0c5ce;">Incorporates search blitz into sourcegraph/sourcegraph so it has access to the internal streaming client</span></div></td></tr></tbody></table>',
+                }),
+            }
+
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+                ...viewerSettingsWithStreamingSearch,
+                ...highlightResult,
+            })
+            testContext.overrideSearchStreamEvents(searchStreamEvents)
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=graph%20type:commit&patternType=regexp')
+            await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
+                visible: true,
+            })
+            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+
+            await percySnapshot(driver.page, 'Streaming commit search syntax highlighting')
+        })
     })
 
     describe('Search contexts', () => {
