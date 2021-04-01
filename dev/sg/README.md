@@ -22,6 +22,8 @@ Run the following to install `sg` from the `main` branch:
 go install github.com/sourcegraph/sourcegraph/dev/sg@latest
 ```
 
+Make sure that `$HOME/go/bin` is in your `$PATH`. (If you use `$GOPATH` then `$GOPATH/bin` needs to be in the `$PATH`)
+
 Then, in the root of `sourcegraph/sourcegraph`, run:
 
 ```
