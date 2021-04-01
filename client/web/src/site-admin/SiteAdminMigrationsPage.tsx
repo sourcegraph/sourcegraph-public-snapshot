@@ -372,14 +372,19 @@ interface Version {
     minor: number
 }
 
-/** Extract the major and minor semver numbers from the given version string. */
+/**
+ * Extract the major and minor semver numbers from the given version string.
+ *
+ * We do not use the semver package here because we want to parse only the major.minor
+ * prefix, and semver does not allow us to parse invalid (patch-less) version strings.
+ */
 const extract = (version: string): Version | undefined => {
-    const semVer = semver.parse(version)
-    if (semVer === null) {
+    const match = version.match(/^(\d+)\.(\d+)/)
+    if (!match) {
         return undefined
     }
 
-    return { major: semVer.major, minor: semVer.minor }
+    return { major: parseInt(match[1], 10), minor: parseInt(match[2], 10) }
 }
 
 /** Return a copy of the given version with the minor value bumped by delta. */
