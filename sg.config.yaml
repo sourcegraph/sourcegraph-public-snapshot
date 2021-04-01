@@ -46,8 +46,11 @@ commands:
       - cmd/frontend
 
   enterprise-frontend:
-    cmd: .bin/enterprise-frontend
+    cmd: ulimit -n 10000 && .bin/enterprise-frontend
     install: go build -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
+    env:
+      CONFIGURATION_MODE: server
+      USE_ENHANCED_LANGUAGE_DETECTION: false
     watch:
       - internal
       - cmd/frontend
@@ -184,12 +187,25 @@ commands:
         -cpu_fraction 0.25
     install: |
       mkdir -p .bin
-      export GOBIN="${PWD}/.bin"
-      export GO111MODULE=on
       # TODO: Do we need to install these?
       # go install github.com/google/zoekt/cmd/zoekt-archive-index
       # go install github.com/google/zoekt/cmd/zoekt-git-index
-      go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
+      env GOBIN="${PWD}/.bin" GO111MODULE=on go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
+    env:
+      GOGC: 50
+
+  zoekt-indexserver-1:
+    cmd: |
+      .bin/zoekt-sourcegraph-indexserver \
+        -sourcegraph_url 'http://localhost:3090' \
+        -index "$HOME/.sourcegraph/zoekt/index-1" \
+        -hostname 'localhost:3071' \
+        -interval 1m \
+        -listen ":6073" \
+        -cpu_fraction 0.25
+    install: |
+      mkdir -p .bin
+      env GOBIN="${PWD}/.bin" GO111MODULE=on go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
     env:
       GOGC: 50
 
@@ -200,17 +216,24 @@ commands:
         -pprof -rpc -listen ":3070"
     install: |
       mkdir -p .bin
-      export GOBIN="${PWD}/.bin"
-      export GO111MODULE=on
-      go install github.com/google/zoekt/cmd/zoekt-webserver
+      env GOBIN="${PWD}/.bin" GO111MODULE=on go install github.com/google/zoekt/cmd/zoekt-webserver
+    env:
+      JAEGER_DISABLED: false
+      GOGC: 50
+
+  zoekt-webserver-1:
+    cmd: |
+      .bin/zoekt-webserver \
+        -index "$HOME/.sourcegraph/zoekt/index-1" \
+        -pprof -rpc -listen ":3071"
+    install: |
+      mkdir -p .bin
+      env GOBIN="${PWD}/.bin" GO111MODULE=on go install github.com/google/zoekt/cmd/zoekt-webserver
     env:
       JAEGER_DISABLED: false
       GOGC: 50
 
 commandsets:
-  testing:
-    - frontend
-    - gitserver
   default:
     - frontend
     - repo-updater
@@ -224,13 +247,9 @@ commandsets:
     - syntect_server
     - github-proxy
     - zoekt-indexserver-0
+    - zoekt-indexserver-1
     - zoekt-webserver-0
-
-  zoekt:
-    - frontend
-    - gitserver
-    - zoekt-indexserver-0
-    - zoekt-webserver-0
+    - zoekt-webserver-1
 
   enterprise:
     - enterprise-frontend
@@ -244,13 +263,10 @@ commandsets:
     - docsite
     - syntect_server
     - github-proxy
-
-  # Another set that can be run with `sg run-set monitoring`:
-  monitoring:
-    # - jaeger
-    # - prometheus
-    # - grafana
-    # - postgres_exporter
+    - zoekt-indexserver-0
+    - zoekt-indexserver-1
+    - zoekt-webserver-0
+    - zoekt-webserver-1
 
 tests:
   # These can be run with `sg test [name]`
