@@ -189,11 +189,9 @@ func (r *ChangesetRewirer) closeChangeset(changeset *batches.Changeset) {
 			changeset.Closing = true
 			reset = true
 		}
-	} else {
+	} else if wasAttached := changeset.Detach(r.batchChangeID); wasAttached {
 		// If not, we simply detach it
-		if wasAttached := changeset.Detach(r.batchChangeID); wasAttached {
-			reset = true
-		}
+		reset = true
 	}
 
 	if reset {
