@@ -1,6 +1,8 @@
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContext } from '../../../../shared/src/graphql/schema'
+import { MockIntersectionObserver } from '../../../../shared/src/util/MockIntersectionObserver'
 import { mount } from 'enzyme'
 import React, { ChangeEvent } from 'react'
+import { act } from 'react-dom/test-utils'
 import { DropdownItem, DropdownMenu, UncontrolledDropdown } from 'reactstrap'
 import { of } from 'rxjs'
 import sinon from 'sinon'
@@ -27,7 +29,7 @@ const mockFetchAutoDefinedSearchContexts = () =>
         },
     ] as ISearchContext[])
 
-const mockFetchSearchContexts = (first: number, query?: string, after?: string) => {
+const mockFetchSearchContexts = (first: number, query?: string, after?: string | null) => {
     const nodes = [
         {
             __typename: 'SearchContext',
@@ -66,6 +68,19 @@ describe('SearchContextMenu', () => {
         fetchSearchContexts: mockFetchSearchContexts,
         closeMenu: () => {},
     }
+
+    const RealIntersectionObserver = window.IntersectionObserver
+    let clock: sinon.SinonFakeTimers
+
+    beforeAll(() => {
+        clock = sinon.useFakeTimers()
+        window.IntersectionObserver = MockIntersectionObserver
+    })
+
+    afterAll(() => {
+        clock.restore()
+        window.IntersectionObserver = RealIntersectionObserver
+    })
 
     it('should select item when clicking on it', () => {
         const selectSearchContextSpec = sinon.spy()
@@ -115,11 +130,16 @@ describe('SearchContextMenu', () => {
         )
 
         const searchInput = root.find('input')
+        act(() => {
+            // Search by spec
+            searchInput.invoke('onInput')?.({
+                currentTarget: { value: 'ser' },
+            } as ChangeEvent<HTMLInputElement>)
+            // Wait for debounce
+            clock.tick(500)
+        })
 
-        // Search by spec
-        searchInput.invoke('onInput')?.({
-            currentTarget: { value: 'ser' },
-        } as ChangeEvent<HTMLInputElement>)
+        root.update()
 
         const items = root.find(DropdownItem)
         expect(items.length).toBe(2)
@@ -140,10 +160,17 @@ describe('SearchContextMenu', () => {
 
         const searchInput = root.find('input')
 
-        // Search by spec
-        searchInput.invoke('onInput')?.({
-            currentTarget: { value: 'nothing' },
-        } as ChangeEvent<HTMLInputElement>)
+        act(() => {
+            // Search by spec
+            searchInput.invoke('onInput')?.({
+                currentTarget: { value: 'nothing' },
+            } as ChangeEvent<HTMLInputElement>)
+
+            // Wait for debounce
+            clock.tick(500)
+        })
+
+        root.update()
 
         const items = root.find(DropdownItem)
         expect(items.length).toBe(1)
@@ -161,9 +188,15 @@ describe('SearchContextMenu', () => {
 
         const searchInput = root.find('input')
 
-        searchInput.invoke('onInput')?.({
-            currentTarget: { value: 'version 1.5' },
-        } as ChangeEvent<HTMLInputElement>)
+        act(() => {
+            searchInput.invoke('onInput')?.({
+                currentTarget: { value: 'version 1.5' },
+            } as ChangeEvent<HTMLInputElement>)
+            // Wait for debounce
+            clock.tick(500)
+        })
+
+        root.update()
 
         const items = root.find(DropdownItem)
         expect(items.length).toBe(1)

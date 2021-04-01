@@ -21,6 +21,8 @@
     &__list {
         width: 30rem;
         padding: 0.25rem 0;
+        max-height: 300px;
+        overflow: auto;
     }
 
     &__item {

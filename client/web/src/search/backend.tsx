@@ -267,7 +267,7 @@ export const fetchAutoDefinedSearchContexts = defer(() =>
 export function fetchSearchContexts(
     first: number,
     query?: string,
-    after?: string
+    after?: string | null
 ): Observable<ListSearchContextsResult['searchContexts']> {
     return requestGraphQL<ListSearchContextsResult, ListSearchContextsVariables>(
         gql`

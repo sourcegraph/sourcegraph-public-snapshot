@@ -6,7 +6,8 @@ import { of } from 'rxjs'
 import { ListSearchContextsResult, SearchPatternType } from '../../graphql-operations'
 import { Dropdown, DropdownItem, DropdownToggle } from 'reactstrap'
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { MockIntersectionObserver } from '../../../../shared/src/util/MockIntersectionObserver'
+import { ISearchContext } from '../../../../shared/src/graphql/schema'
 
 const mockFetchAutoDefinedSearchContexts = () =>
     of([
@@ -20,7 +21,7 @@ const mockFetchAutoDefinedSearchContexts = () =>
         },
     ] as ISearchContext[])
 
-const mockFetchSearchContexts = (first: number, query?: string, after?: string) => {
+const mockFetchSearchContexts = (first: number, query?: string, after?: string | null) => {
     const result: ListSearchContextsResult['searchContexts'] = {
         nodes: [],
         pageInfo: {
@@ -46,7 +47,15 @@ describe('SearchContextDropdown', () => {
         versionContext: undefined,
         submitSearch: () => {},
     }
+    const RealIntersectionObserver = window.IntersectionObserver
 
+    beforeAll(() => {
+        window.IntersectionObserver = MockIntersectionObserver
+    })
+
+    afterAll(() => {
+        window.IntersectionObserver = RealIntersectionObserver
+    })
     it('should start closed', () => {
         const element = mount(<SearchContextDropdown {...defaultProps} />)
         const button = element.find(Dropdown)
