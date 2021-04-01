@@ -706,7 +706,7 @@ This panel indicates percentage pods available.
 
 <br />
 
-### Frontend: Sentinel Search Queries
+### Frontend: Sentinel Search Queries (currently only available on Cloud)
 
 #### frontend: 90th_percentile_sentinel_search_request_duration
 

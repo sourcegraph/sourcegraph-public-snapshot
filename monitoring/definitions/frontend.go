@@ -746,7 +746,8 @@ func Frontend() *monitoring.Container {
 				},
 			},
 			{
-				Title: "Sentinel Search Queries",
+				Title:  "Sentinel Search Queries (currently only available on Cloud)",
+				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
