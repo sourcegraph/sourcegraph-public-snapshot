@@ -677,6 +677,16 @@ func (c *Changeset) Archive(batchChangeID int64) bool {
 	return false
 }
 
+// ArchivedIn checks whether the changeset is archived in the given batch change.
+func (c *Changeset) ArchivedIn(batchChangeID int64) bool {
+	for i := range c.BatchChanges {
+		if c.BatchChanges[i].BatchChangeID == batchChangeID && c.BatchChanges[i].IsArchived {
+			return true
+		}
+	}
+	return false
+}
+
 // SupportsLabels returns whether the code host on which the changeset is
 // hosted supports labels and whether it's safe to call the
 // (*Changeset).Labels() method.

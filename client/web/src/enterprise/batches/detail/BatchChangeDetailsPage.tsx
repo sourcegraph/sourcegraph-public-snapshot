@@ -92,8 +92,6 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
         )
     )
 
-    const archiveEnabled = window.context?.experimentalFeatures?.archiveBatchChangeChangesets
-
     // Is loading.
     if (batchChange === undefined) {
         return (
@@ -145,7 +143,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 total={batchChange.changesetsStats.total}
                 className="mb-3"
             />
-            {archiveEnabled && <ChangesetsArchivedNotice history={history} location={location} />}
+            <ChangesetsArchivedNotice history={history} location={location} />
             <BatchChangeStatsCard
                 closedAt={batchChange.closedAt}
                 stats={batchChange.changesetsStats}

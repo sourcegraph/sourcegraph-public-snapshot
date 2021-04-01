@@ -30,11 +30,10 @@ func TestRewirer_Rewire(t *testing.T) {
 		},
 	}
 	testCases := []struct {
-		name                   string
-		mappings               store.RewirerMappings
-		wantChangesets         []ct.ChangesetAssertions
-		wantErr                error
-		archiveInsteadOfDetach bool
+		name           string
+		mappings       store.RewirerMappings
+		wantChangesets []ct.ChangesetAssertions
+		wantErr        error
 	}{
 		{
 			name:           "empty mappings",
@@ -90,38 +89,6 @@ func TestRewirer_Rewire(t *testing.T) {
 		},
 		{
 			name: "no spec matching existing published branch changeset owned by this batch change",
-			mappings: store.RewirerMappings{{
-				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
-					Repo:         testRepoID,
-					BatchChanges: []batches.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
-
-					// Owned, published branch changeset:
-					OwnedByBatchChange: testBatchChangeID,
-					CurrentSpec:        testChangesetSpecID,
-					PublicationState:   batches.ChangesetPublicationStatePublished,
-					// Publication succeeded
-					ReconcilerState: batches.ReconcilerStateCompleted,
-				}),
-				Repo: testRepo,
-			}},
-			wantChangesets: []ct.ChangesetAssertions{
-				// No match, should be re-enqueued and detached from the batch change.
-				assertResetQueued(ct.ChangesetAssertions{
-					PublicationState:   batches.ChangesetPublicationStatePublished,
-					OwnedByBatchChange: testBatchChangeID,
-					CurrentSpec:        testChangesetSpecID,
-					// The changeset should be closed on the code host.
-					Closing:    true,
-					Repo:       testRepoID,
-					DetachFrom: []int64{testBatchChangeID},
-					// Current spec should have been made the previous spec.
-					PreviousSpec: testChangesetSpecID,
-				}),
-			},
-		},
-		{
-			name:                   "archiving-feature-flag on: no spec matching existing published branch changeset owned by this batch change",
-			archiveInsteadOfDetach: true,
 			mappings: store.RewirerMappings{{
 				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
 					Repo:         testRepoID,
@@ -388,7 +355,7 @@ func TestRewirer_Rewire(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			r := New(tc.mappings, testBatchChangeID, tc.archiveInsteadOfDetach)
+			r := New(tc.mappings, testBatchChangeID)
 
 			changesets, err := r.Rewire()
 			if err != nil && tc.wantErr == nil {
