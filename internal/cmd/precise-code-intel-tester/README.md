@@ -69,3 +69,11 @@ Upload the generated indexes by running the following command:
 ```
 ./scripts/upload.sh
 ```
+
+Or if you just want to test an indexer change locally, you can:
+
+```sh
+rm -rf testdata/indexes/
+```
+
+Then rerun the testing steps described above (starting at `clone-and-index.sh`)
