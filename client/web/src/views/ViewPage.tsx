@@ -20,6 +20,7 @@ interface Props extends Omit<ViewContentProps, 'viewContent' | 'containerClassNa
  * A page that displays a single view (contributed by an extension) as a standalone page.
  */
 export const ViewPage: React.FunctionComponent<Props> = ({ viewID, extraPath, location, getViewForID, ...props }) => {
+    console.log({ viewID });
     const queryParameters = useMemo<Record<string, string>>(
         () => ({ ...Object.fromEntries(new URLSearchParams(location.search).entries()), extraPath }),
         [extraPath, location.search]

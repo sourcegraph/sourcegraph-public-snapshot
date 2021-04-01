@@ -42,7 +42,7 @@ interface TooltipData {
     value: number;
 }
 
-interface BarChartProps extends BarChartContent<any, string> {
+interface BarChartProps extends Omit<BarChartContent<any, string>, 'chart'> {
     width: number;
     height: number;
 }

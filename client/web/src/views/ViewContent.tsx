@@ -10,7 +10,8 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 import { isObject } from 'lodash'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { ChartViewContent } from './ChartViewContent'
+// import { ChartViewContent } from './ChartViewContent'
+import { ChartViewContent } from './ChartViewContent/ChartViewContent'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>
