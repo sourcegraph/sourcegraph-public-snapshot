@@ -16,7 +16,7 @@ import (
 )
 
 // CurrentDocumentSchemaVersion is the schema version used for new lsif_data_documents rows.
-const CurrentDocumentSchemaVersion = 2
+const CurrentDocumentSchemaVersion = 3
 
 // CurrentDefinitionsSchemaVersion is the schema version used for new lsif_data_definitions rows.
 const CurrentDefinitionsSchemaVersion = 2
@@ -56,7 +56,18 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 				return err
 			}
 
-			if err := inserter.Insert(ctx, bundleID, v.Path, data, CurrentDocumentSchemaVersion, len(v.Document.Diagnostics)); err != nil {
+			if err := inserter.Insert(
+				ctx,
+				bundleID,
+				v.Path,
+				data.Ranges,
+				data.HoverResults,
+				data.Monikers,
+				data.PackageInformation,
+				data.Diagnostics,
+				CurrentDocumentSchemaVersion,
+				len(v.Document.Diagnostics),
+			); err != nil {
 				return err
 			}
 
@@ -66,7 +77,17 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 		return nil
 	}
 
-	if err := withBatchInserter(ctx, s.Handle().DB(), "lsif_data_documents", []string{"dump_id", "path", "data", "schema_version", "num_diagnostics"}, inserter); err != nil {
+	if err := withBatchInserter(ctx, s.Handle().DB(), "lsif_data_documents", []string{
+		"dump_id",
+		"path",
+		"ranges",
+		"hovers",
+		"monikers",
+		"packages",
+		"diagnostics",
+		"schema_version",
+		"num_diagnostics",
+	}, inserter); err != nil {
 		return err
 	}
 	traceLog(log.Int("count", int(count)))

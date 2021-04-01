@@ -22,7 +22,7 @@ func TestLocationsCountMigrator(t *testing.T) {
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	store := lsifstore.NewStore(dbconn.Global, &observation.TestContext)
-	migrator := NewLocationsCountMigrator(store, "lsif_data_definitions", 1000)
+	migrator := NewLocationsCountMigrator(store, "lsif_data_definitions", 250)
 	serializer := lsifstore.NewSerializer()
 
 	assertProgress := func(expectedProgress float64) {
@@ -43,7 +43,7 @@ func TestLocationsCountMigrator(t *testing.T) {
 		}
 	}
 
-	n := 2000
+	n := 500
 	expectedCounts := make([]int, 0, n)
 	locations := make([]semantic.LocationData, 0, n)
 

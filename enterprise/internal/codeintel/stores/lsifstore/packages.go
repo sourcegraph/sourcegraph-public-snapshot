@@ -30,5 +30,19 @@ func (s *Store) PackageInformation(ctx context.Context, bundleID int, path, pack
 
 const packageInformationQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/packages.go:PackageInformation
-SELECT dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path = %s LIMIT 1
+SELECT
+	dump_id,
+	path,
+	data,
+	NULL AS ranges,
+	NULL AS hovers,
+	NULL AS monikers,
+	packages,
+	NULL AS diagnostics
+FROM
+	lsif_data_documents
+WHERE
+	dump_id = %s AND
+	path = %s
+LIMIT 1
 `
