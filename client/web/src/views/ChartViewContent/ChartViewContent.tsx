@@ -5,13 +5,13 @@ import { ParentSize } from '@visx/responsive';
 
 import { LineChart } from './charts/line/LineChart';
 import { PieChart } from './charts/pie/PieChart';
+import { BarChart } from './charts/bar/BarChart';
 
 /**
  * Displays chart view content.
  */
 export interface ChartViewContentProps {
     content: ChartContent
-    animate?: boolean
     history: H.History
     viewID: string
 }
@@ -33,14 +33,12 @@ interface CartesianChartViewContentProps extends ChartViewContentProps {
 export const CartesianChartViewContent: FunctionComponent<CartesianChartViewContentProps> = props => {
     const { content } = props;
 
-    if (content.chart === 'bar') {
-      return (<div>Bar chart mock</div>);
-    }
+    const ChartComponent = content.chart === 'line' ? LineChart : BarChart
 
     return (
         <div className="chart-view-content" >
             <ParentSize className='chart-view-content__chart'>
-                { ({ width, height}) => <LineChart width={width} height={height} {...content} /> }
+                { ({ width, height}) => <ChartComponent width={width} height={height} {...content} /> }
             </ParentSize>
         </div>
     );
