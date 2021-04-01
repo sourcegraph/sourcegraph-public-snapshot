@@ -176,7 +176,15 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
-            const newQuery = [query, ...additionalFilters].join(' ')
+            const countRe = new RegExp(/count:\d+/, 'gim')
+            let newQuery = query
+            for (const value of additionalFilters) {
+                if (!value.startsWith('count')) {
+                    newQuery = newQuery + ' ' + value
+                    continue
+                }
+                newQuery = newQuery.search(countRe) >= 0 ? newQuery.replace(countRe, value) : newQuery + ' ' + value
+            }
             telemetryService.log('SearchSkippedResultsAgainClicked')
             submitSearch({ ...props, query: newQuery, source: 'excludedResults' })
         },
