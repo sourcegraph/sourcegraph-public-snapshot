@@ -261,6 +261,12 @@ func (c *Changeset) Clone() *Changeset {
 	return &tt
 }
 
+// Closeable returns whether the Changeset is already closed or merged.
+func (c *Changeset) Closeable() bool {
+	return c.ExternalState != ChangesetExternalStateClosed &&
+		c.ExternalState != ChangesetExternalStateMerged
+}
+
 // Published returns whether the Changeset's PublicationState is Published.
 func (c *Changeset) Published() bool { return c.PublicationState.Published() }
 

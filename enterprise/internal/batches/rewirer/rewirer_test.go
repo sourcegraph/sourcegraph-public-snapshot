@@ -88,7 +88,7 @@ func TestRewirer_Rewire(t *testing.T) {
 			},
 		},
 		{
-			name: "no spec matching existing published branch changeset owned by this batch change",
+			name: "no spec matching existing published and open branch changeset owned by this batch change",
 			mappings: store.RewirerMappings{{
 				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
 					Repo:         testRepoID,
@@ -98,6 +98,7 @@ func TestRewirer_Rewire(t *testing.T) {
 					OwnedByBatchChange: testBatchChangeID,
 					CurrentSpec:        testChangesetSpecID,
 					PublicationState:   batches.ChangesetPublicationStatePublished,
+					ExternalState:      batches.ChangesetExternalStateOpen,
 					// Publication succeeded
 					ReconcilerState: batches.ReconcilerStateCompleted,
 				}),
@@ -107,6 +108,7 @@ func TestRewirer_Rewire(t *testing.T) {
 				// No match, should be re-enqueued and detached from the batch change.
 				assertResetQueued(ct.ChangesetAssertions{
 					PublicationState:   batches.ChangesetPublicationStatePublished,
+					ExternalState:      batches.ChangesetExternalStateOpen,
 					OwnedByBatchChange: testBatchChangeID,
 					CurrentSpec:        testChangesetSpecID,
 					Repo:               testRepoID,
@@ -114,6 +116,76 @@ func TestRewirer_Rewire(t *testing.T) {
 					PreviousSpec: testChangesetSpecID,
 					// The changeset should be closed on the code host.
 					Closing: true,
+					// And still attached to the batch change but archived
+					ArchiveIn:  testBatchChangeID,
+					AttachedTo: []int64{testBatchChangeID},
+				}),
+			},
+		},
+		{
+			name: "no spec matching existing published and merged branch changeset owned by this batch change",
+			mappings: store.RewirerMappings{{
+				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
+					Repo:         testRepoID,
+					BatchChanges: []batches.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
+
+					// Owned, published branch changeset:
+					OwnedByBatchChange: testBatchChangeID,
+					CurrentSpec:        testChangesetSpecID,
+					PublicationState:   batches.ChangesetPublicationStatePublished,
+					ExternalState:      batches.ChangesetExternalStateMerged,
+					// Publication succeeded
+					ReconcilerState: batches.ReconcilerStateCompleted,
+				}),
+				Repo: testRepo,
+			}},
+			wantChangesets: []ct.ChangesetAssertions{
+				// No match, should be re-enqueued and detached from the batch change.
+				assertResetQueued(ct.ChangesetAssertions{
+					PublicationState:   batches.ChangesetPublicationStatePublished,
+					ExternalState:      batches.ChangesetExternalStateMerged,
+					OwnedByBatchChange: testBatchChangeID,
+					CurrentSpec:        testChangesetSpecID,
+					Repo:               testRepoID,
+					// Current spec should have been made the previous spec.
+					PreviousSpec: testChangesetSpecID,
+					// The changeset should NOT be closed on the code host, since it's already merged
+					Closing: false,
+					// And still attached to the batch change but archived
+					ArchiveIn:  testBatchChangeID,
+					AttachedTo: []int64{testBatchChangeID},
+				}),
+			},
+		},
+		{
+			name: "no spec matching existing published and closed branch changeset owned by this batch change",
+			mappings: store.RewirerMappings{{
+				Changeset: ct.BuildChangeset(ct.TestChangesetOpts{
+					Repo:         testRepoID,
+					BatchChanges: []batches.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
+
+					// Owned, published branch changeset:
+					OwnedByBatchChange: testBatchChangeID,
+					CurrentSpec:        testChangesetSpecID,
+					PublicationState:   batches.ChangesetPublicationStatePublished,
+					ExternalState:      batches.ChangesetExternalStateClosed,
+					// Publication succeeded
+					ReconcilerState: batches.ReconcilerStateCompleted,
+				}),
+				Repo: testRepo,
+			}},
+			wantChangesets: []ct.ChangesetAssertions{
+				// No match, should be re-enqueued and detached from the batch change.
+				assertResetQueued(ct.ChangesetAssertions{
+					PublicationState:   batches.ChangesetPublicationStatePublished,
+					ExternalState:      batches.ChangesetExternalStateClosed,
+					OwnedByBatchChange: testBatchChangeID,
+					CurrentSpec:        testChangesetSpecID,
+					Repo:               testRepoID,
+					// Current spec should have been made the previous spec.
+					PreviousSpec: testChangesetSpecID,
+					// The changeset should NOT be closed on the code host, since it's already closed
+					Closing: false,
 					// And still attached to the batch change but archived
 					ArchiveIn:  testBatchChangeID,
 					AttachedTo: []int64{testBatchChangeID},
