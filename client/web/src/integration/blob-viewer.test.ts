@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
+import { Driver, createDriverForTest, percySnapshot } from '../../../shared/src/testing/driver'
 import { ExtensionManifest } from '../../../shared/src/schema/extensionSchema'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
@@ -191,14 +191,14 @@ describe('Blob viewer', () => {
                     response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                 })
         })
-        it('truncates long file paths properly', async () => {
+        it('truncates long file paths properly', async function () {
             await driver.page.goto(
                 `${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/this_is_a_long_file_path/apps/rest-showcase/src/main/java/org/demo/rest/example/OrdersController.java`
             )
             await driver.page.waitForSelector('.test-repo-blob')
             await driver.page.waitForSelector('.test-breadcrumb')
             // Uncomment this snapshot once https://github.com/sourcegraph/sourcegraph/issues/15126 is resolved
-            // await percySnapshot(driver.page, this.test!.fullTitle())
+            await percySnapshot(driver.page, this.test!.title)
         })
 
         it.skip('shows a hover overlay from a hover provider when a token is hovered', async () => {
@@ -207,7 +207,7 @@ describe('Blob viewer', () => {
             // TODO
         })
 
-        it('shows a hover overlay from a hover provider and updates the URL when a token is clicked', async () => {
+        it('shows a hover overlay from a hover provider and updates the URL when a token is clicked', async function () {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
 
             // Click on "log" in "console.log()" in line 2
@@ -217,7 +217,7 @@ describe('Blob viewer', () => {
             await driver.assertWindowLocation('/github.com/sourcegraph/test/-/blob/test.ts#L2:9')
             assert.deepStrictEqual(await getHoverContents(), ['Test hover content\n'])
             // Uncomment this snapshot once https://github.com/sourcegraph/sourcegraph/issues/15126 is resolved
-            // await percySnapshot(driver.page, this.test!.fullTitle())
+            await percySnapshot(driver.page, this.test!.title)
         })
 
         interface MockExtension {
