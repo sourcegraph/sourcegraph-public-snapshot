@@ -245,13 +245,6 @@ func BatchChangesRestrictedToAdmins() bool {
 	return false
 }
 
-func ArchiveBatchChangeChangesets() bool {
-	if archive := Get().ExperimentalFeatures.ArchiveBatchChangeChangesets; archive != nil {
-		return *archive
-	}
-	return false
-}
-
 func CodeIntelAutoIndexingEnabled() bool {
 	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
 		return *enabled

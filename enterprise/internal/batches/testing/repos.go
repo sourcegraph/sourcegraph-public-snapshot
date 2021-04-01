@@ -163,10 +163,14 @@ func CreateGitHubSSHTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, c
 			GitURLType: "ssh",
 		}),
 	}
+	esStore := database.ExternalServices(db)
+	if err := esStore.Upsert(ctx, ext); err != nil {
+		t.Fatal(err)
+	}
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepo(t, database.ExternalServices(db), extsvc.KindGitHub)
+		r := TestRepo(t, esStore, extsvc.KindGitHub)
 		r.Sources = map[string]*types.SourceInfo{ext.URN(): {
 			ID:       ext.URN(),
 			CloneURL: "git@github.com:" + string(r.Name) + ".git",

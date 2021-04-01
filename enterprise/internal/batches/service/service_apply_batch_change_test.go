@@ -345,7 +345,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				t.Fatal("expected to update batch change, but got a new one")
 			}
 
-			// This changeset we want marked as "to be closed"
+			// This changeset we want marked as "to be archived" and "to be closed"
 			ct.ReloadAndAssertChangeset(t, ctx, store, wantClosed, ct.ChangesetAssertions{
 				Repo:         repos[2].ID,
 				CurrentSpec:  oldSpec4.ID,
@@ -358,7 +358,8 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				ReconcilerState:    batches.ReconcilerStateQueued,
 				PublicationState:   batches.ChangesetPublicationStatePublished,
 				DiffStat:           ct.TestChangsetSpecDiffStat,
-				DetachFrom:         []int64{batchChange.ID},
+				AttachedTo:         []int64{batchChange.ID},
+				ArchiveIn:          batchChange.ID,
 				Closing:            true,
 			})
 
@@ -795,15 +796,15 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			}
 		})
 
-		t.Run("closed and detached changeset not re-enqueued for close", func(t *testing.T) {
+		t.Run("closed and archived changeset not re-enqueued for close", func(t *testing.T) {
 			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
+			batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "archived-closed-changeset", admin.ID)
 
 			specOpts := ct.TestSpecOpts{
 				User:      admin.ID,
 				Repo:      repos[0].ID,
 				BatchSpec: batchSpec1.ID,
-				HeadRef:   "refs/heads/detached-closed",
+				HeadRef:   "refs/heads/archived-closed",
 			}
 			spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
@@ -829,38 +830,41 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			}
 			c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
-			// STEP 2: Now we apply a new spec without any changesets, but expect the changeset-to-be-detached to
+			// STEP 2: Now we apply a new spec without any changesets, but expect the changeset-to-be-archived to
 			// be left in the batch change (the reconciler would detach it, if the executor picked up the changeset).
-			batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
+			batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "archived-closed-changeset", admin.ID)
 			applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
 
-			// Our previously published changeset should be marked as "to be closed"
+			// Our previously published changeset should be marked as "to be
+			// archived" and "to be closed"
+			assertions.ArchiveIn = batchChange.ID
+			assertions.AttachedTo = []int64{batchChange.ID}
 			assertions.Closing = true
 			assertions.ReconcilerState = batches.ReconcilerStateQueued
 			// And the previous spec is recorded, because the previous run finished with reconcilerState completed.
 			assertions.PreviousSpec = spec1.ID
-			assertions.DetachFrom = []int64{batchChange.ID}
-			assertions.AttachedTo = []int64{}
 			c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
-			// Now we update the changeset to make it look closed.
+			// Now we update the changeset to make it look closed and archived.
 			ct.SetChangesetClosed(t, ctx, store, c)
 			assertions.Closing = false
-			assertions.DetachFrom = []int64{}
 			assertions.ReconcilerState = batches.ReconcilerStateCompleted
+			assertions.ArchivedInOwnerBatchChange = true
+			assertions.ArchiveIn = 0
 			assertions.ExternalState = batches.ChangesetExternalStateClosed
 			c = ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 
-			// STEP 3: We apply a new batch spec and expect that the detached changeset record is not re-enqueued.
-			batchSpec3 := ct.CreateBatchSpec(t, ctx, store, "detached-closed-changeset", admin.ID)
+			// STEP 3: We apply a new batch spec and expect that the archived changeset record is not re-enqueued.
+			batchSpec3 := ct.CreateBatchSpec(t, ctx, store, "archived-closed-changeset", admin.ID)
 
-			applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 0)
+			// 1 changeset that's archived
+			applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 1)
 
-			// Assert that the changeset record is still completed and closed.
+			// Assert that the changeset record is still archived and closed.
 			ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
 		})
 
-		t.Run("batch change with changeset that is detached and reattached", func(t *testing.T) {
+		t.Run("batch change with changeset that is archived and reattached", func(t *testing.T) {
 			t.Run("changeset has been closed before re-attaching", func(t *testing.T) {
 				ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 				batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
@@ -869,7 +873,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 					User:      admin.ID,
 					Repo:      repos[0].ID,
 					BatchSpec: batchSpec1.ID,
-					HeadRef:   "refs/heads/detached-reattached",
+					HeadRef:   "refs/heads/archived-reattached",
 				}
 				spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
@@ -899,10 +903,11 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
 				applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
 
-				// Our previously published changeset should be marked as "to be closed"
+				// Our previously published changeset should be marked as "to
+				// be archived" and "to be closed"
 				assertions.Closing = true
-				assertions.DetachFrom = []int64{batchChange.ID}
-				assertions.AttachedTo = []int64{}
+				assertions.ArchiveIn = batchChange.ID
+				assertions.AttachedTo = []int64{batchChange.ID}
 				assertions.ReconcilerState = batches.ReconcilerStateQueued
 				// And the previous spec is recorded.
 				assertions.PreviousSpec = spec1.ID
@@ -911,7 +916,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				// Now we update the changeset to make it look closed.
 				ct.SetChangesetClosed(t, ctx, store, c)
 				assertions.Closing = false
-				assertions.DetachFrom = []int64{}
+				assertions.ArchiveIn = 0
 				assertions.ReconcilerState = batches.ReconcilerStateCompleted
 				assertions.ExternalState = batches.ChangesetExternalStateClosed
 				ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
@@ -936,6 +941,8 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				// Assert that the previous spec is still spec 1
 				assertions.PreviousSpec = spec1.ID
 				assertions.ReconcilerState = batches.ReconcilerStateQueued
+				// Assert that it's not archived anymore:
+				assertions.ArchiveIn = 0
 				assertions.AttachedTo = []int64{batchChange.ID}
 				ct.AssertChangeset(t, attachedChangeset, assertions)
 			})
@@ -978,10 +985,11 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
 				applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
 
-				// Our previously published changeset should be marked as "to be closed"
+				// Our previously published changeset should be marked as "to
+				// be archived" and "to be closed"
 				assertions.Closing = true
-				assertions.DetachFrom = []int64{batchChange.ID}
-				assertions.AttachedTo = []int64{}
+				assertions.ArchiveIn = batchChange.ID
+				assertions.AttachedTo = []int64{batchChange.ID}
 				assertions.ReconcilerState = batches.ReconcilerStateQueued
 				// And the previous spec is recorded.
 				assertions.PreviousSpec = spec1.ID
@@ -1026,6 +1034,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				assertions.NumFailures = 0
 				assertions.DetachFrom = []int64{}
 				assertions.AttachedTo = []int64{batchChange.ID}
+				assertions.ArchiveIn = 0
 				ct.AssertChangeset(t, attachedChangeset, assertions)
 			})
 
@@ -1069,10 +1078,11 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				batchChange2 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID)
 				applyAndListChangesets(adminCtx, t, svc, batchChange2.RandID, 1)
 
-				// Our previously published changeset should be marked as "to be closed"
+				// Our previously published changeset should be marked as "to
+				// be archived" and "to be closed"
 				assertions.Closing = true
-				assertions.DetachFrom = []int64{batchChange.ID}
-				assertions.AttachedTo = []int64{}
+				assertions.ArchiveIn = batchChange.ID
+				assertions.AttachedTo = []int64{batchChange.ID}
 				assertions.ReconcilerState = batches.ReconcilerStateQueued
 				// And the previous spec is recorded.
 				assertions.PreviousSpec = spec1.ID
@@ -1100,6 +1110,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				assertions.ReconcilerState = batches.ReconcilerStateQueued
 				assertions.DetachFrom = []int64{}
 				assertions.AttachedTo = []int64{batchChange.ID}
+				assertions.ArchiveIn = 0
 				ct.AssertChangeset(t, attachedChangeset, assertions)
 			})
 		})
@@ -1138,7 +1149,10 @@ func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, bat
 		t.Fatalf("batch change ID is zero")
 	}
 
-	changesets, _, err := svc.store.ListChangesets(ctx, store.ListChangesetsOpts{BatchChangeID: batchChange.ID})
+	changesets, _, err := svc.store.ListChangesets(ctx, store.ListChangesetsOpts{
+		BatchChangeID:   batchChange.ID,
+		IncludeArchived: true,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

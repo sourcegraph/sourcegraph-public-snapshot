@@ -9892,6 +9892,11 @@ extend type Mutation {
     Hard-deletes a given credential.
     """
     deleteBatchChangesCredential(batchChangesCredential: ID!): EmptyResponse!
+
+    """
+    Detach archived changesets from a batch change.
+    """
+    detachChangesets(batchChange: ID!, changesets: [ID!]!): EmptyResponse!
 }
 
 extend type Query {

@@ -380,6 +380,10 @@ func SetChangesetClosed(t *testing.T, ctx context.Context, s UpdateChangeseter, 
 	assocs := make([]batches.BatchChangeAssoc, 0)
 	for _, assoc := range c.BatchChanges {
 		if !assoc.Detach {
+			if assoc.Archive {
+				assoc.IsArchived = true
+				assoc.Archive = false
+			}
 			assocs = append(assocs, assoc)
 		}
 	}

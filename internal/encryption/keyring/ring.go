@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/cloudkms"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/mounted"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -76,13 +77,19 @@ func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, erro
 	if err != nil {
 		return nil, err
 	}
+	uextacc, err := NewKey(ctx, keyConfig.UserExternalAccountKey)
+	if err != nil {
+		return nil, err
+	}
 	return &Ring{
-		ExternalServiceKey: extsvc,
+		ExternalServiceKey:     extsvc,
+		UserExternalAccountKey: uextacc,
 	}, nil
 }
 
 type Ring struct {
-	ExternalServiceKey encryption.Key
+	ExternalServiceKey     encryption.Key
+	UserExternalAccountKey encryption.Key
 }
 
 func NewKey(ctx context.Context, k *schema.EncryptionKey) (encryption.Key, error) {
@@ -92,6 +99,8 @@ func NewKey(ctx context.Context, k *schema.EncryptionKey) (encryption.Key, error
 	switch {
 	case k.Cloudkms != nil:
 		return cloudkms.NewKey(ctx, k.Cloudkms.Keyname)
+	case k.Mounted != nil:
+		return mounted.NewKey(ctx, *k.Mounted)
 	case k.Noop != nil:
 		return &encryption.NoopKey{}, nil
 	default:

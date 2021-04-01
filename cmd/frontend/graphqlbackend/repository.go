@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -34,26 +35,21 @@ type RepositoryResolver struct {
 	hydration sync.Once
 	err       error
 
-	// Invariant: name and id are always set and safe to use.
-	// They are used to hydrate the inner repo, and should always
-	// be the same as the name and id of the inner repo, but referring
-	// to the inner repo directly is unsafe because it may cause a race
-	// during hydration.
-	name api.RepoName
-	id   api.RepoID
-	db   dbutil.DB
+	// Invariant: Name and ID of RepoMatch are always set and safe to use. They are
+	// used to hydrate the inner repo, and should always be the same as the name and
+	// id of the inner repo, but referring to the inner repo directly is unsafe
+	// because it may cause a race during hydration.
+	result.RepoMatch
+
+	db dbutil.DB
 
 	// innerRepo may only contain ID and Name information.
 	// To access any other repo information, use repo() instead.
 	innerRepo *types.Repo
-	icon      string
 
 	defaultBranchOnce sync.Once
 	defaultBranch     *GitRefResolver
 	defaultBranchErr  error
-
-	// rev optionally specifies a revision to go to for search results.
-	rev string
 }
 
 func NewRepositoryResolver(db dbutil.DB, repo *types.Repo) *RepositoryResolver {
@@ -68,8 +64,10 @@ func NewRepositoryResolver(db dbutil.DB, repo *types.Repo) *RepositoryResolver {
 	return &RepositoryResolver{
 		db:        db,
 		innerRepo: repo,
-		name:      name,
-		id:        id,
+		RepoMatch: result.RepoMatch{
+			Name: name,
+			ID:   id,
+		},
 	}
 }
 
@@ -98,7 +96,7 @@ func (r *RepositoryResolver) ID() graphql.ID {
 }
 
 func (r *RepositoryResolver) IDInt32() api.RepoID {
-	return r.id
+	return r.RepoMatch.ID
 }
 
 func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
@@ -122,8 +120,12 @@ func (r *RepositoryResolver) repo(ctx context.Context) (*types.Repo, error) {
 	return r.innerRepo, err
 }
 
+func (r *RepositoryResolver) RepoName() api.RepoName {
+	return r.RepoMatch.Name
+}
+
 func (r *RepositoryResolver) Name() string {
-	return string(r.name)
+	return string(r.RepoMatch.Name)
 }
 
 func (r *RepositoryResolver) ExternalRepo(ctx context.Context) (*api.ExternalRepoSpec, error) {
@@ -204,12 +206,12 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		refBytes, _, exitCode, err := git.ExecSafe(ctx, r.name, []string{"symbolic-ref", "HEAD"})
+		refBytes, _, exitCode, err := git.ExecSafe(ctx, r.RepoName(), []string{"symbolic-ref", "HEAD"})
 		refName := string(bytes.TrimSpace(refBytes))
 
 		if err == nil && exitCode == 0 {
 			// Check that our repo is not empty
-			_, err = git.ResolveRevision(ctx, r.name, "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
+			_, err = git.ResolveRevision(ctx, r.RepoName(), "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
 		}
 
 		// If we fail to get the default branch due to cloning or being empty, we return nothing.
@@ -270,8 +272,8 @@ func (r *RepositoryResolver) UpdatedAt() *DateTime {
 
 func (r *RepositoryResolver) URL() string {
 	url := "/" + escapePathForURL(r.Name())
-	if r.rev != "" {
-		url += "@" + escapePathForURL(r.rev)
+	if r.Rev() != "" {
+		url += "@" + escapePathForURL(r.Rev())
 	}
 	return url
 }
@@ -285,17 +287,17 @@ func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.
 }
 
 func (r *RepositoryResolver) Icon() string {
-	return r.icon
+	return "data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIKCSB2aWV3Qm94PSIwIDAgNjQgNjQiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDY0IDY0OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+Cjx0aXRsZT5JY29ucyA0MDA8L3RpdGxlPgo8Zz4KCTxwYXRoIGQ9Ik0yMywyMi40YzEuMywwLDIuNC0xLjEsMi40LTIuNHMtMS4xLTIuNC0yLjQtMi40Yy0xLjMsMC0yLjQsMS4xLTIuNCwyLjRTMjEuNywyMi40LDIzLDIyLjR6Ii8+Cgk8cGF0aCBkPSJNMzUsMjYuNGMxLjMsMCwyLjQtMS4xLDIuNC0yLjRzLTEuMS0yLjQtMi40LTIuNHMtMi40LDEuMS0yLjQsMi40UzMzLjcsMjYuNCwzNSwyNi40eiIvPgoJPHBhdGggZD0iTTIzLDQyLjRjMS4zLDAsMi40LTEuMSwyLjQtMi40cy0xLjEtMi40LTIuNC0yLjRzLTIuNCwxLjEtMi40LDIuNFMyMS43LDQyLjQsMjMsNDIuNHoiLz4KCTxwYXRoIGQ9Ik01MCwxNmgtMS41Yy0wLjMsMC0wLjUsMC4yLTAuNSwwLjV2MzVjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC0yN2MtMC41LDAtMS0wLjItMS40LTAuNmwtMC42LTAuNmMtMC4xLTAuMS0wLjEtMC4yLTAuMS0wLjQKCQljMC0wLjMsMC4yLTAuNSwwLjUtMC41SDQ0YzEuMSwwLDItMC45LDItMlYxMmMwLTEuMS0wLjktMi0yLTJIMTRjLTEuMSwwLTIsMC45LTIsMnYzNi4zYzAsMS4xLDAuNCwyLjEsMS4yLDIuOGwzLjEsMy4xCgkJYzEuMSwxLjEsMi43LDEuOCw0LjIsMS44SDUwYzEuMSwwLDItMC45LDItMlYxOEM1MiwxNi45LDUxLjEsMTYsNTAsMTZ6IE0xOSwyMGMwLTIuMiwxLjgtNCw0LTRjMS40LDAsMi44LDAuOCwzLjUsMgoJCWMxLjEsMS45LDAuNCw0LjMtMS41LDUuNFYzM2MxLTAuNiwyLjMtMC45LDQtMC45YzEsMCwyLTAuNSwyLjgtMS4zQzMyLjUsMzAsMzMsMjkuMSwzMywyOHYtMC42Yy0xLjItMC43LTItMi0yLTMuNQoJCWMwLTIuMiwxLjgtNCw0LTRjMi4yLDAsNCwxLjgsNCw0YzAsMS41LTAuOCwyLjctMiwzLjVoMGMtMC4xLDIuMS0wLjksNC40LTIuNSw2Yy0xLjYsMS42LTMuNCwyLjQtNS41LDIuNWMtMC44LDAtMS40LDAuMS0xLjksMC4zCgkJYy0wLjIsMC4xLTEsMC44LTEuMiwwLjlDMjYuNiwzOCwyNywzOC45LDI3LDQwYzAsMi4yLTEuOCw0LTQsNHMtNC0xLjgtNC00YzAtMS41LDAuOC0yLjcsMi0zLjRWMjMuNEMxOS44LDIyLjcsMTksMjEuNCwxOSwyMHoiLz4KPC9nPgo8L3N2Zz4K"
 }
 
 func (r *RepositoryResolver) Rev() string {
-	return r.rev
+	return r.RepoMatch.Rev
 }
 
 func (r *RepositoryResolver) Label() (Markdown, error) {
 	var label string
-	if r.rev != "" {
-		label = r.Name() + "@" + r.rev
+	if r.Rev() != "" {
+		label = r.Name() + "@" + r.Rev()
 	} else {
 		label = r.Name()
 	}
@@ -319,11 +321,6 @@ func (r *RepositoryResolver) ToCommitSearchResult() (*CommitSearchResultResolver
 
 func (r *RepositoryResolver) ResultCount() int32 {
 	return 1
-}
-
-func (r *RepositoryResolver) Limit(limit int) int {
-	// Always represents one result and limit > 0 so we just return limit - 1.
-	return limit - 1
 }
 
 func (r *RepositoryResolver) Type(ctx context.Context) (*types.Repo, error) {
