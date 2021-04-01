@@ -73,18 +73,25 @@ func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, erro
 	if keyConfig == nil {
 		return nil, nil
 	}
-	extsvc, err := NewKey(ctx, keyConfig.ExternalServiceKey)
-	if err != nil {
-		return nil, err
+
+	var r Ring
+	var err error
+
+	if keyConfig.ExternalServiceKey != nil {
+		r.ExternalServiceKey, err = NewKey(ctx, keyConfig.ExternalServiceKey)
+		if err != nil {
+			return nil, err
+		}
 	}
-	uextacc, err := NewKey(ctx, keyConfig.UserExternalAccountKey)
-	if err != nil {
-		return nil, err
+
+	if keyConfig.UserExternalAccountKey != nil {
+		r.UserExternalAccountKey, err = NewKey(ctx, keyConfig.UserExternalAccountKey)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return &Ring{
-		ExternalServiceKey:     extsvc,
-		UserExternalAccountKey: uextacc,
-	}, nil
+
+	return &r, nil
 }
 
 type Ring struct {
