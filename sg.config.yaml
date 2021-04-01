@@ -46,13 +46,21 @@ commands:
       - cmd/frontend
 
   enterprise-frontend:
-    cmd: ulimit -n 10000 && .bin/enterprise-frontend
+    cmd: |
+      ulimit -n 10000
+      # TODO: This should be fixed
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/enterprise-frontend
     install: go build -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
+      ENTERPRISE: 1
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      EXTSVC_CONFIG_FILE: '../dev-private/enterprise/dev/external-services-config.json'
     watch:
       - internal
+      - enterprise/internal
       - cmd/frontend
       - enterprise/cmd/frontend
 
@@ -90,8 +98,10 @@ commands:
     install: go build -o .bin/repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
     env:
       HOSTNAME: $SRC_GIT_SERVER_1
+      ENTERPRISE: 1
     watch:
       - internal
+      - enterprise/internal
       - cmd/repo-updater
       - enterprise/cmd/repo-updater
 
@@ -157,6 +167,15 @@ commands:
       NODE_ENV: development
       NODE_OPTIONS: "--max_old_space_size=4096"
 
+  enterprise-web:
+    cmd: ./node_modules/.bin/gulp --silent --color dev
+    install: yarn --no-progress
+    env:
+      ENTERPRISE: 1
+      WEBPACK_DEV_SERVER: 1
+      NODE_ENV: development
+      NODE_OPTIONS: "--max_old_space_size=4096"
+
   docsite:
     cmd: .bin/docsite_${VERSION} -config doc/docsite.json serve -http=localhost:5080
     install: |
@@ -187,10 +206,11 @@ commands:
         -cpu_fraction 0.25
     install: |
       mkdir -p .bin
-      # TODO: Do we need to install these?
-      # go install github.com/google/zoekt/cmd/zoekt-archive-index
-      # go install github.com/google/zoekt/cmd/zoekt-git-index
-      env GOBIN="${PWD}/.bin" GO111MODULE=on go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
+      export GOBIN="${PWD}/.bin"
+      export GO111MODULE=on
+      go install github.com/google/zoekt/cmd/zoekt-archive-index
+      go install github.com/google/zoekt/cmd/zoekt-git-index
+      go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
     env:
       GOGC: 50
 
@@ -204,8 +224,14 @@ commands:
         -listen ":6073" \
         -cpu_fraction 0.25
     install: |
+      # We technically don't need this because indexserver-0 installs it, but
+      # let's keep it here before we have something to remove the duplication
       mkdir -p .bin
-      env GOBIN="${PWD}/.bin" GO111MODULE=on go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
+      export GOBIN="${PWD}/.bin"
+      export GO111MODULE=on
+      go install github.com/google/zoekt/cmd/zoekt-archive-index
+      go install github.com/google/zoekt/cmd/zoekt-git-index
+      go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
     env:
       GOGC: 50
 
@@ -254,11 +280,11 @@ commandsets:
   enterprise:
     - enterprise-frontend
     - enterprise-repo-updater
+    - enterprise-web
     - gitserver
     - searcher
     - symbols
     - query-runner
-    - web
     - caddy
     - docsite
     - syntect_server
