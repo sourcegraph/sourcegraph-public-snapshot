@@ -520,10 +520,6 @@ func TestExternalAccountsMigrator(t *testing.T) {
 				t.Fatalf("stored data is still encrypted")
 			}
 
-			if data != string(*accounts[i].Data) {
-				t.Fatalf("stored data is still encrypted")
-			}
-
 			i++
 		}
 		if rows.Err() != nil {

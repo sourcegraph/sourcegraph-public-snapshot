@@ -214,7 +214,7 @@ func (m *ExternalAccountsMigrator) Progress(ctx context.Context) (float64, error
 				CAST(c1.count AS float) / CAST(c2.count AS float)
 			END
 		FROM
-			(SELECT COUNT(*) AS count FROM user_external_accounts WHERE encryption_key_id != '') c1,
+			(SELECT COUNT(*) AS count FROM user_external_accounts WHERE encryption_key_id != '' OR auth_data = '') c1,
 			(SELECT COUNT(*) AS count FROM user_external_accounts) c2
 	`)))
 	return progress, err
@@ -243,7 +243,7 @@ func (m *ExternalAccountsMigrator) Up(ctx context.Context) (err error) {
 	defer func() { err = tx.Done(err) }()
 
 	store := ExternalAccountsWith(tx)
-	accounts, err := store.listBySQL(ctx, sqlf.Sprintf("WHERE encryption_key_id = '' ORDER BY id ASC LIMIT %s FOR UPDATE SKIP LOCKED", m.BatchSize))
+	accounts, err := store.listBySQL(ctx, sqlf.Sprintf("WHERE encryption_key_id = '' AND auth_data != '' ORDER BY id ASC LIMIT %s FOR UPDATE SKIP LOCKED", m.BatchSize))
 	if err != nil {
 		return err
 	}
