@@ -7,7 +7,7 @@ import {
     WebGraphQlOperations,
     SearchContextsResult,
 } from '../graphql-operations'
-import { Driver, createDriverForTest, percySnapshot } from '../../../shared/src/testing/driver'
+import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { test } from 'mocha'
@@ -73,7 +73,7 @@ const searchResults = (): SearchResult => ({
     },
 })
 
-const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
+export const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
     Search: searchResults,
     SearchSuggestions: (): SearchSuggestionsResult => ({
@@ -494,7 +494,7 @@ describe('Search', () => {
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
 
-            await percySnapshot(driver.page, 'Streaming diff search syntax highlighting')
+            // await percySnapshot(driver.page, 'Streaming diff search syntax highlighting')
         })
     })
 

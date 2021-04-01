@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { Driver, createDriverForTest, percySnapshot } from '../../../shared/src/testing/driver'
+import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
 import { ExtensionManifest } from '../../../shared/src/schema/extensionSchema'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
@@ -16,6 +16,20 @@ import { Settings } from '../schema/settings.schema'
 import type * as sourcegraph from 'sourcegraph'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { Page } from 'puppeteer'
+
+export const getCommonBlobGraphQlResults = (
+    repositoryName: string,
+    repositoryUrl: string,
+    fileName: string
+): Partial<WebGraphQlOperations & SharedGraphQlOperations> => ({
+    ...commonWebGraphQlResults,
+    RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+    ResolveRev: () => createResolveRevisionResult(repositoryUrl),
+    FileExternalLinks: ({ filePath }) =>
+        createFileExternalLinksResult(`https://${repositoryName}/blob/master/${filePath}`),
+    TreeEntries: () => createTreeEntriesResult(repositoryUrl, ['README.md', fileName]),
+    Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
+})
 
 describe('Blob viewer', () => {
     let driver: Driver
@@ -38,16 +52,8 @@ describe('Blob viewer', () => {
     const repositorySourcegraphUrl = `/${repositoryName}`
     const fileName = 'test.ts'
     const files = ['README.md', fileName]
+    const commonBlobGraphQlResults = getCommonBlobGraphQlResults(repositoryName, repositorySourcegraphUrl, fileName)
 
-    const commonBlobGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
-        ...commonWebGraphQlResults,
-        RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
-        ResolveRev: () => createResolveRevisionResult(repositorySourcegraphUrl),
-        FileExternalLinks: ({ filePath }) =>
-            createFileExternalLinksResult(`https://${repositoryName}/blob/master/${filePath}`),
-        TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, ['README.md', fileName]),
-        Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
-    }
     beforeEach(() => {
         testContext.overrideGraphQL(commonBlobGraphQlResults)
     })
@@ -197,7 +203,7 @@ describe('Blob viewer', () => {
             )
             await driver.page.waitForSelector('.test-repo-blob')
             await driver.page.waitForSelector('.test-breadcrumb')
-            await percySnapshot(driver.page, this.test!.title)
+            // await percySnapshot(driver.page, this.test!.title)
         })
 
         it.skip('shows a hover overlay from a hover provider when a token is hovered', async () => {
@@ -215,7 +221,7 @@ describe('Blob viewer', () => {
 
             await driver.assertWindowLocation('/github.com/sourcegraph/test/-/blob/test.ts#L2:9')
             assert.deepStrictEqual(await getHoverContents(), ['Test hover content\n'])
-            await percySnapshot(driver.page, this.test!.title)
+            // await percySnapshot(driver.page, this.test!.title)
         })
 
         interface MockExtension {
@@ -943,7 +949,7 @@ describe('Blob viewer', () => {
             await driver.page.waitForSelector('.test-tooltip-find-references', { visible: true })
             await driver.page.click('.test-tooltip-find-references')
 
-            await percySnapshot(driver.page, 'Blob Panel - Find References')
+            // await percySnapshot(driver.page, 'Blob Panel - Find References')
 
             // Click on the first reference
             await driver.page.waitForSelector('.test-file-match-children-item')
@@ -961,7 +967,7 @@ describe('Blob viewer', () => {
             } catch {
                 throw new Error('Expected to navigate to file after clicking on link in references panel')
             }
-            await percySnapshot(driver.page, 'Blob Panel - First Reference')
+            // await percySnapshot(driver.page, 'Blob Panel - First Reference')
         })
 
         describe('browser extension discoverability', () => {
