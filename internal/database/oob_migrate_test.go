@@ -452,17 +452,6 @@ func TestExternalAccountsMigrator(t *testing.T) {
 				t.Fatalf("decrypted data is different from the original one")
 			}
 
-			if data == string(*accounts[i].Data) {
-				t.Fatalf("stored data is the same as before migration")
-			}
-			secret, err = key.Decrypt(ctx, []byte(data))
-			if err != nil {
-				t.Fatal(err)
-			}
-			if secret.Secret() != string(*accounts[i].Data) {
-				t.Fatalf("decrypted data is different from the original one")
-			}
-
 			if id, _ := key.ID(ctx); keyID != id {
 				t.Fatalf("wrong encryption_key_id, want %s, got %s", id, keyID)
 			}

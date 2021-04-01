@@ -249,7 +249,7 @@ func (m *ExternalAccountsMigrator) Up(ctx context.Context) (err error) {
 	}
 
 	for _, acc := range accounts {
-		var encAuthData, encData []byte
+		var encAuthData []byte
 		if acc.AuthData != nil {
 			encAuthData, err = key.Encrypt(ctx, []byte(*acc.AuthData))
 			if err != nil {
@@ -266,26 +266,9 @@ func (m *ExternalAccountsMigrator) Up(ctx context.Context) (err error) {
 			}
 		}
 
-		if acc.Data != nil {
-			encData, err = key.Encrypt(ctx, []byte(*acc.Data))
-			if err != nil {
-				return err
-			}
-
-			// ensure encryption round-trip is valid
-			decrypted, err := key.Decrypt(ctx, encData)
-			if err != nil {
-				return err
-			}
-			if decrypted.Secret() != string(*acc.Data) {
-				return errors.New("invalid encryption round-trip")
-			}
-		}
-
 		if err := tx.Exec(ctx, sqlf.Sprintf(
-			"UPDATE user_external_accounts SET auth_data = %s, account_data = %s, encryption_key_id = %s WHERE id = %d",
+			"UPDATE user_external_accounts SET auth_data = %s, encryption_key_id = %s WHERE id = %d",
 			string(encAuthData),
-			string(encData),
 			keyIdent,
 			acc.ID,
 		)); err != nil {
@@ -318,9 +301,8 @@ func (m *ExternalAccountsMigrator) Down(ctx context.Context) (err error) {
 
 	for _, acc := range accounts {
 		if err := tx.Exec(ctx, sqlf.Sprintf(
-			"UPDATE user_external_accounts SET auth_data = %s, account_data = %s, encryption_key_id = '' WHERE id = %s",
+			"UPDATE user_external_accounts SET auth_data = %s, encryption_key_id = '' WHERE id = %s",
 			acc.AuthData,
-			acc.Data,
 			acc.ID,
 		)); err != nil {
 			return err
