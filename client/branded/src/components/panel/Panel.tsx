@@ -37,8 +37,6 @@ interface Props
         TelemetryProps,
         ThemeProps,
         VersionContextProps {
-    location: H.Location
-    history: H.History
     repoName?: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
@@ -120,10 +118,10 @@ export const Panel = React.memo<Props>(props => {
     )
 
     const [tabIndex, setTabIndex] = useState(0)
-    const { hash, pathname } = useLocation()
+    const location = useLocation()
     const history = useHistory()
-    const handlePanelClose = useCallback(() => history.replace(pathname), [history, pathname])
-    const [currentTabLabel, currentTabID] = hash.split('=')
+    const handlePanelClose = useCallback(() => history.replace(location.pathname), [history, location.pathname])
+    const [currentTabLabel, currentTabID] = location.hash.split('=')
 
     const builtinPanels: PanelViewWithComponent[] | undefined = useObservable(
         useMemo(
@@ -196,7 +194,9 @@ export const Panel = React.memo<Props>(props => {
                               label: panelView.title,
                               id: panelView.id,
                               priority: panelView.priority,
-                              element: <PanelView {...props} panelView={panelView} />,
+                              element: (
+                                  <PanelView {...props} panelView={panelView} history={history} location={location} />
+                              ),
                               hasLocations: !!panelView.locationProvider,
                           })
                       )
@@ -207,20 +207,19 @@ export const Panel = React.memo<Props>(props => {
 
     useEffect(() => {
         const subscription = registerPanelToolbarContributions(props.extensionsController.extHostAPI)
-
         return () => subscription.unsubscribe()
     }, [props.extensionsController])
 
     const handleActiveTab = useCallback(
         (index: number): void => {
-            history.replace(`${pathname}${currentTabLabel}=${items[index].id}`)
+            history.replace(`${location.pathname}${currentTabLabel}=${items[index].id}`)
         },
-        [currentTabLabel, history, items, pathname]
+        [currentTabLabel, history, items, location.pathname]
     )
 
     useEffect(() => {
         setTabIndex(items.findIndex(({ id }) => id === currentTabID))
-    }, [items, hash, currentTabID])
+    }, [items, location.hash, currentTabID])
 
     const activeTab: PanelItem | undefined = items[tabIndex]
 
@@ -257,6 +256,7 @@ export const Panel = React.memo<Props>(props => {
                                 hasLocations: Boolean(activeTab.hasLocations),
                             }}
                             wrapInList={true}
+                            location={location}
                         />
                     )}
                     <button
