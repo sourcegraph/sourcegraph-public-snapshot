@@ -15,10 +15,6 @@ body,
     height: 100%;
 }
 
-* {
-    font-size: 2rem;
-}
-
 // Document highlight is the background color for tokens which are matched with
 // a result from a document highlight provider. e.g. for references of the token
 // currently being hovered over.
