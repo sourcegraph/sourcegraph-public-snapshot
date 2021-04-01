@@ -28,8 +28,8 @@ var requestMeter = metrics.NewRequestMeter("repoupdater", "Total number of reque
 // environment variable.
 var DefaultClient = NewClient(env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "repo-updater server URL"))
 
-// Client is a repoupdater client.
-type Client struct {
+// client is a repoupdater client.
+type client struct {
 	// URL to repoupdater server.
 	URL string
 
@@ -37,8 +37,8 @@ type Client struct {
 	HTTPClient *http.Client
 }
 
-func NewClient(serverURL string) *Client {
-	return &Client{
+func NewClient(serverURL string) *client {
+	return &client{
 		URL: serverURL,
 		HTTPClient: &http.Client{
 			// ot.Transport will propagate opentracing spans and whether or not to trace
@@ -56,7 +56,7 @@ func NewClient(serverURL string) *Client {
 }
 
 // RepoUpdateSchedulerInfo returns information about the state of the repo in the update scheduler.
-func (c *Client) RepoUpdateSchedulerInfo(ctx context.Context, args protocol.RepoUpdateSchedulerInfoArgs) (result *protocol.RepoUpdateSchedulerInfoResult, err error) {
+func (c *client) RepoUpdateSchedulerInfo(ctx context.Context, args protocol.RepoUpdateSchedulerInfoArgs) (result *protocol.RepoUpdateSchedulerInfoResult, err error) {
 	resp, err := c.httpPost(ctx, "repo-update-scheduler-info", args)
 	if err != nil {
 		return nil, err
@@ -71,16 +71,16 @@ func (c *Client) RepoUpdateSchedulerInfo(ctx context.Context, args protocol.Repo
 	return result, err
 }
 
-// MockRepoLookup mocks (*Client).RepoLookup for tests.
+// MockRepoLookup mocks (*client).RepoLookup for tests.
 var MockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
 // RepoLookup retrieves information about the repository on repoupdater.
-func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
+func (c *client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
 	if MockRepoLookup != nil {
 		return MockRepoLookup(args)
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup")
+	span, ctx := ot.StartSpanFromContext(ctx, "client.RepoLookup")
 	defer func() {
 		if result != nil {
 			span.SetTag("found", result.Repo != nil)
@@ -130,12 +130,12 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	return result, err
 }
 
-// MockEnqueueRepoUpdate mocks (*Client).EnqueueRepoUpdate for tests.
+// MockEnqueueRepoUpdate mocks (*client).EnqueueRepoUpdate for tests.
 var MockEnqueueRepoUpdate func(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error)
 
 // EnqueueRepoUpdate requests that the named repository be updated in the near
 // future. It does not wait for the update.
-func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
+func (c *client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
 	if MockEnqueueRepoUpdate != nil {
 		return MockEnqueueRepoUpdate(ctx, repo)
 	}
@@ -165,10 +165,10 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*pro
 	return &res, nil
 }
 
-// MockEnqueueChangesetSync mocks (*Client).EnqueueChangesetSync for tests.
+// MockEnqueueChangesetSync mocks (*client).EnqueueChangesetSync for tests.
 var MockEnqueueChangesetSync func(ctx context.Context, ids []int64) error
 
-func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
+func (c *client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
 	if MockEnqueueChangesetSync != nil {
 		return MockEnqueueChangesetSync(ctx, ids)
 	}
@@ -198,7 +198,7 @@ func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
 	return errors.New(res.Error)
 }
 
-func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error {
+func (c *client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error {
 	resp, err := c.httpPost(ctx, "schedule-perms-sync", args)
 	if err != nil {
 		return err
@@ -224,7 +224,7 @@ func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncR
 }
 
 // SyncExternalService requests the given external service to be synced.
-func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalService) (*protocol.ExternalServiceSyncResult, error) {
+func (c *client) SyncExternalService(ctx context.Context, svc api.ExternalService) (*protocol.ExternalServiceSyncResult, error) {
 	req := &protocol.ExternalServiceSyncRequest{ExternalService: svc}
 	resp, err := c.httpPost(ctx, "sync-external-service", req)
 	if err != nil {
@@ -258,7 +258,7 @@ func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalServic
 
 // RepoExternalServices requests the external services associated with a
 // repository with the given id.
-func (c *Client) RepoExternalServices(ctx context.Context, id api.RepoID) ([]api.ExternalService, error) {
+func (c *client) RepoExternalServices(ctx context.Context, id api.RepoID) ([]api.ExternalService, error) {
 	req := protocol.RepoExternalServicesRequest{ID: id}
 	resp, err := c.httpPost(ctx, "repo-external-services", &req)
 	if err != nil {
@@ -283,7 +283,7 @@ func (c *Client) RepoExternalServices(ctx context.Context, id api.RepoID) ([]api
 
 // ExcludeRepo adds the repository with the given id to all of the
 // external services exclude lists that match its kind.
-func (c *Client) ExcludeRepo(ctx context.Context, id api.RepoID) (*protocol.ExcludeRepoResponse, error) {
+func (c *client) ExcludeRepo(ctx context.Context, id api.RepoID) (*protocol.ExcludeRepoResponse, error) {
 	if id == 0 {
 		return &protocol.ExcludeRepoResponse{}, nil
 	}
@@ -310,7 +310,7 @@ func (c *Client) ExcludeRepo(ctx context.Context, id api.RepoID) (*protocol.Excl
 	return &res, nil
 }
 
-func (c *Client) httpPost(ctx context.Context, method string, payload interface{}) (resp *http.Response, err error) {
+func (c *client) httpPost(ctx context.Context, method string, payload interface{}) (resp *http.Response, err error) {
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -324,8 +324,8 @@ func (c *Client) httpPost(ctx context.Context, method string, payload interface{
 	return c.do(ctx, req)
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
+func (c *client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "client.do")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
