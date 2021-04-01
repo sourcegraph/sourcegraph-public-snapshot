@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"math/rand"
 	"strings"
 	"testing"
 	"time"
@@ -37,18 +36,14 @@ func TestRepo(t *testing.T, store *database.ExternalServiceStore, serviceKind st
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 
-	return TestRepoWithExternalService(&svc, rand.Int())
-}
-
-func TestRepoWithExternalService(svc *types.ExternalService, id int) *types.Repo {
 	return &types.Repo{
-		Name:    api.RepoName(fmt.Sprintf("repo-%d", id)),
-		URI:     fmt.Sprintf("repo-%d", id),
+		Name:    api.RepoName(fmt.Sprintf("repo-%d", svc.ID)),
+		URI:     fmt.Sprintf("repo-%d", svc.ID),
 		Private: true,
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          fmt.Sprintf("external-id-%d", id),
-			ServiceType: extsvc.KindToType(svc.Kind),
-			ServiceID:   fmt.Sprintf("https://%s.com/", strings.ToLower(svc.Kind)),
+			ID:          fmt.Sprintf("external-id-%d", svc.ID),
+			ServiceType: extsvc.KindToType(serviceKind),
+			ServiceID:   fmt.Sprintf("https://%s.com/", strings.ToLower(serviceKind)),
 		},
 		Sources: map[string]*types.SourceInfo{
 			svc.URN(): {
@@ -87,7 +82,7 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, count int)
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepoWithExternalService(ext, rand.Int())
+		r := TestRepo(t, esStore, extsvc.KindGitHub)
 		r.Sources = map[string]*types.SourceInfo{ext.URN(): {
 			ID:       ext.URN(),
 			CloneURL: "https://secrettoken@github.com/" + string(r.Name),
@@ -124,7 +119,7 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepoWithExternalService(ext, rand.Int())
+		r := TestRepo(t, esStore, extsvc.KindGitLab)
 		r.Sources = map[string]*types.SourceInfo{ext.URN(): {
 			ID:       ext.URN(),
 			CloneURL: "https://git:gitlab-token@gitlab.com/" + string(r.Name),
@@ -168,10 +163,14 @@ func CreateGitHubSSHTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, c
 			GitURLType: "ssh",
 		}),
 	}
+	esStore := database.ExternalServices(db)
+	if err := esStore.Upsert(ctx, ext); err != nil {
+		t.Fatal(err)
+	}
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepo(t, database.ExternalServices(db), extsvc.KindGitHub)
+		r := TestRepo(t, esStore, extsvc.KindGitHub)
 		r.Sources = map[string]*types.SourceInfo{ext.URN(): {
 			ID:       ext.URN(),
 			CloneURL: "git@github.com:" + string(r.Name) + ".git",
@@ -216,7 +215,7 @@ func createBbsRepos(t *testing.T, ctx context.Context, db dbutil.DB, ext *types.
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepoWithExternalService(ext, rand.Int())
+		r := TestRepo(t, esStore, extsvc.KindBitbucketServer)
 		r.Sources = map[string]*types.SourceInfo{
 			ext.URN(): {
 				ID:       ext.URN(),
