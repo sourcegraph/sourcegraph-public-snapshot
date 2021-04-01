@@ -511,6 +511,17 @@ func (r *changesetResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffS
 	return nil, nil
 }
 
+func (r *changesetResolver) HasRunningJob(ctx context.Context) (bool, error) {
+	job, err := r.store.GetChangesetJob(ctx, store.GetChangesetJobOpts{
+		States:      []string{batches.ReconcilerStateProcessing.ToDB(), batches.ReconcilerStateQueued.ToDB()},
+		ChangesetID: r.changeset.ID,
+	})
+	if err != nil && err != store.ErrNoResults {
+		return false, err
+	}
+	return job != nil, nil
+}
+
 type changesetLabelResolver struct {
 	label btypes.ChangesetLabel
 }

@@ -143,6 +143,7 @@ export const externalChangesetFieldsFragment = gql`
         __typename
         id
         title
+        hasRunningJob
         body
         state
         reviewState

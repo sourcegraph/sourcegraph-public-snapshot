@@ -8928,6 +8928,8 @@ type ExternalChangeset implements Node & Changeset {
     """
     externalID: String
 
+    hasRunningJob: Boolean!
+
     """
     The repository changed by this changeset.
     """

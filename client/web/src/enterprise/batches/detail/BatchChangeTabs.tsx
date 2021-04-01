@@ -122,7 +122,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
     )
     const [isSubmittingSelected, setIsSubmittingSelected] = useState<boolean | Error>(false)
     const onSubmitSelectedComment = useCallback(
-        async (selectedChangesets: Set<string>) => {
+        async (selectedChangesets: Set<string>, done: () => void) => {
             const message = prompt('What would you like to comment')
             if (!message) {
                 return
@@ -140,7 +140,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             setIsSubmittingSelected(true)
             try {
                 await commentOnAllChangesetsOfBatchChange(batchChange.id, [...selectedChangesets], message)
-                // deselectAll()
+                done()
             } catch (error) {
                 setIsSubmittingSelected(asError(error))
             }
@@ -148,7 +148,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
         [batchChange.id]
     )
     const onSubmitSelectedArchived = useCallback(
-        async (selectedChangesets: Set<string>) => {
+        async (selectedChangesets: Set<string>, done: () => void) => {
             if (
                 !confirm(
                     `Are you sure you want to detach ${selectedChangesets.size} ${pluralize(
@@ -162,7 +162,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
             setIsSubmittingSelected(true)
             try {
                 await detachChangesets(batchChange.id, [...selectedChangesets])
-                // deselectAll()
+                done()
                 telemetryService.logViewEvent('BatchChangeDetailsPageDetachArchivedChangesets')
             } catch (error) {
                 setIsSubmittingSelected(asError(error))

@@ -3,6 +3,7 @@ package background
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -47,5 +48,6 @@ func (b *bulkProcessor) process(ctx context.Context, tx *store.Store, job *store
 func (b *bulkProcessor) comment(ctx context.Context, tx *store.Store, job *store.ChangesetJob) error {
 	typedPayload := job.Payload.(*store.ChangesetJobCommentPayload)
 	svc := service.NewWithClockAndSourcer(tx, tx.Clock(), b.sourcer)
+	time.Sleep(7 * time.Second)
 	return svc.CommentOnAllChangesetsOfBatchChange(ctx, job.BatchChangeID, job.ChangesetID, typedPayload.Message)
 }

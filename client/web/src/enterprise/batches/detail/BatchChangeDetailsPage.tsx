@@ -176,7 +176,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 className="mb-3"
             />
             <Description history={history} description={batchChange.description} />
-            <h4>Comment on all changesets</h4>
+            {/* <h4>Comment on all changesets</h4>
             <textarea
                 rows={8}
                 className="form-control w-100 text-monospace mb-2"
@@ -191,7 +191,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             >
                 {isCommenting === true && <LoadingSpinner className="icon-inline" />} Add comment
             </button>
-            {isErrorLike(isCommenting) && <ErrorAlert error={isCommenting} />}
+            {isErrorLike(isCommenting) && <ErrorAlert error={isCommenting} />} */}
             <BatchChangeTabs
                 batchChange={batchChange}
                 changesetsCount={batchChange.changesetsStats.total - batchChange.changesetsStats.archived}

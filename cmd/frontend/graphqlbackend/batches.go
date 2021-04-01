@@ -610,6 +610,7 @@ type HiddenExternalChangesetResolver interface {
 type ExternalChangesetResolver interface {
 	ChangesetResolver
 
+	HasRunningJob(ctx context.Context) (bool, error)
 	ExternalID() *string
 	Title(context.Context) (*string, error)
 	Body(context.Context) (*string, error)
