@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"strconv"
 
+	"github.com/dineshappavoo/basex"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 
@@ -26,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
@@ -1155,6 +1158,10 @@ func validateFirstParamDefaults(first int32) error {
 	return validateFirstParam(first, defaultMaxFirstParam)
 }
 
+// seededRand is used to populate the RandID fields on BatchSpec and
+// ChangesetSpec when creating them.
+var seededRand *rand.Rand = rand.New(rand.NewSource(timeutil.Now().UnixNano()))
+
 func (r *Resolver) CommentOnAllChangesetsOfBatchChange(ctx context.Context, args *graphqlbackend.CommentOnAllChangesetsOfBatchChangeArgs) (_ *graphqlbackend.EmptyResponse, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.CommentOnAllChangesetsOfBatchChange", fmt.Sprintf("BatchChange: %q", args.BatchChange))
 	defer func() {
@@ -1162,6 +1169,10 @@ func (r *Resolver) CommentOnAllChangesetsOfBatchChange(ctx context.Context, args
 		tr.Finish()
 	}()
 	if err := batchChangesEnabled(ctx); err != nil {
+		return nil, err
+	}
+
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
@@ -1178,9 +1189,49 @@ func (r *Resolver) CommentOnAllChangesetsOfBatchChange(ctx context.Context, args
 		return nil, ErrIDIsZero{}
 	}
 
-	svc := service.New(r.store)
-	if err := svc.CommentOnAllChangesetsOfBatchChange(ctx, dbID, args.Comment); err != nil {
+	var changesetIDs []int64
+	for _, raw := range args.Changesets {
+		id, err := unmarshalChangesetID(raw)
+		if err != nil {
+			return nil, err
+		}
+
+		if id == 0 {
+			return nil, ErrIDIsZero{}
+		}
+
+		changesetIDs = append(changesetIDs, id)
+	}
+
+	tx, err := r.store.Transact(ctx)
+	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		tx.Done(err)
+	}()
+
+	act := actor.FromContext(ctx)
+
+	bulkGroup, err := basex.Encode(strconv.Itoa(seededRand.Int()))
+	if err != nil {
+		return nil, errors.Wrap(err, "creating RandID failed")
+	}
+
+	for _, id := range changesetIDs {
+		job := &store.ChangesetJob{
+			BulkGroup:     bulkGroup,
+			BatchChangeID: dbID,
+			UserID:        act.UID,
+			ChangesetID:   id,
+			JobType:       store.ChangesetJobTypeComment,
+			Payload:       store.ChangesetJobCommentPayload{Message: args.Comment},
+			State:         batches.ReconcilerStateQueued.ToDB(),
+		}
+		if err := tx.CreateChangesetJobs(ctx, job); err != nil {
+			return nil, err
+		}
+	}
+
 	return &graphqlbackend.EmptyResponse{}, nil
 }

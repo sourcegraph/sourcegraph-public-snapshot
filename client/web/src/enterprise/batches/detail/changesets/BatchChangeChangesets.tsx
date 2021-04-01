@@ -1,7 +1,7 @@
 import * as H from 'history'
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { Subject } from 'rxjs'
-import { repeatWhen, delay, withLatestFrom, map, filter, tap } from 'rxjs/operators'
+import { repeatWhen, delay, withLatestFrom, map, filter } from 'rxjs/operators'
 
 import { createHoverifier } from '@sourcegraph/codeintellify'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -45,7 +45,11 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     hideFilters?: boolean
     onlyArchived?: boolean
 
-    enableSelect?: boolean
+    useSelect?: {
+        isSubmittingSelected: boolean | Error
+        setIsSubmittingSelected: (value: boolean | Error) => void
+        onSubmitSelected: (currentSelected: Set<string>) => Promise<void>
+    }
 
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
@@ -72,7 +76,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     queryExternalChangesetWithFileDiffs,
     expandByDefault,
     onlyArchived,
-    enableSelect,
+    useSelect,
 }) => {
     const [availableChangesets, setAvailableChangesets] = useState<Set<string>>(new Set())
 
@@ -228,6 +232,12 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     useEffect(() => {
         componentRerenders.next()
     }, [componentRerenders, hoverState])
+    const onSubmit = useCallback(() => {
+        if (!useSelect) {
+            throw new Error('Whatever')
+        }
+        return useSelect.onSubmitSelected(selectedChangesets)
+    }, [selectedChangesets, useSelect])
 
     return (
         <>
@@ -257,7 +267,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                         extensionInfo: { extensionsController, hoverifier },
                         expandByDefault,
                         queryExternalChangesetWithFileDiffs,
-                        enableSelect,
+                        enableSelect: !!useSelect,
                         onSelect,
                         isSelected: changesetSelected,
                     }}
@@ -271,7 +281,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     useURLQuery={true}
                     listComponent="div"
                     listClassName={
-                        enableSelect
+                        useSelect
                             ? 'batch-change-changesets__grid--with-checkboxes mb-3'
                             : 'batch-change-changesets__grid mb-3'
                     }

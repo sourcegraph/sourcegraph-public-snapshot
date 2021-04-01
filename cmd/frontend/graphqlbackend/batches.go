@@ -208,6 +208,7 @@ type DetachChangesetsArgs struct {
 type CommentOnAllChangesetsOfBatchChangeArgs struct {
 	BatchChange graphql.ID
 	Comment     string
+	Changesets  []graphql.ID
 }
 
 type BatchChangesResolver interface {

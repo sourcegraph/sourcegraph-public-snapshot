@@ -539,16 +539,24 @@ export async function detachChangesets(batchChange: Scalars['ID'], changesets: S
     dataOrThrowErrors(result)
 }
 
-export async function commentOnAllChangesetsOfBatchChange(batchChange: Scalars['ID'], comment: string): Promise<void> {
+export async function commentOnAllChangesetsOfBatchChange(
+    batchChange: Scalars['ID'],
+    changesetIDs: Scalars['ID'][],
+    comment: string
+): Promise<void> {
     return requestGraphQL<CommentOnAllChangesetsOfBatchChangeResult, CommentOnAllChangesetsOfBatchChangeVariables>(
         gql`
-            mutation CommentOnAllChangesetsOfBatchChange($batchChange: ID!, $comment: String!) {
-                commentOnAllChangesetsOfBatchChange(batchChange: $batchChange, comment: $comment) {
+            mutation CommentOnAllChangesetsOfBatchChange($batchChange: ID!, $changesetIDs: [ID!]!, $comment: String!) {
+                commentOnAllChangesetsOfBatchChange(
+                    batchChange: $batchChange
+                    changesets: $changesetIDs
+                    comment: $comment
+                ) {
                     alwaysNil
                 }
             }
         `,
-        { batchChange, comment }
+        { batchChange, changesetIDs, comment }
     )
         .pipe(map(dataOrThrowErrors), mapTo(undefined))
         .toPromise()

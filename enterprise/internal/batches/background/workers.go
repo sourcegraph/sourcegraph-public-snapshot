@@ -97,15 +97,15 @@ func newBulkJobWorker(
 	ctx context.Context,
 	s *store.Store,
 	sourcer repos.Sourcer,
-	// metrics batchChangesMetrics,
+	metrics batchChangesMetrics,
 ) *workerutil.Worker {
-	r := &reconciler.Reconciler{Sourcer: sourcer, Store: s}
+	r := &bulkProcessor{sourcer: sourcer, store: s}
 
 	options := workerutil.WorkerOptions{
 		Name:        "batches_bulk_worker",
 		NumHandlers: 5,
 		Interval:    5 * time.Second,
-		// Metrics:     metrics.workerMetrics,
+		Metrics:     metrics.workerMetrics,
 	}
 
 	workerStore := createBulkJobDBWorkerStore(s)
@@ -118,8 +118,11 @@ func createBulkJobDBWorkerStore(s *store.Store) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		Name:              "batches_bulk_worker_store",
 		TableName:         "changeset_jobs",
+		ViewName:          "changeset_jobs",
 		ColumnExpressions: store.ChangesetJobColumns,
 		Scan:              scanFirstChangesetJobRecord,
+
+		OrderByExpression: sqlf.Sprintf("changeset_jobs.state = 'errored', changeset_jobs.updated_at DESC"),
 
 		StalledMaxAge: 60 * time.Second,
 		MaxNumResets:  reconcilerMaxNumResets,
@@ -131,4 +134,21 @@ func createBulkJobDBWorkerStore(s *store.Store) dbworkerstore.Store {
 
 func scanFirstChangesetJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	return store.ScanFirstChangesetJob(rows, err)
+}
+
+func newBulkJobWorkerResetter(s *store.Store, metrics batchChangesMetrics) *dbworker.Resetter {
+	workerStore := createBulkJobDBWorkerStore(s)
+
+	options := dbworker.ResetterOptions{
+		Name:     "batches_bulk_worker_resetter",
+		Interval: 1 * time.Minute,
+		Metrics: dbworker.ResetterMetrics{
+			Errors:              metrics.errors,
+			RecordResetFailures: metrics.resetFailures,
+			RecordResets:        metrics.resets,
+		},
+	}
+
+	resetter := dbworker.NewResetter(workerStore, options)
+	return resetter
 }

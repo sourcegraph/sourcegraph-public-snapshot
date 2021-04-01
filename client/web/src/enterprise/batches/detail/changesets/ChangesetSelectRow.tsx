@@ -40,6 +40,20 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                     </div>
                 </div>
             </div>
+            <div className="m-0 col col-md-auto">
+                <div className="row no-gutters">
+                    <div className="col my-2 ml-0 ml-sm-2">
+                        <button
+                            type="button"
+                            className="btn btn-primary text-nowrap"
+                            onClick={onSubmit}
+                            disabled={isSubmitting === true}
+                        >
+                            Comment on {selected.size} {pluralize('changeset', selected.size)}
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         {isErrorLike(isSubmitting) && <ErrorAlert error={isSubmitting} />}

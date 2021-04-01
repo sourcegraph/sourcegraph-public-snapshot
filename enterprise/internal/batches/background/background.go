@@ -18,7 +18,8 @@ func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factor
 		newReconcilerWorker(ctx, batchesStore, gitserver.DefaultClient, sourcer, metrics),
 		newReconcilerWorkerResetter(batchesStore, metrics),
 		newSpecExpireWorker(ctx, batchesStore),
-		newBulkJobWorker(ctx, batchesStore, sourcer),
+		newBulkJobWorker(ctx, batchesStore, sourcer, metrics),
+		newBulkJobWorkerResetter(batchesStore, metrics),
 	}
 	return routines
 }

@@ -51,6 +51,27 @@ func (j *ChangesetJob) RecordID() int {
 // modified in CreateBatchChange and UpdateBatchChange.
 // update and query batches.
 var changesetJobInsertColumns = []*sqlf.Query{
+	sqlf.Sprintf("bulk_group"),
+	sqlf.Sprintf("user_id"),
+	sqlf.Sprintf("batch_change_id"),
+	sqlf.Sprintf("changeset_id"),
+	sqlf.Sprintf("job_type"),
+	sqlf.Sprintf("payload"),
+	sqlf.Sprintf("state"),
+	sqlf.Sprintf("failure_message"),
+	sqlf.Sprintf("started_at"),
+	sqlf.Sprintf("finished_at"),
+	sqlf.Sprintf("process_after"),
+	sqlf.Sprintf("num_resets"),
+	sqlf.Sprintf("num_failures"),
+	sqlf.Sprintf("created_at"),
+	sqlf.Sprintf("updated_at"),
+}
+
+// ChangesetJobColumns are used by the batch change related Store methods to insert,
+// update and query batches.
+var ChangesetJobColumns = []*sqlf.Query{
+	sqlf.Sprintf("changeset_jobs.id"),
 	sqlf.Sprintf("changeset_jobs.bulk_group"),
 	sqlf.Sprintf("changeset_jobs.user_id"),
 	sqlf.Sprintf("changeset_jobs.batch_change_id"),
@@ -67,12 +88,6 @@ var changesetJobInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("changeset_jobs.created_at"),
 	sqlf.Sprintf("changeset_jobs.updated_at"),
 }
-
-// ChangesetJobColumns are used by the batch change related Store methods to insert,
-// update and query batches.
-var ChangesetJobColumns = append([]*sqlf.Query{
-	sqlf.Sprintf("changeset_jobs.id"),
-}, changesetJobInsertColumns...)
 
 // CreateBatchChange creates the given batch change.
 func (s *Store) CreateChangesetJobs(ctx context.Context, c *ChangesetJob) error {
@@ -97,7 +112,7 @@ func (s *Store) CreateChangesetJobs(ctx context.Context, c *ChangesetJob) error 
 var createChangesetJobQueryFmtstr = `
 -- source: enterprise/internal/batches/store/changeset_jobs.go:CreateChangesetJob
 INSERT INTO changeset_jobs (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
@@ -117,9 +132,9 @@ func createChangesetJobQuery(c *ChangesetJob) (*sqlf.Query, error) {
 		payload,
 		c.State,
 		c.FailureMessage,
-		c.StartedAt,
-		c.FinishedAt,
-		c.ProcessAfter,
+		&dbutil.NullTime{Time: &c.StartedAt},
+		&dbutil.NullTime{Time: &c.FinishedAt},
+		&dbutil.NullTime{Time: &c.ProcessAfter},
 		c.NumResets,
 		c.NumFailures,
 		c.CreatedAt,
@@ -140,9 +155,9 @@ func scanChangesetJob(c *ChangesetJob, s scanner) error {
 		&raw,
 		&c.State,
 		&dbutil.NullString{S: c.FailureMessage},
-		&c.StartedAt,
-		&c.FinishedAt,
-		&c.ProcessAfter,
+		&dbutil.NullTime{Time: &c.StartedAt},
+		&dbutil.NullTime{Time: &c.FinishedAt},
+		&dbutil.NullTime{Time: &c.ProcessAfter},
 		&c.NumResets,
 		&c.NumFailures,
 		&c.CreatedAt,

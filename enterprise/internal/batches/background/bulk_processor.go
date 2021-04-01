@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -44,6 +45,7 @@ func (b *bulkProcessor) process(ctx context.Context, tx *store.Store, job *store
 }
 
 func (b *bulkProcessor) comment(ctx context.Context, tx *store.Store, job *store.ChangesetJob) error {
-
-	return nil
+	typedPayload := job.Payload.(*store.ChangesetJobCommentPayload)
+	svc := service.NewWithClockAndSourcer(tx, tx.Clock(), b.sourcer)
+	return svc.CommentOnAllChangesetsOfBatchChange(ctx, job.BatchChangeID, job.ChangesetID, typedPayload.Message)
 }
