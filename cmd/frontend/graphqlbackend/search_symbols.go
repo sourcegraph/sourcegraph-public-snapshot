@@ -192,7 +192,6 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 		symbolRes := &result.SymbolMatch{
 			Symbol:  symbol,
 			BaseURI: baseURI,
-			Lang:    strings.ToLower(symbol.Language),
 		}
 		newFileMatchResolver := &FileMatchResolver{
 			db: db,

@@ -1,4 +1,4 @@
-import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
+import FileDownloadOutlineIcon from 'mdi-react/FileDownloadOutlineIcon'
 import * as React from 'react'
 import { encodeRepoRevision, RepoSpec, RevisionSpec, FileSpec } from '../../../../shared/src/util/url'
 import { RepoHeaderContext } from '../RepoHeader'
@@ -15,7 +15,7 @@ export class GoToRawAction extends React.PureComponent<Props> {
         if (this.props.actionType === 'dropdown') {
             return (
                 <a href={to} className="nav-link repo-header__file-action" download={true}>
-                    <FileDownloadIcon className="icon-inline" />
+                    <FileDownloadOutlineIcon className="icon-inline" />
                     <span>Raw (download file)</span>
                 </a>
             )
@@ -23,7 +23,7 @@ export class GoToRawAction extends React.PureComponent<Props> {
 
         return (
             <a href={to} className="nav-link" data-tooltip="Raw (download file)" download={true}>
-                <FileDownloadIcon className="icon-inline" />
+                <FileDownloadOutlineIcon className="icon-inline" />
             </a>
         )
     }

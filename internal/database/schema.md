@@ -1473,21 +1473,22 @@ Foreign-key constraints:
 
 # Table "public.user_external_accounts"
 ```
-    Column     |           Type           | Collation | Nullable |                      Default                       
----------------+--------------------------+-----------+----------+----------------------------------------------------
- id            | integer                  |           | not null | nextval('user_external_accounts_id_seq'::regclass)
- user_id       | integer                  |           | not null | 
- service_type  | text                     |           | not null | 
- service_id    | text                     |           | not null | 
- account_id    | text                     |           | not null | 
- auth_data     | text                     |           |          | 
- account_data  | text                     |           |          | 
- created_at    | timestamp with time zone |           | not null | now()
- updated_at    | timestamp with time zone |           | not null | now()
- deleted_at    | timestamp with time zone |           |          | 
- client_id     | text                     |           | not null | 
- expired_at    | timestamp with time zone |           |          | 
- last_valid_at | timestamp with time zone |           |          | 
+      Column       |           Type           | Collation | Nullable |                      Default                       
+-------------------+--------------------------+-----------+----------+----------------------------------------------------
+ id                | integer                  |           | not null | nextval('user_external_accounts_id_seq'::regclass)
+ user_id           | integer                  |           | not null | 
+ service_type      | text                     |           | not null | 
+ service_id        | text                     |           | not null | 
+ account_id        | text                     |           | not null | 
+ auth_data         | text                     |           |          | 
+ account_data      | text                     |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ deleted_at        | timestamp with time zone |           |          | 
+ client_id         | text                     |           | not null | 
+ expired_at        | timestamp with time zone |           |          | 
+ last_valid_at     | timestamp with time zone |           |          | 
+ encryption_key_id | text                     |           | not null | ''::text
 Indexes:
     "user_external_accounts_pkey" PRIMARY KEY, btree (id)
     "user_external_accounts_account" UNIQUE, btree (service_type, service_id, client_id, account_id) WHERE deleted_at IS NULL
