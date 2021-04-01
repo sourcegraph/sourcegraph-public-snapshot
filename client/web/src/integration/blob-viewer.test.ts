@@ -197,7 +197,6 @@ describe('Blob viewer', () => {
             )
             await driver.page.waitForSelector('.test-repo-blob')
             await driver.page.waitForSelector('.test-breadcrumb')
-            // Uncomment this snapshot once https://github.com/sourcegraph/sourcegraph/issues/15126 is resolved
             await percySnapshot(driver.page, this.test!.title)
         })
 
@@ -216,7 +215,6 @@ describe('Blob viewer', () => {
 
             await driver.assertWindowLocation('/github.com/sourcegraph/test/-/blob/test.ts#L2:9')
             assert.deepStrictEqual(await getHoverContents(), ['Test hover content\n'])
-            // Uncomment this snapshot once https://github.com/sourcegraph/sourcegraph/issues/15126 is resolved
             await percySnapshot(driver.page, this.test!.title)
         })
 
@@ -945,6 +943,8 @@ describe('Blob viewer', () => {
             await driver.page.waitForSelector('.test-tooltip-find-references', { visible: true })
             await driver.page.click('.test-tooltip-find-references')
 
+            await percySnapshot(driver.page, 'Blob Panel - Find References')
+
             // Click on the first reference
             await driver.page.waitForSelector('.test-file-match-children-item')
             await driver.page.click('.test-file-match-children-item')
@@ -961,6 +961,7 @@ describe('Blob viewer', () => {
             } catch {
                 throw new Error('Expected to navigate to file after clicking on link in references panel')
             }
+            await percySnapshot(driver.page, 'Blob Panel - First Reference')
         })
 
         describe('browser extension discoverability', () => {

@@ -364,6 +364,8 @@ describe('Repository', () => {
 
             await driver.page.waitForSelector('h2.tree-page__title')
 
+            await percySnapshot(driver.page, 'Repository page')
+
             // Assert that the directory listing displays properly
             await driver.page.waitForSelector('.test-tree-entries')
             await percySnapshot(driver.page, 'Repository index page')
@@ -860,6 +862,8 @@ describe('Repository', () => {
                 },
                 'Incorrect decorations for nested on tree sidebar'
             )
+
+            await percySnapshot(driver.page, 'Tree Sidebar')
 
             // Since nested is a single child, its children should be visible and decorated as well
 

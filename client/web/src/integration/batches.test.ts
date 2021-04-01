@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
+import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
@@ -399,6 +399,7 @@ describe('Batches', () => {
                 await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href),
                 testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-batch-change'
             )
+            await percySnapshot(driver.page, 'Batch changes list')
         })
 
         it('lists user batch changes', async () => {
@@ -416,6 +417,7 @@ describe('Batches', () => {
                 testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-batch-change'
             )
             assert.strictEqual(await driver.page.$('.test-batches-namespace-link'), null)
+            await percySnapshot(driver.page, 'User batch changes')
         })
 
         it('lists org batch changes', async () => {
@@ -434,6 +436,7 @@ describe('Batches', () => {
                 testContext.driver.sourcegraphBaseUrl + '/organizations/test-org/batch-changes/test-batch-change'
             )
             assert.strictEqual(await driver.page.$('.test-batches-namespace-link'), null)
+            await percySnapshot(driver.page, 'Org batch changes')
         })
     })
 
@@ -459,13 +462,19 @@ describe('Batches', () => {
                 // Expect one diff to be rendered.
                 await driver.page.waitForSelector('.test-file-diff-node')
 
+                await percySnapshot(driver.page, 'Batch changes details diff')
+
                 // Switch to view burndown chart.
                 await driver.page.click('.test-batches-chart-tab')
                 await driver.page.waitForSelector('.test-batches-chart')
 
+                await percySnapshot(driver.page, 'Batch changes burndown chart')
+
                 // Switch to view spec file.
                 await driver.page.click('.test-batches-spec-tab')
                 await driver.page.waitForSelector('.test-batches-spec')
+
+                await percySnapshot(driver.page, 'Batch changes spec file')
 
                 // Go to close page via button.
                 await Promise.all([driver.page.waitForNavigation(), driver.page.click('.test-batches-close-btn')])
@@ -675,10 +684,14 @@ describe('Batches', () => {
                 // View overview page.
                 await driver.page.waitForSelector('.test-batch-change-apply-page')
 
+                await percySnapshot(driver.page, 'Batch changes preview overview')
+
                 // Expand one changeset.
                 await driver.page.click('.test-batches-expand-preview')
                 // Expect one diff to be rendered.
                 await driver.page.waitForSelector('.test-file-diff-node')
+
+                await percySnapshot(driver.page, 'Batch changes preview diff')
 
                 // Apply batch change.
                 await Promise.all([
@@ -800,6 +813,9 @@ describe('Batches', () => {
             await driver.page.waitForSelector('.test-batches-settings-page')
             // Wait for list to load.
             await driver.page.waitForSelector('.test-code-host-connection-node')
+
+            await percySnapshot(driver.page, 'Code host setttings page')
+
             // Check no credential is configured.
             assert.strictEqual(await driver.page.$('.test-code-host-connection-node-enabled'), null)
             // Click "Add token".
