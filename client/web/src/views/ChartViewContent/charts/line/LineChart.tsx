@@ -1,181 +1,156 @@
-import React, {ReactElement, useCallback, useMemo} from 'react';
-import { ChartAxis, LineChartContent } from 'sourcegraph';
+import React, { ReactElement, useCallback, useMemo } from 'react';
+import { LineChartContent } from 'sourcegraph';
 import { curveLinear } from '@visx/curve';
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip';
-
 import {
     Axis,
+    EventEmitterProvider,
+    GlyphSeries,
     Grid,
+    lightTheme,
     LineSeries,
     Tooltip,
     XYChart,
-    lightTheme, GlyphProps, GlyphSeries,
 } from '@visx/xychart';
-import {GlyphDot} from '@visx/glyph';
+import useEventEmitters from '@visx/xychart/lib/hooks/useEventEmitters';
 
-export interface XYChartProps extends LineChartContent<any, string> {
-    width: number;
-    height: number;
-}
+import { XYCHART_EVENT_SOURCE } from '@visx/xychart/lib/constants';
+import { format } from 'd3-format';
+import { timeFormat } from 'd3-time-format'
+import { scaleLinear, scaleTime } from '@visx/scale';
+import { GridColumns } from '@visx/grid'
+import { Group } from '@visx/group'
+import { TextProps } from '@visx/text/lib/Text'
+
+import { generateAccessors } from './helpers/generate-accessors'
+import { getRangeWithPadding } from './helpers/get-range-with-padding'
+import { getMinAndMax } from './helpers/get-min-max'
+import { GlyphComponent } from './components/Glyph'
+import { TooltipContent } from './components/TooltipContent'
+import { MaybeLink } from './components/MaybeLink'
 
 // Chart configuration
-// const glyphComponent: 'star' | 'cross' | 'circle' = 'circle';
-const glyphOutline = 'white'; // any color
+const WIDTH_PER_TICK = 70;
+const HEIGHT_PER_TICK = 40;
+const MARGIN = { top: 10, left: 30, bottom: 20, right: 20 };
+const TICK_LABEL_PROPS = (): Partial<TextProps> => ({
+    fill: 'black',
+    fontSize: 12,
+    fontWeight: 400
+})
 
-const TICK_LABEL_PROPS = (): object => ({ fill: 'black' })
-const NUMBER_OF_TICKS = 4;
-const MARGIN = { top: 10, left: 50, bottom: 30, right: 30 };
+// Formatters
+const dateFormatter = timeFormat('%d %b');
+const formatDate = (date: Date): string => dateFormatter(date);
 
-// Helpers
-export function pad([min, max]:number[], coefficient: number): [number, number] {
-    const increment = (max - min) * coefficient / 2;
-
-    return [min - increment, max + increment];
+export interface LineChartProps extends Omit<LineChartContent<any, string>, 'chart'> {
+    width: number;
+    height: number;
+    onDataPointClick?: () => void;
 }
 
-interface Accessors<Datum, Key extends string | number> {
-    x: (d: Datum) => Date | number;
-    y: Record<Key, (data: Datum) => any>;
-}
-
-function generateAccessors<Datum extends object>(
-    xAxis: ChartAxis<keyof Datum, Datum>,
-    series: { dataKey: keyof Datum}[]
-): Accessors<Datum, string> {
-    const { dataKey: xDataKey, scale = 'time' } = xAxis;
-
-    return {
-        x: data => scale === 'time'
-            // as unknown as string quick hack for cast Datum[keyof Datum] to string
-            // fix that when we will have a value type for LineChartContent<D> generic
-            ? new Date(data[xDataKey] as unknown as string)
-            // In case if we got linear scale we have to operate with numbers
-            : +data[xDataKey],
-        y: series.reduce<Record<string, (data: Datum) => any>>((accessors, currentLine) => {
-            const { dataKey } = currentLine;
-            // as unknown as string quick hack for cast Datum[keyof Datum] to string
-            // fix that when we will have a value type for LineChartContent<D> generic
-            const key = dataKey as unknown as string;
-
-            accessors[key] = data => +data[dataKey];
-
-            return accessors;
-        }, {})
-    };
-}
-
-function getMinAndMax<Datum, Key extends string | number>(data: Datum[], accessors: Accessors<Datum, Key> ): [number, number] {
-    const keys = Object.keys(accessors.y) as Key[];
-
-    const resultArray = data.reduce<number[]>((memo, item) => {
-        for (const key of keys) {
-            const accessor = accessors.y[key];
-
-            memo.push(+accessor(item))
-        }
-
-        return memo;
-    }, []);
-
-    return [Math.min(...resultArray), Math.max(...resultArray)]
-}
-
-function GlyphComponent(props: GlyphProps<any>): ReactElement {
-    const { x: xCoord, y: yCoord, color, onPointerMove, onPointerOut, onPointerUp } = props;
-    const handlers = { onPointerMove, onPointerOut, onPointerUp };
-
+export function LineChart(props: LineChartProps): ReactElement {
     return (
-        <GlyphDot
-            cx={xCoord}
-            cy={yCoord}
-            stroke={glyphOutline}
-            strokeWidth={2}
-            fill={color}
-            r={4}
-            {...handlers}
-        />
-    );
+        <EventEmitterProvider>
+            <LineChartContentComponent {...props}/>
+        </EventEmitterProvider>
+    )
 }
 
-export function LineChart(props: XYChartProps): ReactElement {
-    const { width, height, data, series, xAxis } = props;
+function LineChartContentComponent(props: LineChartProps): ReactElement {
+    const { width, height, data, series, xAxis, onDataPointClick = () => {} } = props;
 
     // derived
-    const accessors = useMemo(() => generateAccessors(xAxis, series), [xAxis, series])
-    const scalesConfig = useMemo(() => ({
-        x: {
-            type: 'time' as const,
-            paddingInner: 0.3,
-            nice: false
+    const innerWidth = width - MARGIN.left - MARGIN.right;
+    const innerHeight = height - MARGIN.top - MARGIN.bottom;
+
+    const numberOfTicks = Math.max(1, Math.floor(innerWidth / WIDTH_PER_TICK))
+    const numberOfTicksY = Math.max(1, Math.floor(innerHeight / HEIGHT_PER_TICK))
+
+    const sortedData = useMemo(
+        () => data.sort(
+            (firstDatum, secondDatum) => firstDatum[xAxis.dataKey] - secondDatum[xAxis.dataKey]
+        ),
+        [data, xAxis]
+    );
+    const accessors = useMemo(
+        () => generateAccessors(xAxis, series),
+        [xAxis, series]
+    );
+    const scalesConfig = useMemo(
+        () => {
+            const scale = scaleLinear({
+                domain: getRangeWithPadding(getMinAndMax(sortedData, accessors), 0.3),
+                nice: true,
+                zero: false,
+            })
+
+            const ticks = scale.ticks(numberOfTicksY);
+            const firstTickValue = scale.ticks()[0];
+            const lastTickValue = ticks[ticks.length - 1];
+
+            return ({
+                x: {
+                    type: 'time' as const,
+                    nice: true
+                },
+                y: {
+                    type: 'linear' as const,
+                    domain: [firstTickValue, lastTickValue],
+                    nice: false,
+                    zero: false,
+                    round: false,
+                    clamp: true,
+                }
+            })
         },
-        y: {
-            type: 'linear' as const,
-            domain: pad(getMinAndMax(data, accessors), 0.3),
-            nice: true,
-            zero: true,
-        }
-    }), [accessors, data])
+        [accessors, sortedData, numberOfTicksY]
+    );
+
+    const xScale = useMemo(
+        () => scaleTime({
+                nice: true,
+                range: [0, innerWidth],
+                domain: [accessors.x(sortedData[0]), accessors.x(sortedData[sortedData.length - 1])]
+            }),
+        [accessors, sortedData, innerWidth]
+    );
 
     // callbacks
-    const renderTooltip = useCallback(({ tooltipData, colorScale }: RenderTooltipParams<any>) => (
-        <>
-            {/** date */}
-            {(tooltipData?.nearestDatum?.datum &&
-                new Date(accessors.x(tooltipData?.nearestDatum?.datum)).toDateString()) ||
-            'No date'}
-            <br/>
-            <br/>
-            {/** values */}
-            {(Object.keys(tooltipData?.datumByKey ?? {}).filter(lineKey => lineKey) as any[]).map(lineKey => {
-                const value =
-                    tooltipData?.nearestDatum?.datum &&
-                    accessors.y[lineKey](
-                        tooltipData?.nearestDatum?.datum,
-                    );
+    const renderTooltip = useCallback(
+        (renderProps: RenderTooltipParams<any>) =>
+            <TooltipContent {...renderProps} accessors={accessors} series={series}/>,
+        [accessors, series]
+    );
 
-                const line = series.find(line => line.dataKey === lineKey)
-
-                /* eslint-disable react/forbid-dom-props */
-                return (
-                    <div
-                        className='line-chart__tooltip'
-                        key={lineKey}>
-
-                        <em
-                            className='line-chart__tooltip-text'
-                            style={{
-                                color: colorScale?.(lineKey),
-                                textDecoration:
-                                    tooltipData?.nearestDatum?.key === lineKey ? 'underline' : undefined,
-                            }}
-                        >
-                            {line?.name ?? 'unknown series'}
-                        </em>{' '}
-                        {
-                          value === null || Number.isNaN(value)
-                            ? '–'
-                            : value
-                        }
-                    </div>
-                );
-            })}
-        </>
-    ), [accessors, series]);
+    const eventEmitters = useEventEmitters({ source: XYCHART_EVENT_SOURCE });
 
     return (
+
         <XYChart
             theme={lightTheme}
             xScale={scalesConfig.x}
             yScale={scalesConfig.y}
             height={height}
             width={width}
-            captureEvents={true}
+            captureEvents={false}
             margin={MARGIN}
         >
+
+            <Group top={MARGIN.top} left={MARGIN.left}>
+
+                <GridColumns
+                    scale={xScale}
+                    numTicks={numberOfTicks}
+                    width={innerWidth} height={innerHeight} stroke="#e0e0e0"
+                    lineStyle={{ stroke: 'gray', strokeWidth: 1, strokeOpacity: 0.3 }} />
+            </Group>
+
             <Grid
                 rows={true}
-                columns={true}
-                lineStyle={{ stroke: 'gray', strokeWidth: 1, strokeOpacity: 0.2 }}
+                columns={false}
+                numTicks={numberOfTicksY}
+                lineStyle={{ stroke: 'gray', strokeWidth: 1, strokeOpacity: 0.3 }}
             />
 
             <Axis
@@ -184,13 +159,17 @@ export function LineChart(props: XYChartProps): ReactElement {
                 stroke="black"
                 tickStroke="black"
                 tickClassName="ticks"
+                tickValues={xScale.ticks(numberOfTicks)}
+                tickFormat={formatDate}
+                numTicks={numberOfTicks}
                 tickLabelProps={TICK_LABEL_PROPS}
             />
             <Axis
                 orientation="left"
-                numTicks={NUMBER_OF_TICKS}
+                numTicks={numberOfTicksY}
                 strokeWidth={2}
                 stroke="black"
+                tickFormat={format('~s')}
                 tickStroke="black"
                 tickClassName="ticks"
                 tickLabelProps={TICK_LABEL_PROPS}
@@ -198,27 +177,21 @@ export function LineChart(props: XYChartProps): ReactElement {
 
             {
                 series.map(line =>
-                    <g key={line.dataKey as string}>
-                        <LineSeries
-                            dataKey={line.dataKey as string}
-                            data={data}
-                            xAccessor={accessors.x}
-                            yAccessor={accessors.y[line.dataKey as string]}
-                            curve={curveLinear}
-                        />
-
-                        <GlyphSeries
-                            dataKey={line.dataKey as string}
-                            data={data}
-                            xAccessor={accessors.x}
-                            yAccessor={accessors.y[line.dataKey as string]}
-                            renderGlyph={GlyphComponent}
-                        />
-                    </g>
+                    <LineSeries
+                        key={line.dataKey as string}
+                        dataKey={line.dataKey as string}
+                        data={sortedData}
+                        strokeWidth={3}
+                        xAccessor={accessors.x}
+                        yAccessor={accessors.y[line.dataKey as string]}
+                        stroke={line.stroke ?? lightTheme.colors[0]}
+                        curve={curveLinear}
+                    />
                 )
             }
 
             <Tooltip
+                debounce={200}
                 showHorizontalCrosshair={false}
                 showVerticalCrosshair={true}
                 snapTooltipToDatumX={false}
@@ -227,6 +200,42 @@ export function LineChart(props: XYChartProps): ReactElement {
                 showSeriesGlyphs={true}
                 renderTooltip={renderTooltip}
             />
+
+            <rect
+                x={MARGIN.left}
+                y={MARGIN.top}
+                width={width - MARGIN.left - MARGIN.right}
+                height={height - MARGIN.top - MARGIN.bottom}
+                fill="transparent"
+                {...eventEmitters}
+            />
+
+            {
+                series.map(line =>
+                    <GlyphSeries
+                        key={line.dataKey as string}
+                        dataKey={line.dataKey as string}
+                        data={sortedData}
+                        /* eslint-disable-next-line react/jsx-no-bind */
+                        colorAccessor={() => line.stroke}
+                        xAccessor={accessors.x}
+                        yAccessor={accessors.y[line.dataKey as string]}
+                        /* eslint-disable-next-line react/jsx-no-bind */
+                        renderGlyph={props => (
+                            <MaybeLink
+                                // visx types are wrong here. props don't have index value
+                                // key is index here. Index doesn't exist in runtime
+                                href={line.linkURLs?.[+props.key]}
+                                onClick={onDataPointClick}
+                                {...eventEmitters}
+                            >
+
+                                <GlyphComponent {...props}/>
+                            </MaybeLink>
+                        )}
+                    />
+                )
+            }
         </XYChart>
     );
 }

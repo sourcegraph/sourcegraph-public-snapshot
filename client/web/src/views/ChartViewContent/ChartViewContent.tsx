@@ -1,5 +1,5 @@
 import React, { FunctionComponent } from 'react';
-import {BarChartContent, ChartContent, LineChartContent, PieChartContent} from 'sourcegraph';
+import { BarChartContent, ChartContent, LineChartContent, PieChartContent } from 'sourcegraph';
 import * as H from 'history';
 import { ParentSize } from '@visx/responsive';
 
@@ -31,14 +31,16 @@ interface CartesianChartViewContentProps extends ChartViewContentProps {
 }
 
 export const CartesianChartViewContent: FunctionComponent<CartesianChartViewContentProps> = props => {
-    const { content } = props;
+    const { chart, ...content } = props.content;
 
-    const ChartComponent = content.chart === 'line' ? LineChart : BarChart
+    const ChartComponent = chart === 'line' ? LineChart : BarChart
 
     return (
         <div className="chart-view-content" >
             <ParentSize className='chart-view-content__chart'>
-                { ({ width, height}) => <ChartComponent width={width} height={height} {...content} /> }
+                {
+                    ({ width, height}) => <ChartComponent {...content} width={width} height={height}/>
+                }
             </ParentSize>
         </div>
     );

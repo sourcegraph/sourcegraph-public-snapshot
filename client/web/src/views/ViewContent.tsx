@@ -10,7 +10,8 @@ import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { hasProperty } from '../../../shared/src/util/types'
 import { isObject } from 'lodash'
 import { VersionContextProps } from '../../../shared/src/search/util'
-import { ChartViewContent } from './ChartViewContent'
+// import { ChartViewContent } from './ChartViewContent'
+import { ChartViewContent } from './ChartViewContent/ChartViewContent'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>
