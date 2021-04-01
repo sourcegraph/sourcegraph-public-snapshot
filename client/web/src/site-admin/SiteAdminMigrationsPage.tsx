@@ -348,14 +348,14 @@ const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now 
                 titleAtStart={true}
                 defaultExpanded={false}
             >
-                <div className="pt-2 site-admin-migration-node__errors__grid">
+                <div className="pt-2 site-admin-migration-node-errors__grid">
                     {node.errors.map(error => (
                         <>
                             <div className="py-1 pr-2">
                                 <Timestamp date={error.created} now={now} />
                             </div>
 
-                            <span className="py-1 pl-2 site-admin-migration-node__errors__grid-code">
+                            <span className="py-1 pl-2 site-admin-migration-node-errors__grid-code">
                                 <code>{error.message}</code>
                             </span>
                         </>
