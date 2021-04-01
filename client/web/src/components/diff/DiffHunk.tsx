@@ -12,6 +12,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
 import { useSplitDiff } from '@sourcegraph/wildcard/src/hooks'
 import { useHooksAddLineNumber } from '@sourcegraph/wildcard/src/hooks'
+import { useHistory } from 'react-router'
 
 interface DiffBoundaryProps extends FileDiffHunkFields {
     lineNumberClassName: string
@@ -56,6 +57,7 @@ interface LineCounter {
     line: number
     dataPart: string
     className?: string
+    anchor: string
 }
 
 interface DiffHunkProps extends ThemeProps {
@@ -65,7 +67,6 @@ interface DiffHunkProps extends ThemeProps {
     lineNumbers: boolean
     decorations: Record<'head' | 'base', DecorationMapByLine>
     location: H.Location
-    history: H.History
     /**
      * Reflect selected line in url
      *
@@ -74,14 +75,15 @@ interface DiffHunkProps extends ThemeProps {
     persistLines?: boolean
 }
 
-const LineCounter: React.FunctionComponent<LineCounter> = ({ line, dataPart, className }) => {
+const LineCounter: React.FunctionComponent<LineCounter> = ({ line, dataPart, className, anchor }) => {
+    const history = useHistory()
     return (
         <td
             className={`diff-hunk__num ${className}`}
             data-line={line}
             data-part={dataPart}
             // id={oldAnchor}
-            // onClick={() => persistLines && history.push({ hash: oldAnchor })}
+            onClick={() => /*persistLines && */ history.push({ hash: anchor })}
         />
     )
 }
@@ -94,7 +96,7 @@ const LineContent: React.FunctionComponent<any> = ({
     html,
     className,
 }: {
-    decorations: any
+    decorations: Record<'head' | 'base', DecorationMapByLine>
     kind: DiffHunkLineType
     html: string
     line: number
@@ -116,7 +118,6 @@ const LineContent: React.FunctionComponent<any> = ({
     return (
         <td
             className={`diff-hunk__content ${className}`}
-            /* eslint-disable-next-line react/forbid-dom-props */
             style={lineStyle}
             data-diff-marker={diffHunkTypeIndicators[kind]}
         >
@@ -140,15 +141,25 @@ const LineContent: React.FunctionComponent<any> = ({
     )
 }
 
-const LineGroup: React.FunctionComponent<any> = ({ decorations, isLightTheme, line, html, dataPart, className }) => {
+const LineGroup: React.FunctionComponent<any> = ({
+    decorations,
+    isLightTheme,
+    line,
+    html,
+    dataPart,
+    className,
+    kind,
+    anchor,
+}) => {
     return (
         <>
-            <LineCounter line={line} dataPart={dataPart} className={className} />
+            <LineCounter line={line} dataPart={dataPart} className={className} anchor={anchor} />
             <LineContent
                 className={className}
                 decorations={decorations}
                 isLightTheme={isLightTheme}
                 line={line}
+                kind={kind}
                 html={html}
             />
         </>
@@ -161,7 +172,6 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
     hunk,
     lineNumbers,
     location,
-    history,
     persistLines = true,
     isLightTheme,
 }) => {
@@ -170,64 +180,47 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
         hunk.newRange.startLine,
         hunk.oldRange.startLine
     )
+
     const { diff } = useSplitDiff(hunksWithLineNumber)
+
+    console.log(hunksWithLineNumber)
 
     const singleHunk = () => {
         return diff.map(elements => {
             return (
                 <tr>
                     {elements.map((line, index) => {
-                        if (!line)
+                        if (!line) {
                             return (
                                 <>
-                                    <td />
-                                    <td />
+                                    <td className="diff-hunk__num diff-hunk__num--empty" />
+                                    <td className="diff-hunk__num diff-hunk__num--empty" />
                                 </>
                             )
-                        if (line.kind === DiffHunkLineType.ADDED) {
-                            return (
-                                <LineGroup
-                                    className="diff-hunk__line--addition"
-                                    dataPart="head"
-                                    key={`${line.newLine}${line.html}`}
-                                    line={line.newLine}
-                                    html={line.html}
-                                    decorations={decorations}
-                                    isLightTheme={isLightTheme}
-                                />
-                            )
                         }
 
-                        if (line.kind === DiffHunkLineType.DELETED) {
-                            return (
-                                <LineGroup
-                                    className="diff-hunk__line--deletion"
-                                    dataPart="base"
-                                    key={`${line.newLine}${line.html}`}
-                                    line={line.oldLine}
-                                    html={line.html}
-                                    decorations={decorations}
-                                    isLightTheme={isLightTheme}
-                                />
-                            )
-                        }
-
-                        if (line.kind === DiffHunkLineType.UNCHANGED) {
-                            let l = elements[index + 1] ? line.oldLine : line.newLine
-                            return (
-                                <LineGroup
-                                    className="diff-hunk__line"
-                                    dataPart="base"
-                                    key={`${line.newLine}${line.html}`}
-                                    line={l}
-                                    html={line.html}
-                                    decorations={decorations}
-                                    isLightTheme={isLightTheme}
-                                />
-                            )
-                        } else {
-                            return null
-                        }
+                        return (
+                            <LineGroup
+                                className={`diff-hunk__line ${
+                                    line.kind === DiffHunkLineType.UNCHANGED ? 'diff-hunk__line--both' : ''
+                                } ${line.kind === DiffHunkLineType.DELETED ? 'diff-hunk__line--deletion' : ''} ${
+                                    line.kind === DiffHunkLineType.ADDED ? 'diff-hunk__line--addition' : ''
+                                }${
+                                    location.hash ===
+                                    `#${fileDiffAnchor}L${elements[index + 1] ? line.newLine : line.oldLine}`
+                                        ? 'diff-hunk__line--active'
+                                        : ''
+                                }`}
+                                anchor={`${fileDiffAnchor}L${elements[index + 1] ? line.oldLine : line.newLine}`}
+                                dataPart={line.kind === DiffHunkLineType.ADDED ? 'base' : 'head'}
+                                key={`${line.newLine}${line.html}`}
+                                line={elements[index + 1] ? line.oldLine : line.newLine}
+                                html={line.html}
+                                kind={line.kind}
+                                decorations={decorations}
+                                isLightTheme={isLightTheme}
+                            />
+                        )
                     })}
                 </tr>
             )

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-enum DiffHunkLineType {
+export enum DiffHunkLineType {
     ADDED = 'ADDED',
     UNCHANGED = 'UNCHANGED',
     DELETED = 'DELETED',
@@ -10,13 +10,13 @@ interface Hunk {
     kind: DiffHunkLineType
     html: string
     line: number
-    oldLine: number
-    newLine: number
+    oldLine?: number
+    newLine?: number
 }
 
-type HunkZipped = [Hunk[], Hunk | null, number]
+type HunkZipped = [Hunk[], Hunk | undefined, number]
 
-const zipHunks = (hunks: Hunk[]) =>
+const zipHunks = (hunks: Hunk[]): HunkZipped =>
     hunks.reduce(
         ([result, last, lastDeletionIndex], current, i): HunkZipped => {
             if (!last) {
@@ -44,12 +44,11 @@ const zipHunks = (hunks: Hunk[]) =>
             }
             return [result, current, newLastDeletionIndex]
         },
-        <HunkZipped>[[], null, -1]
+        <HunkZipped>[[], undefined, -1]
     )
 
-const groupHunks = (hunks: Hunk[]) => {
-    const elements = []
-
+const groupHunks = (hunks: Hunk[]): (Hunk | undefined)[][] => {
+    const elements: (Hunk | undefined)[][] = []
     // This could be a very complex reduce call, use `for` loop seems to make it a little more readable
     for (let i = 0; i < hunks.length; i++) {
         const current = hunks[i]
@@ -64,10 +63,10 @@ const groupHunks = (hunks: Hunk[]) => {
                 i = i + 1
                 elements.push([current, next])
             } else {
-                elements.push([current, null])
+                elements.push([current, undefined])
             }
         } else {
-            elements.push([null, current])
+            elements.push([undefined, current])
         }
     }
 
