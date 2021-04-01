@@ -418,13 +418,15 @@ const searchFields = (migration: OutOfBandMigrationFields): string[] => [
     migration.component,
     migration.description,
     migration.introduced,
-    migration.deprecated,
+    migration.deprecated || '',
     ...migration.errors.map(error => error.message),
 ]
 
 /** Returns true if the migration matches the given query. */
 const matchesQuery = (migration: OutOfBandMigrationFields, query: string): boolean => {
-    const fields = searchFields(migration).map(value => value.toLowerCase())
+    const fields = searchFields(migration)
+        .map(value => value.toLowerCase())
+        .filter(value => value !== '')
 
     return query
         .toLowerCase()
