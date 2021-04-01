@@ -66,6 +66,23 @@ const defaultProps: SearchContextMenuProps = {
     closeMenu: () => {},
 }
 
+const emptySearchContexts = {
+    fetchAutoDefinedSearchContexts: of([]),
+    fetchSearchContexts: (
+        first: number,
+        query?: string,
+        after?: string
+    ): Observable<ListSearchContextsResult['searchContexts']> =>
+        of({
+            nodes: [],
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            totalCount: 0,
+        }),
+}
+
 add('default', () => <WebStory>{() => <SearchContextMenu {...defaultProps} />}</WebStory>, {})
 
-add('empty', () => <WebStory>{() => <SearchContextMenu {...defaultProps} />}</WebStory>, {})
+add('empty', () => <WebStory>{() => <SearchContextMenu {...defaultProps} {...emptySearchContexts} />}</WebStory>, {})
