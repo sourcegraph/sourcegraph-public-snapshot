@@ -987,6 +987,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				`repo:contains(file:diff.pb.go) type:commit LSIF`,
 				counts{Commit: 1},
 			},
+			{
+				`predicate logic does not conflict with unrecognized patterns`,
+				`repo:sg(test)`,
+				counts{Repo: 6},
+			},
 		}
 
 		for _, test := range tests {

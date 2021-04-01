@@ -60,28 +60,14 @@ func TestParseAsPredicate(t *testing.T) {
 		input  string
 		name   string
 		params string
-		err    bool
 	}{
-		{`()`, "", "", true},
-		{`a()`, "a", "", false},
-		{`a(b)`, "a", "b", false},
-		{``, "", "", true},
-		{`a)(`, "", "", true},
+		{`a()`, "a", ""},
+		{`a(b)`, "a", "b"},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.input, func(t *testing.T) {
-			name, params, err := ParseAsPredicate(tc.input)
-			if tc.err {
-				if err == nil {
-					t.Fatal("expected err, but got none")
-				}
-				return
-			}
-			if err != nil {
-				t.Fatalf("unexpected err: %s", err)
-			}
-
+			name, params := ParseAsPredicate(tc.input)
 			if name != tc.name {
 				t.Fatalf("expected name %s, got %s", tc.name, name)
 			}

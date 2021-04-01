@@ -1016,27 +1016,17 @@ func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*Search
 			Annotation: ann,
 		}
 
+		if !ann.Labels.IsSet(query.IsPredicate) {
+			return orig
+		}
+
 		if topErr != nil {
 			return orig
 		}
 
-		name, params, err := query.ParseAsPredicate(value)
-		if err != nil {
-			// This doesn't look like a predicate, so skip it
-			return orig
-		}
-
-		predicate, err := query.DefaultPredicateRegistry.Get(field, name, params)
-		if err != nil {
-			topErr = err
-			return orig
-		}
-
-		if neg {
-			topErr = errors.New("predicates do not currently support negation")
-			return nil
-		}
-
+		name, params := query.ParseAsPredicate(value)
+		predicate := query.DefaultPredicateRegistry.Get(field, name)
+		predicate.ParseParams(params)
 		srr, err := evaluate(predicate)
 		if err != nil {
 			topErr = err

@@ -471,7 +471,7 @@ func fuzzyRegexp(patterns []Pattern) Pattern {
 	}
 	var values []string
 	for _, p := range patterns {
-		if p.Annotation.Labels.isSet(Literal) {
+		if p.Annotation.Labels.IsSet(Literal) {
 			values = append(values, regexp.QuoteMeta(p.Value))
 		} else {
 			values = append(values, p.Value)
@@ -617,7 +617,7 @@ func escapeParens(s string) string {
 // escapeParensHeuristic escapes certain parentheses in search patterns (see escapeParens).
 func escapeParensHeuristic(nodes []Node) []Node {
 	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
-		if !annotation.Labels.isSet(Quoted) {
+		if !annotation.Labels.IsSet(Quoted) {
 			value = escapeParens(value)
 		}
 		return Pattern{
