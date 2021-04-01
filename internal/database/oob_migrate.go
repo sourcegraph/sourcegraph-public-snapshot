@@ -201,9 +201,9 @@ func NewExternalAccountsMigratorWithDB(db dbutil.DB) *ExternalAccountsMigrator {
 }
 
 // ID of the migration row in the out_of_band_migrations table.
-// This ID was defined arbitrarily in this migration file: frontend/1528395807_external_account_migration.up.sql
+// This ID was defined arbitrarily in this migration file: frontend/1528395809_external_account_migration.up.sql
 func (m *ExternalAccountsMigrator) ID() int {
-	return 4
+	return 6
 }
 
 // Progress returns a value from 0 to 1 representing the percentage of configuration already migrated.
