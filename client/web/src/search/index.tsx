@@ -7,7 +7,12 @@ import { SearchPatternType } from '../../../shared/src/graphql-operations'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { ISavedSearch } from '../../../shared/src/graphql/schema'
-import { EventLogResult, resolveSearchContextSpec } from './backend'
+import {
+    EventLogResult,
+    resolveSearchContextSpec,
+    fetchAutoDefinedSearchContexts,
+    fetchSearchContexts,
+} from './backend'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
 import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
 import { VersionContextProps } from '../../../shared/src/search/util'
@@ -183,6 +188,8 @@ export interface SearchContextProps {
     defaultSearchContextSpec: string
     selectedSearchContextSpec?: string
     setSelectedSearchContextSpec: (spec: string) => void
+    fetchAutoDefinedSearchContexts: typeof fetchAutoDefinedSearchContexts
+    fetchSearchContexts: typeof fetchSearchContexts
 }
 
 export interface ShowQueryBuilderProps {

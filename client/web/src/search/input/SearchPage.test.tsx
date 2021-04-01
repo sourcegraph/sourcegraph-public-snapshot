@@ -58,6 +58,16 @@ describe('SearchPage', () => {
         fetchSavedSearches: () => of([]),
         fetchRecentSearches: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
         fetchRecentFileViews: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
+        fetchAutoDefinedSearchContexts: of([]),
+        fetchSearchContexts: () =>
+            of({
+                nodes: [],
+                pageInfo: {
+                    endCursor: null,
+                    hasNextPage: false,
+                },
+                totalCount: 0,
+            }),
     }
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {

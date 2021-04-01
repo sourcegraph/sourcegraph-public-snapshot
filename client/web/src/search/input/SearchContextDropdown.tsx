@@ -7,19 +7,12 @@ import { SearchContextMenu } from './SearchContextMenu'
 import { SubmitSearchParameters } from '../helpers'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { isContextFilterInQuery } from '../../../../shared/src/search/query/validate'
-import {
-    fetchAutoDefinedSearchContexts as _fetchAutoDefinedSearchContexts,
-    fetchSearchContexts as _fetchSearchContexts,
-} from '../backend'
-
 export interface SearchContextDropdownProps
     extends Omit<SearchContextProps, 'showSearchContext'>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         VersionContextProps {
     submitSearch: (args: SubmitSearchParameters) => void
-    fetchAutoDefinedSearchContexts?: typeof _fetchAutoDefinedSearchContexts
-    fetchSearchContexts?: typeof _fetchSearchContexts
     query: string
     history: H.History
 }
@@ -34,8 +27,8 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         selectedSearchContextSpec,
         setSelectedSearchContextSpec,
         submitSearch,
-        fetchAutoDefinedSearchContexts = _fetchAutoDefinedSearchContexts,
-        fetchSearchContexts = _fetchSearchContexts,
+        fetchAutoDefinedSearchContexts,
+        fetchSearchContexts,
     } = props
 
     const [isOpen, setIsOpen] = useState(false)

@@ -1,4 +1,5 @@
 import { storiesOf } from '@storybook/react'
+import { of } from 'rxjs'
 import { createMemoryHistory } from 'history'
 import React from 'react'
 import { WebStory } from '../../components/WebStory'
@@ -37,6 +38,16 @@ const defaultProps: MonacoQueryInputProps = {
     copyQueryButton: false,
     onChange: () => {},
     onSubmit: () => {},
+    fetchAutoDefinedSearchContexts: of([]),
+    fetchSearchContexts: () =>
+        of({
+            nodes: [],
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            totalCount: 0,
+        }),
 }
 
 add(

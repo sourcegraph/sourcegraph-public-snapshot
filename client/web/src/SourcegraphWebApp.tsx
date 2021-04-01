@@ -41,6 +41,7 @@ import {
     fetchSavedSearches,
     fetchRecentSearches,
     fetchRecentFileViews,
+    fetchAutoDefinedSearchContexts,
     fetchSearchContexts,
 } from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
@@ -466,6 +467,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     showSearchContext={this.canShowSearchContext()}
                                     selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                                    fetchSearchContexts={fetchSearchContexts}
                                     defaultSearchContextSpec={this.state.defaultSearchContextSpec}
                                     showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                     globbing={this.state.globbing}

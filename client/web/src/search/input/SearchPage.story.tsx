@@ -1,4 +1,5 @@
 import React from 'react'
+import { of } from 'rxjs'
 import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from '../panels/utils'
 import { createMemoryHistory } from 'history'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
@@ -51,6 +52,16 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     fetchRecentSearches: _fetchRecentSearches,
     fetchRecentFileViews: _fetchRecentFileViews,
     now: () => parseISO('2020-09-16T23:15:01Z'),
+    fetchAutoDefinedSearchContexts: of([]),
+    fetchSearchContexts: () =>
+        of({
+            nodes: [],
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            totalCount: 0,
+        }),
 })
 
 const { add } = storiesOf('web/search/input/SearchPage', module).addParameters({

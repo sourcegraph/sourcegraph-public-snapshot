@@ -1,4 +1,5 @@
 import React from 'react'
+import { of } from 'rxjs'
 import { createMemoryHistory } from 'history'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../components/WebStory'
@@ -60,6 +61,16 @@ const defaultProps = (
     activation: undefined,
     hideNavLinks: false,
     routes: [],
+    fetchAutoDefinedSearchContexts: of([]),
+    fetchSearchContexts: () =>
+        of({
+            nodes: [],
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            totalCount: 0,
+        }),
 })
 
 const { add } = storiesOf('web/nav/GlobalNav', module)

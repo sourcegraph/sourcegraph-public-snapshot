@@ -1,4 +1,5 @@
 import React from 'react'
+import { of } from 'rxjs'
 import renderer from 'react-test-renderer'
 import { setLinkComponent } from '../../../shared/src/components/Link'
 import { ThemePreference } from '../theme'
@@ -50,6 +51,16 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     showOnboardingTour: false,
     branding: undefined,
     routes: [],
+    fetchAutoDefinedSearchContexts: of([]),
+    fetchSearchContexts: () =>
+        of({
+            nodes: [],
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            totalCount: 0,
+        }),
 }
 
 describe('GlobalNavbar', () => {

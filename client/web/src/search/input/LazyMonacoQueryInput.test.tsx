@@ -1,5 +1,6 @@
 import renderer from 'react-test-renderer'
 import React from 'react'
+import { of } from 'rxjs'
 import { noop } from 'lodash'
 import { PlainQueryInput } from './LazyMonacoQueryInput'
 import { createMemoryHistory } from 'history'
@@ -33,6 +34,17 @@ describe('PlainQueryInput', () => {
                         versionContext={undefined}
                         globbing={false}
                         enableSmartQuery={false}
+                        fetchAutoDefinedSearchContexts={of([])}
+                        fetchSearchContexts={() =>
+                            of({
+                                nodes: [],
+                                pageInfo: {
+                                    endCursor: null,
+                                    hasNextPage: false,
+                                },
+                                totalCount: 0,
+                            })
+                        }
                     />
                 )
                 .toJSON()
@@ -64,6 +76,17 @@ describe('PlainQueryInput', () => {
                         versionContext={undefined}
                         globbing={false}
                         enableSmartQuery={false}
+                        fetchAutoDefinedSearchContexts={of([])}
+                        fetchSearchContexts={() =>
+                            of({
+                                nodes: [],
+                                pageInfo: {
+                                    endCursor: null,
+                                    hasNextPage: false,
+                                },
+                                totalCount: 0,
+                            })
+                        }
                     />
                 )
                 .toJSON()

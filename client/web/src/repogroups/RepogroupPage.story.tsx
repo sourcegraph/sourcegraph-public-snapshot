@@ -3,7 +3,7 @@ import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
 import React from 'react'
 import { python2To3Metadata } from './Python2To3'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { NEVER } from 'rxjs'
+import { NEVER, of } from 'rxjs'
 import { NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
 import { ThemePreference } from '../theme'
 import { ActionItemComponentProps } from '../../../shared/src/actions/ActionItem'
@@ -100,6 +100,16 @@ const commonProps = () =>
         enableSmartQuery: false,
         showOnboardingTour: false,
         showQueryBuilder: false,
+        fetchAutoDefinedSearchContexts: of([]),
+        fetchSearchContexts: () =>
+            of({
+                nodes: [],
+                pageInfo: {
+                    endCursor: null,
+                    hasNextPage: false,
+                },
+                totalCount: 0,
+            }),
     })
 
 add('Refactor Python 2 to 3', () => (

@@ -14,10 +14,6 @@ import React, {
 } from 'react'
 import { DropdownItem } from 'reactstrap'
 import { SearchContextProps } from '..'
-import {
-    fetchAutoDefinedSearchContexts as _fetchAutoDefinedSearchContexts,
-    fetchSearchContexts as _fetchSearchContexts,
-} from '../backend'
 
 const HighlightedSearchTerm: React.FunctionComponent<{ text: string; searchFilter: string }> = ({
     text,
@@ -70,8 +66,6 @@ const SearchContextMenuItem: React.FunctionComponent<{
 
 export interface SearchContextMenuProps
     extends Omit<SearchContextProps, 'showSearchContext' | 'setSelectedSearchContextSpec'> {
-    fetchAutoDefinedSearchContexts: typeof _fetchAutoDefinedSearchContexts
-    fetchSearchContexts: typeof _fetchSearchContexts
     closeMenu: () => void
     selectSearchContextSpec: (spec: string) => void
 }
