@@ -6,9 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
 	"k8s.io/apimachinery/pkg/util/rand"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/schema"
