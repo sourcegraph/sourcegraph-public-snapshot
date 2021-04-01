@@ -69,39 +69,39 @@ add('Line chart', () => (
     />
 ))
 
-// add('Bar chart', () => (
-//     <ChartViewContent
-//         {...commonProps}
-//         content={{
-//             chart: 'bar',
-//             data: [
-//                 { name: 'A', value: 183 },
-//                 { name: 'B', value: 145 },
-//                 { name: 'C', value: 94 },
-//                 { name: 'D', value: 134 },
-//                 { name: 'E', value: 123 },
-//             ],
-//             series: [
-//                 {
-//                     dataKey: 'value',
-//                     name: 'A metric',
-//                     fill: 'var(--oc-teal-7)',
-//                     linkURLs: [
-//                         '#1st_data_point',
-//                         '#2nd_data_point',
-//                         '#3rd_data_point',
-//                         '#4th_data_point',
-//                         '#5th_data_point',
-//                     ],
-//                 },
-//             ],
-//             xAxis: {
-//                 dataKey: 'name',
-//                 type: 'category',
-//             },
-//         }}
-//     />
-// ))
+add('Bar chart', () => (
+    <ChartViewContent
+        {...commonProps}
+        content={{
+            chart: 'bar',
+            data: [
+                { name: 'A', value: 183 },
+                { name: 'B', value: 145 },
+                { name: 'C', value: 94 },
+                { name: 'D', value: 134 },
+                { name: 'E', value: 123 },
+            ],
+            series: [
+                {
+                    dataKey: 'value',
+                    name: 'A metric',
+                    fill: 'var(--oc-teal-7)',
+                    linkURLs: [
+                        '#1st_data_point',
+                        '#2nd_data_point',
+                        '#3rd_data_point',
+                        '#4th_data_point',
+                        '#5th_data_point',
+                    ],
+                },
+            ],
+            xAxis: {
+                dataKey: 'name',
+                type: 'category',
+            },
+        }}
+    />
+))
 
 add('Pie chart', () => (
     <ChartViewContent

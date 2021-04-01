@@ -97,7 +97,7 @@ function GlyphComponent(props: GlyphProps<any>): ReactElement {
     );
 }
 
-export function LineChart(props: XYChartProps) {
+export function LineChart(props: XYChartProps): ReactElement {
     const { width, height, data, series, xAxis } = props;
 
     // derived
