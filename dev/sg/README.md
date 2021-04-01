@@ -51,7 +51,7 @@ Make sure that `~/my/path` is in your `$PATH` then.
 ### Start dev environment
 
 ```bash
-# Run complete environment:
+# Run default environment (this starts the 'default' command set defined in config):
 sg start
 
 # Run the enterprise environment:
