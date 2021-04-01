@@ -40,7 +40,6 @@ go build -o ~/my/path/sg ./dev/sg
 
 Make sure that `~/my/path` is in your `$PATH` then.
 
-
 ## Inspiration
 
 - [GitLab Developer Kit (GDK)](https://gitlab.com/gitlab-org/gitlab-development-kit)
@@ -244,10 +243,10 @@ tests:
 - [ ] All of the things marked as TODOs above
 - [ ] Add the remaining processes from `<root>/dev/Procfile` to `<root>/sg.config.yaml`
 - [ ] Add a _simple_ way to define in the config file when a restart after a rebuild is not necessary
-    - Something like `check_binary: .bin/frontend` which would take a SHA256 before and after rebuild and only restart if SHA doesn't match
+  - Something like `check_binary: .bin/frontend` which would take a SHA256 before and after rebuild and only restart if SHA doesn't match
 - [ ] Rename `install` to `build` because it's clearer
 - [ ] Add support for "dev environment setup"
-    - Something like `sg check` which runs `check_cmds` in the config file and provides helpful output if one of them failed ("check_cmd postgres failed. Install postgres with...")
+  - Something like `sg check` which runs `check_cmds` in the config file and provides helpful output if one of them failed ("check_cmd postgres failed. Install postgres with...")
 - [ ] Add built-in support for "download binary" so that the `caddy` command, for example, would be 3 lines instead of 20
 
 ## Hacking
@@ -261,4 +260,3 @@ go run . -config ../../sg.config.yaml start
 ```
 
 The `-config` can be anything you want, of course.
-
