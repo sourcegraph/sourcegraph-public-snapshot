@@ -42,7 +42,7 @@ func TestAddExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := (&schemaResolver{db: db}).AddExternalService(ctx, &addExternalServiceArgs{})
+			result, err := newSchemaResolver(db, nil).AddExternalService(ctx, &addExternalServiceArgs{})
 			if want := backend.ErrMustBeSiteAdmin; err != want {
 				t.Errorf("err: want %q but got %q", want, err)
 			}
@@ -60,7 +60,7 @@ func TestAddExternalService(t *testing.T) {
 			}()
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			userID := MarshalUserID(1)
-			result, err := (&schemaResolver{db: db}).AddExternalService(ctx, &addExternalServiceArgs{
+			result, err := newSchemaResolver(db, nil).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace: &userID,
 				},
@@ -93,7 +93,7 @@ func TestAddExternalService(t *testing.T) {
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			userID := MarshalUserID(2)
-			result, err := (&schemaResolver{db: db}).AddExternalService(ctx, &addExternalServiceArgs{
+			result, err := newSchemaResolver(db, nil).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace: &userID,
 				},
@@ -133,7 +133,8 @@ func TestAddExternalService(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			userID := int32(1)
 			gqlID := MarshalUserID(userID)
-			result, err := (&schemaResolver{db: db}).AddExternalService(ctx, &addExternalServiceArgs{
+
+			result, err := newSchemaResolver(db, nil).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace: &gqlID,
 				},
@@ -187,7 +188,7 @@ func TestAddExternalService(t *testing.T) {
 			userID := int32(1)
 			gqlID := MarshalUserID(userID)
 
-			result, err := (&schemaResolver{db: db}).AddExternalService(ctx, &addExternalServiceArgs{
+			result, err := newSchemaResolver(db, nil).AddExternalService(ctx, &addExternalServiceArgs{
 				Input: addExternalServiceInput{
 					Namespace: &gqlID,
 				},
@@ -270,7 +271,7 @@ func TestUpdateExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := (&schemaResolver{db: db}).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			result, err := newSchemaResolver(db, nil).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -296,7 +297,7 @@ func TestUpdateExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := (&schemaResolver{db: db}).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			result, err := newSchemaResolver(db, nil).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -330,7 +331,7 @@ func TestUpdateExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := (&schemaResolver{db: db}).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			_, err := newSchemaResolver(db, nil).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -359,7 +360,7 @@ func TestUpdateExternalService(t *testing.T) {
 		}()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&schemaResolver{db: db}).UpdateExternalService(ctx, &updateExternalServiceArgs{
+		result, err := newSchemaResolver(db, nil).UpdateExternalService(ctx, &updateExternalServiceArgs{
 			Input: updateExternalServiceInput{
 				ID:     "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				Config: strptr(""),
@@ -455,7 +456,7 @@ func TestDeleteExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := (&schemaResolver{db: db}).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			result, err := newSchemaResolver(db, nil).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 			if want := backend.ErrMustBeSiteAdmin; err != want {
@@ -479,7 +480,7 @@ func TestDeleteExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := (&schemaResolver{db: db}).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			result, err := newSchemaResolver(db, nil).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 
@@ -511,7 +512,7 @@ func TestDeleteExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := (&schemaResolver{db: db}).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			_, err := newSchemaResolver(db, nil).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 			if err != nil {
@@ -578,7 +579,7 @@ func TestExternalServices(t *testing.T) {
 			}()
 
 			id := MarshalUserID(2)
-			result, err := (&schemaResolver{db: db}).ExternalServices(context.Background(), &ExternalServicesArgs{
+			result, err := newSchemaResolver(db, nil).ExternalServices(context.Background(), &ExternalServicesArgs{
 				Namespace: &id,
 			})
 			if want := errMustBeSiteAdminOrSameUser; err != want {
