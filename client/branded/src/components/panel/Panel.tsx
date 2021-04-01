@@ -1,5 +1,4 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
-import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { BehaviorSubject, from, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
