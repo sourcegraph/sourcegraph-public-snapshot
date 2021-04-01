@@ -1,6 +1,5 @@
 package mounted
 
-import "C"
 import (
 	"context"
 	"crypto/aes"
@@ -20,6 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// Key is an encryption.Key implementation that uses AES GCM encryption, using a
+// secret loaded either from an env var or a file
 type Key struct {
 	keyname string
 	secret  []byte
