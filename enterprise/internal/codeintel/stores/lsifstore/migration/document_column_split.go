@@ -19,27 +19,19 @@ func NewDocumentColumnSplitMigrator(store *lsifstore.Store, batchSize int) oobmi
 	}
 
 	return newMigrator(store, driver, migratorOptions{
-		tableName:   "lsif_data_documents",
-		primaryKeys: []string{"path"},
-		selectionFields: []string{
-			"data",
-			"ranges",
-			"hovers",
-			"monikers",
-			"packages",
-			"diagnostics",
-		},
-		updatedFields: []string{
-			"data",
-			"ranges",
-			"hovers",
-			"monikers",
-			"packages",
-			"diagnostics",
-		},
-		fieldTypes:    []string{"text not null", "bytea", "bytea", "bytea", "bytea", "bytea", "bytea"}, // TODO - nasty
+		tableName:     "lsif_data_documents",
 		targetVersion: 3,
 		batchSize:     batchSize,
+		fields: []fieldSpec{
+			{name: "dump_id", postgresType: "integer not null", primaryKey: true},
+			{name: "path", postgresType: "text not null", primaryKey: true},
+			{name: "data", postgresType: "bytea"},
+			{name: "ranges", postgresType: "bytea"},
+			{name: "hovers", postgresType: "bytea"},
+			{name: "monikers", postgresType: "bytea"},
+			{name: "packages", postgresType: "bytea"},
+			{name: "diagnostics", postgresType: "bytea"},
+		},
 	})
 }
 
@@ -50,16 +42,7 @@ func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) (updateSpec,
 	var path string
 	var rawData, ignored []byte
 
-	if err := scanner.Scan(
-		&dumpID,
-		&path,
-		&rawData,
-		&ignored,
-		&ignored,
-		&ignored,
-		&ignored,
-		&ignored,
-	); err != nil {
+	if err := scanner.Scan(&dumpID, &path, &rawData, &ignored, &ignored, &ignored, &ignored, &ignored); err != nil {
 		return updateSpec{}, err
 	}
 
@@ -73,9 +56,10 @@ func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) (updateSpec,
 	}
 
 	return updateSpec{
-		DumpID:           dumpID,
-		PrimaryKeyValues: []interface{}{path},
-		UpdatedFieldValues: []interface{}{
+		DumpID: dumpID,
+		FieldValues: []interface{}{
+			dumpID,
+			path,
 			nil,
 			encoded.Ranges,
 			encoded.HoverResults,
@@ -116,15 +100,7 @@ func (m *documentColumnSplitMigrator) MigrateRowDown(scanner scanner) (updateSpe
 	}
 
 	return updateSpec{
-		DumpID:           dumpID,
-		PrimaryKeyValues: []interface{}{path},
-		UpdatedFieldValues: []interface{}{
-			reencoded,
-			nil,
-			nil,
-			nil,
-			nil,
-			nil,
-		},
+		DumpID:      dumpID,
+		FieldValues: []interface{}{dumpID, path, reencoded, nil, nil, nil, nil, nil},
 	}, nil
 }
