@@ -1,14 +1,17 @@
 import { replaceRange } from '../../util/strings'
+import { FilterType } from './filters'
 import { Filter } from './token'
-import { isContextFilterInQuery } from './validate'
+import { filterExists } from './validate'
 
 export function appendContextFilter(query: string, searchContextSpec: string | undefined): string {
-    return !isContextFilterInQuery(query) && searchContextSpec ? `context:${searchContextSpec} ${query}` : query
+    return !filterExists(query, FilterType.context) && searchContextSpec
+        ? `context:${searchContextSpec} ${query}`
+        : query
 }
 
-export function omitContextFilter(query: string, contextFilter: Filter): string {
-    let finalQuery = replaceRange(query, contextFilter.range)
-    if (contextFilter.range.start === 0) {
+export function omitFilter(query: string, filter: Filter): string {
+    let finalQuery = replaceRange(query, filter.range)
+    if (filter.range.start === 0) {
         // Remove space at the start
         finalQuery = finalQuery.slice(1)
     }

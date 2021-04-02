@@ -1,6 +1,6 @@
 import { FilterType } from './filters'
 import { Filter } from './token'
-import { appendContextFilter, omitContextFilter } from './transformer'
+import { appendContextFilter, omitFilter } from './transformer'
 import { FilterKind, findFilter } from './validate'
 
 describe('appendContextFilter', () => {
@@ -34,16 +34,16 @@ describe('omitContextFilter', () => {
 
     test('omit context filter from the start of the query', () => {
         const query = 'context:foo bar'
-        expect(omitContextFilter(query, getGlobalContextFilter(query))).toEqual('bar')
+        expect(omitFilter(query, getGlobalContextFilter(query))).toEqual('bar')
     })
 
     test('omit context filter from the end of the query', () => {
         const query = 'bar context:foo'
-        expect(omitContextFilter(query, getGlobalContextFilter(query))).toEqual('bar ')
+        expect(omitFilter(query, getGlobalContextFilter(query))).toEqual('bar ')
     })
 
     test('omit context filter from the middle of the query', () => {
         const query = 'bar context:foo bar1'
-        expect(omitContextFilter(query, getGlobalContextFilter(query))).toEqual('bar  bar1')
+        expect(omitFilter(query, getGlobalContextFilter(query))).toEqual('bar  bar1')
     })
 })
