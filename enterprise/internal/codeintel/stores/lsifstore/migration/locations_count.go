@@ -48,8 +48,8 @@ func (m *locationsCountMigrator) MigrateRowUp(scanner scanner) (updateSpec, erro
 	}
 
 	return updateSpec{
-		DumpID:      dumpID,
-		FieldValues: []interface{}{dumpID, scheme, identifier, len(data)},
+		dumpID:      dumpID,
+		fieldValues: []interface{}{dumpID, scheme, identifier, len(data)},
 	}, nil
 }
 
@@ -64,7 +64,7 @@ func (m *locationsCountMigrator) MigrateRowDown(scanner scanner) (updateSpec, er
 	}
 
 	return updateSpec{
-		DumpID:      dumpID,
-		FieldValues: []interface{}{dumpID, scheme, identifier, 0},
+		dumpID:      dumpID,
+		fieldValues: []interface{}{dumpID, scheme, identifier, 0},
 	}, nil
 }

@@ -56,8 +56,8 @@ func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) (updateSpec,
 	}
 
 	return updateSpec{
-		DumpID: dumpID,
-		FieldValues: []interface{}{
+		dumpID: dumpID,
+		fieldValues: []interface{}{
 			dumpID,
 			path,
 			nil,
@@ -100,7 +100,7 @@ func (m *documentColumnSplitMigrator) MigrateRowDown(scanner scanner) (updateSpe
 	}
 
 	return updateSpec{
-		DumpID:      dumpID,
-		FieldValues: []interface{}{dumpID, path, reencoded, nil, nil, nil, nil, nil},
+		dumpID:      dumpID,
+		fieldValues: []interface{}{dumpID, path, reencoded, nil, nil, nil, nil, nil},
 	}, nil
 }

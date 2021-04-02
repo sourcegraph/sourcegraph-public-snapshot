@@ -47,8 +47,8 @@ func (m *diagnosticsCountMigrator) MigrateRowUp(scanner scanner) (updateSpec, er
 	}
 
 	return updateSpec{
-		DumpID:      dumpID,
-		FieldValues: []interface{}{dumpID, path, len(data.Diagnostics)},
+		dumpID:      dumpID,
+		fieldValues: []interface{}{dumpID, path, len(data.Diagnostics)},
 	}, nil
 }
 
@@ -63,7 +63,7 @@ func (m *diagnosticsCountMigrator) MigrateRowDown(scanner scanner) (updateSpec, 
 	}
 
 	return updateSpec{
-		DumpID:      dumpID,
-		FieldValues: []interface{}{dumpID, path, 0},
+		dumpID:      dumpID,
+		fieldValues: []interface{}{dumpID, path, 0},
 	}, nil
 }
