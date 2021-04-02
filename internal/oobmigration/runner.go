@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"sync"
 	"time"
 
@@ -244,9 +243,6 @@ func runMigrationFunction(ctx context.Context, store storeIface, migration *Migr
 	if migration.ApplyReverse {
 		migrationFunc = migrator.Down
 	}
-
-	// TODO - remove
-	time.Sleep(time.Millisecond * time.Duration(7*rand.Intn(200)))
 
 	if migrationErr := migrationFunc(ctx); migrationErr != nil {
 		// Migration resulted in an error. All we'll do here is add this error to the migration's error
