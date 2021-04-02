@@ -109,16 +109,11 @@ describe('Code monitoring', () => {
             await driver.page.waitForSelector('.test-trigger-input')
             await driver.page.type('.test-trigger-input', 'foobar')
             await driver.page.waitForSelector('.is-invalid')
-            expect(await driver.page.evaluate(() => document.querySelector('.test-trigger-error')?.textContent)).toBe(
-                'Code monitors require queries to specify either `type:commit` or `type:diff`.'
-            )
+
             await driver.page.type('.test-trigger-input', ' type:diff')
             await driver.page.waitForSelector('.is-invalid')
-            await driver.page.waitForSelector('.test-trigger-error')
-            expect(await driver.page.evaluate(() => document.querySelector('.test-trigger-error')?.textContent)).toBe(
-                'Code monitors require queries to specify a `patternType:` of literal or regexp.'
-            )
-            await driver.page.type('.test-trigger-input', ' patterntype:literal')
+
+            await driver.page.type('.test-trigger-input', ' repo:test')
             await driver.page.waitForSelector('.is-valid')
             await driver.page.waitForSelector('.test-preview-link')
             expect(
@@ -144,7 +139,7 @@ describe('Code monitoring', () => {
             await driver.page.click('.test-trigger-button')
 
             await driver.page.waitForSelector('.test-trigger-input')
-            await driver.page.type('.test-trigger-input', 'foobar type:diff patterntype:literal')
+            await driver.page.type('.test-trigger-input', 'foobar type:diff repo:test')
             await driver.page.waitForSelector('.is-valid')
             await driver.page.waitForSelector('.test-preview-link')
             await driver.page.waitForSelector('.test-submit-trigger')
@@ -181,7 +176,7 @@ describe('Code monitoring', () => {
             await driver.page.click('.test-trigger-button')
 
             await driver.page.waitForSelector('.test-trigger-input')
-            await driver.page.type('.test-trigger-input', 'foobar type:diff patterntype:literal')
+            await driver.page.type('.test-trigger-input', 'foobar type:diff repo:test')
             await driver.page.waitForSelector('.is-valid')
             await driver.page.waitForSelector('.test-preview-link')
             await driver.page.waitForSelector('.test-submit-trigger')
