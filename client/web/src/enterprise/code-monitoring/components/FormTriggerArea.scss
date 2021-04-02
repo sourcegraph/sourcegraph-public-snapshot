@@ -50,9 +50,19 @@
             color: var(--border-color);
         }
 
+        &-children {
+            &--faded {
+                opacity: 0.4;
+            }
+        }
+
         &-hint {
             font-size: 0.65rem;
             margin-left: 0.25rem;
+
+            &--faded {
+                opacity: 0.4;
+            }
         }
 
         &-tooltip {

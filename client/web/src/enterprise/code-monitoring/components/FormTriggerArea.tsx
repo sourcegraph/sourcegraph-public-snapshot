@@ -49,14 +49,19 @@ const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?
                 <RadioboxBlankIcon className="trigger-area__checklist-checkbox icon-inline" aria-hidden={true} />
             )}
 
-            <span>{children}</span>
+            <span className={checked ? 'trigger-area__checklist-children--faded' : ''}>{children}</span>
 
             {hint && (
                 <>
                     <span className="sr-only"> {hint}</span>
 
                     <span ref={tooltipTarget} className="d-flex">
-                        <HelpCircleIcon className="trigger-area__checklist-hint icon-inline" aria-hidden={true} />
+                        <HelpCircleIcon
+                            className={classNames('trigger-area__checklist-hint', 'icon-inline', {
+                                'trigger-area__checklist-hint--faded': checked,
+                            })}
+                            aria-hidden={true}
+                        />
                     </span>
 
                     <Tooltip
