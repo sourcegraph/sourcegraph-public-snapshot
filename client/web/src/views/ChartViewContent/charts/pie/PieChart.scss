@@ -1,7 +1,30 @@
 
 .pie-chart {
 
+    &__arc {
+        stroke: var(--body-bg);
+    }
+
     &__arc--with-link {
         cursor: pointer;
+    }
+
+    &__label-line, &__label-circle {
+        stroke: var(--body-color);
+        fill: var(--body-color);
+    }
+
+    &__arc-path {
+        stroke-width: 1;
+        stroke: var(--body-bg);
+    }
+
+    &__label {
+
+        text {
+            stroke: var(--body-color);
+            font-size: 1em !important;
+            font-weight: 200 !important;
+        }
     }
 }
