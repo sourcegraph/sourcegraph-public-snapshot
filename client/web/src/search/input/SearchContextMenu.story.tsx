@@ -71,7 +71,7 @@ const emptySearchContexts = {
     fetchSearchContexts: (
         first: number,
         query?: string,
-        after?: string
+        after?: string | null
     ): Observable<ListSearchContextsResult['searchContexts']> =>
         of({
             nodes: [],
