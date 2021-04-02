@@ -1,8 +1,9 @@
 import React, { ReactElement, useCallback, useMemo, useState, MouseEvent } from 'react';
 import classnames from 'classnames';
 import { LineChartContent } from 'sourcegraph';
-import { curveLinear } from '@visx/curve';
 import { useDebouncedCallback } from 'use-debounce';
+import { curveLinear } from '@visx/curve';
+import { ParentSize } from '@visx/responsive';
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip';
 import {
     Axis,
@@ -49,7 +50,7 @@ export interface LineChartProps extends Omit<LineChartContent<any, string>, 'cha
     onDatumClick: onDatumClick;
 }
 
-export function LineChart(props: LineChartProps): ReactElement {
+function LineChartContentComponent(props: LineChartProps): ReactElement {
     const { width, height, data, series, xAxis, onDatumClick } = props;
 
     // derived
@@ -150,9 +151,10 @@ export function LineChart(props: LineChartProps): ReactElement {
         { leading: true }
     );
 
-    return (
-        <div className={classnames('line-chart', { 'line-chart--with-cursor': !!activeLinkDatum })}>
+    const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!activeLinkDatum });
 
+    return (
+        <div className={rootClasses}>
             <XYChart
                 theme={lightTheme}
                 xScale={scalesConfig.x}
@@ -242,4 +244,41 @@ export function LineChart(props: LineChartProps): ReactElement {
             </XYChart>
         </div>
     );
+}
+
+export function LineChart(props: LineChartProps): ReactElement {
+
+    const { width, height, ...otherProps } = props;
+    const hasLegend = props.series.every(line => !!line.name);
+
+    if (!hasLegend) {
+        return (<LineChartContentComponent {...props}/>)
+    }
+
+    return (
+        /* eslint-disable-next-line react/forbid-dom-props */
+        <div style={{ width, height }} className='line-chart'>
+            {/*
+                In case if we have a legend to render we have to have responsive container for chart
+                just to calculate right sizes for chart content = rootContainerSizes - legendSizes
+            */}
+            <ParentSize className='line-chart__content-parent-size'>
+                {
+                    ({ width, height}) => (<LineChartContentComponent {...otherProps} width={width} height={height}/>)
+                }
+            </ParentSize>
+
+            <ul className='line-chart__legend'>
+
+                { props.series.map(line => (
+                        <li key={line.dataKey.toString()} className='line-chart__legend-item'>
+
+                            {/* eslint-disable-next-line react/forbid-dom-props */}
+                            <div style={{ backgroundColor: line.stroke }} className='line-chart__legend-mark' />
+                            {line.name}
+                        </li>
+                    ))}
+            </ul>
+        </div>
+    )
 }

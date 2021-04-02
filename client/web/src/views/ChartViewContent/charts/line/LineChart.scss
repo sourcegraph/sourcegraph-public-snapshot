@@ -1,17 +1,53 @@
 
-.visx-line {
-    stroke-width: 2;
-}
 
 .line-chart {
 
-    &--with-cursor {
-        cursor: pointer;
+    display: flex;
+    flex-direction: column;
+
+    &__content-parent-size {
+        flex-grow: 1;
     }
+
+    &__content {
+        position: relative;
+
+        &--with-cursor {
+            cursor: pointer;
+        }
+    }
+
+    &__legend {
+        display: flex;
+        padding: 8px;
+        list-style: none;
+        margin:0;
+    }
+
+    &__legend-item {
+        display: flex;
+        margin-right: 8px;
+        align-items: center;
+    }
+
+    &__legend-mark {
+        width: 12px;
+        height: 12px;
+        margin-right:4px;
+        border-radius: 50%;
+    }
+
+    // Tooltip
 
     &__tooltip {
         margin: 4px;
     }
 
     &__tooltip-text {}
+
+    // Visx global elements
+
+    .visx-line {
+        stroke-width: 2;
+    }
 }
