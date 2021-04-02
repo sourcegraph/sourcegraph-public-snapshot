@@ -17,6 +17,52 @@
         }
     }
 
+    // Axes
+    &__axis-line {
+        stroke: var(--border-color);
+        stroke-width: 3;
+    }
+
+    &__axis-tick {
+        // small tick line
+        line {
+            stroke: var(--border-color);
+            stroke-width: 2;
+        }
+
+        // tick label
+        text {
+            fill: var(--text-muted);
+            font-size: 12px;
+            font-weight: 400;
+        }
+    }
+
+    &__axis-label {
+        color: var(--body-color);
+    }
+
+    // Grid
+
+    &__grid-line {
+
+        line {
+            stroke: var(--border-color-2);
+            stroke-width: 2;
+            stroke-opacity: 1;
+        }
+    }
+
+
+    &__glyph {
+        stroke-width: 2;
+        stroke: var(--body-bg);
+
+        &--active {
+
+        }
+    }
+
     &__legend {
         display: flex;
         padding: 8px;
@@ -38,16 +84,26 @@
     }
 
     // Tooltip
-
     &__tooltip {
+        box-shadow: var(--border-color-2) 0 1px 2px !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--body-color) !important;
+        background: var(--body-bg) !important;
+    }
+
+    &__tooltip-content {
         margin: 4px;
     }
 
-    &__tooltip-text {}
-
-    // Visx global elements
-
-    .visx-line {
-        stroke-width: 2;
+    &__tooltip-date {
+        font-size: 1em;
     }
+
+    &__tooltip-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    &__tooltip-text {}
 }

@@ -8,7 +8,6 @@ import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip';
 import {
     Axis,
     GlyphSeries,
-    Grid,
     lightTheme,
     LineSeries,
     Tooltip,
@@ -18,27 +17,23 @@ import {
 import { format } from 'd3-format';
 import { timeFormat } from 'd3-time-format'
 import { scaleLinear, scaleTime } from '@visx/scale';
-import { GridColumns } from '@visx/grid'
+import { GridColumns, GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
-import { TextProps } from '@visx/text/lib/Text'
+import { GlyphDot } from '@visx/glyph'
 import { EventHandlerParams } from '@visx/xychart/lib/types';
 
 import { generateAccessors } from './helpers/generate-accessors'
 import { getRangeWithPadding } from './helpers/get-range-with-padding'
 import { getMinAndMax } from './helpers/get-min-max'
-import { GlyphComponent } from './components/Glyph'
+import { GlyphDotComponent } from './components/GlyphDot'
 import { TooltipContent } from './components/TooltipContent'
 import { onDatumClick } from '../types';
+import isValidNumber from '@visx/xychart/lib/typeguards/isValidNumber';
 
 // Chart configuration
 const WIDTH_PER_TICK = 70;
 const HEIGHT_PER_TICK = 40;
 const MARGIN = { top: 10, left: 30, bottom: 20, right: 20 };
-const TICK_LABEL_PROPS = (): Partial<TextProps> => ({
-    fill: 'black',
-    fontSize: 12,
-    fontWeight: 400
-})
 
 // Formatters
 const dateFormatter = timeFormat('%d %b');
@@ -109,13 +104,22 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
         [accessors, sortedData, innerWidth]
     );
 
+    const yScale = useMemo(
+        () => scaleLinear({...scalesConfig.y, range: [innerHeight, 0]}),
+        [scalesConfig.y, innerHeight]
+    );
+
     // state
-    const [activeLinkDatum, setActiveLinkDatum] = useState<any | null>(null);
+    const [activeDatum, setActiveDatum] = useState<EventHandlerParams<any> & { line: LineChartProps['series'][number] } | null>(null);
 
     // callbacks
     const renderTooltip = useCallback(
         (renderProps: RenderTooltipParams<any>) =>
-            <TooltipContent {...renderProps} accessors={accessors} series={series}/>,
+            <TooltipContent
+                {...renderProps}
+                accessors={accessors}
+                series={series}
+                className='line-chart__tooltip-content'/>,
         [accessors, series]
     );
 
@@ -123,14 +127,18 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
     // Remove debounce when https://github.com/airbnb/visx/issues/1077 will be resolved
     const handlePointerUp = useDebouncedCallback(
         (event: EventHandlerParams<any>) => {
+            const line = series.find(line => line.dataKey === event.key);
 
-            if (!event.event) {
+            // By types from visx/xychart index can be undefined
+            const activeDatumIndex = activeDatum?.index;
+
+            if (!event.event || !line || !isValidNumber(activeDatumIndex)) {
                 return;
             }
 
             onDatumClick({
                 originEvent: event.event as MouseEvent<unknown>,
-                link: activeLinkDatum
+                link: line?.linkURLs?.[activeDatumIndex],
             });
         },
     );
@@ -143,15 +151,25 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
                 return;
             }
 
-            const link = line?.linkURLs?.[event.index];
-
-            setActiveLinkDatum(link);
+            setActiveDatum({
+                ...event,
+                line
+            });
         },
         0,
         { leading: true }
     );
 
-    const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!activeLinkDatum });
+    const handlePointerOut = useDebouncedCallback(
+        () => setActiveDatum(null)
+    );
+
+    const activeDatumLink = activeDatum?.line?.linkURLs?.[activeDatum?.index];
+
+    const rootClasses = classnames(
+        'line-chart__content',
+        { 'line-chart__content--with-cursor': !!activeDatumLink }
+    );
 
     return (
         <div className={rootClasses}>
@@ -165,44 +183,42 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
                 margin={MARGIN}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
+                onPointerOut={handlePointerOut}
             >
 
                 <Group top={MARGIN.top} left={MARGIN.left}>
 
+                    <GridRows
+                        scale={yScale}
+                        numTicks={numberOfTicksY}
+                        width={innerWidth}
+                        className='line-chart__grid-line'
+                    />
+
                     <GridColumns
                         scale={xScale}
                         numTicks={numberOfTicks}
-                        width={innerWidth} height={innerHeight} stroke="#e0e0e0"
-                        lineStyle={{ stroke: 'gray', strokeWidth: 1, strokeOpacity: 0.3 }} />
+                        height={innerHeight}
+                        className='line-chart__grid-line'
+                    />
                 </Group>
-
-                <Grid
-                    rows={true}
-                    columns={false}
-                    numTicks={numberOfTicksY}
-                    lineStyle={{ stroke: 'gray', strokeWidth: 1, strokeOpacity: 0.3 }}
-                />
 
                 <Axis
                     orientation="bottom"
-                    strokeWidth={2}
-                    stroke="black"
-                    tickStroke="black"
-                    tickClassName="ticks"
                     tickValues={xScale.ticks(numberOfTicks)}
                     tickFormat={formatDate}
                     numTicks={numberOfTicks}
-                    tickLabelProps={TICK_LABEL_PROPS}
+                    axisClassName='line-chart__axis'
+                    axisLineClassName='line-chart__axis-line'
+                    tickClassName="line-chart__axis-tick"
                 />
                 <Axis
                     orientation="left"
                     numTicks={numberOfTicksY}
-                    strokeWidth={2}
-                    stroke="black"
                     tickFormat={format('~s')}
-                    tickStroke="black"
-                    tickClassName="ticks"
-                    tickLabelProps={TICK_LABEL_PROPS}
+                    axisClassName='line-chart__axis'
+                    axisLineClassName='line-chart__axis-line'
+                    tickClassName="line-chart__axis-tick"
                 />
 
                 {
@@ -226,19 +242,33 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
                                 colorAccessor={() => line.stroke}
                                 xAccessor={accessors.x}
                                 yAccessor={accessors.y[line.dataKey as string]}
-                                renderGlyph={GlyphComponent}
+                                renderGlyph={GlyphDotComponent}
                             />
                         </Group>
                     )
                 }
 
+                <Group top={MARGIN.top} left={MARGIN.left}>
+                    {
+                        activeDatum &&
+                        <GlyphDot
+                            className='line-chart__glyph line-chart__glyph--active'
+                            r={8}
+                            fill={activeDatum.line.stroke}
+                            cx={xScale(accessors.x(activeDatum.datum))}
+                            cy={yScale(accessors.y[activeDatum.key](activeDatum.datum))}
+                        />
+                    }
+                </Group>
+
                 <Tooltip
+                    className='line-chart__tooltip'
                     showHorizontalCrosshair={false}
                     showVerticalCrosshair={true}
                     snapTooltipToDatumX={false}
                     snapTooltipToDatumY={false}
-                    showDatumGlyph={true}
-                    showSeriesGlyphs={true}
+                    showDatumGlyph={false}
+                    showSeriesGlyphs={false}
                     renderTooltip={renderTooltip}
                 />
             </XYChart>
