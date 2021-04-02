@@ -6,7 +6,7 @@ export function appendContextFilter(query: string, searchContextSpec: string | u
     return !isContextFilterInQuery(query) && searchContextSpec ? `context:${searchContextSpec} ${query}` : query
 }
 
-export const omitContextFilter = (query: string, contextFilter: Filter): string => {
+export function omitContextFilter(query: string, contextFilter: Filter): string {
     let finalQuery = replaceRange(query, contextFilter.range)
     if (contextFilter.range.start === 0) {
         // Remove space at the start

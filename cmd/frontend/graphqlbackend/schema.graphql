@@ -1370,9 +1370,31 @@ type Query {
     """
     versionContexts: [VersionContext!]!
     """
-    (experimental) All search contexts.
+    (experimental) Auto-defined search contexts available to the current user.
     """
-    searchContexts: [SearchContext!]!
+    autoDefinedSearchContexts: [SearchContext!]!
+    """
+    (experimental) All available user-defined search contexts. Excludes auto-defined contexts.
+    """
+    searchContexts(
+        """
+        Returns the first n search contexts from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Query to filter the search contexts by spec.
+        """
+        query: String
+    ): SearchContextConnection!
+    """
+    (experimental) Determines whether the search context is within the set of search contexts available to the current user.
+    The set consists of contexts created by the user, contexts created by the users' organizations, and instance-level contexts.
+    """
+    isSearchContextAvailable(spec: String!): Boolean!
     """
     (experimental) Return the parse tree of a search query.
     """
@@ -3221,6 +3243,44 @@ type SearchContext implements Node {
     default organization search context ("@org").
     """
     autoDefined: Boolean!
+    """
+    Repositories and their revisions that will be searched when querying.
+    """
+    repositories: [SearchContextRepositoryRevisions!]!
+}
+
+"""
+(experimental) Specifies a set of revisions to be searched within a repository.
+"""
+type SearchContextRepositoryRevisions {
+    """
+    The repository to be searched.
+    """
+    repository: Repository!
+    """
+    The set of revisions to be searched.
+    """
+    revisions: [String!]!
+}
+
+"""
+A list of search contexts
+"""
+type SearchContextConnection {
+    """
+    A list of search contexts.
+    """
+    nodes: [SearchContext!]!
+
+    """
+    The total number of search contexts in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
 }
 
 """

@@ -1,7 +1,10 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 import { ActionsNavItems, ActionsNavItemsProps } from '@sourcegraph/shared/src/actions/ActionsNavItems'
-import { CommandListPopoverButton, CommandListPopoverButtonProps } from '@sourcegraph/shared/src/commandPalette/CommandList'
+import {
+    CommandListPopoverButton,
+    CommandListPopoverButtonProps,
+} from '@sourcegraph/shared/src/commandPalette/CommandList'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'

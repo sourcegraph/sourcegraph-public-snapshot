@@ -142,8 +142,8 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             alwaysNil: null,
         },
     }),
-    SearchContexts: () => ({
-        searchContexts: [
+    AutoDefinedSearchContexts: () => ({
+        autoDefinedSearchContexts: [
             {
                 __typename: 'SearchContext',
                 id: '1',
@@ -159,6 +159,16 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
                 description: 'Your repositories on Sourcegraph',
             },
         ],
+    }),
+    ListSearchContexts: () => ({
+        searchContexts: {
+            nodes: [],
+            totalCount: 0,
+            pageInfo: { endCursor: null },
+        },
+    }),
+    IsSearchContextAvailable: () => ({
+        isSearchContextAvailable: false,
     }),
     UserRepositories: () => ({
         node: {

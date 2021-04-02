@@ -31,7 +31,6 @@ import {
     resolveVersionContext,
     ParsedSearchQueryProps,
     MutableVersionContextProps,
-    SearchContextProps,
 } from '../..'
 import { StreamingSearchResultsList } from './StreamingSearchResultsList'
 
@@ -46,8 +45,7 @@ export interface StreamingSearchResultsProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         ThemeProps,
-        CodeMonitoringProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
+        CodeMonitoringProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -69,7 +67,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         previousVersionContext,
         authenticatedUser,
         telemetryService,
-        selectedSearchContextSpec,
     } = props
 
     // Log view event on first load
@@ -103,19 +100,9 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     patternType: patternType ?? SearchPatternType.literal,
                     caseSensitive,
                     versionContext: resolveVersionContext(versionContext, availableVersionContexts),
-                    searchContextSpec: selectedSearchContextSpec,
                     trace,
                 }).pipe(debounceTime(500)),
-            [
-                streamSearch,
-                query,
-                patternType,
-                caseSensitive,
-                versionContext,
-                availableVersionContexts,
-                trace,
-                selectedSearchContextSpec,
-            ]
+            [streamSearch, query, patternType, caseSensitive, versionContext, availableVersionContexts, trace]
         )
     )
 
