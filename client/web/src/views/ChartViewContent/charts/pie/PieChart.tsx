@@ -66,8 +66,10 @@ export function PieChart(props: PieChartProps): ReactElement | null {
     }
 
     return (
-        <svg width={width} height={height}>
+        <svg className='pie-chart' width={width} height={height}>
+
             <Group top={centerY + margin.top} left={centerX + margin.left}>
+
                 <Pie
                     data={data}
                     pieValue={usage}
@@ -139,10 +141,9 @@ function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
             onClick={onClick}>
 
             <path
+                className='pie-chart__arc-path'
                 d={pathValue}
                 fill={getColor(arc)}
-                stroke='white'
-                strokeWidth={1}
             />
             <Annotation
                 x={surfaceX}
@@ -150,15 +151,25 @@ function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
                 dx={labelX}
                 dy={labelY}
             >
-                <Connector type='line' />
+                <Connector
+                    className='pie-chart__label-line'
+                    type='line' />
+
                 <Label
+                    className='pie-chart__label'
                     showBackground={false}
                     showAnchorLine={false}
                     title={getKey(arc)}
                     subtitle={`${arc.value}%`} />
             </Annotation>
 
-            <circle r={4} fill="black" cx={surfaceX + labelX} cy={surfaceY + labelY}/>
+            <circle
+                className='pie-chart__label-circle'
+                r={2}
+                fill="black"
+                cx={surfaceX + labelX}
+                cy={surfaceY + labelY}/>
+
         </Group>
     );
 }
