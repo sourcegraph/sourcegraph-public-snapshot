@@ -200,7 +200,8 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                         const { repoName, revision, filePath, commitID } = extensionInfo[hoveredToken.part || 'head']
 
                         // If a hover or go-to-definition was invoked on this part, we know the file path must exist
-                        return { repoName, filePath, revision, commitID }
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        return { repoName, filePath: filePath!, revision, commitID }
                     },
                 })
                 subscription.add(hoverSubscription)
