@@ -86,7 +86,6 @@ export function search(
                                             html
                                         }
                                         url
-                                        icon
                                         detail {
                                             html
                                         }
@@ -157,7 +156,6 @@ export function search(
                                             html
                                         }
                                         url
-                                        icon
                                         detail {
                                             html
                                         }
