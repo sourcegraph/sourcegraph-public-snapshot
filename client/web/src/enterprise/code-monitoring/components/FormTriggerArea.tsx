@@ -18,6 +18,25 @@ interface TriggerAreaProps {
 
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
 
+const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?: string }> = ({
+    checked,
+    children,
+    hint,
+}) => (
+    <label>
+        <input type="checkbox" disabled={true} checked={checked} />
+        {children}
+        {hint && (
+            <>
+                <span className="sr-only"> {hint}</span>
+                <span aria-hidden={true} data-tooltip={hint} data-placement="bottom">
+                    ?
+                </span>
+            </>
+        )}
+    </label>
+)
+
 export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     query,
     onQueryChange,
@@ -150,28 +169,25 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
 
                                 <ul>
                                     <li>
-                                        <input type="checkbox" disabled={true} checked={hasTypeDiffOrCommitFilter} />
-                                        Contains a <code>type:diff</code> or <code>type:commit</code> filter
-                                        <span
-                                            data-tooltip="type:diff targets code present in new commits, while type:commit targets commit messages"
-                                            data-placement="bottom"
+                                        <ValidQueryChecklistItem
+                                            checked={hasTypeDiffOrCommitFilter}
+                                            hint="type:diff targets code present in new commits, while type:commit targets commit messages"
                                         >
-                                            ?
-                                        </span>
+                                            Contains a <code>type:diff</code> or <code>type:commit</code> filter
+                                        </ValidQueryChecklistItem>
                                     </li>
                                     <li>
-                                        <input type="checkbox" disabled={true} checked={hasRepoFilter} />
-                                        Contains a <code>repo:</code> filter
-                                        <span
-                                            data-tooltip="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
-                                            data-placement="bottom"
+                                        <ValidQueryChecklistItem
+                                            checked={hasRepoFilter}
+                                            hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
                                         >
-                                            ?
-                                        </span>
+                                            Contains a <code>repo:</code> filter
+                                        </ValidQueryChecklistItem>
                                     </li>
                                     <li>
-                                        <input type="checkbox" disabled={true} checked={isValidQuery} />
-                                        Is a valid search query
+                                        <ValidQueryChecklistItem checked={isValidQuery}>
+                                            Is a valid search query
+                                        </ValidQueryChecklistItem>
                                     </li>
                                 </ul>
                             </div>
