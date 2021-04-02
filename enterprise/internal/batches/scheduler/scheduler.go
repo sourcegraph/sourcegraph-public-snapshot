@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/scheduler/window"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
@@ -22,6 +23,7 @@ type Scheduler struct {
 var _ goroutine.BackgroundRoutine = &Scheduler{}
 
 func NewScheduler(ctx context.Context, bstore *store.Store) *Scheduler {
+	log15.Info("creating a batch change scheduler")
 	return &Scheduler{
 		cfg:   window.NewConfiguration(),
 		ctx:   ctx,
@@ -32,25 +34,41 @@ func NewScheduler(ctx context.Context, bstore *store.Store) *Scheduler {
 
 func (s *Scheduler) Start() {
 	goroutine.Go(func() {
-		log15.Debug("starting batch change scheduler")
+		log15.Info("starting batch change scheduler")
 
 		for {
 			schedule := s.cfg.Schedule()
 			taker := newTaker(schedule)
 			timer := time.NewTimer(time.Until(schedule.ValidUntil()))
 
-			log15.Debug("applying batch change schedule", "schedule", schedule, "until", schedule.ValidUntil())
+			log15.Info("applying batch change schedule", "schedule", schedule, "until", schedule.ValidUntil())
 
-			select {
-			case <-taker.C:
-				log15.Debug("would apply the next changeset")
-				// TODO: grab the next scheduled changeset and queue it.
-			case <-timer.C:
-				log15.Debug("current batch change schedule is outdated; looping")
-				continue
-			case <-s.done:
-				log15.Debug("stopping the batch change scheduler")
-				return
+			// TODO: don't busy-wait until we actually _have_ something to
+			// schedule.
+
+			for {
+				select {
+				case <-taker.C:
+					if cs, err := s.store.GetNextScheduledChangeset(s.ctx); err == store.ErrNoResults {
+						// TODO: be smarter about the busy-wait.
+						log15.Info("no scheduled changeset waiting to be queued")
+						time.Sleep(schedule.Sleep())
+					} else if err != nil {
+						log15.Warn("error retrieving the next scheduled changeset", "err", err)
+					} else {
+						log15.Info("queueing changeset", "changeset", cs)
+						cs.ReconcilerState = batches.ReconcilerStateQueued
+						if err := s.store.UpsertChangeset(s.ctx, cs); err != nil {
+							log15.Warn("error updating the next scheduled changeset", "err", err, "changeset", cs)
+						}
+					}
+				case <-timer.C:
+					log15.Info("current batch change schedule is outdated; looping")
+					continue
+				case <-s.done:
+					log15.Info("stopping the batch change scheduler")
+					return
+				}
 			}
 		}
 	})

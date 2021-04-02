@@ -3,6 +3,7 @@ package rewirer
 import (
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/scheduler/window"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -88,6 +89,13 @@ func (r *ChangesetRewirer) Rewire() (changesets []*batches.Changeset, err error)
 }
 
 func (r *ChangesetRewirer) createChangesetForSpec(repo *types.Repo, spec *batches.ChangesetSpec) *batches.Changeset {
+	// FIXME: this is _definitely_ not the right place to parse the
+	// configuration.
+	reconcilerState := batches.ReconcilerStateQueued
+	if window.NewConfiguration().HasRolloutWindows() {
+		reconcilerState = batches.ReconcilerStateScheduled
+	}
+
 	newChangeset := &batches.Changeset{
 		RepoID:              spec.RepoID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -97,7 +105,7 @@ func (r *ChangesetRewirer) createChangesetForSpec(repo *types.Repo, spec *batche
 		CurrentSpecID:        spec.ID,
 
 		PublicationState: batches.ChangesetPublicationStateUnpublished,
-		ReconcilerState:  batches.ReconcilerStateQueued,
+		ReconcilerState:  reconcilerState,
 	}
 
 	// Copy over diff stat from the spec.

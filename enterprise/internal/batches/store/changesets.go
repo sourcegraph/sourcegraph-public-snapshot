@@ -916,6 +916,40 @@ WHERE
 	%s
 `
 
+func (s *Store) GetNextScheduledChangeset(ctx context.Context) (*batches.Changeset, error) {
+	q := sqlf.Sprintf(
+		getNextScheduledChangesetFmtstr,
+		sqlf.Join(ChangesetColumns, ","),
+		batches.ReconcilerStateScheduled.ToDB(),
+	)
+
+	var c batches.Changeset
+	err := s.query(ctx, q, func(sc scanner) error {
+		return scanChangeset(&c, sc)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if c.ID == 0 {
+		return nil, ErrNoResults
+	}
+
+	return &c, nil
+}
+
+const getNextScheduledChangesetFmtstr = `
+-- source: enterprise/internal/batches/store/changesets.go:GetNextScheduledChangesetQuery
+SELECT %s
+FROM changesets
+WHERE reconciler_state = %s
+ORDER BY updated_at DESC
+`
+
+func (s *Store) GetChangesetPlaceInLine(ctx context.Context, id int64) (int, error) {
+	return 0, errors.New("unimplemented")
+}
+
 func archivedInBatchChange(batchChangeID string) *sqlf.Query {
 	return sqlf.Sprintf(
 		"(COALESCE((batch_change_ids->%s->>'isArchived')::bool, false) OR COALESCE((batch_change_ids->%s->>'archive')::bool, false))",

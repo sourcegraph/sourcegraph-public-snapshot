@@ -85,6 +85,7 @@ type ReconcilerState string
 
 // ReconcilerState constants.
 const (
+	ReconcilerStateScheduled  ReconcilerState = "SCHEDULED"
 	ReconcilerStateQueued     ReconcilerState = "QUEUED"
 	ReconcilerStateProcessing ReconcilerState = "PROCESSING"
 	ReconcilerStateErrored    ReconcilerState = "ERRORED"
@@ -95,7 +96,8 @@ const (
 // Valid returns true if the given ReconcilerState is valid.
 func (s ReconcilerState) Valid() bool {
 	switch s {
-	case ReconcilerStateQueued,
+	case ReconcilerStateScheduled,
+		ReconcilerStateQueued,
 		ReconcilerStateProcessing,
 		ReconcilerStateErrored,
 		ReconcilerStateFailed,

@@ -8544,6 +8544,10 @@ The reconciler state of a changeset on Sourcegraph
 """
 enum ChangesetReconcilerState {
     """
+    The changeset is scheduled, and will be enqueued when its turn comes in Sourcegraph's rollout window.
+    """
+    SCHEDULED
+    """
     The changeset is enqueued for the reconciler to process it.
     """
     QUEUED

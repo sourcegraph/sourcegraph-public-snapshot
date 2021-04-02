@@ -3,6 +3,7 @@ package window
 import (
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"go.uber.org/ratelimit"
 )
@@ -17,6 +18,8 @@ type Schedule interface {
 	// ValidUntil returns the time the schedule is valid until. After that time,
 	// a new Schedule must be created and used.
 	ValidUntil() time.Time
+
+	Sleep() time.Duration
 
 	// total returns the total number of events the schedule expects to be able
 	// to handle while valid. If the schedule does not apply any rate limiting,
@@ -46,8 +49,10 @@ var _ Schedule = &schedule{}
 func newSchedule(base time.Time, d time.Duration, rate rate) Schedule {
 	var limiter ratelimit.Limiter
 	if rate.IsUnlimited() {
+		log15.Info("unlimited power")
 		limiter = ratelimit.NewUnlimited()
 	} else if rate.n > 0 {
+		log15.Info("creating new schedule", "n", rate.n, "per", rate.unit.AsDuration())
 		limiter = ratelimit.New(rate.n, ratelimit.Per(rate.unit.AsDuration()))
 	}
 
@@ -57,6 +62,16 @@ func newSchedule(base time.Time, d time.Duration, rate rate) Schedule {
 		rate:     rate,
 		until:    base.Add(d),
 	}
+}
+
+func (s *schedule) Sleep() time.Duration {
+	if s.rate.IsUnlimited() {
+		return time.Duration(0)
+	}
+	if s.limiter == nil {
+		return 1 * time.Minute
+	}
+	return s.rate.unit.AsDuration() / time.Duration(s.rate.n)
 }
 
 func (s *schedule) Take() (time.Time, error) {
