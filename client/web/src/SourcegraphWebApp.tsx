@@ -53,7 +53,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { resolveVersionContext, parseSearchURL, resolveSearchContextSpecOrDefault } from './search'
+import { resolveVersionContext, parseSearchURL, getAvailableSearchContextSpecOrDefault } from './search'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
@@ -551,10 +551,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
     private setSelectedSearchContextSpec = (spec: string): void => {
         const { defaultSearchContextSpec } = this.state
         this.subscriptions.add(
-            resolveSearchContextSpecOrDefault({ spec, defaultSpec: defaultSearchContextSpec }).subscribe(
-                resolvedSearchContextSpec => {
-                    this.setState({ selectedSearchContextSpec: resolvedSearchContextSpec })
-                    localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, resolvedSearchContextSpec)
+            getAvailableSearchContextSpecOrDefault({ spec, defaultSpec: defaultSearchContextSpec }).subscribe(
+                availableSearchContextSpecOrDefault => {
+                    this.setState({ selectedSearchContextSpec: availableSearchContextSpecOrDefault })
+                    localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
                 }
             )
         )

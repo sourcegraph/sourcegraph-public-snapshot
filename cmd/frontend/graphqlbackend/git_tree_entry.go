@@ -75,7 +75,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 
 		r.content, r.contentErr = git.ReadFile(
 			ctx,
-			r.commit.repoResolver.name,
+			r.commit.repoResolver.RepoName(),
 			api.CommitID(r.commit.OID()),
 			r.Path(),
 			0,
@@ -213,7 +213,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	}
 	entries, err := git.ReadDir(
 		ctx,
-		r.commit.repoResolver.name,
+		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
 		path.Dir(r.Path()),
 		false,

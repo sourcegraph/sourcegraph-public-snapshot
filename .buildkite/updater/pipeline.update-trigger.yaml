@@ -1,0 +1,15 @@
+steps:
+  - trigger: 'ds-updater-test-image-updater'
+    label: ':k8s: :arrows_counterclockwise: :construction: Trigger update pipeline for deploy-sourcegraph-updater-test'
+    branches: 'main'
+    async: true
+    build:
+      env:
+        TARGET_COMMIT: '${BUILDKITE_COMMIT}'
+  - trigger: 'deploy-sourcegraph-dogfood-k8s-2-image-updater-pipeline'
+    label: ':k8s: :arrows_counterclockwise: :dog: Trigger update pipeline for deploy-sourcegraph-dogfood-k8s-2'
+    branches: 'main'
+    async: true
+    build:
+      env:
+        TARGET_COMMIT: '${BUILDKITE_COMMIT}'

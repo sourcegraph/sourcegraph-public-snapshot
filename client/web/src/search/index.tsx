@@ -9,7 +9,7 @@ import { map } from 'rxjs/operators'
 import { ISavedSearch } from '../../../shared/src/graphql/schema'
 import {
     EventLogResult,
-    resolveSearchContextSpec,
+    isSearchContextAvailable,
     fetchAutoDefinedSearchContexts,
     fetchSearchContexts,
 } from './backend'
@@ -238,7 +238,7 @@ export function resolveVersionContext(
     return versionContext
 }
 
-export function getGlobalSearchContext(query: string): { filter: Filter; spec: string } | null {
+export function getGlobalSearchContextFilter(query: string): { filter: Filter; spec: string } | null {
     const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global)
     if (!globalContextFilter) {
         return null
@@ -248,12 +248,12 @@ export function getGlobalSearchContext(query: string): { filter: Filter; spec: s
 }
 
 export const isSearchContextSpecAvailable = memoizeObservable(
-    (spec: string) => resolveSearchContextSpec(spec).pipe(map(searchContext => !!searchContext)),
+    (spec: string) => isSearchContextAvailable(spec),
     parameters => parameters
 )
 
-export const resolveSearchContextSpecOrDefault = memoizeObservable(
+export const getAvailableSearchContextSpecOrDefault = memoizeObservable(
     ({ spec, defaultSpec }: { spec: string; defaultSpec: string }) =>
-        resolveSearchContextSpec(spec).pipe(map(searchContext => (searchContext ? searchContext.spec : defaultSpec))),
+        isSearchContextAvailable(spec).pipe(map(isAvailable => (isAvailable ? spec : defaultSpec))),
     ({ spec, defaultSpec }) => `${spec}:${defaultSpec}`
 )

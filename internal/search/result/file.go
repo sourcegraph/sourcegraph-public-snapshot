@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -22,6 +23,8 @@ type FileMatch struct {
 	// absolute commit ID when they select a result.
 	InputRev *string `json:"-"`
 }
+
+func (fm *FileMatch) searchResultMarker() {}
 
 func (fm *FileMatch) URL() string {
 	var b strings.Builder
@@ -50,6 +53,43 @@ func (fm *FileMatch) ResultCount() int {
 		return 1 // 1 to count "empty" results like type:path results
 	}
 	return rc
+}
+
+func (fm *FileMatch) Select(t filter.SelectPath) Match {
+	switch t.Type {
+	case filter.Repository:
+		return &RepoMatch{
+			Name: fm.Repo.Name,
+			ID:   fm.Repo.ID,
+		}
+	case filter.File:
+		fm.LineMatches = nil
+		fm.Symbols = nil
+		return fm
+	case filter.Symbol:
+		if len(fm.Symbols) > 0 {
+			fm.LineMatches = nil // Only return symbol match if symbols exist
+			if len(t.Fields) > 0 {
+				filteredSymbols := SelectSymbolKind(fm.Symbols, t.Fields[0])
+				if len(filteredSymbols) == 0 {
+					return nil // Remove file match if there are no symbol results after filtering
+				}
+				fm.Symbols = filteredSymbols
+			}
+			return fm
+		}
+		return nil
+	case filter.Content:
+		// Only return file match if line matches exist
+		if len(fm.LineMatches) > 0 {
+			fm.Symbols = nil
+			return fm
+		}
+		return nil
+	case filter.Commit:
+		return nil
+	}
+	return nil
 }
 
 // AppendMatches appends the line matches from src as well as updating match

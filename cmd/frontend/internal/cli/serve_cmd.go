@@ -174,9 +174,14 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, time.Second*30)
 
 	// Run a background job to handle encryption of external service configuration.
-	migrator := database.NewExternalServiceConfigMigratorWithDB(db)
-	if err := outOfBandMigrationRunner.Register(migrator.ID(), migrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-		log.Fatalf("failed to run external service encryption job encryption: %v", err)
+	extsvcMigrator := database.NewExternalServiceConfigMigratorWithDB(db)
+	if err := outOfBandMigrationRunner.Register(extsvcMigrator.ID(), extsvcMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
+		log.Fatalf("failed to run external service encryption job: %v", err)
+	}
+	// Run a background job to handle encryption of external service configuration.
+	extAccMigrator := database.NewExternalAccountsMigratorWithDB(db)
+	if err := outOfBandMigrationRunner.Register(extAccMigrator.ID(), extAccMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
+		log.Fatalf("failed to run user external account encryption job: %v", err)
 	}
 
 	// Run enterprise setup hook

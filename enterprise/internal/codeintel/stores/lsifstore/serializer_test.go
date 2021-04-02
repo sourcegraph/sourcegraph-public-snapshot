@@ -57,7 +57,7 @@ func TestDocumentData(t *testing.T) {
 		},
 	}
 
-	serializer := newSerializer()
+	serializer := NewSerializer()
 
 	recompressed, err := serializer.MarshalDocumentData(expected)
 	if err != nil {
@@ -97,7 +97,7 @@ func TestResultChunkData(t *testing.T) {
 		},
 	}
 
-	serializer := newSerializer()
+	serializer := NewSerializer()
 
 	recompressed, err := serializer.MarshalResultChunkData(expected)
 	if err != nil {
@@ -188,7 +188,7 @@ func TestLocations(t *testing.T) {
 		},
 	}
 
-	serializer := newSerializer()
+	serializer := NewSerializer()
 
 	recompressed, err := serializer.MarshalLocations(expected)
 	if err != nil {

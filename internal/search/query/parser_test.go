@@ -18,12 +18,14 @@ func collectLabels(nodes []Node) (result labels) {
 			result |= collectLabels(v.Operands)
 		case Pattern:
 			result |= v.Annotation.Labels
+		case Parameter:
+			result |= v.Annotation.Labels
 		}
 	}
 	return result
 }
 
-func heuristicLabels(nodes []Node) string {
+func labelsToString(nodes []Node) string {
 	labels := collectLabels(nodes)
 	return strings.Join(labels.String(), ",")
 }
@@ -54,7 +56,7 @@ func TestParseParameterList(t *testing.T) {
 
 		var gotLabels string
 		if _, ok := resultNode.(Pattern); ok {
-			gotLabels = heuristicLabels([]Node{resultNode})
+			gotLabels = labelsToString([]Node{resultNode})
 		}
 
 		return value{
@@ -169,29 +171,54 @@ func TestParseParameterList(t *testing.T) {
 		ResultLabels: "HeuristicDanglingParens,Regexp",
 		ResultRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
 	}).Equal(t, test(`Search(xxx)\\(`))
+}
+
+func TestScanPredicate(t *testing.T) {
+	type value struct {
+		Result       string
+		ResultLabels string
+	}
+
+	test := func(input string) value {
+		parser := &parser{buf: []byte(input), heuristics: parensAsPatterns | allowDanglingParens}
+		result, err := parser.parseLeaves(Regexp)
+		if err != nil {
+			t.Fatal(fmt.Sprintf("Unexpected error: %s", err))
+		}
+		resultNode := result[0]
+		got, _ := json.Marshal(resultNode)
+		gotLabels := labelsToString([]Node{resultNode})
+
+		return value{
+			Result:       string(got),
+			ResultLabels: gotLabels,
+		}
+	}
 
 	autogold.Want("Repo contains predicate", value{
-		Result:      `{"field":"repo","value":"contains(file:test)","negated":false}`,
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":24}}`,
+		Result:       `{"field":"repo","value":"contains(file:test)","negated":false}`,
+		ResultLabels: "IsPredicate",
 	}).Equal(t, test(`repo:contains(file:test)`))
 
+	autogold.Want("Predicate contains escaped paranthesis", value{
+		Result:       `{"field":"repo","value":"contains(\\()","negated":false}`,
+		ResultLabels: "IsPredicate",
+	}).Equal(t, test(`repo:contains(\()`))
+
 	autogold.Want("Repo contains not predicate", value{
-		Result:      `{"field":"repo","value":"contains","negated":false}`,
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":13}}`,
+		Result:       `{"field":"repo","value":"contains","negated":false}`,
+		ResultLabels: "None",
 	}).Equal(t, test(`repo:contains`))
 
 	autogold.Want("Repo with something that looks kinda like predicate", value{
-		Result: `{"Kind":1,"Operands":[{"field":"repo","value":"nopredicate","negated":false},{"value":"(file:foo","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`,
+		Result:       `{"Kind":1,"Operands":[{"field":"repo","value":"nopredicate","negated":false},{"value":"(file:foo","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`,
+		ResultLabels: "HeuristicDanglingParens,Regexp",
 	}).Equal(t, test(`repo:nopredicate(file:foo or file:bar)`))
 
 	autogold.Want("Pattern looks like predicate", value{
-		Result: `{"Kind":2,"Operands":[{"value":"abc","negated":false},{"value":"contains(file:test)","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`,
+		Result:       `{"Kind":2,"Operands":[{"value":"abc","negated":false},{"value":"contains(file:test)","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`,
+		ResultLabels: "HeuristicDanglingParens,Regexp",
 	}).Equal(t, test(`abc contains(file:test)`))
-
-	autogold.Want("Predicate contains escaped paranthesis", value{
-		Result:      `{"field":"repo","value":"contains(\\()","negated":false}`,
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":17}}`,
-	}).Equal(t, test(`repo:contains(\()`))
 }
 
 func TestScanField(t *testing.T) {
@@ -558,7 +585,7 @@ func TestParseAndOrLiteral(t *testing.T) {
 		if err != nil {
 			return fmt.Sprintf("ERROR: %s", err.Error())
 		}
-		wantLabels := heuristicLabels(result)
+		wantLabels := labelsToString(result)
 		var resultStr []string
 		for _, node := range result {
 			resultStr = append(resultStr, node.String())
@@ -620,9 +647,9 @@ func TestParseAndOrLiteral(t *testing.T) {
 	autogold.Want(`\\`, `"\\\\" (Literal)`).Equal(t, test(`\\`))
 	autogold.Want(`foo\d "bar*"`, `(concat "foo\\d" "\"bar*\"") (Literal)`).Equal(t, test(`foo\d "bar*"`))
 	autogold.Want(`\d`, `"\\d" (Literal)`).Equal(t, test(`\d`))
-	autogold.Want(`type:commit message:"a commit message" after:"10 days ago"`, `(and "type:commit" "message:a commit message" "after:10 days ago") (None)`).Equal(t, test(`type:commit message:"a commit message" after:"10 days ago"`))
-	autogold.Want(`type:commit message:"a commit message" after:"10 days ago" test test2`, `(and "type:commit" "message:a commit message" "after:10 days ago" (concat "test" "test2")) (Literal)`).Equal(t, test(`type:commit message:"a commit message" after:"10 days ago" test test2`))
-	autogold.Want(`type:commit message:"a com"mit message" after:"10 days ago"`, `(and "type:commit" "message:a com" "after:10 days ago" (concat "mit" "message\"")) (Literal)`).Equal(t, test(`type:commit message:"a com"mit message" after:"10 days ago"`))
+	autogold.Want(`type:commit message:"a commit message" after:"10 days ago"`, `(and "type:commit" "message:a commit message" "after:10 days ago") (Quoted)`).Equal(t, test(`type:commit message:"a commit message" after:"10 days ago"`))
+	autogold.Want(`type:commit message:"a commit message" after:"10 days ago" test test2`, `(and "type:commit" "message:a commit message" "after:10 days ago" (concat "test" "test2")) (Literal,Quoted)`).Equal(t, test(`type:commit message:"a commit message" after:"10 days ago" test test2`))
+	autogold.Want(`type:commit message:"a com"mit message" after:"10 days ago"`, `(and "type:commit" "message:a com" "after:10 days ago" (concat "mit" "message\"")) (Literal,Quoted)`).Equal(t, test(`type:commit message:"a com"mit message" after:"10 days ago"`))
 	autogold.Want(`bar and (foo or x\) ()`, `(or (and "bar" "(foo") (concat "x\\)" "()")) (HeuristicDanglingParens,HeuristicHoisted,Literal)`).Equal(t, test(`bar and (foo or x\) ()`))
 
 	// For implementation simplicity, behavior preserves whitespace inside parentheses.

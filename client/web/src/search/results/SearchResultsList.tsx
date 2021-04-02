@@ -4,6 +4,8 @@ import { isEqual } from 'lodash'
 import FileIcon from 'mdi-react/FileIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
+import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -520,8 +522,25 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         settingsCascade={this.props.settingsCascade}
                     />
                 )
+            case 'CommitSearchResult':
+                return (
+                    <SearchResult
+                        icon={SourceCommitIcon}
+                        result={result}
+                        isLightTheme={this.props.isLightTheme}
+                        history={this.props.history}
+                    />
+                )
+            case 'Repository':
+                return (
+                    <SearchResult
+                        icon={SourceRepositoryMultipleIcon}
+                        result={result}
+                        isLightTheme={this.props.isLightTheme}
+                        history={this.props.history}
+                    />
+                )
         }
-        return <SearchResult result={result} isLightTheme={this.props.isLightTheme} history={this.props.history} />
     }
 
     private itemKey = (item: GQL.GenericSearchResultInterface | GQL.IFileMatch): string => {

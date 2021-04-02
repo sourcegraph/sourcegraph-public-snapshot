@@ -24,8 +24,8 @@ import {
     ListSearchContextsVariables,
     AutoDefinedSearchContextsResult,
     AutoDefinedSearchContextsVariables,
-    ResolveSearchContextSpecResult,
-    ResolveSearchContextSpecVariables,
+    IsSearchContextAvailableResult,
+    IsSearchContextAvailableVariables,
     Scalars,
     FetchSearchContextResult,
     FetchSearchContextVariables,
@@ -92,7 +92,6 @@ export function search(
                                             html
                                         }
                                         url
-                                        icon
                                         detail {
                                             html
                                         }
@@ -163,7 +162,6 @@ export function search(
                                             html
                                         }
                                         url
-                                        icon
                                         detail {
                                             html
                                         }
@@ -312,22 +310,17 @@ export const fetchSearchContext = (id: Scalars['ID']): Observable<GQL.ISearchCon
     )
 }
 
-export function resolveSearchContextSpec(
+export function isSearchContextAvailable(
     spec: string
-): Observable<ResolveSearchContextSpecResult['resolveSearchContextSpec']> {
-    return requestGraphQL<ResolveSearchContextSpecResult, ResolveSearchContextSpecVariables>(
+): Observable<IsSearchContextAvailableResult['isSearchContextAvailable']> {
+    return requestGraphQL<IsSearchContextAvailableResult, IsSearchContextAvailableVariables>(
         gql`
-            query ResolveSearchContextSpec($spec: String!) {
-                resolveSearchContextSpec(spec: $spec) {
-                    id
-                    spec
-                    description
-                    autoDefined
-                }
+            query IsSearchContextAvailable($spec: String!) {
+                isSearchContextAvailable(spec: $spec)
             }
         `,
         { spec }
-    ).pipe(map(result => result.data?.resolveSearchContextSpec ?? null))
+    ).pipe(map(result => result.data?.isSearchContextAvailable ?? false))
 }
 
 export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> {
