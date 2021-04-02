@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
@@ -207,13 +206,44 @@ func (m *Migrator) selectAndUpdate(ctx context.Context, tx *lsifstore.Store, sou
 		return nil, err
 	}
 
-	// TODO - document, rename
-	if err := something(ctx, tx, m.options.fields, updateSpecs); err != nil {
+	//
+	// TODO - refactor this
+	//
+
+	insertFields := make([]ColumnAndType, 0, len(m.options.fields))
+	for _, field := range m.options.fields {
+		if !field.readOnly {
+			insertFields = append(insertFields, ColumnAndType{
+				Name:         field.name,
+				PostgresType: field.postgresType,
+			})
+		}
+	}
+
+	// TODO - just return a channel
+	ch := make(chan []interface{}, len(updateSpecs))
+	for _, spec := range updateSpecs {
+		ch <- spec.fieldValues
+	}
+	close(ch)
+
+	if err := BulkInsertIntoTemporaryTable(ctx, tx.Store, insertFields, ch); err != nil {
 		return nil, err
 	}
 
-	// TODO - document, rename
-	if err := something2(ctx, tx, m.options.tableName, targetVersion, m.options.fields); err != nil {
+	primaryKeyFields := make([]string, 0, len(m.options.fields))
+	updateFields := make([]string, 0, len(m.options.fields))
+	constantFieldValues := map[string]interface{}{"schema_version": targetVersion}
+
+	for _, field := range m.options.fields {
+		if field.primaryKey {
+			primaryKeyFields = append(primaryKeyFields, field.name)
+		} else if !field.readOnly {
+			updateFields = append(updateFields, field.name)
+		}
+	}
+
+	if err := BulkUpdateFromTempTable(ctx, tx.Store, m.options.tableName, primaryKeyFields, updateFields, constantFieldValues); err != nil {
 		return nil, err
 	}
 
@@ -287,82 +317,4 @@ WHERE
 ORDER BY dump_id
 LIMIT %s
 FOR UPDATE SKIP LOCKED
-`
-
-// TODO - extract
-// TODO - rename
-// TODO - document
-// TODO - re-parameterize
-func something(ctx context.Context, lsifStore *lsifstore.Store, fieldSpecs []fieldSpec, updateSpecs []updateSpec) error {
-	names := make([]string, 0, len(fieldSpecs))
-	namesAndTypes := make([]*sqlf.Query, 0, len(fieldSpecs))
-
-	for _, field := range fieldSpecs {
-		if field.readOnly {
-			continue
-		}
-
-		names = append(names, field.name)
-		namesAndTypes = append(namesAndTypes, sqlf.Sprintf(field.name+" "+field.postgresType))
-	}
-
-	if err := lsifStore.Exec(ctx, sqlf.Sprintf(somethingQuery, sqlf.Join(namesAndTypes, ", "))); err != nil {
-		return err
-	}
-
-	inserter := batch.NewBatchInserter(ctx, lsifStore.Handle().DB(), "t_target", names...)
-
-	for _, spec := range updateSpecs {
-		if err := inserter.Insert(ctx, spec.fieldValues...); err != nil {
-			return err
-		}
-	}
-	if err := inserter.Flush(ctx); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// TODO - rename
-const somethingQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:something
-CREATE TEMPORARY TABLE t_target (%s) ON COMMIT DROP
-`
-
-// TODO - extract
-// TODO - rename
-// TODO - document
-// TODO - re-parameterize
-func something2(ctx context.Context, tx *lsifstore.Store, tableName string, targetVersion int, fieldSpecs []fieldSpec) error {
-	conditions := make([]*sqlf.Query, 0, len(fieldSpecs))
-	assignments := make([]*sqlf.Query, 0, len(fieldSpecs))
-
-	for _, field := range fieldSpecs {
-		sub := field.name + "= src." + field.name
-
-		if field.primaryKey {
-			// disambiguate fields
-			conditions = append(conditions, sqlf.Sprintf("dest."+sub))
-		} else if !field.readOnly {
-			assignments = append(assignments, sqlf.Sprintf(sub))
-		}
-	}
-
-	return tx.Exec(ctx, sqlf.Sprintf(
-		something2Query,
-		sqlf.Sprintf(tableName),
-		sqlf.Join(assignments, ", "),
-		targetVersion,
-		sqlf.Join(conditions, " AND "),
-	))
-}
-
-// TODO - rename
-const something2Query = `
--- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:something2
-UPDATE %s dest
-SET %s, schema_version = %s
-FROM t_target src
-WHERE %s
 `
