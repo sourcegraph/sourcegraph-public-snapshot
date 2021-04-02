@@ -639,20 +639,14 @@ describe('Search', () => {
         test('Search context selected based on URL', async () => {
             testContext.overrideGraphQL({
                 ...testContextForSearchContexts,
-                ResolveSearchContextSpec: () => ({
-                    resolveSearchContextSpec: {
-                        __typename: 'SearchContext',
-                        id: '1',
-                        spec: 'global',
-                        description: '',
-                        autoDefined: true,
-                    },
+                IsSearchContextAvailable: () => ({
+                    isSearchContextAvailable: true,
                 }),
             })
             await testContext.waitForGraphQLRequest(async () => {
                 await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
                 await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-            }, 'ResolveSearchContextSpec')
+            }, 'IsSearchContextAvailable')
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
         })
 
@@ -669,7 +663,7 @@ describe('Search', () => {
                 )
                 await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
                 await driver.page.waitForSelector('#monaco-query-input')
-            }, 'ResolveSearchContextSpec')
+            }, 'IsSearchContextAvailable')
             expect(await getSearchFieldValue(driver)).toStrictEqual('context:@unavailableCtx test')
             expect(await isSearchContextDropdownDisabled()).toBeTruthy()
         })

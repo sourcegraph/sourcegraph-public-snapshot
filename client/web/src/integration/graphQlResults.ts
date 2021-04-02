@@ -167,8 +167,8 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             pageInfo: { endCursor: null },
         },
     }),
-    ResolveSearchContextSpec: () => ({
-        resolveSearchContextSpec: null,
+    IsSearchContextAvailable: () => ({
+        isSearchContextAvailable: false,
     }),
     UserRepositories: () => ({
         node: {

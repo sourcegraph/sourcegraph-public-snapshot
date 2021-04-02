@@ -14,7 +14,7 @@ import {
     ParsedSearchQueryProps,
     SearchContextProps,
     isSearchContextSpecAvailable,
-    getGlobalSearchContext,
+    getGlobalSearchContextFilter,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { showDotComMarketing } from '../util/features'
@@ -116,7 +116,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 
     const query = props.parsedSearchQuery
 
-    const globalSearchContextSpec = useMemo(() => getGlobalSearchContext(query), [query])
+    const globalSearchContextSpec = useMemo(() => getGlobalSearchContextFilter(query), [query])
     const isSearchContextAvailable = useObservable(
         useMemo(
             () => (globalSearchContextSpec ? isSearchContextSpecAvailable(globalSearchContextSpec.spec) : of(false)),

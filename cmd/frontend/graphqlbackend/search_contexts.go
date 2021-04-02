@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -98,6 +99,8 @@ func (r *schemaResolver) AutoDefinedSearchContexts(ctx context.Context) ([]*sear
 	return searchContextsToResolvers(searchContexts, r.db), nil
 }
 
+// TODO: Create a separate 'UsersSearchContexts' function that returns instance-level search contexts,
+// search contexts owned by the user, and search contexts owned by users organizations (to populate the dropdown).
 func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchContextsArgs) (*searchContextConnection, error) {
 	// Request one extra to determine if there are more pages
 	newArgs := *args
@@ -147,14 +150,40 @@ func searchContextsToResolvers(searchContexts []*types.SearchContext, db dbutil.
 	return searchContextResolvers
 }
 
-func (r *schemaResolver) ResolveSearchContextSpec(ctx context.Context, args struct {
+func (r *schemaResolver) IsSearchContextAvailable(ctx context.Context, args struct {
 	Spec string
-}) (*searchContextResolver, error) {
+}) (bool, error) {
 	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, args.Spec)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
-	return &searchContextResolver{searchContext, r.db}, nil
+
+	if searchcontexts.IsInstanceLevelSearchContext(searchContext) {
+		// Instance-level search contexts are available to everyone
+		return true, nil
+	}
+
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return false, nil
+	}
+
+	if searchContext.NamespaceUserID != 0 {
+		// Is search context created by the current user
+		return a.UID == searchContext.NamespaceUserID, nil
+	} else {
+		// Is search context created by one of the users' organizations
+		orgs, err := database.Orgs(r.db).GetByUserID(ctx, a.UID)
+		if err != nil {
+			return false, err
+		}
+		for _, org := range orgs {
+			if org.ID == searchContext.NamespaceOrgID {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
 }
 
 func resolveVersionContext(versionContext string) (*schema.VersionContext, error) {

@@ -24,8 +24,8 @@ import {
     ListSearchContextsVariables,
     AutoDefinedSearchContextsResult,
     AutoDefinedSearchContextsVariables,
-    ResolveSearchContextSpecResult,
-    ResolveSearchContextSpecVariables,
+    IsSearchContextAvailableResult,
+    IsSearchContextAvailableVariables,
     Scalars,
 } from '../graphql-operations'
 
@@ -276,23 +276,17 @@ export function fetchSearchContexts(
     )
 }
 
-export function resolveSearchContextSpec(
+export function isSearchContextAvailable(
     spec: string
-): Observable<ResolveSearchContextSpecResult['resolveSearchContextSpec']> {
-    return requestGraphQL<ResolveSearchContextSpecResult, ResolveSearchContextSpecVariables>(
+): Observable<IsSearchContextAvailableResult['isSearchContextAvailable']> {
+    return requestGraphQL<IsSearchContextAvailableResult, IsSearchContextAvailableVariables>(
         gql`
-            query ResolveSearchContextSpec($spec: String!) {
-                resolveSearchContextSpec(spec: $spec) {
-                    __typename
-                    id
-                    spec
-                    description
-                    autoDefined
-                }
+            query IsSearchContextAvailable($spec: String!) {
+                isSearchContextAvailable(spec: $spec)
             }
         `,
         { spec }
-    ).pipe(map(result => result.data?.resolveSearchContextSpec ?? null))
+    ).pipe(map(result => result.data?.isSearchContextAvailable ?? false))
 }
 
 export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> {

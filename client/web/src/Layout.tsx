@@ -42,7 +42,7 @@ import {
     MutableVersionContextProps,
     parseSearchURL,
     SearchContextProps,
-    getGlobalSearchContext,
+    getGlobalSearchContextFilter,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -169,7 +169,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         location.search,
     ])
 
-    const searchContextSpec = useMemo(() => getGlobalSearchContext(query)?.spec, [query])
+    const searchContextSpec = useMemo(() => getGlobalSearchContextFilter(query)?.spec, [query])
 
     useEffect(() => {
         if (query !== currentQuery) {

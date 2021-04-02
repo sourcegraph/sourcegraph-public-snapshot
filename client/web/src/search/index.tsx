@@ -7,7 +7,7 @@ import { SearchPatternType } from '../../../shared/src/graphql-operations'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { ISavedSearch, ISearchContext } from '../../../shared/src/graphql/schema'
-import { EventLogResult, resolveSearchContextSpec } from './backend'
+import { EventLogResult, isSearchContextAvailable } from './backend'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
 import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
 import { VersionContextProps } from '../../../shared/src/search/util'
@@ -232,7 +232,7 @@ export function resolveVersionContext(
     return versionContext
 }
 
-export function getGlobalSearchContext(query: string): { filter: Filter; spec: string } | null {
+export function getGlobalSearchContextFilter(query: string): { filter: Filter; spec: string } | null {
     const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global)
     if (!globalContextFilter) {
         return null
@@ -242,12 +242,12 @@ export function getGlobalSearchContext(query: string): { filter: Filter; spec: s
 }
 
 export const isSearchContextSpecAvailable = memoizeObservable(
-    (spec: string) => resolveSearchContextSpec(spec).pipe(map(searchContext => !!searchContext)),
+    (spec: string) => isSearchContextAvailable(spec),
     parameters => parameters
 )
 
-export const resolveSearchContextSpecOrDefault = memoizeObservable(
+export const getAvailableSearchContextSpecOrDefault = memoizeObservable(
     ({ spec, defaultSpec }: { spec: string; defaultSpec: string }) =>
-        resolveSearchContextSpec(spec).pipe(map(searchContext => (searchContext ? searchContext.spec : defaultSpec))),
+        isSearchContextAvailable(spec).pipe(map(isAvailable => (isAvailable ? spec : defaultSpec))),
     ({ spec, defaultSpec }) => `${spec}:${defaultSpec}`
 )

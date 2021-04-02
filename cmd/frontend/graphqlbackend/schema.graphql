@@ -1391,9 +1391,10 @@ type Query {
         query: String
     ): SearchContextConnection!
     """
-    (experimental) Resolves search context spec into a search context if it exists.
+    (experimental) Determines whether the search context is within the set of search contexts available to the current user.
+    The set consists of contexts created by the user, contexts created by the users' organizations, and instance-level contexts.
     """
-    resolveSearchContextSpec(spec: String!): SearchContext
+    isSearchContextAvailable(spec: String!): Boolean!
     """
     (experimental) Return the parse tree of a search query.
     """
