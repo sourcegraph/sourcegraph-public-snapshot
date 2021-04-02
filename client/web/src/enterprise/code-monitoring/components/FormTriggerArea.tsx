@@ -8,7 +8,8 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
+import { Tooltip } from 'reactstrap'
 import { SearchPatternType } from '../../../graphql-operations'
 
 interface TriggerAreaProps {
@@ -25,37 +26,53 @@ const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?
     checked,
     children,
     hint,
-}) => (
-    <label>
-        <input className="sr-only" type="checkbox" disabled={true} checked={checked} />
+}) => {
+    const tooltipTarget = useRef<HTMLElement | null>(null)
+    const [tooltipOpen, setTooltipOpen] = useState(false)
+    const toggleTooltip = useCallback(() => setTooltipOpen(isOpen => !isOpen), [])
+    const showTooltip = useCallback(() => setTooltipOpen(true), [])
+    const hideTooltip = useCallback(() => setTooltipOpen(false), [])
 
-        {checked ? (
-            <span
-                className="trigger-area__checklist-checkbox trigger-area__checklist-checkbox--checked"
-                aria-hidden={true}
-            >
-                <CheckIcon className="icon-inline" />
-            </span>
-        ) : (
-            <span
-                className="trigger-area__checklist-checkbox trigger-area__checklist-checkbox--unchecked"
-                aria-hidden={true}
-            >
-                <RadioboxBlankIcon className="icon-inline" />
-            </span>
-        )}
+    return (
+        <label
+            className="d-flex align-items-center mb-1 text-muted"
+            onMouseOver={showTooltip}
+            onMouseOut={hideTooltip}
+            onFocus={showTooltip}
+            onBlur={hideTooltip}
+        >
+            <input className="sr-only" type="checkbox" disabled={true} checked={checked} />
 
-        {children}
-        {hint && (
-            <>
-                <span className="sr-only"> {hint}</span>
-                <span aria-hidden={true} data-tooltip={hint} data-placement="bottom">
-                    <HelpCircleIcon className="icon-inline" />
-                </span>
-            </>
-        )}
-    </label>
-)
+            {checked ? (
+                <CheckIcon className="trigger-area__checklist-checkbox icon-inline text-success" aria-hidden={true} />
+            ) : (
+                <RadioboxBlankIcon className="trigger-area__checklist-checkbox icon-inline" aria-hidden={true} />
+            )}
+
+            <span>{children}</span>
+
+            {hint && (
+                <>
+                    <span className="sr-only"> {hint}</span>
+
+                    <span ref={tooltipTarget} className="d-flex">
+                        <HelpCircleIcon className="trigger-area__checklist-hint icon-inline" aria-hidden={true} />
+                    </span>
+
+                    <Tooltip
+                        target={tooltipTarget}
+                        toggle={toggleTooltip}
+                        isOpen={tooltipOpen}
+                        placement="bottom"
+                        innerClassName="trigger-area__checklist-tooltip"
+                    >
+                        {hint}
+                    </Tooltip>
+                </>
+            )}
+        </label>
+    )
+}
 
 export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     query,
@@ -175,7 +192,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 <input
                                     type="text"
                                     className={classNames(
-                                        'trigger-area__query-input-field form-control my-2 test-trigger-input text-monospace',
+                                        'trigger-area__query-input-field form-control mt-2 mb-3 test-trigger-input text-monospace',
                                         deriveInputClassName(queryState)
                                     )}
                                     onChange={nextQueryFieldChange}

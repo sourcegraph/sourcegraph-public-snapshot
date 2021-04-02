@@ -42,11 +42,22 @@
     &__checklist {
         list-style-type: none;
         padding-left: 0;
+        margin-bottom: 0;
 
         &-checkbox {
-            &--checked {
-                color: $success;
-            }
+            font-size: 0.65rem;
+            margin-right: 0.5rem;
+            color: var(--border-color);
+        }
+
+        &-hint {
+            font-size: 0.65rem;
+            margin-left: 0.25rem;
+        }
+
+        &-tooltip {
+            text-align: left;
+            max-width: 16rem;
         }
     }
 }
