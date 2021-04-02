@@ -701,6 +701,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.MonitorByID(ctx, id)
 	case "OutOfBandMigration":
 		return r.OutOfBandMigrationByID(ctx, id)
+	case "SearchContext":
+		return r.SearchContextByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

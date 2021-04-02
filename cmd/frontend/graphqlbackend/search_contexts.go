@@ -23,6 +23,19 @@ type searchContextResolver struct {
 	db dbutil.DB
 }
 
+type searchContextRepositoryRevisionsResolver struct {
+	repository *RepositoryResolver
+	revisions  []string
+}
+
+func (r *searchContextRepositoryRevisionsResolver) Repository(ctx context.Context) *RepositoryResolver {
+	return r.repository
+}
+
+func (r *searchContextRepositoryRevisionsResolver) Revisions(ctx context.Context) []string {
+	return r.revisions
+}
+
 type listSearchContextsArgs struct {
 	First int32
 	After *string
@@ -52,6 +65,11 @@ func (s *searchContextConnection) PageInfo(ctx context.Context) (*graphqlutil.Pa
 
 func marshalSearchContextID(searchContextSpec string) graphql.ID {
 	return relay.MarshalID("SearchContext", searchContextSpec)
+}
+
+func unmarshalSearchContextID(id graphql.ID) (spec string, err error) {
+	err = relay.UnmarshalSpec(id, &spec)
+	return
 }
 
 func marshalSearchContextDatabaseID(id int64) graphql.ID {
@@ -89,6 +107,23 @@ func (r *searchContextResolver) AutoDefined(ctx context.Context) bool {
 
 func (r *searchContextResolver) Spec(ctx context.Context) string {
 	return searchcontexts.GetSearchContextSpec(r.sc)
+}
+
+func (r *searchContextResolver) Repositories(ctx context.Context) ([]*searchContextRepositoryRevisionsResolver, error) {
+	if searchcontexts.IsAutoDefinedSearchContext(r.sc) {
+		return []*searchContextRepositoryRevisionsResolver{}, nil
+	}
+
+	repoRevs, err := database.SearchContexts(r.db).GetSearchContextRepositoryRevisions(ctx, r.sc.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	searchContextRepositories := make([]*searchContextRepositoryRevisionsResolver, len(repoRevs))
+	for idx, repoRev := range repoRevs {
+		searchContextRepositories[idx] = &searchContextRepositoryRevisionsResolver{NewRepositoryResolver(r.db, repoRev.Repo.ToRepo()), repoRev.Revisions}
+	}
+	return searchContextRepositories, nil
 }
 
 func (r *schemaResolver) AutoDefinedSearchContexts(ctx context.Context) ([]*searchContextResolver, error) {
@@ -210,5 +245,19 @@ func (r *schemaResolver) ConvertVersionContextToSearchContext(ctx context.Contex
 	if err != nil {
 		return nil, err
 	}
+	return &searchContextResolver{searchContext, r.db}, nil
+}
+
+func (r *schemaResolver) SearchContextByID(ctx context.Context, id graphql.ID) (*searchContextResolver, error) {
+	searchContextSpec, err := unmarshalSearchContextID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
+	if err != nil {
+		return nil, err
+	}
+
 	return &searchContextResolver{searchContext, r.db}, nil
 }
