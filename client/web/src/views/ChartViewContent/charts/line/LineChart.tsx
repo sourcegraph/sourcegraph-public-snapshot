@@ -12,7 +12,8 @@ import {
     Tooltip,
     XYChart,
 } from '@visx/xychart';
-import useEventEmitters from '@visx/xychart/lib/hooks/useEventEmitters';
+
+import useEventEmmiters from '@visx/xychart/esm/hooks/useEventEmitters';
 
 import { XYCHART_EVENT_SOURCE } from '@visx/xychart/lib/constants';
 import { format } from 'd3-format';
@@ -28,6 +29,7 @@ import { getMinAndMax } from './helpers/get-min-max'
 import { GlyphComponent } from './components/Glyph'
 import { TooltipContent } from './components/TooltipContent'
 import { MaybeLink } from './components/MaybeLink'
+
 
 // Chart configuration
 const WIDTH_PER_TICK = 70;
@@ -123,7 +125,7 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
         [accessors, series]
     );
 
-    const eventEmitters = useEventEmitters({ source: XYCHART_EVENT_SOURCE });
+    const eventEmitters = useEventEmmiters({ source: XYCHART_EVENT_SOURCE });
 
     return (
 
