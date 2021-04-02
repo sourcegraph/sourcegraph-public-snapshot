@@ -2,7 +2,7 @@ import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 import { ToggleBig } from './ToggleBig'
-import webStyles from '../../../web/src/main.scss'
+import webStyles from '@sourcegraph/web/src/main.scss'
 
 const onToggle = action('onToggle')
 
