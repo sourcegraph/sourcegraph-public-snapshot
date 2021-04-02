@@ -11,12 +11,7 @@ export function appendContextFilter(query: string, searchContextSpec: string | u
 }
 
 export function omitFilter(query: string, filter: Filter): string {
-    let finalQuery = replaceRange(query, filter.range)
-    if (filter.range.start === 0) {
-        // Remove space at the start
-        finalQuery = finalQuery.slice(1)
-    }
-    return finalQuery
+    return replaceRange(query, filter.range).trimStart()
 }
 
 const succeedScan = (query: string): Token[] => {
