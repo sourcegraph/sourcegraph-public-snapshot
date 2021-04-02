@@ -1,4 +1,8 @@
 
 .bar-chart {
     position: relative;
+
+    &__bar--with-link {
+        cursor: pointer;
+    }
 }

@@ -1,13 +1,15 @@
 import React, { ReactElement, useCallback, useMemo } from 'react';
-import {scaleBand, scaleLinear} from '@visx/scale';
-import {AxisBottom, AxisLeft} from '@visx/axis'
+import classnames from 'classnames';
+import { scaleBand, scaleLinear } from '@visx/scale';
+import { AxisBottom, AxisLeft } from '@visx/axis'
 import { localPoint } from '@visx/event';
-import {Group} from '@visx/group';
-import {Bar} from '@visx/shape';
-import {Grid} from '@visx/grid';
-import {useTooltip, defaultStyles, TooltipWithBounds} from '@visx/tooltip';
-import {BarChartContent} from 'sourcegraph';
-import {TextProps} from '@visx/text/lib/Text';
+import { Group} from '@visx/group';
+import { Bar} from '@visx/shape';
+import { Grid } from '@visx/grid';
+import { useTooltip, defaultStyles, TooltipWithBounds } from '@visx/tooltip';
+import { BarChartContent } from 'sourcegraph';
+import { TextProps } from '@visx/text/lib/Text';
+import { onDatumClick } from '../types';
 
 const DEFAULT_MARGIN = { top: 20, right: 20, bottom: 20, left: 40 };
 
@@ -45,15 +47,16 @@ interface TooltipData {
 interface BarChartProps extends Omit<BarChartContent<any, string>, 'chart'> {
     width: number;
     height: number;
+    onDatumClick: onDatumClick
 }
 
 export function BarChart(props: BarChartProps): ReactElement {
 
-    const { width, height, data, series } = props;
+    const { width, height, data, series, onDatumClick } = props;
 
     // Respect only first element of data series
     // Refactor this in case if we need support stacked bar chart
-    const { dataKey, fill, linkURLs, name } = series[0];
+    const { dataKey, fill, linkURLs } = series[0];
 
     const xMax = width - DEFAULT_MARGIN.left - DEFAULT_MARGIN.right;
     const yMax = height - DEFAULT_MARGIN.top - DEFAULT_MARGIN.bottom;
@@ -129,16 +132,28 @@ export function BarChart(props: BarChartProps): ReactElement {
                     {
                         data.map((datum, index) => {
                             const barHeight = yMax - (yPoint(datum) ?? 0);
+                            const link = linkURLs?.[index];
+                            const classes =  classnames(
+                                'bar-chart__bar',
+                                { 'bar-chart__bar--with-link': link }
+                            );
 
                             return (
                                 <Group key={`bar-${index}`}>
 
                                     <Bar
+                                        className={classes}
                                         x={xScale(index)}
                                         y={yMax - barHeight}
                                         height={barHeight}
                                         width={xScale.bandwidth()}
                                         fill={fill}
+                                        /* eslint-disable-next-line react/jsx-no-bind */
+                                        onClick={event => {
+                                            const link = linkURLs?.[index];
+
+                                            onDatumClick({ originEvent: event, link })
+                                        }}
                                         onMouseLeave={handleMouseLeave}
 
                                         // In this case we have to use arrow function because we need

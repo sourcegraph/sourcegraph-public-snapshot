@@ -1,10 +1,11 @@
-import React, { ReactElement, useCallback, useMemo } from 'react';
+import React, { ReactElement, useCallback, useMemo, useState, MouseEvent } from 'react';
+import classnames from 'classnames';
 import { LineChartContent } from 'sourcegraph';
 import { curveLinear } from '@visx/curve';
+import { useDebouncedCallback } from 'use-debounce';
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip';
 import {
     Axis,
-    EventEmitterProvider,
     GlyphSeries,
     Grid,
     lightTheme,
@@ -12,22 +13,21 @@ import {
     Tooltip,
     XYChart,
 } from '@visx/xychart';
-import useEventEmitters from '@visx/xychart/lib/hooks/useEventEmitters';
 
-import { XYCHART_EVENT_SOURCE } from '@visx/xychart/lib/constants';
 import { format } from 'd3-format';
 import { timeFormat } from 'd3-time-format'
 import { scaleLinear, scaleTime } from '@visx/scale';
 import { GridColumns } from '@visx/grid'
 import { Group } from '@visx/group'
 import { TextProps } from '@visx/text/lib/Text'
+import { EventHandlerParams } from '@visx/xychart/lib/types';
 
 import { generateAccessors } from './helpers/generate-accessors'
 import { getRangeWithPadding } from './helpers/get-range-with-padding'
 import { getMinAndMax } from './helpers/get-min-max'
 import { GlyphComponent } from './components/Glyph'
 import { TooltipContent } from './components/TooltipContent'
-import { MaybeLink } from './components/MaybeLink'
+import { onDatumClick } from '../types';
 
 // Chart configuration
 const WIDTH_PER_TICK = 70;
@@ -46,19 +46,11 @@ const formatDate = (date: Date): string => dateFormatter(date);
 export interface LineChartProps extends Omit<LineChartContent<any, string>, 'chart'> {
     width: number;
     height: number;
-    onDataPointClick?: () => void;
+    onDatumClick: onDatumClick;
 }
 
 export function LineChart(props: LineChartProps): ReactElement {
-    return (
-        <EventEmitterProvider>
-            <LineChartContentComponent {...props}/>
-        </EventEmitterProvider>
-    )
-}
-
-function LineChartContentComponent(props: LineChartProps): ReactElement {
-    const { width, height, data, series, xAxis, onDataPointClick = () => {} } = props;
+    const { width, height, data, series, xAxis, onDatumClick } = props;
 
     // derived
     const innerWidth = width - MARGIN.left - MARGIN.right;
@@ -116,6 +108,9 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
         [accessors, sortedData, innerWidth]
     );
 
+    // state
+    const [activeLinkDatum, setActiveLinkDatum] = useState<any | null>(null);
+
     // callbacks
     const renderTooltip = useCallback(
         (renderProps: RenderTooltipParams<any>) =>
@@ -123,119 +118,128 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
         [accessors, series]
     );
 
-    const eventEmitters = useEventEmitters({ source: XYCHART_EVENT_SOURCE });
+    // Because xychart fires all consumer's handlers twice, we need to debounce our handler
+    // Remove debounce when https://github.com/airbnb/visx/issues/1077 will be resolved
+    const handlePointerUp = useDebouncedCallback(
+        (event: EventHandlerParams<any>) => {
+
+            if (!event.event) {
+                return;
+            }
+
+            onDatumClick({
+                originEvent: event.event as MouseEvent<unknown>,
+                link: activeLinkDatum
+            });
+        },
+    );
+
+    const handlePointerMove = useDebouncedCallback(
+        (event: EventHandlerParams<any>) => {
+            const line = series.find(line => line.dataKey === event.key);
+
+            if (!line) {
+                return;
+            }
+
+            const link = line?.linkURLs?.[event.index];
+
+            setActiveLinkDatum(link);
+        },
+        0,
+        { leading: true }
+    );
 
     return (
+        <div className={classnames('line-chart', { 'line-chart--with-cursor': !!activeLinkDatum })}>
 
-        <XYChart
-            theme={lightTheme}
-            xScale={scalesConfig.x}
-            yScale={scalesConfig.y}
-            height={height}
-            width={width}
-            captureEvents={false}
-            margin={MARGIN}
-        >
+            <XYChart
+                theme={lightTheme}
+                xScale={scalesConfig.x}
+                yScale={scalesConfig.y}
+                height={height}
+                width={width}
+                captureEvents={true}
+                margin={MARGIN}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+            >
 
-            <Group top={MARGIN.top} left={MARGIN.left}>
+                <Group top={MARGIN.top} left={MARGIN.left}>
 
-                <GridColumns
-                    scale={xScale}
+                    <GridColumns
+                        scale={xScale}
+                        numTicks={numberOfTicks}
+                        width={innerWidth} height={innerHeight} stroke="#e0e0e0"
+                        lineStyle={{ stroke: 'gray', strokeWidth: 1, strokeOpacity: 0.3 }} />
+                </Group>
+
+                <Grid
+                    rows={true}
+                    columns={false}
+                    numTicks={numberOfTicksY}
+                    lineStyle={{ stroke: 'gray', strokeWidth: 1, strokeOpacity: 0.3 }}
+                />
+
+                <Axis
+                    orientation="bottom"
+                    strokeWidth={2}
+                    stroke="black"
+                    tickStroke="black"
+                    tickClassName="ticks"
+                    tickValues={xScale.ticks(numberOfTicks)}
+                    tickFormat={formatDate}
                     numTicks={numberOfTicks}
-                    width={innerWidth} height={innerHeight} stroke="#e0e0e0"
-                    lineStyle={{ stroke: 'gray', strokeWidth: 1, strokeOpacity: 0.3 }} />
-            </Group>
+                    tickLabelProps={TICK_LABEL_PROPS}
+                />
+                <Axis
+                    orientation="left"
+                    numTicks={numberOfTicksY}
+                    strokeWidth={2}
+                    stroke="black"
+                    tickFormat={format('~s')}
+                    tickStroke="black"
+                    tickClassName="ticks"
+                    tickLabelProps={TICK_LABEL_PROPS}
+                />
 
-            <Grid
-                rows={true}
-                columns={false}
-                numTicks={numberOfTicksY}
-                lineStyle={{ stroke: 'gray', strokeWidth: 1, strokeOpacity: 0.3 }}
-            />
+                {
+                    series.map(line =>
+                        <Group key={line.dataKey as string}>
 
-            <Axis
-                orientation="bottom"
-                strokeWidth={2}
-                stroke="black"
-                tickStroke="black"
-                tickClassName="ticks"
-                tickValues={xScale.ticks(numberOfTicks)}
-                tickFormat={formatDate}
-                numTicks={numberOfTicks}
-                tickLabelProps={TICK_LABEL_PROPS}
-            />
-            <Axis
-                orientation="left"
-                numTicks={numberOfTicksY}
-                strokeWidth={2}
-                stroke="black"
-                tickFormat={format('~s')}
-                tickStroke="black"
-                tickClassName="ticks"
-                tickLabelProps={TICK_LABEL_PROPS}
-            />
+                            <LineSeries
+                                dataKey={line.dataKey as string}
+                                data={sortedData}
+                                strokeWidth={3}
+                                xAccessor={accessors.x}
+                                yAccessor={accessors.y[line.dataKey as string]}
+                                stroke={line.stroke ?? lightTheme.colors[0]}
+                                curve={curveLinear}
+                            />
 
-            {
-                series.map(line =>
-                    <LineSeries
-                        key={line.dataKey as string}
-                        dataKey={line.dataKey as string}
-                        data={sortedData}
-                        strokeWidth={3}
-                        xAccessor={accessors.x}
-                        yAccessor={accessors.y[line.dataKey as string]}
-                        stroke={line.stroke ?? lightTheme.colors[0]}
-                        curve={curveLinear}
-                    />
-                )
-            }
+                            <GlyphSeries
+                                dataKey={line.dataKey as string}
+                                data={sortedData}
+                                /* eslint-disable-next-line react/jsx-no-bind */
+                                colorAccessor={() => line.stroke}
+                                xAccessor={accessors.x}
+                                yAccessor={accessors.y[line.dataKey as string]}
+                                renderGlyph={GlyphComponent}
+                            />
+                        </Group>
+                    )
+                }
 
-            <Tooltip
-                debounce={200}
-                showHorizontalCrosshair={false}
-                showVerticalCrosshair={true}
-                snapTooltipToDatumX={false}
-                snapTooltipToDatumY={true}
-                showDatumGlyph={true}
-                showSeriesGlyphs={true}
-                renderTooltip={renderTooltip}
-            />
-
-            <rect
-                x={MARGIN.left}
-                y={MARGIN.top}
-                width={width - MARGIN.left - MARGIN.right}
-                height={height - MARGIN.top - MARGIN.bottom}
-                fill="transparent"
-                {...eventEmitters}
-            />
-
-            {
-                series.map(line =>
-                    <GlyphSeries
-                        key={line.dataKey as string}
-                        dataKey={line.dataKey as string}
-                        data={sortedData}
-                        /* eslint-disable-next-line react/jsx-no-bind */
-                        colorAccessor={() => line.stroke}
-                        xAccessor={accessors.x}
-                        yAccessor={accessors.y[line.dataKey as string]}
-                        /* eslint-disable-next-line react/jsx-no-bind */
-                        renderGlyph={props => (
-                            <MaybeLink
-                                // visx types are wrong here. props don't have index value
-                                // key is index here. Index doesn't exist in runtime
-                                href={line.linkURLs?.[+props.key]}
-                                onClick={onDataPointClick}
-                                {...eventEmitters}
-                            >
-
-                                <GlyphComponent {...props}/>
-                            </MaybeLink>
-                        )}
-                    />
-                )
-            }
-        </XYChart>
+                <Tooltip
+                    showHorizontalCrosshair={false}
+                    showVerticalCrosshair={true}
+                    snapTooltipToDatumX={false}
+                    snapTooltipToDatumY={false}
+                    showDatumGlyph={true}
+                    showSeriesGlyphs={true}
+                    renderTooltip={renderTooltip}
+                />
+            </XYChart>
+        </div>
     );
 }

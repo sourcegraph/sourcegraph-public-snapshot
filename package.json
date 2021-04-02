@@ -350,6 +350,7 @@
     "textarea-caret": "^3.1.0",
     "ts-key-enum": "^2.0.7",
     "tslib": "^2.1.0",
+    "use-debounce": "^6.0.0",
     "use-deep-compare-effect": "^1.6.1",
     "use-resize-observer": "^7.0.0",
     "utility-types": "^3.10.0",
