@@ -5,6 +5,10 @@
 
 .line-chart {
 
+    &--with-cursor {
+        cursor: pointer;
+    }
+
     &__tooltip {
         margin: 4px;
     }
