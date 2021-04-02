@@ -46,10 +46,21 @@ commands:
       - cmd/frontend
 
   enterprise-frontend:
-    cmd: .bin/enterprise-frontend
+    cmd: |
+      ulimit -n 10000
+      # TODO: This should be fixed
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/enterprise-frontend
     install: go build -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
+    env:
+      CONFIGURATION_MODE: server
+      USE_ENHANCED_LANGUAGE_DETECTION: false
+      ENTERPRISE: 1
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      EXTSVC_CONFIG_FILE: '../dev-private/enterprise/dev/external-services-config.json'
     watch:
       - internal
+      - enterprise/internal
       - cmd/frontend
       - enterprise/cmd/frontend
 
@@ -87,8 +98,10 @@ commands:
     install: go build -o .bin/repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
     env:
       HOSTNAME: $SRC_GIT_SERVER_1
+      ENTERPRISE: 1
     watch:
       - internal
+      - enterprise/internal
       - cmd/repo-updater
       - enterprise/cmd/repo-updater
 
@@ -154,6 +167,15 @@ commands:
       NODE_ENV: development
       NODE_OPTIONS: "--max_old_space_size=4096"
 
+  enterprise-web:
+    cmd: ./node_modules/.bin/gulp --silent --color dev
+    install: yarn --no-progress
+    env:
+      ENTERPRISE: 1
+      WEBPACK_DEV_SERVER: 1
+      NODE_ENV: development
+      NODE_OPTIONS: "--max_old_space_size=4096"
+
   docsite:
     cmd: .bin/docsite_${VERSION} -config doc/docsite.json serve -http=localhost:5080
     install: |
@@ -186,9 +208,29 @@ commands:
       mkdir -p .bin
       export GOBIN="${PWD}/.bin"
       export GO111MODULE=on
-      # TODO: Do we need to install these?
-      # go install github.com/google/zoekt/cmd/zoekt-archive-index
-      # go install github.com/google/zoekt/cmd/zoekt-git-index
+      go install github.com/google/zoekt/cmd/zoekt-archive-index
+      go install github.com/google/zoekt/cmd/zoekt-git-index
+      go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
+    env:
+      GOGC: 50
+
+  zoekt-indexserver-1:
+    cmd: |
+      .bin/zoekt-sourcegraph-indexserver \
+        -sourcegraph_url 'http://localhost:3090' \
+        -index "$HOME/.sourcegraph/zoekt/index-1" \
+        -hostname 'localhost:3071' \
+        -interval 1m \
+        -listen ":6073" \
+        -cpu_fraction 0.25
+    install: |
+      # We technically don't need this because indexserver-0 installs it, but
+      # let's keep it here before we have something to remove the duplication
+      mkdir -p .bin
+      export GOBIN="${PWD}/.bin"
+      export GO111MODULE=on
+      go install github.com/google/zoekt/cmd/zoekt-archive-index
+      go install github.com/google/zoekt/cmd/zoekt-git-index
       go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
     env:
       GOGC: 50
@@ -200,17 +242,24 @@ commands:
         -pprof -rpc -listen ":3070"
     install: |
       mkdir -p .bin
-      export GOBIN="${PWD}/.bin"
-      export GO111MODULE=on
-      go install github.com/google/zoekt/cmd/zoekt-webserver
+      env GOBIN="${PWD}/.bin" GO111MODULE=on go install github.com/google/zoekt/cmd/zoekt-webserver
+    env:
+      JAEGER_DISABLED: false
+      GOGC: 50
+
+  zoekt-webserver-1:
+    cmd: |
+      .bin/zoekt-webserver \
+        -index "$HOME/.sourcegraph/zoekt/index-1" \
+        -pprof -rpc -listen ":3071"
+    install: |
+      mkdir -p .bin
+      env GOBIN="${PWD}/.bin" GO111MODULE=on go install github.com/google/zoekt/cmd/zoekt-webserver
     env:
       JAEGER_DISABLED: false
       GOGC: 50
 
 commandsets:
-  testing:
-    - frontend
-    - gitserver
   default:
     - frontend
     - repo-updater
@@ -224,33 +273,26 @@ commandsets:
     - syntect_server
     - github-proxy
     - zoekt-indexserver-0
+    - zoekt-indexserver-1
     - zoekt-webserver-0
-
-  zoekt:
-    - frontend
-    - gitserver
-    - zoekt-indexserver-0
-    - zoekt-webserver-0
+    - zoekt-webserver-1
 
   enterprise:
     - enterprise-frontend
     - enterprise-repo-updater
+    - enterprise-web
     - gitserver
     - searcher
     - symbols
     - query-runner
-    - web
     - caddy
     - docsite
     - syntect_server
     - github-proxy
-
-  # Another set that can be run with `sg run-set monitoring`:
-  monitoring:
-    # - jaeger
-    # - prometheus
-    # - grafana
-    # - postgres_exporter
+    - zoekt-indexserver-0
+    - zoekt-indexserver-1
+    - zoekt-webserver-0
+    - zoekt-webserver-1
 
 tests:
   # These can be run with `sg test [name]`

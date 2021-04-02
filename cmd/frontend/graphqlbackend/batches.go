@@ -197,6 +197,11 @@ type ListViewerBatchChangesCodeHostsArgs struct {
 	OnlyWithoutCredential bool
 }
 
+type DetachChangesetsArgs struct {
+	BatchChange graphql.ID
+	Changesets  []graphql.ID
+}
+
 type BatchChangesResolver interface {
 	//
 	// MUTATIONS
@@ -223,6 +228,7 @@ type BatchChangesResolver interface {
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
+	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (*EmptyResponse, error)
 
 	// Queries
 
@@ -712,6 +718,10 @@ func (defaultBatchChangesResolver) CreateBatchChangesCredential(ctx context.Cont
 }
 
 func (defaultBatchChangesResolver) DeleteBatchChangesCredential(ctx context.Context, args *DeleteBatchChangesCredentialArgs) (*EmptyResponse, error) {
+	return nil, batchChangesOnlyInEnterprise
+}
+
+func (defaultBatchChangesResolver) DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (*EmptyResponse, error) {
 	return nil, batchChangesOnlyInEnterprise
 }
 

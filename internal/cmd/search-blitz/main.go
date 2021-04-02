@@ -22,7 +22,12 @@ const envLogDir = "LOG_DIR"
 func run(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	c, err := newClient()
+	bc, err := newClient()
+	if err != nil {
+		panic(err)
+	}
+
+	sc, err := newStreamClient()
 	if err != nil {
 		panic(err)
 	}
@@ -36,32 +41,68 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		panic(err)
 	}
 
-OUTER:
-	for {
-		log15.Info("new iteration")
-		for _, group := range config.Groups {
-			log15.Info("new group", "group", group.Name)
-			for _, qc := range group.Queries {
-				_, m, err := c.search(ctx, qc)
-				if err != nil {
-					log15.Error(err.Error())
-					continue
-				}
-				log15.Info("metrics", "group", group.Name, "query", qc.Query, "trace", m.trace, "duration_ms", m.took)
-				durationSearchHistogram.WithLabelValues(group.Name).Observe(float64(m.took))
+	clientForProtocol := func(p Protocol) genericClient {
+		switch p {
+		case Batch:
+			return bc
+		case Stream:
+			return sc
+		}
+		return nil
+	}
+
+	loopSearch := func(ctx context.Context, c genericClient, group string, qc QueryConfig) {
+		if qc.Interval == 0 {
+			qc.Interval = time.Minute
+		}
+		ticker := time.NewTicker(qc.Interval)
+		defer ticker.Stop()
+
+		for {
+			m, err := c.search(ctx, qc.Query, qc.Name)
+			if err != nil {
+				log15.Error(err.Error())
+			} else {
+				log15.Info("metrics", "group", group, "query", qc.Query, "trace", m.trace, "duration_ms", m.took)
+				durationSearchHistogram.WithLabelValues(group, c.clientType()).Observe(float64(m.took))
+			}
+
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
 			}
 		}
+	}
 
-		select {
-		case <-ctx.Done():
-			break OUTER
-		case <-time.After(300 * time.Second):
+	scheduleQuery := func(ctx context.Context, group string, qc QueryConfig) {
+		if len(qc.Protocols) == 0 {
+			qc.Protocols = allProtocols
+		}
+
+		for _, protocol := range qc.Protocols {
+			client := clientForProtocol(protocol)
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				loopSearch(ctx, client, group, qc)
+			}()
+		}
+	}
+
+	for _, group := range config.Groups {
+		for _, qc := range group.Queries {
+			scheduleQuery(ctx, group.Name, qc)
 		}
 	}
 }
 
-func startServer(wg *sync.WaitGroup) *http.Server {
+type genericClient interface {
+	search(ctx context.Context, query, queryName string) (*metrics, error)
+	clientType() string
+}
 
+func startServer(wg *sync.WaitGroup) *http.Server {
 	http.HandleFunc("/health", health)
 	http.Handle("/metrics", promhttp.Handler())
 
@@ -77,7 +118,6 @@ func startServer(wg *sync.WaitGroup) *http.Server {
 }
 
 func main() {
-
 	logDir := os.Getenv(envLogDir)
 	if logDir == "" {
 		logDir = "."
@@ -112,7 +152,7 @@ func main() {
 // SignalSensitiveContext returns a background context that is canceled after receiving an
 // interrupt or terminate signal. A second signal will abort the program. This function returns
 // the context and a function that should be  deferred by the caller to clean up internal channels.
-func SignalSensitiveContext() (context.Context, func()) {
+func SignalSensitiveContext() (ctx context.Context, cleanup func()) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	signals := make(chan os.Signal, 1)

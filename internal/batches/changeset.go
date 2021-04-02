@@ -261,6 +261,12 @@ func (c *Changeset) Clone() *Changeset {
 	return &tt
 }
 
+// Closeable returns whether the Changeset is already closed or merged.
+func (c *Changeset) Closeable() bool {
+	return c.ExternalState != ChangesetExternalStateClosed &&
+		c.ExternalState != ChangesetExternalStateMerged
+}
+
 // Published returns whether the Changeset's PublicationState is Published.
 func (c *Changeset) Published() bool { return c.PublicationState.Published() }
 
@@ -671,6 +677,16 @@ func (c *Changeset) Archive(batchChangeID int64) bool {
 	for i := range c.BatchChanges {
 		if c.BatchChanges[i].BatchChangeID == batchChangeID && !c.BatchChanges[i].IsArchived {
 			c.BatchChanges[i].Archive = true
+			return true
+		}
+	}
+	return false
+}
+
+// ArchivedIn checks whether the changeset is archived in the given batch change.
+func (c *Changeset) ArchivedIn(batchChangeID int64) bool {
+	for i := range c.BatchChanges {
+		if c.BatchChanges[i].BatchChangeID == batchChangeID && c.BatchChanges[i].IsArchived {
 			return true
 		}
 	}

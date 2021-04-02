@@ -39,31 +39,31 @@ func newClient() (*client, error) {
 	}, nil
 }
 
-func (s *client) search(ctx context.Context, qc QueryConfig) (*result, *metrics, error) {
+func (s *client) search(ctx context.Context, query, queryName string) (*metrics, error) {
 	var body bytes.Buffer
 	m := &metrics{}
 	if err := json.NewEncoder(&body).Encode(map[string]interface{}{
 		"query":     graphQLQuery,
-		"variables": map[string]string{"query": qc.Query},
+		"variables": map[string]string{"query": query},
 	}); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", s.url(qc.Name), ioutil.NopCloser(&body))
+	req, err := http.NewRequestWithContext(ctx, "POST", s.url(), ioutil.NopCloser(&body))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	req.Header.Set("Authorization", "token "+s.token)
 	req.Header.Set("X-Sourcegraph-Should-Trace", "true")
-	req.Header.Set("User-Agent", "SearchBlitz (monitoring)")
+	req.Header.Set("User-Agent", fmt.Sprintf("SearchBlitz (%s)", queryName))
 
 	start := time.Now()
 	resp, err := s.client.Do(req)
 	m.took = time.Since(start).Milliseconds()
 
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -71,7 +71,7 @@ func (s *client) search(ctx context.Context, qc QueryConfig) (*result, *metrics,
 	case 200:
 		break
 	default:
-		return nil, nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	m.trace = resp.Header.Get("x-trace")
@@ -79,14 +79,15 @@ func (s *client) search(ctx context.Context, qc QueryConfig) (*result, *metrics,
 	// Decode the response.
 	respDec := rawResult{Data: result{}}
 	if err := json.NewDecoder(resp.Body).Decode(&respDec); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return &respDec.Data, m, nil
+	return m, nil
 }
 
-func (s *client) url(queryName string) string {
-	if queryName != "" {
-		return s.endpoint + "/.api/graphql?" + queryName
-	}
-	return s.endpoint + "/.api/graphql"
+func (s *client) url() string {
+	return s.endpoint + "/.api/graphql?SearchBlitz"
+}
+
+func (s *client) clientType() string {
+	return "batch"
 }

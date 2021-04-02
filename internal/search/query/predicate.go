@@ -35,24 +35,18 @@ var DefaultPredicateRegistry = predicateRegistry{
 
 type predicateRegistry map[string]map[string]func() Predicate
 
-// Get returns a predicate for the given field with the given name. If no such predicate
-// exists, or the params provided are invalid, it returns an error.
-func (pr predicateRegistry) Get(field, name, params string) (Predicate, error) {
+// Get returns a predicate for the given field with the given name. It assumes
+// it exists, and panics otherwise.
+func (pr predicateRegistry) Get(field, name string) Predicate {
 	fieldPredicates, ok := pr[field]
 	if !ok {
-		return nil, fmt.Errorf("no predicates registered for field %s", field)
+		panic("predicate lookup for " + field + " is invalid")
 	}
-
 	newPredicateFunc, ok := fieldPredicates[name]
 	if !ok {
-		return nil, fmt.Errorf("field '%s' has no predicate named '%s'", field, name)
+		panic("predicate lookup for " + name + " on " + field + " is invalid")
 	}
-
-	predicate := newPredicateFunc()
-	if err := predicate.ParseParams(params); err != nil {
-		return nil, fmt.Errorf("failed to parse params: %s", err)
-	}
-	return predicate, nil
+	return newPredicateFunc()
 }
 
 var (
@@ -61,17 +55,17 @@ var (
 	paramsIndex     = predicateRegexp.SubexpIndex("params")
 )
 
-// ParseAsPredicate attempts to parse a value as a predicate. It does not validate
-// that the parsed predicate is a defined predicate.
-func ParseAsPredicate(value string) (name, params string, err error) {
+// ParsePredicate returns the name and value of syntax conforming to
+// name(value). It assumes this syntax is already validated prior. If not, it
+// panics.
+func ParseAsPredicate(value string) (name, params string) {
 	match := predicateRegexp.FindStringSubmatch(value)
 	if match == nil {
-		return "", "", fmt.Errorf("value '%s' is not a predicate", value)
+		panic("Invariant broken: attempt to parse a predicate value " + value + " that has not been validated")
 	}
-
 	name = match[nameIndex]
 	params = match[paramsIndex]
-	return name, params, nil
+	return name, params
 }
 
 // RepoContainsPredicate represents the `repo:contains()` predicate,
@@ -154,7 +148,7 @@ func (f *RepoContainsPredicate) Plan(parent Basic) (Plan, error) {
 func nonPredicateRepos(q Basic) []Node {
 	var res []Node
 	VisitField(q.ToParseTree(), FieldRepo, func(value string, negated bool, ann Annotation) {
-		if _, _, err := ParseAsPredicate(value); err == nil {
+		if ann.Labels.IsSet(IsPredicate) {
 			// Skip predicates
 			return
 		}
