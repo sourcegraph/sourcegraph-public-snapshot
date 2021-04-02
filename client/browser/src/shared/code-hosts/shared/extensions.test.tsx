@@ -1,4 +1,4 @@
-import { integrationTestContext } from '../../../../../shared/src/api/integration-test/testHelpers'
+import { integrationTestContext } from '@sourcegraph/shared/src/api/integration-test/testHelpers'
 import { createPlatformContext } from '../../platform/context'
 import { DEFAULT_SOURCEGRAPH_URL, getAssetsURL } from '../../util/context'
 

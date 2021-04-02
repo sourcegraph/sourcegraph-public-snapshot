@@ -1,6 +1,6 @@
 import { Observable, zip } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
-import { PlatformContext } from '../../../../../shared/src/platform/context'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FileInfo, DiffInfo, BlobInfo } from '../shared/codeHost'
 import { PhabricatorMode } from '.'
 import { queryConduitHelper, resolveDiffRevision } from './backend'

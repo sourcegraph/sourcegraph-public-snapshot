@@ -1,6 +1,6 @@
 import expect from 'expect'
-import { Driver } from '../../../shared/src/testing/driver'
-import { retry } from '../../../shared/src/testing/utils'
+import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import { retry } from '@sourcegraph/shared/src/testing/utils'
 import puppeteer from 'puppeteer'
 import assert from 'assert'
 

@@ -1,13 +1,13 @@
 import { take } from 'rxjs/operators'
-import { PlatformContext } from '../../../../shared/src/platform/context'
-import { buildSearchURLQuery } from '../../../../shared/src/util/url'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { createSuggestionFetcher } from '../backend/search'
 import { observeSourcegraphURL, getAssetsURL, DEFAULT_SOURCEGRAPH_URL } from '../util/context'
 import { createPlatformContext } from '../platform/context'
 import { from } from 'rxjs'
-import { isDefined, isNot } from '../../../../shared/src/util/types'
-import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { Settings } from '../../../../shared/src/settings/settings'
+import { isDefined, isNot } from '@sourcegraph/shared/src/util/types'
+import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { SearchPatternType } from '../../graphql-operations'
 
 const isURL = /^https?:\/\//

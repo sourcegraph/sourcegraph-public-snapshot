@@ -26,6 +26,6 @@
     "fallbackPolling": "dynamicPriority",
   },
 
-  "include": ["./client/web/src/**/*"],
+  "include": ["./client/browser/src/**/*"],
   "exclude": ["out", "node_modules"],
 }

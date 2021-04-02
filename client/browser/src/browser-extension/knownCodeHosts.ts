@@ -1,7 +1,7 @@
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
-import { PhabricatorIcon } from '../../../shared/src/components/icons'
+import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 
 export interface KnownCodeHost {
     host: string

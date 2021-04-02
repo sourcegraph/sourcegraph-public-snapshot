@@ -41,26 +41,26 @@ import {
     retryWhen,
     mapTo,
 } from 'rxjs/operators'
-import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
-import { DecorationMapByLine } from '../../../../../shared/src/api/extension/api/decorations'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import {
     isPrivateRepoPublicSourcegraphComErrorLike,
     isRepoNotFoundErrorLike,
-} from '../../../../../shared/src/backend/errors'
+} from '@sourcegraph/shared/src/backend/errors'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
-} from '../../../../../shared/src/commandPalette/CommandList'
-import { asObservable } from '../../../../../shared/src/util/rxjs/asObservable'
-import { ApplyLinkPreviewOptions } from '../../../../../shared/src/components/linkPreviews/linkPreviews'
-import { Controller } from '../../../../../shared/src/extensions/controller'
-import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
-import { getHoverActions, registerHoverContributions } from '../../../../../shared/src/hover/actions'
-import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '../../../../../shared/src/hover/HoverOverlay'
-import { getModeFromPath } from '../../../../../shared/src/languages'
-import { URLToFileContext } from '../../../../../shared/src/platform/context'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { isDefined, isInstanceOf, property } from '../../../../../shared/src/util/types'
+} from '@sourcegraph/shared/src/commandPalette/CommandList'
+import { asObservable } from '@sourcegraph/shared/src/util/rxjs/asObservable'
+import { ApplyLinkPreviewOptions } from '@sourcegraph/shared/src/components/linkPreviews/linkPreviews'
+import { Controller } from '@sourcegraph/shared/src/extensions/controller'
+import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
+import { getHoverActions, registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
+import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
+import { getModeFromPath } from '@sourcegraph/shared/src/languages'
+import { URLToFileContext } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { isDefined, isInstanceOf, property } from '@sourcegraph/shared/src/util/types'
 import {
     FileSpec,
     UIPositionSpec,
@@ -71,7 +71,7 @@ import {
     toRootURI,
     toURIWithPath,
     ViewStateSpec,
-} from '../../../../../shared/src/util/url'
+} from '@sourcegraph/shared/src/util/url'
 import { observeStorageKey } from '../../../browser-extension/web-extension-api/storage'
 import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
@@ -104,17 +104,17 @@ import {
 } from './nativeTooltips'
 import { delayUntilIntersecting, ViewResolver } from './views'
 import { NotificationType, HoverAlert } from 'sourcegraph'
-import { isHTTPAuthError } from '../../../../../shared/src/backend/fetch'
-import { asError } from '../../../../../shared/src/util/errors'
+import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
-import { wrapRemoteObservable } from '../../../../../shared/src/api/client/api/common'
-import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { isFirefox, observeSourcegraphURL } from '../../util/context'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
 import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
 import { background } from '../../../browser-extension/web-extension-api/runtime'
-import { ThemeProps } from '../../../../../shared/src/theme'
-import { CodeEditorData, CodeEditorWithPartialModel } from '../../../../../shared/src/api/viewerTypes'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 
 registerHighlightContributions()
 

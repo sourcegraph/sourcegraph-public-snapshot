@@ -1,6 +1,6 @@
-import { TextDocumentIdentifier } from '../../../../shared/src/api/client/types/textDocument'
-import { TextDocumentPositionParameters } from '../../../../shared/src/api/protocol'
-import { AbsoluteRepoFilePosition, FileSpec, RepoSpec, ResolvedRevisionSpec } from '../../../../shared/src/util/url'
+import { TextDocumentIdentifier } from '@sourcegraph/shared/src/api/client/types/textDocument'
+import { TextDocumentPositionParameters } from '@sourcegraph/shared/src/api/protocol'
+import { AbsoluteRepoFilePosition, FileSpec, RepoSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 export const toTextDocumentIdentifier = (
     position: RepoSpec & ResolvedRevisionSpec & FileSpec

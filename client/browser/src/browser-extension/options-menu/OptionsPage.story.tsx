@@ -6,8 +6,8 @@ import { Observable, of } from 'rxjs'
 import { action } from '@storybook/addon-actions'
 import { boolean, text } from '@storybook/addon-knobs'
 import GithubIcon from 'mdi-react/GithubIcon'
-import { BrandedStory } from '../../../../branded/src/components/BrandedStory'
-import { subtypeOf } from '../../../../shared/src/util/types'
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import { subtypeOf } from '@sourcegraph/shared/src/util/types'
 
 const validateSourcegraphUrl = (): Observable<string | undefined> => of(undefined)
 const invalidSourcegraphUrl = (): Observable<string | undefined> => of('Arbitrary error string')

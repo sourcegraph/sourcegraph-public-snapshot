@@ -1,6 +1,6 @@
 import { last, take } from 'lodash'
 
-import { FileSpec, RawRepoSpec, RevisionSpec } from '../../../../../shared/src/util/url'
+import { FileSpec, RawRepoSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { commitIDFromPermalink } from '../../util/dom'
 import { FileInfo } from '../shared/codeHost'
 import { isExtension } from '../../context'
