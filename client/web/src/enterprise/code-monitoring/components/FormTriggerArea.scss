@@ -38,4 +38,15 @@
     &__query-label {
         white-space: pre-wrap;
     }
+
+    &__checklist {
+        list-style-type: none;
+        padding-left: 0;
+
+        &-checkbox {
+            &--checked {
+                color: $success;
+            }
+        }
+    }
 }

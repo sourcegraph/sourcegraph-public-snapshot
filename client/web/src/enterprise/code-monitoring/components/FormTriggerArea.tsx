@@ -1,12 +1,15 @@
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import classNames from 'classnames'
-import React, { useState, useCallback, useMemo } from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
-import { SearchPatternType } from '../../../graphql-operations'
+import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { resolveFilter, validateFilter, FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
+import classNames from 'classnames'
+import CheckIcon from 'mdi-react/CheckIcon'
+import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
+import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
+import React, { useCallback, useMemo, useState } from 'react'
+import { SearchPatternType } from '../../../graphql-operations'
 
 interface TriggerAreaProps {
     query: string
@@ -24,13 +27,30 @@ const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?
     hint,
 }) => (
     <label>
-        <input type="checkbox" disabled={true} checked={checked} />
+        <input className="sr-only" type="checkbox" disabled={true} checked={checked} />
+
+        {checked ? (
+            <span
+                className="trigger-area__checklist-checkbox trigger-area__checklist-checkbox--checked"
+                aria-hidden={true}
+            >
+                <CheckIcon className="icon-inline" />
+            </span>
+        ) : (
+            <span
+                className="trigger-area__checklist-checkbox trigger-area__checklist-checkbox--unchecked"
+                aria-hidden={true}
+            >
+                <RadioboxBlankIcon className="icon-inline" />
+            </span>
+        )}
+
         {children}
         {hint && (
             <>
                 <span className="sr-only"> {hint}</span>
                 <span aria-hidden={true} data-tooltip={hint} data-placement="bottom">
-                    ?
+                    <HelpCircleIcon className="icon-inline" />
                 </span>
             </>
         )}
@@ -63,7 +83,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     (value: string) => {
                         const tokens = scanSearchQuery(value)
 
-                        const isValidQuery = tokens.type === 'success'
+                        const isValidQuery = !!value && tokens.type === 'success'
                         setIsValidQuery(isValidQuery)
 
                         let hasTypeDiffOrCommitFilter = false
@@ -160,14 +180,13 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     )}
                                     onChange={nextQueryFieldChange}
                                     value={queryState.value}
-                                    required={true}
                                     autoFocus={true}
                                     ref={queryInputReference}
                                     spellCheck={false}
                                     data-testid="trigger-query-edit"
                                 />
 
-                                <ul>
+                                <ul className="trigger-area__checklist">
                                     <li>
                                         <ValidQueryChecklistItem
                                             checked={hasTypeDiffOrCommitFilter}
