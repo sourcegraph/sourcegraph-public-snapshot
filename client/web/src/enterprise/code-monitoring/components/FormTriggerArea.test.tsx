@@ -74,7 +74,7 @@ describe('FormTriggerArea', () => {
         })
     }
 
-    test.only('Append patternType:literal if no patternType is present', () => {
+    test('Append patternType:literal if no patternType is present', () => {
         const onQueryChange = sinon.spy()
         let component = mount(
             <FormTriggerArea
