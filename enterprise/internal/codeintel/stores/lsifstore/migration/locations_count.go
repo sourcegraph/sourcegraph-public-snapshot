@@ -19,7 +19,10 @@ func NewLocationsCountMigrator(store *lsifstore.Store, tableName string, batchSi
 
 	return newMigrator(store, driver, migratorOptions{
 		tableName:       tableName,
-		selectionFields: []string{"scheme", "identifier", "data"},
+		primaryKeys:     []string{"scheme", "identifier"},
+		selectionFields: []string{"data"},
+		updatedFields:   []string{"num_locations"},
+		fieldTypes:      []string{"text not null", "text not null", "integer not null"}, // TODO - nasty
 		targetVersion:   2,
 		batchSize:       batchSize,
 	})
@@ -42,9 +45,9 @@ func (m *locationsCountMigrator) MigrateRowUp(scanner scanner) (updateSpec, erro
 	}
 
 	return updateSpec{
-		DumpID:      dumpID,
-		Conditions:  map[string]interface{}{"scheme": scheme, "identifier": identifier},
-		Assignments: map[string]interface{}{"num_locations": len(data)},
+		DumpID:             dumpID,
+		PrimaryKeyValues:   []interface{}{scheme, identifier},
+		UpdatedFieldValues: []interface{}{len(data)},
 	}, nil
 }
 
@@ -59,8 +62,8 @@ func (m *locationsCountMigrator) MigrateRowDown(scanner scanner) (updateSpec, er
 	}
 
 	return updateSpec{
-		DumpID:      dumpID,
-		Conditions:  map[string]interface{}{"scheme": scheme, "identifier": identifier},
-		Assignments: map[string]interface{}{"num_locations": 0},
+		DumpID:             dumpID,
+		PrimaryKeyValues:   []interface{}{scheme, identifier},
+		UpdatedFieldValues: []interface{}{0},
 	}, nil
 }

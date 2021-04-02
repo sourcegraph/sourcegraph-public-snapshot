@@ -3,6 +3,8 @@ package oobmigration
 import (
 	"context"
 	"errors"
+	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -243,6 +245,9 @@ func runMigrationFunction(ctx context.Context, store storeIface, migration *Migr
 		migrationFunc = migrator.Down
 	}
 
+	// TODO - remove
+	time.Sleep(time.Millisecond * time.Duration(7*rand.Intn(200)))
+
 	if migrationErr := migrationFunc(ctx); migrationErr != nil {
 		// Migration resulted in an error. All we'll do here is add this error to the migration's error
 		// message list. Unless _that_ write to the database fails, we'll continue along the happy path
@@ -268,6 +273,7 @@ func updateProgress(ctx context.Context, store storeIface, migration *Migration,
 		return err
 	}
 
+	fmt.Printf("> %.2f\n", progress*100)
 	migration.Progress = progress
 	return nil
 }

@@ -19,9 +19,9 @@ func NewDocumentColumnSplitMigrator(store *lsifstore.Store, batchSize int) oobmi
 	}
 
 	return newMigrator(store, driver, migratorOptions{
-		tableName: "lsif_data_documents",
+		tableName:   "lsif_data_documents",
+		primaryKeys: []string{"path"},
 		selectionFields: []string{
-			"path",
 			"data",
 			"ranges",
 			"hovers",
@@ -29,6 +29,15 @@ func NewDocumentColumnSplitMigrator(store *lsifstore.Store, batchSize int) oobmi
 			"packages",
 			"diagnostics",
 		},
+		updatedFields: []string{
+			"data",
+			"ranges",
+			"hovers",
+			"monikers",
+			"packages",
+			"diagnostics",
+		},
+		fieldTypes:    []string{"text not null", "bytea", "bytea", "bytea", "bytea", "bytea", "bytea"}, // TODO - nasty
 		targetVersion: 3,
 		batchSize:     batchSize,
 	})
@@ -64,15 +73,15 @@ func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) (updateSpec,
 	}
 
 	return updateSpec{
-		DumpID:     dumpID,
-		Conditions: map[string]interface{}{"path": path},
-		Assignments: map[string]interface{}{
-			"data":        nil,
-			"ranges":      encoded.Ranges,
-			"hovers":      encoded.HoverResults,
-			"monikers":    encoded.Monikers,
-			"packages":    encoded.PackageInformation,
-			"diagnostics": encoded.Diagnostics,
+		DumpID:           dumpID,
+		PrimaryKeyValues: []interface{}{path},
+		UpdatedFieldValues: []interface{}{
+			nil,
+			encoded.Ranges,
+			encoded.HoverResults,
+			encoded.Monikers,
+			encoded.PackageInformation,
+			encoded.Diagnostics,
 		},
 	}, nil
 }
@@ -107,15 +116,15 @@ func (m *documentColumnSplitMigrator) MigrateRowDown(scanner scanner) (updateSpe
 	}
 
 	return updateSpec{
-		DumpID:     dumpID,
-		Conditions: map[string]interface{}{"path": path},
-		Assignments: map[string]interface{}{
-			"data":        reencoded,
-			"ranges":      nil,
-			"hovers":      nil,
-			"monikers":    nil,
-			"packages":    nil,
-			"diagnostics": nil,
+		DumpID:           dumpID,
+		PrimaryKeyValues: []interface{}{path},
+		UpdatedFieldValues: []interface{}{
+			reencoded,
+			nil,
+			nil,
+			nil,
+			nil,
+			nil,
 		},
 	}, nil
 }

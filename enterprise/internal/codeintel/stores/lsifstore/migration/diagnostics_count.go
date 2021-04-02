@@ -19,7 +19,10 @@ func NewDiagnosticsCountMigrator(store *lsifstore.Store, batchSize int) oobmigra
 
 	return newMigrator(store, driver, migratorOptions{
 		tableName:       "lsif_data_documents",
-		selectionFields: []string{"path", "data"},
+		primaryKeys:     []string{"path"},
+		selectionFields: []string{"data"},
+		updatedFields:   []string{"num_diagnostics"},
+		fieldTypes:      []string{"text not null", "integer not null"}, // TODO - nasty
 		targetVersion:   2,
 		batchSize:       batchSize,
 	})
@@ -42,9 +45,9 @@ func (m *diagnosticsCountMigrator) MigrateRowUp(scanner scanner) (updateSpec, er
 	}
 
 	return updateSpec{
-		DumpID:      dumpID,
-		Conditions:  map[string]interface{}{"path": path},
-		Assignments: map[string]interface{}{"num_diagnostics": len(data.Diagnostics)},
+		DumpID:             dumpID,
+		PrimaryKeyValues:   []interface{}{path},
+		UpdatedFieldValues: []interface{}{len(data.Diagnostics)},
 	}, nil
 }
 
@@ -59,8 +62,8 @@ func (m *diagnosticsCountMigrator) MigrateRowDown(scanner scanner) (updateSpec, 
 	}
 
 	return updateSpec{
-		DumpID:      dumpID,
-		Conditions:  map[string]interface{}{"path": path},
-		Assignments: map[string]interface{}{"num_diagnostics": 0},
+		DumpID:             dumpID,
+		PrimaryKeyValues:   []interface{}{path},
+		UpdatedFieldValues: []interface{}{0},
 	}, nil
 }
