@@ -5,55 +5,66 @@ import { LineChartContent } from 'sourcegraph'
 
 export interface TooltipContentProps extends RenderTooltipParams<any>{
     accessors: Accessors<any, string>;
-    series: LineChartContent<any, string>['series']
+    series: LineChartContent<any, string>['series'];
+    className?: string;
 }
 
-export function TooltipContent(props: TooltipContentProps): ReactElement {
-  const { tooltipData, colorScale, accessors, series } = props;
+export function TooltipContent(props: TooltipContentProps): ReactElement | null {
+  const { className = '', tooltipData, accessors, series } = props;
+  const datum = tooltipData?.nearestDatum?.datum;
+
+  if (!datum) {
+      return null;
+  }
+
+  const dateString = new Date(accessors.x(datum)).toDateString();
+  const lineKeys = Object.keys(tooltipData?.datumByKey ?? {}).filter(lineKey => lineKey);
 
   return (
-      <>
-          {/** date */}
-          {(tooltipData?.nearestDatum?.datum &&
-              new Date(accessors.x(tooltipData?.nearestDatum?.datum)).toDateString()) ||
-          'No date'}
-          <br/>
-          <br/>
+      <div className={`line-chart__tooltip-content ${className}`}>
+
+          <h3 className='line-chart__tooltip-date'>
+              {dateString}
+          </h3>
+
           {/** values */}
-          {(Object.keys(tooltipData?.datumByKey ?? {}).filter(lineKey => lineKey) as any[]).map(lineKey => {
-              const value =
-                  tooltipData?.nearestDatum?.datum &&
-                  accessors.y[lineKey](
-                      tooltipData?.nearestDatum?.datum,
-                  );
+          <ul className='line-chart__tooltip-list'>
+              {
+                  lineKeys.map(lineKey => {
+                      const value = accessors.y[lineKey](datum);
+                      const line = series.find(line => line.dataKey === lineKey)
+                      const datumKey = tooltipData?.nearestDatum?.key;
 
-              const line = series.find(line => line.dataKey === lineKey)
+                      /* eslint-disable react/forbid-dom-props */
+                      return (
+                          <li
+                              key={lineKey}
+                              className='line-chart__tooltip-item'>
 
-              /* eslint-disable react/forbid-dom-props */
-              return (
-                  <div
-                      className='line-chart__tooltip'
-                      key={lineKey}>
+                              <em
+                                  className='line-chart__tooltip-item-name'
+                                  style={{
+                                      color: line?.stroke,
+                                      textDecoration: datumKey === lineKey ? 'underline' : undefined,
+                                  }}
+                              >
+                                  {line?.name ?? 'unknown series'}
+                              </em>
+                              {' '}
+                              <span className='line-chart__tooltip-item-value'>
+                                  {
+                                      value === null || Number.isNaN(value)
+                                          ? '–'
+                                          : value
+                                  }
+                              </span>
 
-                      <em
-                          className='line-chart__tooltip-text'
-                          style={{
-                              color: colorScale?.(lineKey),
-                              textDecoration:
-                                  tooltipData?.nearestDatum?.key === lineKey ? 'underline' : undefined,
-                          }}
-                      >
-                          {line?.name ?? 'unknown series'}
-                      </em>{' '}
-                      {
-                          value === null || Number.isNaN(value)
-                              ? '–'
-                              : value
-                      }
-                  </div>
-              );
-          })}
-      </>
+                          </li>
+                      );
+                  })
+              }
+          </ul>
+      </div>
   );
 }
 
