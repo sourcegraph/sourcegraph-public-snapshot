@@ -54,7 +54,7 @@ describe('CreateCodeMonitorPage', () => {
         const triggerInput = component.find('.test-trigger-input')
         expect(triggerInput.length).toBe(1)
         act(() => {
-            triggerInput.simulate('change', { target: { value: 'test type:diff patterntype:literal' } })
+            triggerInput.simulate('change', { target: { value: 'test type:diff repo:test' } })
             clock.tick(600)
         })
         component = component.update()
@@ -86,7 +86,7 @@ describe('CreateCodeMonitorPage', () => {
         const triggerInput = component.find('.test-trigger-input')
         expect(triggerInput.length).toBe(1)
         act(() => {
-            triggerInput.simulate('change', { target: { value: 'test type:diff patterntype:literal' } })
+            triggerInput.simulate('change', { target: { value: 'test type:diff repo:test' } })
             clock.tick(600)
         })
         component = component.update()

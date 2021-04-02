@@ -1,9 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`FormTriggerArea Error message is shown when query is invalid 1`] = `
+exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill requirements 1`] = `
 <FormTriggerArea
   onQueryChange={[Function]}
-  query="test"
+  query="test repo:test"
   setTriggerCompleted={[Function]}
   startExpanded={false}
   triggerCompleted={false}
@@ -38,19 +38,285 @@ exports[`FormTriggerArea Error message is shown when query is invalid 1`] = `
         >
           <input
             autoFocus={true}
-            className="trigger-area__query-input-field form-control my-2 test-trigger-input is-invalid"
+            className="trigger-area__query-input-field form-control mt-2 mb-3 test-trigger-input text-monospace is-invalid"
             data-testid="trigger-query-edit"
             onChange={[Function]}
-            required={true}
             spellCheck={false}
             type="text"
-            value="test"
+            value="test repo:test"
           />
-          <small
-            className="trigger-area__query-input-error-message invalid-feedback test-trigger-error"
+          <ul
+            className="trigger-area__checklist"
           >
-            Code monitors require queries to specify either \`type:commit\` or \`type:diff\`.
-          </small>
+            <li>
+              <ValidQueryChecklistItem
+                checked={false}
+                className="test-type-checkbox"
+                hint="type:diff targets code present in new commits, while type:commit targets commit messages"
+              >
+                <label
+                  className="d-flex align-items-center mb-1 text-muted test-type-checkbox"
+                  onBlur={[Function]}
+                  onFocus={[Function]}
+                  onMouseOut={[Function]}
+                  onMouseOver={[Function]}
+                >
+                  <input
+                    checked={false}
+                    className="sr-only"
+                    disabled={true}
+                    type="checkbox"
+                  />
+                  <Memo(RadioboxBlankIcon)
+                    aria-hidden={true}
+                    className="trigger-area__checklist-checkbox icon-inline"
+                  />
+                  <span
+                    className=""
+                  >
+                    Contains a 
+                    <code>
+                      type:diff
+                    </code>
+                     or 
+                    <code>
+                      type:commit
+                    </code>
+                     filter
+                  </span>
+                  <span
+                    className="sr-only"
+                  >
+                     
+                    type:diff targets code present in new commits, while type:commit targets commit messages
+                  </span>
+                  <span
+                    className="d-flex"
+                  >
+                    <Memo(HelpCircleIcon)
+                      aria-hidden={true}
+                      className="trigger-area__checklist-hint icon-inline"
+                    />
+                  </span>
+                  <Tooltip
+                    autohide={true}
+                    innerClassName="trigger-area__checklist-tooltip"
+                    isOpen={false}
+                    placement="bottom"
+                    placementPrefix="bs-tooltip"
+                    target={
+                      Object {
+                        "current": <span
+                          class="d-flex"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            class="mdi-icon trigger-area__checklist-hint icon-inline"
+                            fill="currentColor"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            width="24"
+                          >
+                            <path
+                              d="M15.07,11.25L14.17,12.17C13.45,12.89 13,13.5 13,15H11V14.5C11,13.39 11.45,12.39 12.17,11.67L13.41,10.41C13.78,10.05 14,9.55 14,9C14,7.89 13.1,7 12,7A2,2 0 0,0 10,9H8A4,4 0 0,1 12,5A4,4 0 0,1 16,9C16,9.88 15.64,10.67 15.07,11.25M13,19H11V17H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
+                            />
+                          </svg>
+                        </span>,
+                      }
+                    }
+                    toggle={[Function]}
+                    trigger="hover focus"
+                  >
+                    <TooltipPopoverWrapper
+                      autohide={true}
+                      delay={
+                        Object {
+                          "hide": 50,
+                          "show": 0,
+                        }
+                      }
+                      fade={true}
+                      hideArrow={false}
+                      innerClassName="tooltip-inner trigger-area__checklist-tooltip"
+                      isOpen={false}
+                      placement="bottom"
+                      placementPrefix="bs-tooltip"
+                      popperClassName="tooltip show"
+                      target={
+                        Object {
+                          "current": <span
+                            class="d-flex"
+                          >
+                            <svg
+                              aria-hidden="true"
+                              class="mdi-icon trigger-area__checklist-hint icon-inline"
+                              fill="currentColor"
+                              height="24"
+                              viewBox="0 0 24 24"
+                              width="24"
+                            >
+                              <path
+                                d="M15.07,11.25L14.17,12.17C13.45,12.89 13,13.5 13,15H11V14.5C11,13.39 11.45,12.39 12.17,11.67L13.41,10.41C13.78,10.05 14,9.55 14,9C14,7.89 13.1,7 12,7A2,2 0 0,0 10,9H8A4,4 0 0,1 12,5A4,4 0 0,1 16,9C16,9.88 15.64,10.67 15.07,11.25M13,19H11V17H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
+                              />
+                            </svg>
+                          </span>,
+                        }
+                      }
+                      toggle={[Function]}
+                      trigger="hover focus"
+                    />
+                  </Tooltip>
+                </label>
+              </ValidQueryChecklistItem>
+            </li>
+            <li>
+              <ValidQueryChecklistItem
+                checked={true}
+                className="test-repo-checkbox"
+                hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
+              >
+                <label
+                  className="d-flex align-items-center mb-1 text-muted test-repo-checkbox"
+                  onBlur={[Function]}
+                  onFocus={[Function]}
+                  onMouseOut={[Function]}
+                  onMouseOver={[Function]}
+                >
+                  <input
+                    checked={true}
+                    className="sr-only"
+                    disabled={true}
+                    type="checkbox"
+                  />
+                  <Memo(CheckIcon)
+                    aria-hidden={true}
+                    className="trigger-area__checklist-checkbox icon-inline text-success"
+                  />
+                  <span
+                    className="trigger-area__checklist-children--faded"
+                  >
+                    Contains a 
+                    <code>
+                      repo:
+                    </code>
+                     filter
+                  </span>
+                  <span
+                    className="sr-only"
+                  >
+                     
+                    Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search.
+                  </span>
+                  <span
+                    className="d-flex"
+                  >
+                    <Memo(HelpCircleIcon)
+                      aria-hidden={true}
+                      className="trigger-area__checklist-hint icon-inline trigger-area__checklist-hint--faded"
+                    />
+                  </span>
+                  <Tooltip
+                    autohide={true}
+                    innerClassName="trigger-area__checklist-tooltip"
+                    isOpen={false}
+                    placement="bottom"
+                    placementPrefix="bs-tooltip"
+                    target={
+                      Object {
+                        "current": <span
+                          class="d-flex"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            class="mdi-icon trigger-area__checklist-hint icon-inline trigger-area__checklist-hint--faded"
+                            fill="currentColor"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            width="24"
+                          >
+                            <path
+                              d="M15.07,11.25L14.17,12.17C13.45,12.89 13,13.5 13,15H11V14.5C11,13.39 11.45,12.39 12.17,11.67L13.41,10.41C13.78,10.05 14,9.55 14,9C14,7.89 13.1,7 12,7A2,2 0 0,0 10,9H8A4,4 0 0,1 12,5A4,4 0 0,1 16,9C16,9.88 15.64,10.67 15.07,11.25M13,19H11V17H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
+                            />
+                          </svg>
+                        </span>,
+                      }
+                    }
+                    toggle={[Function]}
+                    trigger="hover focus"
+                  >
+                    <TooltipPopoverWrapper
+                      autohide={true}
+                      delay={
+                        Object {
+                          "hide": 50,
+                          "show": 0,
+                        }
+                      }
+                      fade={true}
+                      hideArrow={false}
+                      innerClassName="tooltip-inner trigger-area__checklist-tooltip"
+                      isOpen={false}
+                      placement="bottom"
+                      placementPrefix="bs-tooltip"
+                      popperClassName="tooltip show"
+                      target={
+                        Object {
+                          "current": <span
+                            class="d-flex"
+                          >
+                            <svg
+                              aria-hidden="true"
+                              class="mdi-icon trigger-area__checklist-hint icon-inline trigger-area__checklist-hint--faded"
+                              fill="currentColor"
+                              height="24"
+                              viewBox="0 0 24 24"
+                              width="24"
+                            >
+                              <path
+                                d="M15.07,11.25L14.17,12.17C13.45,12.89 13,13.5 13,15H11V14.5C11,13.39 11.45,12.39 12.17,11.67L13.41,10.41C13.78,10.05 14,9.55 14,9C14,7.89 13.1,7 12,7A2,2 0 0,0 10,9H8A4,4 0 0,1 12,5A4,4 0 0,1 16,9C16,9.88 15.64,10.67 15.07,11.25M13,19H11V17H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
+                              />
+                            </svg>
+                          </span>,
+                        }
+                      }
+                      toggle={[Function]}
+                      trigger="hover focus"
+                    />
+                  </Tooltip>
+                </label>
+              </ValidQueryChecklistItem>
+            </li>
+            <li>
+              <ValidQueryChecklistItem
+                checked={true}
+                className="test-valid-checkbox"
+              >
+                <label
+                  className="d-flex align-items-center mb-1 text-muted test-valid-checkbox"
+                  onBlur={[Function]}
+                  onFocus={[Function]}
+                  onMouseOut={[Function]}
+                  onMouseOver={[Function]}
+                >
+                  <input
+                    checked={true}
+                    className="sr-only"
+                    disabled={true}
+                    type="checkbox"
+                  />
+                  <Memo(CheckIcon)
+                    aria-hidden={true}
+                    className="trigger-area__checklist-checkbox icon-inline text-success"
+                  />
+                  <span
+                    className="trigger-area__checklist-children--faded"
+                  >
+                    Is a valid search query
+                  </span>
+                </label>
+              </ValidQueryChecklistItem>
+            </li>
+          </ul>
         </div>
         <div
           className="trigger-area__query-input-preview-link p-2 my-2"
@@ -59,11 +325,11 @@ exports[`FormTriggerArea Error message is shown when query is invalid 1`] = `
             className="trigger-area__query-input-preview-link-text test-preview-link"
             rel="noopener noreferrer"
             target="_blank"
-            to="/search?q=test&patternType=literal"
+            to="/search?q=test+repo:test&patternType=literal"
           >
             <a
               className="trigger-area__query-input-preview-link-text test-preview-link"
-              href="/search?q=test&patternType=literal"
+              href="/search?q=test+repo:test&patternType=literal"
               rel="noopener noreferrer"
               target="_blank"
             >

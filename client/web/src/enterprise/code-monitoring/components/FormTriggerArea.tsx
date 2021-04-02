@@ -22,10 +22,11 @@ interface TriggerAreaProps {
 
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
 
-const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?: string }> = ({
+const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?: string; className?: string }> = ({
     checked,
     children,
     hint,
+    className,
 }) => {
     const tooltipTarget = useRef<HTMLElement | null>(null)
     const [tooltipOpen, setTooltipOpen] = useState(false)
@@ -35,7 +36,7 @@ const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?
 
     return (
         <label
-            className="d-flex align-items-center mb-1 text-muted"
+            className={classNames('d-flex align-items-center mb-1 text-muted', className)}
             onMouseOver={showTooltip}
             onMouseOut={hideTooltip}
             onFocus={showTooltip}
@@ -211,6 +212,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 <ul className="trigger-area__checklist">
                                     <li>
                                         <ValidQueryChecklistItem
+                                            className="test-type-checkbox"
                                             checked={hasTypeDiffOrCommitFilter}
                                             hint="type:diff targets code present in new commits, while type:commit targets commit messages"
                                         >
@@ -219,6 +221,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     </li>
                                     <li>
                                         <ValidQueryChecklistItem
+                                            className="test-repo-checkbox"
                                             checked={hasRepoFilter}
                                             hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
                                         >
@@ -226,7 +229,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                         </ValidQueryChecklistItem>
                                     </li>
                                     <li>
-                                        <ValidQueryChecklistItem checked={isValidQuery}>
+                                        <ValidQueryChecklistItem checked={isValidQuery} className="test-valid-checkbox">
                                             Is a valid search query
                                         </ValidQueryChecklistItem>
                                     </li>
