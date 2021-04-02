@@ -5,7 +5,7 @@ import {
     SearchResult,
     SearchSuggestionsResult,
     WebGraphQlOperations,
-    SearchContextsResult,
+    AutoDefinedSearchContextsResult,
 } from '../graphql-operations'
 import { Driver, createDriverForTest, percySnapshot } from '../../../shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
@@ -82,8 +82,8 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     RepoGroups: (): RepoGroupsResult => ({
         repoGroups: [],
     }),
-    SearchContexts: (): SearchContextsResult => ({
-        searchContexts: [],
+    AutoDefinedSearchContexts: (): AutoDefinedSearchContextsResult => ({
+        autoDefinedSearchContexts: [],
     }),
 }
 
@@ -576,8 +576,8 @@ describe('Search', () => {
         const testContextForSearchContexts: Partial<WebGraphQlOperations> = {
             ...commonSearchGraphQLResults,
             ...viewerSettingsWithSearchContexts,
-            SearchContexts: () => ({
-                searchContexts: [
+            AutoDefinedSearchContexts: () => ({
+                autoDefinedSearchContexts: [
                     {
                         __typename: 'SearchContext',
                         id: '1',
@@ -637,9 +637,17 @@ describe('Search', () => {
                 () => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown')?.disabled
             )
         test('Search context selected based on URL', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:%40test+test&patternType=regexp')
-            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@test')
+            testContext.overrideGraphQL({
+                ...testContextForSearchContexts,
+                IsSearchContextAvailable: () => ({
+                    isSearchContextAvailable: true,
+                }),
+            })
+            await testContext.waitForGraphQLRequest(async () => {
+                await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
+                await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            }, 'IsSearchContextAvailable')
+            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
         })
 
         test('Missing context param should default to global context', async () => {
@@ -649,11 +657,13 @@ describe('Search', () => {
         })
 
         test('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
-            await driver.page.goto(
-                driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp'
-            )
-            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-            await driver.page.waitForSelector('#monaco-query-input')
+            await testContext.waitForGraphQLRequest(async () => {
+                await driver.page.goto(
+                    driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp'
+                )
+                await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+                await driver.page.waitForSelector('#monaco-query-input')
+            }, 'IsSearchContextAvailable')
             expect(await getSearchFieldValue(driver)).toStrictEqual('context:@unavailableCtx test')
             expect(await isSearchContextDropdownDisabled()).toBeTruthy()
         })
