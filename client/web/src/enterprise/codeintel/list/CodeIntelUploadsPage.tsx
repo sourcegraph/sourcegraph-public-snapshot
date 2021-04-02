@@ -1,8 +1,8 @@
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { of } from 'rxjs'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import {
     FilteredConnection,
     FilteredConnectionFilter,

@@ -1,11 +1,11 @@
-import * as GQL from '../../../../shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { GraphQLClient } from './GraphQlClient'
-import { Driver } from '../../../../shared/src/testing/driver'
-import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
+import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { catchError, map } from 'rxjs/operators'
 import { throwError } from 'rxjs'
 import { Key } from 'ts-key-enum'
-import { PlatformContext } from '../../../../shared/src/platform/context'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     deleteUser,
     getUser,
@@ -17,7 +17,7 @@ import {
     fetchSiteConfiguration,
     updateSiteConfiguration,
 } from './api'
-import { Config } from '../../../../shared/src/testing/config'
+import { Config } from '@sourcegraph/shared/src/testing/config'
 import { ResourceDestructor } from './TestResourceManager'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
@@ -29,9 +29,9 @@ import {
     SiteConfiguration,
 } from '../../schema/site.schema'
 import { first } from 'lodash'
-import { overwriteSettings } from '../../../../shared/src/settings/edit'
-import { retry } from '../../../../shared/src/testing/utils'
-import { asError } from '../../../../shared/src/util/errors'
+import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
+import { retry } from '@sourcegraph/shared/src/testing/utils'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 
 /**
  * Create the user with the specified password. Returns a destructor that destroys the test user. Assumes basic auth.

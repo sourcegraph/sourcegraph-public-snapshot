@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback } from 'react'
 import * as H from 'history'
-import * as GQL from '../../../../shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'

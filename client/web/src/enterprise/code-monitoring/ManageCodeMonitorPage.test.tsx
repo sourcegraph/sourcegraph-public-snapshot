@@ -12,7 +12,7 @@ import {
     MonitorEditTriggerInput,
     MonitorEditActionInput,
     MonitorEmailPriority,
-} from '../../../../shared/src/graphql-operations'
+} from '@sourcegraph/shared/src/graphql-operations'
 
 jest.mock('../../tracking/eventLogger', () => ({
     eventLogger: { logViewEvent: () => undefined },

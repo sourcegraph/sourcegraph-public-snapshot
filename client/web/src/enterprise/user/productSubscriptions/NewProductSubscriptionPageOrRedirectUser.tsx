@@ -1,7 +1,7 @@
 import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { UserSubscriptionsNewProductSubscriptionPage } from './UserSubscriptionsNewProductSubscriptionPage'
-import { ThemeProps } from '../../../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AuthenticatedUser } from '../../../auth'
 
 interface Props extends RouteComponentProps<{}>, ThemeProps {

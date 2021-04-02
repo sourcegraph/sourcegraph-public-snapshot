@@ -6,7 +6,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import { RepoLink } from '../../../../../shared/src/components/RepoLink'
+import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { ExternalServiceKind } from '../../../graphql-operations'
 

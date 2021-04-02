@@ -1,5 +1,5 @@
-import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
-import { isErrorLike } from '../../../shared/src/util/errors'
+import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 /**
  * Returns "true" if search.globbing is set to true in the final settings, "false" otherwise

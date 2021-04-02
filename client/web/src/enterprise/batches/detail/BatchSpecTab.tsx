@@ -1,7 +1,7 @@
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import React, { useMemo } from 'react'
-import { Link } from '../../../../../shared/src/components/Link'
-import { CodeSnippet } from '../../../../../branded/src/components/CodeSnippet'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { BatchChangeFields } from '../../../graphql-operations'
 

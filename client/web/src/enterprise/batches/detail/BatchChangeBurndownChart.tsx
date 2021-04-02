@@ -12,10 +12,10 @@ import {
 } from 'recharts'
 import { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operations'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { queryChangesetCountsOverTime as _queryChangesetCountsOverTime } from './backend'
 import { getYear, parseISO } from 'date-fns'
-import { Toggle } from '../../../../../branded/src/components/Toggle'
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 
 interface Props {
     batchChangeID: Scalars['ID']

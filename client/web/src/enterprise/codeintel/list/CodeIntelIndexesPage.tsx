@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useCallback, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     FilteredConnection,
     FilteredConnectionFilter,

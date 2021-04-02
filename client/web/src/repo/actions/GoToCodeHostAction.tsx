@@ -6,16 +6,16 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { merge, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
-import { PhabricatorIcon } from '../../../../shared/src/components/icons' // TODO: Switch mdi icon
-import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { fetchFileExternalLinks } from '../backend'
-import { RevisionSpec, FileSpec } from '../../../../shared/src/util/url'
+import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
-import { useObservable } from '../../../../shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import { eventLogger } from '../../tracking/eventLogger'
 import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
-import { useLocalStorage } from '../../../../shared/src/util/useLocalStorage'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { RepoHeaderContext } from '../RepoHeader'
 
 interface GoToCodeHostPopoverProps {

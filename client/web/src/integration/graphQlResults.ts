@@ -1,7 +1,7 @@
 import { builtinAuthProvider, siteGQLID, siteID } from './jscontext'
 import { WebGraphQlOperations } from '../graphql-operations'
-import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
-import { testUserID, sharedGraphQlResults } from '../../../shared/src/testing/integration/graphQlResults'
+import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { testUserID, sharedGraphQlResults } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
 /**
  * Predefined results for GraphQL requests that are made on almost every page.

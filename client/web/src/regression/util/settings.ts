@@ -1,6 +1,6 @@
 import { GraphQLClient } from './GraphQlClient'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { mutateSettings } from '../../../../shared/src/settings/edit'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { mutateSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getUser } from './api'
 /**
  * Applies an edit to the user settings for the given username.

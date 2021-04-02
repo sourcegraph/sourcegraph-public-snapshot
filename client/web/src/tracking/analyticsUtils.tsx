@@ -1,7 +1,7 @@
 import { fromEvent, concat, Observable, of } from 'rxjs'
 import { catchError, filter, map, mapTo, publishReplay, refCount, take, timeout } from 'rxjs/operators'
 import { eventLogger } from './eventLogger'
-import { asError } from '../../../shared/src/util/errors'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 import { fromFetch } from 'rxjs/fetch'
 import { IS_CHROME } from '../marketing/util'
 

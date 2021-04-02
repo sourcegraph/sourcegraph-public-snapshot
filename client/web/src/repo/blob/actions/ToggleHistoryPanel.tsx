@@ -3,14 +3,14 @@ import HistoryIcon from 'mdi-react/HistoryIcon'
 import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { ButtonLink } from '../../../../../shared/src/components/LinkOrButton'
+import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import {
     lprToRange,
     parseHash,
     toPositionOrRangeHash,
     toViewStateHashComponent,
-} from '../../../../../shared/src/util/url'
-import { Tooltip } from '../../../../../branded/src/components/tooltip/Tooltip'
+} from '@sourcegraph/shared/src/util/url'
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { BlobPanelTabID } from '../panel/BlobPanel'
 import { RepoHeaderContext } from '../../RepoHeader'

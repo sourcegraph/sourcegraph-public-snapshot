@@ -1,5 +1,5 @@
 import React from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import renderer, { act } from 'react-test-renderer'
 import { UserSubscriptionsProductSubscriptionPage } from './UserSubscriptionsProductSubscriptionPage'
 import { of } from 'rxjs'

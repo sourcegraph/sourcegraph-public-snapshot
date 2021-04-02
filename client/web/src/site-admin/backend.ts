@@ -1,18 +1,18 @@
 import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import { Observable } from 'rxjs'
 import { map, tap, mapTo } from 'rxjs/operators'
-import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
+import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import {
     createInvalidGraphQLMutationResponseError,
     dataOrThrowErrors,
     isErrorGraphQLResult,
     gql,
-} from '../../../shared/src/graphql/graphql'
-import { createAggregateError } from '../../../shared/src/util/errors'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObservable'
+} from '@sourcegraph/shared/src/graphql/graphql'
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { resetAllMemoizationCaches } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
-import { Settings } from '../../../shared/src/settings/settings'
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import {
     UserRepositoriesResult,
     UserRepositoriesVariables,

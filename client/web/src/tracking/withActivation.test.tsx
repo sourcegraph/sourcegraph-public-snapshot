@@ -1,7 +1,7 @@
 import * as util from 'util'
 import * as React from 'react'
 import renderer from 'react-test-renderer'
-import { ActivationProps } from '../../../shared/src/components/activation/Activation'
+import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { withActivation } from './withActivation'
 import { AuthenticatedUser } from '../auth'
 

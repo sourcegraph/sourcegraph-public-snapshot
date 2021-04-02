@@ -1,6 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
-import { Form } from '../../../branded/src/components/Form'
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { PatternTypeProps } from '../search'
 import { AuthenticatedUser } from '../auth'
 import Dialog from '@reach/dialog'

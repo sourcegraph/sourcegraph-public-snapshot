@@ -1,18 +1,18 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { AuthenticatedUser } from '../../auth'
-import { buildSearchURLQuery } from '../../../../shared/src/util/url'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { EventLogResult } from '../backend'
-import { Link } from '../../../../shared/src/components/Link'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LoadingPanelView } from './LoadingPanelView'
 import { Observable } from 'rxjs'
 import { PanelContainer } from './PanelContainer'
 import { SearchPatternType } from '../../graphql-operations'
 import { ShowMoreButton } from './ShowMoreButton'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Timestamp } from '../../components/time/Timestamp'
-import { useObservable } from '../../../../shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 interface RecentSearch {
     count: number

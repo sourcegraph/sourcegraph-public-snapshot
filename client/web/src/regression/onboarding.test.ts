@@ -1,9 +1,9 @@
 import { describe, before, after, test } from 'mocha'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { Driver } from '../../../shared/src/testing/driver'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { GraphQLClient } from './util/GraphQlClient'
 import { getTestTools } from './util/init'
-import { getConfig } from '../../../shared/src/testing/config'
+import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import {
     ensureTestExternalService,
@@ -14,11 +14,11 @@ import {
     getExternalServices,
 } from './util/api'
 import { Key } from 'ts-key-enum'
-import { retry } from '../../../shared/src/testing/utils'
+import { retry } from '@sourcegraph/shared/src/testing/utils'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import { TestResourceManager } from './util/TestResourceManager'
 import delay from 'delay'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 const activationNavBarSelector = '.test-activation-nav-item-toggle'
 

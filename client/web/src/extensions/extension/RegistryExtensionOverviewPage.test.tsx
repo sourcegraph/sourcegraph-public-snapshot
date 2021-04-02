@@ -4,7 +4,7 @@ import { RegistryExtensionOverviewPage } from './RegistryExtensionOverviewPage'
 import { PageTitle } from '../../components/PageTitle'
 import { createMemoryHistory } from 'history'
 import { Router } from 'react-router'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 jest.mock('mdi-react/GithubIcon', () => 'GithubIcon')
 

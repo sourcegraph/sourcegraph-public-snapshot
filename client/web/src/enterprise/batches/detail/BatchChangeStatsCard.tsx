@@ -12,7 +12,7 @@ import {
     ChangesetStatusDraft,
     ChangesetStatusArchived,
 } from './changesets/ChangesetStatusCell'
-import { pluralize } from '../../../../../shared/src/util/strings'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { DiffStat } from '../../../components/diff/DiffStat'
 
 interface BatchChangeStatsCardProps {

@@ -4,7 +4,7 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { requestGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
 import { accessTokenFragment, AccessTokenNode, AccessTokenNodeProps } from '../../../settings/tokens/AccessTokenNode'
@@ -16,7 +16,7 @@ import {
     AccessTokensVariables,
     CreateAccessTokenResult,
 } from '../../../graphql-operations'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 interface Props

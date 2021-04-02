@@ -1,7 +1,7 @@
 import React from 'react'
 import { _fetchRecentSearches } from './utils'
 import { NEVER, of } from 'rxjs'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseISO } from 'date-fns'
 import { RecentSearchesPanel } from './RecentSearchesPanel'
 import { storiesOf } from '@storybook/react'

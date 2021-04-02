@@ -6,7 +6,7 @@ import React, { useEffect, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
-import { RepoLink } from '../../../shared/src/components/RepoLink'
+import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -15,7 +15,7 @@ import {
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { RepositoriesResult, SiteAdminRepositoryFields } from '../graphql-operations'
 
 interface RepositoryNodeProps {

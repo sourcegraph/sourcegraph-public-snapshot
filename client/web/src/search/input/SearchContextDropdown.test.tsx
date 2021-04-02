@@ -5,7 +5,7 @@ import * as H from 'history'
 import { SearchPatternType } from '../../graphql-operations'
 import { Dropdown, DropdownItem, DropdownToggle } from 'reactstrap'
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
-import { ISearchContext } from '../../../../shared/src/graphql/schema'
+import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 
 describe('SearchContextDropdown', () => {
     const defaultProps: SearchContextDropdownProps = {

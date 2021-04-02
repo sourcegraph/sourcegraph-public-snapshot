@@ -3,7 +3,7 @@ import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../.
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import { PreviewActions } from './PreviewActions'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
-import { ChangesetState } from '../../../../../../shared/src/graphql-operations'
+import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
 
 export interface HiddenChangesetApplyPreviewNodeProps {

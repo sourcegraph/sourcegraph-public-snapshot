@@ -7,7 +7,7 @@ import combySample from './samples/comby.batch.yaml'
 import goImportsSample from './samples/go-imports.batch.yaml'
 import minimalSample from './samples/minimal.batch.yaml'
 import classNames from 'classnames'
-import { CodeSnippet } from '../../../../../branded/src/components/CodeSnippet'
+import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 
 interface SampleTabHeaderProps {
     sample: Sample

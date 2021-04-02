@@ -5,9 +5,9 @@ import {
     VisibleChangesetApplyPreviewFields,
     VisibleChangesetSpecFields,
 } from '../../../../graphql-operations'
-import { ThemeProps } from '../../../../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
-import { Link } from '../../../../../../shared/src/components/Link'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { DiffStat } from '../../../../components/diff/DiffStat'
 import { PreviewActions } from './PreviewActions'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'

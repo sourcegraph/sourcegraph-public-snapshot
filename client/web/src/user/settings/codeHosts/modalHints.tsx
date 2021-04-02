@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link } from '../../../../../shared/src/components/Link'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExternalServiceKind } from '../../../graphql-operations'
 
 export const hints: Partial<Record<ExternalServiceKind, React.ReactFragment>> = {

@@ -7,12 +7,12 @@ import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
 import sanitizeHtml from 'sanitize-html'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { highlightNode } from '../../../shared/src/util/dom'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { highlightNode } from '@sourcegraph/shared/src/util/dom'
 import { highlightCode } from '../search/backend'
-import { ThemeProps } from '../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import * as H from 'history'
-import { renderMarkdown } from '../../../shared/src/util/markdown'
+import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 interface SearchResultMatchProps extends ThemeProps {
     item: GQL.ISearchResultMatch

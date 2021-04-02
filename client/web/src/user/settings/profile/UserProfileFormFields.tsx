@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 import { UsernameInput } from '../../../auth/SignInSignUpCommon'
-import * as GQL from '../../../../../shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { UserAvatar } from '../../UserAvatar'
 import { USER_DISPLAY_NAME_MAX_LENGTH } from '../..'
 

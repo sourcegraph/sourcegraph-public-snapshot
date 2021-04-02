@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs'
 import { map, mapTo } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { requestGraphQL } from '../backend/graphql'
 import { SurveyResponse } from './SurveyPage'
 import {

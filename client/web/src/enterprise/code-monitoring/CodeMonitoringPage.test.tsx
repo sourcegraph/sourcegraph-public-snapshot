@@ -7,7 +7,7 @@ import { AuthenticatedUser } from '../../auth'
 import { ListCodeMonitors, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 import sinon from 'sinon'
 import { mockCodeMonitorNodes } from './testing/util'
-import { EMPTY_SETTINGS_CASCADE } from '../../../../shared/src/settings/settings'
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
 jest.mock('../../tracking/eventLogger', () => ({
     eventLogger: { logViewEvent: () => undefined },

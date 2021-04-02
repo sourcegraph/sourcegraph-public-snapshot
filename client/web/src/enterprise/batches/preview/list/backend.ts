@@ -1,5 +1,5 @@
 import { diffStatFields, fileDiffFields } from '../../../../backend/diff'
-import { gql, dataOrThrowErrors } from '../../../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import {
     ChangesetSpecFileDiffsVariables,
     ChangesetSpecFileDiffsResult,

@@ -5,7 +5,7 @@ import { of } from 'rxjs'
 import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
 import { eventLogger } from '../../tracking/eventLogger'
 import sinon from 'sinon'
-import { ISiteUsagePeriod } from '../../../../shared/src/graphql/schema'
+import { ISiteUsagePeriod } from '@sourcegraph/shared/src/graphql/schema'
 import { PageTitle } from '../../components/PageTitle'
 
 describe('SiteAdminOverviewPage', () => {

@@ -1,4 +1,4 @@
-import { Driver } from '../../../../shared/src/testing/driver'
+import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { BoundingBox } from 'puppeteer'
 
 interface ExpectedScreenshot {

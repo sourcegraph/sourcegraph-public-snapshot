@@ -3,10 +3,10 @@ import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
-import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { numberWithCommas } from '../../../../../shared/src/util/strings'
+import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
 import { queryGraphQL } from '../../../backend/graphql'
 import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 import { formatUserCount } from '../../../productSubscription/helpers'
@@ -14,7 +14,7 @@ import { ProductCertificate } from '../../productSubscription/ProductCertificate
 import { TrueUpStatusSummary } from '../../productSubscription/TrueUpStatusSummary'
 import { ErrorAlert } from '../../../components/alerts'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 const queryProductLicenseInfo = (): Observable<{
     productSubscription: GQL.IProductSubscriptionStatus

@@ -3,8 +3,8 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useCallback } from 'react'
 import { Observable, throwError } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
-import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
-import { useEventObservable } from '../../../../../shared/src/util/useObservable'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { CodeMonitorFormProps } from './CodeMonitorForm'
 
 interface DeleteModalProps extends Pick<CodeMonitorFormProps, 'history' | 'codeMonitor'> {

@@ -7,7 +7,7 @@ import {
     UserRepositoriesResult,
     ListExternalServiceFields,
 } from '../../../graphql-operations'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Connection,
     FilteredConnection,
@@ -19,13 +19,13 @@ import { EMPTY, Observable } from 'rxjs'
 import { listUserRepositories } from '../../../site-admin/backend'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { RouteComponentProps } from 'react-router'
-import { Link } from '../../../../../shared/src/components/Link'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { RepositoryNode } from './RepositoryNode'
 import AddIcon from 'mdi-react/AddIcon'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { ErrorAlert } from '../../../components/alerts'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { catchError, map } from 'rxjs/operators'
 
 interface Props extends RouteComponentProps, TelemetryProps {

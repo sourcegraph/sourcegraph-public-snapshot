@@ -1,5 +1,5 @@
 import { CloseBatchChangeResult, CloseBatchChangeVariables } from '../../../graphql-operations'
-import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { requestGraphQL } from '../../../backend/graphql'
 
 export async function closeBatchChange({ batchChange, closeChangesets }: CloseBatchChangeVariables): Promise<void> {

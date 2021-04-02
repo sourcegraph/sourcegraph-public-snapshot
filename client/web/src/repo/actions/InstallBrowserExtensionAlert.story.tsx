@@ -3,7 +3,7 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { WebStory } from '../../components/WebStory'
 import { InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
-import { ExternalServiceKind } from '../../../../shared/src/graphql/schema'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
 
 const onAlertDismissed = action('onAlertDismissed')
 

@@ -5,11 +5,11 @@ import {
     RepoNotFoundError,
     RepoSeeOtherError,
     RevisionNotFoundError,
-} from '../../../shared/src/backend/errors'
-import { FetchFileParameters } from '../../../shared/src/components/CodeExcerpt'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
-import { createAggregateError } from '../../../shared/src/util/errors'
-import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
+} from '@sourcegraph/shared/src/backend/errors'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import {
     AbsoluteRepoFile,
     makeRepoURI,
@@ -17,7 +17,7 @@ import {
     RevisionSpec,
     RepoSpec,
     ResolvedRevisionSpec,
-} from '../../../shared/src/util/url'
+} from '@sourcegraph/shared/src/util/url'
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
     TreeFields,

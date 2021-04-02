@@ -3,7 +3,7 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
-import { Form } from '../../../../../branded/src/components/Form'
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword, createPassword } from '../backend'
@@ -16,11 +16,11 @@ import {
     MinExternalAccountsVariables,
 } from '../../../graphql-operations'
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
-import { Link } from '../../../../../shared/src/components/Link'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SourcegraphContext } from '../../../jscontext'
-import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { requestGraphQL } from '../../../backend/graphql'
-import { ErrorLike, asError } from '../../../../../shared/src/util/errors'
+import { ErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 
 // pick only the fields we need
 type MinExternalAccount = Pick<ExternalAccountFields, 'id' | 'serviceID' | 'serviceType' | 'accountData'>

@@ -1,11 +1,11 @@
 import React, { FormEvent, useCallback, useEffect, useState } from 'react'
 import classNames from 'classnames'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../../../components/PageTitle'
 import { CheckboxRepositoryNode } from './RepositoryNode'
-import { Form } from '../../../../../branded/src/components/Form'
-import { Link } from '../../../../../shared/src/components/Link'
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import {
     ExternalServiceKind,
     ExternalServicesResult,
@@ -17,11 +17,11 @@ import {
     setExternalServiceRepos,
     listAffiliatedRepositories,
 } from '../../../components/externalServices/backend'
-import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
+import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { UserRepositoriesUpdateProps } from '../../../util'
 import { queryUserPublicRepositories, setUserPublicRepositories } from '../../../site-admin/backend'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { PageSelector } from '@sourcegraph/wildcard'
 

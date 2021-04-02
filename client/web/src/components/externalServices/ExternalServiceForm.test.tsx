@@ -6,9 +6,9 @@ import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { noop } from 'rxjs'
-import { ExternalServiceKind } from '../../../../shared/src/graphql/schema'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
 import { ExternalServiceForm } from './ExternalServiceForm'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 describe('ExternalServiceForm', () => {
     const baseProps = {

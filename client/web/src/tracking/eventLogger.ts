@@ -1,5 +1,5 @@
 import * as uuid from 'uuid'
-import { TelemetryService } from '../../../shared/src/telemetry/telemetryService'
+import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParameters } from './analyticsUtils'
 import { serverAdmin } from './services/serverAdminWrapper'
 import cookies from 'js-cookie'

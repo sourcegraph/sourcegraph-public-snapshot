@@ -1,9 +1,9 @@
 import React from 'react'
 import { render } from '@testing-library/react'
 import { StatusBar } from './StatusBar'
-import { StatusBarItemWithKey } from '../../../../shared/src/api/extension/api/codeEditor'
+import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { BehaviorSubject } from 'rxjs'
-import { extensionsController } from '../../../../shared/src/util/searchTestHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 import * as H from 'history'
 
 const LOCATION: H.Location = { hash: '', pathname: '/', search: '', state: undefined }

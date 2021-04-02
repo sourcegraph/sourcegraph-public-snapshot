@@ -4,7 +4,7 @@ import {
     createInvalidGraphQLMutationResponseError,
     dataOrThrowErrors,
     gql,
-} from '../../../../../shared/src/graphql/graphql'
+} from '@sourcegraph/shared/src/graphql/graphql'
 import { requestGraphQL } from '../../../backend/graphql'
 import {
     DeleteLsifIndexResult,

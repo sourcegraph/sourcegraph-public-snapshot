@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 import { UserSettingsCreateAccessTokenPage } from './UserSettingsCreateAccessTokenPage'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'

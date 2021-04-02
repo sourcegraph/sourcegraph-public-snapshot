@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import * as H from 'history'
-import { ThemeProps } from '../../../../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
 import { queryChangesetApplyPreview as _queryChangesetApplyPreview, queryChangesetSpecFileDiffs } from './backend'

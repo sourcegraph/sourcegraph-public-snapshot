@@ -2,20 +2,20 @@ import { createBrowserHistory } from 'history'
 import * as React from 'react'
 import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     MULTIPLE_SEARCH_REQUEST,
     REPO_MATCH_RESULT,
     SEARCH_REQUEST,
-} from '../../../../shared/src/util/searchTestHelpers'
+} from '@sourcegraph/shared/src/util/searchTestHelpers'
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
 import { NEVER, of } from 'rxjs'
-import { SearchPatternType } from '../../../../shared/src/graphql-operations'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../../components/WebStory'
-import { ISearchResults } from '../../../../shared/src/graphql/schema'
+import { ISearchResults } from '@sourcegraph/shared/src/graphql/schema'
 
 const history = createBrowserHistory()
 history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })

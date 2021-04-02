@@ -10,7 +10,7 @@ import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { hints } from './modalHints'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
-import { ErrorLike } from '../../../../../shared/src/util/errors'
+import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
 
 interface CodeHostItemProps {

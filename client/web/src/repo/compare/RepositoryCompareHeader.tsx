@@ -1,6 +1,6 @@
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import * as React from 'react'
-import { Form } from '../../../../branded/src/components/Form'
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 

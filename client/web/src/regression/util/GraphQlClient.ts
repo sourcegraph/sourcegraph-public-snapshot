@@ -1,7 +1,7 @@
-import { GraphQLResult, requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
+import { GraphQLResult, requestGraphQLCommon } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { Observable } from 'rxjs'
-import { PlatformContext } from '../../../../shared/src/platform/context'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 /**
  * A GraphQL client to be used from regression test scripts.

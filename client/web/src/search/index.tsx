@@ -1,14 +1,14 @@
 import { escapeRegExp } from 'lodash'
-import { replaceRange } from '../../../shared/src/util/strings'
-import { discreteValueAliases, escapeSpaces } from '../../../shared/src/search/query/filters'
+import { replaceRange } from '@sourcegraph/shared/src/util/strings'
+import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { VersionContext } from '../schema/site.schema'
-import { SearchPatternType } from '../../../shared/src/graphql-operations'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Observable } from 'rxjs'
-import { ISavedSearch, ISearchContext } from '../../../shared/src/graphql/schema'
+import { ISavedSearch, ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { EventLogResult } from './backend'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
-import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
-import { VersionContextProps } from '../../../shared/src/search/util'
+import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it

@@ -6,12 +6,12 @@ import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileD
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { map, tap } from 'rxjs/operators'
-import { ThemeProps } from '../../../../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Hoverifier } from '@sourcegraph/codeintellify'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../../shared/src/util/url'
-import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover'
-import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
-import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 export interface ChangesetFileDiffProps extends ThemeProps {

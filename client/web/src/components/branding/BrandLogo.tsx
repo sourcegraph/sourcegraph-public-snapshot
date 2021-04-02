@@ -1,5 +1,5 @@
 import React from 'react'
-import { ThemeProps } from '../../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import classNames from 'classnames'
 
 interface Props extends ThemeProps, Exclude<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> {

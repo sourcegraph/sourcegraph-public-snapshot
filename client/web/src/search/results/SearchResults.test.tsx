@@ -9,7 +9,7 @@ import {
     HIGHLIGHTED_FILE_LINES_REQUEST,
     NOOP_SETTINGS_CASCADE,
     OBSERVABLE_SEARCH_REQUEST,
-} from '../../../../shared/src/util/searchTestHelpers'
+} from '@sourcegraph/shared/src/util/searchTestHelpers'
 import { SearchResults, SearchResultsProps } from './SearchResults'
 import { SearchPatternType } from '../../graphql-operations'
 

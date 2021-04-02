@@ -1,35 +1,35 @@
 import React, { useCallback, useMemo, useEffect } from 'react'
 import * as H from 'history'
-import { ThemeProps } from '../../../../../shared/src/theme'
-import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars, ChangesetFields, BatchChangeChangesetsResult } from '../../../graphql-operations'
 import { Subject } from 'rxjs'
 import { FilteredConnectionQueryArguments, FilteredConnection } from '../../../components/FilteredConnection'
 import { repeatWhen, withLatestFrom, filter, map, delay } from 'rxjs/operators'
 import { createHoverifier } from '@sourcegraph/codeintellify'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../shared/src/util/url'
-import { HoverMerged } from '../../../../../shared/src/api/client/types/hover'
-import { ActionItemAction } from '../../../../../shared/src/actions/ActionItem'
-import { isDefined, property } from '../../../../../shared/src/util/types'
+import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import { getHover, getDocumentHighlights } from '../../../backend/features'
 import { getLSPTextDocumentPositionParameters } from '../utils'
-import { getHoverActions } from '../../../../../shared/src/hover/actions'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ChangesetCloseNodeProps, ChangesetCloseNode } from './ChangesetCloseNode'
 import { WebHoverOverlay } from '../../../components/shared'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
 } from '../detail/backend'
-import { ErrorLike } from '../../../../../shared/src/util/errors'
+import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import {
     BatchChangeCloseHeaderWillCloseChangesets,
     BatchChangeCloseHeaderWillKeepChangesets,
 } from './BatchChangeCloseHeader'
 import { CloseChangesetsListEmptyElement } from './CloseChangesetsListEmptyElement'
-import { ChangesetState } from '../../../../../shared/src/graphql-operations'
+import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     batchChangeID: Scalars['ID']

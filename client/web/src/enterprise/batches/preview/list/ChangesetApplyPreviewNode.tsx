@@ -3,7 +3,7 @@ import React from 'react'
 import { ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNode'
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
-import { ThemeProps } from '../../../../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { queryChangesetSpecFileDiffs } from './backend'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 

@@ -6,8 +6,8 @@ import { Subscription } from 'rxjs'
 import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
 import * as _monacoSettingsEditorModule from './MonacoSettingsEditor' // type only
 import { EditorAction } from '../site-admin/configHelpers'
-import { ThemeProps } from '../../../shared/src/theme'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription

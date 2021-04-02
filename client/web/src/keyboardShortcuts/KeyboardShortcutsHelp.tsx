@@ -1,7 +1,7 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
 import React, { useCallback, useState } from 'react'
 import { Modal } from 'reactstrap'
-import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
+import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { KeyboardShortcutsProps } from './keyboardShortcuts'
 
 interface Props extends KeyboardShortcutsProps {

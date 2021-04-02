@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
-import { gql } from '../../../shared/src/graphql/graphql'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { PersonLinkFields } from '../graphql-operations'
 
 export const personLinkFieldsFragment = gql`

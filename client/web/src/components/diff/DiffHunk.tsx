@@ -5,10 +5,10 @@ import {
     decorationAttachmentStyleForTheme,
     DecorationMapByLine,
     decorationStyleForTheme,
-} from '../../../../shared/src/api/extension/api/decorations'
-import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
-import { property, isDefined } from '../../../../shared/src/util/types'
-import { ThemeProps } from '../../../../shared/src/theme'
+} from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { property, isDefined } from '@sourcegraph/shared/src/util/types'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
 
 interface DiffBoundaryProps extends FileDiffHunkFields {
