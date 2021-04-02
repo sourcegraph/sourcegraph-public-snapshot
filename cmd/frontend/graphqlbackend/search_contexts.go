@@ -134,6 +134,8 @@ func (r *schemaResolver) AutoDefinedSearchContexts(ctx context.Context) ([]*sear
 	return searchContextsToResolvers(searchContexts, r.db), nil
 }
 
+// TODO: Create a separate 'UsersSearchContexts' function that returns instance-level search contexts,
+// search contexts owned by the user, and search contexts owned by users organizations (to populate the dropdown).
 func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchContextsArgs) (*searchContextConnection, error) {
 	// Request one extra to determine if there are more pages
 	newArgs := *args
