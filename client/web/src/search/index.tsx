@@ -7,11 +7,7 @@ import { SearchPatternType } from '../../../shared/src/graphql-operations'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { ISavedSearch, ISearchContext } from '../../../shared/src/graphql/schema'
-<<<<<<< HEAD
 import { EventLogResult, isSearchContextAvailable } from './backend'
-=======
-import { EventLogResult, resolveSearchContextSpec } from './backend'
->>>>>>> a77f2f6ea5 (Client is now using paginated API for user-defined search contexts, and non-paginated API for auto-defined search contexts. Moved resolving search contexts to an API call.)
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
 import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
 import { VersionContextProps } from '../../../shared/src/search/util'
