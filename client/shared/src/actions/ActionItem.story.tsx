@@ -5,7 +5,7 @@ import React from 'react'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { ActionItem, ActionItemComponentProps, ActionItemProps } from './ActionItem'
 import { NEVER } from 'rxjs'
-import webStyles from '../../../web/src/SourcegraphWebApp.scss'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { subtypeOf } from '../util/types'
 
 const { add } = storiesOf('shared/ActionItem', module).addDecorator(story => (
