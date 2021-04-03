@@ -5,30 +5,18 @@ import { AxisBottom, AxisLeft } from '@visx/axis'
 import { localPoint } from '@visx/event';
 import { Group} from '@visx/group';
 import { Bar} from '@visx/shape';
-import { Grid } from '@visx/grid';
-import { useTooltip, defaultStyles, TooltipWithBounds } from '@visx/tooltip';
+import { GridRows } from '@visx/grid';
+import { useTooltip, TooltipWithBounds } from '@visx/tooltip';
 import { BarChartContent } from 'sourcegraph';
-import { TextProps } from '@visx/text/lib/Text';
+
 import { onDatumClick } from '../types';
 
-const DEFAULT_MARGIN = { top: 20, right: 20, bottom: 20, left: 40 };
+const DEFAULT_MARGIN = { top: 20, right: 20, bottom: 25, left: 40 };
 
 // Tooltip timeout used below as semaphore to prevent tooltip flashing
 // in case if user is moving mouse fast
 let tooltipTimeout: number;
 
-const tooltipStyles = {
-    ...defaultStyles,
-    minWidth: 60,
-    backgroundColor: 'rgba(0,0,0,0.9)',
-    color: 'white',
-};
-
-const tickLabelStyles = (): Partial<TextProps> => ({
-    fill: 'black',
-    fontSize: 11,
-    textAnchor: 'middle',
-})
 
 // helpers
 // eslint-disable-next-line id-length
@@ -119,14 +107,11 @@ export function BarChart(props: BarChartProps): ReactElement {
             <svg width={width} height={height}>
                 <Group left={DEFAULT_MARGIN.left} top={DEFAULT_MARGIN.top}>
 
-                    <Grid
-                        xScale={xScale}
-                        yScale={yScale}
+                    <GridRows
+                        scale={yScale}
                         width={xMax}
                         height={yMax}
-                        stroke="black"
-                        strokeOpacity={0.1}
-                        xOffset={xScale.bandwidth() / 2}
+                        className='bar-chart__grid'
                     />
 
                     {
@@ -180,25 +165,36 @@ export function BarChart(props: BarChartProps): ReactElement {
                         top={yMax}
                         scale={xScale}
                         tickFormat={formatXLabel}
-                        stroke='black'
-                        tickStroke='black'
-                        tickLabelProps={tickLabelStyles}
+                        axisClassName='bar-chart__axis'
+                        axisLineClassName='bar-chart__axis-line'
+                        tickClassName="bar-chart__axis-tick"
                     />
 
-                    <AxisLeft scale={yScale} />
+                    <AxisLeft
+                        scale={yScale}
+                        axisClassName='bar-chart__axis'
+                        axisLineClassName='bar-chart__axis-line'
+                        tickClassName="bar-chart__axis-tick"
+                    />
                 </Group>
             </svg>
 
             {tooltipOpen && tooltipData && (
                 <TooltipWithBounds
+                    className='bar-chart__tooltip'
                     top={tooltipTop}
-                    left={tooltipLeft}
-                    style={tooltipStyles}>
+                    left={tooltipLeft}>
 
-                    <div>
-                        <strong>{tooltipData.xLabel}</strong>
+                    <div className='bar-chart__tooltip-content'>
+
+                        <strong className='bar-chart__tooltip-name'>
+                            {tooltipData.xLabel}
+                        </strong>
                     </div>
-                    <div>{tooltipData.value}</div>
+
+                    <div className='bar-chart__tooltip-value'>
+                        {tooltipData.value}
+                    </div>
                 </TooltipWithBounds>
             )}
         </div>

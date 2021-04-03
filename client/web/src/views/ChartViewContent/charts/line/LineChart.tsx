@@ -8,7 +8,6 @@ import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip';
 import {
     Axis,
     GlyphSeries,
-    lightTheme,
     LineSeries,
     Tooltip,
     XYChart,
@@ -20,6 +19,7 @@ import { scaleLinear, scaleTime } from '@visx/scale';
 import { GridColumns, GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
 import { GlyphDot } from '@visx/glyph'
+import isValidNumber from '@visx/xychart/lib/typeguards/isValidNumber';
 import { EventHandlerParams } from '@visx/xychart/lib/types';
 
 import { generateAccessors } from './helpers/generate-accessors'
@@ -28,7 +28,7 @@ import { getMinAndMax } from './helpers/get-min-max'
 import { GlyphDotComponent } from './components/GlyphDot'
 import { TooltipContent } from './components/TooltipContent'
 import { onDatumClick } from '../types';
-import isValidNumber from '@visx/xychart/lib/typeguards/isValidNumber';
+import { DEFAULT_LINE_STROKE } from './colors';
 
 // Chart configuration
 const WIDTH_PER_TICK = 70;
@@ -174,7 +174,6 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
     return (
         <div className={rootClasses}>
             <XYChart
-                theme={lightTheme}
                 xScale={scalesConfig.x}
                 yScale={scalesConfig.y}
                 height={height}
@@ -231,7 +230,7 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
                                 strokeWidth={3}
                                 xAccessor={accessors.x}
                                 yAccessor={accessors.y[line.dataKey as string]}
-                                stroke={line.stroke ?? lightTheme.colors[0]}
+                                stroke={line.stroke ?? DEFAULT_LINE_STROKE}
                                 curve={curveLinear}
                             />
 
@@ -304,7 +303,7 @@ export function LineChart(props: LineChartProps): ReactElement {
                         <li key={line.dataKey.toString()} className='line-chart__legend-item'>
 
                             {/* eslint-disable-next-line react/forbid-dom-props */}
-                            <div style={{ backgroundColor: line.stroke }} className='line-chart__legend-mark' />
+                            <div style={{ backgroundColor: line.stroke ?? DEFAULT_LINE_STROKE }} className='line-chart__legend-mark' />
                             {line.name}
                         </li>
                     ))}
