@@ -256,7 +256,7 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
                         <GlyphDot
                             className='line-chart__glyph line-chart__glyph--active'
                             r={8}
-                            fill={activeDatum.line.stroke}
+                            fill={activeDatum.line.stroke ?? DEFAULT_LINE_STROKE}
                             cx={xScale(accessors.x(activeDatum.datum))}
                             cy={yScale(accessors.y[activeDatum.key](activeDatum.datum))}
                         />
