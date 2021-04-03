@@ -1,4 +1,4 @@
-import React, { MouseEventHandler, ReactElement, useCallback } from 'react';
+import React, { MouseEventHandler, PointerEventHandler, ReactElement, useCallback, useMemo, useState } from 'react';
 import classnames from 'classnames';
 import { PieChartContent } from 'sourcegraph';
 import Pie, { PieArcDatum } from '@visx/shape/lib/shapes/Pie';
@@ -30,15 +30,49 @@ export function PieChart(props: PieChartProps): ReactElement | null {
         onDatumClick,
     } = props;
 
+    const [activeArc, setActiveArc] = useState<PieArcDatum<any> | null>(null)
+
     const content = pies[0];
     const { data, dataKey, nameKey, linkURLKey = '', fillKey = '' } = content;
+
+    const sortedData = useMemo(
+        () => {
+            const sortedData = [...data.sort(
+                (first, second) => +first[dataKey] - +second[dataKey])
+            ];
+
+            const result = [];
+
+            while (sortedData.length) {
+                const firstElement = sortedData.shift();
+
+                if (firstElement) {
+                    result.push(firstElement)
+                }
+
+                const lastElement = sortedData.pop();
+
+                if (lastElement) {
+                    result.push(lastElement);
+                }
+            }
+
+            return result;
+        },
+        [data, dataKey]
+    )
 
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
 
-    const radius = Math.min(innerWidth, innerHeight) / 3;
+    const radius = Math.min(innerWidth, innerHeight) / 4;
     const centerY = innerHeight / 2;
     const centerX = innerWidth / 2;
+
+    const sum = useMemo(
+        () => sortedData.reduce((sum, datum) => +sum + datum[dataKey], 0),
+        [sortedData, dataKey]
+    );
 
     // accessor
     const usage = useCallback(
@@ -71,18 +105,22 @@ export function PieChart(props: PieChartProps): ReactElement | null {
             <Group top={centerY + margin.top} left={centerX + margin.left}>
 
                 <Pie
-                    data={data}
+                    data={sortedData}
                     pieValue={usage}
                     outerRadius={radius}
                     cornerRadius={3}
-                    padRadius={30}
+                    pieSort={null}
+                    pieSortValues={null}
+                    padRadius={40}
                 >
                     {pie => (
                         <Group>
                             {
                                 pie.arcs.map(arc => {
                                         const link = getLink(arc);
-                                        const classes = classnames('pie-chart__arc', { 'pie-chart__arc--with-link': link })
+                                        const classes = classnames(
+                                            'pie-chart__arc',
+                                            { 'pie-chart__arc--with-link': link, 'pie-chart__arc--active': activeArc && getKey(arc) === getKey(activeArc) })
 
                                         return (
                                             <PieArc
@@ -90,8 +128,43 @@ export function PieChart(props: PieChartProps): ReactElement | null {
                                                 className={classes}
                                                 arc={arc}
                                                 path={pie.path}
+                                                sum={sum}
                                                 getColor={getFillColor}
                                                 getKey={getKey}
+                                                /* eslint-disable-next-line react/jsx-no-bind */
+                                                onPointerMove={() => setActiveArc(arc)}
+                                                /* eslint-disable-next-line react/jsx-no-bind */
+                                                onClick={event =>
+                                                    onDatumClick({ originEvent: event, link })
+                                                }
+                                            />
+                                        );
+                                    }
+                                )
+                            }
+
+                            {
+                                pie.arcs.map(arc => {
+                                        const link = getLink(arc);
+                                        const classes = classnames(
+                                            'pie-chart__arc',
+                                            {
+                                                'pie-chart__arc--with-link': link,
+                                                'pie-chart__arc--with-annotation-only': !(activeArc && getKey(arc) === getKey(activeArc))
+                                            }
+                                        );
+
+                                        return (
+                                            <PieArc
+                                                key={getKey(arc)}
+                                                className={classes}
+                                                arc={arc}
+                                                path={pie.path}
+                                                sum={sum}
+                                                getColor={getFillColor}
+                                                getKey={getKey}
+                                                /* eslint-disable-next-line react/jsx-no-bind */
+                                                onPointerMove={() => setActiveArc(arc)}
                                                 /* eslint-disable-next-line react/jsx-no-bind */
                                                 onClick={event =>
                                                     onDatumClick({ originEvent: event, link })
@@ -118,10 +191,13 @@ interface PieArcProps<Datum> {
     path: ArcType<any, PieArcDatum<Datum>>;
     arc: PieArcDatum<Datum>;
     onClick: MouseEventHandler
+    sum: number;
+    onPointerMove?: PointerEventHandler;
+    onPointerOut?: PointerEventHandler;
 }
 
 function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
-    const { path, arc, getColor, getKey, className, onClick } = props;
+    const { sum, path, arc, getColor, getKey, className, onClick, onPointerMove, onPointerOut } = props;
     const pathValue = path(arc) ?? '';
     const middleAngle = Math.PI / 2 - (arc.startAngle + ((arc.endAngle - arc.startAngle) / 2));
 
@@ -129,8 +205,8 @@ function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
     const normalX = Math.cos(middleAngle);
     const normalY = Math.sin(-middleAngle);
 
-    const labelX = normalX * (30);
-    const labelY = normalY * (30);
+    const labelX = normalX * (15);
+    const labelY = normalY * (15);
 
     const surfaceX = normalX * (radius + 2);
     const surfaceY = normalY * (radius + 2);
@@ -138,13 +214,17 @@ function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
     return (
         <Group
             className={className}
-            onClick={onClick}>
+            onClick={onClick}
+            onPointerMove={onPointerMove}
+            onPointerOut={onPointerOut}
+        >
 
             <path
                 className='pie-chart__arc-path'
                 d={pathValue}
                 fill={getColor(arc)}
             />
+
             <Annotation
                 x={surfaceX}
                 y={surfaceY}
@@ -157,10 +237,11 @@ function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
 
                 <Label
                     className='pie-chart__label'
-                    showBackground={false}
+                    backgroundPadding={4}
+                    showBackground={true}
                     showAnchorLine={false}
                     title={getKey(arc)}
-                    subtitle={`${arc.value}%`} />
+                    subtitle={`${(100 * arc.value / sum).toFixed(2)}%`}/>
             </Annotation>
 
             <circle

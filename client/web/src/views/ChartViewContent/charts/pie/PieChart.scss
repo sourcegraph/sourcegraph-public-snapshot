@@ -3,6 +3,14 @@
 
     &__arc {
         stroke: var(--body-bg);
+
+        &--with-annotation-only {
+            opacity: 0;
+        }
+
+        &--active {
+            opacity: 0;
+        }
     }
 
     &__arc--with-link {
@@ -20,11 +28,19 @@
     }
 
     &__label {
+        background-color: var(--body-bg);
+
+        rect {
+            fill: var(--body-bg);
+            stroke-width: 1;
+            stroke: var(--border-color);
+        }
 
         text {
             stroke: var(--body-color);
             font-size: 1em !important;
             font-weight: 200 !important;
+            background-color: var(--body-bg);
         }
     }
 }
