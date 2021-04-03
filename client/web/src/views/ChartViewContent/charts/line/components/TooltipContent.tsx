@@ -1,7 +1,9 @@
 import React, { ReactElement } from 'react';
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip';
-import { Accessors } from '../types'
 import { LineChartContent } from 'sourcegraph'
+
+import { Accessors } from '../types'
+import { DEFAULT_LINE_STROKE } from '../colors';
 
 export interface TooltipContentProps extends RenderTooltipParams<any>{
     accessors: Accessors<any, string>;
@@ -44,7 +46,7 @@ export function TooltipContent(props: TooltipContentProps): ReactElement | null 
                               <em
                                   className='line-chart__tooltip-item-name'
                                   style={{
-                                      color: line?.stroke,
+                                      color: line?.stroke ?? DEFAULT_LINE_STROKE,
                                       textDecoration: datumKey === lineKey ? 'underline' : undefined,
                                   }}
                               >

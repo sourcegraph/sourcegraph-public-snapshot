@@ -38,7 +38,7 @@ add('Line chart', () => (
                 {
                     dataKey: 'a',
                     name: 'A metric',
-                    stroke: 'var(--warning)',
+                    // stroke: 'var(--warning)',
                     linkURLs: [
                         '#A:1st_data_point',
                         '#A:2nd_data_point',
