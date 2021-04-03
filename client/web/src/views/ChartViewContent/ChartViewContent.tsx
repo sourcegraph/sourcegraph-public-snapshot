@@ -3,7 +3,9 @@ import { ChartContent } from 'sourcegraph';
 import * as H from 'history';
 import { ParentSize } from '@visx/responsive';
 
-import { createLinkClickHandler } from '../../../../shared/src/components/linkClickHandler'
+import {
+    createProgrammaticallyLinkHandler
+} from '../../../../shared/src/components/linkClickHandler'
 import { eventLogger } from '../../tracking/eventLogger';
 
 import { LineChart } from './charts/line/LineChart';
@@ -24,7 +26,7 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
     const { content, ...otherProps } = props;
 
     const linkHandler = useMemo(() => {
-        const linkHandler = createLinkClickHandler(otherProps.history)
+        const linkHandler = createProgrammaticallyLinkHandler(otherProps.history)
         return (event: DatumClickEvent): void => {
             console.log('Link handler chart view content')
             if (!event.link) {

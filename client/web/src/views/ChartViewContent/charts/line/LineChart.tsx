@@ -125,24 +125,6 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
 
     // Because xychart fires all consumer's handlers twice, we need to debounce our handler
     // Remove debounce when https://github.com/airbnb/visx/issues/1077 will be resolved
-    const handlePointerUp = useDebouncedCallback(
-        (event: EventHandlerParams<any>) => {
-            const line = series.find(line => line.dataKey === event.key);
-
-            // By types from visx/xychart index can be undefined
-            const activeDatumIndex = activeDatum?.index;
-
-            if (!event.event || !line || !isValidNumber(activeDatumIndex)) {
-                return;
-            }
-
-            onDatumClick({
-                originEvent: event.event as MouseEvent<unknown>,
-                link: line?.linkURLs?.[activeDatumIndex],
-            });
-        },
-    );
-
     const handlePointerMove = useDebouncedCallback(
         (event: EventHandlerParams<any>) => {
             const line = series.find(line => line.dataKey === event.key);
@@ -162,6 +144,27 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
 
     const handlePointerOut = useDebouncedCallback(
         () => setActiveDatum(null)
+    );
+
+    const handlePointerUp = useCallback(
+        (event: EventHandlerParams<any>) => {
+            event.event?.persist();
+
+            const line = series.find(line => line.dataKey === event.key);
+
+            // By types from visx/xychart index can be undefined
+            const activeDatumIndex = activeDatum?.index;
+
+            if (!event.event || !line || !isValidNumber(activeDatumIndex)) {
+                return;
+            }
+
+            onDatumClick({
+                originEvent: event.event as MouseEvent<unknown>,
+                link: line?.linkURLs?.[activeDatumIndex],
+            });
+        },
+        [activeDatum?.index, series, onDatumClick]
     );
 
     const activeDatumLink = activeDatum?.line?.linkURLs?.[activeDatum?.index];
