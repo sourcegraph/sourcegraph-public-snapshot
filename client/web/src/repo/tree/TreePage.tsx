@@ -38,7 +38,7 @@ import { pluralize } from '../../../../shared/src/util/strings'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '../../../../shared/src/util/url'
 import { Settings } from '../../schema/settings.schema'
-import { InsightsViewGrid } from '../../insights/components/InsightsViewGrid/InsightsViewGrid'
+import { InsightsViewGrid } from '../../insights/src/components/InsightsViewGrid/InsightsViewGrid'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -48,7 +48,7 @@ import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphq
 import { getFileDecorations } from '../../backend/features'
 import { FileDecorationsByPath } from '../../../../shared/src/api/extension/extensionHostApi'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import { getCombinedViews } from '../../insights/core/backend'
+import { getCombinedViews } from '../../insights/src/core/backend'
 import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
 
 const fetchTreeCommits = memoizeObservable(

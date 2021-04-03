@@ -14,7 +14,7 @@ import { AuthenticatedUser } from '../auth'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringNavItem } from '../code-monitoring/CodeMonitoringNavItem'
-import { InsightsNavItem } from '../insights/components/InsightsNavLink/InsightsNavLink'
+import { InsightsNavItem } from '../insights/src/components/InsightsNavLink/InsightsNavLink'
 import {
     KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,

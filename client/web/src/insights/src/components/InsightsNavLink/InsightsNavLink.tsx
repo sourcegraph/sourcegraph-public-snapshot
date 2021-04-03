@@ -1,5 +1,5 @@
 import React from 'react'
-import { LinkWithIcon } from '../../../components/LinkWithIcon'
+import { LinkWithIcon } from '../../../../components/LinkWithIcon'
 import { InsightsIcon } from '../Icons'
 
 export const InsightsNavItem: React.FunctionComponent = () => (

@@ -1,18 +1,18 @@
 import React, { useEffect, useRef } from 'react'
 import { isObject } from 'lodash'
 import * as H from 'history'
+import { View, MarkupContent } from 'sourcegraph'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { hasProperty } from '@sourcegraph/shared/src/util/types'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
-import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { QueryInputInViewContent } from './QueryInputInViewContent'
-import { View, MarkupContent } from 'sourcegraph'
 import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '../search'
-import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { hasProperty } from '../../../shared/src/util/types'
-import { VersionContextProps } from '../../../shared/src/search/util'
 import { ChartViewContent } from './ChartViewContent/ChartViewContent'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>
     isObject(input) && hasProperty('value')(input) && typeof input.value === 'string'
@@ -46,6 +46,7 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = ({
 }) => {
     // Track user intent to interact with extension-contributed views
     const viewContentReference = useRef<HTMLDivElement>(null)
+
     useEffect(() => {
         let viewContentElement = viewContentReference.current
 

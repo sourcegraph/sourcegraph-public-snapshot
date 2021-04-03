@@ -70,7 +70,7 @@ import { SearchPatternType } from '../../shared/src/graphql-operations'
 import { HTTPStatusError } from '../../shared/src/backend/fetch'
 import { aggregateStreamingSearch } from './search/stream'
 import { ISearchContext } from '../../shared/src/graphql/schema'
-import { logCodeInsightsChanges } from './insights/core/analytics'
+import { logCodeInsightsChanges } from './insights/src/core/analytics'
 import { listUserRepositories } from './site-admin/backend'
 import { NotificationType } from '../../shared/src/api/extension/extensionHostApi'
 

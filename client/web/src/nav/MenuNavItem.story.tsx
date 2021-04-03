@@ -3,7 +3,7 @@ import React from 'react'
 import { WebStory } from '../components/WebStory'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringNavItem } from '../code-monitoring/CodeMonitoringNavItem'
-import { InsightsNavItem } from '../insights/components/InsightsNavLink/InsightsNavLink'
+import { InsightsNavItem } from '../insights/src/components/InsightsNavLink/InsightsNavLink'
 import { MenuNavItem } from './MenuNavItem'
 
 const { add } = storiesOf('web/nav/MenuNavItem', module)
