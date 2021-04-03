@@ -40,12 +40,11 @@ export const createProgrammaticallyLinkHandler = (history: H.History) => (event:
 
     // Do nothing if the link was requested to open in a new tab
     if (event.ctrlKey || event.metaKey) {
-        window.open(url.pathname + url.search + url.hash, '_target')?.focus();
+        window.open(url.origin + url.pathname + url.search + url.hash, '_target')?.focus();
 
         return;
     }
 
     // Handle navigation programmatically
-    event.preventDefault();
     history.push(url.pathname + url.search + url.hash)
 }

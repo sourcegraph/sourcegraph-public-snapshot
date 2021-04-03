@@ -28,7 +28,6 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
     const linkHandler = useMemo(() => {
         const linkHandler = createProgrammaticallyLinkHandler(otherProps.history)
         return (event: DatumClickEvent): void => {
-            console.log('Link handler chart view content')
             if (!event.link) {
                 return
             }
