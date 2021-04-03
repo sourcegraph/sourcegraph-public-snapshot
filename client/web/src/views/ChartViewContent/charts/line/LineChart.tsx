@@ -73,9 +73,8 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
                 zero: false,
             })
 
-            const ticks = scale.ticks(numberOfTicksY);
             const firstTickValue = scale.ticks()[0];
-            const lastTickValue = ticks[ticks.length - 1];
+            const lastTickValue = scale.ticks()[scale.ticks().length - 1];
 
             return ({
                 x: {
@@ -241,7 +240,7 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
                                 dataKey={line.dataKey as string}
                                 data={sortedData}
                                 /* eslint-disable-next-line react/jsx-no-bind */
-                                colorAccessor={() => line.stroke}
+                                colorAccessor={() => line.stroke ?? DEFAULT_LINE_STROKE}
                                 xAccessor={accessors.x}
                                 yAccessor={accessors.y[line.dataKey as string]}
                                 renderGlyph={GlyphDotComponent}

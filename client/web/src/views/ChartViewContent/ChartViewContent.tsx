@@ -2,6 +2,7 @@ import React, { FunctionComponent, useMemo} from 'react';
 import { ChartContent } from 'sourcegraph';
 import * as H from 'history';
 import { ParentSize } from '@visx/responsive';
+import { useDebouncedCallback } from 'use-debounce'
 
 import {
     createProgrammaticallyLinkHandler
@@ -25,20 +26,23 @@ export interface ChartViewContentProps {
 export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props => {
     const { content, ...otherProps } = props;
 
-    const linkHandler = useMemo(() => {
-        const linkHandler = createProgrammaticallyLinkHandler(otherProps.history)
-        return (event: DatumClickEvent): void => {
-            if (!event.link) {
-                return
-            }
+    // Because xychart fires all consumer's handlers twice, we need to debounce our handler
+    // Remove debounce when https://github.com/airbnb/visx/issues/1077 will be resolved
+    const linkHandler = useDebouncedCallback(
+        useMemo(() => {
+            const linkHandler = createProgrammaticallyLinkHandler(otherProps.history)
+            return (event: DatumClickEvent): void => {
+                if (!event.link) {
+                    return
+                }
 
-            eventLogger.log('InsightDataPointClick', { insightType: otherProps.viewID.split('.')[0] })
-            linkHandler(event.originEvent, event.link)
-        }
-    }, [otherProps.history, otherProps.viewID])
+                eventLogger.log('InsightDataPointClick', { insightType: otherProps.viewID.split('.')[0] })
+                linkHandler(event.originEvent, event.link)
+            }
+        }, [otherProps.history, otherProps.viewID])
+    )
 
     return (
-
         <div className="chart-view-content" >
             <ParentSize className='chart-view-content__chart'>
                 {
@@ -70,45 +74,3 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
         </div>
     );
 }
-
-// interface CartesianChartViewContentProps extends ChartViewContentProps {
-//     content: LineChartContent<any, string> | BarChartContent<any, string>;
-// }
-//
-// export const CartesianChartViewContent: FunctionComponent<CartesianChartViewContentProps> = props => {
-//     const { chart, ...content } = props.content;
-//
-//     const ChartComponent = chart === 'line' ? LineChart : BarChart
-//
-//     return (
-//         <div className="chart-view-content" >
-//             <ParentSize className='chart-view-content__chart'>
-//                 {
-//                     ({ width, height}) =>
-//                         <ChartComponent
-//                             {...content}
-//                             width={width}
-//                             height={height}
-//                             onDatumClick={}
-//                         />
-//                 }
-//             </ParentSize>
-//         </div>
-//     );
-// };
-//
-// interface PieChartViewContentProps extends ChartViewContentProps {
-//     content: PieChartContent<any>
-// }
-//
-// export const PieChartViewContent: FunctionComponent<PieChartViewContentProps> = props => {
-//     const { content } = props;
-//
-//     return (
-//         <div className="chart-view-content" >
-//             <ParentSize className='chart-view-content__chart'>
-//                 { ({ width, height}) => <PieChart width={width} height={height} {...content} /> }
-//             </ParentSize>
-//         </div>
-//     );
-// };
