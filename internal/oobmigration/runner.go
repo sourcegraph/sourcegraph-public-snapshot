@@ -269,7 +269,7 @@ func updateProgress(ctx context.Context, store storeIface, migration *Migration,
 		return err
 	}
 
-	fmt.Printf("> %.2f\n", progress*100)
+	fmt.Printf("[%s] > %.2f\n", time.Now().Format(time.RFC3339), progress*100)
 	migration.Progress = progress
 	return nil
 }

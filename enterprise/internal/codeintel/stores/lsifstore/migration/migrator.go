@@ -316,5 +316,5 @@ WHERE
 	schema_version = %s
 ORDER BY dump_id
 LIMIT %s
-FOR UPDATE SKIP LOCKED;
+FOR UPDATE SKIP LOCKED
 `
