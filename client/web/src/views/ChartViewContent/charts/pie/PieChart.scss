@@ -1,12 +1,9 @@
 
 .pie-chart {
 
+    // Arcs
     &__arc {
         stroke: var(--body-bg);
-
-        &--with-annotation-only {
-            opacity: 0;
-        }
 
         &--active {
             opacity: 0;
@@ -17,30 +14,36 @@
         cursor: pointer;
     }
 
-    &__label-line, &__label-circle {
-        stroke: var(--body-color);
-        fill: var(--body-color);
-    }
-
     &__arc-path {
         stroke-width: 1;
         stroke: var(--body-bg);
     }
 
+    // Labels
     &__label {
         background-color: var(--body-bg);
 
+        // We don't have access to this element to add our own class
+        // that's why we relay on tag name here.
         rect {
             fill: var(--body-bg);
             stroke-width: 1;
             stroke: var(--border-color);
         }
+    }
 
-        text {
-            stroke: var(--body-color);
-            font-size: 1em !important;
-            font-weight: 200 !important;
-            background-color: var(--body-bg);
-        }
+    &__label-title {
+        stroke: var(--body-color);
+        font-weight: 200 !important;
+        background-color: var(--body-bg);
+    }
+
+    &__label-sub-title {
+        stroke: var(--text-muted);
+    }
+
+    &__label-line, &__label-circle {
+        stroke: var(--body-color);
+        fill: var(--body-color);
     }
 }

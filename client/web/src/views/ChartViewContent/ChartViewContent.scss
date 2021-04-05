@@ -5,8 +5,7 @@
 .chart-view-content {
     height: 100%;
     width: 100%;
-    // Fix for Safari char rendering
-    position: absolute;
+    position: relative;
 
     &__chart {
         // stretch chart over all parent block
