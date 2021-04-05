@@ -14,33 +14,25 @@ import { onDatumClick } from '../types';
 const DEFAULT_MARGIN = { top: 20, right: 20, bottom: 25, left: 40 };
 
 // Tooltip timeout used below as semaphore to prevent tooltip flashing
-// in case if user is moving mouse fast
+// in case if user is moving mouse very fast between bars
 let tooltipTimeout: number;
 
-
-// helpers
-// eslint-disable-next-line id-length
+// eslint-disable-next-line id-length, @typescript-eslint/no-unsafe-assignment
 const range = (rangeLength: number): number[] => [...new Array(rangeLength)].map((_, index) => index);
-
-type Accessor<Datum> = (d: Datum) => number | string;
-
-// Compose together the scale and accessor functions to get point functions
-function compose<Datum>(scale: any, accessor: Accessor<Datum>) { return  (data: Datum) => scale(accessor(data));}
 
 interface TooltipData {
     xLabel: string;
     value: number;
 }
 
-interface BarChartProps extends Omit<BarChartContent<any, string>, 'chart'> {
+interface BarChartProps<Datum extends object> extends Omit<BarChartContent<Datum, keyof Datum>, 'chart'> {
     width: number;
     height: number;
     onDatumClick: onDatumClick
 }
 
-export function BarChart(props: BarChartProps): ReactElement {
-
-    const { width, height, data, series, onDatumClick } = props;
+export function BarChart<Datum extends object>(props: BarChartProps<Datum>): ReactElement {
+    const { width, height, data, series, onDatumClick, xAxis: { dataKey: xDataKey } } = props;
 
     // Respect only first element of data series
     // Refactor this in case if we need support stacked bar chart
@@ -60,13 +52,13 @@ export function BarChart(props: BarChartProps): ReactElement {
 
     // Accessors
     const yAccessor = useCallback(
-        (data: any) => data[dataKey],
+        (data: Datum): number => +data[dataKey],
         [dataKey]
     );
 
     const formatXLabel = useCallback(
-        index => data[index].name,
-        [data]
+        (index: number): string => data[index][xDataKey] as unknown as string,
+        [data, xDataKey]
     );
 
     // And then scale the graph by our data
@@ -89,8 +81,6 @@ export function BarChart(props: BarChartProps): ReactElement {
             }),
         [yMax, data, yAccessor]
     );
-
-    const yPoint = useMemo(() => compose(yScale, yAccessor), [yScale, yAccessor]);
 
     // handlers
     const handleMouseLeave = useCallback(
@@ -116,7 +106,7 @@ export function BarChart(props: BarChartProps): ReactElement {
 
                     {
                         data.map((datum, index) => {
-                            const barHeight = yMax - (yPoint(datum) ?? 0);
+                            const barHeight = yMax - (yScale(yAccessor(datum)) ?? 0);
                             const link = linkURLs?.[index];
                             const classes =  classnames(
                                 'bar-chart__bar',

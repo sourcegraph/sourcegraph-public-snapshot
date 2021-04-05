@@ -15,7 +15,6 @@ import {
 
 import { format } from 'd3-format';
 import { timeFormat } from 'd3-time-format'
-import { scaleLinear, scaleTime } from '@visx/scale';
 import { GridColumns, GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
 import { GlyphDot } from '@visx/glyph'
@@ -23,97 +22,73 @@ import isValidNumber from '@visx/xychart/lib/typeguards/isValidNumber';
 import { EventHandlerParams } from '@visx/xychart/lib/types';
 
 import { generateAccessors } from './helpers/generate-accessors'
-import { getRangeWithPadding } from './helpers/get-range-with-padding'
-import { getMinAndMax } from './helpers/get-min-max'
 import { GlyphDotComponent } from './components/GlyphDot'
 import { TooltipContent } from './components/TooltipContent'
 import { onDatumClick } from '../types';
 import { DEFAULT_LINE_STROKE } from './colors';
+import { useScales } from './helpers/use-scales';
+import { GridScale } from '@visx/grid/lib/types';
 
 // Chart configuration
 const WIDTH_PER_TICK = 70;
 const HEIGHT_PER_TICK = 40;
 const MARGIN = { top: 10, left: 30, bottom: 20, right: 20 };
+const SCALES_CONFIG = {
+    x: {
+        type: 'time' as const,
+        nice: true
+    },
+    y: {
+        type: 'linear' as const,
+        nice: true,
+        zero: false,
+        clamp: true,
+    }
+}
 
 // Formatters
 const dateFormatter = timeFormat('%d %b');
 const formatDate = (date: Date): string => dateFormatter(date);
 
-export interface LineChartProps extends Omit<LineChartContent<any, string>, 'chart'> {
+export interface LineChartProps<Datum extends object> extends Omit<LineChartContent<Datum, keyof Datum>, 'chart'> {
     width: number;
     height: number;
     onDatumClick: onDatumClick;
 }
 
-function LineChartContentComponent(props: LineChartProps): ReactElement {
+function LineChartContentComponent<Datum extends object>(props: LineChartProps<Datum>): ReactElement {
     const { width, height, data, series, xAxis, onDatumClick } = props;
 
-    // derived
+    // Derived
     const innerWidth = width - MARGIN.left - MARGIN.right;
     const innerHeight = height - MARGIN.top - MARGIN.bottom;
 
-    const numberOfTicks = Math.max(1, Math.floor(innerWidth / WIDTH_PER_TICK))
+    const numberOfTicksX = Math.max(1, Math.floor(innerWidth / WIDTH_PER_TICK))
     const numberOfTicksY = Math.max(1, Math.floor(innerHeight / HEIGHT_PER_TICK))
 
     const sortedData = useMemo(
         () => data.sort(
-            (firstDatum, secondDatum) => firstDatum[xAxis.dataKey] - secondDatum[xAxis.dataKey]
+            (firstDatum, secondDatum) =>
+                +firstDatum[xAxis.dataKey] - +secondDatum[xAxis.dataKey]
         ),
         [data, xAxis]
     );
-    const accessors = useMemo(
-        () => generateAccessors(xAxis, series),
-        [xAxis, series]
-    );
-    const scalesConfig = useMemo(
-        () => {
-            const scale = scaleLinear({
-                domain: getRangeWithPadding(getMinAndMax(sortedData, accessors), 0.3),
-                nice: true,
-                zero: false,
-            })
+    const accessors = useMemo(() => generateAccessors(xAxis, series), [xAxis, series]);
 
-            const firstTickValue = scale.ticks()[0];
-            const lastTickValue = scale.ticks()[scale.ticks().length - 1];
-
-            return ({
-                x: {
-                    type: 'time' as const,
-                    nice: true
-                },
-                y: {
-                    type: 'linear' as const,
-                    domain: [firstTickValue, lastTickValue],
-                    nice: false,
-                    zero: false,
-                    round: false,
-                    clamp: true,
-                }
-            })
-        },
-        [accessors, sortedData, numberOfTicksY]
-    );
-
-    const xScale = useMemo(
-        () => scaleTime({
-                nice: true,
-                range: [0, innerWidth],
-                domain: [accessors.x(sortedData[0]), accessors.x(sortedData[sortedData.length - 1])]
-            }),
-        [accessors, sortedData, innerWidth]
-    );
-
-    const yScale = useMemo(
-        () => scaleLinear({...scalesConfig.y, range: [innerHeight, 0]}),
-        [scalesConfig.y, innerHeight]
-    );
+    const { config: scalesConfig, xScale, yScale } = useScales({
+        config: SCALES_CONFIG,
+        data: sortedData,
+        width: innerWidth,
+        height: innerHeight,
+        accessors
+    });
 
     // state
-    const [activeDatum, setActiveDatum] = useState<EventHandlerParams<any> & { line: LineChartProps['series'][number] } | null>(null);
+    const [activeDatum, setActiveDatum] = useState<EventHandlerParams<Datum> & { line: LineChartProps<Datum>['series'][number] } | null>(null);
 
     // callbacks
     const renderTooltip = useCallback(
-        (renderProps: RenderTooltipParams<any>) =>
+        (renderProps: RenderTooltipParams<Datum>) =>
             <TooltipContent
                 {...renderProps}
                 accessors={accessors}
@@ -125,7 +100,7 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
     // Because xychart fires all consumer's handlers twice, we need to debounce our handler
     // Remove debounce when https://github.com/airbnb/visx/issues/1077 will be resolved
     const handlePointerMove = useDebouncedCallback(
-        (event: EventHandlerParams<any>) => {
+        (event: EventHandlerParams<Datum>) => {
             const line = series.find(line => line.dataKey === event.key);
 
             if (!line) {
@@ -145,26 +120,38 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
         () => setActiveDatum(null)
     );
 
-    const handlePointerUp = useCallback(
-        (event: EventHandlerParams<any>) => {
-            event.event?.persist();
+    // Because xychart fires all consumer's handlers twice, we need to debounce our handler
+    // Remove debounce when https://github.com/airbnb/visx/issues/1077 will be resolved
+    const handlePointerUpDebounced = useDebouncedCallback(
+        (info: EventHandlerParams<Datum>) => {
 
-            const line = series.find(line => line.dataKey === event.key);
+            const line = series.find(line => line.dataKey === info.key);
 
             // By types from visx/xychart index can be undefined
             const activeDatumIndex = activeDatum?.index;
 
-            if (!event.event || !line || !isValidNumber(activeDatumIndex)) {
+            if (!info.event || !line || !isValidNumber(activeDatumIndex)) {
                 return;
             }
 
             onDatumClick({
-                originEvent: event.event as MouseEvent<unknown>,
+                originEvent: info.event as MouseEvent<unknown>,
                 link: line?.linkURLs?.[activeDatumIndex],
             });
-        },
-        [activeDatum?.index, series, onDatumClick]
+        }
     );
+
+    // If we pass delayed callback to handle pointer event we will lose event object
+    // due reusing event object by react between event handlers. So we have to have sync handler
+    // just to preserve event object by event.persist()
+    const handlePointerUpSync = useCallback(
+        (info: EventHandlerParams<Datum>) => {
+            info.event?.persist();
+
+            handlePointerUpDebounced(info);
+        },
+        [handlePointerUpDebounced]
+    )
 
     const activeDatumLink = activeDatum?.line?.linkURLs?.[activeDatum?.index];
 
@@ -183,22 +170,22 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
                 captureEvents={true}
                 margin={MARGIN}
                 onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
+                onPointerUp={handlePointerUpSync}
                 onPointerOut={handlePointerOut}
             >
 
                 <Group top={MARGIN.top} left={MARGIN.left}>
 
                     <GridRows
-                        scale={yScale}
+                        scale={yScale as GridScale}
                         numTicks={numberOfTicksY}
                         width={innerWidth}
                         className='line-chart__grid-line'
                     />
 
                     <GridColumns
-                        scale={xScale}
-                        numTicks={numberOfTicks}
+                        scale={xScale as GridScale}
+                        numTicks={numberOfTicksX}
                         height={innerHeight}
                         className='line-chart__grid-line'
                     />
@@ -206,9 +193,9 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
 
                 <Axis
                     orientation="bottom"
-                    tickValues={xScale.ticks(numberOfTicks)}
+                    tickValues={xScale.ticks(numberOfTicksX)}
                     tickFormat={formatDate}
-                    numTicks={numberOfTicks}
+                    numTicks={numberOfTicksX}
                     axisClassName='line-chart__axis'
                     axisLineClassName='line-chart__axis-line'
                     tickClassName="line-chart__axis-tick"
@@ -277,8 +264,7 @@ function LineChartContentComponent(props: LineChartProps): ReactElement {
     );
 }
 
-export function LineChart(props: LineChartProps): ReactElement {
-
+export function LineChart<Datum extends object>(props: LineChartProps<Datum>): ReactElement {
     const { width, height, ...otherProps } = props;
     const hasLegend = props.series.every(line => !!line.name);
 

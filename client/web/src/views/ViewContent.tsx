@@ -1,16 +1,16 @@
 import React, { useEffect, useRef } from 'react'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { renderMarkdown } from '../../../shared/src/util/markdown'
-import { MarkupKind } from '@sourcegraph/extension-api-classes'
+import { isObject } from 'lodash'
 import * as H from 'history'
+import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
+
+import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { QueryInputInViewContent } from './QueryInputInViewContent'
 import { View, MarkupContent } from 'sourcegraph'
 import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '../search'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { hasProperty } from '../../../shared/src/util/types'
-import { isObject } from 'lodash'
 import { VersionContextProps } from '../../../shared/src/search/util'
-// import { ChartViewContent } from './ChartViewContent'
 import { ChartViewContent } from './ChartViewContent/ChartViewContent'
 import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
@@ -98,7 +98,13 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = ({
                         )}
                     </React.Fragment>
                 ) : 'chart' in content ? (
-                    <ChartViewContent key={index} content={content} viewID={viewID} history={props.history} />
+                    <ChartViewContent
+                        key={index}
+                        content={content}
+                        viewID={viewID}
+                        history={props.history}
+                        className='view-content__chart'
+                    />
                 ) : content.component === 'QueryInput' ? (
                     <QueryInputInViewContent
                         {...props}
