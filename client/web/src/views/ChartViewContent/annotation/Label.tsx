@@ -1,156 +1,150 @@
-import React, { useContext, useMemo } from 'react';
-import cx from 'classnames';
-import Group from '@visx/group/lib/Group';
-import Text, { TextProps } from '@visx/text/lib/Text';
-import useMeasure, { Options as UseMeasureOptions } from 'react-use-measure';
+import React, { useContext, useMemo } from 'react'
+import cx from 'classnames'
+import Group from '@visx/group/lib/Group'
+import Text, { TextProps } from '@visx/text/lib/Text'
+import useMeasure, { Options as UseMeasureOptions } from 'react-use-measure'
 import { AnnotationContext } from '@visx/annotation'
 
 export type LabelProps = {
     /** Stroke color of anchor line. */
-    anchorLineStroke?: string;
+    anchorLineStroke?: string
     /** Background color of label. */
-    backgroundFill?: string;
+    backgroundFill?: string
     /** Padding of text from background. */
-    backgroundPadding?: number | { top?: number; right?: number; bottom?: number; left?: number };
+    backgroundPadding?: number | { top?: number; right?: number; bottom?: number; left?: number }
     /** Additional props to be passed to background SVGRectElement. */
-    backgroundProps?: React.SVGProps<SVGRectElement>;
+    backgroundProps?: React.SVGProps<SVGRectElement>
     /** Optional className to apply to container in addition to 'visx-annotation-label'. */
-    className?: string;
+    className?: string
     /** Color of title and subtitle text. */
-    fontColor?: string;
+    fontColor?: string
     /** Whether the label is horizontally anchored to the start, middle, or end of its x position. */
-    horizontalAnchor?: TextProps['textAnchor'];
+    horizontalAnchor?: TextProps['textAnchor']
     /** Optionally inject a ResizeObserver polyfill, else this *must* be globally available. */
-    resizeObserverPolyfill?: UseMeasureOptions['polyfill'];
+    resizeObserverPolyfill?: UseMeasureOptions['polyfill']
     /** Whether to render a line indicating label text anchor. */
-    showAnchorLine?: boolean;
+    showAnchorLine?: boolean
     /** Whether to render a label background. */
-    showBackground?: boolean;
+    showBackground?: boolean
     /** Optional subtitle. */
-    subtitle?: string;
+    subtitle?: string
     /** Optional title font size. */
-    subtitleFontSize?: TextProps['fontSize'];
+    subtitleFontSize?: TextProps['fontSize']
     /** Optional title font weight. */
-    subtitleFontWeight?: TextProps['fontWeight'];
+    subtitleFontWeight?: TextProps['fontWeight']
     /** The vertical offset of the subtitle from the title. */
-    subtitleDy?: number;
+    subtitleDy?: number
     /** Optional subtitle Text props (to override color, etc.). */
-    subtitleProps?: Partial<TextProps>;
+    subtitleProps?: Partial<TextProps>
     /** Optional title. */
-    title?: string;
+    title?: string
     /** Optional title font size. */
-    titleFontSize?: TextProps['fontSize'];
+    titleFontSize?: TextProps['fontSize']
     /** Optional title font weight. */
-    titleFontWeight?: TextProps['fontWeight'];
+    titleFontWeight?: TextProps['fontWeight']
     /** Optional title Text props (to override color, etc.). */
-    titleProps?: Partial<TextProps>;
+    titleProps?: Partial<TextProps>
     /** Whether the label is vertically anchored to the start, middle, or end of its y position. */
-    verticalAnchor?: TextProps['verticalAnchor'];
+    verticalAnchor?: TextProps['verticalAnchor']
     /** Width of annotation, including background, for text wrapping. */
-    width?: number;
+    width?: number
     /** Left offset of entire AnnotationLabel, if not specified uses x + dx from Annotation. */
-    x?: number;
+    x?: number
     /** Top offset of entire AnnotationLabel, if not specified uses y + dy from Annotation. */
-    y?: number;
-};
+    y?: number
+}
 
-const DEFAULT_PADDING = { top: 12, right: 12, bottom: 12, left: 12 };
+const DEFAULT_PADDING = { top: 12, right: 12, bottom: 12, left: 12 }
 
 function getCompletePadding(padding: LabelProps['backgroundPadding']) {
-    if (typeof padding === 'undefined') return DEFAULT_PADDING;
+    if (typeof padding === 'undefined') return DEFAULT_PADDING
     if (typeof padding === 'number') {
-        return { top: padding, right: padding, bottom: padding, left: padding };
+        return { top: padding, right: padding, bottom: padding, left: padding }
     }
-    return { ...DEFAULT_PADDING, ...padding };
+    return { ...DEFAULT_PADDING, ...padding }
 }
 
 // This component is a fork of Lable component from @visx/annotaion package
 // Replace this component by original when https://github.com/airbnb/visx/issues/1126 will be resolved
 export function Label({
-                          anchorLineStroke = '#222',
-                          backgroundFill = '#eaeaea',
-                          backgroundPadding,
-                          backgroundProps,
-                          className,
-                          fontColor = '#222',
-                          horizontalAnchor: propsHorizontalAnchor,
-                          resizeObserverPolyfill,
-                          showAnchorLine = true,
-                          showBackground = true,
-                          subtitle,
-                          subtitleDy = 4,
-                          subtitleFontSize = 12,
-                          subtitleFontWeight = 200,
-                          subtitleProps,
-                          title,
-                          titleFontSize = 16,
-                          titleFontWeight = 600,
-                          titleProps,
-                          verticalAnchor: propsVerticalAnchor,
-                          width: propWidth,
-                          x: propsX,
-                          y: propsY,
-                      }: LabelProps) {
+    anchorLineStroke = '#222',
+    backgroundFill = '#eaeaea',
+    backgroundPadding,
+    backgroundProps,
+    className,
+    fontColor = '#222',
+    horizontalAnchor: propsHorizontalAnchor,
+    resizeObserverPolyfill,
+    showAnchorLine = true,
+    showBackground = true,
+    subtitle,
+    subtitleDy = 4,
+    subtitleFontSize = 12,
+    subtitleFontWeight = 200,
+    subtitleProps,
+    title,
+    titleFontSize = 16,
+    titleFontWeight = 600,
+    titleProps,
+    verticalAnchor: propsVerticalAnchor,
+    width: propWidth,
+    x: propsX,
+    y: propsY,
+}: LabelProps) {
     // we must measure the rendered title + subtitle to compute container height
-    const [titleRef, titleBounds] = useMeasure({ polyfill: resizeObserverPolyfill });
-    const [subtitleRef, subtitleBounds] = useMeasure({ polyfill: resizeObserverPolyfill });
+    const [titleRef, titleBounds] = useMeasure({ polyfill: resizeObserverPolyfill })
+    const [subtitleRef, subtitleBounds] = useMeasure({ polyfill: resizeObserverPolyfill })
 
-    const padding = useMemo(() => getCompletePadding(backgroundPadding), [backgroundPadding]);
+    const padding = useMemo(() => getCompletePadding(backgroundPadding), [backgroundPadding])
 
     // if props are provided, they take precedence over context
-    const { x = 0, y = 0, dx = 0, dy = 0 } = useContext(AnnotationContext);
-    const height = Math.floor(
-        padding.top + padding.bottom + (titleBounds.height ?? 0) + (subtitleBounds.height ?? 0),
-    );
+    const { x = 0, y = 0, dx = 0, dy = 0 } = useContext(AnnotationContext)
+    const height = Math.floor(padding.top + padding.bottom + (titleBounds.height ?? 0) + (subtitleBounds.height ?? 0))
 
-    const measuredWidth = padding.right + padding.left + Math.max(
-        titleBounds.width ?? 0 ,
-        subtitleBounds.width ?? 0
-    );
-    const width = propWidth ?? measuredWidth;
-    const innerWidth = (width ?? measuredWidth) - padding.left - padding.right;
+    const measuredWidth = padding.right + padding.left + Math.max(titleBounds.width ?? 0, subtitleBounds.width ?? 0)
+    const width = propWidth ?? measuredWidth
+    const innerWidth = (width ?? measuredWidth) - padding.left - padding.right
 
     // offset container position based on horizontal + vertical anchor
     const horizontalAnchor =
-        propsHorizontalAnchor || (Math.abs(dx) < Math.abs(dy) ? 'middle' : dx > 0 ? 'start' : 'end');
-    const verticalAnchor =
-        propsVerticalAnchor || (Math.abs(dx) > Math.abs(dy) ? 'middle' : dy > 0 ? 'start' : 'end');
+        propsHorizontalAnchor || (Math.abs(dx) < Math.abs(dy) ? 'middle' : dx > 0 ? 'start' : 'end')
+    const verticalAnchor = propsVerticalAnchor || (Math.abs(dx) > Math.abs(dy) ? 'middle' : dy > 0 ? 'start' : 'end')
 
     const containerCoords = useMemo(() => {
-        let adjustedX: number = propsX == null ? x + dx : propsX;
-        let adjustedY: number = propsY == null ? y + dy : propsY;
+        let adjustedX: number = propsX == null ? x + dx : propsX
+        let adjustedY: number = propsY == null ? y + dy : propsY
 
-        if (horizontalAnchor === 'middle') adjustedX -= width / 2;
-        if (horizontalAnchor === 'end') adjustedX -= width;
-        if (verticalAnchor === 'middle') adjustedY -= height / 2;
-        if (verticalAnchor === 'end') adjustedY -= height;
+        if (horizontalAnchor === 'middle') adjustedX -= width / 2
+        if (horizontalAnchor === 'end') adjustedX -= width
+        if (verticalAnchor === 'middle') adjustedY -= height / 2
+        if (verticalAnchor === 'end') adjustedY -= height
 
-        return { x: adjustedX, y: adjustedY };
-    }, [propsX, x, dx, propsY, y, dy, horizontalAnchor, verticalAnchor, width, height]);
+        return { x: adjustedX, y: adjustedY }
+    }, [propsX, x, dx, propsY, y, dy, horizontalAnchor, verticalAnchor, width, height])
 
-    const titleFontFamily = titleProps?.fontFamily;
+    const titleFontFamily = titleProps?.fontFamily
     const titleStyle = useMemo(
         () => ({
             fontSize: titleFontSize,
             fontWeight: titleFontWeight,
             fontFamily: titleFontFamily,
         }),
-        [titleFontSize, titleFontWeight, titleFontFamily],
-    ) as React.CSSProperties;
+        [titleFontSize, titleFontWeight, titleFontFamily]
+    ) as React.CSSProperties
 
-    const subtitleFontFamily = subtitleProps?.fontFamily;
+    const subtitleFontFamily = subtitleProps?.fontFamily
     const subtitleStyle = useMemo(
         () => ({
             fontSize: subtitleFontSize,
             fontWeight: subtitleFontWeight,
             fontFamily: subtitleFontFamily,
         }),
-        [subtitleFontSize, subtitleFontWeight, subtitleFontFamily],
-    ) as React.CSSProperties;
+        [subtitleFontSize, subtitleFontWeight, subtitleFontFamily]
+    ) as React.CSSProperties
 
-    const anchorLineOrientation = Math.abs(dx) > Math.abs(dy) ? 'vertical' : 'horizontal';
+    const anchorLineOrientation = Math.abs(dx) > Math.abs(dy) ? 'vertical' : 'horizontal'
 
-    const backgroundOutline = showAnchorLine ? { stroke: anchorLineStroke, strokeWidth: 2 } : null;
+    const backgroundOutline = showAnchorLine ? { stroke: anchorLineStroke, strokeWidth: 2 } : null
 
     return !title && !subtitle ? null : (
         <Group
@@ -219,5 +213,5 @@ export function Label({
                 </Text>
             )}
         </Group>
-    );
+    )
 }

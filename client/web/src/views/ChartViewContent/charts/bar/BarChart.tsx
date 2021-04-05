@@ -1,68 +1,66 @@
-import React, { ReactElement, useCallback, useMemo } from 'react';
-import classnames from 'classnames';
-import { scaleBand, scaleLinear } from '@visx/scale';
+import React, { ReactElement, useCallback, useMemo } from 'react'
+import classnames from 'classnames'
+import { scaleBand, scaleLinear } from '@visx/scale'
 import { AxisBottom, AxisLeft } from '@visx/axis'
-import { localPoint } from '@visx/event';
-import { Group} from '@visx/group';
-import { Bar} from '@visx/shape';
-import { GridRows } from '@visx/grid';
-import { useTooltip, TooltipWithBounds } from '@visx/tooltip';
-import { BarChartContent } from 'sourcegraph';
+import { localPoint } from '@visx/event'
+import { Group } from '@visx/group'
+import { Bar } from '@visx/shape'
+import { GridRows } from '@visx/grid'
+import { useTooltip, TooltipWithBounds } from '@visx/tooltip'
+import { BarChartContent } from 'sourcegraph'
 
-import { onDatumClick } from '../types';
+import { onDatumClick } from '../types'
 
-const DEFAULT_MARGIN = { top: 20, right: 20, bottom: 25, left: 40 };
+const DEFAULT_MARGIN = { top: 20, right: 20, bottom: 25, left: 40 }
 
 // Tooltip timeout used below as semaphore to prevent tooltip flashing
 // in case if user is moving mouse very fast between bars
-let tooltipTimeout: number;
+let tooltipTimeout: number
 
 // eslint-disable-next-line id-length, @typescript-eslint/no-unsafe-assignment
-const range = (rangeLength: number): number[] => [...new Array(rangeLength)].map((_, index) => index);
+const range = (rangeLength: number): number[] => [...new Array(rangeLength)].map((_, index) => index)
 
 interface TooltipData {
-    xLabel: string;
-    value: number;
+    xLabel: string
+    value: number
 }
 
 interface BarChartProps<Datum extends object> extends Omit<BarChartContent<Datum, keyof Datum>, 'chart'> {
-    width: number;
-    height: number;
+    width: number
+    height: number
     onDatumClick: onDatumClick
 }
 
 export function BarChart<Datum extends object>(props: BarChartProps<Datum>): ReactElement {
-    const { width, height, data, series, onDatumClick, xAxis: { dataKey: xDataKey } } = props;
+    const {
+        width,
+        height,
+        data,
+        series,
+        onDatumClick,
+        xAxis: { dataKey: xDataKey },
+    } = props
 
     // Respect only first element of data series
     // Refactor this in case if we need support stacked bar chart
-    const { dataKey, fill, linkURLs } = series[0];
+    const { dataKey, fill, linkURLs } = series[0]
 
-    const xMax = width - DEFAULT_MARGIN.left - DEFAULT_MARGIN.right;
-    const yMax = height - DEFAULT_MARGIN.top - DEFAULT_MARGIN.bottom;
+    const xMax = width - DEFAULT_MARGIN.left - DEFAULT_MARGIN.right
+    const yMax = height - DEFAULT_MARGIN.top - DEFAULT_MARGIN.bottom
 
-    const {
-        tooltipOpen,
-        tooltipLeft,
-        tooltipTop,
-        tooltipData,
-        hideTooltip,
-        showTooltip,
-    } = useTooltip<TooltipData>();
+    const { tooltipOpen, tooltipLeft, tooltipTop, tooltipData, hideTooltip, showTooltip } = useTooltip<TooltipData>()
 
     // Accessors
-    const yAccessor = useCallback(
-        (data: Datum): number => +data[dataKey],
-        [dataKey]
-    );
+    const yAccessor = useCallback((data: Datum): number => +data[dataKey], [dataKey])
 
-    const formatXLabel = useCallback(
-        (index: number): string => data[index][xDataKey] as unknown as string,
-        [data, xDataKey]
-    );
+    const formatXLabel = useCallback((index: number): string => (data[index][xDataKey] as unknown) as string, [
+        data,
+        xDataKey,
+    ])
 
     // And then scale the graph by our data
-    const xScale = useMemo(() =>
+    const xScale = useMemo(
+        () =>
             scaleBand({
                 range: [0, xMax],
                 round: true,
@@ -70,9 +68,10 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                 padding: 0.2,
             }),
         [xMax, data]
-    );
+    )
 
-    const yScale = useMemo(() =>
+    const yScale = useMemo(
+        () =>
             scaleLinear({
                 range: [yMax, 0],
                 round: true,
@@ -80,113 +79,90 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                 domain: [0, Math.max(...data.map(yAccessor))],
             }),
         [yMax, data, yAccessor]
-    );
+    )
 
     // handlers
-    const handleMouseLeave = useCallback(
-        () => {
-            tooltipTimeout = window.setTimeout(() => {
-                hideTooltip();
-            }, 300);
-        },
-        [hideTooltip]
-    );
+    const handleMouseLeave = useCallback(() => {
+        tooltipTimeout = window.setTimeout(() => {
+            hideTooltip()
+        }, 300)
+    }, [hideTooltip])
 
     return (
-        <div className='bar-chart'>
+        <div className="bar-chart">
             <svg width={width} height={height}>
                 <Group left={DEFAULT_MARGIN.left} top={DEFAULT_MARGIN.top}>
+                    <GridRows scale={yScale} width={xMax} height={yMax} className="bar-chart__grid" />
 
-                    <GridRows
-                        scale={yScale}
-                        width={xMax}
-                        height={yMax}
-                        className='bar-chart__grid'
-                    />
+                    {data.map((datum, index) => {
+                        const barHeight = yMax - (yScale(yAccessor(datum)) ?? 0)
+                        const link = linkURLs?.[index]
+                        const classes = classnames('bar-chart__bar', { 'bar-chart__bar--with-link': link })
 
-                    {
-                        data.map((datum, index) => {
-                            const barHeight = yMax - (yScale(yAccessor(datum)) ?? 0);
-                            const link = linkURLs?.[index];
-                            const classes =  classnames(
-                                'bar-chart__bar',
-                                { 'bar-chart__bar--with-link': link }
-                            );
+                        return (
+                            <Group key={`bar-${index}`}>
+                                <Bar
+                                    className={classes}
+                                    x={xScale(index)}
+                                    y={yMax - barHeight}
+                                    height={barHeight}
+                                    width={xScale.bandwidth()}
+                                    fill={fill}
+                                    /* eslint-disable-next-line react/jsx-no-bind */
+                                    onClick={event => {
+                                        const link = linkURLs?.[index]
 
-                            return (
-                                <Group key={`bar-${index}`}>
+                                        onDatumClick({ originEvent: event, link })
+                                    }}
+                                    onMouseLeave={handleMouseLeave}
+                                    // In this case we have to use arrow function because we need
+                                    // get access to index and current datum within onMouseMove handler
+                                    /* eslint-disable-next-line react/jsx-no-bind */
+                                    onMouseMove={event => {
+                                        if (tooltipTimeout) {
+                                            clearTimeout(tooltipTimeout)
+                                        }
 
-                                    <Bar
-                                        className={classes}
-                                        x={xScale(index)}
-                                        y={yMax - barHeight}
-                                        height={barHeight}
-                                        width={xScale.bandwidth()}
-                                        fill={fill}
-                                        /* eslint-disable-next-line react/jsx-no-bind */
-                                        onClick={event => {
-                                            const link = linkURLs?.[index];
+                                        const rectangle = localPoint(event)
 
-                                            onDatumClick({ originEvent: event, link })
-                                        }}
-                                        onMouseLeave={handleMouseLeave}
-
-                                        // In this case we have to use arrow function because we need
-                                        // get access to index and current datum within onMouseMove handler
-                                        /* eslint-disable-next-line react/jsx-no-bind */
-                                        onMouseMove={event => {
-                                            if (tooltipTimeout) { clearTimeout(tooltipTimeout); }
-
-                                            const rectangle = localPoint(event);
-
-                                            showTooltip({
-                                                tooltipData: { xLabel: formatXLabel(index), value: yAccessor(datum) },
-                                                tooltipTop: rectangle?.y,
-                                                tooltipLeft:  rectangle?.x,
-                                            });
-                                        }}
-                                    />
-                                </Group>
-                            );
-                        })
-                    }
+                                        showTooltip({
+                                            tooltipData: { xLabel: formatXLabel(index), value: yAccessor(datum) },
+                                            tooltipTop: rectangle?.y,
+                                            tooltipLeft: rectangle?.x,
+                                        })
+                                    }}
+                                />
+                            </Group>
+                        )
+                    })}
 
                     <AxisBottom
                         top={yMax}
                         scale={xScale}
                         tickFormat={formatXLabel}
-                        axisClassName='bar-chart__axis'
-                        axisLineClassName='bar-chart__axis-line'
+                        axisClassName="bar-chart__axis"
+                        axisLineClassName="bar-chart__axis-line"
                         tickClassName="bar-chart__axis-tick"
                     />
 
                     <AxisLeft
                         scale={yScale}
-                        axisClassName='bar-chart__axis'
-                        axisLineClassName='bar-chart__axis-line'
+                        axisClassName="bar-chart__axis"
+                        axisLineClassName="bar-chart__axis-line"
                         tickClassName="bar-chart__axis-tick"
                     />
                 </Group>
             </svg>
 
             {tooltipOpen && tooltipData && (
-                <TooltipWithBounds
-                    className='bar-chart__tooltip'
-                    top={tooltipTop}
-                    left={tooltipLeft}>
-
-                    <div className='bar-chart__tooltip-content'>
-
-                        <strong className='bar-chart__tooltip-name'>
-                            {tooltipData.xLabel}
-                        </strong>
+                <TooltipWithBounds className="bar-chart__tooltip" top={tooltipTop} left={tooltipLeft}>
+                    <div className="bar-chart__tooltip-content">
+                        <strong className="bar-chart__tooltip-name">{tooltipData.xLabel}</strong>
                     </div>
 
-                    <div className='bar-chart__tooltip-value'>
-                        {tooltipData.value}
-                    </div>
+                    <div className="bar-chart__tooltip-value">{tooltipData.value}</div>
                 </TooltipWithBounds>
             )}
         </div>
-    );
+    )
 }
