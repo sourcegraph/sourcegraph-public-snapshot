@@ -27,9 +27,8 @@ type Predicate interface {
 
 var DefaultPredicateRegistry = predicateRegistry{
 	FieldRepo: {
-		"contains": func() Predicate {
-			return &RepoContainsPredicate{}
-		},
+		"contains":              func() Predicate { return &RepoContainsPredicate{} },
+		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 	},
 }
 
@@ -50,7 +49,7 @@ func (pr predicateRegistry) Get(field, name string) Predicate {
 }
 
 var (
-	predicateRegexp = regexp.MustCompile(`^(?P<name>[a-z]+)\((?P<params>.*)\)$`)
+	predicateRegexp = regexp.MustCompile(`^(?P<name>[a-z\.]+)\((?P<params>.*)\)$`)
 	nameIndex       = predicateRegexp.SubexpIndex("name")
 	paramsIndex     = predicateRegexp.SubexpIndex("params")
 )
@@ -139,6 +138,33 @@ func (f *RepoContainsPredicate) Plan(parent Basic) (Plan, error) {
 			Value: f.Content,
 		})
 	}
+
+	nodes = append(nodes, nonPredicateRepos(parent)...)
+	return ToPlan(Dnf(nodes))
+}
+
+type RepoContainsCommitAfterPredicate struct {
+	TimeRef string
+}
+
+func (f *RepoContainsCommitAfterPredicate) ParseParams(params string) error {
+	f.TimeRef = params
+	return nil
+}
+
+func (f RepoContainsCommitAfterPredicate) Field() string { return FieldRepo }
+func (f RepoContainsCommitAfterPredicate) Name() string {
+	return "contains.commit.after"
+}
+func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
+	nodes := make([]Node, 0, 3)
+	nodes = append(nodes, Parameter{
+		Field: FieldCount,
+		Value: "99999",
+	}, Parameter{
+		Field: FieldRepoHasCommitAfter,
+		Value: f.TimeRef,
+	})
 
 	nodes = append(nodes, nonPredicateRepos(parent)...)
 	return ToPlan(Dnf(nodes))

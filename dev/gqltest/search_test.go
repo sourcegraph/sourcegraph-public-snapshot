@@ -991,6 +991,21 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:  `repo:sg(test)`,
 				counts: counts{Repo: 6},
 			},
+			{
+				`repo has commit after`,
+				`repo:go-diff repo:contains.commit.after(10 years ago)`,
+				counts{Repo: 1},
+			},
+			{
+				`repo has commit after no results`,
+				`repo:go-diff repo:contains.commit.after(1 second ago)`,
+				counts{Repo: 0},
+			},
+			{
+				`unscoped repo has commit after no results`,
+				`repo:contains.commit.after(1 second ago)`,
+				counts{Repo: 0},
+			},
 		}
 
 		for _, test := range tests {
