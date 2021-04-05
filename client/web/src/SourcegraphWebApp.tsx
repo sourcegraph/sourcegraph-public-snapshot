@@ -74,6 +74,7 @@ import { ISearchContext } from '../../shared/src/graphql/schema'
 import { logCodeInsightsChanges } from './insights/analytics'
 import { listUserRepositories } from './site-admin/backend'
 import { NotificationType } from '../../shared/src/api/extension/extensionHostApi'
+import { REDESIGN_CLASS_NAME, REDESIGN_TOGGLE_KEY } from './nav/RedesignToggle'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -298,6 +299,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         updateUserSessionStores()
 
         document.documentElement.classList.add('theme')
+
+        if (process.env.NODE_ENV === 'development' && localStorage.getItem(REDESIGN_TOGGLE_KEY) === 'true') {
+            document.documentElement.classList.add(REDESIGN_CLASS_NAME)
+        }
 
         this.subscriptions.add(
             combineLatest([from(this.platformContext.settings), authenticatedUser.pipe(startWith(null))]).subscribe(

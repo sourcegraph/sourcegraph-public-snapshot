@@ -113,6 +113,7 @@
     "@storybook/addon-links": "^6.1.11",
     "@storybook/addon-storyshots": "^6.1.11",
     "@storybook/addon-storyshots-puppeteer": "^6.1.11",
+    "@storybook/addon-toolbars": "6.1.21",
     "@storybook/addons": "^6.1.11",
     "@storybook/components": "^6.1.11",
     "@storybook/core": "^6.1.11",
