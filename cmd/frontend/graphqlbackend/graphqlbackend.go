@@ -605,25 +605,26 @@ type schemaResolver struct {
 	CodeMonitorsResolver
 	LicenseResolver
 
-	RepoUpdaterClient *repoupdater.Client
-
-	db dbutil.DB
+	db                dbutil.DB
+	repoupdaterClient *repoupdater.Client
 }
 
-func newSchemaResolver(db dbutil.DB, repoUpdaterClient *repoupdater.Client) *schemaResolver {
-	if repoUpdaterClient == nil {
-		repoUpdaterClient = repoupdater.DefaultClient
+// newSchemaResolver will return a new schemaResolver. If repoupdaterClient is nil, then it will use
+// repoupdater.DefaultClient instead.
+func newSchemaResolver(db dbutil.DB, repoupdaterClient *repoupdater.Client) *schemaResolver {
+	if repoupdaterClient == nil {
+		repoupdaterClient = repoupdater.DefaultClient
 	}
 
 	return &schemaResolver{
-		db: db,
+		db:                db,
+		repoupdaterClient: repoupdaterClient,
 
 		BatchChangesResolver: defaultBatchChangesResolver{},
 		AuthzResolver:        defaultAuthzResolver{},
 		CodeIntelResolver:    defaultCodeIntelResolver{},
 		InsightsResolver:     defaultInsightsResolver{},
 		LicenseResolver:      defaultLicenseResolver{},
-		RepoUpdaterClient:    repoUpdaterClient,
 	}
 }
 
