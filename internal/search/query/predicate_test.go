@@ -43,6 +43,8 @@ func TestRepoContainsPredicate(t *testing.T) {
 
 		invalid := []test{
 			{`empty`, ``, nil},
+			{`negated file`, `-file:test`, nil},
+			{`negated content`, `-content:test`, nil},
 		}
 
 		for _, tc := range invalid {

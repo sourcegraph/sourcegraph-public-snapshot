@@ -96,6 +96,9 @@ func (f *RepoContainsPredicate) ParseParams(params string) error {
 func (f *RepoContainsPredicate) parseNode(n Node) error {
 	switch v := n.(type) {
 	case Parameter:
+		if v.Negated {
+			return errors.New("predicates do not currently support negated values")
+		}
 		switch strings.ToLower(v.Field) {
 		case "file":
 			if f.File != "" {
@@ -111,13 +114,16 @@ func (f *RepoContainsPredicate) parseNode(n Node) error {
 			return fmt.Errorf("unsupported option %q", v.Field)
 		}
 	case Pattern:
+		if v.Negated {
+			return errors.New("predicates do not currently support negated values")
+		}
 		if f.Content != "" {
 			return errors.New("cannot specify content multiple times")
 		}
 		f.Content = v.Value
 	case Operator:
 		if v.Kind == Or {
-			return errors.New("predicates do not currently support or queries")
+			return errors.New("predicates do not currently support 'or' queries")
 		}
 		for _, operand := range v.Operands {
 			if err := f.parseNode(operand); err != nil {
