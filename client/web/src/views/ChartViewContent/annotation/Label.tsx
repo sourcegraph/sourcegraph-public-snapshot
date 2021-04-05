@@ -57,7 +57,9 @@ export interface LabelProps {
 const DEFAULT_PADDING = { top: 12, right: 12, bottom: 12, left: 12 }
 
 function getCompletePadding(padding: LabelProps['backgroundPadding']): typeof DEFAULT_PADDING {
-    if (typeof padding === 'undefined') {return DEFAULT_PADDING}
+    if (typeof padding === 'undefined') {
+        return DEFAULT_PADDING
+    }
     if (typeof padding === 'number') {
         return { top: padding, right: padding, bottom: padding, left: padding }
     }
@@ -115,10 +117,18 @@ export function Label({
         let adjustedX: number = propsX === undefined ? x + dx : propsX
         let adjustedY: number = propsY === undefined ? y + dy : propsY
 
-        if (horizontalAnchor === 'middle') {adjustedX -= width / 2}
-        if (horizontalAnchor === 'end') {adjustedX -= width}
-        if (verticalAnchor === 'middle') {adjustedY -= height / 2}
-        if (verticalAnchor === 'end') {adjustedY -= height}
+        if (horizontalAnchor === 'middle') {
+            adjustedX -= width / 2
+        }
+        if (horizontalAnchor === 'end') {
+            adjustedX -= width
+        }
+        if (verticalAnchor === 'middle') {
+            adjustedY -= height / 2
+        }
+        if (verticalAnchor === 'end') {
+            adjustedY -= height
+        }
 
         return { x: adjustedX, y: adjustedY }
     }, [propsX, x, dx, propsY, y, dy, horizontalAnchor, verticalAnchor, width, height])
