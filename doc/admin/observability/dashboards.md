@@ -1203,6 +1203,18 @@ A 0 value indicates that no migration is in progress.
 
 <br />
 
+### Postgres: Invalid indexes
+
+#### postgres: invalid_index
+
+This panel indicates invalid indexes.
+
+This value indicates the factor by which a table`s overhead outweighs its minimum overhead.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
 ### Postgres: Table bloat (dead tuples / live tuples)
 
 #### postgres: codeintel_commit_graph_db_bloat

@@ -174,3 +174,25 @@ pg_database:
         - size_bytes:
               usage: "GAUGE"
               description: "Disk space used by the database"
+
+pg_invalid_index:
+    query: |
+        SELECT
+            current_database() AS datname,
+            pc.relname AS relname,
+            1 AS count
+        FROM pg_class pc
+        JOIN pg_index pi ON pi.indexrelid = pc.oid
+        WHERE
+            NOT indisvalid AND
+            NOT EXISTS (SELECT 1 FROM pg_stat_progress_create_index pci WHERE pci.index_relid = pi.indexrelid)
+    metrics:
+        - datname:
+              usage: "LABEL"
+              description: "Name of current database"
+        - relname:
+              usage: "LABEL"
+              description: "Name of the index"
+        - count:
+              usage: "COUNTER"
+              description: "Test"

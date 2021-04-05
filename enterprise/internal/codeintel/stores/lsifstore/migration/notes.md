@@ -2,9 +2,9 @@
 
 | table_schema | table_name              | row_estimate  | total  | index  | toast  | table   |
 | ------------ | ----------------------- | ------------- | ------ | ------ | ------ | ------- |
-| public       | lsif_data_references    | 4.4469523e+08 | 765 GB | 83 GB  | 432 GB | 250 GB  |
 | public       | lsif_data_definitions   | 3.077555e+08  | 230 GB | 68 GB  | 186 MB | 162 GB  |
 | public       | lsif_data_documents     | 1.1777075e+07 | 145 GB | 793 MB | 141 GB | 3159 MB |
+| public       | lsif_data_references    | 4.4469523e+08 | 765 GB | 83 GB  | 432 GB | 250 GB  |
 | public       | lsif_data_result_chunks | 4.878871e+06  | 64 GB  | 105 MB | 64 GB  | 284 MB  |
 
 # Original query
@@ -56,9 +56,10 @@ CREATE INDEX lsif_data_definitions_dump_id_schema_version ON lsif_data_definitio
 
 Time: 673473.870 ms (11:13.474)
 
-| table_schema | table_name            | row_estimate | total  | index | toast  | table  |
-| ------------ | --------------------- | ------------ | ------ | ----- | ------ | ------ |
-| public       | lsif_data_definitions | 3.077555e+08 | 236 GB | 74 GB | 186 MB | 162 GB |
+| table_schema | table_name            | row_estimate  | total  | index | toast  | table  |
+| ------------ | --------------------- | ------------- | ------ | ----- | ------ | ------ |
+| public       | lsif_data_definitions | 3.077555e+08  | 236 GB | 74 GB | 186 MB | 162 GB |
+| public       | lsif_data_references  | 4.2517418e+08 | 774 GB | 92 GB | 432 GB | 250 GB |
 
 Original query:
 

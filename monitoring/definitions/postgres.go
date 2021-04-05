@@ -100,6 +100,32 @@ func Postgres() *monitoring.Container {
 				},
 			},
 			{
+				Title:  "Invalid indexes",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						monitoring.Observable{
+							Name:        "invalid_index",
+							Description: "invalid indexes",
+							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Query:       "max by (relname)(pg_invalid_index_count)",
+							Panel:       monitoring.Panel().LegendFormat("{{relname}}"),
+							// TODO(efritz) - re-enable this after we correctly tune autovacuum daemon or have
+							// docs specifying our recommended settings.
+							// Critical:    monitoring.Alert().GreaterOrEqual(bloatThreshold, nil).For(5 * time.Minute),
+							// PossibleSolutions: `
+							// 	- Run ANALYZE on the table to correct its statistics
+							// 	- Run VACUUM on the table manually to remove dead tuples
+							// 	- Run VACUUM FULL on the table manually to remove all dead tuples (requires an exclusive table lock)
+							// 	- Reconfigure the Postgres autovacuum daemon with additional resources
+							// `,
+							NoAlert:        true,
+							Interpretation: "This value indicates the factor by which a table's overhead outweighs its minimum overhead.",
+						},
+					},
+				},
+			},
+			{
 				Title:  "Table bloat (dead tuples / live tuples)",
 				Hidden: true,
 				Rows: []monitoring.Row{
