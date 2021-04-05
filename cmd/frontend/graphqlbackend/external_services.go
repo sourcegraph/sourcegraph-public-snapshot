@@ -88,7 +88,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	}
 
 	res := &externalServiceResolver{db: r.db, externalService: externalService}
-	if err := syncExternalService(ctx, externalService, 5*time.Second, r.RepoUpdaterClient); err != nil {
+	if err := syncExternalService(ctx, externalService, 5*time.Second, r.repoupdaterClient); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
 
@@ -150,7 +150,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	}
 
 	res := &externalServiceResolver{db: r.db, externalService: es}
-	if err = syncExternalService(ctx, es, 5*time.Second, r.RepoUpdaterClient); err != nil {
+	if err = syncExternalService(ctx, es, 5*time.Second, r.repoupdaterClient); err != nil {
 		res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
 	}
 
@@ -236,7 +236,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 	// The user doesn't care if triggering syncing failed when deleting a
 	// service, so kick off in the background.
 	go func() {
-		if err := syncExternalService(context.Background(), es, 5*time.Second, r.RepoUpdaterClient); err != nil {
+		if err := syncExternalService(context.Background(), es, 5*time.Second, r.repoupdaterClient); err != nil {
 			log15.Warn("Performing final sync after external service deletion", "err", err)
 		}
 	}()
