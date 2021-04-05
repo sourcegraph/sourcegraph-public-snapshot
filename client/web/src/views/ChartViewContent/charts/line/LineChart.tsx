@@ -267,8 +267,8 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
             <ul className="line-chart__legend">
                 {props.series.map(line => (
                     <li key={line.dataKey.toString()} className="line-chart__legend-item">
-                        {/* eslint-disable-next-line react/forbid-dom-props */}
                         <div
+                            /* eslint-disable-next-line react/forbid-dom-props */
                             style={{ backgroundColor: line.stroke ?? DEFAULT_LINE_STROKE }}
                             className="line-chart__legend-mark"
                         />

@@ -1,11 +1,11 @@
-import React, { useContext, useMemo } from 'react'
-import cx from 'classnames'
+import React, { ReactElement, useContext, useMemo } from 'react'
+import classnames from 'classnames'
 import Group from '@visx/group/lib/Group'
 import Text, { TextProps } from '@visx/text/lib/Text'
 import useMeasure, { Options as UseMeasureOptions } from 'react-use-measure'
 import { AnnotationContext } from '@visx/annotation'
 
-export type LabelProps = {
+export interface LabelProps {
     /** Stroke color of anchor line. */
     anchorLineStroke?: string
     /** Background color of label. */
@@ -56,8 +56,8 @@ export type LabelProps = {
 
 const DEFAULT_PADDING = { top: 12, right: 12, bottom: 12, left: 12 }
 
-function getCompletePadding(padding: LabelProps['backgroundPadding']) {
-    if (typeof padding === 'undefined') return DEFAULT_PADDING
+function getCompletePadding(padding: LabelProps['backgroundPadding']): typeof DEFAULT_PADDING {
+    if (typeof padding === 'undefined') {return DEFAULT_PADDING}
     if (typeof padding === 'number') {
         return { top: padding, right: padding, bottom: padding, left: padding }
     }
@@ -87,22 +87,23 @@ export function Label({
     titleFontWeight = 600,
     titleProps,
     verticalAnchor: propsVerticalAnchor,
-    width: propWidth,
+    width: propertyWidth,
     x: propsX,
     y: propsY,
-}: LabelProps) {
+}: LabelProps): ReactElement | null {
     // we must measure the rendered title + subtitle to compute container height
-    const [titleRef, titleBounds] = useMeasure({ polyfill: resizeObserverPolyfill })
-    const [subtitleRef, subtitleBounds] = useMeasure({ polyfill: resizeObserverPolyfill })
+    const [titleReference, titleBounds] = useMeasure({ polyfill: resizeObserverPolyfill })
+    const [subtitleReference, subtitleBounds] = useMeasure({ polyfill: resizeObserverPolyfill })
 
     const padding = useMemo(() => getCompletePadding(backgroundPadding), [backgroundPadding])
 
     // if props are provided, they take precedence over context
+    // eslint-disable-next-line id-length
     const { x = 0, y = 0, dx = 0, dy = 0 } = useContext(AnnotationContext)
     const height = Math.floor(padding.top + padding.bottom + (titleBounds.height ?? 0) + (subtitleBounds.height ?? 0))
 
     const measuredWidth = padding.right + padding.left + Math.max(titleBounds.width ?? 0, subtitleBounds.width ?? 0)
-    const width = propWidth ?? measuredWidth
+    const width = propertyWidth ?? measuredWidth
     const innerWidth = (width ?? measuredWidth) - padding.left - padding.right
 
     // offset container position based on horizontal + vertical anchor
@@ -111,13 +112,13 @@ export function Label({
     const verticalAnchor = propsVerticalAnchor || (Math.abs(dx) > Math.abs(dy) ? 'middle' : dy > 0 ? 'start' : 'end')
 
     const containerCoords = useMemo(() => {
-        let adjustedX: number = propsX == null ? x + dx : propsX
-        let adjustedY: number = propsY == null ? y + dy : propsY
+        let adjustedX: number = propsX === undefined ? x + dx : propsX
+        let adjustedY: number = propsY === undefined ? y + dy : propsY
 
-        if (horizontalAnchor === 'middle') adjustedX -= width / 2
-        if (horizontalAnchor === 'end') adjustedX -= width
-        if (verticalAnchor === 'middle') adjustedY -= height / 2
-        if (verticalAnchor === 'end') adjustedY -= height
+        if (horizontalAnchor === 'middle') {adjustedX -= width / 2}
+        if (horizontalAnchor === 'end') {adjustedX -= width}
+        if (verticalAnchor === 'middle') {adjustedY -= height / 2}
+        if (verticalAnchor === 'end') {adjustedY -= height}
 
         return { x: adjustedX, y: adjustedY }
     }, [propsX, x, dx, propsY, y, dy, horizontalAnchor, verticalAnchor, width, height])
@@ -151,7 +152,7 @@ export function Label({
             top={containerCoords.y}
             left={containerCoords.x}
             pointerEvents="none"
-            className={cx('visx-annotationlabel', className)}
+            className={classnames('visx-annotationlabel', className)}
             opacity={titleBounds.height === 0 && subtitleBounds.height === 0 ? 0 : 1}
         >
             {showBackground && (
@@ -183,7 +184,7 @@ export function Label({
             )}
             {title && (
                 <Text
-                    innerRef={titleRef}
+                    innerRef={titleReference}
                     fill={fontColor}
                     verticalAnchor="start"
                     x={padding.left + (titleProps?.textAnchor === 'middle' ? innerWidth / 2 : 0)}
@@ -198,7 +199,7 @@ export function Label({
             )}
             {subtitle && (
                 <Text
-                    innerRef={subtitleRef}
+                    innerRef={subtitleReference}
                     fill={fontColor}
                     verticalAnchor="start"
                     x={padding.left + (subtitleProps?.textAnchor === 'middle' ? innerWidth / 2 : 0)}
