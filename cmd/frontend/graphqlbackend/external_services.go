@@ -157,7 +157,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	return res, nil
 }
 
-// repoupdaterClient is an interface with only the methods required in sycnExternalService. As a
+// repoupdaterClient is an interface with only the methods required in syncExternalService. As a
 // result instead of using the entire repoupdater client implementation, we use a thinner API which
 // only needs the SyncExternalService method to be defined on the object.
 type repoupdaterClient interface {
