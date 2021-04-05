@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -157,10 +157,14 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	return res, nil
 }
 
+type repoupdaterClient interface {
+	SyncExternalService(ctx context.Context, svc api.ExternalService) (*protocol.ExternalServiceSyncResult, error)
+}
+
 // syncExternalService will eagerly trigger a repo-updater sync. It accepts a
 // timeout as an argument which is recommended to be 5 seconds unless the caller
 // has special requirements for it to be larger or smaller.
-func syncExternalService(ctx context.Context, svc *types.ExternalService, timeout time.Duration, client *repoupdater.Client) error {
+func syncExternalService(ctx context.Context, svc *types.ExternalService, timeout time.Duration, client repoupdaterClient) error {
 	// Set a timeouut to validate external service sync. It usually fails in
 	// under 5s if there is a problem.
 	ctx, cancel := context.WithTimeout(ctx, timeout)
