@@ -225,11 +225,11 @@ func (m *Migrator) selectAndProcess(ctx context.Context, tx *lsifstore.Store, ve
 
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
 		selectAndProcessQuery,
-		sqlf.Sprintf(m.options.tableName),
-		version,
-		version,
 		sqlf.Join(fieldQueries, ", "),
 		sqlf.Sprintf(m.options.tableName),
+		sqlf.Sprintf(m.options.tableName),
+		version,
+		version,
 		version,
 		m.options.batchSize,
 	))
@@ -253,17 +253,17 @@ func (m *Migrator) selectAndProcess(ctx context.Context, tx *lsifstore.Store, ve
 
 const selectAndProcessQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:selectAndProcess
-WITH candidates AS (
-	SELECT dump_id
-	FROM %s_schema_versions
-	WHERE
-		min_schema_version <= %s AND
-		max_schema_version >= %s
-)
 SELECT dump_id, %s
-FROM %s
+FROM %s t
 WHERE
-	dump_id IN (SELECT dump_id FROM candidates) AND
+	EXISTS (
+		SELECT 1
+		FROM %s_schema_versions sv
+		WHERE
+			sv.dump_id = t.dump_id AND
+			min_schema_version <= %s AND
+			max_schema_version >= %s
+	) AND
 	schema_version = %s
 ORDER BY dump_id
 LIMIT %s
