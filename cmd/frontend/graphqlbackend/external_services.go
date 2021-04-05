@@ -186,8 +186,15 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService, timeou
 		NamespaceUserID: svc.NamespaceUserID,
 	})
 
-	// err is either nil or contains an actual error from the API
-	// call. And we return it nonetheless.
+	// If context error is anything but a deadline exceeded error, we do not want to propagate
+	// it. But we definitely want to log the error as a warning.
+	if ctx.Err() != nil && ctx.Err() != context.DeadlineExceeded {
+		log15.Warn("syncExternalService: context error discarded", "err", ctx.Err())
+		return nil
+	}
+
+	// err is either nil or contains an actual error from the API call. And we return it
+	// nonetheless.
 	return errors.Wrapf(err, "error in syncExternalService for service %q with ID %d", svc.Kind, svc.ID)
 }
 
