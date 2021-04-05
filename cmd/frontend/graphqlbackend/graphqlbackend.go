@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -338,39 +339,38 @@ func prometheusGraphQLRequestName(requestName string) string {
 }
 
 func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
-	resolver := &schemaResolver{
-		db: db,
+	resolver := newSchemaResolver(db, repoupdater.DefaultClient)
 
-		BatchChangesResolver: defaultBatchChangesResolver{},
-		AuthzResolver:        defaultAuthzResolver{},
-		CodeIntelResolver:    defaultCodeIntelResolver{},
-		InsightsResolver:     defaultInsightsResolver{},
-		LicenseResolver:      defaultLicenseResolver{},
-	}
 	if batchChanges != nil {
 		EnterpriseResolvers.batchChangesResolver = batchChanges
 		resolver.BatchChangesResolver = batchChanges
 	}
+
 	if codeIntel != nil {
 		EnterpriseResolvers.codeIntelResolver = codeIntel
 		resolver.CodeIntelResolver = codeIntel
 	}
+
 	if insights != nil {
 		EnterpriseResolvers.insightsResolver = insights
 		resolver.InsightsResolver = insights
 	}
+
 	if authz != nil {
 		EnterpriseResolvers.authzResolver = authz
 		resolver.AuthzResolver = authz
 	}
+
 	if codeMonitors != nil {
 		EnterpriseResolvers.codeMonitorsResolver = codeMonitors
 		resolver.CodeMonitorsResolver = codeMonitors
 	}
+
 	if license != nil {
 		EnterpriseResolvers.licenseResolver = license
 		resolver.LicenseResolver = license
 	}
+
 	return graphql.ParseSchema(
 		Schema,
 		resolver,
@@ -605,7 +605,27 @@ type schemaResolver struct {
 	CodeMonitorsResolver
 	LicenseResolver
 
-	db dbutil.DB
+	db                dbutil.DB
+	repoupdaterClient *repoupdater.Client
+}
+
+// newSchemaResolver will return a new schemaResolver. If repoupdaterClient is nil, then it will use
+// repoupdater.DefaultClient instead.
+func newSchemaResolver(db dbutil.DB, repoupdaterClient *repoupdater.Client) *schemaResolver {
+	if repoupdaterClient == nil {
+		repoupdaterClient = repoupdater.DefaultClient
+	}
+
+	return &schemaResolver{
+		db:                db,
+		repoupdaterClient: repoupdaterClient,
+
+		BatchChangesResolver: defaultBatchChangesResolver{},
+		AuthzResolver:        defaultAuthzResolver{},
+		CodeIntelResolver:    defaultCodeIntelResolver{},
+		InsightsResolver:     defaultInsightsResolver{},
+		LicenseResolver:      defaultLicenseResolver{},
+	}
 }
 
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
