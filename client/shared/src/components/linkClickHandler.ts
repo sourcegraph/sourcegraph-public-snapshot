@@ -34,15 +34,17 @@ export const createLinkClickHandler = (history: H.History): React.MouseEventHand
     history.push(url.pathname + url.search + url.hash)
 }
 
-export const createProgrammaticallyLinkHandler = (history: H.History) => (event: React.MouseEvent<unknown>, target: string): void => {
-
-    const url = new URL(target);
+export const createProgrammaticallyLinkHandler = (history: H.History) => (
+    event: React.MouseEvent<unknown>,
+    target: string
+): void => {
+    const url = new URL(target)
 
     // Do nothing if the link was requested to open in a new tab
     if (event.ctrlKey || event.metaKey) {
-        window.open(url.origin + url.pathname + url.search + url.hash, '_blank')?.focus();
+        window.open(url.origin + url.pathname + url.search + url.hash, '_blank')?.focus()
 
-        return;
+        return
     }
 
     // Handle navigation programmatically

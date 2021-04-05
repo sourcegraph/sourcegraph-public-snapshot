@@ -1,7 +1,4 @@
-
-
 .line-chart {
-
     display: flex;
     flex-direction: column;
 
@@ -38,7 +35,7 @@
         // tick label
         text {
             fill: var(--text-muted);
-            font-size: 12px;
+            font-size: 0.75rem;
             font-weight: 400;
         }
     }
@@ -50,7 +47,6 @@
     // Grid
 
     &__grid-line {
-
         line {
             stroke: var(--border-color-2);
             stroke-width: 2;
@@ -58,34 +54,29 @@
         }
     }
 
-
     &__glyph {
         stroke-width: 2;
         stroke: var(--body-bg);
-
-        &--active {
-
-        }
     }
 
     &__legend {
         display: flex;
         flex-wrap: wrap;
-        padding: 8px;
+        padding: 0.5rem;
         list-style: none;
-        margin:0;
+        margin: 0;
     }
 
     &__legend-item {
         display: flex;
-        margin-right: 8px;
+        margin-right: 0.5rem;
         align-items: center;
     }
 
     &__legend-mark {
-        width: 12px;
-        height: 12px;
-        margin-right:4px;
+        width: 0.75rem;
+        height: 0.75rem;
+        margin-right: 0.25rem;
         border-radius: 50%;
     }
 
@@ -98,7 +89,7 @@
     }
 
     &__tooltip-content {
-        margin: 4px;
+        margin: 0.25rem;
     }
 
     &__tooltip-date {
@@ -110,6 +101,4 @@
         margin: 0;
         padding: 0;
     }
-
-    &__tooltip-text {}
 }

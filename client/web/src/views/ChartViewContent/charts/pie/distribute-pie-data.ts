@@ -1,28 +1,25 @@
-
 // This algorithm sort origin data array in a way to alternate data for better
 // visual distribution of labels. When you have small small parts of pie chart
 // ofter you have label overlapping to avoid this we can change order of
 // data to => big arc => small arc => big arc. Just to add some space between labels.
 export function distributePieArcs<D>(data: D[], dataKey: keyof D): D[] {
-    const sortedData = [...data.sort(
-        (first, second) => +first[dataKey] - +second[dataKey])
-    ];
+    const sortedData = [...data.sort((first, second) => +first[dataKey] - +second[dataKey])]
 
-    const result = [];
+    const result = []
 
     while (sortedData.length) {
-        const firstElement = sortedData.shift();
+        const firstElement = sortedData.shift()
 
         if (firstElement) {
             result.push(firstElement)
         }
 
-        const lastElement = sortedData.pop();
+        const lastElement = sortedData.pop()
 
         if (lastElement) {
-            result.push(lastElement);
+            result.push(lastElement)
         }
     }
 
-    return result;
+    return result
 }

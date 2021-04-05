@@ -133,12 +133,20 @@ export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
                                     <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
                                         <LoadingSpinner /> Loading code insight
                                     </div>
-                                    <InsightDescription className='view-grid__view-description' title={id} icon={getInsightViewIcon(source)} />
+                                    <InsightDescription
+                                        className="view-grid__view-description"
+                                        title={id}
+                                        icon={getInsightViewIcon(source)}
+                                    />
                                 </>
                             ) : isErrorLike(view) ? (
                                 <>
                                     <ErrorAlert className="m-0" error={view} />
-                                    <InsightDescription className='view-grid__view-description' title={id} icon={getInsightViewIcon(source)} />
+                                    <InsightDescription
+                                        className="view-grid__view-description"
+                                        title={id}
+                                        icon={getInsightViewIcon(source)}
+                                    />
                                 </>
                             ) : (
                                 <>

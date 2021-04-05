@@ -1,8 +1,8 @@
-import { MouseEvent } from 'react';
+import { MouseEvent } from 'react'
 
 export interface DatumClickEvent {
-    originEvent: MouseEvent<unknown>,
+    originEvent: MouseEvent<unknown>
     link?: string
 }
 
-export type onDatumClick = (event: DatumClickEvent) => void;
+export type onDatumClick = (event: DatumClickEvent) => void

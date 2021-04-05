@@ -1,6 +1,4 @@
-
 .pie-chart {
-
     // Arcs
     &__arc {
         stroke: var(--body-bg);
@@ -42,7 +40,8 @@
         stroke: var(--text-muted);
     }
 
-    &__label-line, &__label-circle {
+    &__label-line,
+    &__label-circle {
         stroke: var(--body-color);
         fill: var(--body-color);
     }
