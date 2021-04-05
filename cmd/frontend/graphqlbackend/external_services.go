@@ -188,8 +188,7 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService, timeou
 
 	// err is either nil or contains an actual error from the API
 	// call. And we return it nonetheless.
-	// TODO: Maybe we want to wrap this error?
-	return err
+	return errors.Wrapf(err, "error in syncExternalService for service %q with ID %d", svc.Kind, svc.ID)
 }
 
 type deleteExternalServiceArgs struct {
