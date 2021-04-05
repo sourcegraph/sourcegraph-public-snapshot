@@ -1,6 +1,6 @@
 import { FilterType } from './filters'
 import { scanSearchQuery } from './scanner'
-import { Filter } from './token'
+import { Filter, Token } from './token'
 
 export enum FilterKind {
     Global = 'Global',
@@ -55,12 +55,16 @@ export const findFilter = (query: string, field: string, kind: FilterKind): Filt
     return kind === FilterKind.Global ? filter : undefined
 }
 
-export function isContextFilterInQuery(query: string): boolean {
+/**
+ * Returns all filters that match field.
+ */
+export const findFilters = (tokens: Token[], field: string): Filter[] =>
+    tokens.filter(token => token.type === 'filter' && token.field.value.toLowerCase() === field) as Filter[]
+
+export function filterExists(query: string, filter: FilterType): boolean {
     const scannedQuery = scanSearchQuery(query)
     return (
         scannedQuery.type === 'success' &&
-        scannedQuery.term.some(
-            token => token.type === 'filter' && token.field.value.toLowerCase() === FilterType.context
-        )
+        scannedQuery.term.some(token => token.type === 'filter' && token.field.value.toLowerCase() === filter)
     )
 }

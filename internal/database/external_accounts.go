@@ -77,62 +77,11 @@ func (s *UserExternalAccountsStore) ensureStore() {
 	})
 }
 
-type encryptedAccountData struct {
-	AuthData, Data string
-}
-
 func (s *UserExternalAccountsStore) getEncryptionKey() encryption.Key {
 	if s.key != nil {
 		return s.key
 	}
 	return keyring.Default().UserExternalAccountKey
-}
-
-// maybeEncryptAccountData encrypts and returns user auth data if an encryption.Key is configured
-func (s *UserExternalAccountsStore) maybeEncryptAccountData(ctx context.Context, data extsvc.AccountData) (*encryptedAccountData, string, error) {
-	var enc encryptedAccountData
-	var keyID string
-	var err error
-
-	if data.AuthData != nil {
-		enc.AuthData, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
-		if err != nil {
-			return nil, "", err
-		}
-	}
-
-	if data.Data != nil {
-		enc.Data, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.Data))
-		if err != nil {
-			return nil, "", err
-		}
-	}
-
-	return &enc, keyID, nil
-}
-
-func (s *UserExternalAccountsStore) maybeDecryptAccountData(ctx context.Context, data *encryptedAccountData, keyIdent string) (extsvc.AccountData, error) {
-	var acc extsvc.AccountData
-
-	decryptedAuthData, err := MaybeDecrypt(ctx, s.getEncryptionKey(), data.AuthData, keyIdent)
-	if err != nil {
-		return extsvc.AccountData{}, err
-	}
-	decryptedData, err := MaybeDecrypt(ctx, s.getEncryptionKey(), data.Data, keyIdent)
-	if err != nil {
-		return extsvc.AccountData{}, err
-	}
-
-	if decryptedAuthData != "" {
-		jAuthData := json.RawMessage(decryptedAuthData)
-		acc.AuthData = &jAuthData
-	}
-	if decryptedData != "" {
-		jData := json.RawMessage(decryptedData)
-		acc.Data = &jData
-	}
-
-	return acc, nil
 }
 
 // Get gets information about the user external account.
@@ -155,9 +104,13 @@ func (s *UserExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec 
 	}
 	s.ensureStore()
 
-	encAuthdata, keyIdent, err := s.maybeEncryptAccountData(ctx, data)
-	if err != nil {
-		return 0, err
+	var encAuthData, keyID string
+
+	if data.AuthData != nil {
+		encAuthData, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
+		if err != nil {
+			return 0, err
+		}
 	}
 
 	err = s.Handle().DB().QueryRowContext(ctx, `
@@ -176,7 +129,7 @@ AND client_id = $3
 AND account_id = $4
 AND deleted_at IS NULL
 RETURNING user_id
-`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encAuthdata.AuthData, encAuthdata.Data, keyIdent).Scan(&userID)
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encAuthData, data.Data, keyID).Scan(&userID)
 	if err == sql.ErrNoRows {
 		err = userExternalAccountNotFoundError{[]interface{}{spec}}
 	}
@@ -236,9 +189,13 @@ AND deleted_at IS NULL
 		return tx.insert(ctx, userID, spec, data)
 	}
 
-	encAuthdata, keyIdent, err := s.maybeEncryptAccountData(ctx, data)
-	if err != nil {
-		return err
+	var encAuthData, keyID string
+
+	if data.AuthData != nil {
+		encAuthData, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
+		if err != nil {
+			return err
+		}
 	}
 
 	// Update the external account (it exists).
@@ -258,7 +215,7 @@ AND client_id = %s
 AND account_id = %s
 AND user_id = %s
 AND deleted_at IS NULL
-`, encAuthdata.AuthData, encAuthdata.Data, keyIdent, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID))
+`, encAuthData, data.Data, keyID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID))
 	if err != nil {
 		return err
 	}
@@ -298,16 +255,21 @@ func (s *UserExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 }
 
 func (s *UserExternalAccountsStore) insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
-	encAuthdata, keyIdent, err := s.maybeEncryptAccountData(ctx, data)
-	if err != nil {
-		return err
+	var encAuthData, keyID string
+	var err error
+
+	if data.AuthData != nil {
+		encAuthData, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
+		if err != nil {
+			return err
+		}
 	}
 
 	return s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.insert
 INSERT INTO user_external_accounts (user_id, service_type, service_id, client_id, account_id, auth_data, account_data, encryption_key_id)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encAuthdata.AuthData, encAuthdata.Data, keyIdent))
+`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encAuthData, data.Data, keyID))
 }
 
 // TouchExpired sets the given user external account to be expired now.
@@ -435,29 +397,35 @@ func (s *UserExternalAccountsStore) listBySQL(ctx context.Context, querySuffix *
 	var results []*extsvc.Account
 	for rows.Next() {
 		var acct extsvc.Account
-		var keyIdent string
+		var keyID string
 		var authData, data sql.NullString
 		if err := rows.Scan(
 			&acct.ID, &acct.UserID,
 			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
 			&authData, &data,
 			&acct.CreatedAt, &acct.UpdatedAt,
-			&keyIdent,
+			&keyID,
 		); err != nil {
 			return nil, err
 		}
 
-		var encAuthdata encryptedAccountData
+		var encAuthData string
 		if authData.Valid {
-			encAuthdata.AuthData = authData.String
-		}
-		if data.Valid {
-			encAuthdata.Data = data.String
+			encAuthData = authData.String
+			decryptedAuthData, err := MaybeDecrypt(ctx, s.getEncryptionKey(), encAuthData, keyID)
+			if err != nil {
+				return nil, err
+			}
+
+			if decryptedAuthData != "" {
+				jAuthData := json.RawMessage(decryptedAuthData)
+				acct.AuthData = &jAuthData
+			}
 		}
 
-		acct.AccountData, err = s.maybeDecryptAccountData(ctx, &encAuthdata, keyIdent)
-		if err != nil {
-			return nil, err
+		if data.Valid {
+			jData := json.RawMessage(data.String)
+			acct.Data = &jData
 		}
 
 		results = append(results, &acct)

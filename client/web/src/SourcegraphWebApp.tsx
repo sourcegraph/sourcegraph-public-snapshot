@@ -7,7 +7,7 @@ import { hot } from 'react-hot-loader/root'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
-import { bufferCount, startWith, switchMap } from 'rxjs/operators'
+import { bufferCount, map, startWith, switchMap } from 'rxjs/operators'
 import { setLinkComponent } from '../../shared/src/components/Link'
 import {
     Controller as ExtensionsController,
@@ -41,6 +41,7 @@ import {
     fetchSavedSearches,
     fetchRecentSearches,
     fetchRecentFileViews,
+    fetchAutoDefinedSearchContexts,
     fetchSearchContexts,
 } from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
@@ -52,7 +53,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { resolveVersionContext, parseSearchURL, resolveSearchContextSpec } from './search'
+import { resolveVersionContext, parseSearchURL, getAvailableSearchContextSpecOrDefault } from './search'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
@@ -333,9 +334,16 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         )
 
         this.subscriptions.add(
-            fetchSearchContexts.subscribe(contexts => {
-                this.setState({ availableSearchContexts: contexts })
-            })
+            combineLatest([fetchAutoDefinedSearchContexts, fetchSearchContexts(10).pipe(map(({ nodes }) => nodes))])
+                .pipe(
+                    map(([autoDefinedSearchContexts, searchContexts]) => [
+                        ...autoDefinedSearchContexts,
+                        ...searchContexts,
+                    ])
+                )
+                .subscribe(contexts => {
+                    this.setState({ availableSearchContexts: contexts as ISearchContext[] })
+                })
         )
 
         this.subscriptions.add(
@@ -551,14 +559,15 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.canShowSearchContext() ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpec = (spec: string): void => {
-        const { availableSearchContexts, defaultSearchContextSpec } = this.state
-        const resolvedSearchContextSpec = resolveSearchContextSpec(
-            spec,
-            availableSearchContexts,
-            defaultSearchContextSpec
+        const { defaultSearchContextSpec } = this.state
+        this.subscriptions.add(
+            getAvailableSearchContextSpecOrDefault({ spec, defaultSpec: defaultSearchContextSpec }).subscribe(
+                availableSearchContextSpecOrDefault => {
+                    this.setState({ selectedSearchContextSpec: availableSearchContextSpecOrDefault })
+                    localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
+                }
+            )
         )
-        this.setState({ selectedSearchContextSpec: resolvedSearchContextSpec })
-        localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, resolvedSearchContextSpec)
     }
 }
 

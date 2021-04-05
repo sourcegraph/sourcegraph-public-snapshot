@@ -447,7 +447,7 @@ export const useSearchOnboardingTour = ({
             tour.start()
         }
     }, [shouldShowTour, tour, inputLocation])
-    const shouldFocusQueryInput = useMemo(() => shouldShowTour && inputLocation !== 'search-homepage', [
+    const shouldFocusQueryInput = useMemo(() => (shouldShowTour ? inputLocation !== 'search-homepage' : true), [
         shouldShowTour,
         inputLocation,
     ])
