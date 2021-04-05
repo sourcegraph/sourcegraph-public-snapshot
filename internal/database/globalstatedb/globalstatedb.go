@@ -45,6 +45,11 @@ func SiteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
 	return alreadyInitialized, err
 }
 
+type queryExecDatabaseHandler interface {
+	QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row
+	Exec(ctx context.Context, query *sqlf.Query) error
+}
+
 // EnsureInitialized ensures the site is marked as having been initialized. If the site was already
 // initialized, it does nothing. It returns whether the site was already initialized prior to the
 // call.
@@ -55,10 +60,7 @@ func SiteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
 // privileges (even if all other users are deleted). This reduces the risk of (1) a site admin
 // accidentally deleting all user accounts and opening up their site to any attacker becoming a site
 // admin and (2) a bug in user account creation code letting attackers create site admin accounts.
-func EnsureInitialized(ctx context.Context, dbh interface {
-	QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row
-	Exec(ctx context.Context, query *sqlf.Query) error
-}) (alreadyInitialized bool, err error) {
+func EnsureInitialized(ctx context.Context, dbh queryExecDatabaseHandler) (alreadyInitialized bool, err error) {
 	if err := tryInsertNew(ctx, dbh); err != nil {
 		return false, err
 	}
@@ -85,9 +87,11 @@ func getConfiguration(ctx context.Context) (*State, error) {
 	return configuration, err
 }
 
-func tryInsertNew(ctx context.Context, dbh interface {
+type execDatabaseHandler interface {
 	Exec(ctx context.Context, query *sqlf.Query) error
-}) error {
+}
+
+func tryInsertNew(ctx context.Context, dbh execDatabaseHandler) error {
 	siteID, err := uuid.NewRandom()
 	if err != nil {
 		return err
