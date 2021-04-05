@@ -37,6 +37,7 @@ type Client struct {
 	HTTPClient *http.Client
 }
 
+// NewClient will initiate a new repoupdater Client with the given serverURL.
 func NewClient(serverURL string) *Client {
 	return &Client{
 		URL: serverURL,
