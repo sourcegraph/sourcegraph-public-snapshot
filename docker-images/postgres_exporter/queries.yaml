@@ -14,9 +14,32 @@ pg_sg_migration:
               usage: "GAUGE"
               description: "Whether the migration applied successfully"
 
-# From https://github.com/wrouesnel/postgres_exporter/pull/433/
+pg_invalid_index:
+    query: |
+        SELECT
+            current_database() AS datname,
+            pc.relname AS relname,
+            1 AS count
+        FROM pg_class pc
+        JOIN pg_index pi ON pi.indexrelid = pc.oid
+        WHERE
+            NOT indisvalid AND
+            NOT EXISTS (SELECT 1 FROM pg_stat_progress_create_index pci WHERE pci.index_relid = pi.indexrelid)
+    metrics:
+        - datname:
+              usage: "LABEL"
+              description: "Name of current database"
+        - relname:
+              usage: "LABEL"
+              description: "Name of the index"
+        - count:
+              usage: "COUNTER"
+              description: "Non-zero value used to tag existence of an invalid index"
+
+# From https://github.com/prometheus-community/postgres_exporter/pull/433
+# Updated in https://github.com/prometheus-community/postgres_exporter/pull/395
 pg_replication:
-    query: "SELECT EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp())) as lag"
+    query: "SELECT CASE WHEN NOT pg_is_in_recovery() THEN 0 ELSE GREATEST (0, EXTRACT(EPOCH FROM (now() - pg_last_xact_replay_timestamp()))) END AS lag"
     master: true
     metrics:
         - lag:
@@ -174,3 +197,48 @@ pg_database:
         - size_bytes:
               usage: "GAUGE"
               description: "Disk space used by the database"
+
+# From https://github.com/prometheus-community/postgres_exporter/pull/435
+pg_stat_activity:
+  query: |
+    WITH
+      metrics AS (
+        SELECT
+          application_name,
+          SUM(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - state_change))::bigint)::float AS process_idle_seconds_sum,
+          COUNT(*) AS process_idle_seconds_count
+        FROM pg_stat_activity
+        WHERE state = 'idle'
+        GROUP BY application_name
+      ),
+      buckets AS (
+        SELECT
+          application_name,
+          le,
+          SUM(
+            CASE WHEN EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - state_change)) <= le
+              THEN 1
+              ELSE 0
+            END
+          )::bigint AS bucket
+        FROM
+          pg_stat_activity,
+          UNNEST(ARRAY[1, 2, 5, 15, 30, 60, 90, 120, 300]) AS le
+        GROUP BY application_name, le
+        ORDER BY application_name, le
+      )
+    SELECT
+      application_name,
+      process_idle_seconds_sum,
+      process_idle_seconds_count,
+      ARRAY_AGG(le) AS process_idle_seconds,
+      ARRAY_AGG(bucket) AS process_idle_seconds_bucket
+    FROM metrics JOIN buckets USING (application_name)
+    GROUP BY 1, 2, 3
+  metrics:
+    - application_name:
+        usage: "LABEL"
+        description: "Application Name"
+    - process_idle_seconds:
+        usage: "HISTOGRAM"
+        description: "Idle time of server processes"
