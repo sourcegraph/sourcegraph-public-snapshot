@@ -8,6 +8,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
@@ -41,9 +43,14 @@ import (
 // table. When checking progress, we can efficiently do a full-table on the much smaller
 // aggregate table.
 type Migrator struct {
-	store   *lsifstore.Store
-	driver  migrationDriver
-	options migratorOptions
+	store                *lsifstore.Store
+	driver               migrationDriver
+	options              migratorOptions
+	primaryKeyFields     []string              // names of primary keys
+	selectionExpressions []*sqlf.Query         // expressions used in select query
+	insertFieldNames     []string              // names of fields inserted into temporary table
+	insertFields         []batch.ColumnAndType // names and types of fields inserted into temporary table
+	updateFields         []string              // names of fields updated from temporary table
 }
 
 type migratorOptions struct {
@@ -77,16 +84,6 @@ type fieldSpec struct {
 	updateOnly bool
 }
 
-type updateSpec struct {
-	// dumpID is the identifier of the associated upload record.
-	dumpID int
-
-	// fieldValues indicates the values that should be written back to the table. This must have
-	// the same number of values as the set of primary keys plus any additional non-selectOnly
-	// fields supplied via the migrator's fields option.
-	fieldValues []interface{}
-}
-
 type migrationDriver interface {
 	// MigrateRowUp determines which fields to update for the given row. The scanner will receive
 	// the values of the primary keys plus any additional non-updateOnly fields supplied via the
@@ -106,11 +103,55 @@ type scanner interface {
 	Scan(dest ...interface{}) error
 }
 
+type updateSpec struct {
+	// dumpID is the identifier of the associated upload record.
+	dumpID int
+
+	// fieldValues indicates the values that should be written back to the table. This must have
+	// the same number of values as the set of primary keys plus any additional non-selectOnly
+	// fields supplied via the migrator's fields option.
+	fieldValues []interface{}
+
+	// err is the error value that occurred while processing a row.
+	err error
+}
+
 func newMigrator(store *lsifstore.Store, driver migrationDriver, options migratorOptions) oobmigration.Migrator {
+	primaryKeyFields := make([]string, 0, len(options.fields))
+	selectionExpressions := make([]*sqlf.Query, 0, len(options.fields))
+	insertFieldNames := make([]string, 0, len(options.fields))
+	insertFields := make([]batch.ColumnAndType, 0, len(options.fields))
+	updateFields := make([]string, 0, len(options.fields))
+
+	for _, field := range options.fields {
+		if field.primaryKey {
+			primaryKeyFields = append(primaryKeyFields, field.name)
+		}
+		if !field.updateOnly {
+			selectionExpressions = append(selectionExpressions, sqlf.Sprintf(field.name))
+		}
+		if !field.readOnly {
+			insertFieldNames = append(insertFieldNames, field.name)
+			insertFields = append(insertFields, batch.ColumnAndType{
+				Name:         field.name,
+				PostgresType: field.postgresType,
+			})
+
+			if !field.primaryKey {
+				updateFields = append(updateFields, field.name)
+			}
+		}
+	}
+
 	return &Migrator{
-		store:   store,
-		driver:  driver,
-		options: options,
+		store:                store,
+		driver:               driver,
+		options:              options,
+		selectionExpressions: selectionExpressions,
+		insertFieldNames:     insertFieldNames,
+		insertFields:         insertFields,
+		primaryKeyFields:     primaryKeyFields,
+		updateFields:         updateFields,
 	}
 }
 
@@ -162,7 +203,6 @@ func (m *Migrator) run(ctx context.Context, sourceVersion, targetVersion int, dr
 	if err != nil {
 		return err
 	}
-
 	if len(ids) == 0 {
 		return nil
 	}
@@ -199,57 +239,61 @@ ON CONFLICT (dump_id) DO UPDATE SET
 // of upload identifiers denoting the complete set of uploads whose records were modified by
 // this batch of updates.
 func (m *Migrator) selectAndUpdate(ctx context.Context, tx *lsifstore.Store, sourceVersion, targetVersion int, driverFunc driverFunc) ([]int, error) {
-	// Note: we can't pipeline this as you can't have an open rows object and
-	// execute another unrelated query using the same database handle.
-	updateSpecs, err := m.selectAndProcess(ctx, tx, sourceVersion, driverFunc)
-	if err != nil {
-		return nil, err
-	}
-
-	//
-	// TODO - refactor this
-	//
-
-	insertFields := make([]ColumnAndType, 0, len(m.options.fields))
-	for _, field := range m.options.fields {
-		if !field.readOnly {
-			insertFields = append(insertFields, ColumnAndType{
-				Name:         field.name,
-				PostgresType: field.postgresType,
-			})
-		}
-	}
-
-	// TODO - just return a channel
-	ch := make(chan []interface{}, len(updateSpecs))
-	for _, spec := range updateSpecs {
-		ch <- spec.fieldValues
-	}
-	close(ch)
-
-	if err := BulkInsertIntoTemporaryTable(ctx, tx.Store, insertFields, ch); err != nil {
-		return nil, err
-	}
-
-	primaryKeyFields := make([]string, 0, len(m.options.fields))
-	updateFields := make([]string, 0, len(m.options.fields))
-	constantFieldValues := map[string]interface{}{"schema_version": targetVersion}
-
-	for _, field := range m.options.fields {
-		if field.primaryKey {
-			primaryKeyFields = append(primaryKeyFields, field.name)
-		} else if !field.readOnly {
-			updateFields = append(updateFields, field.name)
-		}
-	}
-
-	if err := BulkUpdateFromTempTable(ctx, tx.Store, m.options.tableName, primaryKeyFields, updateFields, constantFieldValues); err != nil {
-		return nil, err
-	}
-
+	var specErr error
 	idMap := map[int]struct{}{}
-	for _, spec := range updateSpecs {
-		idMap[spec.dumpID] = struct{}{}
+	rowValues := make(chan []interface{})
+
+	go func() {
+		defer close(rowValues)
+
+		// Pull candidate rows from the database and read them from the resulting channel.
+		// This will only read as many rows as can fit in the current batch.
+		for spec := range m.selectAndProcess(ctx, tx, sourceVersion, driverFunc) {
+			if spec.err != nil {
+				specErr = spec.err
+				return
+			}
+
+			idMap[spec.dumpID] = struct{}{}
+			rowValues <- spec.fieldValues
+		}
+	}()
+
+	db := tx.Handle().DB()
+
+	// Create a temporary table
+	if err := batch.CreateTemporaryTable(ctx, db, "t_target", m.insertFields); err != nil {
+		return nil, err
+	}
+
+	// Bulk insert into temporary table from multiple goroutines. We can do this safely
+	// as multiple goroutines can read from rowValues without double-inserting values.
+	if err := goroutine.RunWorkers(goroutine.SimplePoolWorker(func() error {
+		return batch.WithInserter(ctx, db, "t_target", m.insertFieldNames, func(inserter *batch.Inserter) error {
+			for row := range rowValues {
+				if err := inserter.Insert(ctx, row...); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		})
+	})); err != nil {
+		return nil, err
+	}
+
+	// Note: specErr and idMap are fully populated after the return of the bulk insertion
+	// routine as rowValues is closed and the writing goroutine has necessarily exited.
+	if specErr != nil {
+		return nil, specErr
+	}
+
+	// Do an in-database transfer from the temporary table to the target table. This saves
+	// a bit of bandwidth since we don't have to transmit the same values for the schema
+	// version for every row.
+	constantFieldValues := map[string]interface{}{"schema_version": targetVersion}
+	if err := batch.UpdateFromTemporaryTable(ctx, tx.Handle().DB(), "t_target", m.options.tableName, m.primaryKeyFields, m.updateFields, constantFieldValues); err != nil {
+		return nil, err
 	}
 
 	ids := make([]int, 0, len(idMap))
@@ -264,40 +308,40 @@ func (m *Migrator) selectAndUpdate(ctx context.Context, tx *lsifstore.Store, sou
 // selectAndProcess selects a batch of records from the configured table with the given version and
 // returns the update specifications after running the given driver function on each matching row.
 // The records selected by this method are locked (via select for update) in the given transaction.
-func (m *Migrator) selectAndProcess(ctx context.Context, tx *lsifstore.Store, version int, driverFunc driverFunc) ([]updateSpec, error) {
-	fieldQueries := make([]*sqlf.Query, 0, len(m.options.fields))
-	for _, field := range m.options.fields {
-		if !field.updateOnly {
-			fieldQueries = append(fieldQueries, sqlf.Sprintf(field.name))
-		}
-	}
+func (m *Migrator) selectAndProcess(ctx context.Context, tx *lsifstore.Store, version int, driverFunc driverFunc) <-chan updateSpec {
+	updateSpecs := make(chan updateSpec)
 
-	rows, err := tx.Query(ctx, sqlf.Sprintf(
-		selectAndProcessQuery,
-		sqlf.Join(fieldQueries, ", "),
-		sqlf.Sprintf(m.options.tableName),
-		sqlf.Sprintf(m.options.tableName),
-		version,
-		version,
-		version,
-		m.options.batchSize,
-	))
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	go func() {
+		defer close(updateSpecs)
 
-	updateSpecs := make([]updateSpec, 0, m.options.batchSize)
-	for rows.Next() {
-		spec, err := driverFunc(rows)
+		rows, err := tx.Query(ctx, sqlf.Sprintf(
+			selectAndProcessQuery,
+			sqlf.Join(m.selectionExpressions, ", "),
+			sqlf.Sprintf(m.options.tableName),
+			sqlf.Sprintf(m.options.tableName),
+			version,
+			version,
+			version,
+			m.options.batchSize,
+		))
 		if err != nil {
-			return nil, err
+			updateSpecs <- updateSpec{err: err}
+			return
 		}
+		defer func() { err = basestore.CloseRows(rows, err) }()
 
-		updateSpecs = append(updateSpecs, spec)
-	}
+		for rows.Next() {
+			spec, err := driverFunc(rows)
+			if err != nil {
+				updateSpecs <- updateSpec{err: err}
+				return
+			}
 
-	return updateSpecs, nil
+			updateSpecs <- spec
+		}
+	}()
+
+	return updateSpecs
 }
 
 const selectAndProcessQuery = `

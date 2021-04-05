@@ -113,3 +113,16 @@ Time: 2621394.080 ms (43:41.394)
 | table_schema | table_name            | row_estimate | total  | index | toast  | table  |
 | ------------ | --------------------- | ------------ | ------ | ----- | ------ | ------ |
 | public       | lsif_data_definitions | 3.077555e+08 | 187 GB | 24 GB | 186 MB | 162 GB |
+
+####
+
+Before:
+
+| table_schema | table_name          | row_estimate  | total  | index   | toast  | table   |
+| ------------ | ------------------- | ------------- | ------ | ------- | ------ | ------- |
+| public       | lsif_data_documents | 1.1777075e+07 | 146 GB | 1045 MB | 141 GB | 3159 MB |
+
+After:
+
+| table_schema | table_name | row_estimate | total | index | toast | table |
+| ------------ | ---------- | ------------ | ----- | ----- | ----- | ----- |

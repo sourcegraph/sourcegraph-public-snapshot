@@ -21,18 +21,19 @@ func (s *Store) UpdatePackageReferences(ctx context.Context, dumpID int, referen
 		return nil
 	}
 
-	inserter := batch.NewBatchInserter(ctx, s.Store.Handle().DB(), "lsif_references", "dump_id", "scheme", "name", "version", "filter")
-	for _, r := range references {
-		filter := r.Filter
-		// avoid not null constraint
-		if r.Filter == nil {
-			filter = []byte{}
+	return batch.WithInserter(ctx, s.Store.Handle().DB(), "lsif_references", []string{"dump_id", "scheme", "name", "version", "filter"}, func(inserter *batch.Inserter) error {
+		for _, r := range references {
+			filter := r.Filter
+			// avoid not null constraint
+			if r.Filter == nil {
+				filter = []byte{}
+			}
+
+			if err := inserter.Insert(ctx, dumpID, r.Scheme, r.Name, r.Version, filter); err != nil {
+				return err
+			}
 		}
 
-		if err := inserter.Insert(ctx, dumpID, r.Scheme, r.Name, r.Version, filter); err != nil {
-			return err
-		}
-	}
-
-	return inserter.Flush(ctx)
+		return nil
+	})
 }

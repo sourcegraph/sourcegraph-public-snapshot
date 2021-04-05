@@ -4,13 +4,11 @@ import (
 	"context"
 	"sync/atomic"
 
-	"github.com/hashicorp/go-multierror"
+	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -30,15 +28,7 @@ func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta semantic.MetaD
 	}})
 	defer endObservation(1, observation.Args{})
 
-	inserter := batch.NewBatchInserter(ctx, s.Handle().DB(), "lsif_data_metadata", "dump_id", "num_result_chunks")
-
-	defer func() {
-		if flushErr := inserter.Flush(ctx); flushErr != nil {
-			err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
-		}
-	}()
-
-	return inserter.Insert(ctx, bundleID, meta.NumResultChunks)
+	return s.Exec(ctx, sqlf.Sprintf("INSERT INTO lsif_data_metadata VALUES (%s, %s)", bundleID, meta.NumResultChunks))
 }
 
 func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan semantic.KeyedDocumentData) (err error) {
@@ -49,7 +39,7 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 
 	var count uint32
 
-	inserter := func(inserter *batch.BatchInserter) error {
+	inserter := func(inserter *batch.Inserter) error {
 		for v := range documents {
 			data, err := s.serializer.MarshalDocumentData(v.Document)
 			if err != nil {
@@ -77,17 +67,19 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 		return nil
 	}
 
-	if err := withBatchInserter(ctx, s.Handle().DB(), "lsif_data_documents", []string{
-		"dump_id",
-		"path",
-		"ranges",
-		"hovers",
-		"monikers",
-		"packages",
-		"diagnostics",
-		"schema_version",
-		"num_diagnostics",
-	}, inserter); err != nil {
+	if err := goroutine.RunWorkers(goroutine.SimplePoolWorker(func() error {
+		return batch.WithInserter(ctx, s.Handle().DB(), "lsif_data_documents", []string{
+			"dump_id",
+			"path",
+			"ranges",
+			"hovers",
+			"monikers",
+			"packages",
+			"diagnostics",
+			"schema_version",
+			"num_diagnostics",
+		}, inserter)
+	})); err != nil {
 		return err
 	}
 	traceLog(log.Int("count", int(count)))
@@ -102,7 +94,7 @@ func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunk
 
 	var count uint32
 
-	inserter := func(inserter *batch.BatchInserter) error {
+	inserter := func(inserter *batch.Inserter) error {
 		for v := range resultChunks {
 			data, err := s.serializer.MarshalResultChunkData(v.ResultChunk)
 			if err != nil {
@@ -119,7 +111,9 @@ func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunk
 		return nil
 	}
 
-	if err := withBatchInserter(ctx, s.Handle().DB(), "lsif_data_result_chunks", []string{"dump_id", "idx", "data"}, inserter); err != nil {
+	if err := goroutine.RunWorkers(goroutine.SimplePoolWorker(func() error {
+		return batch.WithInserter(ctx, s.Handle().DB(), "lsif_data_result_chunks", []string{"dump_id", "idx", "data"}, inserter)
+	})); err != nil {
 		return err
 	}
 	traceLog(log.Int("count", int(count)))
@@ -157,7 +151,7 @@ func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocati
 func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, version int, monikerLocations chan semantic.MonikerLocations) (int, error) {
 	var count uint32
 
-	inserter := func(inserter *batch.BatchInserter) error {
+	inserter := func(inserter *batch.Inserter) error {
 		for v := range monikerLocations {
 			data, err := s.serializer.MarshalLocations(v.Locations)
 			if err != nil {
@@ -174,19 +168,8 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 		return nil
 	}
 
-	err := withBatchInserter(ctx, s.Handle().DB(), tableName, []string{"dump_id", "scheme", "identifier", "data", "schema_version", "num_locations"}, inserter)
-	return int(count), err
-}
-
-func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *batch.BatchInserter) error) (err error) {
-	return goroutine.RunWorkers(goroutine.SimplePoolWorker(func() error {
-		inserter := batch.NewBatchInserter(ctx, db, tableName, columns...)
-		defer func() {
-			if flushErr := inserter.Flush(ctx); flushErr != nil {
-				err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
-			}
-		}()
-
-		return f(inserter)
+	err := goroutine.RunWorkers(goroutine.SimplePoolWorker(func() error {
+		return batch.WithInserter(ctx, s.Handle().DB(), tableName, []string{"dump_id", "scheme", "identifier", "data", "schema_version", "num_locations"}, inserter)
 	}))
+	return int(count), err
 }
