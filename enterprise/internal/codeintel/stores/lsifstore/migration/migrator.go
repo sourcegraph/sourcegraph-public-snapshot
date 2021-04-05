@@ -43,9 +43,12 @@ import (
 // table. When checking progress, we can efficiently do a full-table on the much smaller
 // aggregate table.
 type Migrator struct {
-	store                *lsifstore.Store
-	driver               migrationDriver
-	options              migratorOptions
+	store   *lsifstore.Store
+	driver  migrationDriver
+	options migratorOptions
+
+	// TODO - rename these things
+
 	primaryKeyFields     []string              // names of primary keys
 	selectionExpressions []*sqlf.Query         // expressions used in select query
 	insertFieldNames     []string              // names of fields inserted into temporary table
@@ -292,7 +295,7 @@ func (m *Migrator) selectAndUpdate(ctx context.Context, tx *lsifstore.Store, sou
 	// a bit of bandwidth since we don't have to transmit the same values for the schema
 	// version for every row.
 	constantFieldValues := map[string]interface{}{"schema_version": targetVersion}
-	if err := batch.UpdateFromTemporaryTable(ctx, tx.Handle().DB(), "t_target", m.options.tableName, m.primaryKeyFields, m.updateFields, constantFieldValues); err != nil {
+	if err := batch.UpdateFromTemporaryTable(ctx, tx.Handle().DB(), "t_target", m.options.tableName, m.primaryKeyFields, nil, m.updateFields, constantFieldValues); err != nil {
 		return nil, err
 	}
 
