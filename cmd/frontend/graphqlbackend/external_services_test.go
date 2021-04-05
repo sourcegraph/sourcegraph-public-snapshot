@@ -836,9 +836,8 @@ func TestExternalServices_PageInfo(t *testing.T) {
 
 func TestSyncExternalService_ContextTimeout(t *testing.T) {
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Sleep for longer than the timeout for syncExternalService
-		// to trigger a context deadline exceeded error.
-		time.Sleep(400 * time.Millisecond)
+		// Since the timeout in our test is set to 0ms, we do not need to sleep at all. If our code
+		// is correct, this handler should timeout right away.
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -847,7 +846,7 @@ func TestSyncExternalService_ContextTimeout(t *testing.T) {
 	ctx := context.Background()
 	svc := &types.ExternalService{}
 
-	err := syncExternalService(ctx, svc, 200*time.Millisecond, repoupdater.NewClient(s.URL))
+	err := syncExternalService(ctx, svc, 0*time.Millisecond, repoupdater.NewClient(s.URL))
 
 	if err == nil {
 		t.Error("Expected error but got nil")
