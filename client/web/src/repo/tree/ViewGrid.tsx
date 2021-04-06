@@ -76,7 +76,11 @@ const InsightDescription: React.FunctionComponent<InsightDescriptionProps> = pro
 
     return (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-        <small title={title} className={`insight-description text-muted ${className}`} onMouseDown={stopPropagation}>
+        <small
+            title={title}
+            className={classNames('insight-description', 'text-muted', className)}
+            onMouseDown={stopPropagation}
+        >
             <Icon className="icon-inline" /> {title}
         </small>
     )

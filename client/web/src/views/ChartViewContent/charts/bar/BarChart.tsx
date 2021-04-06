@@ -1,5 +1,6 @@
 import React, { ReactElement, useCallback, useMemo } from 'react'
 import classnames from 'classnames'
+import { range } from 'lodash'
 import { scaleBand, scaleLinear } from '@visx/scale'
 import { AxisBottom, AxisLeft } from '@visx/axis'
 import { localPoint } from '@visx/event'
@@ -16,9 +17,6 @@ const DEFAULT_MARGIN = { top: 20, right: 20, bottom: 25, left: 40 }
 // Tooltip timeout used below as semaphore to prevent tooltip flashing
 // in case if user is moving mouse very fast between bars
 let tooltipTimeout: number
-
-// eslint-disable-next-line id-length, @typescript-eslint/no-unsafe-assignment
-const range = (rangeLength: number): number[] => [...new Array(rangeLength)].map((_, index) => index)
 
 interface TooltipData {
     xLabel: string
@@ -82,11 +80,11 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
     )
 
     // handlers
-    const handleMouseLeave = useCallback(() => {
+    const handleMouseLeave = (): void => {
         tooltipTimeout = window.setTimeout(() => {
             hideTooltip()
         }, 300)
-    }, [hideTooltip])
+    }
 
     return (
         <div className="bar-chart">
@@ -114,6 +112,7 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
 
                                         onDatumClick({ originEvent: event, link })
                                     }}
+                                    /* eslint-disable-next-line react/jsx-no-bind */
                                     onMouseLeave={handleMouseLeave}
                                     // In this case we have to use arrow function because we need
                                     // get access to index and current datum within onMouseMove handler

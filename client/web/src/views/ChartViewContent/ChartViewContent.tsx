@@ -21,19 +21,19 @@ export interface ChartViewContentProps {
 }
 
 export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props => {
-    const { content, className = '', ...otherProps } = props
+    const { content, className = '', history, viewID } = props
 
     const linkHandler = useMemo(() => {
-        const linkHandler = createProgrammaticallyLinkHandler(otherProps.history)
+        const linkHandler = createProgrammaticallyLinkHandler(history)
         return (event: DatumClickEvent): void => {
             if (!event.link) {
                 return
             }
 
-            eventLogger.log('InsightDataPointClick', { insightType: otherProps.viewID.split('.')[0] })
+            eventLogger.log('InsightDataPointClick', { insightType: viewID.split('.')[0] })
             linkHandler(event.originEvent, event.link)
         }
-    }, [otherProps.history, otherProps.viewID])
+    }, [history, viewID])
 
     return (
         <div className={`chart-view-content ${className}`}>
