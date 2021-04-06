@@ -24,14 +24,12 @@
             }
         }
 
-        &-error-message {
-            font-size: 0.75rem;
-        }
-
         &-field {
             border-top-right-radius: 0;
             border-bottom-right-radius: 0;
             font-size: 0.75rem;
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            height: calc(1rem + 0.5rem * 2 + 1px * 2); // 1rem for text, 0.5rem vertical padding, 1px border
         }
     }
 
