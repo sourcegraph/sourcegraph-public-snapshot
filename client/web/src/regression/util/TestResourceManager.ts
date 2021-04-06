@@ -1,4 +1,4 @@
-import { asError } from '../../../../shared/src/util/errors'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 
 export type ResourceDestructor = () => Promise<void>
 

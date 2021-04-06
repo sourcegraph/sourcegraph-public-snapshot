@@ -1,10 +1,10 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { setLinkComponent } from '../../../shared/src/components/Link'
+import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import { ThemePreference } from '../theme'
 import { GlobalNavbar } from './GlobalNavbar'
 import { createLocation, createMemoryHistory } from 'history'
-import { extensionsController, NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
+import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
 import { SearchPatternType } from '../graphql-operations'
 import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../searchContexts/testHelpers'
 

@@ -839,6 +839,7 @@ type MountedEncryptionKey struct {
 	Filepath   string `json:"filepath,omitempty"`
 	Keyname    string `json:"keyname"`
 	Type       string `json:"type"`
+	Version    string `json:"version,omitempty"`
 }
 
 // NoOpEncryptionKey description: This encryption key is a no op, leaving your data in plaintext (not recommended).

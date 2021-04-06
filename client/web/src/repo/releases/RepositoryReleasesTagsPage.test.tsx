@@ -2,7 +2,7 @@ import React from 'react'
 import { createRenderer } from 'react-test-renderer/shallow'
 import * as H from 'history'
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
-import { IRepository, IGitRef } from '../../../../shared/src/graphql/schema'
+import { IRepository, IGitRef } from '@sourcegraph/shared/src/graphql/schema'
 import { of } from 'rxjs'
 
 describe('RepositoryReleasesTagsPage', () => {

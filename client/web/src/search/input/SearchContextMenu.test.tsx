@@ -1,5 +1,5 @@
-import { ISearchContext } from '../../../../shared/src/graphql/schema'
-import { MockIntersectionObserver } from '../../../../shared/src/util/MockIntersectionObserver'
+import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 import { mount } from 'enzyme'
 import React, { ChangeEvent } from 'react'
 import { act } from 'react-dom/test-utils'

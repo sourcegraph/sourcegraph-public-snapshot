@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/testing/driver'
+import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import {
@@ -9,13 +9,13 @@ import {
     createTreeEntriesResult,
     createBlobContentResult,
 } from './graphQlResponseHelpers'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import * as path from 'path'
 import { DiffHunkLineType } from '../graphql-operations'
-import { encodeURIPathComponent } from '../../../shared/src/util/url'
-import { ExtensionManifest } from '../../../shared/src/extensions/extensionManifest'
-import { Settings } from '../../../shared/src/settings/settings'
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
+import { encodeURIPathComponent } from '@sourcegraph/shared/src/util/url'
+import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
 import type * as sourcegraph from 'sourcegraph'
 
 describe('Repository', () => {

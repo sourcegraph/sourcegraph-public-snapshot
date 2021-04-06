@@ -42,7 +42,7 @@ const defaultProps: SearchContextMenuProps = {
     fetchSearchContexts: (
         first: number,
         query?: string,
-        after?: string | null
+        after?: string
     ): Observable<ListSearchContextsResult['searchContexts']> =>
         of({
             nodes: [

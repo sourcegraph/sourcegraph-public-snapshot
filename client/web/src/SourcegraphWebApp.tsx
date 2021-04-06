@@ -8,20 +8,20 @@ import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
 import { bufferCount, startWith, switchMap } from 'rxjs/operators'
-import { setLinkComponent } from '../../shared/src/components/Link'
+import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import {
     Controller as ExtensionsController,
     createController as createExtensionsController,
-} from '../../shared/src/extensions/controller'
-import { Notifications } from '../../shared/src/notifications/Notifications'
-import { PlatformContext } from '../../shared/src/platform/context'
-import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../../shared/src/settings/settings'
+} from '@sourcegraph/shared/src/extensions/controller'
+import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { RouterLinkOrAnchor } from './components/RouterLinkOrAnchor'
-import { Tooltip } from '../../branded/src/components/tooltip/Tooltip'
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
@@ -67,12 +67,12 @@ import {
     defaultPatternTypeFromSettings,
     experimentalFeaturesFromSettings,
 } from './util/settings'
-import { SearchPatternType } from '../../shared/src/graphql-operations'
-import { HTTPStatusError } from '../../shared/src/backend/fetch'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
 import { aggregateStreamingSearch } from './search/stream'
 import { logCodeInsightsChanges } from './insights/analytics'
 import { listUserRepositories } from './site-admin/backend'
-import { NotificationType } from '../../shared/src/api/extension/extensionHostApi'
+import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]

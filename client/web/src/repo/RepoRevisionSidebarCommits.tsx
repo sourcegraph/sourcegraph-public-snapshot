@@ -4,13 +4,13 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { createInvalidGraphQLQueryResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+import { createInvalidGraphQLQueryResponseError, dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { requestGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { replaceRevisionInURL } from '../util/url'
 import { GitCommitNode } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
-import { RevisionSpec, FileSpec } from '../../../shared/src/util/url'
+import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
 import {
     CommitAncestorsConnectionFields,
     FetchCommitsResult,

@@ -1,9 +1,9 @@
 import { isExtension } from '../context'
 import { isFirefox } from '../util/context'
 import { Subscribable, from } from 'rxjs'
-import { checkOk } from '../../../../shared/src/backend/fetch'
-import { ExtensionManifest } from '../../../../shared/src/extensions/extensionManifest'
-import { ExecutableExtension } from '../../../../shared/src/api/extension/activation'
+import { checkOk } from '@sourcegraph/shared/src/backend/fetch'
+import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
+import { ExecutableExtension } from '@sourcegraph/shared/src/api/extension/activation'
 
 /**
  * Determine if inline extensions should be loaded.

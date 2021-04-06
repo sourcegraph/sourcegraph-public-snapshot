@@ -5,14 +5,14 @@ import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { useSearchOnboardingTour } from './SearchOnboardingTour'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { SearchButton } from './SearchButton'
-import { Link } from '../../../../shared/src/components/Link'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { QuickLinks } from '../QuickLinks'
 import { Notices } from '../../global/Notices'
-import { SettingsCascadeProps, isSettingsValid } from '../../../../shared/src/settings/settings'
+import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
-import { ThemeProps } from '../../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ThemePreferenceProps } from '../../theme'
-import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
+import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
@@ -21,13 +21,13 @@ import {
     ParsedSearchQueryProps,
     SearchContextProps,
 } from '..'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { VersionContextProps } from '../../../../shared/src/search/util'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
 import { submitSearch, SubmitSearchParameters } from '../helpers'
 
 import { AuthenticatedUser } from '../../auth'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 
 interface Props
