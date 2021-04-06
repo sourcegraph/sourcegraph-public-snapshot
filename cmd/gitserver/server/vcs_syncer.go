@@ -258,8 +258,8 @@ func (s *PerforceDepotSyncer) FetchCommand(ctx context.Context, remoteURL *url.U
 		return nil, false, errors.Wrap(err, "ping with trust")
 	}
 
-	// Example: git p4 sync --branch=refs/heads/master --max-changes 1000
-	args := []string{"p4", "sync", "--branch=refs/heads/master"}
+	// Example: git p4 sync --max-changes 1000
+	args := []string{"p4", "sync"}
 	if s.MaxChanges > 0 {
 		args = append(args, "--max-changes", strconv.Itoa(s.MaxChanges))
 	}
