@@ -736,7 +736,7 @@ func TestComputeExternalState(t *testing.T) {
 func TestComputeLabels(t *testing.T) {
 	t.Parallel()
 
-	now := time.Now()
+	now := timeutil.Now()
 	labelEvent := func(name string, kind batches.ChangesetEventKind, when time.Time) *batches.ChangesetEvent {
 		removed := kind == batches.ChangesetEventKindGitHubUnlabeled
 		return &batches.ChangesetEvent{

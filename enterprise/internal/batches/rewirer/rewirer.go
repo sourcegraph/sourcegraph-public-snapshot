@@ -186,8 +186,15 @@ func (r *ChangesetRewirer) closeChangeset(changeset *batches.Changeset) {
 		// already and we don't want to detach it.
 		if !changeset.ArchivedIn(r.batchChangeID) {
 			changeset.Archive(r.batchChangeID)
-			changeset.Closing = true
 			reset = true
+
+			// If the changeset hasn't been closed/merged yet, we close it.
+			// Marking it as Closing would be a noop, but it's weird to show a
+			// changeset as will-be-closed on the preview page when it's
+			// already closed.
+			if changeset.Closeable() {
+				changeset.Closing = true
+			}
 		}
 	} else if wasAttached := changeset.Detach(r.batchChangeID); wasAttached {
 		// If not, we simply detach it

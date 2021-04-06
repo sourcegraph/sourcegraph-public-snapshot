@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react'
 import * as H from 'history'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
-import { ThemeProps } from '../../../../../shared/src/theme'
-import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { BatchChangeFields } from '../../../graphql-operations'
 import {
     queryChangesets as _queryChangesets,

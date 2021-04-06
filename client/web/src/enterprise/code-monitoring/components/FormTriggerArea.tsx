@@ -1,12 +1,12 @@
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import classNames from 'classnames'
 import React, { useState, useCallback, useMemo } from 'react'
-import { Link } from '../../../../../shared/src/components/Link'
-import { buildSearchURLQuery } from '../../../../../shared/src/util/url'
-import { useInputValidation, deriveInputClassName } from '../../../../../shared/src/util/useInputValidation'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
 import { SearchPatternType } from '../../../graphql-operations'
-import { scanSearchQuery } from '../../../../../shared/src/search/query/scanner'
-import { resolveFilter, validateFilter, FilterType } from '../../../../../shared/src/search/query/filters'
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { resolveFilter, validateFilter, FilterType } from '@sourcegraph/shared/src/search/query/filters'
 
 interface TriggerAreaProps {
     query: string

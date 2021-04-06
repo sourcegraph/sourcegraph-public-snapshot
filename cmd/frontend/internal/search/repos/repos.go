@@ -590,14 +590,23 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 
 type defaultReposFunc func(ctx context.Context) ([]*types.RepoName, error)
 
-func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, z *searchbackend.Zoekt, excludePatterns []string) ([]*types.RepoName, error) {
+// defaultRepositories returns the intersection of default repos (db) and indexed
+// repos (zoekt), minus repos matching excludePatterns.
+func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, z *searchbackend.Zoekt, excludePatterns []string) (_ []*types.RepoName, err error) {
+	tr, ctx := trace.New(ctx, "defaultRepositories", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	// Get the list of default repos from the database.
 	defaultRepos, err := getRawDefaultRepos(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying database for default repos")
 	}
+	tr.LazyPrintf("getRawDefaultRepos - done")
 
-	// Remove excluded repos
+	// Remove excluded repos.
 	if len(excludePatterns) > 0 {
 		patterns, _ := regexp.Compile(`(?i)` + UnionRegExps(excludePatterns))
 		filteredRepos := defaultRepos[:0]
@@ -607,15 +616,17 @@ func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFun
 			}
 		}
 		defaultRepos = filteredRepos
+		tr.LazyPrintf("remove excluded repos - done")
 	}
 
-	// Ask Zoekt which repos it has indexed
+	// Ask Zoekt which repos it has indexed.
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	set, err := z.ListAll(ctx)
 	if err != nil {
 		return nil, err
 	}
+	tr.LazyPrintf("zoekt.ListAll - done")
 
 	// In place filtering of defaultRepos to only include names from set.
 	repos := defaultRepos[:0]
@@ -624,6 +635,7 @@ func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFun
 			repos = append(repos, r)
 		}
 	}
+	tr.LazyPrintf("filtering - done")
 
 	return repos, nil
 }

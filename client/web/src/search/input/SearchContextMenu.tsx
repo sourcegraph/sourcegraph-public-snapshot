@@ -1,3 +1,6 @@
+import { ISearchContext } from '../../../../shared/src/graphql/schema'
+import { useObservable } from '../../../../shared/src/util/useObservable'
+import { Link } from '../../../../shared/src/components/Link'
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, {
@@ -71,10 +74,11 @@ const getFirstMenuItem = (): HTMLButtonElement | null =>
     document.querySelector('.search-context-menu__item:first-child')
 
 export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> = ({
-    availableSearchContexts,
     selectedSearchContextSpec,
     defaultSearchContextSpec,
     selectSearchContextSpec,
+    fetchAutoDefinedSearchContexts,
+    fetchSearchContexts,
     closeMenu,
 }) => {
     const inputElement = useRef<HTMLInputElement | null>(null)
@@ -130,10 +134,24 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         []
     )
 
+    const autoDefinedSearchContexts = useObservable(fetchAutoDefinedSearchContexts)
+    const filteredAutoDefinedSearchContexts = useMemo(
+        () =>
+            autoDefinedSearchContexts?.filter(context =>
+                context.spec.toLowerCase().includes(searchFilter.toLowerCase())
+            ),
+        [autoDefinedSearchContexts, searchFilter]
+    )
+
+    const filteredUserDefinedSearchContexts = useObservable(
+        useMemo(() => fetchSearchContexts(10, searchFilter), [fetchSearchContexts, searchFilter])
+    )
     const filteredList = useMemo(
         () =>
-            availableSearchContexts.filter(context => context.spec.toLowerCase().includes(searchFilter.toLowerCase())),
-        [availableSearchContexts, searchFilter]
+            (filteredAutoDefinedSearchContexts ?? []).concat(
+                (filteredUserDefinedSearchContexts?.nodes as ISearchContext[]) ?? []
+            ),
+        [filteredAutoDefinedSearchContexts, filteredUserDefinedSearchContexts]
     )
 
     const onMenuKeyDown = useCallback(
@@ -189,6 +207,13 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                     Reset
                 </button>
                 <span className="flex-grow-1" />
+                <Link
+                    to="/contexts"
+                    className="btn btn-link btn-sm search-context-menu__footer-button"
+                    onClick={closeMenu}
+                >
+                    Manage
+                </Link>
             </div>
         </div>
     )

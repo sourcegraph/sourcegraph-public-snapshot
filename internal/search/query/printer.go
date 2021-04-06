@@ -12,7 +12,7 @@ func stringHumanPattern(nodes []Node) string {
 		switch n := node.(type) {
 		case Pattern:
 			v := n.Value
-			if n.Annotation.Labels.isSet(Quoted) {
+			if n.Annotation.Labels.IsSet(Quoted) {
 				v = strconv.Quote(v)
 			}
 			if n.Negated {
@@ -41,7 +41,7 @@ func stringHumanParameters(parameters []Parameter) string {
 	var result []string
 	for _, p := range parameters {
 		v := p.Value
-		if p.Annotation.Labels.isSet(Quoted) {
+		if p.Annotation.Labels.IsSet(Quoted) {
 			v = strconv.Quote(v)
 		}
 		if p.Negated {

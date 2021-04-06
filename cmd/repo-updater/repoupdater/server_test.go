@@ -344,7 +344,7 @@ func testServerSetRepoEnabled(t *testing.T, store *repos.Store) func(t *testing.
 				s := &Server{Store: store}
 				srv := httptest.NewServer(s.Handler())
 				defer srv.Close()
-				cli := repoupdater.Client{URL: srv.URL}
+				cli := repoupdater.NewClient(srv.URL)
 
 				if tc.err == "" {
 					tc.err = "<nil>"
@@ -480,7 +480,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *repos.Store) func(t *testi
 				s := &Server{Store: tc.store, Scheduler: &fakeScheduler{}}
 				srv := httptest.NewServer(s.Handler())
 				defer srv.Close()
-				cli := repoupdater.Client{URL: srv.URL}
+				cli := repoupdater.NewClient(srv.URL)
 
 				if tc.err == "" {
 					tc.err = "<nil>"
@@ -581,7 +581,7 @@ func testServerRepoExternalServices(t *testing.T, store *repos.Store) func(t *te
 		s := &Server{Store: store}
 		srv := httptest.NewServer(s.Handler())
 		defer srv.Close()
-		cli := repoupdater.Client{URL: srv.URL}
+		cli := repoupdater.NewClient(srv.URL)
 		for _, tc := range testCases {
 			tc := tc
 			t.Run(tc.name, func(t *testing.T) {
@@ -1043,7 +1043,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(
 					srv := httptest.NewServer(s.Handler())
 					defer srv.Close()
 
-					cli := repoupdater.Client{URL: srv.URL}
+					cli := repoupdater.NewClient(srv.URL)
 
 					if tc.err == "" {
 						tc.err = "<nil>"

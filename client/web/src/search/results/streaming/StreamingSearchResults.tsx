@@ -2,15 +2,15 @@ import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
-import { FetchFileParameters } from '../../../../../shared/src/components/CodeExcerpt'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
-import { SearchPatternType } from '../../../../../shared/src/graphql-operations'
-import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { ThemeProps } from '../../../../../shared/src/theme'
-import { asError } from '../../../../../shared/src/util/errors'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { asError } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { AuthenticatedUser } from '../../../auth'
 import { PageTitle } from '../../../components/PageTitle'
 import { CodeMonitoringProps } from '../../../code-monitoring'
@@ -31,7 +31,6 @@ import {
     resolveVersionContext,
     ParsedSearchQueryProps,
     MutableVersionContextProps,
-    SearchContextProps,
 } from '../..'
 import { StreamingSearchResultsList } from './StreamingSearchResultsList'
 
@@ -46,8 +45,7 @@ export interface StreamingSearchResultsProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         ThemeProps,
-        CodeMonitoringProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
+        CodeMonitoringProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -69,7 +67,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         previousVersionContext,
         authenticatedUser,
         telemetryService,
-        selectedSearchContextSpec,
     } = props
 
     // Log view event on first load
@@ -103,19 +100,9 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     patternType: patternType ?? SearchPatternType.literal,
                     caseSensitive,
                     versionContext: resolveVersionContext(versionContext, availableVersionContexts),
-                    searchContextSpec: selectedSearchContextSpec,
                     trace,
                 }).pipe(debounceTime(500)),
-            [
-                streamSearch,
-                query,
-                patternType,
-                caseSensitive,
-                versionContext,
-                availableVersionContexts,
-                trace,
-                selectedSearchContextSpec,
-            ]
+            [streamSearch, query, patternType, caseSensitive, versionContext, availableVersionContexts, trace]
         )
     )
 

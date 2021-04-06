@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { ThemeProps } from '../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 interface IconProps {
     className?: string

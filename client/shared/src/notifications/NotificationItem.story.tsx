@@ -7,7 +7,7 @@ import { of } from 'rxjs'
 import { NotificationType as NotificationTypeType } from 'sourcegraph'
 import { NotificationItem } from './NotificationItem'
 import notificationItemStyles from './NotificationItem.scss'
-import webStyles from '../../../web/src/SourcegraphWebApp.scss'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 const notificationClassNames = {
     [NotificationType.Log]: 'alert alert-secondary',

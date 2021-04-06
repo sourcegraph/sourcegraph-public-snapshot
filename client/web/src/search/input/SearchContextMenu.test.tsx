@@ -1,37 +1,69 @@
+import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { mount } from 'enzyme'
 import React, { ChangeEvent } from 'react'
 import { DropdownItem, DropdownMenu, UncontrolledDropdown } from 'reactstrap'
+import { of } from 'rxjs'
 import sinon from 'sinon'
+import { ListSearchContextsResult, SearchContextFields } from '../../graphql-operations'
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
+
+const mockFetchAutoDefinedSearchContexts = () =>
+    of([
+        {
+            __typename: 'SearchContext',
+            id: '1',
+            spec: 'global',
+            autoDefined: true,
+            description: 'All repositories on Sourcegraph',
+            repositories: [],
+        },
+        {
+            __typename: 'SearchContext',
+            id: '2',
+            spec: '@username',
+            autoDefined: true,
+            description: 'Your repositories on Sourcegraph',
+            repositories: [],
+        },
+    ] as ISearchContext[])
+
+const mockFetchSearchContexts = (first: number, query?: string, after?: string) => {
+    const nodes = [
+        {
+            __typename: 'SearchContext',
+            id: '3',
+            spec: '@username/test-version-1.5',
+            autoDefined: false,
+            description: 'Only code in version 1.5',
+            repositories: [],
+        },
+        {
+            __typename: 'SearchContext',
+            id: '4',
+            spec: '@org/test-version-1.6',
+            autoDefined: false,
+            description: 'Only code in version 1.6',
+            repositories: [],
+        },
+    ].filter(context => !query || context.spec.toLowerCase().includes(query.toLowerCase())) as SearchContextFields[]
+    const result: ListSearchContextsResult['searchContexts'] = {
+        nodes,
+        pageInfo: {
+            endCursor: 'foo',
+            hasNextPage: false,
+        },
+        totalCount: nodes.length,
+    }
+    return of(result)
+}
 
 describe('SearchContextMenu', () => {
     const defaultProps: SearchContextMenuProps = {
-        availableSearchContexts: [
-            {
-                __typename: 'SearchContext',
-                id: '1',
-                spec: 'global',
-                autoDefined: true,
-                description: 'All repositories on Sourcegraph',
-            },
-            {
-                __typename: 'SearchContext',
-                id: '2',
-                spec: '@username',
-                autoDefined: true,
-                description: 'Your repositories on Sourcegraph',
-            },
-            {
-                __typename: 'SearchContext',
-                id: '3',
-                spec: '@username/test-version-1.5',
-                autoDefined: true,
-                description: 'Only code in version 1.5',
-            },
-        ],
         defaultSearchContextSpec: 'global',
         selectedSearchContextSpec: 'global',
         selectSearchContextSpec: () => {},
+        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+        fetchSearchContexts: mockFetchSearchContexts,
         closeMenu: () => {},
     }
 

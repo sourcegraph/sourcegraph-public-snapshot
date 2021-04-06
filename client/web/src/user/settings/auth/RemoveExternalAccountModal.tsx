@@ -1,12 +1,12 @@
 import React, { useCallback, useState } from 'react'
 import Dialog from '@reach/dialog'
 
-import { Form } from '../../../../../branded/src/components/Form'
-import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Scalars, DeleteExternalAccountResult, DeleteExternalAccountVariables } from '../../../graphql-operations'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 
 const deleteUserExternalAccount = async (externalAccount: Scalars['ID']): Promise<void> => {
     dataOrThrowErrors(

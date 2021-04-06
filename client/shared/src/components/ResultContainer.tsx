@@ -64,7 +64,6 @@ export interface Props {
 
     /** Expand all results */
     allExpanded?: boolean
-    stringIcon?: string
 }
 
 interface State {
@@ -97,7 +96,6 @@ export class ResultContainer extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         const Icon = this.props.icon
-        const stringIcon = this.props.stringIcon ? this.props.stringIcon : undefined
         return (
             <div className="test-search-result result-container" data-testid="result-container">
                 {/* TODO: Fix accessibility issues.
@@ -109,11 +107,7 @@ export class ResultContainer extends React.PureComponent<Props, State> {
                     }
                     onClick={this.toggle}
                 >
-                    {stringIcon ? (
-                        <img src={stringIcon} className="icon-inline icon-inline__filtered" alt="" />
-                    ) : (
-                        <Icon className="icon-inline" />
-                    )}
+                    <Icon className="icon-inline" />
                     <div
                         className={`result-container__header-title ${this.props.titleClassName || ''}`}
                         data-testid="result-container-header"

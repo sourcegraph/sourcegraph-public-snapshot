@@ -24,7 +24,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- A regression caused by search onboarding tour logic to never focus input in the search bar on the homepage. Input now focuses on the homepage if the search tour isn't in effect. [#19678](https://github.com/sourcegraph/sourcegraph/pull/19678)
+- New changes of a Perforce depot will now be reflected in `master` branch after the initial clone. [#19690](https://github.com/sourcegraph/sourcegraph/pull/19690)
 
 ## 3.26.1
 
@@ -43,7 +44,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Commit search returning duplicate commits. [#19460](https://github.com/sourcegraph/sourcegraph/pull/19460)
 - Clicking the Code Monitoring tab tries to take users to a non-existent repo. [#19525](https://github.com/sourcegraph/sourcegraph/pull/19525)
-- Diff search not highlighting search terms correctly for some files. [#19543](https://github.com/sourcegraph/sourcegraph/pull/19543)
+- Diff and commit search not highlighting search terms correctly for some files. [#19543](https://github.com/sourcegraph/sourcegraph/pull/19543), [#19639](https://github.com/sourcegraph/sourcegraph/pull/19639)
 
 ### Removed
 

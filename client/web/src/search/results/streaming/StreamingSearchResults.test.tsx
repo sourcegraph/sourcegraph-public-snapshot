@@ -5,11 +5,11 @@ import { act } from 'react-dom/test-utils'
 import { BrowserRouter } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
-import { FileMatch } from '../../../../../shared/src/components/FileMatch'
-import { VirtualList } from '../../../../../shared/src/components/VirtualList'
-import { SearchPatternType } from '../../../../../shared/src/graphql-operations'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
+import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
+import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { SearchResult } from '../../../components/SearchResult'
 import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
 import * as helpers from '../../helpers'
@@ -24,7 +24,7 @@ import {
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULT,
     RESULT,
-} from '../../../../../shared/src/util/searchTestHelpers'
+} from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 describe('StreamingSearchResults', () => {
     const history = createBrowserHistory()
@@ -45,7 +45,6 @@ describe('StreamingSearchResults', () => {
         caseSensitive: false,
         patternType: SearchPatternType.literal,
         versionContext: undefined,
-        selectedSearchContextSpec: 'global',
         availableVersionContexts: [],
         previousVersionContext: null,
 
@@ -95,7 +94,6 @@ describe('StreamingSearchResults', () => {
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
             versionContext: 'test',
-            searchContextSpec: 'global',
             trace: undefined,
         })
 
@@ -129,7 +127,6 @@ describe('StreamingSearchResults', () => {
             patternType: SearchPatternType.regexp,
             caseSensitive: false,
             versionContext: undefined,
-            searchContextSpec: 'global',
             trace: undefined,
         })
 

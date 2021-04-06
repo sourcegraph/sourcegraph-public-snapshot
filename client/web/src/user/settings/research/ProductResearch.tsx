@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import { TelemetryService } from '../../../../../shared/src/telemetry/telemetryService'
+import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../../auth'
 
 interface Props {

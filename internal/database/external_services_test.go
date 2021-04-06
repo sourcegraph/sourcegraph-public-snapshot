@@ -1476,6 +1476,6 @@ func (k testKey) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Se
 	return &s, err
 }
 
-func (k testKey) ID(ctx context.Context) (string, error) {
-	return "testkey", nil
+func (k testKey) Version(ctx context.Context) (encryption.KeyVersion, error) {
+	return encryption.KeyVersion{Type: "testkey"}, nil
 }

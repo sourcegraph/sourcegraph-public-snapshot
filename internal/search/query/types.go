@@ -292,10 +292,10 @@ func (q Q) valueToTypedValue(field, value string, label labels) []*Value {
 	switch field {
 	case
 		FieldDefault:
-		if label.isSet(Literal) {
+		if label.IsSet(Literal) {
 			return []*Value{{String: &value}}
 		}
-		if label.isSet(Regexp) {
+		if label.IsSet(Regexp) {
 			regexp, err := regexp.Compile(value)
 			if err != nil {
 				panic(fmt.Sprintf("Invariant broken: value must have been checked to be valid regexp. Error: %s", err))

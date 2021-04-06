@@ -4,9 +4,9 @@ import { createMemoryHistory, createLocation } from 'history'
 import { noop } from 'lodash'
 import { NEVER } from 'rxjs'
 import { SearchResultsInfoBar, SearchResultsInfoBarProps } from './SearchResultsInfoBar'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { SearchPatternType } from '../../graphql-operations'
-import { extensionsController } from '../../../../shared/src/util/searchTestHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     extensionsController,

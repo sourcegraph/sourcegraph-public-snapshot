@@ -349,6 +349,28 @@ func validateCommitParameters(nodes []Node) error {
 	return nil
 }
 
+// validatePredicates validates predicate parameters with respect to their validation logic.
+func validatePredicates(nodes []Node) error {
+	var err error
+	VisitParameter(nodes, func(field, value string, negated bool, annotation Annotation) {
+		if err != nil {
+			return
+		}
+		if annotation.Labels.IsSet(IsPredicate) {
+			if negated {
+				err = errors.New("predicates do not currently support negation")
+				return
+			}
+			name, params := ParseAsPredicate(value)                // guaranteed to succeed
+			predicate := DefaultPredicateRegistry.Get(field, name) // guaranteed to succeed
+			if parseErr := predicate.ParseParams(params); parseErr != nil {
+				err = fmt.Errorf("invalid predicate value: %s", parseErr)
+			}
+		}
+	})
+	return err
+}
+
 // validateRepoHasFile validates that the repohasfile parameter can be executed.
 // A query like `repohasfile:foo type:symbol patter-to-match-symbols` is
 // currently not supported.
@@ -407,13 +429,13 @@ func validateParameters(nodes []Node) error {
 func validatePattern(nodes []Node) error {
 	var err error
 	VisitPattern(nodes, func(value string, negated bool, annotation Annotation) {
-		if annotation.Labels.isSet(Regexp) {
+		if annotation.Labels.IsSet(Regexp) {
 			if err != nil {
 				return
 			}
 			_, err = regexp.Compile(value)
 		}
-		if annotation.Labels.isSet(Structural) && negated {
+		if annotation.Labels.IsSet(Structural) && negated {
 			if err != nil {
 				return
 			}
@@ -439,6 +461,7 @@ func validate(nodes []Node) error {
 		validateRepoRevPair,
 		validateRepoHasFile,
 		validateCommitParameters,
+		validatePredicates,
 	)
 }
 
