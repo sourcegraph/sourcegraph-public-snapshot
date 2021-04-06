@@ -16,6 +16,7 @@ type Key interface {
 }
 
 type KeyVersion struct {
+	// TODO: generate this as an enum from JSONSchema
 	Type    string
 	Name    string
 	Version string
