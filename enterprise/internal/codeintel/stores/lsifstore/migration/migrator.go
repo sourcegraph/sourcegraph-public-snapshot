@@ -261,7 +261,13 @@ func (m *Migrator) selectAndUpdate(ctx context.Context, tx *lsifstore.Store, sou
 	}
 
 	// Bulk insert all the unique column values into the temporary table
-	if err := batch.InsertValues(ctx, tx.Handle().DB(), temporaryTableName, m.temporaryTableFieldNames, rowValues); err != nil {
+	if err := batch.InsertValues(
+		ctx,
+		tx.Handle().DB(),
+		temporaryTableName,
+		m.temporaryTableFieldNames,
+		rowValues,
+	); err != nil {
 		return nil, err
 	}
 

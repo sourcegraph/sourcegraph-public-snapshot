@@ -33,11 +33,14 @@ func (s *Store) UpdatePackageReferences(ctx context.Context, dumpID int, referen
 		return err
 	}
 
-	db := tx.Handle().DB()
-	columns := []string{"scheme", "name", "version", "filter"}
-
 	// Bulk insert all the unique column values into the temporary table
-	if err := batch.InsertValues(ctx, db, "t_lsif_references", columns, loadReferencesChannel(references)); err != nil {
+	if err := batch.InsertValues(
+		ctx,
+		tx.Handle().DB(),
+		"t_lsif_references",
+		[]string{"scheme", "name", "version", "filter"},
+		loadReferencesChannel(references),
+	); err != nil {
 		return err
 	}
 

@@ -50,7 +50,6 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 	}
 
 	var count uint32
-	columns := []string{"path", "data", "num_diagnostics"}
 	inserter := func(inserter *batch.Inserter) error {
 		for v := range documents {
 			data, err := s.serializer.MarshalDocumentData(v.Document)
@@ -69,7 +68,13 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 	}
 
 	// Bulk insert all the unique column values into the temporary table
-	if err := withBatchInserter(ctx, tx.Handle().DB(), "t_lsif_data_documents", columns, inserter); err != nil {
+	if err := withBatchInserter(
+		ctx,
+		tx.Handle().DB(),
+		"t_lsif_data_documents",
+		[]string{"path", "data", "num_diagnostics"},
+		inserter,
+	); err != nil {
 		return err
 	}
 	traceLog(log.Int("numDocumentRecords", int(count)))
@@ -114,7 +119,6 @@ func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunk
 	}
 
 	var count uint32
-	columns := []string{"idx", "data"}
 	inserter := func(inserter *batch.Inserter) error {
 		for v := range resultChunks {
 			data, err := s.serializer.MarshalResultChunkData(v.ResultChunk)
@@ -133,7 +137,13 @@ func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunk
 	}
 
 	// Bulk insert all the unique column values into the temporary table
-	if err := withBatchInserter(ctx, tx.Handle().DB(), "t_lsif_data_result_chunks", columns, inserter); err != nil {
+	if err := withBatchInserter(
+		ctx,
+		tx.Handle().DB(),
+		"t_lsif_data_result_chunks",
+		[]string{"idx", "data"},
+		inserter,
+	); err != nil {
 		return err
 	}
 	traceLog(log.Int("numResultChunkRecords", int(count)))
@@ -189,7 +199,6 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 	}
 
 	var count uint32
-	columns := []string{"scheme", "identifier", "data", "num_locations"}
 	inserter := func(inserter *batch.Inserter) error {
 		for v := range monikerLocations {
 			data, err := s.serializer.MarshalLocations(v.Locations)
@@ -208,7 +217,13 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 	}
 
 	// Bulk insert all the unique column values into the temporary table
-	if err := withBatchInserter(ctx, tx.Handle().DB(), "t_"+tableName, columns, inserter); err != nil {
+	if err := withBatchInserter(
+		ctx,
+		tx.Handle().DB(),
+		"t_"+tableName,
+		[]string{"scheme", "identifier", "data", "num_locations"},
+		inserter,
+	); err != nil {
 		return err
 	}
 	traceLog(log.Int("numRecords", int(count)))
