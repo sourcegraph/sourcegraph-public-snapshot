@@ -241,15 +241,10 @@ SELECT %s, %s, source.scheme, source.identifier, source.data, source.num_locatio
 FROM t_%s source
 `
 
+// withBatchInserter runs batch.WithInserter in as a number of goroutines proportional to
+// the maximum number of CPUs that can be executing simultaneously.
 func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *batch.Inserter) error) (err error) {
 	return goroutine.RunWorkers(goroutine.SimplePoolWorker(func() error {
-		inserter := batch.NewInserter(ctx, db, tableName, columns...)
-		defer func() {
-			if flushErr := inserter.Flush(ctx); flushErr != nil {
-				err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
-			}
-		}()
-
-		return f(inserter)
+		return batch.WithInserter(ctx, db, tableName, columns, f)
 	}))
 }
