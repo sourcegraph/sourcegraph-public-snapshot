@@ -4,9 +4,8 @@ import (
 	"context"
 	"sync/atomic"
 
-	"github.com/hashicorp/go-multierror"
+	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -30,15 +29,7 @@ func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta semantic.MetaD
 	}})
 	defer endObservation(1, observation.Args{})
 
-	inserter := batch.NewInserter(ctx, s.Handle().DB(), "lsif_data_metadata", "dump_id", "num_result_chunks")
-
-	defer func() {
-		if flushErr := inserter.Flush(ctx); flushErr != nil {
-			err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
-		}
-	}()
-
-	return inserter.Insert(ctx, bundleID, meta.NumResultChunks)
+	return s.Exec(ctx, sqlf.Sprintf("INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (%s, %s)", bundleID, meta.NumResultChunks))
 }
 
 func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan semantic.KeyedDocumentData) (err error) {
