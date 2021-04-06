@@ -30,6 +30,10 @@
         align-items: center;
         padding: 0.25rem 1rem;
 
+        &--error {
+            color: var(--danger) !important;
+        }
+
         &-name {
             width: 10rem;
             margin-right: 0.25rem;

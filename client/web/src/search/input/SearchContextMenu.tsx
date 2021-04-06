@@ -1,7 +1,8 @@
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
-import { debounce, switchMap, tap } from 'rxjs/operators'
+import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
 import { ISearchContext } from '../../../../shared/src/graphql/schema'
 import { useObservable } from '../../../../shared/src/util/useObservable'
+import { asError, isErrorLike } from '../../../../shared/src/util/errors'
 import { Link } from '../../../../shared/src/components/Link'
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
@@ -79,11 +80,13 @@ interface PageInfo {
 }
 
 interface NextPageUpdate {
-    cursor: string | undefined | null
+    cursor: string | undefined
     query: string
 }
 
-type LoadingState = 'LOADING' | 'LOADING_NEXT_PAGE' | 'DONE'
+type LoadingState = 'LOADING' | 'LOADING_NEXT_PAGE' | 'DONE' | 'ERROR'
+
+const searchContextsPerPageToLoad = 10
 
 const getFirstMenuItem = (): HTMLButtonElement | null =>
     document.querySelector('.search-context-menu__item:first-child')
@@ -159,13 +162,13 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
     const [lastPageInfo, setLastPageInfo] = useState<PageInfo | null>(null)
 
     const loadNextPageUpdates = useRef(
-        new BehaviorSubject<NextPageUpdate>({ cursor: null, query: '' })
+        new BehaviorSubject<NextPageUpdate>({ cursor: undefined, query: '' })
     )
 
     const loadNextPage = useCallback((): void => {
         if (loadingState === 'DONE' && (!lastPageInfo || lastPageInfo.hasNextPage)) {
             loadNextPageUpdates.current.next({
-                cursor: lastPageInfo?.endCursor,
+                cursor: lastPageInfo?.endCursor ?? undefined,
                 query: searchFilter,
             })
         }
@@ -175,7 +178,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         (event: FormEvent<HTMLInputElement>) => {
             const searchFilter = event ? event.currentTarget.value : ''
             setSearchFilter(searchFilter)
-            loadNextPageUpdates.current.next({ cursor: null, query: searchFilter })
+            loadNextPageUpdates.current.next({ cursor: undefined, query: searchFilter })
         },
         [loadNextPageUpdates, setSearchFilter]
     )
@@ -183,20 +186,28 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
     useEffect(() => {
         const subscription = loadNextPageUpdates.current
             .pipe(
-                tap(({ cursor }) => setLoadingState(cursor === null ? 'LOADING' : 'LOADING_NEXT_PAGE')),
+                tap(({ cursor }) => setLoadingState(!cursor ? 'LOADING' : 'LOADING_NEXT_PAGE')),
                 // Do not debounce the initial load
-                debounce(({ cursor, query }) => (cursor === null && query === '' ? timer(0) : timer(300))),
-                switchMap(({ cursor, query }) => combineLatest([of(cursor), fetchSearchContexts(10, query, cursor)])),
-                tap(([, searchContextsResult]) => setLastPageInfo(searchContextsResult.pageInfo))
+                debounce(({ cursor, query }) => (!cursor && query === '' ? timer(0) : timer(300))),
+                switchMap(({ cursor, query }) =>
+                    combineLatest([of(cursor), fetchSearchContexts(searchContextsPerPageToLoad, query, cursor)])
+                ),
+                tap(([, searchContextsResult]) => setLastPageInfo(searchContextsResult.pageInfo)),
+                catchError(error => [asError(error)])
             )
-            .subscribe(([cursor, searchContextsResult]) => {
-                setSearchContexts(searchContexts => {
-                    // Cursor is null when loading the first page, so we need to replace existing search contexts
-                    // E.g. when a user scrolls down to the end of the list, and starts searching
-                    const initialSearchContexts = cursor === null ? [] : searchContexts
-                    return initialSearchContexts.concat(searchContextsResult.nodes)
-                })
-                setLoadingState('DONE')
+            .subscribe(result => {
+                if (!isErrorLike(result)) {
+                    const [cursor, searchContextsResult] = result
+                    setSearchContexts(searchContexts => {
+                        // Cursor is undefined when loading the first page, so we need to replace existing search contexts
+                        // E.g. when a user scrolls down to the end of the list, and starts searching
+                        const initialSearchContexts = !cursor ? [] : searchContexts
+                        return initialSearchContexts.concat(searchContextsResult.nodes)
+                    })
+                    setLoadingState('DONE')
+                } else {
+                    setLoadingState('ERROR')
+                }
             })
 
         return () => subscription.unsubscribe()
@@ -258,9 +269,17 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                             searchFilter={searchFilter}
                         />
                     ))}
-                {loadingState !== 'DONE' && (
+                {(loadingState === 'LOADING' || loadingState === 'LOADING_NEXT_PAGE') && (
                     <DropdownItem className="search-context-menu__item" disabled={true}>
                         Loading search contexts...
+                    </DropdownItem>
+                )}
+                {loadingState === 'ERROR' && (
+                    <DropdownItem
+                        className="search-context-menu__item search-context-menu__item--error"
+                        disabled={true}
+                    >
+                        Error occured while loading search contexts
                     </DropdownItem>
                 )}
                 {loadingState === 'DONE' && filteredList.length === 0 && (

@@ -29,7 +29,7 @@ const mockFetchAutoDefinedSearchContexts = () =>
         },
     ] as ISearchContext[])
 
-const mockFetchSearchContexts = (first: number, query?: string, after?: string | null) => {
+const mockFetchSearchContexts = (first: number, query?: string, after?: string) => {
     const nodes = [
         {
             __typename: 'SearchContext',
@@ -92,6 +92,13 @@ describe('SearchContextMenu', () => {
                 </DropdownMenu>
             </UncontrolledDropdown>
         )
+
+        act(() => {
+            // Wait for debounce
+            clock.tick(50)
+        })
+        root.update()
+
         const item = root.find(DropdownItem).at(1)
         item.simulate('click')
 
@@ -201,5 +208,27 @@ describe('SearchContextMenu', () => {
         const items = root.find(DropdownItem)
         expect(items.length).toBe(1)
         expect(items.at(0).text()).toBe('No contexts found')
+    })
+
+    it('should show error on failed next page load', () => {
+        const errorFetchSearchContexts = () => {
+            throw new Error('unknown error')
+        }
+        const root = mount(
+            <UncontrolledDropdown>
+                <DropdownMenu>
+                    <SearchContextMenu {...defaultProps} fetchSearchContexts={errorFetchSearchContexts} />
+                </DropdownMenu>
+            </UncontrolledDropdown>
+        )
+
+        act(() => {
+            // Wait for debounce
+            clock.tick(50)
+        })
+        root.update()
+
+        const items = root.find(DropdownItem)
+        expect(items.at(items.length - 1).text()).toBe('Error occured while loading search contexts')
     })
 })

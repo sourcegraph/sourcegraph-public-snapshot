@@ -9,7 +9,7 @@ export function mockFetchAutoDefinedSearchContexts(): Observable<ISearchContext[
 export function mockFetchSearchContexts(
     first: number,
     query?: string,
-    after?: string | null
+    after?: string
 ): Observable<ListSearchContextsResult['searchContexts']> {
     const result: ListSearchContextsResult['searchContexts'] = {
         nodes: [],
