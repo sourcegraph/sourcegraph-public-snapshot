@@ -25,7 +25,6 @@ import {
     REPO_MATCH_RESULT,
     RESULT,
 } from '../../../../../shared/src/util/searchTestHelpers'
-import { forEach } from 'lodash'
 
 describe('StreamingSearchResults', () => {
     const history = createBrowserHistory()
