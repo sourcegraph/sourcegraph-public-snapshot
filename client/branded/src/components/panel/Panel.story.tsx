@@ -116,38 +116,30 @@ const PanelWithActions = (
     />
 )
 
-add('Simple', () => {
-    return (
-        <MemoryRouter initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
-            <div>
-                <Panel {...panelProps} />
-            </div>
-        </MemoryRouter>
-    )
-})
+add('Simple', () => (
+    <MemoryRouter initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
+        <div>
+            <Panel {...panelProps} />
+        </div>
+    </MemoryRouter>
+))
 
-add('Simple mobile', () => {
-    return (
-        <MemoryRouter initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
-            <div style={{ width: 320 }}>
-                <Panel {...panelProps} />
-            </div>
-        </MemoryRouter>
-    )
-})
+add('Simple mobile', () => (
+    <MemoryRouter initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
+        <div style={{ width: 320 }}>
+            <Panel {...panelProps} />
+        </div>
+    </MemoryRouter>
+))
 
-add('With actions', () => {
-    return (
-        <MemoryRouter initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
-            <div>{PanelWithActions}</div>
-        </MemoryRouter>
-    )
-})
+add('With actions', () => (
+    <MemoryRouter initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
+        <div>{PanelWithActions}</div>
+    </MemoryRouter>
+))
 
-add('With actions mobile', () => {
-    return (
-        <MemoryRouter initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
-            <div style={{ width: 320 }}>{PanelWithActions}</div>
-        </MemoryRouter>
-    )
-})
+add('With actions mobile', () => (
+    <MemoryRouter initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
+        <div style={{ width: 320 }}>{PanelWithActions}</div>
+    </MemoryRouter>
+))

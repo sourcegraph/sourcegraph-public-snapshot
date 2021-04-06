@@ -201,7 +201,7 @@ export const Panel = React.memo<Props>(props => {
                       )
                       .sort((a, b) => b.priority - a.priority)
                 : [],
-        [panelViews, props]
+        [history, location, panelViews, props]
     )
 
     useEffect(() => {
