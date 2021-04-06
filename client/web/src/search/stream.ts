@@ -519,6 +519,8 @@ function search({
         if (trace) {
             parameters.push(['trace', trace])
         }
+        // We hard-code display=500 for the frontend. The src-cli allows to configure the display limit.
+        parameters.push(['display', '500'])
         const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
 
         const eventSource = new EventSource('/search/stream?' + parameterEncoded)
