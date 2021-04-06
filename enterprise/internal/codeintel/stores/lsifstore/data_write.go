@@ -38,8 +38,14 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 	}})
 	defer endObservation(1, observation.Args{})
 
-	var count uint32
+	// Create temporary table symmetric to lsif_data_documents without the dump id or schema version
+	if err := s.Exec(ctx, sqlf.Sprintf(writeDocumentsTemporaryTableQuery)); err != nil {
+		return err
+	}
 
+	var count uint32
+	db := s.Handle().DB()
+	columns := []string{"path", "data", "num_diagnostics"}
 	inserter := func(inserter *batch.Inserter) error {
 		for v := range documents {
 			data, err := s.serializer.MarshalDocumentData(v.Document)
@@ -47,7 +53,7 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 				return err
 			}
 
-			if err := inserter.Insert(ctx, bundleID, v.Path, data, CurrentDocumentSchemaVersion, len(v.Document.Diagnostics)); err != nil {
+			if err := inserter.Insert(ctx, v.Path, data, len(v.Document.Diagnostics)); err != nil {
 				return err
 			}
 
@@ -57,12 +63,36 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 		return nil
 	}
 
-	if err := withBatchInserter(ctx, s.Handle().DB(), "lsif_data_documents", []string{"dump_id", "path", "data", "schema_version", "num_diagnostics"}, inserter); err != nil {
+	// Bulk insert all the unique column values into the temporary table
+	if err := withBatchInserter(ctx, db, "t_lsif_data_documents", columns, inserter); err != nil {
+		return err
+	}
+
+	// Insert the values from the temporary table into the target table. We select a
+	// parameterized dump id and schema version here since it is the same for all rows
+	// in this operation.
+	if err := s.Exec(ctx, sqlf.Sprintf(writeDocumentsInsertQuery, bundleID, CurrentDocumentSchemaVersion)); err != nil {
 		return err
 	}
 	traceLog(log.Int("count", int(count)))
 	return nil
 }
+
+const writeDocumentsTemporaryTableQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:WriteDocuments
+CREATE TEMPORARY TABLE t_lsif_data_documents (
+	path text NOT NULL,
+	data bytea NOT NULL,
+	num_diagnostics integer NOT NULL
+) ON COMMIT DROP
+`
+
+const writeDocumentsInsertQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:WriteDocuments
+INSERT INTO lsif_data_documents (dump_id, schema_version, path, data, num_diagnostics)
+SELECT %s, %s, source.path, source.data, source.num_diagnostics
+FROM t_lsif_data_documents source
+`
 
 func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan semantic.IndexedResultChunkData) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeResultChunks.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
