@@ -343,7 +343,7 @@ describe('e2e test suite', () => {
             )
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
-            await percySnapshot(driver.page, 'Search results repo')
+            // await percySnapshot(page, 'Search results repo')
         })
 
         test('Search results file', async () => {
@@ -352,7 +352,7 @@ describe('e2e test suite', () => {
             )
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
-            await percySnapshot(driver.page, 'Search results file')
+            // await percySnapshot(page, 'Search results file')
         })
 
         test('Search visibility:private|public', async () => {
@@ -396,7 +396,7 @@ describe('e2e test suite', () => {
             )
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
-            await percySnapshot(driver.page, 'Search results code')
+            // await percySnapshot(page, 'Search results code')
         })
 
         test('Site admin overview', async () => {

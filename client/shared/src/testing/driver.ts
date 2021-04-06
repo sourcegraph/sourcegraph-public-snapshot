@@ -39,9 +39,26 @@ import { PUPPETEER_BROWSER_REVISION } from './puppeteer-browser-revision'
 export const oncePageEvent = <E extends keyof PageEventObj>(page: Page, eventName: E): Promise<PageEventObj[E]> =>
     new Promise(resolve => page.once(eventName, resolve))
 
-export const percySnapshot = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
-    ? realPercySnapshot
-    : () => Promise.resolve()
+interface PercySnapshotConfig {
+    /** Optionally specify a theme to apply before taking the screenshot */
+    theme: 'theme-light' | 'theme-dark' | 'theme-redesign'
+}
+
+export const percySnapshot = async (page: Page, name: string, config?: PercySnapshotConfig): Promise<void> => {
+    const percyEnabled = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
+
+    if (!percyEnabled) {
+        return Promise.resolve()
+    }
+
+    if (config?.theme) {
+        await page.evaluate(() => document.documentElement.classList.add(config.theme))
+        await realPercySnapshot(page, name)
+        await page.evaluate(() => document.documentElement.classList.remove(config.theme))
+    } else {
+        return realPercySnapshot(page, name)
+    }
+}
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
 

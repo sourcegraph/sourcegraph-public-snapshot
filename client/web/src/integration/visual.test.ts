@@ -25,6 +25,7 @@ describe('Visual tests', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
             await percySnapshot(driver.page, 'Search page')
+            await percySnapshot(driver.page, 'Search page', { theme: 'theme-dark' })
         })
 
         it('Renders search result page correctly', async () => {
@@ -34,6 +35,7 @@ describe('Visual tests', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
             await driver.page.waitForSelector('#monaco-query-input')
             await percySnapshot(driver.page, 'Search results page')
+            await percySnapshot(driver.page, 'Search results page', { theme: 'theme-dark' })
         })
     })
 
@@ -51,15 +53,7 @@ describe('Visual tests', () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}`)
             await driver.page.waitForSelector('.test-repo-blob')
             await percySnapshot(driver.page, 'Blob page')
-        })
-
-        it('Renders search result page correctly', async () => {
-            testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
-            })
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
-            await driver.page.waitForSelector('#monaco-query-input')
-            await percySnapshot(driver.page, 'Search results page')
+            await percySnapshot(driver.page, 'Blob page', { theme: 'theme-dark' })
         })
     })
 })
