@@ -434,12 +434,17 @@ func ScanPredicate(field string, buf []byte) (string, int, bool) {
 func ScanPredicateName(fieldRegistry map[string]func() Predicate, buf []byte) (string, int, bool) {
 	var predicateName string
 	var advance int
-	for i, c := range buf {
-		if !unicode.IsLetter(rune(c)) {
-			predicateName = string(buf[:i])
-			advance = i
+	for {
+		r, i := utf8.DecodeRune(buf[advance:])
+		if r == utf8.RuneError {
 			break
 		}
+
+		if !(unicode.IsLetter(r) || r == '.') {
+			predicateName = string(buf[:advance])
+			break
+		}
+		advance += i
 	}
 
 	if _, ok := fieldRegistry[predicateName]; !ok {

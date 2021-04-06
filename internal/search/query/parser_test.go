@@ -200,6 +200,16 @@ func TestScanPredicate(t *testing.T) {
 		ResultLabels: "IsPredicate",
 	}).Equal(t, test(`repo:contains(file:test)`))
 
+	autogold.Want("Repo contains commit after predicate", value{
+		Result:       `{"field":"repo","value":"contains.commit.after(last thursday)","negated":false}`,
+		ResultLabels: "IsPredicate",
+	}).Equal(t, test(`repo:contains.commit.after(last thursday)`))
+
+	autogold.Want("Repo contains commit before predicate does not exist", value{
+		Result:       `{"field":"repo","value":"contains.commit.before(yesterday)","negated":false}`,
+		ResultLabels: "None",
+	}).Equal(t, test(`repo:contains.commit.before(yesterday)`))
+
 	autogold.Want("Predicate contains escaped paranthesis", value{
 		Result:       `{"field":"repo","value":"contains(\\()","negated":false}`,
 		ResultLabels: "IsPredicate",

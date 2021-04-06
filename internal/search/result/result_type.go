@@ -41,17 +41,12 @@ func (r Types) Without(t Types) Types {
 }
 
 func (r Types) String() string {
-	var s strings.Builder
-	first := true
+	var names []string
 	for name, t := range TypeFromString {
 		if !r.Has(t) {
 			continue
 		}
-		if !first {
-			s.WriteByte('|')
-			first = false
-		}
-		s.WriteString(name)
+		names = append(names, name)
 	}
-	return s.String()
+	return strings.Join(names, "|")
 }
