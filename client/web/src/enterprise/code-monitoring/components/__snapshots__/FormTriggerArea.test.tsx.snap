@@ -38,7 +38,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
         >
           <input
             autoFocus={true}
-            className="trigger-area__query-input-field form-control mt-2 mb-3 test-trigger-input text-monospace is-invalid"
+            className="trigger-area__query-input-field form-control mt-2 mb-3 test-trigger-input text-monospace test-is-invalid"
             data-testid="trigger-query-edit"
             onChange={[Function]}
             spellCheck={false}

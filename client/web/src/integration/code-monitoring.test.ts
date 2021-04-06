@@ -108,13 +108,13 @@ describe('Code monitoring', () => {
 
             await driver.page.waitForSelector('.test-trigger-input')
             await driver.page.type('.test-trigger-input', 'foobar')
-            await driver.page.waitForSelector('.is-invalid')
+            await driver.page.waitForSelector('.test-is-invalid')
 
             await driver.page.type('.test-trigger-input', ' type:diff')
-            await driver.page.waitForSelector('.is-invalid')
+            await driver.page.waitForSelector('.test-is-invalid')
 
             await driver.page.type('.test-trigger-input', ' repo:test')
-            await driver.page.waitForSelector('.is-valid')
+            await driver.page.waitForSelector('.test-is-valid')
             await driver.page.waitForSelector('.test-preview-link')
             expect(
                 await driver.page.evaluate(() => document.querySelectorAll('.test-preview-link').length)
@@ -140,7 +140,7 @@ describe('Code monitoring', () => {
 
             await driver.page.waitForSelector('.test-trigger-input')
             await driver.page.type('.test-trigger-input', 'foobar type:diff repo:test')
-            await driver.page.waitForSelector('.is-valid')
+            await driver.page.waitForSelector('.test-is-valid')
             await driver.page.waitForSelector('.test-preview-link')
             await driver.page.waitForSelector('.test-submit-trigger')
             await driver.page.click('.test-submit-trigger')
@@ -177,7 +177,7 @@ describe('Code monitoring', () => {
 
             await driver.page.waitForSelector('.test-trigger-input')
             await driver.page.type('.test-trigger-input', 'foobar type:diff repo:test')
-            await driver.page.waitForSelector('.is-valid')
+            await driver.page.waitForSelector('.test-is-valid')
             await driver.page.waitForSelector('.test-preview-link')
             await driver.page.waitForSelector('.test-submit-trigger')
             await driver.page.click('.test-submit-trigger')

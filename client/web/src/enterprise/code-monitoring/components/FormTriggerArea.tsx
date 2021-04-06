@@ -199,7 +199,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     type="text"
                                     className={classNames(
                                         'trigger-area__query-input-field form-control mt-2 mb-3 test-trigger-input text-monospace',
-                                        deriveInputClassName(queryState)
+                                        `test-${deriveInputClassName(queryState)}`
                                     )}
                                     onChange={nextQueryFieldChange}
                                     value={queryState.value}

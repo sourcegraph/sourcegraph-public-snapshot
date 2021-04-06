@@ -58,7 +58,7 @@ describe('CreateCodeMonitorPage', () => {
             clock.tick(600)
         })
         component = component.update()
-        expect(component.find('.is-valid').length).toBe(1)
+        expect(component.find('.test-is-valid').length).toBe(1)
         const submitTrigger = component.find('.test-submit-trigger')
         submitTrigger.simulate('click')
         const actionButton = component.find('.test-action-button')
@@ -90,7 +90,7 @@ describe('CreateCodeMonitorPage', () => {
             clock.tick(600)
         })
         component = component.update()
-        expect(component.find('.is-valid').length).toBe(1)
+        expect(component.find('.test-is-valid').length).toBe(1)
         const submitTrigger = component.find('.test-submit-trigger')
         submitTrigger.simulate('click')
 
