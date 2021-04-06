@@ -3,7 +3,7 @@ import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
 import React from 'react'
 import { python2To3Metadata } from './Python2To3'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { NEVER, of } from 'rxjs'
+import { NEVER } from 'rxjs'
 import { NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
 import { ThemePreference } from '../theme'
 import { ActionItemComponentProps } from '../../../shared/src/actions/ActionItem'
@@ -13,6 +13,7 @@ import { WebStory } from '../components/WebStory'
 import { subtypeOf } from '../../../shared/src/util/types'
 import { action } from '@storybook/addon-actions'
 import { cncf } from './cncf'
+import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../searchContexts/testHelpers'
 
 const { add } = storiesOf('web/RepogroupPage', module).addParameters({
     design: {
@@ -100,16 +101,8 @@ const commonProps = () =>
         enableSmartQuery: false,
         showOnboardingTour: false,
         showQueryBuilder: false,
-        fetchAutoDefinedSearchContexts: of([]),
-        fetchSearchContexts: () =>
-            of({
-                nodes: [],
-                pageInfo: {
-                    endCursor: null,
-                    hasNextPage: false,
-                },
-                totalCount: 0,
-            }),
+        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+        fetchSearchContexts: mockFetchSearchContexts,
     })
 
 add('Refactor Python 2 to 3', () => (

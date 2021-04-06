@@ -3,6 +3,7 @@ import React from 'react'
 import { Observable, of } from 'rxjs'
 import { WebStory } from '../../components/WebStory'
 import { ListSearchContextsResult } from '../../graphql-operations'
+import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
 const { add } = storiesOf('web/search/input/SearchContextMenu', module)
@@ -67,20 +68,8 @@ const defaultProps: SearchContextMenuProps = {
 }
 
 const emptySearchContexts = {
-    fetchAutoDefinedSearchContexts: of([]),
-    fetchSearchContexts: (
-        first: number,
-        query?: string,
-        after?: string
-    ): Observable<ListSearchContextsResult['searchContexts']> =>
-        of({
-            nodes: [],
-            pageInfo: {
-                endCursor: null,
-                hasNextPage: false,
-            },
-            totalCount: 0,
-        }),
+    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+    fetchSearchContexts: mockFetchSearchContexts,
 }
 
 add('default', () => <WebStory>{() => <SearchContextMenu {...defaultProps} />}</WebStory>, {})

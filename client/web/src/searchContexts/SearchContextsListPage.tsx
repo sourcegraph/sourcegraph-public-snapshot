@@ -31,12 +31,12 @@ export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> 
     </div>
 )
 
-export interface SearchContextsPageProps {
+export interface SearchContextsListPageProps {
     location: H.Location
     history: H.History
 }
 
-export const SearchContextsPage: React.FunctionComponent<SearchContextsPageProps> = props => {
+export const SearchContextsListPage: React.FunctionComponent<SearchContextsListPageProps> = props => {
     const queryConnection = useCallback(
         (args: Partial<ListSearchContextsVariables>) =>
             fetchSearchContexts(args.first ?? 1, args.query ?? undefined, args.after ?? undefined),
