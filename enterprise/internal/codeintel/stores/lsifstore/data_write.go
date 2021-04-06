@@ -184,8 +184,14 @@ func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocati
 }
 
 func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, version int, monikerLocations chan semantic.MonikerLocations) (int, error) {
-	var count uint32
+	// Create temporary table symmetric to the given target table without the dump id or schema version
+	if err := s.Exec(ctx, sqlf.Sprintf(writeDefinitionsReferencesTemporaryTableQuery, sqlf.Sprintf(tableName))); err != nil {
+		return 0, err
+	}
 
+	var count uint32
+	db := s.Handle().DB()
+	columns := []string{"scheme", "identifier", "data", "num_locations"}
 	inserter := func(inserter *batch.Inserter) error {
 		for v := range monikerLocations {
 			data, err := s.serializer.MarshalLocations(v.Locations)
@@ -193,7 +199,7 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 				return err
 			}
 
-			if err := inserter.Insert(ctx, bundleID, v.Scheme, v.Identifier, data, version, len(v.Locations)); err != nil {
+			if err := inserter.Insert(ctx, v.Scheme, v.Identifier, data, len(v.Locations)); err != nil {
 				return err
 			}
 
@@ -203,9 +209,37 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 		return nil
 	}
 
-	err := withBatchInserter(ctx, s.Handle().DB(), tableName, []string{"dump_id", "scheme", "identifier", "data", "schema_version", "num_locations"}, inserter)
-	return int(count), err
+	// Bulk insert all the unique column values into the temporary table
+	if err := withBatchInserter(ctx, db, "t_"+tableName, columns, inserter); err != nil {
+		return 0, err
+	}
+
+	// Insert the values from the temporary table into the target table. We select a
+	// parameterized dump id and schema version here since it is the same for all rows
+	// in this operation.
+	if err := s.Exec(ctx, sqlf.Sprintf(writeDefinitionReferencesInsertQuery, sqlf.Sprintf(tableName), bundleID, version, sqlf.Sprintf(tableName))); err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
 }
+
+const writeDefinitionsReferencesTemporaryTableQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:writeDefinitionReferences
+CREATE TEMPORARY TABLE t_%s (
+	scheme text NOT NULL,
+	identifier text NOT NULL,
+	data bytea NOT NULL,
+	num_locations integer NOT NULL
+) ON COMMIT DROP
+`
+
+const writeDefinitionReferencesInsertQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:writeDefinitionReferences
+INSERT INTO %s (dump_id, schema_version, scheme, identifier, data, num_locations)
+SELECT %s, %s, source.scheme, source.identifier, source.data, source.num_locations
+FROM t_%s source
+`
 
 func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *batch.Inserter) error) (err error) {
 	return goroutine.RunWorkers(goroutine.SimplePoolWorker(func() error {
