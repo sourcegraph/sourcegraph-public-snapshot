@@ -452,8 +452,8 @@ func TestExternalAccountsMigrator(t *testing.T) {
 				t.Fatalf("decrypted data is different from the original one")
 			}
 
-			if version, _ := key.Version(ctx); keyID != string(version.JSON()) {
-				t.Fatalf("wrong encryption_key_id, want %s, got %s", string(version.JSON()), keyID)
+			if version, _ := key.Version(ctx); keyID != version.JSON() {
+				t.Fatalf("wrong encryption_key_id, want %s, got %s", version.JSON(), keyID)
 			}
 
 			i++
