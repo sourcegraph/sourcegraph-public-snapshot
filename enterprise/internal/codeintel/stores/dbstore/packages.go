@@ -21,7 +21,7 @@ func (s *Store) UpdatePackages(ctx context.Context, dumpID int, packages []seman
 		return nil
 	}
 
-	inserter := batch.NewBatchInserter(ctx, s.Store.Handle().DB(), "lsif_packages", "dump_id", "scheme", "name", "version")
+	inserter := batch.NewInserter(ctx, s.Store.Handle().DB(), "lsif_packages", "dump_id", "scheme", "name", "version")
 	for _, p := range packages {
 		if err := inserter.Insert(ctx, dumpID, p.Scheme, p.Name, p.Version); err != nil {
 			return err

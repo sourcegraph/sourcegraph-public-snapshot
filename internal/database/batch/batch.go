@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-// BatchInserter allows for bulk updates to a single Postgres table.
-type BatchInserter struct {
+// Inserter allows for bulk updates to a single Postgres table.
+type Inserter struct {
 	db           dbutil.DB
 	numColumns   int
 	maxBatchSize int
@@ -20,16 +20,15 @@ type BatchInserter struct {
 	querySuffix  string
 }
 
-// NewBatchInserter creates a new batch inserter using the given database handle,
-// table name, and column names. For performance and atomicity, handle should be
-// a transaction.
-func NewBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columnNames ...string) *BatchInserter {
+// NewInserter creates a new batch inserter using the given database handle, table name,
+// and column names. For performance and atomicity, handle should be a transaction.
+func NewInserter(ctx context.Context, db dbutil.DB, tableName string, columnNames ...string) *Inserter {
 	numColumns := len(columnNames)
 	maxBatchSize := getMaxBatchSize(numColumns)
 	queryPrefix := makeQueryPrefix(tableName, columnNames)
 	querySuffix := makeQuerySuffix(numColumns)
 
-	return &BatchInserter{
+	return &Inserter{
 		db:           db,
 		numColumns:   numColumns,
 		maxBatchSize: maxBatchSize,
@@ -40,7 +39,7 @@ func NewBatchInserter(ctx context.Context, db dbutil.DB, tableName string, colum
 }
 
 // Insert submits a single row of values to be inserted on the next flush.
-func (i *BatchInserter) Insert(ctx context.Context, values ...interface{}) error {
+func (i *Inserter) Insert(ctx context.Context, values ...interface{}) error {
 	if len(values) != i.numColumns {
 		return fmt.Errorf("expected %d values, got %d", i.numColumns, len(values))
 	}
@@ -57,7 +56,7 @@ func (i *BatchInserter) Insert(ctx context.Context, values ...interface{}) error
 
 // Flush ensures that all queued rows are inserted. This method must be invoked at the end
 // of insertion to ensure that all records are flushed to the underlying Execable.
-func (i *BatchInserter) Flush(ctx context.Context) error {
+func (i *Inserter) Flush(ctx context.Context) error {
 	if batch := i.pop(); len(batch) != 0 {
 		// Create a query with enough placeholders to match the current batch size. This should
 		// generally be the full querySuffix string, except for the last call to Flush which
@@ -72,7 +71,7 @@ func (i *BatchInserter) Flush(ctx context.Context) error {
 
 // pop removes and returns as many values from the current batch that can be attached to a single
 // insert statement. The returned values are the oldest values submitted to the batch (in order).
-func (i *BatchInserter) pop() (batch []interface{}) {
+func (i *Inserter) pop() (batch []interface{}) {
 	if len(i.batch) < i.maxBatchSize {
 		batch, i.batch = i.batch, i.batch[:0]
 		return batch
@@ -85,7 +84,7 @@ func (i *BatchInserter) pop() (batch []interface{}) {
 // makeQuery returns a parameterized SQL query that has the given number of values worth of
 // placeholder variables. It is assumed that the number of values is non-zero and also is a
 // multiple of the number of columns of the target table.
-func (i *BatchInserter) makeQuery(numValues int) string {
+func (i *Inserter) makeQuery(numValues int) string {
 	// Determine how many characters a single tuple of the query suffix occupies.
 	// The tuples have the form `($xxxxx,$xxxxx,...)`, and all placeholders are
 	// exactly five digits for uniformity. This counts 5 digits, `$`, and `,` for

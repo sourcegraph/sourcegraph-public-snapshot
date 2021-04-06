@@ -296,7 +296,7 @@ func (s *Store) writeVisibleUploads(ctx context.Context, graph *commitgraph.Grap
 
 	// Insert the set of uploads that are visible from each commit for a given repository into
 	// a temporary table.
-	nearestUploadsInserter := batch.NewBatchInserter(
+	nearestUploadsInserter := batch.NewInserter(
 		ctx,
 		s.Handle().DB(),
 		"t_lsif_nearest_uploads",
@@ -308,7 +308,7 @@ func (s *Store) writeVisibleUploads(ctx context.Context, graph *commitgraph.Grap
 	// ancestor and their relative distance in the graph into another temporary table.
 	// We use this as a cheap way to reconstruct the full data set, which is multiplicative
 	// in the size of the commit graph AND the number of unique roots.
-	nearestUploadsLinksInserter := batch.NewBatchInserter(
+	nearestUploadsLinksInserter := batch.NewInserter(
 		ctx,
 		s.Handle().DB(),
 		"t_lsif_nearest_uploads_links",
@@ -320,7 +320,7 @@ func (s *Store) writeVisibleUploads(ctx context.Context, graph *commitgraph.Grap
 	// Insert the set of uploads visible from the tip of the default branch into a temporary
 	// table. These values are used to determine which bundles for a repository we open during
 	// a global find references query.
-	uploadsVisibleAtTipInserter := batch.NewBatchInserter(
+	uploadsVisibleAtTipInserter := batch.NewInserter(
 		ctx,
 		s.Handle().DB(),
 		"t_lsif_uploads_visible_at_tip",

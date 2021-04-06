@@ -30,7 +30,7 @@ func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta semantic.MetaD
 	}})
 	defer endObservation(1, observation.Args{})
 
-	inserter := batch.NewBatchInserter(ctx, s.Handle().DB(), "lsif_data_metadata", "dump_id", "num_result_chunks")
+	inserter := batch.NewInserter(ctx, s.Handle().DB(), "lsif_data_metadata", "dump_id", "num_result_chunks")
 
 	defer func() {
 		if flushErr := inserter.Flush(ctx); flushErr != nil {
@@ -49,7 +49,7 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 
 	var count uint32
 
-	inserter := func(inserter *batch.BatchInserter) error {
+	inserter := func(inserter *batch.Inserter) error {
 		for v := range documents {
 			data, err := s.serializer.MarshalDocumentData(v.Document)
 			if err != nil {
@@ -81,7 +81,7 @@ func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunk
 
 	var count uint32
 
-	inserter := func(inserter *batch.BatchInserter) error {
+	inserter := func(inserter *batch.Inserter) error {
 		for v := range resultChunks {
 			data, err := s.serializer.MarshalResultChunkData(v.ResultChunk)
 			if err != nil {
@@ -136,7 +136,7 @@ func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocati
 func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, version int, monikerLocations chan semantic.MonikerLocations) (int, error) {
 	var count uint32
 
-	inserter := func(inserter *batch.BatchInserter) error {
+	inserter := func(inserter *batch.Inserter) error {
 		for v := range monikerLocations {
 			data, err := s.serializer.MarshalLocations(v.Locations)
 			if err != nil {
@@ -157,9 +157,9 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 	return int(count), err
 }
 
-func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *batch.BatchInserter) error) (err error) {
+func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *batch.Inserter) error) (err error) {
 	return goroutine.RunWorkers(goroutine.SimplePoolWorker(func() error {
-		inserter := batch.NewBatchInserter(ctx, db, tableName, columns...)
+		inserter := batch.NewInserter(ctx, db, tableName, columns...)
 		defer func() {
 			if flushErr := inserter.Flush(ctx); flushErr != nil {
 				err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))

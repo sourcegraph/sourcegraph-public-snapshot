@@ -21,7 +21,7 @@ func (s *Store) UpdatePackageReferences(ctx context.Context, dumpID int, referen
 		return nil
 	}
 
-	inserter := batch.NewBatchInserter(ctx, s.Store.Handle().DB(), "lsif_references", "dump_id", "scheme", "name", "version", "filter")
+	inserter := batch.NewInserter(ctx, s.Store.Handle().DB(), "lsif_references", "dump_id", "scheme", "name", "version", "filter")
 	for _, r := range references {
 		filter := r.Filter
 		// avoid not null constraint
