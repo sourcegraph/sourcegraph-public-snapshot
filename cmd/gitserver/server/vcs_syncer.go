@@ -26,8 +26,8 @@ type VCSSyncer interface {
 	IsCloneable(ctx context.Context, remoteURL *url.URL) error
 	// CloneCommand returns the command to be executed for cloning from remote.
 	CloneCommand(ctx context.Context, remoteURL *url.URL, tmpPath string) (cmd *exec.Cmd, err error)
-	// FetchCommand returns the command to be executed for fetching updates from remote.
-	FetchCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, configRemoteOpts bool, err error)
+	// Fetch tries to fetch updates from the remote to given directory.
+	Fetch(ctx context.Context, remoteURL *url.URL, dir GitDir) error
 	// RemoteShowCommand returns the command to be executed for showing remote.
 	RemoteShowCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, err error)
 }
@@ -78,16 +78,12 @@ func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *url.URL, tm
 		return nil, errors.Wrapf(err, "clone setup failed")
 	}
 
-	cmd, _, err = s.FetchCommand(ctx, remoteURL)
-	if err != nil {
-		return nil, errors.Wrapf(err, "clone setup failed for FetchCommand")
-	}
+	cmd, _ = s.fetchCommand(ctx, remoteURL)
 	cmd.Dir = tmpPath
 	return cmd, nil
 }
 
-// FetchCommand returns the command to be executed for fetching updates of a Git repository.
-func (s *GitRepoSyncer) FetchCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, configRemoteOpts bool, err error) {
+func (s *GitRepoSyncer) fetchCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, configRemoteOpts bool) {
 	configRemoteOpts = true
 	if customCmd := customFetchCmd(ctx, remoteURL); customCmd != nil {
 		cmd = customCmd
@@ -110,7 +106,17 @@ func (s *GitRepoSyncer) FetchCommand(ctx context.Context, remoteURL *url.URL) (c
 			// Possibly deprecated refs for sourcegraph zap experiment?
 			"+refs/sourcegraph/*:refs/sourcegraph/*")
 	}
-	return cmd, configRemoteOpts, nil
+	return cmd, configRemoteOpts
+}
+
+// Fetch tries to fetch updates of a Git repository.
+func (s *GitRepoSyncer) Fetch(ctx context.Context, remoteURL *url.URL, dir GitDir) error {
+	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
+	dir.Set(cmd)
+	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
+		return errors.Wrapf(err, "failed to update with output %q", string(output))
+	}
+	return nil
 }
 
 // RemoteShowCommand returns the command to be executed for showing remote of a Git repository.
@@ -246,16 +252,16 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *url.U
 	return cmd, nil
 }
 
-// FetchCommand returns the command to be executed for fetching updates of a Perforce depot as a Git repository.
-func (s *PerforceDepotSyncer) FetchCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, configRemoteOpts bool, err error) {
+// Fetch tries to fetch updates of a Perforce depot as a Git repository.
+func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *url.URL, dir GitDir) error {
 	username, password, host, _, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
-		return nil, false, errors.Wrap(err, "decompose")
+		return errors.Wrap(err, "decompose")
 	}
 
 	err = p4pingWithTrust(ctx, host, username, password)
 	if err != nil {
-		return nil, false, errors.Wrap(err, "ping with trust")
+		return errors.Wrap(err, "ping with trust")
 	}
 
 	// Example: git p4 sync --max-changes 1000
@@ -264,14 +270,26 @@ func (s *PerforceDepotSyncer) FetchCommand(ctx context.Context, remoteURL *url.U
 		args = append(args, "--max-changes", strconv.Itoa(s.MaxChanges))
 	}
 
-	cmd = exec.CommandContext(ctx, "git", args...)
+	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+host,
 		"P4USER="+username,
 		"P4PASSWD="+password,
 	)
 
-	return cmd, false, nil
+	dir.Set(cmd)
+
+	if output, err := runWith(ctx, cmd, false, nil); err != nil {
+		return errors.Wrapf(err, "failed to update with output %q", string(output))
+	}
+
+	// Force update "master" to "refs/remotes/p4/master" where changes are synced into
+	cmd.Args = []string{"branch", "-f", "master", "refs/remotes/p4/master"}
+	if output, err := runWith(ctx, cmd, false, nil); err != nil {
+		return errors.Wrapf(err, "failed to force update branch with output %q", string(output))
+	}
+
+	return nil
 }
 
 // RemoteShowCommand returns the command to be executed for showing Git remote of a Perforce depot.
