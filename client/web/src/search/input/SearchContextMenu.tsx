@@ -1,5 +1,8 @@
-import { ISearchContext } from '../../../../shared/src/graphql/schema'
-import { useObservable } from '../../../../shared/src/util/useObservable'
+import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
+import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
+import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Link } from '../../../../shared/src/components/Link'
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
@@ -14,6 +17,7 @@ import React, {
 } from 'react'
 import { DropdownItem } from 'reactstrap'
 import { SearchContextProps } from '..'
+import { SearchContextFields } from '../../graphql-operations'
 
 const HighlightedSearchTerm: React.FunctionComponent<{ text: string; searchFilter: string }> = ({
     text,
@@ -69,6 +73,20 @@ export interface SearchContextMenuProps
     closeMenu: () => void
     selectSearchContextSpec: (spec: string) => void
 }
+
+interface PageInfo {
+    endCursor: string | null
+    hasNextPage: boolean
+}
+
+interface NextPageUpdate {
+    cursor: string | undefined
+    query: string
+}
+
+type LoadingState = 'LOADING' | 'LOADING_NEXT_PAGE' | 'DONE' | 'ERROR'
+
+const searchContextsPerPageToLoad = 10
 
 const getFirstMenuItem = (): HTMLButtonElement | null =>
     document.querySelector('.search-context-menu__item:first-child')
@@ -128,32 +146,6 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         return () => firstMenuItem?.removeEventListener('keydown', onFirstMenuItemKeyDown)
     }, [])
 
-    const [searchFilter, setSearchFilter] = useState('')
-    const onSearchFilterChanged = useCallback(
-        (event: FormEvent<HTMLInputElement>) => setSearchFilter(event ? event.currentTarget.value : ''),
-        []
-    )
-
-    const autoDefinedSearchContexts = useObservable(fetchAutoDefinedSearchContexts)
-    const filteredAutoDefinedSearchContexts = useMemo(
-        () =>
-            autoDefinedSearchContexts?.filter(context =>
-                context.spec.toLowerCase().includes(searchFilter.toLowerCase())
-            ),
-        [autoDefinedSearchContexts, searchFilter]
-    )
-
-    const filteredUserDefinedSearchContexts = useObservable(
-        useMemo(() => fetchSearchContexts(10, searchFilter), [fetchSearchContexts, searchFilter])
-    )
-    const filteredList = useMemo(
-        () =>
-            (filteredAutoDefinedSearchContexts ?? []).concat(
-                (filteredUserDefinedSearchContexts?.nodes as ISearchContext[]) ?? []
-            ),
-        [filteredAutoDefinedSearchContexts, filteredUserDefinedSearchContexts]
-    )
-
     const onMenuKeyDown = useCallback(
         (event: ReactKeyboardEvent<HTMLDivElement>): void => {
             if (event.key === 'Escape') {
@@ -163,6 +155,91 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         },
         [closeMenu]
     )
+
+    const [loadingState, setLoadingState] = useState<LoadingState>('DONE')
+    const [searchFilter, setSearchFilter] = useState('')
+    const [searchContexts, setSearchContexts] = useState<SearchContextFields[]>([])
+    const [lastPageInfo, setLastPageInfo] = useState<PageInfo | null>(null)
+
+    const loadNextPageUpdates = useRef(
+        new BehaviorSubject<NextPageUpdate>({ cursor: undefined, query: '' })
+    )
+
+    const loadNextPage = useCallback((): void => {
+        if (loadingState === 'DONE' && (!lastPageInfo || lastPageInfo.hasNextPage)) {
+            loadNextPageUpdates.current.next({
+                cursor: lastPageInfo?.endCursor ?? undefined,
+                query: searchFilter,
+            })
+        }
+    }, [loadNextPageUpdates, searchFilter, lastPageInfo, loadingState])
+
+    const onSearchFilterChanged = useCallback(
+        (event: FormEvent<HTMLInputElement>) => {
+            const searchFilter = event ? event.currentTarget.value : ''
+            setSearchFilter(searchFilter)
+            loadNextPageUpdates.current.next({ cursor: undefined, query: searchFilter })
+        },
+        [loadNextPageUpdates, setSearchFilter]
+    )
+
+    useEffect(() => {
+        const subscription = loadNextPageUpdates.current
+            .pipe(
+                tap(({ cursor }) => setLoadingState(!cursor ? 'LOADING' : 'LOADING_NEXT_PAGE')),
+                // Do not debounce the initial load
+                debounce(({ cursor, query }) => (!cursor && query === '' ? timer(0) : timer(300))),
+                switchMap(({ cursor, query }) =>
+                    combineLatest([of(cursor), fetchSearchContexts(searchContextsPerPageToLoad, query, cursor)])
+                ),
+                tap(([, searchContextsResult]) => setLastPageInfo(searchContextsResult.pageInfo)),
+                catchError(error => [asError(error)])
+            )
+            .subscribe(result => {
+                if (!isErrorLike(result)) {
+                    const [cursor, searchContextsResult] = result
+                    setSearchContexts(searchContexts => {
+                        // Cursor is undefined when loading the first page, so we need to replace existing search contexts
+                        // E.g. when a user scrolls down to the end of the list, and starts searching
+                        const initialSearchContexts = !cursor ? [] : searchContexts
+                        return initialSearchContexts.concat(searchContextsResult.nodes)
+                    })
+                    setLoadingState('DONE')
+                } else {
+                    setLoadingState('ERROR')
+                }
+            })
+
+        return () => subscription.unsubscribe()
+    }, [loadNextPageUpdates, setSearchContexts, setLastPageInfo, fetchSearchContexts])
+
+    const autoDefinedSearchContexts = useObservable(fetchAutoDefinedSearchContexts)
+    const filteredAutoDefinedSearchContexts = useMemo(
+        () =>
+            autoDefinedSearchContexts?.filter(context =>
+                context.spec.toLowerCase().includes(searchFilter.toLowerCase())
+            ) ?? [],
+        [autoDefinedSearchContexts, searchFilter]
+    )
+
+    // Merge auto-defined contexts and user-defined contexts
+    const filteredList = useMemo(() => filteredAutoDefinedSearchContexts.concat(searchContexts as ISearchContext[]), [
+        filteredAutoDefinedSearchContexts,
+        searchContexts,
+    ])
+
+    const infiniteScrollTrigger = useRef<HTMLDivElement | null>(null)
+    const infiniteScrollList = useRef<HTMLDivElement | null>(null)
+    useEffect(() => {
+        if (!infiniteScrollTrigger.current || !infiniteScrollList.current) {
+            return
+        }
+        const intersectionObserver = new IntersectionObserver(entries => entries[0].isIntersecting && loadNextPage(), {
+            root: infiniteScrollList.current,
+        })
+        intersectionObserver.observe(infiniteScrollTrigger.current)
+        return () => intersectionObserver.disconnect()
+    }, [infiniteScrollTrigger, infiniteScrollList, loadNextPage])
 
     return (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
@@ -179,23 +256,38 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                     className="search-context-menu__header-input"
                 />
             </div>
-            <div className="search-context-menu__list">
-                {filteredList.map(context => (
-                    <SearchContextMenuItem
-                        key={context.id}
-                        spec={context.spec}
-                        description={context.description}
-                        isDefault={context.spec === defaultSearchContextSpec}
-                        selected={context.spec === selectedSearchContextSpec}
-                        selectSearchContextSpec={selectSearchContextSpec}
-                        searchFilter={searchFilter}
-                    />
-                ))}
-                {filteredList.length === 0 && (
+            <div className="search-context-menu__list" ref={infiniteScrollList}>
+                {loadingState !== 'LOADING' &&
+                    filteredList.map(context => (
+                        <SearchContextMenuItem
+                            key={context.id}
+                            spec={context.spec}
+                            description={context.description}
+                            isDefault={context.spec === defaultSearchContextSpec}
+                            selected={context.spec === selectedSearchContextSpec}
+                            selectSearchContextSpec={selectSearchContextSpec}
+                            searchFilter={searchFilter}
+                        />
+                    ))}
+                {(loadingState === 'LOADING' || loadingState === 'LOADING_NEXT_PAGE') && (
+                    <DropdownItem className="search-context-menu__item" disabled={true}>
+                        Loading search contexts...
+                    </DropdownItem>
+                )}
+                {loadingState === 'ERROR' && (
+                    <DropdownItem
+                        className="search-context-menu__item search-context-menu__item--error"
+                        disabled={true}
+                    >
+                        Error occured while loading search contexts
+                    </DropdownItem>
+                )}
+                {loadingState === 'DONE' && filteredList.length === 0 && (
                     <DropdownItem className="search-context-menu__item" disabled={true}>
                         No contexts found
                     </DropdownItem>
                 )}
+                <div ref={infiniteScrollTrigger} />
             </div>
             <div className="search-context-menu__footer">
                 <button

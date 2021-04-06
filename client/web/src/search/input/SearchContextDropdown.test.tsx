@@ -6,8 +6,10 @@ import { of } from 'rxjs'
 import { SearchPatternType } from '../../graphql-operations'
 import { Dropdown, DropdownItem, DropdownToggle } from 'reactstrap'
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
+import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+import { act } from 'react-dom/test-utils'
 
 const mockFetchAutoDefinedSearchContexts = () =>
     of([
@@ -35,6 +37,18 @@ describe('SearchContextDropdown', () => {
         versionContext: undefined,
         submitSearch: () => {},
     }
+    const RealIntersectionObserver = window.IntersectionObserver
+    let clock: sinon.SinonFakeTimers
+
+    beforeAll(() => {
+        clock = sinon.useFakeTimers()
+        window.IntersectionObserver = MockIntersectionObserver
+    })
+
+    afterAll(() => {
+        clock.restore()
+        window.IntersectionObserver = RealIntersectionObserver
+    })
 
     it('should start closed', () => {
         const element = mount(<SearchContextDropdown {...defaultProps} />)
@@ -89,6 +103,13 @@ describe('SearchContextDropdown', () => {
     it('should submit search on item click', () => {
         const submitSearch = sinon.spy()
         const element = mount(<SearchContextDropdown {...defaultProps} submitSearch={submitSearch} query="test" />)
+
+        act(() => {
+            // Wait for debounce
+            clock.tick(50)
+        })
+        element.update()
+
         const item = element.find(DropdownItem).at(0)
         item.simulate('click')
 
