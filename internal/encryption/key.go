@@ -7,9 +7,15 @@ type Key interface {
 	Encrypter
 	Decrypter
 
-	// ID returns an identifier string containing anything to concretely identify
+	// Version returns info containing to concretely identify
 	// the underlying key, eg: key type, name, & version.
-	ID(ctx context.Context) (string, error)
+	Version(ctx context.Context) (KeyVersion, error)
+}
+
+type KeyVersion struct {
+	Type    string
+	Name    string
+	Version string
 }
 
 // Encrypter is anything that can encrypt a value
