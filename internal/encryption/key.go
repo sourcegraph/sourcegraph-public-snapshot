@@ -1,6 +1,9 @@
 package encryption
 
-import "context"
+import (
+	"context"
+	"encoding/json"
+)
 
 // Key combines the Encrypter & Decrypter interfaces.
 type Key interface {
@@ -16,6 +19,11 @@ type KeyVersion struct {
 	Type    string
 	Name    string
 	Version string
+}
+
+func (v KeyVersion) JSON() string {
+	buf, _ := json.Marshal(v)
+	return string(buf)
 }
 
 // Encrypter is anything that can encrypt a value

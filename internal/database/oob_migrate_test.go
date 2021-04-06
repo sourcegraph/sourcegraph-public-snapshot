@@ -168,8 +168,8 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 				t.Fatalf("decrypted config is different from the original one")
 			}
 
-			if id, _ := key.ID(ctx); keyID != id {
-				t.Fatalf("wrong encryption_key_id, want %s, got %s", id, keyID)
+			if version, _ := key.Version(ctx); keyID != version.JSON() {
+				t.Fatalf("wrong encryption_key_id, want %s, got %s", version.JSON(), keyID)
 			}
 
 			i++
@@ -285,8 +285,8 @@ func (k invalidKey) Decrypt(ctx context.Context, ciphertext []byte) (*encryption
 	return &s, nil
 }
 
-func (k invalidKey) ID(ctx context.Context) (string, error) {
-	return "invalidKey", nil
+func (k invalidKey) Version(ctx context.Context) (encryption.KeyVersion, error) {
+	return encryption.KeyVersion{Type: "invalidkey"}, nil
 }
 
 func TestExternalAccountsMigrator(t *testing.T) {
@@ -452,8 +452,8 @@ func TestExternalAccountsMigrator(t *testing.T) {
 				t.Fatalf("decrypted data is different from the original one")
 			}
 
-			if id, _ := key.ID(ctx); keyID != id {
-				t.Fatalf("wrong encryption_key_id, want %s, got %s", id, keyID)
+			if version, _ := key.Version(ctx); keyID != string(version.JSON()) {
+				t.Fatalf("wrong encryption_key_id, want %s, got %s", string(version.JSON()), keyID)
 			}
 
 			i++
