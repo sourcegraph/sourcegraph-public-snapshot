@@ -6,6 +6,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -18,6 +21,49 @@ type Inserter struct {
 	batch        []interface{}
 	queryPrefix  string
 	querySuffix  string
+}
+
+// InsertValues creates a new batch inserter using the given database handle, table name, and
+// column names, then reads from the given channel as if they specify values for a single row.
+// The inserter will be flushed and any error that occurred during insertion or flush will be
+// returned.
+func InsertValues(ctx context.Context, db dbutil.DB, tableName string, columnNames []string, values <-chan []interface{}) error {
+	return WithInserter(ctx, db, tableName, columnNames, func(inserter *Inserter) error {
+	outer:
+		for {
+			select {
+			case rowValues, ok := <-values:
+				if !ok {
+					break outer
+				}
+
+				if err := inserter.Insert(ctx, rowValues...); err != nil {
+					return err
+				}
+
+			case <-ctx.Done():
+				break outer
+			}
+		}
+
+		return nil
+	})
+}
+
+// WithInserter creates a new batch inserter using the given database handle, table name,
+// and column names, then calls the given function with the new inserter as a parameter.
+// The inserter will be flushed regardless of the error condition of the given function.
+// Any error returned from the given function will be decorated with the inserter's flush
+// error, if one occurs.
+func WithInserter(ctx context.Context, db dbutil.DB, tableName string, columnNames []string, f func(inserter *Inserter) error) (err error) {
+	inserter := NewInserter(ctx, db, tableName, columnNames...)
+	defer func() {
+		if flushErr := inserter.Flush(ctx); flushErr != nil {
+			err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
+		}
+	}()
+
+	return f(inserter)
 }
 
 // NewInserter creates a new batch inserter using the given database handle, table name,
