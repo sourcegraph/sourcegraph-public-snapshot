@@ -1405,6 +1405,9 @@
         },
         "envVarName": {
           "type": "string"
+        },
+        "version": {
+          "type": "string"
         }
       }
     },
