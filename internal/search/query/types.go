@@ -144,6 +144,71 @@ func (b Basic) String() string {
 	return fmt.Sprintf("%s %s", Q(ToNodes(b.Parameters)).String(), Q([]Node{b.Pattern}).String())
 }
 
+func (b Basic) VisitParameter(field string, f func(value string, negated bool, annotation Annotation)) {
+	for _, p := range b.Parameters {
+		if p.Field == field {
+			f(p.Value, p.Negated, p.Annotation)
+		}
+	}
+}
+
+// HasPatternLabel returns whether a pattern atom has a specified label.
+func (b Basic) HasPatternLabel(label labels) bool {
+	if b.Pattern == nil {
+		return false
+	}
+	if _, ok := b.Pattern.(Pattern); !ok {
+		// Basic query is not atomic.
+		return false
+	}
+	annot := b.Pattern.(Pattern).Annotation
+	return annot.Labels.IsSet(label)
+}
+
+func (b Basic) IsLiteral() bool {
+	return b.HasPatternLabel(Literal)
+}
+
+func (b Basic) IsRegexp() bool {
+	return b.HasPatternLabel(Regexp)
+}
+
+func (b Basic) IsStructural() bool {
+	return b.HasPatternLabel(Structural)
+}
+
+// FindParameter calls f on parameters matching field in b.
+func (b Basic) FindParameter(field string, f func(value string, negated bool, annotation Annotation)) {
+	for _, p := range b.Parameters {
+		if p.Field == field {
+			f(p.Value, p.Negated, p.Annotation)
+			break
+		}
+	}
+}
+
+// FindValue returns the first value of a parameter matching field in b. It
+// doesn't inspect whether the field is negated.
+func (b Basic) FindValue(field string) (value string) {
+	var found string
+	b.FindParameter(field, func(v string, _ bool, _ Annotation) {
+		found = v
+	})
+	return found
+}
+
+func (b Basic) IsCaseSensitive() bool {
+	return Q(ToNodes(b.Parameters)).IsCaseSensitive()
+}
+
+func (b Basic) Index() YesNoOnly {
+	v := Q(ToNodes(b.Parameters)).yesNoOnlyValue(FieldIndex)
+	if v == nil {
+		return Yes
+	}
+	return *v
+}
+
 // A query is a tree of Nodes. We choose the type name Q so that external uses like query.Q do not stutter.
 type Q []Node
 
