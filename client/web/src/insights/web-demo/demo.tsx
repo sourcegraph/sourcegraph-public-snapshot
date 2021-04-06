@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { ReactElement, useState } from 'react';
+import { BrowserRouter } from 'react-router-dom'
 import { createBrowserHistory } from 'history'
 import { InsightPage } from '../src/InsightsPage';
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/out/src/settings/settings';
@@ -7,7 +8,7 @@ import { render } from 'react-dom';
 
 import '../../SourcegraphWebApp.scss';
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/out/src/telemetry/telemetryService';
-import { ViewInsightProviderSourceType } from '../src/core/backend';
+import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../src/core/backend';
 
 // const platformContext: PlatformContext = createPlatformContext()
 // const extensionsController: ExtensionsController = createExtensionsController(platformContext)
@@ -102,29 +103,31 @@ const MOCK_VIEWS = [
             }]
         }, 'source': 'Extension'
     }
-]
+] as ViewInsightProviderResult[]
 
-export function App() {
+export function App(): ReactElement {
     const [patternType, setPatterType] = useState(SearchPatternType.literal);
     const [caseSensitive, setCaseSensitive] = useState(false);
 
     return (
-        <InsightPage
-            versionContext={undefined}
-            telemetryService={NOOP_TELEMETRY_SERVICE}
-            copyQueryButton={false}
-            caseSensitive={caseSensitive}
-            setCaseSensitivity={setCaseSensitive}
-            setPatternType={setPatterType}
-            patternType={patternType}
-            settingsCascade={EMPTY_SETTINGS_CASCADE}
-            globbing={false}
-            location={history.location}
-            views={MOCK_VIEWS}
-            history={history}
-            /* eslint-disable-next-line @typescript-eslint/ban-ts-comment */
-            // @ts-ignore
-            extensionsController={null}/>
+        <BrowserRouter>
+            <InsightPage
+                versionContext={undefined}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                copyQueryButton={false}
+                caseSensitive={caseSensitive}
+                setCaseSensitivity={setCaseSensitive}
+                setPatternType={setPatterType}
+                patternType={patternType}
+                settingsCascade={EMPTY_SETTINGS_CASCADE}
+                globbing={false}
+                location={history.location}
+                views={MOCK_VIEWS}
+                history={history}
+                /* eslint-disable-next-line @typescript-eslint/ban-ts-comment */
+                // @ts-ignore
+                extensionsController={null}/>
+        </BrowserRouter>
     );
 }
 

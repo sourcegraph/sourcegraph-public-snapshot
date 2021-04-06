@@ -105,7 +105,7 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
     // )
 
     return (
-        <div className={classNames(props.className, 'InsightsViewGrid')}>
+        <div className={classNames(props.className, 'insights-view-grid')}>
             <ResponsiveGridLayout
                 breakpoints={breakpoints}
                 layouts={viewsToReactGridLayouts(props.views)}
