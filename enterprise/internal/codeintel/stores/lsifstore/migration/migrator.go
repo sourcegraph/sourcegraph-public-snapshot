@@ -217,6 +217,10 @@ UPDATE %s SET %s WHERE %s
 // selectAndProcess selects a batch of records from the configured table with the given version and
 // returns the update specifications after running the given driver function on each matching row.
 // The records selected by this method are locked (via select for update) in the given transaction.
+//
+// This method will lock as many records to be processed as can fit in a batch, but all records will
+// belong to the same index (due to the query construction). Therefore the dump id for each batch is
+// going to be the same for each record.
 func (m *Migrator) selectAndProcess(ctx context.Context, tx *lsifstore.Store, version int, driverFunc driverFunc) ([]updateSpec, error) {
 	fieldQueries := make([]*sqlf.Query, 0, len(m.options.selectionFields))
 	for _, field := range m.options.selectionFields {
@@ -275,9 +279,11 @@ WHERE
 			-- to migrate a legitimate index stuck behind the head of the queue.
 			EXISTS (SELECT 1 FROM %s t2 WHERE t2.dump_id = sv.dump_id AND t2.schema_version = %s)
 
-		ORDER BY dump_id       -- Encourage use of index scan
-		FOR UPDATE SKIP LOCKED -- Skip dump ids which are dequeued by another migrator
-		LIMIT 1                -- All records in a migration batch will belong to a single dump
+		-- Encourage index scan of pk
+		ORDER BY dump_id
+
+		-- All records in a migration batch will belong to a single dump
+		LIMIT 1
 	) AND
 	schema_version = %s
 LIMIT %s
