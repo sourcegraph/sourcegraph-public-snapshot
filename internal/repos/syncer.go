@@ -295,9 +295,6 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 
 	// Delete from external_service_repos only. Deletes need to happen first so that we don't end up with
 	// constraint violations later.
-	// The trigger 'trig_soft_delete_orphan_repo_by_external_service_repo' will run
-	// and remove any repos that no longer have any rows in the external_service_repos
-	// table.
 	sdiff := s.sourcesUpserts(&diff, storedServiceReposAndConflicting)
 	if err = tx.UpsertSources(ctx, nil, nil, sdiff.Deleted); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.delete-sources")
@@ -520,9 +517,6 @@ func (s *Syncer) syncRepo(ctx context.Context, store *Store, insertOnly bool, pu
 
 	// Delete from external_service_repos only. Deletes need to happen first so that we don't end up with
 	// constraint violations later.
-	// The trigger 'trig_soft_delete_orphan_repo_by_external_service_repo' will run
-	// and remove any repos that no longer have any rows in the external_service_repos
-	// table.
 	sdiff := s.sourcesUpserts(&diff, storedCopy)
 	if err = store.UpsertSources(ctx, nil, nil, sdiff.Deleted); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.syncrepo.store.delete-sources")
