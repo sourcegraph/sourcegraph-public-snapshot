@@ -34,7 +34,7 @@ import { ExtensionAlertAnimationProps } from './UserNavItem'
 import { LayoutRouteProps } from '../routes'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { omitContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 
 interface Props
     extends SettingsCascadeProps,
@@ -141,7 +141,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         // query and move it to the search contexts dropdown
         const finalQuery =
             globalSearchContextSpec && isSearchContextAvailable && props.showSearchContext
-                ? omitContextFilter(query, globalSearchContextSpec.filter)
+                ? omitFilter(query, globalSearchContextSpec.filter)
                 : query
 
         onNavbarQueryChange({ query: finalQuery })
