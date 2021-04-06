@@ -2,7 +2,7 @@ import React, { FunctionComponent, useMemo } from 'react'
 import { ChartContent } from 'sourcegraph'
 import * as H from 'history'
 import { ParentSize } from '@visx/responsive'
-import { createProgrammaticallyLinkHandler } from '@sourcegraph/shared/src/components/linkClickHandler'
+import { createProgrammaticallyLinkHandler } from '@sourcegraph/shared/src/util/link-click-handler/linkClickHandler'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { LineChart } from './charts/line/LineChart'

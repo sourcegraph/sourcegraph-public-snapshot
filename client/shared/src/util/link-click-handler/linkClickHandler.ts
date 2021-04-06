@@ -1,7 +1,7 @@
 import * as React from 'react'
-import { anyOf, isInstanceOf } from '../util/types'
+import { anyOf, isInstanceOf } from '../types'
 import * as H from 'history'
-import { isExternalLink } from '../util/url'
+import { isExternalLink } from '../url'
 
 /**
  * Returns a click handler that will make sure clicks on in-app links are handled on the client
