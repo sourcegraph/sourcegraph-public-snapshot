@@ -335,7 +335,7 @@ describe('StreamingSearchResults', () => {
         expect(modal.length).toBe(0)
     })
 
-    it('should start a new search with added params when onSearchAgain event in triggered', () => {
+    it('should start a new search with added params when onSearchAgain event is triggered', () => {
         const submitSearchMock = jest.spyOn(helpers, 'submitSearch').mockImplementation(() => {})
         const element = mount(
             <BrowserRouter>
@@ -350,5 +350,42 @@ describe('StreamingSearchResults', () => {
         expect(helpers.submitSearch).toBeCalledTimes(1)
         const args = submitSearchMock.mock.calls[0][0]
         expect(args.query).toBe('r:golang/oauth2 test f:travis archived:yes timeout:2m')
+    })
+
+    it('should respect existing count: filters when onSearchAgain event is triggered', () => {
+        const submitSearchMock = jest.spyOn(helpers, 'submitSearch').mockImplementation(() => {})
+        const element = mount(
+            <BrowserRouter>
+                <StreamingSearchResults {...defaultProps} parsedSearchQuery="r:golang/oauth2 test f:travis count:50" />
+            </BrowserRouter>
+        )
+
+        const progress = element.find(StreamingProgress)
+        act(() => progress.prop('onSearchAgain')(['count:1000', 'archived:yes', 'timeout:2m']))
+        element.update()
+
+        expect(helpers.submitSearch).toBeCalledTimes(1)
+        const args = submitSearchMock.mock.calls[0][0]
+        expect(args.query).toBe('r:golang/oauth2 test f:travis count:1000 archived:yes timeout:2m')
+    })
+
+    it('should respect subexpressions when onSearchAgain event is triggered', () => {
+        const submitSearchMock = jest.spyOn(helpers, 'submitSearch').mockImplementation(() => {})
+        const element = mount(
+            <BrowserRouter>
+                <StreamingSearchResults
+                    {...defaultProps}
+                    parsedSearchQuery="r:golang/oauth2 (foo count:1) or (bar count:2)"
+                />
+            </BrowserRouter>
+        )
+
+        const progress = element.find(StreamingProgress)
+        act(() => progress.prop('onSearchAgain')(['count:1000', 'fork:yes']))
+        element.update()
+
+        expect(helpers.submitSearch).toBeCalledTimes(1)
+        const args = submitSearchMock.mock.calls[0][0]
+        expect(args.query).toBe('r:golang/oauth2 (foo count:1000) or (bar count:1000) fork:yes')
     })
 })
