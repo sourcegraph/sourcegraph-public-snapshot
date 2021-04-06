@@ -8,6 +8,7 @@ import { SearchPage, SearchPageProps } from './SearchPage'
 import { SearchPatternType } from '../../graphql-operations'
 import { ThemePreference } from '../../theme'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
 
 // Mock the Monaco input box to make this a shallow test
 jest.mock('./SearchPageInput', () => ({
@@ -49,7 +50,6 @@ describe('SearchPage', () => {
         showSearchContext: false,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
-        availableSearchContexts: [],
         defaultSearchContextSpec: '',
         showRepogroupHomepage: false,
         showEnterpriseHomePanels: false,
@@ -59,6 +59,8 @@ describe('SearchPage', () => {
         fetchSavedSearches: () => of([]),
         fetchRecentSearches: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
         fetchRecentFileViews: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
+        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+        fetchSearchContexts: mockFetchSearchContexts,
     }
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {

@@ -11,6 +11,7 @@ import { SourcegraphContext } from '../jscontext'
 import { SuiteFunction } from 'mocha'
 import { AuthenticatedUser } from '../auth'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../searchContexts/testHelpers'
 
 window.context = { assetsRoot: 'https://sourcegraph.com/.assets' } as SourcegraphContext & SuiteFunction
 
@@ -49,7 +50,6 @@ const defaultProps = (
     showSearchContext: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
-    availableSearchContexts: [],
     defaultSearchContextSpec: '',
     showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
@@ -61,6 +61,8 @@ const defaultProps = (
     activation: undefined,
     hideNavLinks: false,
     routes: [],
+    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+    fetchSearchContexts: mockFetchSearchContexts,
 })
 
 const { add } = storiesOf('web/nav/GlobalNav', module)

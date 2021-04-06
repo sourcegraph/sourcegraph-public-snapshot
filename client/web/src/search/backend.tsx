@@ -27,6 +27,8 @@ import {
     IsSearchContextAvailableResult,
     IsSearchContextAvailableVariables,
     Scalars,
+    FetchSearchContextResult,
+    FetchSearchContextVariables,
 } from '../graphql-operations'
 
 export function search(
@@ -227,17 +229,31 @@ const repogroupSuggestions = defer(() =>
     refCount()
 )
 
+const searchContextFragment = gql`
+    fragment SearchContextFields on SearchContext {
+        __typename
+        id
+        spec
+        description
+        autoDefined
+        repositories {
+            __typename
+            repository {
+                name
+            }
+            revisions
+        }
+    }
+`
+
 export const fetchAutoDefinedSearchContexts = defer(() =>
     requestGraphQL<AutoDefinedSearchContextsResult, AutoDefinedSearchContextsVariables>(gql`
         query AutoDefinedSearchContexts {
             autoDefinedSearchContexts {
-                __typename
-                id
-                spec
-                description
-                autoDefined
+                ...SearchContextFields
             }
         }
+        ${searchContextFragment}
     `)
 ).pipe(
     map(dataOrThrowErrors),
@@ -256,30 +272,41 @@ export function fetchSearchContexts(
             query ListSearchContexts($first: Int!, $after: String, $query: String) {
                 searchContexts(first: $first, after: $after, query: $query) {
                     nodes {
-                        __typename
-                        id
-                        spec
-                        description
-                        autoDefined
-                        repositories {
-                            __typename
-                            repository {
-                                name
-                            }
-                            revisions
-                        }
+                        ...SearchContextFields
                     }
                     pageInfo {
+                        hasNextPage
                         endCursor
                     }
                     totalCount
                 }
             }
+            ${searchContextFragment}
         `,
         { first, after: after ?? null, query: query ?? null }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.searchContexts)
+    )
+}
+
+export const fetchSearchContext = (id: Scalars['ID']): Observable<GQL.ISearchContext> => {
+    const query = gql`
+        query FetchSearchContext($id: ID!) {
+            node(id: $id) {
+                ... on SearchContext {
+                    ...SearchContextFields
+                }
+            }
+        }
+        ${searchContextFragment}
+    `
+
+    return requestGraphQL<FetchSearchContextResult, FetchSearchContextVariables>(query, {
+        id,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.node as GQL.ISearchContext)
     )
 }
 

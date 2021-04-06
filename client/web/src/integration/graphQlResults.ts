@@ -150,6 +150,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
                 spec: 'global',
                 autoDefined: true,
                 description: 'All repositories on Sourcegraph',
+                repositories: [],
             },
             {
                 __typename: 'SearchContext',
@@ -157,6 +158,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
                 spec: '@username',
                 autoDefined: true,
                 description: 'Your repositories on Sourcegraph',
+                repositories: [],
             },
         ],
     }),
@@ -164,7 +166,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
         searchContexts: {
             nodes: [],
             totalCount: 0,
-            pageInfo: { endCursor: null },
+            pageInfo: { hasNextPage: false, endCursor: null },
         },
     }),
     IsSearchContextAvailable: () => ({
