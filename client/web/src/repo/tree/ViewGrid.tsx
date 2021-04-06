@@ -141,7 +141,9 @@ export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
                                 </>
                             ) : (
                                 <>
-                                    <h3 className="view-grid__view-title">{view.title}</h3>
+                                    <h3 className="view-grid__view-title" data-testid="view-grid__view-title">
+                                        {view.title}
+                                    </h3>
                                     {view.subtitle && <div className="view-grid__view-subtitle">{view.subtitle}</div>}
                                     <ViewContent
                                         {...props}
