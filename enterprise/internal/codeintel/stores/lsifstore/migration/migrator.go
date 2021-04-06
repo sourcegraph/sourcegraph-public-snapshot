@@ -263,6 +263,13 @@ SELECT dump_id, %s
 FROM %s t1
 WHERE
 	dump_id = (
+		-- First, we select an index that has at least one record with the target schema
+		-- version. We do this so that we can efficiently select from the target table,
+		-- which are all keyed on dump_id.
+		--
+		-- This is more efficient than scanning the entire target table looking for a matching
+		-- schema version especially when that schema version is a small subset of the table.
+
 		SELECT sv.dump_id
 		FROM %s_schema_versions sv
 		WHERE
