@@ -4,6 +4,7 @@ import React from 'react'
 import { WebStory } from '../../components/WebStory'
 import { SearchPatternType } from '../../graphql-operations'
 import { MonacoQueryInput, MonacoQueryInputProps } from './MonacoQueryInput'
+import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
 
 const { add } = storiesOf('web/search/input/MonacoQueryInput', module)
     .addParameters({ chromatic: { viewports: [700] } })
@@ -33,36 +34,12 @@ const defaultProps: MonacoQueryInputProps = {
     showSearchContext: false,
     selectedSearchContextSpec: 'global',
     setSelectedSearchContextSpec: () => {},
-    availableSearchContexts: [
-        {
-            __typename: 'SearchContext',
-            id: '1',
-            spec: 'global',
-            autoDefined: true,
-            description: 'All repositories on Sourcegraph',
-            repositories: [],
-        },
-        {
-            __typename: 'SearchContext',
-            id: '2',
-            spec: '@username',
-            autoDefined: true,
-            description: 'Your repositories on Sourcegraph',
-            repositories: [],
-        },
-        {
-            __typename: 'SearchContext',
-            id: '3',
-            spec: '@username/test-version-1.5',
-            autoDefined: false,
-            description: 'Only code in version 1.5',
-            repositories: [],
-        },
-    ],
     defaultSearchContextSpec: 'global',
     copyQueryButton: false,
     onChange: () => {},
     onSubmit: () => {},
+    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+    fetchSearchContexts: mockFetchSearchContexts,
 }
 
 add(

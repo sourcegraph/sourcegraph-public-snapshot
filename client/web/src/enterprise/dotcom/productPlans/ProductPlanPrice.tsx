@@ -1,7 +1,7 @@
 import React from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { ProductPlanTiered } from './ProductPlanTiered'
-import { pluralize } from '../../../../../shared/src/util/strings'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 /** Displays the price of a plan. */
 export const ProductPlanPrice: React.FunctionComponent<{

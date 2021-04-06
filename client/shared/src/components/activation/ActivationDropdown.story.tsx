@@ -5,7 +5,7 @@ import { ActivationDropdown, ActivationDropdownProps } from './ActivationDropdow
 import { Activation } from './Activation'
 import { boolean } from '@storybook/addon-knobs'
 import { action } from '@storybook/addon-actions'
-import webMainStyles from '../../../../web/src/SourcegraphWebApp.scss'
+import webMainStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { subtypeOf } from '../../util/types'
 
 const { add } = storiesOf('shared/ActivationDropdown', module).addDecorator(story => (

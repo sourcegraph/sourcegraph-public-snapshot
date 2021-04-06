@@ -1,4 +1,4 @@
-import { PlatformContext } from '../../../../../shared/src/platform/context'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ChangeState, DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '.'
 import { getRepoDetailsFromCallsign, getRepoDetailsFromRevisionID, QueryConduitHelper } from './backend'
 import { map } from 'rxjs/operators'

@@ -1,12 +1,12 @@
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as React from 'react'
 import { render } from 'react-dom'
-import { ContributableMenu } from '../../../../../shared/src/api/protocol'
+import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import {
     CommandListPopoverButton,
     CommandListPopoverButtonProps,
-} from '../../../../../shared/src/commandPalette/CommandList'
-import { Notifications } from '../../../../../shared/src/notifications/Notifications'
+} from '@sourcegraph/shared/src/commandPalette/CommandList'
+import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import classNames from 'classnames'
 import { DiffPart } from '@sourcegraph/codeintellify'
 import * as H from 'history'
@@ -16,20 +16,20 @@ import {
     DecorationMapByLine,
     decorationStyleForTheme,
     groupDecorationsByLine,
-} from '../../../../../shared/src/api/extension/api/decorations'
+} from '@sourcegraph/shared/src/api/extension/api/decorations'
 import {
     createController as createExtensionsController,
     ExtensionsControllerProps,
-} from '../../../../../shared/src/extensions/controller'
-import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+} from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { createPlatformContext, SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { GlobalDebug } from '../../components/GlobalDebug'
 import { ShortcutProvider } from '../../components/ShortcutProvider'
 import { CodeHost } from './codeHost'
 import { DOMFunctions } from './codeViews'
-import { NotificationClassNameProps } from '../../../../../shared/src/notifications/NotificationItem'
-import { isExternalLink } from '../../../../../shared/src/util/url'
+import { NotificationClassNameProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
+import { isExternalLink } from '@sourcegraph/shared/src/util/url'
 
 /**
  * Initializes extensions for a page. It creates the {@link PlatformContext} and extensions controller.

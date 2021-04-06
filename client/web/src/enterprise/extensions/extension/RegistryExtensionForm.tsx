@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import {
     EXTENSION_NAME_MAX_LENGTH,
     EXTENSION_NAME_VALID_PATTERN,
@@ -7,7 +7,7 @@ import {
     RegistryPublisher,
 } from '../../../extensions/extension/extension'
 import { ErrorAlert } from '../../../components/alerts'
-import { Scalars } from '../../../../../shared/src/graphql-operations'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 export const RegistryPublisherFormGroup: React.FunctionComponent<{
     className?: string

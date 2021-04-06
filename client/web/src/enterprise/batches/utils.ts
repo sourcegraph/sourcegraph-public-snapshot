@@ -12,8 +12,8 @@ import {
     ResolvedRevisionSpec,
     UIPositionSpec,
     ModeSpec,
-} from '../../../../shared/src/util/url'
-import { getModeFromPath } from '../../../../shared/src/languages'
+} from '@sourcegraph/shared/src/util/url'
+import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 
 export function isValidChangesetReviewState(input: string): input is ChangesetReviewState {
     return Object.values<string>(ChangesetReviewState).includes(input)

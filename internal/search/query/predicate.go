@@ -27,9 +27,8 @@ type Predicate interface {
 
 var DefaultPredicateRegistry = predicateRegistry{
 	FieldRepo: {
-		"contains": func() Predicate {
-			return &RepoContainsPredicate{}
-		},
+		"contains":              func() Predicate { return &RepoContainsPredicate{} },
+		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 	},
 }
 
@@ -50,7 +49,7 @@ func (pr predicateRegistry) Get(field, name string) Predicate {
 }
 
 var (
-	predicateRegexp = regexp.MustCompile(`^(?P<name>[a-z]+)\((?P<params>.*)\)$`)
+	predicateRegexp = regexp.MustCompile(`^(?P<name>[a-z\.]+)\((?P<params>.*)\)$`)
 	nameIndex       = predicateRegexp.SubexpIndex("name")
 	paramsIndex     = predicateRegexp.SubexpIndex("params")
 )
@@ -82,29 +81,8 @@ func (f *RepoContainsPredicate) ParseParams(params string) error {
 	}
 
 	for _, node := range nodes {
-		switch v := node.(type) {
-		case Parameter:
-			switch strings.ToLower(v.Field) {
-			case "file":
-				if f.File != "" {
-					return errors.New("cannot specify file multiple times")
-				}
-				f.File = v.Value
-			case "content":
-				if f.Content != "" {
-					return errors.New("cannot specify content multiple times")
-				}
-				f.Content = v.Value
-			default:
-				return fmt.Errorf("unsupported option %q", v.Field)
-			}
-		case Pattern:
-			if f.Content != "" {
-				return errors.New("cannot specify content multiple times")
-			}
-			f.Content = v.Value
-		default:
-			return fmt.Errorf("unsupported node type %T", node)
+		if err := f.parseNode(node); err != nil {
+			return err
 		}
 	}
 
@@ -112,6 +90,49 @@ func (f *RepoContainsPredicate) ParseParams(params string) error {
 		return errors.New("one of file or content must be set")
 	}
 
+	return nil
+}
+
+func (f *RepoContainsPredicate) parseNode(n Node) error {
+	switch v := n.(type) {
+	case Parameter:
+		if v.Negated {
+			return errors.New("predicates do not currently support negated values")
+		}
+		switch strings.ToLower(v.Field) {
+		case "file":
+			if f.File != "" {
+				return errors.New("cannot specify file multiple times")
+			}
+			f.File = v.Value
+		case "content":
+			if f.Content != "" {
+				return errors.New("cannot specify content multiple times")
+			}
+			f.Content = v.Value
+		default:
+			return fmt.Errorf("unsupported option %q", v.Field)
+		}
+	case Pattern:
+		if v.Negated {
+			return errors.New("predicates do not currently support negated values")
+		}
+		if f.Content != "" {
+			return errors.New("cannot specify content multiple times")
+		}
+		f.Content = v.Value
+	case Operator:
+		if v.Kind == Or {
+			return errors.New("predicates do not currently support 'or' queries")
+		}
+		for _, operand := range v.Operands {
+			if err := f.parseNode(operand); err != nil {
+				return err
+			}
+		}
+	default:
+		return fmt.Errorf("unsupported node type %T", n)
+	}
 	return nil
 }
 
@@ -139,6 +160,33 @@ func (f *RepoContainsPredicate) Plan(parent Basic) (Plan, error) {
 			Value: f.Content,
 		})
 	}
+
+	nodes = append(nodes, nonPredicateRepos(parent)...)
+	return ToPlan(Dnf(nodes))
+}
+
+type RepoContainsCommitAfterPredicate struct {
+	TimeRef string
+}
+
+func (f *RepoContainsCommitAfterPredicate) ParseParams(params string) error {
+	f.TimeRef = params
+	return nil
+}
+
+func (f RepoContainsCommitAfterPredicate) Field() string { return FieldRepo }
+func (f RepoContainsCommitAfterPredicate) Name() string {
+	return "contains.commit.after"
+}
+func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
+	nodes := make([]Node, 0, 3)
+	nodes = append(nodes, Parameter{
+		Field: FieldCount,
+		Value: "99999",
+	}, Parameter{
+		Field: FieldRepoHasCommitAfter,
+		Value: f.TimeRef,
+	})
 
 	nodes = append(nodes, nonPredicateRepos(parent)...)
 	return ToPlan(Dnf(nodes))

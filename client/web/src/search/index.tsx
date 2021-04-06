@@ -1,17 +1,22 @@
 import { escapeRegExp } from 'lodash'
-import { replaceRange } from '../../../shared/src/util/strings'
-import { discreteValueAliases, escapeSpaces, FilterType } from '../../../shared/src/search/query/filters'
-import { Filter } from '../../../shared/src/search/query/token'
+import { replaceRange } from '@sourcegraph/shared/src/util/strings'
+import { discreteValueAliases, escapeSpaces, FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { VersionContext } from '../schema/site.schema'
-import { SearchPatternType } from '../../../shared/src/graphql-operations'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { ISavedSearch, ISearchContext } from '../../../shared/src/graphql/schema'
-import { EventLogResult, isSearchContextAvailable } from './backend'
+import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
+import {
+    EventLogResult,
+    isSearchContextAvailable,
+    fetchAutoDefinedSearchContexts,
+    fetchSearchContexts,
+} from './backend'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
-import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
-import { VersionContextProps } from '../../../shared/src/search/util'
-import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
+import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -180,10 +185,11 @@ export interface OnboardingTourProps {
 
 export interface SearchContextProps {
     showSearchContext: boolean
-    availableSearchContexts: ISearchContext[]
     defaultSearchContextSpec: string
     selectedSearchContextSpec?: string
     setSelectedSearchContextSpec: (spec: string) => void
+    fetchAutoDefinedSearchContexts: typeof fetchAutoDefinedSearchContexts
+    fetchSearchContexts: typeof fetchSearchContexts
 }
 
 export interface ShowQueryBuilderProps {

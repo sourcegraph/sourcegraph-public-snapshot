@@ -13,7 +13,7 @@ import {
     getMergeRequestID,
     getDiffID,
 } from './scrape'
-import { asObservable } from '../../../../../shared/src/util/rxjs/asObservable'
+import { asObservable } from '@sourcegraph/shared/src/util/rxjs/asObservable'
 
 /**
  * Resolves file information for a page with a single file, not including diffs with only one file.

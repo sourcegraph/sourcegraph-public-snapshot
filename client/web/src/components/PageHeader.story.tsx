@@ -5,7 +5,7 @@ import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 
 import webStyles from '../SourcegraphWebApp.scss'
 import { PageHeader } from './PageHeader'
-import { Link } from '../../../shared/src/components/Link'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { FeedbackBadge } from './FeedbackBadge'
 
 const { add } = storiesOf('web/PageHeader', module).addDecorator(story => (

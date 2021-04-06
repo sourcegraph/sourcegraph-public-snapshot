@@ -8,7 +8,7 @@ import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
 import { action } from '@storybook/addon-actions'
 import { flow, startCase } from 'lodash'
-import { highlightCodeSafe } from '../../../shared/src/util/markdown'
+import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
 import { Form } from '../components/Form'
 import openColor from 'open-color'
 import { Menu, MenuButton, MenuList, MenuLink } from '@reach/menu-button'
@@ -16,7 +16,7 @@ import 'storybook-addon-designs'
 import { BrandedStory } from '../components/BrandedStory'
 import { CodeSnippet } from '../components/CodeSnippet'
 import { number } from '@storybook/addon-knobs'
-import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 
 const semanticColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'merged'] as const
 

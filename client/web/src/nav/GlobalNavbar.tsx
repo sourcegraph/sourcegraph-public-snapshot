@@ -1,10 +1,10 @@
 import * as H from 'history'
 import React, { useEffect, useMemo } from 'react'
 import { of } from 'rxjs'
-import { ActivationProps } from '../../../shared/src/components/activation/Activation'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { PlatformContextProps } from '../../../shared/src/platform/context'
-import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
+import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { AuthenticatedUser } from '../auth'
 import {
     PatternTypeProps,
@@ -19,22 +19,22 @@ import {
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { showDotComMarketing } from '../util/features'
 import { NavLinks } from './NavLinks'
-import { ThemeProps } from '../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ThemePreferenceProps } from '../theme'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from '../search/helpers'
-import { Link } from '../../../shared/src/components/Link'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { VersionContextDropdown } from './VersionContextDropdown'
-import { VersionContextProps } from '../../../shared/src/search/util'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { VersionContext } from '../schema/site.schema'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ExtensionAlertAnimationProps } from './UserNavItem'
 import { LayoutRouteProps } from '../routes'
 import { CodeMonitoringProps } from '../code-monitoring'
-import { useObservable } from '../../../shared/src/util/useObservable'
-import { omitContextFilter } from '../../../shared/src/search/query/transformer'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 
 interface Props
     extends SettingsCascadeProps,
@@ -141,7 +141,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         // query and move it to the search contexts dropdown
         const finalQuery =
             globalSearchContextSpec && isSearchContextAvailable && props.showSearchContext
-                ? omitContextFilter(query, globalSearchContextSpec.filter)
+                ? omitFilter(query, globalSearchContextSpec.filter)
                 : query
 
         onNavbarQueryChange({ query: finalQuery })
