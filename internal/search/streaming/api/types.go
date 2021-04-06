@@ -59,6 +59,9 @@ const (
 	// ShardMatchLimit is when we found too many matches in a
 	// shard/repository, so we stopped searching it.
 	ShardMatchLimit SkippedReason = "shard-match-limit"
+	// DisplayLimit is when we found too many matches during a search so we stopped
+	// displaying results.
+	DisplayLimit SkippedReason = "display"
 	// RepositoryLimit is when we did not search a repository because the set
 	// of repositories to search was too large.
 	RepositoryLimit SkippedReason = "repository-limit"

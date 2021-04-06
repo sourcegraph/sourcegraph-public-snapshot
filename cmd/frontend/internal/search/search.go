@@ -100,7 +100,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// want to send everything we find before hitting a limit. Otherwise we
 	// can only send up to limit results.
 	display := args.Display
-	if limit := inputs.MaxResults(); display < 0 || display > limit {
+	limit := inputs.MaxResults()
+	if display < 0 || display > limit {
 		display = limit
 	}
 
@@ -167,6 +168,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		for _, result := range event.Results {
 			if display <= 0 {
+				// We don't want to report a display limit if args.Display >= limit because in
+				// that case we will always show all the results the user asked for. Only if the
+				// user asked for limit > args.Display results and we found more than
+				// args.Display results we inform the user that not all results are displayed.
+				if args.Display < limit {
+					progress.DisplayLimitHit = true
+				}
 				break
 			}
 

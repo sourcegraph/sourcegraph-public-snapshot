@@ -46,6 +46,8 @@ type ProgressStats struct {
 	SuggestedLimit int
 
 	Trace string // only filled if requested
+
+	DisplayLimitHit bool
 }
 
 func skippedReposHandler(repos []Namer, titleVerb, messageReason string, base Skipped) (Skipped, bool) {
@@ -101,6 +103,19 @@ func shardTimeoutHandler(resultsResolver ProgressStats) (Skipped, bool) {
 		Reason:   ShardTimeout,
 		Severity: SeverityWarn,
 	})
+}
+
+func displayLimitHandler(resultsResolver ProgressStats) (Skipped, bool) {
+	if !resultsResolver.DisplayLimitHit {
+		return Skipped{}, false
+	}
+
+	return Skipped{
+		Reason:   DisplayLimit,
+		Title:    "display limit hit",
+		Message:  "By default we only display up to 500 results even if your search returned more results. To see all results and configure the display limit, use our CLI.",
+		Severity: SeverityInfo,
+	}, true
 }
 
 func shardMatchLimitHandler(resultsResolver ProgressStats) (Skipped, bool) {
@@ -175,6 +190,7 @@ var skippedHandlers = []func(stats ProgressStats) (Skipped, bool){
 	shardTimeoutHandler,
 	excludedForkHandler,
 	excludedArchiveHandler,
+	displayLimitHandler,
 }
 
 func number(i int) string {

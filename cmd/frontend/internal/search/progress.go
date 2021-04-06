@@ -20,6 +20,10 @@ type progressAggregator struct {
 
 	// Dirty is true if p has changed since the last call to Current.
 	Dirty bool
+
+	// DisplayLimitHit is true if we have hit the display limit but not the match
+	// limit.
+	DisplayLimitHit bool
 }
 
 func (p *progressAggregator) Update(event graphqlbackend.SearchEvent) {
@@ -60,6 +64,7 @@ func (p *progressAggregator) currentStats() api.ProgressStats {
 		LimitHit:            p.Stats.IsLimitHit,
 		SuggestedLimit:      suggestedLimit,
 		Trace:               p.Trace,
+		DisplayLimitHit:     p.DisplayLimitHit,
 	}
 }
 
