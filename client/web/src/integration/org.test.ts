@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
+import { Driver, createDriverForTest, percySnapshot } from '../../../shared/src/testing/driver'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
@@ -81,7 +81,9 @@ describe('Organizations', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/site-admin/organizations')
 
             await driver.page.waitForSelector('.test-create-org-button')
-            // await percySnapshot(driver.page, 'Site admin org page')
+
+            await percySnapshot(driver.page, 'Site admin org page')
+            await percySnapshot(driver.page, 'Site admin org page', { theme: 'theme-dark' })
 
             await driver.page.click('.test-create-org-button')
 

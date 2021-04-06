@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { retry } from '../../../shared/src/testing/utils'
-import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
+import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { settingsID, testUserID } from '../../../shared/src/testing/integration/graphQlResults'
@@ -94,6 +94,9 @@ describe('Settings', () => {
                 true,
                 'Expected save button to be disabled'
             )
+
+            await percySnapshot(driver.page, 'Settings page')
+            await percySnapshot(driver.page, 'Settings page', { theme: 'theme-dark' })
 
             // Replace with new settings
             const newSettings = '{ /* These are new settings */}'

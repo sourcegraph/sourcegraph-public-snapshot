@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
+import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/testing/driver'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { commonWebGraphQlResults } from './graphQlResults'
@@ -195,6 +195,17 @@ describe('Extension Registry', () => {
             response.type('application/javascript; charset=utf-8').send('exports.activate = () => {}')
         })
     }
+
+    it('is styled correctly', async () => {
+        overrideGraphQLExtensionRegistry({ enabled: false })
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions')
+
+        //  wait for initial set of extensions
+        await driver.page.waitForSelector('[data-test="extension-toggle-sqs/word-count"]')
+
+        await percySnapshot(driver.page, 'Extension registry page')
+        await percySnapshot(driver.page, 'Extension registry page', { theme: 'theme-dark' })
+    })
 
     describe('filtering by category', () => {
         it('does not show language extensions until user clicks show more', async () => {

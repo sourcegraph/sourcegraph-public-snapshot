@@ -7,7 +7,7 @@ import {
     WebGraphQlOperations,
     SearchContextsResult,
 } from '../graphql-operations'
-import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
+import { Driver, createDriverForTest, percySnapshot } from '../../../shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { test } from 'mocha'
@@ -113,6 +113,25 @@ describe('Search', () => {
 
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
         driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
+
+    describe('Visual tests', () => {
+        test('Landing page', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+            await percySnapshot(driver.page, 'Search page')
+            await percySnapshot(driver.page, 'Search page', { theme: 'theme-dark' })
+        })
+
+        test('Results page', async () => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+            })
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
+            await driver.page.waitForSelector('#monaco-query-input')
+            await percySnapshot(driver.page, 'Search results page')
+            await percySnapshot(driver.page, 'Search results page', { theme: 'theme-dark' })
+        })
+    })
 
     describe('Search filters', () => {
         test('Search filters are shown on search result pages and clicking them triggers a new search', async () => {
@@ -591,6 +610,7 @@ describe('Search', () => {
             driver.page.evaluate(
                 () => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown')?.disabled
             )
+
         test('Search context selected based on URL', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:%40test+test&patternType=regexp')
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })

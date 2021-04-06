@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
+import { Driver, createDriverForTest, percySnapshot } from '../../../shared/src/testing/driver'
 import { ExtensionManifest } from '../../../shared/src/schema/extensionSchema'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
@@ -59,6 +59,15 @@ describe('Blob viewer', () => {
     })
 
     describe('general layout for viewing a file', () => {
+        describe('Visual tests', () => {
+            it('Blob page', async () => {
+                await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}`)
+                await driver.page.waitForSelector('.test-repo-blob')
+                await percySnapshot(driver.page, 'Blob page')
+                await percySnapshot(driver.page, 'Blob page', { theme: 'theme-dark' })
+            })
+        })
+
         it('populates editor content and FILES tab', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}`)
             await driver.page.waitForSelector('.test-repo-blob')
@@ -197,13 +206,13 @@ describe('Blob viewer', () => {
                     response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                 })
         })
-        it('truncates long file paths properly', async function () {
+
+        it('truncates long file paths properly', async () => {
             await driver.page.goto(
                 `${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/this_is_a_long_file_path/apps/rest-showcase/src/main/java/org/demo/rest/example/OrdersController.java`
             )
             await driver.page.waitForSelector('.test-repo-blob')
             await driver.page.waitForSelector('.test-breadcrumb')
-            // await percySnapshot(driver.page, this.test!.title)
         })
 
         it.skip('shows a hover overlay from a hover provider when a token is hovered', async () => {
@@ -212,7 +221,7 @@ describe('Blob viewer', () => {
             // TODO
         })
 
-        it('shows a hover overlay from a hover provider and updates the URL when a token is clicked', async function () {
+        it('shows a hover overlay from a hover provider and updates the URL when a token is clicked', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
 
             // Click on "log" in "console.log()" in line 2
@@ -221,7 +230,6 @@ describe('Blob viewer', () => {
 
             await driver.assertWindowLocation('/github.com/sourcegraph/test/-/blob/test.ts#L2:9')
             assert.deepStrictEqual(await getHoverContents(), ['Test hover content\n'])
-            // await percySnapshot(driver.page, this.test!.title)
         })
 
         interface MockExtension {
@@ -949,7 +957,8 @@ describe('Blob viewer', () => {
             await driver.page.waitForSelector('.test-tooltip-find-references', { visible: true })
             await driver.page.click('.test-tooltip-find-references')
 
-            // await percySnapshot(driver.page, 'Blob Panel - Find References')
+            await percySnapshot(driver.page, 'Blob Reference Panel')
+            await percySnapshot(driver.page, 'Blob Reference Panel', { theme: 'theme-dark' })
 
             // Click on the first reference
             await driver.page.waitForSelector('.test-file-match-children-item')
@@ -967,7 +976,6 @@ describe('Blob viewer', () => {
             } catch {
                 throw new Error('Expected to navigate to file after clicking on link in references panel')
             }
-            // await percySnapshot(driver.page, 'Blob Panel - First Reference')
         })
 
         describe('browser extension discoverability', () => {

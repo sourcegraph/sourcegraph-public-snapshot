@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
+import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import {
@@ -11,12 +11,32 @@ import {
 } from './graphQlResponseHelpers'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import * as path from 'path'
-import { DiffHunkLineType } from '../graphql-operations'
+import { DiffHunkLineType, WebGraphQlOperations } from '../graphql-operations'
 import { encodeURIPathComponent } from '../../../shared/src/util/url'
 import { ExtensionManifest } from '../../../shared/src/extensions/extensionManifest'
 import { Settings } from '../../../shared/src/settings/settings'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import type * as sourcegraph from 'sourcegraph'
+import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+
+export const getCommonRepositoryGraphQlResults = (
+    repositoryName: string,
+    repositoryUrl: string,
+    fileEntries: string[]
+): Partial<WebGraphQlOperations & SharedGraphQlOperations> => ({
+    ...commonWebGraphQlResults,
+    RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+    ResolveRev: () => createResolveRevisionResult(repositoryName),
+    FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
+    TreeEntries: () => createTreeEntriesResult(repositoryUrl, fileEntries),
+    TreeCommits: () => ({
+        node: {
+            __typename: 'Repository',
+            commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
+        },
+    }),
+    Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
+})
 
 describe('Repository', () => {
     let driver: Driver
@@ -56,11 +76,7 @@ describe('Repository', () => {
 
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
-                RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
-                ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
-                FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
-                TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, fileEntries),
-                Blob: () => createBlobContentResult('mock file blob'),
+                ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, fileEntries),
                 TreeCommits: () => ({
                     node: {
                         __typename: 'Repository',
@@ -364,11 +380,11 @@ describe('Repository', () => {
 
             await driver.page.waitForSelector('h2.tree-page__title')
 
-            // await percySnapshot(driver.page, 'Repository page')
+            await percySnapshot(driver.page, 'Repository Page')
+            await percySnapshot(driver.page, 'Repository Page', { theme: 'theme-dark' })
 
             // Assert that the directory listing displays properly
             await driver.page.waitForSelector('.test-tree-entries')
-            // await percySnapshot(driver.page, 'Repository index page')
 
             const numberOfFileEntries = await driver.page.evaluate(
                 () => document.querySelectorAll<HTMLButtonElement>('.test-tree-entry-file')?.length
@@ -408,14 +424,15 @@ describe('Repository', () => {
 
         it('works with files with spaces in the name', async () => {
             const shortRepositoryName = 'ggilmore/q-test'
+            const repositoryName = `github.com/${shortRepositoryName}`
+            const repositorySourcegraphUrl = `/${repositoryName}`
             const fileName = '% token.4288249258.sql'
             const directoryName = "Geoffrey's random queries.32r242442bf"
             const filePath = path.posix.join(directoryName, fileName)
 
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
-                RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
-                ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
+                ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, []),
                 FileExternalLinks: ({ filePath, repoName, revision }) =>
                     createFileExternalLinksResult(
                         `https://${encodeURIPathComponent(repoName)}/blob/${encodeURIPathComponent(
@@ -443,13 +460,6 @@ describe('Repository', () => {
                         },
                     },
                 }),
-                TreeCommits: () => ({
-                    node: {
-                        __typename: 'Repository',
-                        commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
-                    },
-                }),
-                Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
             })
 
             await driver.page.goto(
@@ -498,22 +508,12 @@ describe('Repository', () => {
 
         it('works with a plus sign in the repository name', async () => {
             const shortRepositoryName = 'ubuntu/+source/quemu'
-            const repositorySourcegraphUrl = '/ubuntu/+source/quemu'
+            const repositoryName = `github.com/${shortRepositoryName}`
+            const repositorySourcegraphUrl = `/${shortRepositoryName}`
 
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
-                RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
-                ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
-                FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
-                TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, ['readme.md']),
-
-                TreeCommits: () => ({
-                    node: {
-                        __typename: 'Repository',
-                        commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
-                    },
-                }),
-                Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
+                ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, ['readme.md']),
             })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
@@ -545,22 +545,12 @@ describe('Repository', () => {
 
         it('works with spaces in the repository name', async () => {
             const shortRepositoryName = 'my org/repo with spaces'
+            const repositoryName = `github.com/${shortRepositoryName}`
             const repositorySourcegraphUrl = '/github.com/my%20org/repo%20with%20spaces'
 
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
-                RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
-                ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
-                FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
-                TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, ['readme.md']),
-
-                TreeCommits: () => ({
-                    node: {
-                        __typename: 'Repository',
-                        commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
-                    },
-                }),
-                Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
+                ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, ['readme.md']),
             })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
@@ -583,7 +573,9 @@ describe('Repository', () => {
 
     // Describes the ways the directory viewer and tree sidebar can be extended through Sourcegraph extensions.
     describe('extensibility', () => {
-        const repoName = 'github.com/sourcegraph/file-decs'
+        const shortRepoName = 'sourcegraph/file-decs'
+        const repoName = `github.com/${shortRepoName}`
+        const repositorySourcegraphUrl = `/${shortRepoName}`
 
         beforeEach(() => {
             const userSettings: Settings = {
@@ -598,8 +590,7 @@ describe('Repository', () => {
 
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
-                RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
-                ResolveRev: ({ repoName }) => createResolveRevisionResult(repoName),
+                ...getCommonRepositoryGraphQlResults(repoName, repositorySourcegraphUrl, []),
                 FileExternalLinks: ({ filePath, repoName, revision }) =>
                     createFileExternalLinksResult(
                         `https://${encodeURIPathComponent(repoName)}/blob/${encodeURIPathComponent(
@@ -749,13 +740,6 @@ describe('Repository', () => {
                         },
                     }
                 },
-                TreeCommits: () => ({
-                    node: {
-                        __typename: 'Repository',
-                        commit: { ancestors: { nodes: [], pageInfo: { hasNextPage: false } } },
-                    },
-                }),
-                Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}`),
                 Extensions: () => ({
                     extensionRegistry: {
                         extensions: {
@@ -862,9 +846,6 @@ describe('Repository', () => {
                 },
                 'Incorrect decorations for nested on tree sidebar'
             )
-
-            // await percySnapshot(driver.page, 'Tree Sidebar')
-
             // Since nested is a single child, its children should be visible and decorated as well
 
             const testDecorations = await getDecorationsByFilename('sidebar', 'test.ts')

@@ -1,7 +1,7 @@
 import expect from 'expect'
 import assert from 'assert'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
+import { Driver, createDriverForTest, percySnapshot } from '../../../shared/src/testing/driver'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { siteID, siteGQLID } from './jscontext'
@@ -88,16 +88,20 @@ describe('Code monitoring', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    describe('Code monitoring form advances sequentially', () => {
-        it('looks OK', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring/new')
-            await driver.page.waitForSelector('.test-name-input')
-            // await percySnapshot(driver.page, 'Code monitoring - First load')
-        })
+    it('renders correctly on initial load', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring')
+        await percySnapshot(driver.page, 'Code monitoring - First load')
+        await percySnapshot(driver.page, 'Code monitoring - First load', { theme: 'theme-dark' })
+    })
 
+    describe('Code monitoring form advances sequentially', () => {
         it('validates trigger query input', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring/new')
             await driver.page.waitForSelector('.test-name-input')
+
+            await percySnapshot(driver.page, 'Code monitoring - Form')
+            await percySnapshot(driver.page, 'Code monitoring - Form', { theme: 'theme-dark' })
+
             await driver.page.type('.test-name-input', 'test monitor')
 
             await driver.page.waitForSelector('.test-action-button')
