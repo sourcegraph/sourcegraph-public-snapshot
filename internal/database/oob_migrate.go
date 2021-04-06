@@ -82,10 +82,11 @@ func (m *ExternalServiceConfigMigrator) Up(ctx context.Context) (err error) {
 			return err
 		}
 
-		keyIdent, err := key.ID(ctx)
+		version, err := key.Version(ctx)
 		if err != nil {
 			return err
 		}
+		keyIdent := version.JSON()
 
 		// ensure encryption round-trip is valid with keyIdent
 		decrypted, err := key.Decrypt(ctx, encryptedCfg)
@@ -231,10 +232,12 @@ func (m *ExternalAccountsMigrator) Up(ctx context.Context) (err error) {
 		return nil
 	}
 
-	keyIdent, err := key.ID(ctx)
+	version, err := key.Version(ctx)
 	if err != nil {
 		return err
 	}
+
+	keyIdent := version.JSON()
 
 	tx, err := m.store.Transact(ctx)
 	if err != nil {

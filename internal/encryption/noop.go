@@ -1,13 +1,19 @@
 package encryption
 
-import "context"
+import (
+	"context"
+)
 
 var _ Key = &NoopKey{}
 
 type NoopKey struct{}
 
-func (k *NoopKey) ID(ctx context.Context) (string, error) {
-	return "no-op", nil
+func (k *NoopKey) Version(ctx context.Context) (KeyVersion, error) {
+	return KeyVersion{
+		Type:    "noop",
+		Name:    "noop",
+		Version: "",
+	}, nil
 }
 
 func (k *NoopKey) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
