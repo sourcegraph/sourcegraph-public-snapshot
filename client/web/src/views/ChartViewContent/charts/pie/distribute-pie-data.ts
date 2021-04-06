@@ -4,7 +4,7 @@
 // data to => big arc => small arc => big arc. Just to add some space between labels.
 export function distributePieArcs<D>(data: D[], dataKey: keyof D): D[] {
     const sortedData = [...data.sort((first, second) => +first[dataKey] - +second[dataKey])]
-    const result = []
+    const result: D[] = []
 
     while (sortedData.length) {
         const firstElement = sortedData.shift()
