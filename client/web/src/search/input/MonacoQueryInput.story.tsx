@@ -1,10 +1,10 @@
 import { storiesOf } from '@storybook/react'
-import { of } from 'rxjs'
 import { createMemoryHistory } from 'history'
 import React from 'react'
 import { WebStory } from '../../components/WebStory'
 import { SearchPatternType } from '../../graphql-operations'
 import { MonacoQueryInput, MonacoQueryInputProps } from './MonacoQueryInput'
+import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
 
 const { add } = storiesOf('web/search/input/MonacoQueryInput', module)
     .addParameters({ chromatic: { viewports: [700] } })
@@ -38,16 +38,8 @@ const defaultProps: MonacoQueryInputProps = {
     copyQueryButton: false,
     onChange: () => {},
     onSubmit: () => {},
-    fetchAutoDefinedSearchContexts: of([]),
-    fetchSearchContexts: () =>
-        of({
-            nodes: [],
-            pageInfo: {
-                endCursor: null,
-                hasNextPage: false,
-            },
-            totalCount: 0,
-        }),
+    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+    fetchSearchContexts: mockFetchSearchContexts,
 }
 
 add(

@@ -201,7 +201,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/contexts',
-        render: lazyComponent(() => import('./searchContexts/SearchContextsPage'), 'SearchContextsPage'),
+        render: lazyComponent(() => import('./searchContexts/SearchContextsListPage'), 'SearchContextsListPage'),
         exact: true,
         condition: props =>
             !isErrorLike(props.settingsCascade.final) &&

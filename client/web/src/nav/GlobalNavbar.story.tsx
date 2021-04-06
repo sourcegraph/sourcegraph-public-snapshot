@@ -1,5 +1,4 @@
 import React from 'react'
-import { of } from 'rxjs'
 import { createMemoryHistory } from 'history'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../components/WebStory'
@@ -12,6 +11,7 @@ import { SourcegraphContext } from '../jscontext'
 import { SuiteFunction } from 'mocha'
 import { AuthenticatedUser } from '../auth'
 import { extensionsController } from '../../../shared/src/util/searchTestHelpers'
+import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../searchContexts/testHelpers'
 
 window.context = { assetsRoot: 'https://sourcegraph.com/.assets' } as SourcegraphContext & SuiteFunction
 
@@ -61,16 +61,8 @@ const defaultProps = (
     activation: undefined,
     hideNavLinks: false,
     routes: [],
-    fetchAutoDefinedSearchContexts: of([]),
-    fetchSearchContexts: () =>
-        of({
-            nodes: [],
-            pageInfo: {
-                endCursor: null,
-                hasNextPage: false,
-            },
-            totalCount: 0,
-        }),
+    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+    fetchSearchContexts: mockFetchSearchContexts,
 })
 
 const { add } = storiesOf('web/nav/GlobalNav', module)

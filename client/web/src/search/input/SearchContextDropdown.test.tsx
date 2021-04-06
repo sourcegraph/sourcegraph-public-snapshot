@@ -3,11 +3,12 @@ import sinon from 'sinon'
 import React from 'react'
 import * as H from 'history'
 import { of } from 'rxjs'
-import { ListSearchContextsResult, SearchPatternType } from '../../graphql-operations'
+import { SearchPatternType } from '../../graphql-operations'
 import { Dropdown, DropdownItem, DropdownToggle } from 'reactstrap'
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
 import { MockIntersectionObserver } from '../../../../shared/src/util/MockIntersectionObserver'
 import { ISearchContext } from '../../../../shared/src/graphql/schema'
+import { mockFetchSearchContexts } from '../../searchContexts/testHelpers'
 
 const mockFetchAutoDefinedSearchContexts = () =>
     of([
@@ -20,18 +21,6 @@ const mockFetchAutoDefinedSearchContexts = () =>
             repositories: [],
         },
     ] as ISearchContext[])
-
-const mockFetchSearchContexts = (first: number, query?: string, after?: string | null) => {
-    const result: ListSearchContextsResult['searchContexts'] = {
-        nodes: [],
-        pageInfo: {
-            endCursor: null,
-            hasNextPage: false,
-        },
-        totalCount: 0,
-    }
-    return of(result)
-}
 
 describe('SearchContextDropdown', () => {
     const defaultProps: SearchContextDropdownProps = {

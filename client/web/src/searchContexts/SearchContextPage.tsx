@@ -49,6 +49,11 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                         </ul>
                     </>
                 )}
+                {isErrorLike(searchContextOrError) && (
+                    <div className="alert alert-danger">
+                        Error while loading the search context: <strong>{searchContextOrError.message}</strong>
+                    </div>
+                )}
             </Page>
         </div>
     )
