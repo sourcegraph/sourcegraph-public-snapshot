@@ -111,8 +111,8 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 	count := count(q, p)
 
 	// Ugly assumption: for a literal search, the IsRegexp member of
-	// TextPatternInfo must be set true true. The logic assumes that a
-	// literal pattern is an escaped regular expression.
+	// TextPatternInfo must be set true. The logic assumes that a literal
+	// pattern is an escaped regular expression.
 	isRegexp := q.IsLiteral() || q.IsRegexp()
 
 	var pattern string
