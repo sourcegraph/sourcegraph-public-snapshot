@@ -1,0 +1,9 @@
+.convert-version-context-node {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    align-items: center;
+    // To prevent content jumping
+    // stylelint-disable-next-line declaration-property-unit-whitelist
+    min-height: 75px;
+}

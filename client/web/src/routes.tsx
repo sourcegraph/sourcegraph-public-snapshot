@@ -14,6 +14,7 @@ import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import { cncf } from './repogroups/cncf'
 import { ExtensionAlertProps } from './repo/RepoContainer'
 import { StreamingSearchResults } from './search/results/streaming/StreamingSearchResults'
+import { SearchContextsListPage } from './searchContexts/SearchContextsListPage'
 import { isMacPlatform, UserRepositoriesUpdateProps } from './util'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
@@ -201,7 +202,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/contexts',
-        render: lazyComponent(() => import('./searchContexts/SearchContextsListPage'), 'SearchContextsListPage'),
+        render: props => <SearchContextsListPage {...props} />,
         exact: true,
         condition: props =>
             !isErrorLike(props.settingsCascade.final) &&
