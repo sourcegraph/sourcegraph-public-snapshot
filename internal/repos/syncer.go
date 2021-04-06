@@ -547,6 +547,8 @@ func (s *Syncer) syncRepo(ctx context.Context, store *Store, insertOnly bool, pu
 	return diff, nil
 }
 
+// upserts returns a slice containing modified or added repos from a Diff. Deleted
+// repos are ignored.
 func (s *Syncer) upserts(diff Diff) []*types.Repo {
 	now := s.Now()
 	upserts := make([]*types.Repo, 0, len(diff.Added)+len(diff.Modified))
