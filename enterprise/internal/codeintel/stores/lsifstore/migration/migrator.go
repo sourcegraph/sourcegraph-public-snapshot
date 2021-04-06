@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
@@ -41,31 +42,56 @@ import (
 // table. When checking progress, we can efficiently do a full-table on the much smaller
 // aggregate table.
 type Migrator struct {
-	store   *lsifstore.Store
-	driver  migrationDriver
-	options migratorOptions
+	store                    *lsifstore.Store
+	driver                   migrationDriver
+	options                  migratorOptions
+	selectionExpressions     []*sqlf.Query // expressions used in select query
+	temporaryTableFieldNames []string      // names of fields inserted into temporary table
+	temporaryTableFieldSpecs []*sqlf.Query // names of fields inserted into temporary table
+	updateConditions         []*sqlf.Query // expressions used for the update statement
+	updateAssignments        []*sqlf.Query // expressions used to assign to the target table
 }
 
 type migratorOptions struct {
 	// tableName is the name of the table undergoing migration.
 	tableName string
 
-	// selectionFields is a list of fields that should be scanned and made available to
-	// the migration driver.
-	selectionFields []string
-
 	// targetVersion is the value of the row's schema version after an up migration.
 	targetVersion int
 
 	// batchSize limits the number of rows that will be scanned on each call to Up/Down.
 	batchSize int
+
+	// fields is an ordered set of fields used to construct temporary tables and update queries.
+	fields []fieldSpec
+}
+
+type fieldSpec struct {
+	// name is the name of the column.
+	name string
+
+	// postgresType is the type (with modifiers) of the column.
+	postgresType string
+
+	// primaryKey indicates that the field is part of a composite primary key.
+	primaryKey bool
+
+	// readOnly indicates that the field should be skipped on updates.
+	readOnly bool
+
+	// updateOnly indicates that the field should be skipped on selects.
+	updateOnly bool
 }
 
 type migrationDriver interface {
-	// MigrateRowUp determines which fields to update for the given row.
+	// MigrateRowUp determines which fields to update for the given row. The scanner will receive
+	// the values of the primary keys plus any additional non-updateOnly fields supplied via the
+	// migrator's fields option.
 	MigrateRowUp(scanner scanner) (updateSpec, error)
 
-	// MigrateRowDown undoes the migration for the given row.
+	// MigrateRowDown undoes the migration for the given row.  The scanner will receive the values
+	// of the primary keys plus any additional non-updateOnly fields supplied via the migrator's
+	// fields option.
 	MigrateRowDown(scanner scanner) (updateSpec, error)
 }
 
@@ -77,26 +103,48 @@ type scanner interface {
 }
 
 type updateSpec struct {
-	// DumpID is the identifier of the associated upload record.
-	DumpID int
+	// dumpID is the identifier of the associated upload record.
+	dumpID int
 
-	// Conditions is a map from field names to values or SQL expressions. This map should
-	// include the expected value of each primary key field of the current row, as well as
-	// any additional field/value mappings that are expected to exist for this row. If not
-	// supplied, the dump identifier will be implicitly added to this map prior to update.
-	Conditions map[string]interface{}
-
-	// Assignments is a map from field names to values or SQL expressions. This map should
-	// include a value for each field that should be updated. If not supplied, the target
-	// schema version will be implicitly added to this map prior to update.
-	Assignments map[string]interface{}
+	// fieldValues indicates the values that should be written back to the table. This must have
+	// the same number of values as the set of primary keys plus any additional non-selectOnly
+	// fields supplied via the migrator's fields option.
+	fieldValues []interface{}
 }
 
 func newMigrator(store *lsifstore.Store, driver migrationDriver, options migratorOptions) oobmigration.Migrator {
+	selectionExpressions := make([]*sqlf.Query, 0, len(options.fields))
+	temporaryTableFieldNames := make([]string, 0, len(options.fields))
+	temporaryTableFieldSpecs := make([]*sqlf.Query, 0, len(options.fields))
+	updateConditions := make([]*sqlf.Query, 0, len(options.fields))
+	updateAssignments := make([]*sqlf.Query, 0, len(options.fields))
+
+	for _, field := range options.fields {
+		if field.primaryKey {
+			updateConditions = append(updateConditions, sqlf.Sprintf("dest."+field.name+" = src."+field.name))
+		}
+		if !field.updateOnly {
+			selectionExpressions = append(selectionExpressions, sqlf.Sprintf(field.name))
+		}
+		if !field.readOnly {
+			temporaryTableFieldNames = append(temporaryTableFieldNames, field.name)
+			temporaryTableFieldSpecs = append(temporaryTableFieldSpecs, sqlf.Sprintf(field.name+" "+field.postgresType))
+
+			if !field.primaryKey {
+				updateAssignments = append(updateAssignments, sqlf.Sprintf(field.name+" = src."+field.name))
+			}
+		}
+	}
+
 	return &Migrator{
-		store:   store,
-		driver:  driver,
-		options: options,
+		store:                    store,
+		driver:                   driver,
+		options:                  options,
+		selectionExpressions:     selectionExpressions,
+		temporaryTableFieldNames: temporaryTableFieldNames,
+		temporaryTableFieldSpecs: temporaryTableFieldSpecs,
+		updateConditions:         updateConditions,
+		updateAssignments:        updateAssignments,
 	}
 }
 
@@ -184,7 +232,7 @@ ON CONFLICT (dump_id) DO UPDATE SET
 // invocation of the given driver function. This method returns a deduplicated and ordered set
 // of upload identifiers denoting the complete set of uploads whose records were modified
 // by this batch of updates.
-func (m *Migrator) selectAndUpdate(ctx context.Context, tx *lsifstore.Store, sourceVersion, targetVersion int, driverFunc driverFunc) ([]int, error) {
+func (m *Migrator) selectAndUpdate(ctx context.Context, tx *lsifstore.Store, sourceVersion, targetVersion int, driverFunc driverFunc) (_ []int, err error) {
 	// Note: we can't pipeline this as you can't have an open rows object and
 	// execute another unrelated query using the same database handle.
 	updateSpecs, err := m.selectAndProcess(ctx, tx, sourceVersion, driverFunc)
@@ -192,43 +240,74 @@ func (m *Migrator) selectAndUpdate(ctx context.Context, tx *lsifstore.Store, sou
 		return nil, err
 	}
 
+	idMap := map[int]struct{}{}
+	rowValues := make(chan []interface{}, len(updateSpecs))
 	for _, spec := range updateSpecs {
-		defaultConditions := map[string]interface{}{"dump_id": spec.DumpID}
-		defaultAssignments := map[string]interface{}{"schema_version": targetVersion}
+		rowValues <- spec.fieldValues
+		idMap[spec.dumpID] = struct{}{}
+	}
+	close(rowValues)
 
-		if err := tx.Exec(ctx, sqlf.Sprintf(
-			selectAndUpdateQuery,
-			sqlf.Sprintf(m.options.tableName),
-			sqlf.Join(formatFieldValuePairs(fillInDefaults(spec.Assignments, defaultAssignments)), ", "),  // SET k1 = v1, k2 = v2
-			sqlf.Join(formatFieldValuePairs(fillInDefaults(spec.Conditions, defaultConditions)), " AND "), // WHERE k1 = v1 AND k2 = v2
-		)); err != nil {
-			return nil, err
-		}
+	temporaryTableName := "t_migration_payload"
+	temporaryTableExpression := sqlf.Sprintf(temporaryTableName)
+
+	// Create temporary table symmetric to the target table without read-only fields
+	if err := tx.Exec(ctx, sqlf.Sprintf(
+		selectAndUpdateTemporaryTableQuery,
+		temporaryTableExpression,
+		sqlf.Join(m.temporaryTableFieldSpecs, ", "),
+	)); err != nil {
+		return nil, err
 	}
 
-	return dumpIDsFromUpdateSpecs(updateSpecs), nil
+	// Bulk insert all the unique column values into the temporary table
+	if err := batch.InsertValues(ctx, tx.Handle().DB(), temporaryTableName, m.temporaryTableFieldNames, rowValues); err != nil {
+		return nil, err
+	}
+
+	// Update the values from the temporary table in the target table. We assign a
+	// parameterized schema version here since it is the same for all rows in this
+	// operation.
+	if err := tx.Exec(ctx, sqlf.Sprintf(
+		selectAndUpdateUpdateQuery,
+		sqlf.Sprintf(m.options.tableName),
+		sqlf.Join(m.updateAssignments, ", "),
+		targetVersion,
+		temporaryTableExpression,
+		sqlf.Join(m.updateConditions, " AND "),
+	)); err != nil {
+		return nil, err
+	}
+
+	ids := make([]int, 0, len(idMap))
+	for id := range idMap {
+		ids = append(ids, id)
+	}
+	sort.Ints(ids)
+
+	return ids, nil
 }
 
-const selectAndUpdateQuery = `
+const selectAndUpdateTemporaryTableQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:selectAndUpdate
-UPDATE %s SET %s WHERE %s
+CREATE TEMPORARY TABLE %s (%s) ON COMMIT DROP
+`
+
+const selectAndUpdateUpdateQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:selectAndUpdate
+UPDATE %s dest SET %s, schema_version = %s FROM %s src WHERE %s
 `
 
 // selectAndProcess selects a batch of records from the configured table with the given version and
 // returns the update specifications after running the given driver function on each matching row.
 // The records selected by this method are locked (via select for update) in the given transaction.
 func (m *Migrator) selectAndProcess(ctx context.Context, tx *lsifstore.Store, version int, driverFunc driverFunc) ([]updateSpec, error) {
-	fieldQueries := make([]*sqlf.Query, 0, len(m.options.selectionFields))
-	for _, field := range m.options.selectionFields {
-		fieldQueries = append(fieldQueries, sqlf.Sprintf(field))
-	}
-
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
 		selectAndProcessQuery,
 		sqlf.Sprintf(m.options.tableName),
 		version,
 		version,
-		sqlf.Join(fieldQueries, ", "),
+		sqlf.Join(m.selectionExpressions, ", "),
 		sqlf.Sprintf(m.options.tableName),
 		version,
 		m.options.batchSize,
@@ -238,17 +317,17 @@ func (m *Migrator) selectAndProcess(ctx context.Context, tx *lsifstore.Store, ve
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	updateSpecs := make([]updateSpec, 0, m.options.batchSize)
+	var specs []updateSpec
 	for rows.Next() {
 		spec, err := driverFunc(rows)
 		if err != nil {
 			return nil, err
 		}
 
-		updateSpecs = append(updateSpecs, spec)
+		specs = append(specs, spec)
 	}
 
-	return updateSpecs, nil
+	return specs, nil
 }
 
 const selectAndProcessQuery = `
@@ -260,7 +339,7 @@ WITH candidates AS (
 		min_schema_version <= %s AND
 		max_schema_version >= %s
 )
-SELECT dump_id, %s
+SELECT %s
 FROM %s
 WHERE
 	dump_id IN (SELECT dump_id FROM candidates) AND
@@ -269,49 +348,3 @@ ORDER BY dump_id
 LIMIT %s
 FOR UPDATE SKIP LOCKED
 `
-
-// fillInDefaults assigns each (k, v) pair in the given defaults map into the target map m
-// if the key does not already exist. This method returns the target map m.
-func fillInDefaults(m, defaults map[string]interface{}) map[string]interface{} {
-	for k, v := range defaults {
-		if _, ok := m[k]; !ok {
-			m[k] = v
-		}
-	}
-
-	return m
-}
-
-// formatFieldValuePairs returns a slice of sqlf.Query values whose values are `{k} = {v}`
-// for each (k, v) in the given map. The output slice is ordered by field name.
-func formatFieldValuePairs(union map[string]interface{}) []*sqlf.Query {
-	keys := make([]string, 0, len(union))
-	for k := range union {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	queries := make([]*sqlf.Query, 0, len(union))
-	for _, k := range keys {
-		queries = append(queries, sqlf.Sprintf("%s = %s", sqlf.Sprintf(k), union[k]))
-	}
-
-	return queries
-}
-
-// dumpIDsFromUpdateSpecs returns the identifiers of the uploads referenced in the given slice
-// of update spec values.
-func dumpIDsFromUpdateSpecs(updateSpecs []updateSpec) []int {
-	idMap := map[int]struct{}{}
-	for _, spec := range updateSpecs {
-		idMap[spec.DumpID] = struct{}{}
-	}
-
-	ids := make([]int, 0, len(idMap))
-	for id := range idMap {
-		ids = append(ids, id)
-	}
-	sort.Ints(ids)
-
-	return ids
-}
