@@ -7,7 +7,7 @@ import {
     parseHash,
     RepoFile,
     toPositionHashComponent,
-} from '../../../shared/src/util/url'
+} from '@sourcegraph/shared/src/util/url'
 
 export function toTreeURL(target: RepoFile): string {
     return `/${encodeRepoRevision(target)}/-/tree/${target.filePath}`

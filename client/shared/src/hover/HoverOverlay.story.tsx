@@ -10,9 +10,9 @@ import { of } from 'rxjs'
 import { registerHighlightContributions } from '../highlight/contributions'
 import { PlatformContext } from '../platform/context'
 
-import webStyles from '../../../web/src/SourcegraphWebApp.scss'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
-import browserExtensionStyles from '../../../browser/src/app.scss'
+import browserExtensionStyles from '@sourcegraph/browser/src/app.scss'
 import { MarkupContent, Badged, AggregableBadge } from 'sourcegraph'
 
 registerHighlightContributions()

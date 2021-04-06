@@ -1,15 +1,15 @@
 import React from 'react'
 import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from '../panels/utils'
 import { createMemoryHistory } from 'history'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseISO } from 'date-fns'
 import { SearchPage, SearchPageProps } from './SearchPage'
 import { SearchPatternType } from '../../graphql-operations'
 import { storiesOf } from '@storybook/react'
 import { ThemePreference } from '../../theme'
-import { ThemeProps } from '../../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { WebStory } from '../../components/WebStory'
-import { extensionsController } from '../../../../shared/src/util/searchTestHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
 
 const history = createMemoryHistory()

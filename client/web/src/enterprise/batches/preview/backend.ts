@@ -1,5 +1,5 @@
 import { diffStatFields } from '../../../backend/diff'
-import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import {
     Scalars,
     CreateBatchChangeVariables,

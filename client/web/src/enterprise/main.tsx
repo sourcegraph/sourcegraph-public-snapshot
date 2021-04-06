@@ -3,7 +3,7 @@
 // Order is important here
 // Don't remove the empty lines between these imports
 
-import '../../../shared/src/polyfills'
+import '@sourcegraph/shared/src/polyfills'
 
 import '../sentry'
 

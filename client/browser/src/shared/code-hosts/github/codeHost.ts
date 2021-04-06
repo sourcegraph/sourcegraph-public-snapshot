@@ -2,14 +2,14 @@ import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellif
 import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
-import { PlatformContext } from '../../../../../shared/src/platform/context'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     FileSpec,
     RepoSpec,
     ResolvedRevisionSpec,
     RevisionSpec,
     toAbsoluteBlobURL,
-} from '../../../../../shared/src/util/url'
+} from '@sourcegraph/shared/src/util/url'
 import { fetchBlobContentLines } from '../../repo/backend'
 import { querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
@@ -24,8 +24,8 @@ import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './
 import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
 import { defer, of } from 'rxjs'
-import { observeSystemIsLightTheme } from '../../../../../shared/src/theme'
-import { NotificationType } from '../../../../../shared/src/api/extension/extensionHostApi'
+import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing

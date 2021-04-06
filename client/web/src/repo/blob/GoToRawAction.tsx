@@ -1,6 +1,6 @@
 import FileDownloadOutlineIcon from 'mdi-react/FileDownloadOutlineIcon'
 import * as React from 'react'
-import { encodeRepoRevision, RepoSpec, RevisionSpec, FileSpec } from '../../../../shared/src/util/url'
+import { encodeRepoRevision, RepoSpec, RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
 import { RepoHeaderContext } from '../RepoHeader'
 
 interface Props extends RepoSpec, Partial<RevisionSpec>, FileSpec, RepoHeaderContext {}

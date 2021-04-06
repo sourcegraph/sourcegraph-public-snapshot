@@ -1,12 +1,12 @@
 import React, { useState, FunctionComponent, useCallback } from 'react'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables, UserEmailsResult } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { Form } from '../../../../../branded/src/components/Form'
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ErrorAlert } from '../../../components/alerts'
 

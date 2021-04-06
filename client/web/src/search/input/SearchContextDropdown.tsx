@@ -5,8 +5,8 @@ import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { SearchContextMenu } from './SearchContextMenu'
 import { SubmitSearchParameters } from '../helpers'
-import { VersionContextProps } from '../../../../shared/src/search/util'
-import { filterExists } from '../../../../shared/src/search/query/validate'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 
 export interface SearchContextDropdownProps

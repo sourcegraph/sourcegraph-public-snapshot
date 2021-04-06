@@ -1,7 +1,7 @@
 import React from 'react'
 import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from './utils'
 import { HomePanels } from './HomePanels'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseISO } from 'date-fns'
 import { SearchPatternType } from '../../graphql-operations'
 import { storiesOf } from '@storybook/react'

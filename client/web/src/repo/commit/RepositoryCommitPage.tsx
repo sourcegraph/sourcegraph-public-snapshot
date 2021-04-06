@@ -5,18 +5,18 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
-import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
-import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { getHoverActions } from '../../../../shared/src/hover/actions'
-import { HoverContext } from '../../../../shared/src/hover/HoverOverlay'
-import { getModeFromPath } from '../../../../shared/src/languages'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
-import { property, isDefined } from '../../../../shared/src/util/types'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
+import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
+import { getModeFromPath } from '@sourcegraph/shared/src/languages'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
+import { property, isDefined } from '@sourcegraph/shared/src/util/types'
 import {
     FileSpec,
     ModeSpec,
@@ -24,7 +24,7 @@ import {
     RepoSpec,
     ResolvedRevisionSpec,
     RevisionSpec,
-} from '../../../../shared/src/util/url'
+} from '@sourcegraph/shared/src/util/url'
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { requestGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
@@ -34,10 +34,10 @@ import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../components/diff/FileDiffNode'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
-import { ThemeProps } from '../../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorAlert } from '../../components/alerts'
 import { FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     ExternalLinkFields,
     GitCommitFields,

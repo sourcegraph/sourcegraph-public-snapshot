@@ -7,12 +7,12 @@ import {
     WebGraphQlOperations,
     AutoDefinedSearchContextsResult,
 } from '../graphql-operations'
-import { Driver, createDriverForTest, percySnapshot } from '../../../shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { test } from 'mocha'
 import { siteGQLID, siteID } from './jscontext'
-import { SharedGraphQlOperations, SymbolKind } from '../../../shared/src/graphql-operations'
+import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '../search/stream'
 import { Key } from 'ts-key-enum'
 
