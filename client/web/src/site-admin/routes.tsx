@@ -112,4 +112,9 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
         render: lazyComponent(() => import('./SiteAdminSurveyResponsesPage'), 'SiteAdminSurveyResponsesPage'),
     },
+    {
+        path: '/migrations',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminMigrationsPage'), 'SiteAdminMigrationsPage'),
+    },
 ]

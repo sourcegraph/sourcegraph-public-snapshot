@@ -1,5 +1,4 @@
 import { decode } from 'he'
-import FileIcon from 'mdi-react/FileIcon'
 import React from 'react'
 import { ResultContainer } from '../../../shared/src/components/ResultContainer'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -12,6 +11,7 @@ import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 interface Props extends ThemeProps {
     result: Omit<GQL.IGenericSearchResultInterface, '__typename'>
     history: H.History
+    icon: React.ComponentType<{ className?: string }>
 }
 
 export class SearchResult extends React.Component<Props> {
@@ -59,8 +59,7 @@ export class SearchResult extends React.Component<Props> {
     public render(): JSX.Element {
         return (
             <ResultContainer
-                stringIcon={this.props.result.icon}
-                icon={FileIcon}
+                icon={this.props.icon}
                 collapsible={this.props.result && this.props.result.matches.length > 0}
                 defaultExpanded={true}
                 title={this.renderTitle()}

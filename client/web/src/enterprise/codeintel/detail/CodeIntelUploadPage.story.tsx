@@ -108,6 +108,7 @@ add('Errored', () => (
         )}
     </EnterpriseWebStory>
 ))
+
 const fetch = (
     upload: Pick<LsifUploadFields, 'state' | 'uploadedAt' | 'startedAt' | 'finishedAt' | 'failure' | 'placeInQueue'>
 ): (() => Observable<LsifUploadFields>) => () =>

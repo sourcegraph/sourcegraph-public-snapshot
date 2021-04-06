@@ -13,15 +13,12 @@ type ChangesetRewirer struct {
 	// The mappings need to be hydrated for the ChangesetRewirer to consume them.
 	mappings      store.RewirerMappings
 	batchChangeID int64
-	// feature flag that can be removed once this is the default behaviour
-	archiveInsteadOfDetach bool
 }
 
-func New(mappings store.RewirerMappings, batchChangeID int64, archive bool) *ChangesetRewirer {
+func New(mappings store.RewirerMappings, batchChangeID int64) *ChangesetRewirer {
 	return &ChangesetRewirer{
-		mappings:               mappings,
-		batchChangeID:          batchChangeID,
-		archiveInsteadOfDetach: archive,
+		mappings:      mappings,
+		batchChangeID: batchChangeID,
 	}
 }
 
@@ -156,51 +153,52 @@ func (r *ChangesetRewirer) attachTrackingChangeset(changeset *batches.Changeset)
 
 func (r *ChangesetRewirer) closeChangeset(changeset *batches.Changeset) {
 	reset := false
-	archive := false
-	if changeset.CurrentSpecID != 0 && changeset.OwnedByBatchChangeID == r.batchChangeID {
+	if changeset.CurrentSpecID != 0 && changeset.OwnedByBatchChangeID == r.batchChangeID && changeset.Published() {
 		// If we have a current spec ID and the changeset was created by
-		// _this_ batch change that means we should detach and close it.
-		if changeset.Published() {
-			// Store the current spec also as the previous spec.
-			//
-			// Why?
-			//
-			// When a changeset with (prev: A, curr: B) should be closed but
-			// closing failed, it will still have (prev: A, curr: B) set.
-			//
-			// If someone then applies a new batch spec and re-attaches that
-			// changeset with changeset spec C, the changeset would end up with
-			// (prev: A, curr: C), because we don't rotate specs on errors in
-			// `updateChangesetToNewSpec`.
-			//
-			// That would mean, though, that the delta between A and C tells us
-			// to repush and update the changeset on the code host, in addition
-			// to 'reopen', which would actually be the only required action.
-			//
-			// So, when we mark a changeset as to-be-closed, we also rotate the
-			// specs, so that it changeset is saved as (prev: B, curr: B) and
-			// when somebody re-attaches it it's (prev: B, curr: C).
-			// But we only rotate the spec, if applying the currentSpecID was
-			// successful:
-			if changeset.ReconcilerState == batches.ReconcilerStateCompleted {
-				changeset.PreviousSpecID = changeset.CurrentSpecID
-			}
+		// _this_ batch change that means we should archive it.
 
-			if r.archiveInsteadOfDetach {
-				changeset.Archive(r.batchChangeID)
-				archive = true
-			}
-
-			changeset.Closing = true
-			reset = true
+		// Store the current spec also as the previous spec.
+		//
+		// Why?
+		//
+		// When a changeset with (prev: A, curr: B) should be closed but
+		// closing failed, it will still have (prev: A, curr: B) set.
+		//
+		// If someone then applies a new batch spec and re-attaches that
+		// changeset with changeset spec C, the changeset would end up with
+		// (prev: A, curr: C), because we don't rotate specs on errors in
+		// `updateChangesetToNewSpec`.
+		//
+		// That would mean, though, that the delta between A and C tells us
+		// to repush and update the changeset on the code host, in addition
+		// to 'reopen', which would actually be the only required action.
+		//
+		// So, when we mark a changeset as to-be-closed, we also rotate the
+		// specs, so that it changeset is saved as (prev: B, curr: B) and
+		// when somebody re-attaches it it's (prev: B, curr: C).
+		// But we only rotate the spec, if applying the currentSpecID was
+		// successful:
+		if changeset.ReconcilerState == batches.ReconcilerStateCompleted {
+			changeset.PreviousSpecID = changeset.CurrentSpecID
 		}
-	}
 
-	// Disassociate the changeset with the batch change.
-	if !archive {
-		if wasAttached := changeset.Detach(r.batchChangeID); wasAttached {
+		// If we're here we want to archive the changeset or it's archived
+		// already and we don't want to detach it.
+		if !changeset.ArchivedIn(r.batchChangeID) {
+			changeset.Archive(r.batchChangeID)
 			reset = true
+
+			// If the changeset hasn't been closed/merged yet, we close it.
+			// Marking it as Closing would be a noop, but it's weird to show a
+			// changeset as will-be-closed on the preview page when it's
+			// already closed.
+			if changeset.Closeable() {
+				changeset.Closing = true
+			}
 		}
+	} else if wasAttached := changeset.Detach(r.batchChangeID); wasAttached {
+		// If not, we simply detach it
+		reset = true
 	}
 
 	if reset {

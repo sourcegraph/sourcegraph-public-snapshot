@@ -10,19 +10,22 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	UploadStoreConfig              *uploadstore.Config
-	CommitGraphUpdateTaskInterval  time.Duration
-	CleanupTaskInterval            time.Duration
-	AutoIndexingTaskInterval       time.Duration
-	AutoIndexingSkipManualInterval time.Duration
-	HunkCacheSize                  int
-	DataTTL                        time.Duration
-	UploadTimeout                  time.Duration
-	IndexBatchSize                 int
-	MinimumTimeSinceLastEnqueue    time.Duration
-	MinimumSearchCount             int
-	MinimumSearchRatio             int
-	MinimumPreciseCount            int
+	UploadStoreConfig                  *uploadstore.Config
+	CommitGraphUpdateTaskInterval      time.Duration
+	CleanupTaskInterval                time.Duration
+	AutoIndexingTaskInterval           time.Duration
+	AutoIndexingSkipManualInterval     time.Duration
+	HunkCacheSize                      int
+	DataTTL                            time.Duration
+	UploadTimeout                      time.Duration
+	IndexBatchSize                     int
+	MinimumTimeSinceLastEnqueue        time.Duration
+	MinimumSearchCount                 int
+	MinimumSearchRatio                 int
+	MinimumPreciseCount                int
+	DiagnosticsCountMigrationBatchSize int
+	DefinitionsCountMigrationBatchSize int
+	ReferencesCountMigrationBatchSize  int
 }
 
 var config = &Config{}
@@ -44,4 +47,7 @@ func init() {
 	config.MinimumSearchCount = config.GetInt("PRECISE_CODE_INTEL_MINIMUM_SEARCH_COUNT", "50", "The minimum number of search-based code intel events that triggers auto-indexing on a repository.")
 	config.MinimumSearchRatio = config.GetInt("PRECISE_CODE_INTEL_MINIMUM_SEARCH_RATIO", "50", "The minimum ratio of search-based to total code intel events that triggers auto-indexing on a repository.")
 	config.MinimumPreciseCount = config.GetInt("PRECISE_CODE_INTEL_MINIMUM_PRECISE_COUNT", "1", "The minimum number of precise code intel events that triggers auto-indexing on a repository.")
+	config.DiagnosticsCountMigrationBatchSize = config.GetInt("PRECISE_CODE_INTEL_DIAGNOSTICS_COUNT_MIGRATION_BATCH_SIZE", "1000", "The number of document records to migrate per second.")
+	config.DefinitionsCountMigrationBatchSize = config.GetInt("PRECISE_CODE_INTEL_DEFINITIONS_COUNT_MIGRATION_BATCH_SIZE", "1000", "The number of definition records to migrate per second.")
+	config.ReferencesCountMigrationBatchSize = config.GetInt("PRECISE_CODE_INTEL_REFERENCES_COUNT_MIGRATION_BATCH_SIZE", "1000", "The number of reference records to migrate per second.")
 }

@@ -49,14 +49,6 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "archiveBatchChangeChangesets": {
-          "description": "When enabled, changesets that would be detached when a new batch spec is applied will be archived instead, thereby retaining an association with the batch change.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "eventLogging": {
           "description": "Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.",
           "type": "string",
@@ -1364,10 +1356,20 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["cloudkms", "noop"]
+          "enum": ["cloudkms", "mounted", "noop"]
         }
       },
-      "oneOf": [{ "$ref": "#/definitions/CloudKMSEncryptionKey" }, { "$ref": "#/definitions/NoOpEncryptionKey" }],
+      "oneOf": [
+        {
+          "$ref": "#/definitions/CloudKMSEncryptionKey"
+        },
+        {
+          "$ref": "#/definitions/MountedEncryptionKey"
+        },
+        {
+          "$ref": "#/definitions/NoOpEncryptionKey"
+        }
+      ],
       "!go": {
         "taggedUnionType": true
       }
@@ -1382,6 +1384,26 @@
           "const": "cloudkms"
         },
         "keyname": {
+          "type": "string"
+        }
+      }
+    },
+    "MountedEncryptionKey": {
+      "description": "This encryption key is mounted from a given file path or an environment variable.",
+      "type": "object",
+      "required": ["type", "keyname"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "mounted"
+        },
+        "keyname": {
+          "type": "string"
+        },
+        "filepath": {
+          "type": "string"
+        },
+        "envVarName": {
           "type": "string"
         }
       }

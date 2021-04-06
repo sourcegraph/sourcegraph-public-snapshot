@@ -10,6 +10,13 @@ Ensure that the following tools are available on your path:
 - [`lsif-go`](https://github.com/sourcegraph/lsif-go)
 - [`gsutil`](https://cloud.google.com/storage/docs/gsutil_install) (and authenticated to the `sourcegraph-dev` project)
 
+Set:
+
+```sh
+SOURCEGRAPH_BASE_URL=http://localhost:3080
+SOURCEGRAPH_SUDO_TOKEN=<YOUR SOURCEGRAPH API ACCESS TOKEN>
+```
+
 ## Testing
 
 1. Ensure these repositories exist on your instance (in `Site Admin` -> `Manage repositories` -> `GitHub`):
@@ -62,3 +69,11 @@ Upload the generated indexes by running the following command:
 ```
 ./scripts/upload.sh
 ```
+
+Or if you just want to test an indexer change locally, you can:
+
+```sh
+rm -rf testdata/indexes/
+```
+
+Then rerun the testing steps described above (starting at `clone-and-index.sh`)

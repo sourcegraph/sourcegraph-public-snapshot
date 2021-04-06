@@ -316,12 +316,15 @@ update_sources AS (
 INSERT INTO external_service_repos (
   external_service_id,
   repo_id,
+  user_id,
   clone_url
 ) SELECT
   external_service_id,
   repo_id,
+  es.namespace_user_id,
   clone_url
 FROM inserted_sources_list
+JOIN external_services es ON (id = external_service_id)
 ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_unique
 DO
   UPDATE SET clone_url = EXCLUDED.clone_url

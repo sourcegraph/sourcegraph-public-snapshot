@@ -161,9 +161,9 @@ func searchZoektSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitReso
 							ParentKind: m.SymbolInfo.ParentKind,
 							Path:       file.FileName,
 							Line:       l.LineNumber,
+							Language:   file.Language,
 						},
 						BaseURI: baseURI,
-						Lang:    strings.ToLower(file.Language),
 					},
 				))
 			}
@@ -213,7 +213,6 @@ func computeSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitResolver
 		sr := result.SymbolMatch{
 			Symbol:  symbol,
 			BaseURI: baseURI,
-			Lang:    strings.ToLower(symbol.Language),
 		}
 		resolver := toSymbolResolver(db, commit, &sr)
 		resolvers = append(resolvers, resolver)

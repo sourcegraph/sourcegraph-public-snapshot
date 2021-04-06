@@ -49,8 +49,8 @@ describe('Search onboarding', () => {
             RepoGroups: () => ({
                 repoGroups: [],
             }),
-            SearchContexts: () => ({
-                searchContexts: [],
+            AutoDefinedSearchContexts: () => ({
+                autoDefinedSearchContexts: [],
             }),
             ViewerSettings: () => ({
                 viewerSettings: {

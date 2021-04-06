@@ -79,6 +79,7 @@ describe('SearchContextDropdown', () => {
                 spec: 'global',
                 autoDefined: true,
                 description: 'All repositories on Sourcegraph',
+                repositories: [],
             },
         ]
         const submitSearch = sinon.spy()
@@ -104,6 +105,7 @@ describe('SearchContextDropdown', () => {
                 spec: 'global',
                 autoDefined: true,
                 description: 'All repositories on Sourcegraph',
+                repositories: [],
             },
         ]
         const submitSearch = sinon.spy()

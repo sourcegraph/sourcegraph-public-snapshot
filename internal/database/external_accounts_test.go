@@ -357,9 +357,6 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 	if string(*account.AuthData) != base64.StdEncoding.EncodeToString([]byte(*accountData.AuthData)) {
 		t.Fatalf("expected base64 encoded auth data, got %s", string(*account.AuthData))
 	}
-	if string(*account.Data) != base64.StdEncoding.EncodeToString([]byte(*accountData.Data)) {
-		t.Fatalf("expected base64 encoded data, got %s", string(*account.Data))
-	}
 
 	// List should return decrypted data
 	account = listFirstAccount(store)

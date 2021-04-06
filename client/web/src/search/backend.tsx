@@ -20,8 +20,12 @@ import {
     DeleteSavedSearchVariables,
     UpdateSavedSearchResult,
     UpdateSavedSearchVariables,
-    SearchContextsResult,
-    SearchContextsVariables,
+    ListSearchContextsResult,
+    ListSearchContextsVariables,
+    AutoDefinedSearchContextsResult,
+    AutoDefinedSearchContextsVariables,
+    IsSearchContextAvailableResult,
+    IsSearchContextAvailableVariables,
     Scalars,
 } from '../graphql-operations'
 
@@ -86,7 +90,6 @@ export function search(
                                             html
                                         }
                                         url
-                                        icon
                                         detail {
                                             html
                                         }
@@ -157,7 +160,6 @@ export function search(
                                             html
                                         }
                                         url
-                                        icon
                                         detail {
                                             html
                                         }
@@ -225,10 +227,10 @@ const repogroupSuggestions = defer(() =>
     refCount()
 )
 
-export const fetchSearchContexts = defer(() =>
-    requestGraphQL<SearchContextsResult, SearchContextsVariables>(gql`
-        query SearchContexts {
-            searchContexts {
+export const fetchAutoDefinedSearchContexts = defer(() =>
+    requestGraphQL<AutoDefinedSearchContextsResult, AutoDefinedSearchContextsVariables>(gql`
+        query AutoDefinedSearchContexts {
+            autoDefinedSearchContexts {
                 __typename
                 id
                 spec
@@ -239,15 +241,65 @@ export const fetchSearchContexts = defer(() =>
     `)
 ).pipe(
     map(dataOrThrowErrors),
-    map(({ searchContexts }) => searchContexts as GQL.ISearchContext[]),
+    map(({ autoDefinedSearchContexts }) => autoDefinedSearchContexts as GQL.ISearchContext[]),
     publishReplay(1),
     refCount()
 )
 
+export function fetchSearchContexts(
+    first: number,
+    query?: string,
+    after?: string
+): Observable<ListSearchContextsResult['searchContexts']> {
+    return requestGraphQL<ListSearchContextsResult, ListSearchContextsVariables>(
+        gql`
+            query ListSearchContexts($first: Int!, $after: String, $query: String) {
+                searchContexts(first: $first, after: $after, query: $query) {
+                    nodes {
+                        __typename
+                        id
+                        spec
+                        description
+                        autoDefined
+                        repositories {
+                            __typename
+                            repository {
+                                name
+                            }
+                            revisions
+                        }
+                    }
+                    pageInfo {
+                        endCursor
+                    }
+                    totalCount
+                }
+            }
+        `,
+        { first, after: after ?? null, query: query ?? null }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.searchContexts)
+    )
+}
+
+export function isSearchContextAvailable(
+    spec: string
+): Observable<IsSearchContextAvailableResult['isSearchContextAvailable']> {
+    return requestGraphQL<IsSearchContextAvailableResult, IsSearchContextAvailableVariables>(
+        gql`
+            query IsSearchContextAvailable($spec: String!) {
+                isSearchContextAvailable(spec: $spec)
+            }
+        `,
+        { spec }
+    ).pipe(map(result => result.data?.isSearchContextAvailable ?? false))
+}
+
 export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> {
     return combineLatest([
         repogroupSuggestions,
-        fetchSearchContexts,
+        fetchAutoDefinedSearchContexts,
         queryGraphQL(
             gql`
                 query SearchSuggestions($query: String!) {
@@ -294,9 +346,9 @@ export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> 
             })
         ),
     ]).pipe(
-        map(([repogroups, searchContexts, dynamicSuggestions]) => [
+        map(([repogroups, autoDefinedSearchContexts, dynamicSuggestions]) => [
             ...repogroups,
-            ...searchContexts,
+            ...autoDefinedSearchContexts,
             ...dynamicSuggestions,
         ])
     )

@@ -17,14 +17,18 @@ Holds a single column storing the status of the most recent migration attempt.
 
 # Table "public.lsif_data_definitions"
 ```
-   Column   |  Type   | Collation | Nullable | Default 
-------------+---------+-----------+----------+---------
- dump_id    | integer |           | not null | 
- scheme     | text    |           | not null | 
- identifier | text    |           | not null | 
- data       | bytea   |           |          | 
+     Column     |  Type   | Collation | Nullable | Default 
+----------------+---------+-----------+----------+---------
+ dump_id        | integer |           | not null | 
+ scheme         | text    |           | not null | 
+ identifier     | text    |           | not null | 
+ data           | bytea   |           |          | 
+ schema_version | integer |           | not null | 
+ num_locations  | integer |           | not null | 
 Indexes:
     "lsif_data_definitions_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
+Triggers:
+    lsif_data_definitions_schema_versions_insert AFTER INSERT ON lsif_data_definitions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_definitions_schema_versions_insert()
 
 ```
 
@@ -36,7 +40,31 @@ Associates (document, range) pairs with the import monikers attached to the rang
 
 **identifier**: The moniker identifier.
 
+**num_locations**: The number of locations stored in the data field.
+
+**schema_version**: The schema version of this row - used to determine presence and encoding of data.
+
 **scheme**: The moniker scheme.
+
+# Table "public.lsif_data_definitions_schema_versions"
+```
+       Column       |  Type   | Collation | Nullable | Default 
+--------------------+---------+-----------+----------+---------
+ dump_id            | integer |           | not null | 
+ min_schema_version | integer |           |          | 
+ max_schema_version | integer |           |          | 
+Indexes:
+    "lsif_data_definitions_schema_versions_pkey" PRIMARY KEY, btree (dump_id)
+
+```
+
+Tracks the range of schema_versions for each upload in the lsif_data_definitions table.
+
+**dump_id**: The identifier of the associated dump in the lsif_uploads table.
+
+**max_schema_version**: An upper-bound on the `lsif_data_definitions.schema_version` where `lsif_data_definitions.dump_id = dump_id`.
+
+**min_schema_version**: A lower-bound on the `lsif_data_definitions.schema_version` where `lsif_data_definitions.dump_id = dump_id`.
 
 # Table "public.lsif_data_documents"
 ```
@@ -49,6 +77,8 @@ Associates (document, range) pairs with the import monikers attached to the rang
  num_diagnostics | integer |           | not null | 
 Indexes:
     "lsif_data_documents_pkey" PRIMARY KEY, btree (dump_id, path)
+Triggers:
+    lsif_data_documents_schema_versions_insert AFTER INSERT ON lsif_data_documents REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_documents_schema_versions_insert()
 
 ```
 
@@ -63,6 +93,26 @@ Stores reference, hover text, moniker, and diagnostic data about a particular te
 **path**: The path of the text document relative to the associated dump root.
 
 **schema_version**: The schema version of this row - used to determine presence and encoding of data.
+
+# Table "public.lsif_data_documents_schema_versions"
+```
+       Column       |  Type   | Collation | Nullable | Default 
+--------------------+---------+-----------+----------+---------
+ dump_id            | integer |           | not null | 
+ min_schema_version | integer |           |          | 
+ max_schema_version | integer |           |          | 
+Indexes:
+    "lsif_data_documents_schema_versions_pkey" PRIMARY KEY, btree (dump_id)
+
+```
+
+Tracks the range of schema_versions for each upload in the lsif_data_documents table.
+
+**dump_id**: The identifier of the associated dump in the lsif_uploads table.
+
+**max_schema_version**: An upper-bound on the `lsif_data_documents.schema_version` where `lsif_data_documents.dump_id = dump_id`.
+
+**min_schema_version**: A lower-bound on the `lsif_data_documents.schema_version` where `lsif_data_documents.dump_id = dump_id`.
 
 # Table "public.lsif_data_metadata"
 ```
@@ -83,14 +133,18 @@ Stores the number of result chunks associated with a dump.
 
 # Table "public.lsif_data_references"
 ```
-   Column   |  Type   | Collation | Nullable | Default 
-------------+---------+-----------+----------+---------
- dump_id    | integer |           | not null | 
- scheme     | text    |           | not null | 
- identifier | text    |           | not null | 
- data       | bytea   |           |          | 
+     Column     |  Type   | Collation | Nullable | Default 
+----------------+---------+-----------+----------+---------
+ dump_id        | integer |           | not null | 
+ scheme         | text    |           | not null | 
+ identifier     | text    |           | not null | 
+ data           | bytea   |           |          | 
+ schema_version | integer |           | not null | 
+ num_locations  | integer |           | not null | 
 Indexes:
     "lsif_data_references_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
+Triggers:
+    lsif_data_references_schema_versions_insert AFTER INSERT ON lsif_data_references REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_references_schema_versions_insert()
 
 ```
 
@@ -102,7 +156,31 @@ Associates (document, range) pairs with the export monikers attached to the rang
 
 **identifier**: The moniker identifier.
 
+**num_locations**: The number of locations stored in the data field.
+
+**schema_version**: The schema version of this row - used to determine presence and encoding of data.
+
 **scheme**: The moniker scheme.
+
+# Table "public.lsif_data_references_schema_versions"
+```
+       Column       |  Type   | Collation | Nullable | Default 
+--------------------+---------+-----------+----------+---------
+ dump_id            | integer |           | not null | 
+ min_schema_version | integer |           |          | 
+ max_schema_version | integer |           |          | 
+Indexes:
+    "lsif_data_references_schema_versions_pkey" PRIMARY KEY, btree (dump_id)
+
+```
+
+Tracks the range of schema_versions for each upload in the lsif_data_references table.
+
+**dump_id**: The identifier of the associated dump in the lsif_uploads table.
+
+**max_schema_version**: An upper-bound on the `lsif_data_references.schema_version` where `lsif_data_references.dump_id = dump_id`.
+
+**min_schema_version**: A lower-bound on the `lsif_data_references.schema_version` where `lsif_data_references.dump_id = dump_id`.
 
 # Table "public.lsif_data_result_chunks"
 ```

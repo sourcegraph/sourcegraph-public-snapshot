@@ -1,5 +1,6 @@
 import * as H from 'history'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
+import { of } from 'rxjs'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
@@ -12,6 +13,8 @@ import {
     OnboardingTourProps,
     ParsedSearchQueryProps,
     SearchContextProps,
+    isSearchContextSpecAvailable,
+    getGlobalSearchContextFilter,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { showDotComMarketing } from '../util/features'
@@ -30,6 +33,8 @@ import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 import { ExtensionAlertAnimationProps } from './UserNavItem'
 import { LayoutRouteProps } from '../routes'
 import { CodeMonitoringProps } from '../code-monitoring'
+import { useObservable } from '../../../shared/src/util/useObservable'
+import { omitFilter } from '../../../shared/src/search/query/transformer'
 
 interface Props
     extends SettingsCascadeProps,
@@ -111,6 +116,14 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 
     const query = props.parsedSearchQuery
 
+    const globalSearchContextSpec = useMemo(() => getGlobalSearchContextFilter(query), [query])
+    const isSearchContextAvailable = useObservable(
+        useMemo(
+            () => (globalSearchContextSpec ? isSearchContextSpecAvailable(globalSearchContextSpec.spec) : of(false)),
+            [globalSearchContextSpec]
+        )
+    )
+
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
         // the main query input to avoid misleading users
@@ -123,8 +136,23 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         if (!query) {
             return
         }
-        onNavbarQueryChange({ query })
-    }, [isSearchRelatedPage, onNavbarQueryChange, query])
+
+        // If a global search context spec is available to the user, we omit it from the
+        // query and move it to the search contexts dropdown
+        const finalQuery =
+            globalSearchContextSpec && isSearchContextAvailable && props.showSearchContext
+                ? omitFilter(query, globalSearchContextSpec.filter)
+                : query
+
+        onNavbarQueryChange({ query: finalQuery })
+    }, [
+        isSearchRelatedPage,
+        onNavbarQueryChange,
+        query,
+        globalSearchContextSpec,
+        isSearchContextAvailable,
+        props.showSearchContext,
+    ])
 
     const logo = (
         <LinkOrSpan to={authRequired ? undefined : '/search'} className="global-navbar__logo-link">

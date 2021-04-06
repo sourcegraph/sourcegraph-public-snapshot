@@ -42,7 +42,7 @@ import {
     MutableVersionContextProps,
     parseSearchURL,
     SearchContextProps,
-    isSearchContextSpecAvailable,
+    getGlobalSearchContextFilter,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -69,9 +69,6 @@ import { useObservable } from '../../shared/src/util/useObservable'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
 import { CodeMonitoringProps } from './code-monitoring'
 import { UserRepositoriesUpdateProps } from './util'
-import { FilterKind, findFilter } from '../../shared/src/search/query/validate'
-import { FilterType } from '../../shared/src/search/query/filters'
-import { omitContextFilter } from '../../shared/src/search/query/transformer'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -160,7 +157,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         caseSensitive: currentCaseSensitive,
         versionContext: currentVersionContext,
         selectedSearchContextSpec,
-        availableSearchContexts,
         location,
         setParsedSearchQuery,
         setPatternType,
@@ -173,23 +169,11 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         location.search,
     ])
 
+    const searchContextSpec = useMemo(() => getGlobalSearchContextFilter(query)?.spec, [query])
+
     useEffect(() => {
-        const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global)
-        const searchContextSpec = globalContextFilter?.value ? globalContextFilter.value.value : undefined
-
-        let finalQuery = query
-        if (
-            globalContextFilter &&
-            searchContextSpec &&
-            isSearchContextSpecAvailable(searchContextSpec, availableSearchContexts)
-        ) {
-            // If a global search context spec is available to the user, we omit it from the
-            // query and move it to the search contexts dropdown
-            finalQuery = omitContextFilter(finalQuery, globalContextFilter)
-        }
-
-        if (finalQuery !== currentQuery) {
-            setParsedSearchQuery(finalQuery)
+        if (query !== currentQuery) {
+            setParsedSearchQuery(query)
         }
 
         // Only override filters from URL if there is a search query
@@ -228,7 +212,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         setVersionContext,
         versionContext,
         setSelectedSearchContextSpec,
-        availableSearchContexts,
+        searchContextSpec,
     ])
 
     // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
