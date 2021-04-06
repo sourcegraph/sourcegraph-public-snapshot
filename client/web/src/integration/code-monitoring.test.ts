@@ -88,14 +88,6 @@ describe('Code monitoring', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    it('renders correctly on initial load', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring')
-        await driver.page.waitForSelector('[data-testid="nodes"]')
-
-        await percySnapshot(driver.page, 'Code monitoring - First load')
-        await percySnapshot(driver.page, 'Code monitoring - First load', { theme: 'theme-dark' })
-    })
-
     describe('Code monitoring form advances sequentially', () => {
         it('validates trigger query input', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring/new')
