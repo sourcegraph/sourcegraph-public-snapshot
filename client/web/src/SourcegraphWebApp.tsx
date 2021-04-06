@@ -74,7 +74,7 @@ import { ISearchContext } from '../../shared/src/graphql/schema'
 import { logCodeInsightsChanges } from './insights/analytics'
 import { listUserRepositories } from './site-admin/backend'
 import { NotificationType } from '../../shared/src/api/extension/extensionHostApi'
-import { REDESIGN_CLASS_NAME, REDESIGN_TOGGLE_KEY } from './nav/RedesignToggle'
+import { REDESIGN_CLASS_NAME, REDESIGN_TOGGLE_KEY } from '@sourcegraph/wildcard'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
