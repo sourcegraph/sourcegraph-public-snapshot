@@ -100,8 +100,14 @@ func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunk
 	}})
 	defer endObservation(1, observation.Args{})
 
-	var count uint32
+	// Create temporary table symmetric to lsif_data_documents without the dump id
+	if err := s.Exec(ctx, sqlf.Sprintf(writeResultChunksTemporaryTableQuery)); err != nil {
+		return err
+	}
 
+	var count uint32
+	db := s.Handle().DB()
+	columns := []string{"idx", "data"}
 	inserter := func(inserter *batch.Inserter) error {
 		for v := range resultChunks {
 			data, err := s.serializer.MarshalResultChunkData(v.ResultChunk)
@@ -109,7 +115,7 @@ func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunk
 				return err
 			}
 
-			if err := inserter.Insert(ctx, bundleID, v.Index, data); err != nil {
+			if err := inserter.Insert(ctx, v.Index, data); err != nil {
 				return err
 			}
 
@@ -119,12 +125,35 @@ func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunk
 		return nil
 	}
 
-	if err := withBatchInserter(ctx, s.Handle().DB(), "lsif_data_result_chunks", []string{"dump_id", "idx", "data"}, inserter); err != nil {
+	// Bulk insert all the unique column values into the temporary table
+	if err := withBatchInserter(ctx, db, "t_lsif_data_result_chunks", columns, inserter); err != nil {
 		return err
 	}
+
+	// Insert the values from the temporary table into the target table. We select a
+	// parameterized dump id here since it is the same for all rows in this operation.
+	if err := s.Exec(ctx, sqlf.Sprintf(writeResultChunksInsertQuery, bundleID)); err != nil {
+		return err
+	}
+
 	traceLog(log.Int("count", int(count)))
 	return nil
 }
+
+const writeResultChunksTemporaryTableQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:WriteResultChunks
+CREATE TEMPORARY TABLE t_lsif_data_result_chunks (
+	idx integer NOT NULL,
+	data bytea NOT NULL
+) ON COMMIT DROP
+`
+
+const writeResultChunksInsertQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:WriteResultChunks
+INSERT INTO lsif_data_result_chunks (dump_id, idx, data)
+SELECT %s, source.idx, source.data
+FROM t_lsif_data_result_chunks source
+`
 
 func (s *Store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan semantic.MonikerLocations) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeDefinitions.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
