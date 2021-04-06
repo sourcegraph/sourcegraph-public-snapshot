@@ -282,16 +282,8 @@ func (s *Store) writeVisibleUploads(ctx context.Context, graph *commitgraph.Grap
 	ctx, traceLog, endObservation := s.operations.writeVisibleUploads.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	temporaryTableQueries := []string{
-		writeVisibleUploadsTemporaryNearestUploadsTableQuery,
-		writeVisibleUploadsTemporaryNearestUploadsLinksTableQuery,
-		writeVisibleUploadsTemporaryUploadsVisibleAtTipTableQuery,
-	}
-
-	for _, temporaryTableQuery := range temporaryTableQueries {
-		if err := s.Store.Exec(ctx, sqlf.Sprintf(temporaryTableQuery)); err != nil {
-			return err
-		}
+	if err := s.createTemporaryNearestUploadsTables(ctx); err != nil {
+		return err
 	}
 
 	// Insert the set of uploads that are visible from each commit for a given repository into
@@ -383,27 +375,43 @@ func (s *Store) writeVisibleUploads(ctx context.Context, graph *commitgraph.Grap
 	return nil
 }
 
-const writeVisibleUploadsTemporaryNearestUploadsTableQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/commits.go:writeVisibleUploads
+func (s *Store) createTemporaryNearestUploadsTables(ctx context.Context) error {
+	temporaryTableQueries := []string{
+		temporaryNearestUploadsTableQuery,
+		temporaryNearestUploadsLinksTableQuery,
+		temporaryUploadsVisibleAtTipTableQuery,
+	}
+
+	for _, temporaryTableQuery := range temporaryTableQueries {
+		if err := s.Store.Exec(ctx, sqlf.Sprintf(temporaryTableQuery)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+const temporaryNearestUploadsTableQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:createTemporaryNearestUploadsTables
 CREATE TEMPORARY TABLE t_lsif_nearest_uploads (
 	commit_bytea bytea NOT NULL,
 	uploads      jsonb NOT NULL
 ) ON COMMIT DROP
 `
 
-const writeVisibleUploadsTemporaryNearestUploadsLinksTableQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/commits.go:writeVisibleUploads
+const temporaryNearestUploadsLinksTableQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:createTemporaryNearestUploadsTables
 CREATE TEMPORARY TABLE t_lsif_nearest_uploads_links (
-commit_bytea          bytea NOT NULL,
-ancestor_commit_bytea bytea NOT NULL,
-distance              integer NOT NULL
+	commit_bytea          bytea NOT NULL,
+	ancestor_commit_bytea bytea NOT NULL,
+	distance              integer NOT NULL
 ) ON COMMIT DROP
 `
 
-const writeVisibleUploadsTemporaryUploadsVisibleAtTipTableQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/commits.go:writeVisibleUploads
+const temporaryUploadsVisibleAtTipTableQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:createTemporaryNearestUploadsTables
 CREATE TEMPORARY TABLE t_lsif_uploads_visible_at_tip (
-upload_id integer NOT NULL
+	upload_id integer NOT NULL
 ) ON COMMIT DROP
 `
 
