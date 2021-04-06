@@ -258,7 +258,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		Path: "/repo-updater-state",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			dumps := []interface{}{
-				scheduler.DebugDump(),
+				scheduler.DebugDump(r.Context(), db),
 			}
 			for _, dumper := range debugDumpers {
 				dumps = append(dumps, dumper.DebugDump())

@@ -1417,6 +1417,50 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 }
 
+func TestExternalServiceStore_GetExternalServiceSyncJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := ExternalServices(db).Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = db.ExecContext(ctx, "INSERT INTO external_service_sync_jobs (external_service_id) VALUES ($1)", es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	have, err := ExternalServices(db).GetSyncJobs(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(have) != 1 {
+		t.Fatalf("Expected 1 job, got %d", len(have))
+	}
+
+	want := &types.ExternalServiceSyncJob{
+		ID:                1,
+		State:             "queued",
+		ExternalServiceID: es.ID,
+	}
+	if diff := cmp.Diff(want, have[0], cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID")); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func TestExternalServicesStore_OneCloudDefaultPerKind(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
