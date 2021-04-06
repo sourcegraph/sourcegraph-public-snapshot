@@ -2,7 +2,7 @@ import React from 'react'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useRedesignToggle, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
-export const RedesignToggle: React.FC = () => {
+export const RedesignToggle: React.FunctionComponent = () => {
     const { isRedesignEnabled, setIsRedesignEnabled } = useRedesignToggle()
 
     const handleRedesignToggle = (): void => {
