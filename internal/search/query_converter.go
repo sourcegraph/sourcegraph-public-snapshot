@@ -65,7 +65,6 @@ func IncludeExcludeValues(q query.Basic, field string) (include, exclude []strin
 const defaultMaxSearchResults = 30
 const defaultMaxSearchResultsStreaming = 500
 
-// Handle pagination count later
 func count(q query.Basic, p Protocol) int {
 	if count := q.GetCount(); count != "" {
 		v, _ := strconv.Atoi(count) // Invariant: count is validated.
