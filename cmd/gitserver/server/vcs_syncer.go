@@ -276,15 +276,19 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *url.URL, dir
 		"P4USER="+username,
 		"P4PASSWD="+password,
 	)
-
 	dir.Set(cmd)
-
 	if output, err := runWith(ctx, cmd, false, nil); err != nil {
 		return errors.Wrapf(err, "failed to update with output %q", string(output))
 	}
 
 	// Force update "master" to "refs/remotes/p4/master" where changes are synced into
-	cmd.Args = []string{"branch", "-f", "master", "refs/remotes/p4/master"}
+	cmd = exec.CommandContext(ctx, "git", "branch", "-f", "master", "refs/remotes/p4/master")
+	cmd.Env = append(os.Environ(),
+		"P4PORT="+host,
+		"P4USER="+username,
+		"P4PASSWD="+password,
+	)
+	dir.Set(cmd)
 	if output, err := runWith(ctx, cmd, false, nil); err != nil {
 		return errors.Wrapf(err, "failed to force update branch with output %q", string(output))
 	}
