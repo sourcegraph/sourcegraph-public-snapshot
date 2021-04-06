@@ -16,8 +16,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	jsoniter "github.com/json-iterator/go"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -60,26 +58,6 @@ type Metadata struct {
 	ShowPreview bool
 }
 
-type WebpackManifest struct {
-	// AppJSBundlePath contains the file name of the main
-	// Webpack bundle that serves as the entrypoint
-	// for the webapp code.
-	AppJSBundlePath string `json:"app.js"`
-	// Main CSS bundle, only present in production
-	AppCSSBundlePath *string `json:"app.css"`
-}
-
-func loadManifest() (*WebpackManifest, error) {
-	out := WebpackManifest{}
-
-	err := jsoniter.Unmarshal(assets.WebpackManifestJSON, &out)
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing manifest json")
-	}
-
-	return &out, nil
-}
-
 type Common struct {
 	Injected InjectedHTML
 	Metadata *Metadata
@@ -87,7 +65,7 @@ type Common struct {
 	Title    string
 	Error    *pageError
 
-	Manifest *WebpackManifest
+	Manifest *assets.WebpackManifest
 
 	WebpackDevServer bool // whether the Webpack dev server is running (WEBPACK_DEV_SERVER env var)
 
@@ -142,7 +120,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		return mockNewCommon(w, r, title, serveError)
 	}
 
-	manifest, err := loadManifest()
+	manifest, err := assets.LoadWebpackManifest()
 	if err != nil {
 		return nil, errors.Wrap(err, "loading webpack manifest")
 	}

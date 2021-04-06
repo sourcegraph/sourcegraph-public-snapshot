@@ -1,11 +1,10 @@
 package assets
 
-import (
-	_ "embed"
-)
-
-// We use Webpack manifest to extract hashed bundle names to serve to the client
-// https://webpack.js.org/concepts/manifest/
-
-//go:embed webpack.manifest.json
-var WebpackManifestJSON []byte
+type WebpackManifest struct {
+	// AppJSBundlePath contains the file name of the main
+	// Webpack bundle that serves as the entrypoint
+	// for the webapp code.
+	AppJSBundlePath string `json:"app.js"`
+	// Main CSS bundle, only present in production.
+	AppCSSBundlePath *string `json:"app.css"`
+}
