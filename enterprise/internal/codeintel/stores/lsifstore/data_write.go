@@ -38,13 +38,18 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 	}})
 	defer endObservation(1, observation.Args{})
 
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
 	// Create temporary table symmetric to lsif_data_documents without the dump id or schema version
-	if err := s.Exec(ctx, sqlf.Sprintf(writeDocumentsTemporaryTableQuery)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(writeDocumentsTemporaryTableQuery)); err != nil {
 		return err
 	}
 
 	var count uint32
-	db := s.Handle().DB()
 	columns := []string{"path", "data", "num_diagnostics"}
 	inserter := func(inserter *batch.Inserter) error {
 		for v := range documents {
@@ -64,18 +69,15 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 	}
 
 	// Bulk insert all the unique column values into the temporary table
-	if err := withBatchInserter(ctx, db, "t_lsif_data_documents", columns, inserter); err != nil {
+	if err := withBatchInserter(ctx, tx.Handle().DB(), "t_lsif_data_documents", columns, inserter); err != nil {
 		return err
 	}
+	traceLog(log.Int("numDocumentRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id and schema version here since it is the same for all rows
 	// in this operation.
-	if err := s.Exec(ctx, sqlf.Sprintf(writeDocumentsInsertQuery, bundleID, CurrentDocumentSchemaVersion)); err != nil {
-		return err
-	}
-	traceLog(log.Int("count", int(count)))
-	return nil
+	return tx.Exec(ctx, sqlf.Sprintf(writeDocumentsInsertQuery, bundleID, CurrentDocumentSchemaVersion))
 }
 
 const writeDocumentsTemporaryTableQuery = `
@@ -100,13 +102,18 @@ func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunk
 	}})
 	defer endObservation(1, observation.Args{})
 
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
 	// Create temporary table symmetric to lsif_data_documents without the dump id
-	if err := s.Exec(ctx, sqlf.Sprintf(writeResultChunksTemporaryTableQuery)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(writeResultChunksTemporaryTableQuery)); err != nil {
 		return err
 	}
 
 	var count uint32
-	db := s.Handle().DB()
 	columns := []string{"idx", "data"}
 	inserter := func(inserter *batch.Inserter) error {
 		for v := range resultChunks {
@@ -126,18 +133,14 @@ func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunk
 	}
 
 	// Bulk insert all the unique column values into the temporary table
-	if err := withBatchInserter(ctx, db, "t_lsif_data_result_chunks", columns, inserter); err != nil {
+	if err := withBatchInserter(ctx, tx.Handle().DB(), "t_lsif_data_result_chunks", columns, inserter); err != nil {
 		return err
 	}
+	traceLog(log.Int("numResultChunkRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id here since it is the same for all rows in this operation.
-	if err := s.Exec(ctx, sqlf.Sprintf(writeResultChunksInsertQuery, bundleID)); err != nil {
-		return err
-	}
-
-	traceLog(log.Int("count", int(count)))
-	return nil
+	return tx.Exec(ctx, sqlf.Sprintf(writeResultChunksInsertQuery, bundleID))
 }
 
 const writeResultChunksTemporaryTableQuery = `
@@ -161,12 +164,7 @@ func (s *Store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocat
 	}})
 	defer endObservation(1, observation.Args{})
 
-	count, err := s.writeDefinitionReferences(ctx, bundleID, "lsif_data_definitions", CurrentDefinitionsSchemaVersion, monikerLocations)
-	if err != nil {
-		return err
-	}
-	traceLog(log.Int("count", count))
-	return nil
+	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_definitions", CurrentDefinitionsSchemaVersion, monikerLocations, traceLog)
 }
 
 func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocations chan semantic.MonikerLocations) (err error) {
@@ -175,22 +173,22 @@ func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocati
 	}})
 	defer endObservation(1, observation.Args{})
 
-	count, err := s.writeDefinitionReferences(ctx, bundleID, "lsif_data_references", CurrentReferencesSchemaVersion, monikerLocations)
+	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_references", CurrentReferencesSchemaVersion, monikerLocations, traceLog)
+}
+
+func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, version int, monikerLocations chan semantic.MonikerLocations, traceLog observation.TraceLogger) (err error) {
+	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
 	}
-	traceLog(log.Int("count", count))
-	return nil
-}
+	defer func() { err = tx.Done(err) }()
 
-func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, version int, monikerLocations chan semantic.MonikerLocations) (int, error) {
 	// Create temporary table symmetric to the given target table without the dump id or schema version
-	if err := s.Exec(ctx, sqlf.Sprintf(writeDefinitionsReferencesTemporaryTableQuery, sqlf.Sprintf(tableName))); err != nil {
-		return 0, err
+	if err := tx.Exec(ctx, sqlf.Sprintf(writeDefinitionsReferencesTemporaryTableQuery, sqlf.Sprintf(tableName))); err != nil {
+		return err
 	}
 
 	var count uint32
-	db := s.Handle().DB()
 	columns := []string{"scheme", "identifier", "data", "num_locations"}
 	inserter := func(inserter *batch.Inserter) error {
 		for v := range monikerLocations {
@@ -210,18 +208,21 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 	}
 
 	// Bulk insert all the unique column values into the temporary table
-	if err := withBatchInserter(ctx, db, "t_"+tableName, columns, inserter); err != nil {
-		return 0, err
+	if err := withBatchInserter(ctx, tx.Handle().DB(), "t_"+tableName, columns, inserter); err != nil {
+		return err
 	}
+	traceLog(log.Int("numRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id and schema version here since it is the same for all rows
 	// in this operation.
-	if err := s.Exec(ctx, sqlf.Sprintf(writeDefinitionReferencesInsertQuery, sqlf.Sprintf(tableName), bundleID, version, sqlf.Sprintf(tableName))); err != nil {
-		return 0, err
-	}
-
-	return int(count), nil
+	return tx.Exec(ctx, sqlf.Sprintf(
+		writeDefinitionReferencesInsertQuery,
+		sqlf.Sprintf(tableName),
+		bundleID,
+		version,
+		sqlf.Sprintf(tableName),
+	))
 }
 
 const writeDefinitionsReferencesTemporaryTableQuery = `
