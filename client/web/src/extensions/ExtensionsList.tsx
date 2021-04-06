@@ -1,17 +1,17 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import React from 'react'
-import { isExtensionEnabled } from '../../../shared/src/extensions/extension'
-import { PlatformContextProps } from '../../../shared/src/platform/context'
-import { SettingsCascadeProps, SettingsSubject } from '../../../shared/src/settings/settings'
-import { isErrorLike } from '../../../shared/src/util/errors'
+import { isExtensionEnabled } from '@sourcegraph/shared/src/extensions/extension'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { ExtensionCard } from './ExtensionCard'
 import { ErrorAlert } from '../components/alerts'
 import { applyCategoryFilter, applyExtensionsEnablement } from './extensions'
-import { ExtensionCategory, EXTENSION_CATEGORIES } from '../../../shared/src/schema/extensionSchema'
+import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 import { ExtensionListData, ExtensionsEnablement } from './ExtensionRegistry'
-import { ThemeProps } from '../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 interface Props
     extends SettingsCascadeProps,

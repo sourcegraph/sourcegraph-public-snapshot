@@ -11,13 +11,13 @@ import {
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
     deleteBatchChange as _deleteBatchChange,
 } from './backend'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import * as H from 'history'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
-import { ThemeProps } from '../../../../../shared/src/theme'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
-import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { BatchChangeFields, Scalars } from '../../../graphql-operations'
 import { Description } from '../Description'
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'

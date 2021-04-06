@@ -13,21 +13,57 @@ import (
 	"os"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/schema"
+
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func NewKey(ctx context.Context, k schema.MountedEncryptionKey) (*Key, error) {
+	var secret []byte
+	if k.EnvVarName != "" && k.Filepath == "" {
+		secret = []byte(os.Getenv(k.EnvVarName))
+
+	} else if k.Filepath != "" && k.EnvVarName == "" {
+		keyBytes, err := os.ReadFile(k.Filepath)
+		if err != nil {
+			return nil, errors.Errorf("error reading secret file for %q: %v", k.Keyname, err)
+		}
+		secret = keyBytes
+	} else {
+		// Either the user has set none of EnvVarName or Filepath or both in their config. Either way we return an error.
+		return nil, errors.Errorf(
+			"must use only one of EnvVarName and Filepath, EnvVarName: %q, Filepath: %q",
+			k.EnvVarName, k.Filepath,
+		)
+	}
+
+	if len(secret) != 32 {
+		return nil, fmt.Errorf("invalid key length: %d, expected 32 bytes", len(secret))
+	}
+
+	return &Key{
+		keyname: k.Keyname,
+		version: k.Version,
+		secret:  secret,
+	}, nil
+}
 
 // Key is an encryption.Key implementation that uses AES GCM encryption, using a
 // secret loaded either from an env var or a file
 type Key struct {
 	keyname string
 	secret  []byte
+	version string
 }
 
-func (k *Key) ID(ctx context.Context) (string, error) {
-	return k.keyname, nil
+func (k *Key) Version(ctx context.Context) (encryption.KeyVersion, error) {
+	return encryption.KeyVersion{
+		Type:    "mounted",
+		Name:    k.keyname,
+		Version: k.version,
+	}, nil
 }
 
 func (k *Key) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
@@ -101,35 +137,6 @@ func (k *Key) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Secre
 	}
 	s := encryption.NewSecret(string(plaintext))
 	return &s, nil
-}
-
-func NewKey(ctx context.Context, k schema.MountedEncryptionKey) (*Key, error) {
-	var secret []byte
-	if k.EnvVarName != "" && k.Filepath == "" {
-		secret = []byte(os.Getenv(k.EnvVarName))
-
-	} else if k.Filepath != "" && k.EnvVarName == "" {
-		keyBytes, err := os.ReadFile(k.Filepath)
-		if err != nil {
-			return nil, errors.Errorf("error reading secret file for %q: %v", k.Keyname, err)
-		}
-		secret = keyBytes
-	} else {
-		// Either the user has set none of EnvVarName or Filepath or both in their config. Either way we return an error.
-		return nil, errors.Errorf(
-			"must use only one of EnvVarName and Filepath, EnvVarName: %q, Filepath: %q",
-			k.EnvVarName, k.Filepath,
-		)
-	}
-
-	if len(secret) != 32 {
-		return nil, fmt.Errorf("invalid key length: %d, expected 32 bytes", len(secret))
-	}
-
-	return &Key{
-		keyname: k.Keyname,
-		secret:  secret,
-	}, nil
 }
 
 type encryptedValue struct {

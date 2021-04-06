@@ -81,29 +81,8 @@ func (f *RepoContainsPredicate) ParseParams(params string) error {
 	}
 
 	for _, node := range nodes {
-		switch v := node.(type) {
-		case Parameter:
-			switch strings.ToLower(v.Field) {
-			case "file":
-				if f.File != "" {
-					return errors.New("cannot specify file multiple times")
-				}
-				f.File = v.Value
-			case "content":
-				if f.Content != "" {
-					return errors.New("cannot specify content multiple times")
-				}
-				f.Content = v.Value
-			default:
-				return fmt.Errorf("unsupported option %q", v.Field)
-			}
-		case Pattern:
-			if f.Content != "" {
-				return errors.New("cannot specify content multiple times")
-			}
-			f.Content = v.Value
-		default:
-			return fmt.Errorf("unsupported node type %T", node)
+		if err := f.parseNode(node); err != nil {
+			return err
 		}
 	}
 
@@ -111,6 +90,49 @@ func (f *RepoContainsPredicate) ParseParams(params string) error {
 		return errors.New("one of file or content must be set")
 	}
 
+	return nil
+}
+
+func (f *RepoContainsPredicate) parseNode(n Node) error {
+	switch v := n.(type) {
+	case Parameter:
+		if v.Negated {
+			return errors.New("predicates do not currently support negated values")
+		}
+		switch strings.ToLower(v.Field) {
+		case "file":
+			if f.File != "" {
+				return errors.New("cannot specify file multiple times")
+			}
+			f.File = v.Value
+		case "content":
+			if f.Content != "" {
+				return errors.New("cannot specify content multiple times")
+			}
+			f.Content = v.Value
+		default:
+			return fmt.Errorf("unsupported option %q", v.Field)
+		}
+	case Pattern:
+		if v.Negated {
+			return errors.New("predicates do not currently support negated values")
+		}
+		if f.Content != "" {
+			return errors.New("cannot specify content multiple times")
+		}
+		f.Content = v.Value
+	case Operator:
+		if v.Kind == Or {
+			return errors.New("predicates do not currently support 'or' queries")
+		}
+		for _, operand := range v.Operands {
+			if err := f.parseNode(operand); err != nil {
+				return err
+			}
+		}
+	default:
+		return fmt.Errorf("unsupported node type %T", n)
+	}
 	return nil
 }
 

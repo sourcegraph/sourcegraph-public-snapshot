@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { ExternalServicePage } from './ExternalServicePage'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { fetchExternalService as _fetchExternalService } from './backend'
 import { of } from 'rxjs'
 import { ExternalServiceKind } from '../../graphql-operations'

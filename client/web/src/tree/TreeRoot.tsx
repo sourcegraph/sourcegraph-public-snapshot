@@ -14,8 +14,8 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
-import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { AbsoluteRepo } from '../../../shared/src/util/url'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
 import { fetchTreeEntries } from '../repo/backend'
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeNode } from './Tree'
@@ -23,9 +23,9 @@ import { hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from 
 import { ErrorAlert } from '../components/alerts'
 import { TreeFields } from '../graphql-operations'
 import { getFileDecorations } from '../backend/features'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { ThemeProps } from '../../../shared/src/theme'
-import { FileDecorationsByPath } from '../../../shared/src/api/extension/extensionHostApi'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 const maxEntries = 2500
 

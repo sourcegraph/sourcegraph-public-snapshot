@@ -27,6 +27,7 @@ Holds a single column storing the status of the most recent migration attempt.
  num_locations  | integer |           | not null | 
 Indexes:
     "lsif_data_definitions_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
+    "lsif_data_definitions_dump_id_schema_version" btree (dump_id, schema_version)
 Triggers:
     lsif_data_definitions_schema_versions_insert AFTER INSERT ON lsif_data_definitions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_definitions_schema_versions_insert()
 
@@ -77,6 +78,7 @@ Tracks the range of schema_versions for each upload in the lsif_data_definitions
  num_diagnostics | integer |           | not null | 
 Indexes:
     "lsif_data_documents_pkey" PRIMARY KEY, btree (dump_id, path)
+    "lsif_data_documents_dump_id_schema_version" btree (dump_id, schema_version)
 Triggers:
     lsif_data_documents_schema_versions_insert AFTER INSERT ON lsif_data_documents REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_documents_schema_versions_insert()
 
@@ -143,6 +145,7 @@ Stores the number of result chunks associated with a dump.
  num_locations  | integer |           | not null | 
 Indexes:
     "lsif_data_references_pkey" PRIMARY KEY, btree (dump_id, scheme, identifier)
+    "lsif_data_references_dump_id_schema_version" btree (dump_id, schema_version)
 Triggers:
     lsif_data_references_schema_versions_insert AFTER INSERT ON lsif_data_references REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_references_schema_versions_insert()
 

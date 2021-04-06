@@ -307,14 +307,20 @@ UPDATE %s dest SET %s, schema_version = %s FROM %s src WHERE %s
 // selectAndProcess selects a batch of records from the configured table with the given version and
 // returns the update specifications after running the given driver function on each matching row.
 // The records selected by this method are locked (via select for update) in the given transaction.
+//
+// This method will lock as many records to be processed as can fit in a batch, but all records will
+// belong to the same index (due to the query construction). Therefore the dump id for each batch is
+// going to be the same for each record.
 func (m *Migrator) selectAndProcess(ctx context.Context, tx *lsifstore.Store, version int, driverFunc driverFunc) ([]updateSpec, error) {
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
 		selectAndProcessQuery,
-		sqlf.Sprintf(m.options.tableName),
-		version,
-		version,
 		sqlf.Join(m.selectionExpressions, ", "),
 		sqlf.Sprintf(m.options.tableName),
+		sqlf.Sprintf(m.options.tableName),
+		version,
+		version,
+		sqlf.Sprintf(m.options.tableName),
+		version,
 		version,
 		m.options.batchSize,
 	))
@@ -338,19 +344,40 @@ func (m *Migrator) selectAndProcess(ctx context.Context, tx *lsifstore.Store, ve
 
 const selectAndProcessQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:selectAndProcess
-WITH candidates AS (
-	SELECT dump_id
-	FROM %s_schema_versions
-	WHERE
-		min_schema_version <= %s AND
-		max_schema_version >= %s
-)
 SELECT %s
-FROM %s
+FROM %s t1
 WHERE
-	dump_id IN (SELECT dump_id FROM candidates) AND
+	dump_id = (
+		-- First, we select an index that has at least one record with the target schema
+		-- version. We do this so that we can efficiently select from the target table,
+		-- which are all keyed on dump_id.
+		--
+		-- This is more efficient than scanning the entire target table looking for a matching
+		-- schema version especially when that schema version is a small subset of the table.
+
+		SELECT sv.dump_id
+		FROM %s_schema_versions sv
+		WHERE
+			-- Check if we have a schema version in range
+			sv.min_schema_version <= %s AND
+			sv.max_schema_version >= %s AND
+
+			-- Ensure we actually have a row with the target schema version. This condition may
+			-- be true numerically but may not have any rows with this particular schema version;
+			--
+			-- For example: an index with a min schema version of 3 and max schema version of 5
+			-- may have no rows with a schema version of 4. We want to skip over these indexes
+			-- before moving on to the query so we don't always pull back an empty batch unable
+			-- to migrate a legitimate index stuck behind the head of the queue.
+			EXISTS (SELECT 1 FROM %s t2 WHERE t2.dump_id = sv.dump_id AND t2.schema_version = %s)
+
+		-- Encourage index scan of pk
+		ORDER BY dump_id
+
+		-- All records in a migration batch will belong to a single dump
+		LIMIT 1
+	) AND
 	schema_version = %s
-ORDER BY dump_id
 LIMIT %s
 FOR UPDATE SKIP LOCKED
 `

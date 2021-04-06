@@ -567,8 +567,8 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 func (e *ExternalServiceStore) maybeEncryptConfig(ctx context.Context, config string) (string, string, error) {
 	// encrypt the config before writing if we have a key configured
 	var (
-		keyID string
-		key   = keyring.Default().ExternalServiceKey
+		keyVersion string
+		key        = keyring.Default().ExternalServiceKey
 	)
 	if e.key != nil {
 		key = e.key
@@ -579,12 +579,13 @@ func (e *ExternalServiceStore) maybeEncryptConfig(ctx context.Context, config st
 			return "", "", err
 		}
 		config = string(encrypted)
-		keyID, err = key.ID(ctx)
+		version, err := key.Version(ctx)
 		if err != nil {
 			return "", "", err
 		}
+		keyVersion = version.JSON()
 	}
-	return config, keyID, nil
+	return config, keyVersion, nil
 }
 
 func (e *ExternalServiceStore) maybeDecryptConfig(ctx context.Context, config string, keyID string) (string, error) {

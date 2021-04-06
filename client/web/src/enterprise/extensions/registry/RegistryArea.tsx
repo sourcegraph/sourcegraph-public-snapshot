@@ -1,7 +1,7 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { HeroPage } from '../../../components/HeroPage'
 import { ExtensionsAreaRouteContext } from '../../../extensions/ExtensionsArea'
 import { RegistryNewExtensionPage } from './RegistryNewExtensionPage'

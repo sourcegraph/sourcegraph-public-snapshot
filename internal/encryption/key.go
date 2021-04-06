@@ -1,15 +1,30 @@
 package encryption
 
-import "context"
+import (
+	"context"
+	"encoding/json"
+)
 
 // Key combines the Encrypter & Decrypter interfaces.
 type Key interface {
 	Encrypter
 	Decrypter
 
-	// ID returns an identifier string containing anything to concretely identify
+	// Version returns info containing to concretely identify
 	// the underlying key, eg: key type, name, & version.
-	ID(ctx context.Context) (string, error)
+	Version(ctx context.Context) (KeyVersion, error)
+}
+
+type KeyVersion struct {
+	// TODO: generate this as an enum from JSONSchema
+	Type    string
+	Name    string
+	Version string
+}
+
+func (v KeyVersion) JSON() string {
+	buf, _ := json.Marshal(v)
+	return string(buf)
 }
 
 // Encrypter is anything that can encrypt a value

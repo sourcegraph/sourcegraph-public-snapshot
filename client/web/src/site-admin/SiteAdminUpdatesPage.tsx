@@ -8,9 +8,9 @@ import { Link } from 'react-router-dom'
 import { PageTitle } from '../components/PageTitle'
 import { fetchSiteUpdateCheck } from './backend'
 import { ErrorAlert } from '../components/alerts'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
-import { useObservable } from '../../../shared/src/util/useObservable'
-import { isErrorLike } from '../../../shared/src/util/errors'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 interface Props extends TelemetryProps {}
 

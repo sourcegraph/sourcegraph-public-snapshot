@@ -22,7 +22,7 @@ import {
     ContentRenderer,
     PieLabelRenderProps,
 } from 'recharts'
-import { createLinkClickHandler } from '../../../shared/src/components/linkClickHandler'
+import { createLinkClickHandler } from '@sourcegraph/shared/src/components/linkClickHandler'
 import niceTicks from 'nice-ticks'
 import { eventLogger } from '../tracking/eventLogger'
 
