@@ -33,7 +33,8 @@
     "deduplicate": "yarn-deduplicate -s fewer",
     "release": "cd dev/release && yarn run release",
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
-    "download-puppeteer-browser": "yarn --cwd client/shared download-puppeteer-browser"
+    "download-puppeteer-browser": "yarn --cwd client/shared download-puppeteer-browser",
+    "build-browser-extension": "yarn --cwd client/browser run build"
   },
   "browserslist": [
     "last 1 version",
@@ -200,6 +201,7 @@
     "enzyme-to-json": "^3.5.0",
     "eslint": "^7.17.0",
     "eslint-formatter-lsif": "^1.0.3",
+    "eslint-plugin-monorepo": "^0.3.2",
     "execa": "^5.0.0",
     "fancy-log": "^1.3.3",
     "get-port": "^5.1.1",

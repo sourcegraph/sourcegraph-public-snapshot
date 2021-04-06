@@ -1,6 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { decode } from 'he'
-import { escapeRegExp, isEqual, range } from 'lodash'
+import { isEqual, range } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
@@ -8,12 +7,12 @@ import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
 import sanitizeHtml from 'sanitize-html'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { highlightNode } from '../../../shared/src/util/dom'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { highlightNode } from '@sourcegraph/shared/src/util/dom'
 import { highlightCode } from '../search/backend'
-import { ThemeProps } from '../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import * as H from 'history'
-import { renderMarkdown } from '../../../shared/src/util/markdown'
+import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 interface SearchResultMatchProps extends ThemeProps {
     item: GQL.ISearchResultMatch
@@ -69,7 +68,6 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             const codeContent =
                                 parser.parseFromString(markdownHTML, 'text/html').body.textContent?.trim() || ''
                             // Match the code content and any trailing newlines if any.
-                            const codeContentAndAnyNewLines = new RegExp(escapeRegExp(codeContent) + '\\n*')
                             if (codeContent) {
                                 return highlightCode({
                                     code: codeContent,
@@ -77,15 +75,11 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                     disableTimeout: false,
                                     isLightTheme: props.isLightTheme,
                                 }).pipe(
-                                    switchMap(highlightedString => {
-                                        const highlightedMarkdown = decode(markdownHTML).replace(
-                                            codeContentAndAnyNewLines,
-                                            highlightedString
-                                        )
-                                        return of(highlightedMarkdown)
-                                    }),
                                     // Return the rendered markdown if highlighting fails.
-                                    catchError(() => of(markdownHTML))
+                                    catchError(error => {
+                                        console.log(error)
+                                        return of(markdownHTML)
+                                    })
                                 )
                             }
                         }

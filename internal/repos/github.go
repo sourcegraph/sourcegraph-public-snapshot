@@ -430,6 +430,10 @@ func (s *GithubSource) authenticatedRemoteURL(repo *github.Repository) string {
 }
 
 func (s *GithubSource) excludes(r *github.Repository) bool {
+	if r.IsLocked || r.IsDisabled {
+		return true
+	}
+
 	if s.exclude(r.NameWithOwner) || s.exclude(r.ID) {
 		return true
 	}

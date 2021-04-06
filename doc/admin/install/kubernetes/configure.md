@@ -500,7 +500,7 @@ If you want to specify a custom Redis server, you'll need specify the correspond
 
 ## Configure custom PostgreSQL
 
-You can use your own PostgreSQL v9.6+ server with Sourcegraph if you wish. For example, you may prefer this if you already have existing backup infrastructure around your own PostgreSQL server, wish to use Amazon RDS, etc.
+You can use your own PostgreSQL v12+ server with Sourcegraph if you wish. For example, you may prefer this if you already have existing backup infrastructure around your own PostgreSQL server, wish to use Amazon RDS, etc.
 
 Simply edit the relevant PostgreSQL environment variables (e.g. PGHOST, PGPORT, PGUSER, [etc.](http://www.postgresql.org/docs/current/static/libpq-envars.html)) in [base/frontend/sourcegraph-frontend.Deployment.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Deployment.yaml) to point to your existing PostgreSQL instance.
 
@@ -638,6 +638,8 @@ kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 ```
 
 Available overlays are the subdirectories of `overlays` (only give the name of the subdirectory, not the full path as an argument).
+
+You only need to apply one of the three overlays; each builds on the overlay listed before. So, for example, using the non-root overlay will also install Sourcegraph in a non-default namespace.
 
 ### Namespaced overlay
 

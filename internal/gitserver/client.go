@@ -937,8 +937,7 @@ func (c *Client) do(ctx context.Context, repo api.RepoName, method, op string, p
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", c.UserAgent)
-	req.Header.Set(protocol.HeaderSourcegraphActor, userFromContext(ctx))
-
+	req.Header.Set("X-Sourcegraph-Actor", userFromContext(ctx))
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {

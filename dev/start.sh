@@ -34,11 +34,11 @@ fi
 
 # Verify postgresql config.
 hash psql 2>/dev/null || {
-  # "brew install postgresql@9.6" does not put psql on the $PATH by default;
+  # "brew install postgres" does not put psql on the $PATH by default;
   # try to fix this automatically if we can.
   hash brew 2>/dev/null && {
-    if [[ -x "$(brew --prefix)/opt/postgresql@9.6/bin/psql" ]]; then
-      PATH="$(brew --prefix)/opt/postgresql@9.6/bin:$PATH"
+    if [[ -x "$(brew --prefix)/opt/postgres/bin/psql" ]]; then
+      PATH="$(brew --prefix)/opt/postgres/bin:$PATH"
       export PATH
     fi
   }
@@ -73,7 +73,8 @@ export GITHUB_BASE_URL=${GITHUB_BASE_URL:-http://127.0.0.1:3180}
 export SRC_REPOS_DIR=$HOME/.sourcegraph/repos
 export INSECURE_DEV=1
 # In dev we only expect to have one gitserver instance
-export SRC_GIT_SERVERS=127.0.0.1:3178
+export SRC_GIT_SERVER_1=127.0.0.1:3178
+export SRC_GIT_SERVERS=$SRC_GIT_SERVER_1
 export GOLANGSERVER_SRC_GIT_SERVERS=host.docker.internal:3178
 export SEARCHER_URL=http://127.0.0.1:3181
 export REPO_UPDATER_URL=http://127.0.0.1:3182

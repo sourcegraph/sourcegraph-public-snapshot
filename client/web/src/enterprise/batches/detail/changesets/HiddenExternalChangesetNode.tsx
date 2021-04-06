@@ -5,10 +5,26 @@ import { HiddenExternalChangesetInfoCell } from './HiddenExternalChangesetInfoCe
 
 export interface HiddenExternalChangesetNodeProps {
     node: Pick<HiddenExternalChangesetFields, 'id' | 'nextSyncAt' | 'updatedAt' | 'state' | '__typename'>
+    enableSelect?: boolean
 }
 
-export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternalChangesetNodeProps> = ({ node }) => (
+export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternalChangesetNodeProps> = ({
+    node,
+    enableSelect = false,
+}) => (
     <>
+        {enableSelect && (
+            <div className="p-2">
+                <input
+                    id={`select-changeset-${node.id}`}
+                    type="checkbox"
+                    className="btn"
+                    checked={false}
+                    disabled={true}
+                    data-tooltip="You do not have permission to detach this changeset"
+                />
+            </div>
+        )}
         <span className="d-none d-sm-block" />
         <ChangesetStatusCell
             state={node.state}

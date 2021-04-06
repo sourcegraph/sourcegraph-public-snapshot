@@ -16,6 +16,7 @@
   - [Developing the web app](web/web_app.md)
   - [Developing the code host integrations](web/code_host_integrations.md)
   - [Working with GraphQL](web/graphql.md)
+  - [Wildcard Component Library](web/wildcard.md)
   - [Styling UI](web/styling.md)
   - [Accessibility](web/accessibility.md)
   - [Build process](web/build.md)

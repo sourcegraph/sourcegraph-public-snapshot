@@ -2,6 +2,18 @@ package resolvers
 
 import "fmt"
 
+type ErrInvalidFirstParameter struct {
+	Min, Max, First int
+}
+
+func (e ErrInvalidFirstParameter) Error() string {
+	return fmt.Sprintf("first param %d is out of range (min=%d, max=%d)", e.First, e.Min, e.Max)
+}
+
+func (e ErrInvalidFirstParameter) Extensions() map[string]interface{} {
+	return map[string]interface{}{"code": "ErrInvalidFirstParameter"}
+}
+
 type ErrIDIsZero struct{}
 
 func (e ErrIDIsZero) Error() string {

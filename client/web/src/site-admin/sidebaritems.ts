@@ -25,6 +25,10 @@ export const overviewGroup: SiteAdminSideBarGroup = {
             label: 'Feedback survey',
             to: '/site-admin/surveys',
         },
+        {
+            label: 'Migrations',
+            to: '/site-admin/migrations',
+        },
     ],
 }
 

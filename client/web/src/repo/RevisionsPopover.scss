@@ -4,6 +4,10 @@
     isolation: isolate;
     width: 35rem;
 
+    &__tabs {
+        background-color: var(--body-bg);
+    }
+
     &-git-commit-node {
         &__link {
             display: flex;

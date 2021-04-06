@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"go.uber.org/atomic"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/google/zoekt"
@@ -37,7 +38,6 @@ type indexedRequestType string
 const (
 	textRequest   indexedRequestType = "text"
 	symbolRequest indexedRequestType = "symbol"
-	fileRequest   indexedRequestType = "file"
 )
 
 // indexedSearchRequest is responsible for translating a Sourcegraph search
@@ -197,17 +197,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c Sender) error {
 		since = s.since
 	}
 
-	var zoektStream func(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Sender) error
-	switch s.typ {
-	case textRequest, symbolRequest:
-		zoektStream = zoektSearch
-	case fileRequest:
-		zoektStream = zoektSearchHEADOnlyFiles
-	default:
-		return fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
-	}
-
-	return zoektStream(ctx, s.db, s.args, s.repos, s.typ, since, c)
+	return zoektSearch(ctx, s.db, s.args, s.repos, s.typ, since, c)
 }
 
 // zoektSearch searches repositories using zoekt.
@@ -247,15 +237,10 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 	// Start event stream.
 	t0 := time.Now()
 
-	// mu protects matchLimiter and foundResults.
-	mu := sync.Mutex{}
-	matchLimiter := zoektutil.MatchLimiter{
-		Limit: int(args.PatternInfo.FileMatchLimit),
-	}
-	foundResults := false
-
 	// We use reposResolved to synchronize repo resolution and event processing.
 	reposResolved := make(chan struct{})
+
+	mu := sync.Mutex{}
 	var getRepoInputRev zoektutil.RepoRevFunc
 	var repoRevMap map[string]*search.RepositoryRevisions
 
@@ -288,6 +273,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 		return nil
 	})
 
+	foundResults := atomic.Bool{}
 	g.Go(func() error {
 		ctx := ctx
 		if deadline, ok := ctx.Deadline(); ok {
@@ -324,9 +310,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 		// while we wait for repo resolution.
 		bufSender, cleanup := bufferedSender(120, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 
-			mu.Lock()
-			foundResults = foundResults || event.FileCount != 0 || event.MatchCount != 0
-			mu.Unlock()
+			foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
 
 			files := event.Files
 			limitHit := event.FilesSkipped+event.ShardsSkipped > 0
@@ -346,19 +330,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 			if getRepoInputRev == nil {
 				return
 			}
-
-			mu.Lock()
-			// Partial is populated with repositories we may have not fully
-			// searched due to limits.
-			partial, files := matchLimiter.Slice(files, getRepoInputRev)
-			mu.Unlock()
-
-			var statusMap search.RepoStatusMap
-			for r := range partial {
-				statusMap.Update(r, search.RepoStatusLimitHit)
-			}
-
-			limitHit = limitHit || len(partial) > 0
 
 			matches := make([]SearchResultResolver, 0, len(files))
 			repoResolvers := make(RepositoryResolverCache)
@@ -413,7 +384,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 			c.Send(SearchEvent{
 				Results: matches,
 				Stats: streaming.Stats{
-					Status:     statusMap,
 					IsLimitHit: limitHit,
 				},
 			})
@@ -435,7 +405,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 		return statusMap
 	}
 
-	if !foundResults && since(t0) >= searchOpts.MaxWallTime {
+	if !foundResults.Load() && since(t0) >= searchOpts.MaxWallTime {
 		c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
 		return nil
 	}
@@ -561,7 +531,6 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 	// extra stuff. This is a sign that we can probably restructure
 	// resolvers to avoid this.
 	baseURI := &gituri.URI{URL: url.URL{Scheme: "git", Host: repo.Name(), RawQuery: url.QueryEscape(inputRev)}}
-	lang := strings.ToLower(file.Language)
 
 	symbols := make([]*result.SymbolMatch, 0, len(file.LineMatches))
 	for _, l := range file.LineMatches {
@@ -586,9 +555,9 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 					// This Pattern is directly accessible on the unindexed code path. But on the indexed code path, we need to
 					// populate it, or we will always compute a 0 offset, which messes up API use (e.g., highlighting).
 					// It must escape `/` or `\` in the line.
-					Pattern: fmt.Sprintf("/^%s$/", escape(string(l.Line))),
+					Pattern:  fmt.Sprintf("/^%s$/", escape(string(l.Line))),
+					Language: file.Language,
 				},
-				Lang:    lang,
 				BaseURI: baseURI,
 			})
 		}
@@ -720,9 +689,9 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 
 		unindexedRevs := indexed.Add(reporev, repo)
 		if len(unindexedRevs) > 0 {
-			copy := *reporev
+			copy := reporev.Copy()
 			copy.Revs = unindexedRevs
-			unindexed = append(unindexed, &copy)
+			unindexed = append(unindexed, copy)
 		}
 	}
 

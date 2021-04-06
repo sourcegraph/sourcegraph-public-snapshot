@@ -1,33 +1,37 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import * as H from 'history'
 import { ChangesetNodeProps, ChangesetNode } from './ChangesetNode'
-import { ThemeProps } from '../../../../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { Subject } from 'rxjs'
 import {
+    detachChangesets,
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
 } from '../backend'
 import { repeatWhen, delay, withLatestFrom, map, filter } from 'rxjs/operators'
-import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { createHoverifier } from '@sourcegraph/codeintellify'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../../shared/src/util/url'
-import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover'
-import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
-import { getHoverActions } from '../../../../../../shared/src/hover/actions'
+import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { WebHoverOverlay } from '../../../../components/shared'
 import { getHover, getDocumentHighlights } from '../../../../backend/features'
-import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
-import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
-import { property, isDefined } from '../../../../../../shared/src/util/types'
-import { useObservable } from '../../../../../../shared/src/util/useObservable'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { property, isDefined } from '@sourcegraph/shared/src/util/types'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ChangesetFields, Scalars } from '../../../../graphql-operations'
 import { getLSPTextDocumentPositionParameters } from '../../utils'
-import { BatchChangeChangesetsHeader } from './BatchChangeChangesetsHeader'
+import { BatchChangeChangesetsHeader, BatchChangeChangesetsHeaderWithCheckboxes } from './BatchChangeChangesetsHeader'
 import { ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
 import { EmptyChangesetListElement } from './EmptyChangesetListElement'
 import { EmptyChangesetSearchElement } from './EmptyChangesetSearchElement'
 import { EmptyArchivedChangesetListElement } from './EmptyArchivedChangesetListElement'
+import { ChangesetSelectRow } from './ChangesetSelectRow'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     batchChangeID: Scalars['ID']
@@ -37,6 +41,8 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
 
     hideFilters?: boolean
     onlyArchived?: boolean
+
+    enableSelect?: boolean
 
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
@@ -63,7 +69,49 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     queryExternalChangesetWithFileDiffs,
     expandByDefault,
     onlyArchived,
+    enableSelect,
 }) => {
+    const [selectedChangesets, setSelectedChangesets] = useState<Set<string>>(new Set())
+    const onSelect = useCallback(
+        (id: string, selected: boolean): void => {
+            if (selected) {
+                setSelectedChangesets(previous => new Set(previous).add(id))
+            } else {
+                setSelectedChangesets(previous => {
+                    const newSet = new Set(previous)
+                    newSet.delete(id)
+                    return newSet
+                })
+            }
+        },
+        [setSelectedChangesets]
+    )
+
+    const deselectAll = useCallback((): void => setSelectedChangesets(new Set()), [setSelectedChangesets])
+    const changesetSelected = useCallback((id: string): boolean => selectedChangesets.has(id), [selectedChangesets])
+
+    const [isSubmittingSelected, setIsSubmittingSelected] = useState<boolean | Error>(false)
+    const onSubmitSelected = useCallback(async () => {
+        if (
+            !confirm(
+                `Are you sure you want to detach ${selectedChangesets.size} ${pluralize(
+                    'changeset',
+                    selectedChangesets.size
+                )}?`
+            )
+        ) {
+            return
+        }
+        setIsSubmittingSelected(true)
+        try {
+            await detachChangesets(batchChangeID, [...selectedChangesets])
+            deselectAll()
+            telemetryService.logViewEvent('BatchChangeDetailsPageDetachArchivedChangesets')
+        } catch (error) {
+            setIsSubmittingSelected(asError(error))
+        }
+    }, [batchChangeID, selectedChangesets, setIsSubmittingSelected, deselectAll, telemetryService])
+
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
         state: null,
@@ -150,8 +198,16 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
 
     return (
         <>
-            {!hideFilters && (
+            {!hideFilters && selectedChangesets.size === 0 && (
                 <ChangesetFilterRow history={history} location={location} onFiltersChange={setChangesetFilters} />
+            )}
+            {viewerCanAdminister && selectedChangesets.size > 0 && (
+                <ChangesetSelectRow
+                    selected={selectedChangesets}
+                    onSubmit={onSubmitSelected}
+                    deselectAll={deselectAll}
+                    isSubmitting={isSubmittingSelected}
+                />
             )}
             <div className="list-group position-relative" ref={nextContainerElement}>
                 <FilteredConnection<ChangesetFields, Omit<ChangesetNodeProps, 'node'>>
@@ -165,6 +221,9 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                         extensionInfo: { extensionsController, hoverifier },
                         expandByDefault,
                         queryExternalChangesetWithFileDiffs,
+                        enableSelect,
+                        onSelect,
+                        isSelected: changesetSelected,
                     }}
                     queryConnection={queryChangesetsConnection}
                     hideSearch={true}
@@ -175,8 +234,14 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     location={location}
                     useURLQuery={true}
                     listComponent="div"
-                    listClassName="batch-change-changesets__grid mb-3"
-                    headComponent={BatchChangeChangesetsHeader}
+                    listClassName={
+                        enableSelect
+                            ? 'batch-change-changesets__grid--with-checkboxes mb-3'
+                            : 'batch-change-changesets__grid mb-3'
+                    }
+                    headComponent={
+                        enableSelect ? BatchChangeChangesetsHeaderWithCheckboxes : BatchChangeChangesetsHeader
+                    }
                     // Only show the empty element, if no filters are selected.
                     emptyElement={
                         filtersSelected(changesetFilters) ? (

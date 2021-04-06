@@ -48,16 +48,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
           Create code monitor
         </AnchorLink>
       }
-      annotation={
-        <FeedbackBadge
-          feedback={
-            Object {
-              "mailto": "support@sourcegraph.com",
-            }
-          }
-          status="prototype"
-        />
-      }
       className="mb-3"
       path={
         Array [
@@ -72,41 +62,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
         className="d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center mb-3"
       >
         <div>
-          <small
-            className="text-muted d-block mb-2"
-          >
-            <FeedbackBadge
-              feedback={
-                Object {
-                  "mailto": "support@sourcegraph.com",
-                }
-              }
-              status="prototype"
-            >
-              <div
-                className="d-flex align-items-center"
-              >
-                <Badge
-                  className="text-uppercase"
-                  status="prototype"
-                >
-                  <span
-                    className="badge badge--capitalized d-inline-flex align-items-center badge-warning text-uppercase"
-                  >
-                    prototype
-                  </span>
-                </Badge>
-                <a
-                  className="ml-2"
-                  href="mailto:support@sourcegraph.com"
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  Share feedback
-                </a>
-              </div>
-            </FeedbackBadge>
-          </small>
           <h1
             className="flex-grow-1 d-block m-0"
           >
@@ -1731,16 +1686,6 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
           Create code monitor
         </AnchorLink>
       }
-      annotation={
-        <FeedbackBadge
-          feedback={
-            Object {
-              "mailto": "support@sourcegraph.com",
-            }
-          }
-          status="prototype"
-        />
-      }
       className="mb-3"
       path={
         Array [
@@ -1755,41 +1700,6 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
         className="d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center mb-3"
       >
         <div>
-          <small
-            className="text-muted d-block mb-2"
-          >
-            <FeedbackBadge
-              feedback={
-                Object {
-                  "mailto": "support@sourcegraph.com",
-                }
-              }
-              status="prototype"
-            >
-              <div
-                className="d-flex align-items-center"
-              >
-                <Badge
-                  className="text-uppercase"
-                  status="prototype"
-                >
-                  <span
-                    className="badge badge--capitalized d-inline-flex align-items-center badge-warning text-uppercase"
-                  >
-                    prototype
-                  </span>
-                </Badge>
-                <a
-                  className="ml-2"
-                  href="mailto:support@sourcegraph.com"
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  Share feedback
-                </a>
-              </div>
-            </FeedbackBadge>
-          </small>
           <h1
             className="flex-grow-1 d-block m-0"
           >
@@ -2455,16 +2365,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
           Create code monitor
         </AnchorLink>
       }
-      annotation={
-        <FeedbackBadge
-          feedback={
-            Object {
-              "mailto": "support@sourcegraph.com",
-            }
-          }
-          status="prototype"
-        />
-      }
       className="mb-3"
       path={
         Array [
@@ -2479,41 +2379,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
         className="d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center mb-3"
       >
         <div>
-          <small
-            className="text-muted d-block mb-2"
-          >
-            <FeedbackBadge
-              feedback={
-                Object {
-                  "mailto": "support@sourcegraph.com",
-                }
-              }
-              status="prototype"
-            >
-              <div
-                className="d-flex align-items-center"
-              >
-                <Badge
-                  className="text-uppercase"
-                  status="prototype"
-                >
-                  <span
-                    className="badge badge--capitalized d-inline-flex align-items-center badge-warning text-uppercase"
-                  >
-                    prototype
-                  </span>
-                </Badge>
-                <a
-                  className="ml-2"
-                  href="mailto:support@sourcegraph.com"
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  Share feedback
-                </a>
-              </div>
-            </FeedbackBadge>
-          </small>
           <h1
             className="flex-grow-1 d-block m-0"
           >

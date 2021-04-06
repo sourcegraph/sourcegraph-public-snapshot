@@ -801,10 +801,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 }
 
 const userReposQuery = `
-SELECT repo_id as id
-FROM external_service_repos esr
-JOIN external_services es ON esr.external_service_id = es.id
-WHERE es.namespace_user_id = %d AND es.deleted_at IS NULL
+SELECT repo_id as id FROM external_service_repos WHERE user_id = %d
 `
 
 const userPublicReposQuery = `
@@ -1118,13 +1115,16 @@ insert_sources AS (
   INSERT INTO external_service_repos (
     external_service_id,
     repo_id,
+    user_id,
     clone_url
   )
   SELECT
     external_service_id,
     repo_id,
+    es.namespace_user_id,
     clone_url
   FROM sources_list
+  JOIN external_services es ON (es.id = external_service_id)
   ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_unique
   DO
     UPDATE SET clone_url = EXCLUDED.clone_url

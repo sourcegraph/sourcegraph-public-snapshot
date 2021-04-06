@@ -511,7 +511,6 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	s := &Server{
 		ReposDir: root,
 		DB:       db,
-		shardID:  "test",
 	}
 
 	// Remove everything but github.com/foo/survivor
@@ -530,7 +529,6 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		".tmp",
 	)
 
-	// Assert clone status
 	for _, tc := range []struct {
 		name   api.RepoName
 		status types.CloneStatus

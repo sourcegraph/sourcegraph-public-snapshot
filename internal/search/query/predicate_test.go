@@ -18,6 +18,8 @@ func TestRepoContainsPredicate(t *testing.T) {
 			{`file regex`, `file:test(a|b)*.go`, &RepoContainsPredicate{File: "test(a|b)*.go"}},
 			{`content`, `content:test`, &RepoContainsPredicate{Content: "test"}},
 			{`unnamed content`, `test`, &RepoContainsPredicate{Content: "test"}},
+			{`file and content`, `file:test.go content:abc`, &RepoContainsPredicate{File: "test.go", Content: "abc"}},
+			{`content and file`, `content:abc file:test.go`, &RepoContainsPredicate{File: "test.go", Content: "abc"}},
 
 			// TODO (@camdencheek) Query parsing currently checks parameter names against an allowlist.
 			// This will be a problem as soon as we add more fields. Might make sense to do
@@ -41,6 +43,8 @@ func TestRepoContainsPredicate(t *testing.T) {
 
 		invalid := []test{
 			{`empty`, ``, nil},
+			{`negated file`, `-file:test`, nil},
+			{`negated content`, `-content:test`, nil},
 		}
 
 		for _, tc := range invalid {
@@ -60,28 +64,14 @@ func TestParseAsPredicate(t *testing.T) {
 		input  string
 		name   string
 		params string
-		err    bool
 	}{
-		{`()`, "", "", true},
-		{`a()`, "a", "", false},
-		{`a(b)`, "a", "b", false},
-		{``, "", "", true},
-		{`a)(`, "", "", true},
+		{`a()`, "a", ""},
+		{`a(b)`, "a", "b"},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.input, func(t *testing.T) {
-			name, params, err := ParseAsPredicate(tc.input)
-			if tc.err {
-				if err == nil {
-					t.Fatal("expected err, but got none")
-				}
-				return
-			}
-			if err != nil {
-				t.Fatalf("unexpected err: %s", err)
-			}
-
+			name, params := ParseAsPredicate(tc.input)
 			if name != tc.name {
 				t.Fatalf("expected name %s, got %s", tc.name, name)
 			}

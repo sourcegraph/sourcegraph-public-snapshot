@@ -300,7 +300,7 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 
 	// Trigger update when enabling.
 	if args.Enabled {
-		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repo.name); err != nil {
+		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repo.RepoName()); err != nil {
 			return nil, err
 		}
 	}

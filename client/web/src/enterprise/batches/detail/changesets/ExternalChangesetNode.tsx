@@ -1,9 +1,9 @@
-import { ThemeProps } from '../../../../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Hoverifier } from '@sourcegraph/codeintellify'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../../shared/src/util/url'
-import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover'
-import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
-import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import * as H from 'history'
 import React, { useState, useCallback, useEffect } from 'react'
 import { DiffStat } from '../../../../components/diff/DiffStat'
@@ -23,13 +23,16 @@ import { ExternalChangesetInfoCell } from './ExternalChangesetInfoCell'
 import { DownloadDiffButton } from './DownloadDiffButton'
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { ChangesetState } from '../../../../../../shared/src/graphql-operations'
-import { asError, isErrorLike } from '../../../../../../shared/src/util/errors'
+import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import SyncIcon from 'mdi-react/SyncIcon'
 
 export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ExternalChangesetFields
     viewerCanAdminister: boolean
+    enableSelect?: boolean
+    onSelect?: (id: string, selected: boolean) => void
+    isSelected?: (id: string) => boolean
     history: H.History
     location: H.Location
     extensionInfo?: {
@@ -44,6 +47,9 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
 export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNodeProps> = ({
     node: initialNode,
     viewerCanAdminister,
+    enableSelect,
+    onSelect,
+    isSelected,
     isLightTheme,
     history,
     location,
@@ -64,8 +70,28 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
         [isExpanded]
     )
 
+    const selected = isSelected?.(node.id)
+    const toggleSelected = useCallback((): void => {
+        if (onSelect !== undefined) {
+            onSelect(node.id, !selected)
+        }
+    }, [onSelect, selected, node.id])
+
     return (
         <>
+            {enableSelect && (
+                <div className="p-2">
+                    <input
+                        id={`select-changeset-${node.id}`}
+                        type="checkbox"
+                        className="btn"
+                        checked={selected}
+                        onChange={toggleSelected}
+                        disabled={!viewerCanAdminister}
+                        data-tooltip="Click to select changeset for detaching from batch change"
+                    />
+                </div>
+            )}
             <button
                 type="button"
                 className="btn btn-icon test-batches-expand-changeset d-none d-sm-block"

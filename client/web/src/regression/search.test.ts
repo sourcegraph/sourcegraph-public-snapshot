@@ -1,13 +1,13 @@
 import { describe, test } from 'mocha'
-import { Driver } from '../../../shared/src/testing/driver'
-import { getConfig } from '../../../shared/src/testing/config'
+import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { getTestTools } from './util/init'
-import * as GQL from '../../../shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQlClient'
 import { ensureTestExternalService } from './util/api'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { TestResourceManager } from './util/TestResourceManager'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 describe('Search regression test suite', () => {
     /**

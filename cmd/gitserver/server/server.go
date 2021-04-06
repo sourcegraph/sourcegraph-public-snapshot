@@ -16,7 +16,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -25,7 +24,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -138,15 +136,12 @@ type Server struct {
 	// usually set to return a GitRepoSyncer.
 	GetVCSSyncer func(context.Context, api.RepoName) (VCSSyncer, error)
 
+	// Hostname is how we identify this instance of gitserver. Generally it is the
+	// actual hostname but can also be overridden by the HOSTNAME environment variable.
+	Hostname string
+
 	// shared db handle
 	DB dbutil.DB
-
-	// shardIDMu protects shardID
-	shardIDMu sync.RWMutex
-	// shardID stores this server's shardID as seen by frontend. It starts empty and
-	// is populated by incoming requests from frontend. We require frontend and our
-	// view of the shardID to be the same as we shard repos based on it.
-	shardID string
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -167,6 +162,10 @@ type Server struct {
 	// s.acquireClonableLimiter() instead of using these directly.
 	cloneLimiter     *mutablelimiter.Limiter
 	cloneableLimiter *mutablelimiter.Limiter
+
+	// rpsLimiter limits the remote code host git operations done per second
+	// per gitserver instance
+	rpsLimiter *rate.Limiter
 
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
@@ -254,42 +253,43 @@ func (s *Server) Handler() http.Handler {
 		s.cloneableLimiter.SetLimit(limit)
 	})
 
-	// shardIDMiddleware causes us to try and set the server shardID to that of the
-	// shardID received in requests from frontend.
-	shardIDMiddleware := func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-			addrs := conf.Get().ServiceConnections.GitServers
-			shardID := shardIDFromFrontend(r)
-			s.maybeSetShardID(shardID, addrs)
-			h.ServeHTTP(rw, r)
-		})
+	s.rpsLimiter = rate.NewLimiter(rate.Inf, 10)
+	setRPSLimiter := func() {
+		if maxRequestsPerSecond := conf.GitMaxCodehostRequestsPerSecond(); maxRequestsPerSecond == -1 {
+			// As a special case, -1 means no limiting
+			s.rpsLimiter.SetLimit(rate.Inf)
+		} else {
+			s.rpsLimiter.SetLimit(rate.Limit(maxRequestsPerSecond))
+		}
 	}
+	conf.Watch(func() {
+		setRPSLimiter()
+	})
 
-	router := mux.NewRouter()
-	router.Use(shardIDMiddleware)
-	router.HandleFunc("/archive", s.handleArchive)
-	router.HandleFunc("/exec", s.handleExec)
-	router.HandleFunc("/p4-exec", s.handleP4Exec)
-	router.HandleFunc("/list", s.handleList)
-	router.HandleFunc("/list-gitolite", s.handleListGitolite)
-	router.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
-	router.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
-	router.HandleFunc("/repos", s.handleRepoInfo)
-	router.HandleFunc("/repos-stats", s.handleReposStats)
-	router.HandleFunc("/repo-clone-progress", s.handleRepoCloneProgress)
-	router.HandleFunc("/delete", s.handleRepoDelete)
-	router.HandleFunc("/repo-update", s.handleRepoUpdate)
-	router.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
-	router.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
-	router.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/archive", s.handleArchive)
+	mux.HandleFunc("/exec", s.handleExec)
+	mux.HandleFunc("/p4-exec", s.handleP4Exec)
+	mux.HandleFunc("/list", s.handleList)
+	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
+	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
+	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
+	mux.HandleFunc("/repos", s.handleRepoInfo)
+	mux.HandleFunc("/repos-stats", s.handleReposStats)
+	mux.HandleFunc("/repo-clone-progress", s.handleRepoCloneProgress)
+	mux.HandleFunc("/delete", s.handleRepoDelete)
+	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
+	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
+	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
+	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	router.Handle("/git/", http.StripPrefix("/git", &gitServiceHandler{
+	mux.Handle("/git/", http.StripPrefix("/git", &gitServiceHandler{
 		Dir: func(d string) string { return string(s.dir(api.RepoName(d))) },
 	}))
 
-	return router
+	return mux
 }
 
 // Janitor does clean up tasks over s.ReposDir and is expected to run in a
@@ -303,74 +303,30 @@ func (s *Server) Janitor(interval time.Duration) {
 }
 
 // SyncRepoState syncs state on disk to the database for all repos and is expected to
-// run in a background goroutine. If the list of addresses is in flux we'll wait for it
-// to stabilise before syncing.
+// run in a background goroutine.
 func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
-	var oldAddrs []string
 	for {
-		// Take a copy to ensure there's no chance of it being mutated
-		addrs := append([]string{}, conf.Get().ServiceConnections.GitServers...)
-		// If we've never run or the list of addresses has remained stable, go ahead
-		if len(oldAddrs) == 0 || reflect.DeepEqual(addrs, oldAddrs) {
-			if err := s.syncRepoState(addrs, batchSize, perSecond); err != nil {
-				log15.Error("Syncing repo state", "error ", err)
-			}
+		addrs := conf.Get().ServiceConnections.GitServers
+		if err := s.syncRepoState(addrs, batchSize, perSecond); err != nil {
+			log15.Error("Syncing repo state", "error ", err)
 		}
 		time.Sleep(interval)
 	}
 }
 
-// getShardID get the current shardID. It returns an error if it has not been set
-// yet.
-func (s *Server) getShardID() (string, error) {
-	s.shardIDMu.RLock()
-	defer s.shardIDMu.RUnlock()
-	if s.shardID == "" {
-		return "", errors.New("shardID not set")
+// hostnameMatch checks whether the hostname matches the given address.
+// If we don't find an exact match, we look at the initial prefix.
+func (s *Server) hostnameMatch(addr string) bool {
+	if !strings.HasPrefix(addr, s.Hostname) {
+		return false
 	}
-	return s.shardID, nil
-}
-
-// maybeSetShardID sets shardID if h is not blank, it can be found in addrs and
-// the new value is different.
-func (s *Server) maybeSetShardID(h string, addrs []string) {
-	if h == "" {
-		return
+	if addr == s.Hostname {
+		return true
 	}
-	if !shardIDFound(h, addrs) {
-		return
-	}
-	if current, _ := s.getShardID(); current == h {
-		// Nothing needs to change
-		return
-	}
-	s.shardIDMu.Lock()
-	defer s.shardIDMu.Unlock()
-	s.shardID = h
-}
-
-// shardIDFound returns true only if our shardID can be found in addrs
-func shardIDFound(shardID string, addrs []string) bool {
-	for _, a := range addrs {
-		if shardID == a {
-			return true
-		}
-	}
-	return false
-}
-
-// shardIDFromFrontend returns the shardID provided from the request only if it
-// is from one of our frontend instances.
-func shardIDFromFrontend(r *http.Request) string {
-	ua := r.Header.Get("User-Agent")
-	actor := r.Header.Get(protocol.HeaderSourcegraphActor)
-	// TODO: This feels a bit brittle as we may change the name of our frontend
-	// instance at some point and also because the name itself it set based on the
-	// binary name. See client.NewClient
-	if ua == "frontend" && actor == "internal" {
-		return r.Host
-	}
-	return ""
+	// We know that s.Hostname is shorter than addr so we can safely check the next
+	// char
+	next := addr[len(s.Hostname)]
+	return next == '.' || next == ':'
 }
 
 var (
@@ -389,9 +345,16 @@ var (
 )
 
 func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
-	shardID, err := s.getShardID()
-	if err != nil {
-		return errors.Wrap(err, "getting shardID")
+	// Sanity check our host exists in addrs before starting any work
+	var found bool
+	for _, a := range addrs {
+		if s.hostnameMatch(a) {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("gitserver hostname, %q, not found in list", s.Hostname)
 	}
 
 	ctx := s.ctx
@@ -446,7 +409,7 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
 
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
-		if addr := gitserver.AddrForRepo(repo.Name, addrs); shardID != addr {
+		if addr := gitserver.AddrForRepo(repo.Name, addrs); !s.hostnameMatch(addr) {
 			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 			return nil
 		}
@@ -463,8 +426,8 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
 			}
 			shouldUpdate = true
 		}
-		if repo.ShardID != shardID {
-			repo.ShardID = shardID
+		if repo.ShardID != s.Hostname {
+			repo.ShardID = s.Hostname
 			shouldUpdate = true
 		}
 		cloneStatus := cloneStatus(cloned, cloning)
@@ -843,7 +806,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				ev.AddField("repo", req.Repo)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
-				ev.AddField("actor", r.Header.Get(protocol.HeaderSourcegraphActor))
+				ev.AddField("actor", r.Header.Get("X-Sourcegraph-Actor"))
 				ev.AddField("ensure_revision", req.EnsureRevision)
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
 				ev.AddField("client", r.UserAgent())
@@ -1073,7 +1036,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 				ev.AddField("p4port", req.P4Port)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
-				ev.AddField("actor", r.Header.Get(protocol.HeaderSourcegraphActor))
+				ev.AddField("actor", r.Header.Get("X-Sourcegraph-Actor"))
 				ev.AddField("client", r.UserAgent())
 				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("stdout_size", stdoutN)
@@ -1145,10 +1108,6 @@ func (s *Server) setLastError(ctx context.Context, name api.RepoName, error stri
 	if s.DB == nil {
 		return nil
 	}
-	shardID, err := s.getShardID()
-	if err != nil {
-		return err
-	}
 	tx, err := database.Repos(s.DB).Transact(ctx)
 	if err != nil {
 		return err
@@ -1159,7 +1118,7 @@ func (s *Server) setLastError(ctx context.Context, name api.RepoName, error stri
 	if err != nil {
 		return err
 	}
-	return database.NewGitserverReposWith(tx).SetLastError(ctx, repo.ID, error, shardID)
+	return database.NewGitserverReposWith(tx).SetLastError(ctx, repo.ID, error, s.Hostname)
 }
 
 // setLastErrorNonFatal is the same as setLastError but only logs errors
@@ -1177,10 +1136,6 @@ func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status t
 	if s.DB == nil {
 		return nil
 	}
-	shardID, err := s.getShardID()
-	if err != nil {
-		return err
-	}
 	tx, err := database.Repos(s.DB).Transact(ctx)
 	if err != nil {
 		return err
@@ -1191,7 +1146,7 @@ func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status t
 	if err != nil {
 		return err
 	}
-	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status, shardID)
+	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status, s.Hostname)
 }
 
 // setCloneStatusNonFatal is the same as setCloneStatus but only logs errors
@@ -1276,6 +1231,11 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", err // err will be a context error
 	}
 	defer cancel()
+
+	if err = s.rpsLimiter.Wait(ctx); err != nil {
+		return "", err
+	}
+
 	if err := syncer.IsCloneable(ctx, remoteURL); err != nil {
 		return "", fmt.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactor.redact(err.Error()))
 	}
@@ -1306,6 +1266,10 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 			return err
 		}
 		defer cancel1()
+
+		if err = s.rpsLimiter.Wait(ctx); err != nil {
+			return err
+		}
 
 		ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
 		defer cancel2()
@@ -1641,6 +1605,10 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 		return err
 	}
 	defer cancel2()
+
+	if err = s.rpsLimiter.Wait(ctx); err != nil {
+		return err
+	}
 
 	repo = protocol.NormalizeRepo(repo)
 	dir := s.dir(repo)

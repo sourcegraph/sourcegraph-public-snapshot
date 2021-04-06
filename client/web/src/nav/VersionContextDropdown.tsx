@@ -9,7 +9,7 @@ import {
     ListboxGroupLabel,
 } from '@reach/listbox'
 import classNames from 'classnames'
-import { VersionContextProps } from '../../../shared/src/search/util'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import FlagVariantIcon from 'mdi-react/FlagVariantIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -17,7 +17,7 @@ import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import { VersionContext } from '../schema/site.schema'
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../search'
 import { submitSearch } from '../search/helpers'
-import { useLocalStorage } from '../../../shared/src/util/useLocalStorage'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 const HAS_DISMISSED_INFO_KEY = 'sg-has-dismissed-version-context-info'
 

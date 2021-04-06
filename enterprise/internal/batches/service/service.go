@@ -185,7 +185,7 @@ func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 // If it doesn't exist yet, both return values are nil.
 // It accepts a *store.Store so that it can be used inside a transaction.
 func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *batches.BatchSpec) (*batches.BatchChange, error) {
-	opts := store.CountBatchChangeOpts{
+	opts := store.GetBatchChangeOpts{
 		Name:            spec.Spec.Name,
 		NamespaceUserID: spec.NamespaceUserID,
 		NamespaceOrgID:  spec.NamespaceOrgID,
@@ -256,7 +256,7 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 	}
 	defer func() { err = tx.Done(err) }()
 
-	batchChange, err = tx.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: opts.BatchChangeID})
+	batchChange, err = tx.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: opts.BatchChangeID})
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +297,7 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 		tr.Finish()
 	}()
 
-	batchChange, err = s.store.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
+	batchChange, err = s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: id})
 	if err != nil {
 		return nil, errors.Wrap(err, "getting batch change")
 	}
@@ -347,7 +347,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		tr.Finish()
 	}()
 
-	batchChange, err := s.store.GetBatchChange(ctx, store.CountBatchChangeOpts{ID: id})
+	batchChange, err := s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: id})
 	if err != nil {
 		return err
 	}
@@ -560,3 +560,74 @@ type usernameSource interface {
 }
 
 var _ usernameSource = &repos.BitbucketServerSource{}
+
+// ErrChangesetsToDetachNotFound can be returned by (*Service).DetachChangesets
+// if the number of changesets returned from the database doesn't match the
+// number if IDs passed in.
+var ErrChangesetsToDetachNotFound = errors.New("some changesets that should be detached could not be found")
+
+// DetachChangesets detaches the given Changeset from the given BatchChange
+// by checking whether the actor in the context has permission to enqueue a
+// reconciler run and then enqueues it by calling ResetQueued.
+func (s *Service) DetachChangesets(ctx context.Context, batchChangeID int64, ids []int64) (err error) {
+	traceTitle := fmt.Sprintf("batchChangeID: %d, changeset: %d", batchChangeID, ids)
+	tr, ctx := trace.New(ctx, "service.DetachChangesets", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// Load the BatchChange to check for admin rights.
+	batchChange, err := s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChangeID})
+	if err != nil {
+		return err
+	}
+
+	// 🚨 SECURITY: Only the Author of the batch change can detach changesets.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, batchChange.InitialApplierID); err != nil {
+		return err
+	}
+
+	cs, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
+		IDs:           ids,
+		BatchChangeID: batchChangeID,
+		OnlyArchived:  true,
+		// We only want to detach the changesets the user has access to
+		EnforceAuthz: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(cs) != len(ids) {
+		return ErrChangesetsToDetachNotFound
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, changeset := range cs {
+		var detach bool
+		for i, assoc := range changeset.BatchChanges {
+			if assoc.BatchChangeID == batchChangeID {
+				changeset.BatchChanges[i].Detach = true
+				detach = true
+			}
+		}
+
+		if !detach {
+			continue
+		}
+
+		changeset.ResetQueued()
+
+		if err := tx.UpdateChangeset(ctx, changeset); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

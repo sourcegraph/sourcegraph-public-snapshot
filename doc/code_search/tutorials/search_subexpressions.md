@@ -19,7 +19,7 @@ Here are examples of how they can help you:
 
 → [Noncompliant spelling where case-sensitivity differs depending on the word](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%28%28Github+case:yes%29+or+%28organisation+case:no%29%29&patternType=literal).
 
-```text
+```sgquery
  repo:sourcegraph ((Github case:yes) or (organisation case:no))
 ```
 
@@ -30,7 +30,7 @@ Here are examples of how they can help you:
 
 → [Search for either a file name or file contents scoped to the same repository](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+-file:html+%28file:router+or+newRouter%29&patternType=literal).
 
-```text
+```sgquery
 repo:sourcegraph -file:html (file:router or newRouter)
 ```
 > Finds both files containing the word `router` or file contents matching `newRouter` in the same repository, while excluding `html` files. Useful when exploring files or code that interact with a general term like `router`.
@@ -40,7 +40,7 @@ repo:sourcegraph -file:html (file:router or newRouter)
 → [Scope file content searches to particular files or repositories](https://sourcegraph.com/search?q=+repo:sourcegraph+%28%28file:schema%5C.graphql+hover%28...%29%29+or+%28file:codeintel%5C.go+%28Line+or+Character%29%29%29&patternType=structural)
 
 
-```text
+```sgquery
  repo:sourcegraph
  (
   (file:schema.graphql hover(...))
@@ -63,7 +63,7 @@ repo:sourcegraph -file:html (file:router or newRouter)
 
 → [Search across multiple repositories at multiple revisions](https://sourcegraph.com/search?q=%28repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40v3.22.0:v3.22.1+or+repo:%5Egithub%5C.com/sourcegraph/src-cli%24%403.22.0:3.22.1%29+file:CHANGELOG+campaigns&patternType=literal).
 
-```text
+```sgquery
  (
    repo:^github\.com/sourcegraph/sourcegraph$@v3.22.0:v3.22.1
    or
@@ -84,17 +84,17 @@ It's best practice to parenthesize
 queries to avoid confusion. For example, there are multiple ways to group the
 query, which is not fully parenthesized:
 
-```text
+```sgquery
 repo:sourcegraph (Github case:yes) or (organisation case:no)
 ```
 
 It could mean either of these:
 
-```text
+```sgquery
 (repo:sourcegraph (Github case:yes)) or (organisation case:no)
 ```
 
-```text
+```sgquery
 repo:sourcegraph ((Github case:yes) or (organisation case:no))
 ```
 
@@ -107,7 +107,7 @@ j)`
 This convention means we would pick the following meaning of the original query,
 but it may not be what you intended:
 
-```text
+```sgquery
 (repo:sourcegraph (Github case:yes)) or (organisation case:no)
 ```
 
@@ -122,26 +122,26 @@ If you're unsure whether a subexpression is valid, it may be useful to think in
 terms of how a subexpression expands to multiple independent queries. Expansion
 relies on a distributive property over `or`-expressions. For example:
 
-```text
+```sgquery
 repo:sourcegraph ((Github case:yes) or (organisation case:no))
 ```
 
 is equivalent to expanding the query by putting `repo:sourcegraph` inside each
 subexpression:
 
-```text
+```sgquery
 (repo:sourcegraph Github case:yes) or (repo:sourcegraph organisation case:no)
 ```
 
 This query is valid because each side of the `or` operator is a valid query. On the other hand, the following query is _invalid_:
 
-```text
+```sgquery
 repo:sourcegraph case:yes (Github or (case:no organisation))
 ```
 
 because after expanding it is equivalent to:
 
-```text
+```sgquery
 (repo:sourcegraph case:yes Github) or (repo:sourcegraph case:yes case:no organisation)
 ```
 

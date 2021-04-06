@@ -7,10 +7,10 @@ import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
     isRevisionNotFoundErrorLike,
-} from '../../../shared/src/backend/errors'
-import { RepoQuestionIcon } from '../../../shared/src/components/icons'
-import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
-import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+} from '@sourcegraph/shared/src/backend/errors'
+import { RepoQuestionIcon } from '@sourcegraph/shared/src/components/icons'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
 import { resolveRevision } from './backend'
 import { DirectImportRepoAlert } from './DirectImportRepoAlert'

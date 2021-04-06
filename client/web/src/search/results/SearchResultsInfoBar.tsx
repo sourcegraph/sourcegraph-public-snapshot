@@ -1,20 +1,22 @@
+import { PatternTypeProps } from '..'
+import classNames from 'classnames'
 import * as H from 'history'
-import React, { useMemo } from 'react'
 import ArrowCollapseVerticalIcon from 'mdi-react/ArrowCollapseVerticalIcon'
 import ArrowExpandVerticalIcon from 'mdi-react/ArrowExpandVerticalIcon'
-import classNames from 'classnames'
+import DownloadIcon from 'mdi-react/DownloadIcon'
 import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
+import React, { useMemo } from 'react'
+import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
+import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/validate'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { AuthenticatedUser } from '../../auth'
-import { ContributableMenu } from '../../../../shared/src/api/protocol'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { PatternTypeProps } from '..'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { SearchPatternType } from '../../graphql-operations'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { CodeMonitoringProps } from '../../code-monitoring'
-import { FilterKind, findFilter } from '../../../../shared/src/search/query/validate'
-import { Link } from '../../../../shared/src/components/Link'
+import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
+import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
+import { SearchPatternType } from '../../graphql-operations'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
@@ -24,7 +26,7 @@ export interface SearchResultsInfoBarProps
         CodeMonitoringProps {
     history: H.History
     /** The currently authenticated user or null */
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
 
     /** The search query and if any results were found */
     query?: string
@@ -69,27 +71,55 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInf
  * and a few actions like expand all and save query
  */
 export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => {
-    const CreateCodeMonitorButton = useMemo(() => {
-        if (!props.enableCodeMonitoring || !props.query) {
+    const createCodeMonitorButton = useMemo(() => {
+        if (!props.enableCodeMonitoring || !props.query || !props.authenticatedUser) {
             return null
         }
         const globalTypeFilterInQuery = findFilter(props.query, 'type', FilterKind.Global)
         const globalTypeFilterValue = globalTypeFilterInQuery?.value ? globalTypeFilterInQuery.value.value : undefined
         const canCreateMonitorFromQuery = globalTypeFilterValue === 'diff' || globalTypeFilterValue === 'commit'
-        if (!canCreateMonitorFromQuery) {
-            return null
-        }
         const searchParameters = new URLSearchParams(props.location.search)
         searchParameters.set('trigger-query', `${props.query} patterntype:${props.patternType}`)
         const toURL = `/code-monitoring/new?${searchParameters.toString()}`
         return (
-            <li className="nav-item">
-                <Link to={toURL} className="btn btn-sm btn-link nav-link text-decoration-none">
-                    Create code monitor
-                </Link>
+            <li
+                className="nav-item"
+                data-tooltip={
+                    !canCreateMonitorFromQuery
+                        ? 'Code monitors only support type:diff or type:commit searches.'
+                        : undefined
+                }
+            >
+                <ButtonLink
+                    disabled={!canCreateMonitorFromQuery}
+                    to={toURL}
+                    className="btn btn-sm btn-link nav-link text-decoration-none"
+                >
+                    <CodeMonitoringLogo className="icon-inline mr-1" />
+                    Monitor
+                </ButtonLink>
             </li>
         )
-    }, [props.enableCodeMonitoring, props.query, props.patternType, props.location.search])
+    }, [props.enableCodeMonitoring, props.query, props.authenticatedUser, props.location.search, props.patternType])
+
+    const saveSearchButton = useMemo(() => {
+        if (props.showSavedQueryButton === false || !props.authenticatedUser) {
+            return null
+        }
+
+        return (
+            <li className="nav-item">
+                <button
+                    type="button"
+                    onClick={props.onSaveQueryClick}
+                    className="btn btn-sm btn-link nav-link text-decoration-none test-save-search-link"
+                >
+                    <DownloadIcon className="icon-inline mr-1" />
+                    Save search
+                </button>
+            </li>
+        )
+    }, [props.authenticatedUser, props.onSaveQueryClick, props.showSavedQueryButton])
 
     const extraContext = useMemo(() => ({ searchQuery: props.query || null }), [props.query])
 
@@ -108,33 +138,31 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         showLoadingSpinnerDuringExecution={true}
                         actionItemClass="btn btn-sm btn-link nav-link text-decoration-none"
                     />
-                    {CreateCodeMonitorButton}
-                    {props.showSavedQueryButton !== false && props.authenticatedUser && (
-                        <li className="nav-item">
-                            <button
-                                type="button"
-                                onClick={props.onSaveQueryClick}
-                                className="btn btn-sm btn-link nav-link text-decoration-none test-save-search-link"
-                            >
-                                Save search
-                            </button>
-                        </li>
+
+                    {(createCodeMonitorButton || saveSearchButton) && (
+                        <li className="search-results-info-bar__divider" aria-hidden="true" />
                     )}
+                    {createCodeMonitorButton}
+                    {saveSearchButton}
+
                     {props.resultsFound && (
-                        <li className="nav-item">
-                            <button
-                                type="button"
-                                onClick={props.onExpandAllResultsToggle}
-                                className="btn btn-sm btn-link nav-link text-decoration-none"
-                                data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
-                            >
-                                {props.allExpanded ? (
-                                    <ArrowCollapseVerticalIcon className="icon-inline" />
-                                ) : (
-                                    <ArrowExpandVerticalIcon className="icon-inline" />
-                                )}
-                            </button>
-                        </li>
+                        <>
+                            <li className="search-results-info-bar__divider" aria-hidden="true" />
+                            <li className="nav-item">
+                                <button
+                                    type="button"
+                                    onClick={props.onExpandAllResultsToggle}
+                                    className="btn btn-sm btn-link nav-link text-decoration-none"
+                                    data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
+                                >
+                                    {props.allExpanded ? (
+                                        <ArrowCollapseVerticalIcon className="icon-inline" />
+                                    ) : (
+                                        <ArrowExpandVerticalIcon className="icon-inline" />
+                                    )}
+                                </button>
+                            </li>
+                        </>
                     )}
                 </ul>
             </small>

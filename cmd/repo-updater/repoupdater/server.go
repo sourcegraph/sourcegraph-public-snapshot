@@ -351,6 +351,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 		return
 	}
+
 	err = externalServiceValidate(ctx, req, src)
 	if err == github.ErrIncompleteResults {
 		log15.Info("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
@@ -369,10 +370,9 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Enqueue any external services that are due to sync NOW this will cause any
-	// recently updated external service to sync faster than the default enqueue
-	// interval.
-	s.Syncer.TriggerEnqueueSyncJobs()
+	if err := s.Syncer.TriggerExternalServiceSync(ctx, req.ExternalService.ID); err != nil {
+		log15.Warn("Enqueueing external service sync job", "error", err, "id", req.ExternalService.ID)
+	}
 
 	if s.RateLimitSyncer != nil {
 		err = s.RateLimitSyncer.SyncRateLimiters(ctx)

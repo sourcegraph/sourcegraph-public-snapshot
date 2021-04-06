@@ -10,12 +10,12 @@ import React from 'react'
 import renderer from 'react-test-renderer'
 import { concat, EMPTY, NEVER, of } from 'rxjs'
 import * as sinon from 'sinon'
-import { Controller } from '../../../../../shared/src/extensions/controller'
-import { SettingsCascadeOrError } from '../../../../../shared/src/settings/settings'
+import { Controller } from '@sourcegraph/shared/src/extensions/controller'
+import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { pretendProxySubscribable, pretendRemote } from '../../../../../shared/src/api/util'
-import { FlatExtensionHostAPI } from '../../../../../shared/src/api/contract'
+import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 
 jest.mock('mdi-react/SourceRepositoryIcon', () => 'SourceRepositoryIcon')
 

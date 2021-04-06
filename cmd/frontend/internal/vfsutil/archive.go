@@ -65,6 +65,10 @@ func (fs *ArchiveFS) fetchOrWait(ctx context.Context) error {
 
 		fs.ar, fs.err = fs.fetch(ctx)
 		if fs.err == nil {
+			//nolint:govet // This is not a false positive, but there is no easy fix.
+			// The issue comes down to the fact that a `zip.ReadCloser` takes a reader by value,
+			// but NewReader returns a pointer, so there is no way to create a ReadCloser from
+			// a Reader without a pointer dereference, which copies the mutex.
 			fs.fs = zipfs.New(&zip.ReadCloser{Reader: *fs.ar.Reader}, "")
 			if fs.ar.StripTopLevelDir {
 				entries, err := fs.fs.ReadDir("/")

@@ -14,6 +14,10 @@ export interface BatchChangesSettingsAreaProps extends Pick<RouteComponentProps,
 export const BatchChangesSettingsArea: React.FunctionComponent<BatchChangesSettingsAreaProps> = props => (
     <div className="web-content test-batches-settings-page">
         <PageTitle title="Batch changes settings" />
-        <CodeHostConnections userID={props.user.id} {...props} />
+        <CodeHostConnections
+            headerLine={<p>Add access tokens to enable Batch Changes changeset creation on your code hosts.</p>}
+            userID={props.user.id}
+            {...props}
+        />
     </div>
 )

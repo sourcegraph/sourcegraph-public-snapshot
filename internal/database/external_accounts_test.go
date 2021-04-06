@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -298,6 +300,93 @@ func TestExternalAccounts_List(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestExternalAccounts_Encryption(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+
+	store := ExternalAccounts(db).WithEncryptionKey(testKey{})
+
+	spec := extsvc.AccountSpec{
+		ServiceType: "xa",
+		ServiceID:   "xb",
+		ClientID:    "xc",
+		AccountID:   "xd",
+	}
+
+	authData := json.RawMessage(`"authData"`)
+	data := json.RawMessage(`"data"`)
+	accountData := extsvc.AccountData{
+		AuthData: &authData,
+		Data:     &data,
+	}
+
+	// store with encrypted authdata
+	userID, err := store.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, accountData)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	listFirstAccount := func(s *UserExternalAccountsStore) extsvc.Account {
+		t.Helper()
+
+		accounts, err := s.List(ctx, ExternalAccountsListOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(accounts) != 1 {
+			t.Fatalf("got len(accounts) == %d, want 1", len(accounts))
+		}
+		account := *accounts[0]
+		simplifyExternalAccount(&account)
+		account.ID = 0
+		return account
+	}
+
+	// create a store with a NoopKey to read the raw encrypted value
+	noopStore := store.WithEncryptionKey(&encryption.NoopKey{})
+
+	account := listFirstAccount(noopStore)
+
+	// if the testKey worked, the data should just be a base64 encoded version
+	if string(*account.AuthData) != base64.StdEncoding.EncodeToString([]byte(*accountData.AuthData)) {
+		t.Fatalf("expected base64 encoded auth data, got %s", string(*account.AuthData))
+	}
+
+	// List should return decrypted data
+	account = listFirstAccount(store)
+	want := extsvc.Account{
+		UserID:      userID,
+		AccountSpec: spec,
+		AccountData: accountData,
+	}
+	if diff := cmp.Diff(want, account); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+
+	// LookupUserAndSave should encrypt the accountData correctly
+	userID, err = store.LookupUserAndSave(ctx, spec, accountData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	account = listFirstAccount(store)
+	if diff := cmp.Diff(want, account); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+
+	// AssociateUserAndSave should encrypt the accountData correctly
+	err = store.AssociateUserAndSave(ctx, userID, spec, accountData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	account = listFirstAccount(store)
+	if diff := cmp.Diff(want, account); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 }
 

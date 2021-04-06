@@ -68,7 +68,7 @@ func (r *resolver) findClosestDumps(ctx context.Context, cachedCommitChecker *ca
 			if !pathExists {
 				continue
 			}
-		} else {
+		} else { //nolint:staticcheck
 			// TODO(efritz) - ensure there's a valid document path for this condition as well
 		}
 

@@ -619,6 +619,11 @@ VALUES (%d, 1, ''), (%d, 2, '')
 		t.Errorf("error: want %q but got %q", wantErr, gotErr)
 	}
 
+	_, err = ExternalServices(db).GetByID(ctx, es1.ID)
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+
 	// Should only get back the repo with ID=2
 	repos, err := Repos(db).GetByIDs(ctx, 1, 2)
 	if err != nil {
@@ -1298,14 +1303,13 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Errorf("List:\n%s", diff)
 		}
 
-		want.Apply(func(e *types.ExternalService) {
-			e.UpdatedAt = now
-			e.DeletedAt = now
-		})
-
-		if err = tx.Upsert(ctx, want.Clone()...); err != nil {
-			t.Errorf("Upsert error: %s", err)
+		// Delete external services
+		for _, es := range want {
+			if err := tx.Delete(ctx, es.ID); err != nil {
+				t.Fatal(err)
+			}
 		}
+
 		have, err = tx.List(ctx, ExternalServicesListOptions{})
 		if err != nil {
 			t.Errorf("List error: %s", err)
@@ -1393,14 +1397,13 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Errorf("List:\n%s", diff)
 		}
 
-		want.Apply(func(e *types.ExternalService) {
-			e.UpdatedAt = now
-			e.DeletedAt = now
-		})
-
-		if err = tx.Upsert(ctx, want.Clone()...); err != nil {
-			t.Errorf("Upsert error: %s", err)
+		// Delete external services
+		for _, es := range want {
+			if err := tx.Delete(ctx, es.ID); err != nil {
+				t.Fatal(err)
+			}
 		}
+
 		have, err = tx.List(ctx, ExternalServicesListOptions{})
 		if err != nil {
 			t.Errorf("List error: %s", err)
@@ -1473,6 +1476,6 @@ func (k testKey) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Se
 	return &s, err
 }
 
-func (k testKey) ID(ctx context.Context) (string, error) {
-	return "testkey", nil
+func (k testKey) Version(ctx context.Context) (encryption.KeyVersion, error) {
+	return encryption.KeyVersion{Type: "testkey"}, nil
 }

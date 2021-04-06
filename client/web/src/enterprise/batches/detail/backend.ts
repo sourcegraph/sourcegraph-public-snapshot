@@ -1,5 +1,5 @@
 import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { Observable } from 'rxjs'
 import { diffStatFields, fileDiffFields } from '../../../backend/diff'
 import {
@@ -24,6 +24,8 @@ import {
     ReenqueueChangesetResult,
     ChangesetFields,
     DeleteBatchChangeVariables,
+    DetachChangesetsVariables,
+    DetachChangesetsResult,
 } from '../../../graphql-operations'
 import { requestGraphQL } from '../../../backend/graphql'
 
@@ -517,4 +519,18 @@ export async function getChangesetDiff(changeset: Scalars['ID']): Promise<string
             })
         )
         .toPromise()
+}
+
+export async function detachChangesets(batchChange: Scalars['ID'], changesets: Scalars['ID'][]): Promise<void> {
+    const result = await requestGraphQL<DetachChangesetsResult, DetachChangesetsVariables>(
+        gql`
+            mutation DetachChangesets($batchChange: ID!, $changesets: [ID!]!) {
+                detachChangesets(batchChange: $batchChange, changesets: $changesets) {
+                    alwaysNil
+                }
+            }
+        `,
+        { batchChange, changesets }
+    ).toPromise()
+    dataOrThrowErrors(result)
 }

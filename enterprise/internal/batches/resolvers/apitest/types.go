@@ -324,6 +324,7 @@ type BatchChangesCredential struct {
 	ID                  string
 	ExternalServiceKind string
 	ExternalServiceURL  string
+	IsSiteCredential    bool
 	CreatedAt           string
 }
 

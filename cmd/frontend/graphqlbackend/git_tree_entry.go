@@ -2,14 +2,15 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	neturl "net/url"
 	"os"
 	"path"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -74,7 +75,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 
 		r.content, r.contentErr = git.ReadFile(
 			ctx,
-			r.commit.repoResolver.name,
+			r.commit.repoResolver.RepoName(),
 			api.CommitID(r.commit.OID()),
 			r.Path(),
 			0,
@@ -119,7 +120,11 @@ func (r *GitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 
 func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 	if submodule := r.Submodule(); submodule != nil {
-		repoName, err := cloneURLToRepoName(ctx, submodule.URL())
+		url := submodule.URL()
+		if strings.HasPrefix(url, "../") {
+			url = path.Join(r.Repository().Name(), url)
+		}
+		repoName, err := cloneURLToRepoName(ctx, url)
 		if err != nil {
 			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL(), "err", err)
 			return "", nil
@@ -190,7 +195,7 @@ func cloneURLToRepoName(ctx context.Context, cloneURL string) (string, error) {
 		return "", err
 	}
 	if repoName == "" {
-		return "", fmt.Errorf("No matching code host found for %s", cloneURL)
+		return "", errors.Errorf("no matching code host found for %s", cloneURL)
 	}
 	return string(repoName), nil
 }
@@ -208,7 +213,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	}
 	entries, err := git.ReadDir(
 		ctx,
-		r.commit.repoResolver.name,
+		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
 		path.Dir(r.Path()),
 		false,

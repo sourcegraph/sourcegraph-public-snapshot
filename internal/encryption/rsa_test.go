@@ -25,6 +25,8 @@ func TestGenerateKey(t *testing.T) {
 
 	// Try to decrypt the block using the passphrase.
 	block, _ := pem.Decode([]byte(keyPair.PrivateKey))
+
+	//nolint:staticcheck // See issue #19489
 	decrypted, err := x509.DecryptPEMBlock(block, []byte(keyPair.Passphrase))
 	if err != nil {
 		t.Fatal(err)

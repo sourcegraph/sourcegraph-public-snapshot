@@ -2,7 +2,7 @@ import React from 'react'
 import { Redirect } from 'react-router'
 import { LayoutRouteProps, routes } from '../routes'
 import { lazyComponent } from '../util/lazyComponent'
-import { isErrorLike } from '../../../shared/src/util/errors'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Settings } from '../schema/settings.schema'
 
 export const enterpriseRoutes: readonly LayoutRouteProps<{}>[] = [
@@ -48,9 +48,6 @@ export const enterpriseRoutes: readonly LayoutRouteProps<{}>[] = [
             () => import('./code-monitoring/global/GlobalCodeMonitoringArea'),
             'GlobalCodeMonitoringArea'
         ),
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.codeMonitoring,
     },
     ...routes,
 ]

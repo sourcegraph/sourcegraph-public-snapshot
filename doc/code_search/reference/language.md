@@ -254,7 +254,7 @@ ComplexDiagram(
 			Terminal("-"),
 			Sequence(
 				Terminal("NOT"),
-				Terminal("whitespace", {href: "#whitespace"}))),
+				Terminal("space", {href: "#whitespace"}))),
 		Choice(0,
 			Terminal("file:"),
 			Terminal("f:")),
@@ -291,7 +291,7 @@ ComplexDiagram(
 			Terminal("-"),
 			Sequence(
 				Terminal("NOT"),
-				Terminal("whitespace", {href: "#whitespace"}))),
+				Terminal("space", {href: "#whitespace"}))),
 		Terminal("content:"),
 		Terminal("quoted string", {href: "#quoted-string"})).addTo();
 </script>
@@ -473,7 +473,7 @@ ComplexDiagram(
 			Terminal("-"),
 			Sequence(
 				Terminal("NOT"),
-				Terminal("whitespace", {href: "#whitespace"}))),
+				Terminal("space", {href: "#whitespace"}))),
 		Terminal("repohasfile:"),
 		Terminal("regular expression", {href: "#regular-expression"})).addTo();
 </script>
@@ -594,7 +594,7 @@ ComplexDiagram(
 </script>
 
 Any string, including whitespace, may be quoted with single `'` or double `"`
-quotes. Quotes can be escaped with `\`.
+quotes. Quotes can be escaped with `\`. Literal `\` characters will need to be escaped, e.g., `\\`.
 
 ## Commit parameter
 
@@ -670,5 +670,3 @@ ComplexDiagram(
 		OneOrMore(
 			Terminal("space"))).addTo();
 </script>
-
-

@@ -245,13 +245,6 @@ func BatchChangesRestrictedToAdmins() bool {
 	return false
 }
 
-func ArchiveBatchChangeChangesets() bool {
-	if archive := Get().ExperimentalFeatures.ArchiveBatchChangeChangesets; archive != nil {
-		return *archive
-	}
-	return false
-}
-
 func CodeIntelAutoIndexingEnabled() bool {
 	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
 		return *enabled
@@ -378,4 +371,15 @@ func ExternalServiceUserMode() ExternalServiceMode {
 	default:
 		return ExternalServiceModeDisabled
 	}
+}
+
+// GitMaxCodehostRequestsPerSecond returns maximum number of remote code host
+// git operations to be run per second per gitserver. If not set, it returns the
+// default value -1.
+func GitMaxCodehostRequestsPerSecond() int {
+	val := Get().GitMaxCodehostRequestsPerSecond
+	if val == nil || *val < -1 {
+		return -1
+	}
+	return *val
 }

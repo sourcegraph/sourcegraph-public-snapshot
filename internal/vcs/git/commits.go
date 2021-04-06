@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -101,7 +102,7 @@ func getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt Reso
 			ev.AddField("no_ensure_revision", opt.NoEnsureRevision)
 			ev.AddField("actor", actor.FromContext(ctx).UIDString())
 
-			q, _ := ctx.Value("graphql-query").(string)
+			q, _ := ctx.Value(trace.GraphQLQueryKey).(string)
 			ev.AddField("query", q)
 
 			if err != nil {

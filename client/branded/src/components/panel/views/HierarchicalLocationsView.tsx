@@ -5,17 +5,17 @@ import * as H from 'history'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { FetchFileParameters } from '../../../../../shared/src/components/CodeExcerpt'
-import { RepoLink } from '../../../../../shared/src/components/RepoLink'
-import { Resizable } from '../../../../../shared/src/components/Resizable'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
-import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { parseRepoURI } from '../../../../../shared/src/util/url'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
+import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import { groupLocations } from './locations'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { VersionContextProps } from '../../../../../shared/src/search/util'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 
 /** The maximum number of results we'll receive from a provider before we truncate and display a banner. */
 const MAXIMUM_LOCATION_RESULTS = 500
@@ -175,7 +175,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
             })
         }
 
-        const { groups, selectedGroups, visibleLocations } = groupLocations<Location, string>(
+        const { groups, selectedGroups, visibleLocations } = groupLocations(
             this.state.locationsOrError.result.locations,
             this.state.selectedGroups || null,
             GROUPS.map(({ key }) => key),
@@ -280,6 +280,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                         fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
                         settingsCascade={this.props.settingsCascade}
                         versionContext={this.props.versionContext}
+                        parentContainerIsEmpty={this.state.locationsOrError.result.locations.length === 0}
                     />
                 </div>
             </div>

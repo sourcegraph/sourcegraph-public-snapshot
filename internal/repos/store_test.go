@@ -15,6 +15,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -436,8 +437,7 @@ func testStoreUpsertSources(t *testing.T, store *repos.Store) func(*testing.T) {
 
 			// delete an external service
 			svc := servicesPerKind[extsvc.KindGitHub]
-			svc.DeletedAt = now
-			if err := tx.ExternalServiceStore.Upsert(ctx, svc); err != nil {
+			if err := tx.ExternalServiceStore.Delete(ctx, svc.ID); err != nil {
 				t.Fatalf("Upsert externalServices error: %s", err)
 			}
 
@@ -947,6 +947,86 @@ func testStoreEnqueueSyncJobs(db *sql.DB, store *repos.Store) func(t *testing.T,
 					}
 				})
 			}
+		}
+	}
+}
+
+func testStoreEnqueueSingleSyncJob(db *sql.DB) func(t *testing.T, store *repos.Store) func(*testing.T) {
+	return func(t *testing.T, _ *repos.Store) func(*testing.T) {
+		t.Helper()
+
+		clock := timeutil.NewFakeClock(time.Now(), 0)
+		now := clock.Now()
+
+		return func(t *testing.T) {
+			ctx := context.Background()
+			t.Cleanup(func() {
+				if _, err := db.ExecContext(ctx, "DELETE FROM external_service_sync_jobs;DELETE FROM external_services"); err != nil {
+					t.Fatal(err)
+				}
+			})
+			service := types.ExternalService{
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "Github - Test",
+				Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			}
+
+			// Create a new external service
+			confGet := func() *conf.Unified {
+				return &conf.Unified{}
+			}
+			err := database.ExternalServices(db).Create(ctx, confGet, &service)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assertCount := func(t *testing.T, want int) {
+				t.Helper()
+				var count int
+				if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM external_service_sync_jobs").Scan(&count); err != nil {
+					t.Fatal(err)
+				}
+				if count != want {
+					t.Fatalf("Expected %d rows, got %d", want, count)
+				}
+			}
+			assertCount(t, 0)
+
+			rs := repos.NewStore(db, sql.TxOptions{})
+			err = rs.EnqueueSingleSyncJob(ctx, service.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertCount(t, 1)
+
+			// Doing it again should not fail or add a new row
+			err = rs.EnqueueSingleSyncJob(ctx, service.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertCount(t, 1)
+
+			// If we change status to processing it should not add a new row
+			if _, err := db.ExecContext(ctx, "UPDATE external_service_sync_jobs SET state='processing'"); err != nil {
+				t.Fatal(err)
+			}
+			err = rs.EnqueueSingleSyncJob(ctx, service.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertCount(t, 1)
+
+			// If we change status to completed we should be able to enqueue another one
+			if _, err := db.ExecContext(ctx, "UPDATE external_service_sync_jobs SET state='completed'"); err != nil {
+				t.Fatal(err)
+			}
+			err = rs.EnqueueSingleSyncJob(ctx, service.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertCount(t, 2)
 		}
 	}
 }

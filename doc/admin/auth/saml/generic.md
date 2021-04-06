@@ -25,6 +25,7 @@ Ensure the following values are set for the application configuration in the ide
   - `email` (required): the user's email
   - `login` (optional): the user's username
   - `displayName` (optional): the full name of the user
+- **Name ID**: `email`
 
 ## 2. Add a SAML auth provider to Sourcegraph site configuration
 

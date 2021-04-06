@@ -1,9 +1,8 @@
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { appendContextFilter } from '../../../shared/src/search/query/transformer'
-import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { SearchPatternType } from '../graphql-operations'
 
 // This is an initial proof of concept implementation of search streaming.
@@ -62,7 +61,6 @@ type MarkdownText = string
  */
 interface CommitMatch {
     type: 'commit'
-    icon: string
     label: MarkdownText
     url: string
     detail: MarkdownText
@@ -245,9 +243,11 @@ const toGQLSymbolMatch = (fm: FileSymbolMatch): GQL.IFileMatch => ({
 // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 const toMarkdown = (text: string | MarkdownText): GQL.IMarkdown => ({ __typename: 'Markdown', text } as GQL.IMarkdown)
 
-// copy-paste from search_repositories.go. When we move away from GQL types this shouldn't be part of the API.
-const repoIcon =
-    'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIKCSB2aWV3Qm94PSIwIDAgNjQgNjQiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDY0IDY0OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+Cjx0aXRsZT5JY29ucyA0MDA8L3RpdGxlPgo8Zz4KCTxwYXRoIGQ9Ik0yMywyMi40YzEuMywwLDIuNC0xLjEsMi40LTIuNHMtMS4xLTIuNC0yLjQtMi40Yy0xLjMsMC0yLjQsMS4xLTIuNCwyLjRTMjEuNywyMi40LDIzLDIyLjR6Ii8+Cgk8cGF0aCBkPSJNMzUsMjYuNGMxLjMsMCwyLjQtMS4xLDIuNC0yLjRzLTEuMS0yLjQtMi40LTIuNHMtMi40LDEuMS0yLjQsMi40UzMzLjcsMjYuNCwzNSwyNi40eiIvPgoJPHBhdGggZD0iTTIzLDQyLjRjMS4zLDAsMi40LTEuMSwyLjQtMi40cy0xLjEtMi40LTIuNC0yLjRzLTIuNCwxLjEtMi40LDIuNFMyMS43LDQyLjQsMjMsNDIuNHoiLz4KCTxwYXRoIGQ9Ik01MCwxNmgtMS41Yy0wLjMsMC0wLjUsMC4yLTAuNSwwLjV2MzVjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC0yN2MtMC41LDAtMS0wLjItMS40LTAuNmwtMC42LTAuNmMtMC4xLTAuMS0wLjEtMC4yLTAuMS0wLjQKCQljMC0wLjMsMC4yLTAuNSwwLjUtMC41SDQ0YzEuMSwwLDItMC45LDItMlYxMmMwLTEuMS0wLjktMi0yLTJIMTRjLTEuMSwwLTIsMC45LTIsMnYzNi4zYzAsMS4xLDAuNCwyLjEsMS4yLDIuOGwzLjEsMy4xCgkJYzEuMSwxLjEsMi43LDEuOCw0LjIsMS44SDUwYzEuMSwwLDItMC45LDItMlYxOEM1MiwxNi45LDUxLjEsMTYsNTAsMTZ6IE0xOSwyMGMwLTIuMiwxLjgtNCw0LTRjMS40LDAsMi44LDAuOCwzLjUsMgoJCWMxLjEsMS45LDAuNCw0LjMtMS41LDUuNFYzM2MxLTAuNiwyLjMtMC45LDQtMC45YzEsMCwyLTAuNSwyLjgtMS4zQzMyLjUsMzAsMzMsMjkuMSwzMywyOHYtMC42Yy0xLjItMC43LTItMi0yLTMuNQoJCWMwLTIuMiwxLjgtNCw0LTRjMi4yLDAsNCwxLjgsNCw0YzAsMS41LTAuOCwyLjctMiwzLjVoMGMtMC4xLDIuMS0wLjksNC40LTIuNSw2Yy0xLjYsMS42LTMuNCwyLjQtNS41LDIuNWMtMC44LDAtMS40LDAuMS0xLjksMC4zCgkJYy0wLjIsMC4xLTEsMC44LTEuMiwwLjlDMjYuNiwzOCwyNywzOC45LDI3LDQwYzAsMi4yLTEuOCw0LTQsNHMtNC0xLjgtNC00YzAtMS41LDAuOC0yLjcsMi0zLjRWMjMuNEMxOS44LDIyLjcsMTksMjEuNCwxOSwyMHoiLz4KPC9nPgo8L3N2Zz4K'
+export const toMarkdownCodeHtml = (text: string | MarkdownText): GQL.IMarkdown => ({
+    __typename: 'Markdown',
+    html: text.replace(/^```[_a-z]*\n/i, '').replace(/```$/i, ''), // Remove Markdown code indicators to render code as plain text
+    text, // The full result with Markdown code indicators is still needed as SearchResultMatch.tsx uses this to determine syntax highlighting
+})
 
 export function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
     const branch = repo?.branches?.[0]
@@ -258,7 +258,6 @@ export function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
     // We only need to return the subset defined in IGenericSearchResultInterface
     const gqlRepo: unknown = {
         __typename: 'Repository',
-        icon: repoIcon,
         label: toMarkdown(`[${label}](${url})`),
         url,
         detail: toMarkdown('Repository match'),
@@ -270,12 +269,12 @@ export function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
 }
 
 function toGQLCommitMatch(commit: CommitMatch): GQL.ICommitSearchResult {
-    const match = {
+    const match: GQL.ISearchResultMatch = {
         __typename: 'SearchResultMatch',
         url: commit.url,
-        body: toMarkdown(commit.content),
+        body: toMarkdownCodeHtml(commit.content),
         highlights: commit.ranges.map(([line, character, length]) => ({
-            __typename: 'IHighlight',
+            __typename: 'Highlight',
             line,
             character,
             length,
@@ -283,9 +282,8 @@ function toGQLCommitMatch(commit: CommitMatch): GQL.ICommitSearchResult {
     }
 
     // We only need to return the subset defined in IGenericSearchResultInterface
-    const gqlCommit: unknown = {
+    const gqlCommit: Partial<GQL.ICommitSearchResult> = {
         __typename: 'CommitSearchResult',
-        icon: commit.icon,
         label: toMarkdown(commit.label),
         url: commit.url,
         detail: toMarkdown(commit.detail),
@@ -490,7 +488,6 @@ export interface StreamSearchOptions {
     patternType: SearchPatternType
     caseSensitive: boolean
     versionContext: string | undefined
-    searchContextSpec: string | undefined
     trace: string | undefined
 }
 
@@ -506,14 +503,11 @@ function search({
     patternType,
     caseSensitive,
     versionContext,
-    searchContextSpec,
     trace,
 }: StreamSearchOptions): Observable<SearchEvent> {
     return new Observable<SearchEvent>(observer => {
-        const finalQuery = appendContextFilter(`${query} ${caseSensitive ? 'case:yes' : ''}`, searchContextSpec)
-
         const parameters = [
-            ['q', finalQuery],
+            ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
             ['v', version],
             ['t', patternType as string],
         ]

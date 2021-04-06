@@ -392,12 +392,16 @@ type Dotcom struct {
 // EncryptionKey description: Config for a key
 type EncryptionKey struct {
 	Cloudkms *CloudKMSEncryptionKey
+	Mounted  *MountedEncryptionKey
 	Noop     *NoOpEncryptionKey
 }
 
 func (v EncryptionKey) MarshalJSON() ([]byte, error) {
 	if v.Cloudkms != nil {
 		return json.Marshal(v.Cloudkms)
+	}
+	if v.Mounted != nil {
+		return json.Marshal(v.Mounted)
 	}
 	if v.Noop != nil {
 		return json.Marshal(v.Noop)
@@ -414,15 +418,18 @@ func (v *EncryptionKey) UnmarshalJSON(data []byte) error {
 	switch d.DiscriminantProperty {
 	case "cloudkms":
 		return json.Unmarshal(data, &v.Cloudkms)
+	case "mounted":
+		return json.Unmarshal(data, &v.Mounted)
 	case "noop":
 		return json.Unmarshal(data, &v.Noop)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"cloudkms", "noop"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"cloudkms", "mounted", "noop"})
 }
 
 // EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
 type EncryptionKeys struct {
-	ExternalServiceKey *EncryptionKey `json:"externalServiceKey,omitempty"`
+	ExternalServiceKey     *EncryptionKey `json:"externalServiceKey,omitempty"`
+	UserExternalAccountKey *EncryptionKey `json:"userExternalAccountKey,omitempty"`
 }
 type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.
@@ -483,8 +490,6 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// AndOrQuery description: DEPRECATED: Interpret a search input query as an and/or query.
 	AndOrQuery string `json:"andOrQuery,omitempty"`
-	// ArchiveBatchChangeChangesets description: When enabled, changesets that would be detached when a new batch spec is applied will be archived instead, thereby retaining an association with the batch change.
-	ArchiveBatchChangeChangesets *bool `json:"archiveBatchChangeChangesets,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.
@@ -826,6 +831,15 @@ type InsightSeries struct {
 type Log struct {
 	// Sentry description: Configuration for Sentry
 	Sentry *Sentry `json:"sentry,omitempty"`
+}
+
+// MountedEncryptionKey description: This encryption key is mounted from a given file path or an environment variable.
+type MountedEncryptionKey struct {
+	EnvVarName string `json:"envVarName,omitempty"`
+	Filepath   string `json:"filepath,omitempty"`
+	Keyname    string `json:"keyname"`
+	Type       string `json:"type"`
+	Version    string `json:"version,omitempty"`
 }
 
 // NoOpEncryptionKey description: This encryption key is a no op, leaving your data in plaintext (not recommended).
@@ -1349,6 +1363,8 @@ type SiteConfiguration struct {
 	ExternalURL string `json:"externalURL,omitempty"`
 	// GitCloneURLToRepositoryName description: JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.
 	GitCloneURLToRepositoryName []*CloneURLToRepositoryName `json:"git.cloneURLToRepositoryName,omitempty"`
+	// GitMaxCodehostRequestsPerSecond description: Maximum number of remote code host git operations (e.g. clone or ls-remote) to be run per second per gitserver. Default is -1, which is unlimited.
+	GitMaxCodehostRequestsPerSecond *int `json:"gitMaxCodehostRequestsPerSecond,omitempty"`
 	// GitMaxConcurrentClones description: Maximum number of git clone processes that will be run concurrently per gitserver to update repositories. Note: the global git update scheduler respects gitMaxConcurrentClones. However, we allow each gitserver to run upto gitMaxConcurrentClones to allow for urgent fetches. Urgent fetches are used when a user is browsing a PR and we do not have the commit yet.
 	GitMaxConcurrentClones int `json:"gitMaxConcurrentClones,omitempty"`
 	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.

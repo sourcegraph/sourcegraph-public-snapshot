@@ -36,6 +36,8 @@ type searchAlert struct {
 	priority int
 }
 
+func (a searchAlert) PrometheusType() string { return a.prometheusType }
+
 func (a searchAlert) Title() string { return a.title }
 
 func (a searchAlert) Description() *string {

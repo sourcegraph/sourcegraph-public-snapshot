@@ -4,13 +4,13 @@ import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import FileTreeIcon from 'mdi-react/FileTreeIcon'
 import React, { useCallback } from 'react'
 import { Button } from 'reactstrap'
-import { Resizable } from '../../../shared/src/components/Resizable'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { Scalars } from '../../../shared/src/graphql-operations'
-import { ThemeProps } from '../../../shared/src/theme'
-import { AbsoluteRepoFile } from '../../../shared/src/util/url'
+import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
 import { Tree } from '../tree/Tree'
-import { useLocalStorage } from '../../../shared/src/util/useLocalStorage'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps {
@@ -37,14 +37,14 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
 
     if (!toggleSidebar) {
         return (
-            <Button
+            <button
                 type="button"
-                className="btn btn-icon repo-revision-container__toggle"
+                className="position-absolute btn btn-icon btn-link border-right border-bottom rounded-0 repo-revision-container__toggle"
                 onClick={handleSidebarToggle}
                 data-tooltip="Show sidebar"
             >
                 <FileTreeIcon className="icon-inline" />
-            </Button>
+            </button>
         )
     }
 
@@ -59,7 +59,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                     defaultIndex={tabIndex}
                     onChange={handleTabsChange}
                 >
-                    <div className="tablist-wrapper d-flex w-100 align-items-center">
+                    <div className="tablist-wrapper d-flex w-100 align-items-center bg-transparent">
                         <TabList>
                             <Tab data-test-tab="files">Files</Tab>
                             <Tab data-test-tab="symbols">Symbols</Tab>

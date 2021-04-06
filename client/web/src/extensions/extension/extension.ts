@@ -1,12 +1,12 @@
 import { uniq } from 'lodash'
-import * as GQL from '../../../../shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import {
     EXTENSION_CATEGORIES,
     ExtensionCategory,
     ExtensionManifest,
-} from '../../../../shared/src/schema/extensionSchema'
-import { Settings } from '../../../../shared/src/settings/settings'
-import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+} from '@sourcegraph/shared/src/schema/extensionSchema'
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { quoteIfNeeded } from '../../search'
 
 /** Pattern for valid extension names. */

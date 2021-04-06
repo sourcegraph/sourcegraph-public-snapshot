@@ -75,6 +75,17 @@ type RepositoryRevisions struct {
 	ListRefs func(context.Context, api.RepoName) ([]git.Ref, error)
 }
 
+func (r *RepositoryRevisions) Copy() *RepositoryRevisions {
+	repo := *r.Repo
+	revs := make([]RevisionSpecifier, len(r.Revs))
+	copy(revs, r.Revs)
+	return &RepositoryRevisions{
+		Repo:     &repo,
+		Revs:     revs,
+		ListRefs: r.ListRefs,
+	}
+}
+
 // Equal provides custom comparison which is used by go-cmp
 func (r *RepositoryRevisions) Equal(other *RepositoryRevisions) bool {
 	return reflect.DeepEqual(r.Repo, other.Repo) && reflect.DeepEqual(r.Revs, other.Revs)

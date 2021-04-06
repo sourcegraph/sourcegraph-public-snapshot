@@ -203,8 +203,8 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts) *sqlf.Query {
 	return sqlf.Sprintf(countBatchChangesQueryFmtstr, sqlf.Join(joins, "\n"), sqlf.Join(preds, "\n AND "))
 }
 
-// CountBatchChangeOpts captures the query options needed for getting a batch change
-type CountBatchChangeOpts struct {
+// GetBatchChangeOpts captures the query options needed for getting a batch change
+type GetBatchChangeOpts struct {
 	ID int64
 
 	NamespaceUserID int32
@@ -215,7 +215,7 @@ type CountBatchChangeOpts struct {
 }
 
 // GetBatchChange gets a batch change matching the given options.
-func (s *Store) GetBatchChange(ctx context.Context, opts CountBatchChangeOpts) (*batches.BatchChange, error) {
+func (s *Store) GetBatchChange(ctx context.Context, opts GetBatchChangeOpts) (*batches.BatchChange, error) {
 	q := getBatchChangeQuery(&opts)
 
 	var c batches.BatchChange
@@ -242,7 +242,7 @@ WHERE %s
 LIMIT 1
 `
 
-func getBatchChangeQuery(opts *CountBatchChangeOpts) *sqlf.Query {
+func getBatchChangeQuery(opts *GetBatchChangeOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("namespace_user.deleted_at IS NULL"),
 		sqlf.Sprintf("namespace_org.deleted_at IS NULL"),

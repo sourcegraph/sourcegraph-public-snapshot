@@ -11,6 +11,7 @@
     `email`: user.mail (required)<br>
     `name`: user.userprincipalname (optional)<br>
     `login`: user.userprincipalname (optional)<br>
+  * **Name ID**: `email`
   * You can leave the other configuration values set to their defaults.
 1. Record the value of the "App Federation Metadata Url". You'll need this in the next section.
 

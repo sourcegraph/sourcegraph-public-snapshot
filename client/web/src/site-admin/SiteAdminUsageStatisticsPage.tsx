@@ -2,7 +2,7 @@ import format from 'date-fns/format'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
-import * as GQL from '../../../shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { BarChart } from '../components/d3/BarChart'
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -12,7 +12,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
 import { ErrorAlert } from '../components/alerts'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
-import { UserActivePeriod } from '../../../shared/src/graphql-operations'
+import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
 
 interface ChartData {
     label: string

@@ -114,6 +114,43 @@ func TestAuthPasswordResetLinkDuration(t *testing.T) {
 	}
 }
 
+func TestGitMaxCodehostRequestsPerSecond(t *testing.T) {
+	tests := []struct {
+		name string
+		sc   *Unified
+		want int
+	}{
+		{
+			name: "not set should return default",
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{}},
+			want: -1,
+		},
+		{
+			name: "bad value should return default",
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: intPtr(-100)}},
+			want: -1,
+		},
+		{
+			name: "set 0 should return 0",
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: intPtr(0)}},
+			want: 0,
+		},
+		{
+			name: "set non-0 should return non-0",
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: intPtr(100)}},
+			want: 100,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			Mock(test.sc)
+			if got, want := GitMaxCodehostRequestsPerSecond(), test.want; got != want {
+				t.Fatalf("GitMaxCodehostRequestsPerSecond() = %v, want %v", got, want)
+			}
+		})
+	}
+}
+
 func setenv(t *testing.T, keyval string) func() {
 	t.Helper()
 
@@ -141,4 +178,8 @@ func setenv(t *testing.T, keyval string) func() {
 
 func boolPtr(b bool) *bool {
 	return &b
+}
+
+func intPtr(i int) *int {
+	return &i
 }

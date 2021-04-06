@@ -83,10 +83,24 @@ function parseGerritChange(): GerritChangeAndPatchset {
     const plusSign = pathParts.indexOf('+')
     const repoName = pathParts.slice(cPart + 1, plusSign).join('/')
     const changeId = pathParts[plusSign + 1]
+
+    // The URL may or may not contain the patchset ID. When viewing a single
+    // file on Gerrit, there is no dropdown on the page that gives us the
+    // current patchset ID, but fortunately in that case the URL should have it.
+    const patchsetIdFromUrl: string | undefined = pathParts[plusSign + 2]
+
     const filePath = pathParts.slice(plusSign + 3).join('/')
     const repoNameWithServer = window.location.hostname + '/' + repoName
-    const { basePatchsetId, headPatchsetId: patchsetId } = getHeadAndBasePatchsetIds()
-    const parsedData = { repoName: repoNameWithServer, changeId, patchsetId, filePath, basePatchsetId }
+    const { basePatchsetId, headPatchsetId } = getHeadAndBasePatchsetIds()
+    const parsedData = {
+        repoName: repoNameWithServer,
+        changeId,
+        // Fall back to using the patchset ID from the URL when no dropdown
+        // value was found in the page.
+        patchsetId: headPatchsetId || patchsetIdFromUrl,
+        filePath,
+        basePatchsetId,
+    }
     return parsedData
 }
 
@@ -354,10 +368,11 @@ export const gerritCodeHost: CodeHost = {
     // This overrides the default observeMutations because we need to handle shadow DOMS.
     observeMutations,
     getContext() {
-        const { repoName } = parseGerritChange()
+        const { repoName, changeId, patchsetId } = parseGerritChange()
         return {
             privateRepository: true, // Gerrit is always private. Despite the fact that permissions can be set to be publicly viewable.
             rawRepoName: repoName,
+            revision: patchsetId && buildGerritChangeString(changeId, patchsetId),
         }
     },
     check: checkIsGerrit,

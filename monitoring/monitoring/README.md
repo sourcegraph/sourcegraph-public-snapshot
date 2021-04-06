@@ -500,10 +500,10 @@ const (
     Number UnitType = "short"
 
     // Milliseconds for representing time.
-    Milliseconds UnitType = "dtdurationms"
+    Milliseconds UnitType = "ms"
 
     // Seconds for representing time.
-    Seconds UnitType = "dtdurations"
+    Seconds UnitType = "s"
 
     // Percentage in the range of 0-100.
     Percentage UnitType = "percent"

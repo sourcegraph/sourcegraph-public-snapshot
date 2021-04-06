@@ -128,6 +128,10 @@ func (c Config) shortCommit() string {
 	return c.commit[:12]
 }
 
+func (c *Config) isMainBranch() bool {
+	return c.branch == "main"
+}
+
 func (c Config) ensureCommit() error {
 	if len(c.mustIncludeCommit) == 0 {
 		return nil
@@ -157,7 +161,7 @@ func (c Config) isPR() bool {
 		!c.releaseBranch &&
 		!c.taggedRelease &&
 		c.branch != "master" &&
-		c.branch != "main" &&
+		!c.isMainBranch() &&
 		!c.isMasterDryRun &&
 		!c.patch
 }
@@ -181,7 +185,7 @@ func (c Config) isGoOnly() bool {
 }
 
 func (c Config) shouldRunE2EandQA() bool {
-	return c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.branch == "main" || c.isMasterDryRun
+	return c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.isMainBranch() || c.isMasterDryRun
 }
 
 // candidateImageTag provides the tag for a candidate image built for this Buildkite run.

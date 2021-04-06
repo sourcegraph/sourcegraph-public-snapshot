@@ -243,8 +243,6 @@ func (s *Store) UpsertSources(ctx context.Context, inserts, updates, deletes map
 
 	var q *sqlf.Query
 
-	// When upserting sources we only want to perform delete statements when there are actual deletes that need to happen
-	// so that we don't inadvertently trigger trig_soft_delete_orphan_repo_by_external_service_repo
 	if len(deletes) > 0 {
 		deletedSources := makeSourceSlices(deletes)
 		q = sqlf.Sprintf(upsertSourcesWithDeletesQueryFmtstr,
@@ -273,7 +271,18 @@ func (s *Store) UpsertSources(ctx context.Context, inserts, updates, deletes map
 		)
 	}
 
-	return s.Exec(ctx, q)
+	err = s.Exec(ctx, q)
+	if err != nil {
+		return err
+	}
+
+	if len(deletes) > 0 {
+		// if we deleted some sources we must manually run the soft_delete_orphan_repo_by_external_service_repos function
+		// to cleanup orphaned repos
+		return s.Exec(ctx, sqlf.Sprintf(`SELECT soft_delete_orphan_repo_by_external_service_repos()`))
+	}
+
+	return nil
 }
 
 var upsertSourcesQueryFmtstr = upsertSourcesFmtstrPrefix + upsertSourcesFmtstrSuffix
@@ -307,12 +316,15 @@ update_sources AS (
 INSERT INTO external_service_repos (
   external_service_id,
   repo_id,
+  user_id,
   clone_url
 ) SELECT
   external_service_id,
   repo_id,
+  es.namespace_user_id,
   clone_url
 FROM inserted_sources_list
+JOIN external_services es ON (id = external_service_id)
 ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_unique
 DO
   UPDATE SET clone_url = EXCLUDED.clone_url
@@ -466,12 +478,12 @@ func (s *Store) list(ctx context.Context, q *sqlf.Query, scan scanFunc) (last, c
 	return scanAll(rows, scan)
 }
 
-// UpsertRepos updates or inserts the given repos in the Sourcegraph repository store.
-// The ID field is used to distinguish between Repos that need to be updated and types.Repos
-// that need to be inserted. On inserts, the _ID field of each given Repo is set on inserts.
-// The cloned column is not updated by this function.
-// This method does NOT update sources in the external_services_repo table.
-// Use UpsertSources for that purpose.
+// UpsertRepos updates or inserts the given repos in the Sourcegraph repository
+// store. The ID field is used to distinguish between Repos that need to be
+// updated and types.Repos that need to be inserted. On inserts, the _ID field of
+// each given Repo is set on inserts. The cloned column is not updated by this
+// function. This method does NOT update sources in the external_services_repo
+// table. Use UpsertSources for that purpose.
 func (s *Store) UpsertRepos(ctx context.Context, repos ...*types.Repo) (err error) {
 	if s.Mocks.UpsertRepos != nil {
 		return s.Mocks.UpsertRepos(ctx, repos...)
@@ -570,6 +582,22 @@ func (s *Store) UpsertRepos(ctx context.Context, repos ...*types.Repo) (err erro
 	return nil
 }
 
+// EnqueueSingleSyncJob enqueues a single sync job for the given external
+// service if it is not already queued or processing.
+func (s *Store) EnqueueSingleSyncJob(ctx context.Context, id int64) (err error) {
+	q := sqlf.Sprintf(`
+INSERT INTO external_service_sync_jobs (external_service_id)
+SELECT %s
+WHERE NOT EXISTS(
+        SELECT 1
+        FROM external_service_sync_jobs
+        WHERE external_service_id = %s
+          AND state IN ('queued', 'processing'))
+`, id, id)
+	return s.Exec(ctx, q)
+}
+
+// EnqueueSyncJobs enqueues sync jobs for all external services that are due.
 func (s *Store) EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error) {
 	tr, ctx := s.trace(ctx, "Store.EnqueueSyncJobs")
 
