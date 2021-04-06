@@ -68,7 +68,7 @@ export const ConvertVersionContextsTab: React.FunctionComponent<ConvertVersionCo
     return (
         <div className="convert-version-contexts-tab">
             <div className="convert-version-contexts-tab__header ml-3 mr-3 mb-3">
-                <div className="convert-version-contexts-tab__header__title">Available version contexts</div>
+                <div className="convert-version-contexts-tab__header-title">Available version contexts</div>
                 <button
                     type="button"
                     className="btn btn-outline-primary"
