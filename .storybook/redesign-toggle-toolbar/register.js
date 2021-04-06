@@ -1,7 +1,7 @@
 import React from 'react'
 import addons, { types } from '@storybook/addons'
 import { Icons, IconButton } from '@storybook/components'
-import { useRedesignToggle, REDESIGN_CLASS_NAME } from '../../client/wildcard/src/hooks/useRedesignToggle'
+import { useRedesignToggle, REDESIGN_CLASS_NAME } from '../../client/shared/src/util/useRedesignToggle'
 
 const toggleRedesignClass = (element, isRedesignEnabled) => {
   element.classList.toggle(REDESIGN_CLASS_NAME, !isRedesignEnabled)

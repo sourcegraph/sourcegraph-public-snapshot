@@ -3,13 +3,10 @@ import React, { useState } from 'react'
 import { number } from '@storybook/addon-knobs'
 import webStyles from '../../../../web/src/SourcegraphWebApp.scss'
 import { BrandedStory } from '../../../../branded/src/components/BrandedStory'
-import { addRedesignVariants } from '../../utils'
 import { PageSelector } from './PageSelector'
 
 const { add } = storiesOf('wildcard/PageSelector', module).addDecorator(story => (
-    <BrandedStory styles={webStyles}>
-        {() => addRedesignVariants(<div className="container web-content mt-3">{story()}</div>)}
-    </BrandedStory>
+    <BrandedStory styles={webStyles}>{() => <div className="container web-content mt-3">{story()}</div>}</BrandedStory>
 ))
 
 add('Short', () => {
