@@ -379,27 +379,25 @@ func LogSearchLatency(ctx context.Context, db dbutil.DB, si *SearchInputs, durat
 		return
 	}
 
-	options := &getPatternInfoOptions{}
-	if si.PatternType == query.SearchTypeStructural {
-		options = &getPatternInfoOptions{performStructuralSearch: true}
+	q, err := query.ToBasicQuery(si.Query)
+	if err != nil {
+		// Can't convert to a basic query, can't guarantee accurate reporting.
+		return
 	}
-	if si.PatternType == query.SearchTypeLiteral {
-		options = &getPatternInfoOptions{performLiteralSearch: true}
+	if !query.IsPatternAtom(q) {
+		// Not an atomic pattern, can't guarantee accurate reporting.
+		return
 	}
-	pattern, _, _, _ := processSearchPattern(si.Query, options)
 
 	// If no type: was explicitly specified, infer the result type.
 	if len(types) == 0 {
 		// If a pattern was specified, a content search happened.
-		if pattern != "" {
-			switch {
-			case si.PatternType == query.SearchTypeStructural:
-				types = append(types, "structural")
-			case si.PatternType == query.SearchTypeLiteral:
-				types = append(types, "literal")
-			case si.PatternType == query.SearchTypeRegex:
-				types = append(types, "regexp")
-			}
+		if q.IsLiteral() {
+			types = append(types, "literal")
+		} else if q.IsRegexp() {
+			types = append(types, "regexp")
+		} else if q.IsStructural() {
+			types = append(types, "structural")
 		} else if len(si.Query.Fields()["file"]) > 0 {
 			// No search pattern specified and file: is specified.
 			types = append(types, "file")
@@ -1736,20 +1734,16 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 	}
 	defer cancel()
 
-	options := &getPatternInfoOptions{}
 	limit := r.MaxResults()
-	options.fileMatchLimit = int32(limit)
 	if r.PatternType == query.SearchTypeStructural {
-		options = &getPatternInfoOptions{performStructuralSearch: true}
 		forceResultTypes = result.TypeFile
 	}
-	if r.PatternType == query.SearchTypeLiteral {
-		options = &getPatternInfoOptions{performLiteralSearch: true}
-	}
-	p, err := r.getPatternInfo(options)
+
+	q, err := query.ToBasicQuery(r.Query)
 	if err != nil {
 		return nil, err
 	}
+	p := search.ToTextPatternInfo(q, search.Batch, query.Identity)
 
 	// Fallback to literal search for searching repos and files if
 	// the structural search pattern is empty.

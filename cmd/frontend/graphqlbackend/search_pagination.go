@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -144,10 +145,11 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		return alertResult, nil
 	}
 
-	p, err := r.getPatternInfo(nil)
+	q, err := query.ToBasicQuery(r.Query)
 	if err != nil {
 		return nil, err
 	}
+	p := search.ToTextPatternInfo(q, search.Pagination, query.Identity)
 	args := search.TextParameters{
 		PatternInfo:     p,
 		RepoPromise:     (&search.Promise{}).Resolve(resolved.RepoRevs),
