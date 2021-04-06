@@ -230,6 +230,8 @@ func (m *Migrator) selectAndProcess(ctx context.Context, tx *lsifstore.Store, ve
 		sqlf.Sprintf(m.options.tableName),
 		version,
 		version,
+		sqlf.Sprintf(m.options.tableName),
+		version,
 		version,
 		m.options.batchSize,
 	))
@@ -254,18 +256,30 @@ func (m *Migrator) selectAndProcess(ctx context.Context, tx *lsifstore.Store, ve
 const selectAndProcessQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:selectAndProcess
 SELECT dump_id, %s
-FROM %s t
+FROM %s t1
 WHERE
-	EXISTS (
-		SELECT 1
+	dump_id = (
+		SELECT sv.dump_id
 		FROM %s_schema_versions sv
 		WHERE
-			sv.dump_id = t.dump_id AND
-			min_schema_version <= %s AND
-			max_schema_version >= %s
+			-- Check if we have a schema version in range
+			sv.min_schema_version <= %s AND
+			sv.max_schema_version >= %s AND
+
+			-- Ensure we actually have a row with the target schema version. This condition may
+			-- be true numerically but may not have any rows with this particular schema version;
+			--
+			-- For example: an index with a min schema version of 3 and max schema version of 5
+			-- may have no rows with a schema version of 4. We want to skip over these indexes
+			-- before moving on to the query so we don't always pull back an empty batch unable
+			-- to migrate a legitimate index stuck behind the head of the queue.
+			EXISTS (SELECT 1 FROM %s t2 WHERE t2.dump_id = sv.dump_id AND t2.schema_version = %s)
+
+		ORDER BY dump_id       -- Encourage use of index scan
+		FOR UPDATE SKIP LOCKED -- Skip dump ids which are dequeued by another migrator
+		LIMIT 1                -- All records in a migration batch will belong to a single dump
 	) AND
 	schema_version = %s
-ORDER BY dump_id
 LIMIT %s
 FOR UPDATE SKIP LOCKED
 `
