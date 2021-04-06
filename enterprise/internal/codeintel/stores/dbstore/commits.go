@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -226,7 +227,7 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 	graph := commitgraph.NewGraph(commitGraph, commitGraphView)
 
 	// Write the graph into temporary tables in Postgres
-	if err := tx.writeVisibleUploads(ctx, graph, tipCommit); err != nil {
+	if err := tx.writeVisibleUploads(ctx, sanitizeCommitInput(ctx, graph, tipCommit)); err != nil {
 		return err
 	}
 
@@ -268,7 +269,7 @@ const calculateVisibleUploadsDirtyRepositoryQuery = `
 UPDATE lsif_dirty_repositories SET update_token = GREATEST(update_token, %s), updated_at = %s WHERE repository_id = %s
 `
 
-// writeVisibleUploads serializes the given commit graph into a the following set of temporary tables in the database.
+// writeVisibleUploads serializes the given input into a the following set of temporary tables in the database.
 //
 //   - t_lsif_nearest_uploads        (mirroring lsif_nearest_uploads)
 //   - t_lsif_nearest_uploads_links  (mirroring lsif_nearest_uploads_links)
@@ -278,7 +279,7 @@ UPDATE lsif_dirty_repositories SET update_token = GREATEST(update_token, %s), up
 // bulk delete of the records associated with a repository, then reinsert all of the data needed to be persisted. This
 // caused massive table bloat on some instances. Storing into a temporary table and then inserting/updating/deleting
 // records into the persisted table minimizes the number of tuples we need to touch and drastically reduces table bloat.
-func (s *Store) writeVisibleUploads(ctx context.Context, graph *commitgraph.Graph, tipCommit string) (err error) {
+func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitizedCommitInput) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeVisibleUploads.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -286,90 +287,49 @@ func (s *Store) writeVisibleUploads(ctx context.Context, graph *commitgraph.Grap
 		return err
 	}
 
-	// Insert the set of uploads that are visible from each commit for a given repository into
-	// a temporary table.
-	nearestUploadsInserter := batch.NewInserter(
-		ctx,
-		s.Handle().DB(),
-		"t_lsif_nearest_uploads",
-		"commit_bytea",
-		"uploads",
-	)
-
-	// Insert the commits not inserted into the table above by adding links to a unique
-	// ancestor and their relative distance in the graph into another temporary table.
-	// We use this as a cheap way to reconstruct the full data set, which is multiplicative
-	// in the size of the commit graph AND the number of unique roots.
-	nearestUploadsLinksInserter := batch.NewInserter(
-		ctx,
-		s.Handle().DB(),
-		"t_lsif_nearest_uploads_links",
-		"commit_bytea",
-		"ancestor_commit_bytea",
-		"distance",
-	)
-
-	// Insert the set of uploads visible from the tip of the default branch into a temporary
-	// table. These values are used to determine which bundles for a repository we open during
-	// a global find references query.
-	uploadsVisibleAtTipInserter := batch.NewInserter(
-		ctx,
-		s.Handle().DB(),
-		"t_lsif_uploads_visible_at_tip",
-		"upload_id",
-	)
-
-	listSerializer := NewUploadMetaListSerializer()
-
-	var numNearestUploadsRecords int
-	var numNearestUploadsLinksRecords int
-
-	for v := range graph.Stream() {
-		if v.Uploads != nil {
-			numNearestUploadsRecords++
-
-			if err := nearestUploadsInserter.Insert(
-				ctx,
-				dbutil.CommitBytea(v.Uploads.Commit),
-				listSerializer.Serialize(v.Uploads.Uploads),
-			); err != nil {
-				return err
-			}
-		}
-		if v.Links != nil {
-			numNearestUploadsLinksRecords++
-
-			if err := nearestUploadsLinksInserter.Insert(
-				ctx,
-				dbutil.CommitBytea(v.Links.Commit),
-				dbutil.CommitBytea(v.Links.AncestorCommit),
-				v.Links.Distance,
-			); err != nil {
-				return err
-			}
-		}
+	// Insert the set of uploads that are visible from each commit for a given repository into a temporary table.
+	nearestUploadsWriter := func() error {
+		return batch.InsertValues(
+			ctx,
+			s.Handle().DB(),
+			"t_lsif_nearest_uploads",
+			[]string{"commit_bytea", "uploads"},
+			sanitizedInput.nearestUploadsRowValues,
+		)
 	}
 
-	uploadsVisibleAtCommit := graph.UploadsVisibleAtCommit(tipCommit)
-	for _, uploadMeta := range uploadsVisibleAtCommit {
-		if err := uploadsVisibleAtTipInserter.Insert(ctx, uploadMeta.UploadID); err != nil {
-			return err
-		}
+	// Insert the commits not inserted into the table above by adding links to a unique ancestor and their relative
+	// distance in the graph into another temporary table. We use this as a cheap way to reconstruct the full data
+	// set, which is multiplicative in the size of the commit graph AND the number of unique roots.
+	nearestUploadsLinksWriter := func() error {
+		return batch.InsertValues(
+			ctx,
+			s.Handle().DB(),
+			"t_lsif_nearest_uploads_links",
+			[]string{"commit_bytea", "ancestor_commit_bytea", "distance"},
+			sanitizedInput.nearestUploadsLinksRowValues,
+		)
 	}
 
-	if err := nearestUploadsInserter.Flush(ctx); err != nil {
-		return err
+	// Insert the set of uploads visible from the tip of the default branch into a temporary table. These values are
+	// used to determine which bundles for a repository we open during a global find references query.
+	uploadsVisibleAtTipWriter := func() error {
+		return batch.InsertValues(
+			ctx,
+			s.Handle().DB(),
+			"t_lsif_uploads_visible_at_tip",
+			[]string{"upload_id"},
+			sanitizedInput.uploadsVisibleAtTipRowValues,
+		)
 	}
-	if err := nearestUploadsLinksInserter.Flush(ctx); err != nil {
-		return err
-	}
-	if err := uploadsVisibleAtTipInserter.Flush(ctx); err != nil {
+
+	if err := goroutine.Parallel(nearestUploadsWriter, nearestUploadsLinksWriter, uploadsVisibleAtTipWriter); err != nil {
 		return err
 	}
 	traceLog(
-		log.Int("numNearestUploadsRecords", numNearestUploadsRecords),
-		log.Int("numNearestUploadsLinksRecords", numNearestUploadsLinksRecords),
-		log.Int("numUploadsVisibleAtTipRecords", len(uploadsVisibleAtCommit)),
+		log.Int("numNearestUploadsRecords", int(sanitizedInput.numNearestUploadsRecords)),
+		log.Int("numNearestUploadsLinksRecords", int(sanitizedInput.numNearestUploadsLinksRecords)),
+		log.Int("numUploadsVisibleAtTipRecords", int(sanitizedInput.numUploadsVisibleAtTipRecords)),
 	)
 
 	return nil
@@ -658,4 +618,93 @@ func (s *uploadMetaListSerializer) take() []byte {
 	s.buf.Reset()
 
 	return dest
+}
+
+type sanitizedCommitInput struct {
+	nearestUploadsRowValues       <-chan []interface{}
+	nearestUploadsLinksRowValues  <-chan []interface{}
+	uploadsVisibleAtTipRowValues  <-chan []interface{}
+	numNearestUploadsRecords      uint32 // populated once nearestUploadsRowValues is exhausted
+	numNearestUploadsLinksRecords uint32 // populated once nearestUploadsLinksRowValues is exhausted
+	numUploadsVisibleAtTipRecords uint32 // populated once uploadsVisibleAtTipRowValues is exhausted
+}
+
+// sanitizeCommitInput reads the data that needs to be persisted from the given graph and writes the
+// sanitized values (ensures values match the column types) into channels for insertion into a particular
+// table.
+func sanitizeCommitInput(ctx context.Context, graph *commitgraph.Graph, tipCommit string) *sanitizedCommitInput {
+	nearestUploadsRowValues := make(chan []interface{})
+	nearestUploadsLinksRowValues := make(chan []interface{})
+	uploadsVisibleAtTipRowValues := make(chan []interface{})
+
+	sanitized := &sanitizedCommitInput{
+		nearestUploadsRowValues:      nearestUploadsRowValues,
+		nearestUploadsLinksRowValues: nearestUploadsLinksRowValues,
+		uploadsVisibleAtTipRowValues: uploadsVisibleAtTipRowValues,
+	}
+
+	go func() {
+		defer close(nearestUploadsRowValues)
+		defer close(nearestUploadsLinksRowValues)
+		defer close(uploadsVisibleAtTipRowValues)
+
+		listSerializer := NewUploadMetaListSerializer()
+
+		for envelope := range graph.Stream() {
+			if envelope.Uploads != nil {
+				if !countingWrite(
+					ctx,
+					nearestUploadsRowValues,
+					&sanitized.numNearestUploadsRecords,
+					// row values
+					dbutil.CommitBytea(envelope.Uploads.Commit),
+					listSerializer.Serialize(envelope.Uploads.Uploads),
+				) {
+					return
+				}
+			}
+
+			if envelope.Links != nil {
+				if !countingWrite(
+					ctx,
+					nearestUploadsLinksRowValues,
+					&sanitized.numNearestUploadsLinksRecords,
+					// row values
+					dbutil.CommitBytea(envelope.Links.Commit),
+					dbutil.CommitBytea(envelope.Links.AncestorCommit),
+					envelope.Links.Distance,
+				) {
+					return
+				}
+			}
+		}
+
+		for _, uploadMeta := range graph.UploadsVisibleAtCommit(tipCommit) {
+			if !countingWrite(
+				ctx,
+				uploadsVisibleAtTipRowValues,
+				&sanitized.numUploadsVisibleAtTipRecords,
+				// row values
+				uploadMeta.UploadID,
+			) {
+				return
+			}
+		}
+	}()
+
+	return sanitized
+}
+
+// countingWrite writes the given slice of interfaces to the given channel. This function returns true
+// if the write succeeded and false if the context was canceled. On success, the counter's underlying
+// value will be incremented (non-atomically).
+func countingWrite(ctx context.Context, ch chan<- []interface{}, counter *uint32, values ...interface{}) bool {
+	select {
+	case ch <- values:
+		*counter++
+		return true
+
+	case <-ctx.Done():
+		return false
+	}
 }
