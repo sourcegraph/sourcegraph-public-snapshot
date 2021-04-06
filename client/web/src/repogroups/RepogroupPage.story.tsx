@@ -13,6 +13,7 @@ import { WebStory } from '../components/WebStory'
 import { subtypeOf } from '../../../shared/src/util/types'
 import { action } from '@storybook/addon-actions'
 import { cncf } from './cncf'
+import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../searchContexts/testHelpers'
 
 const { add } = storiesOf('web/RepogroupPage', module).addParameters({
     design: {
@@ -91,7 +92,6 @@ const commonProps = () =>
         showSearchContext: false,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
-        availableSearchContexts: [],
         defaultSearchContextSpec: '',
         authRequired: false,
         showBatchChanges: false,
@@ -101,6 +101,8 @@ const commonProps = () =>
         enableSmartQuery: false,
         showOnboardingTour: false,
         showQueryBuilder: false,
+        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+        fetchSearchContexts: mockFetchSearchContexts,
     })
 
 add('Refactor Python 2 to 3', () => (

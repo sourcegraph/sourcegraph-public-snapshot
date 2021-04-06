@@ -29,6 +29,8 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         selectedSearchContextSpec,
         setSelectedSearchContextSpec,
         submitSearch,
+        fetchAutoDefinedSearchContexts,
+        fetchSearchContexts,
     } = props
 
     const [isOpen, setIsOpen] = useState(false)
@@ -100,6 +102,8 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     <SearchContextMenu
                         {...props}
                         selectSearchContextSpec={selectSearchContextSpec}
+                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                        fetchSearchContexts={fetchSearchContexts}
                         closeMenu={toggleOpen}
                     />
                 </DropdownMenu>

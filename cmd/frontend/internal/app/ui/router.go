@@ -46,6 +46,7 @@ const (
 	routeInsights       = "insights"
 	routeBatchChanges   = "batch-changes"
 	routeCodeMonitoring = "code-monitoring"
+	routeContexts       = "contexts"
 	routeThreads        = "threads"
 	routeTree           = "tree"
 	routeBlob           = "blob"
@@ -137,6 +138,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
 	r.PathPrefix("/batch-changes").Methods("GET").Name(routeBatchChanges)
 	r.PathPrefix("/code-monitoring").Methods("GET").Name(routeCodeMonitoring)
+	r.PathPrefix("/contexts").Methods("GET").Name(routeContexts)
 	r.PathPrefix("/organizations").Methods("GET").Name(routeOrganizations)
 	r.PathPrefix("/settings").Methods("GET").Name(routeSettings)
 	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
@@ -226,6 +228,7 @@ func initRouter(db dbutil.DB, router *mux.Router) {
 		router.Get(routeBatchChanges).Handler(handler(serveBrandedPageString("Batch Changes", nil)))
 	}
 	router.Get(routeCodeMonitoring).Handler(handler(serveBrandedPageString("Code Monitoring", nil)))
+	router.Get(routeContexts).Handler(handler(serveBrandedPageString("Search Contexts", nil)))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))
 	router.Get(uirouter.RouteSignUp).Handler(handler(serveBrandedPageString("Sign up", nil)))
 	router.Get(routeOrganizations).Handler(handler(serveBrandedPageString("Organization", nil)))
