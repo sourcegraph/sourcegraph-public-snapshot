@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -198,36 +199,44 @@ func TestDedupper(t *testing.T) {
 	}{{
 		name: "empty",
 		matches: []string{
-			"",
+			"zoekt-0 ",
 		},
 		want: "",
 	}, {
 		name: "one",
 		matches: []string{
-			"r1:a r1:a r1:b r2:a",
+			"zoekt-0 r1:a r1:a r1:b r2:a",
 		},
 		want: "r1:a r1:a r1:b r2:a",
 	}, {
 		name: "some dups",
 		matches: []string{
-			"r1:a r1:a r1:b r2:a",
-			"r1:c r1:c r3:a",
+			"zoekt-0 r1:a r1:a r1:b r2:a",
+			"zoekt-1 r1:c r1:c r3:a",
 		},
 		want: "r1:a r1:a r1:b r2:a r3:a",
 	}, {
 		name: "no dups",
 		matches: []string{
-			"r1:a r1:a r1:b r2:a",
-			"r4:c r4:c r5:a",
+			"zoekt-0 r1:a r1:a r1:b r2:a",
+			"zoekt-1 r4:c r4:c r5:a",
 		},
 		want: "r1:a r1:a r1:b r2:a r4:c r4:c r5:a",
 	}, {
 		name: "shuffled",
 		matches: []string{
-			"r1:a r2:a r1:a r1:b",
-			"r1:c r3:a r1:c",
+			"zoekt-0 r1:a r2:a r1:a r1:b",
+			"zoekt-1 r1:c r3:a r1:c",
 		},
 		want: "r1:a r2:a r1:a r1:b r3:a",
+	}, {
+		name: "some dups multi event",
+		matches: []string{
+			"zoekt-0 r1:a r1:a",
+			"zoekt-1 r1:c r1:c r3:a",
+			"zoekt-0 r1:b r2:a",
+		},
+		want: "r1:a r1:a r3:a r1:b r2:a",
 	}}
 
 	for _, tc := range cases {
@@ -235,8 +244,10 @@ func TestDedupper(t *testing.T) {
 			d := dedupper{}
 			var got []zoekt.FileMatch
 			for _, s := range tc.matches {
-				fms := parse(s)
-				got = append(got, d.Dedup(fms)...)
+				parts := strings.SplitN(s, " ", 2)
+				endpoint := parts[0]
+				fms := parse(parts[1])
+				got = append(got, d.Dedup(endpoint, fms)...)
 			}
 
 			want := parse(tc.want)
@@ -280,8 +291,8 @@ func BenchmarkDedup(b *testing.B) {
 		b.StartTimer()
 
 		d := dedupper{}
-		for _, shard := range shards {
-			_ = d.Dedup(shard)
+		for clientID, shard := range shards {
+			_ = d.Dedup(strconv.Itoa(clientID), shard)
 		}
 	}
 }
