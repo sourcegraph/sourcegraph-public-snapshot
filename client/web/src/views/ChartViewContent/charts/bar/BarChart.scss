@@ -34,9 +34,13 @@
         }
     }
 
+    /*
+      Tooltip element from visx package is adding some inline styles by himself.
+      There is no way to override them from css unless !important statement.
+    */
     &__tooltip {
         box-shadow: var(--border-color-2) 0 1px 2px !important;
-        border: 1px solid var(--border-color) !important;
+        border: 1px solid var(--border-color);
         color: var(--body-color) !important;
         background: var(--body-bg) !important;
     }

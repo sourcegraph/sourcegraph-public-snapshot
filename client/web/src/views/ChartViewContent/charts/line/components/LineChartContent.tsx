@@ -38,35 +38,55 @@ const SCALES_CONFIG = {
     },
 }
 
-// Formatters
+// Date formatters
 const dateFormatter = timeFormat('%d %b')
 const formatDate = (date: Date): string => dateFormatter(date)
 
 export interface LineChartContentProps<Datum extends object>
     extends Omit<LineChartContentType<Datum, keyof Datum>, 'chart'> {
+    /** Chart width value in px */
     width: number
+    /** Chart height value in px */
     height: number
+    /** Callback calls every time when a point on the chart was clicked */
     onDatumClick: onDatumClick
 }
 
+/**
+ * Type for active datum state in LineChartContent component. In order to render active state
+ * for hovered point we need to track active datum to calculate position for active glyph.
+ */
 interface ActiveDatum<Datum extends object> extends EventHandlerParams<Datum> {
+    /** Series of data of active datum */
     line: LineChartContentProps<Datum>['series'][number]
 }
 
+/**
+ * Displays line chart content - line chart, tooltip, active point
+ * */
 export function LineChartContent<Datum extends object>(props: LineChartContentProps<Datum>): ReactElement {
     const { width, height, data, series, xAxis, onDatumClick } = props
 
-    // Derived
+    // Calculate inner sizes for chart without padding values
     const innerWidth = width - MARGIN.left - MARGIN.right
     const innerHeight = height - MARGIN.top - MARGIN.bottom
 
+    // Calculate how many labels we need to have for each axis
     const numberOfTicksX = Math.max(1, Math.floor(innerWidth / WIDTH_PER_TICK))
     const numberOfTicksY = Math.max(1, Math.floor(innerHeight / HEIGHT_PER_TICK))
 
+    // In case if we've got unsorted by x (time) axis dataset we have to sort that by ourselves
+    // otherwise we will get an error in calculation of position for the tooltip
+    // Details: bisector from d3-array package expects sorted data otherwise he can't calculate
+    // right index for nearest point on the XYChart.
+    // See https://github.com/airbnb/visx/blob/master/packages/visx-xychart/src/utils/findNearestDatumSingleDimension.ts#L30
     const sortedData = useMemo(
         () => data.sort((firstDatum, secondDatum) => +firstDatum[xAxis.dataKey] - +secondDatum[xAxis.dataKey]),
         [data, xAxis]
     )
+
+    // XYChart must know how to get the right data from datum object in order to render lines and axes
+    // Because of that we have to generate map of getters for all kind of data which will be rendered on the chart.
     const accessors = useMemo(() => generateAccessors(xAxis, series), [xAxis, series])
 
     const { config: scalesConfig, xScale, yScale } = useScales({

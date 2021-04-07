@@ -2,6 +2,10 @@ import { ChartAxis } from 'sourcegraph'
 
 import { Accessors } from '../types'
 
+/**
+ * Returns accessors map which allows charts to get right values from datum object
+ * One accessor for x - time axis and a map for different series of data for y axis
+ */
 export function generateAccessors<Datum extends object>(
     xAxis: ChartAxis<keyof Datum, Datum>,
     series: { dataKey: keyof Datum }[]

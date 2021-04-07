@@ -1,17 +1,25 @@
 import React, { ReactElement } from 'react'
+import classNames from 'classnames'
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
 import { LineChartContent } from 'sourcegraph'
 
 import { Accessors } from '../types'
 import { DEFAULT_LINE_STROKE } from '../colors'
 
-export interface TooltipContentProps extends RenderTooltipParams<any> {
-    accessors: Accessors<any, string>
-    series: LineChartContent<any, string>['series']
+export interface TooltipContentProps<Datum extends object> extends RenderTooltipParams<Datum> {
+    /** Accessors map to get information from nearest points. */
+    accessors: Accessors<Datum, string>
+    /** Dataset of series (lines) on the chart. */
+    series: LineChartContent<Datum, keyof Datum>['series']
+    /** Possible className for root content element. */
     className?: string
 }
 
-export function TooltipContent(props: TooltipContentProps): ReactElement | null {
+/**
+ * Display tooltip content for XYChart.
+ * It consists of title - datetime for current x point and list of all nearest y points.
+ */
+export function TooltipContent<Datum extends object>(props: TooltipContentProps<Datum>): ReactElement | null {
     const { className = '', tooltipData, accessors, series } = props
     const datum = tooltipData?.nearestDatum?.datum
 
@@ -23,7 +31,7 @@ export function TooltipContent(props: TooltipContentProps): ReactElement | null 
     const lineKeys = Object.keys(tooltipData?.datumByKey ?? {}).filter(lineKey => lineKey)
 
     return (
-        <div className={`line-chart__tooltip-content ${className}`}>
+        <div className={classNames('line-chart__tooltip-content', className)}>
             <h3 className="line-chart__tooltip-date">{dateString}</h3>
 
             {/** values */}

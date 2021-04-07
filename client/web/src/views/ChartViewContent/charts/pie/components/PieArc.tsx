@@ -8,26 +8,39 @@ import { Annotation, Connector } from '@visx/annotation'
 import { Label } from '../../../annotation/Label'
 import { onDatumClick } from '../../types'
 
-interface PieArcProps<Datum> {
-    getKey: (d: PieArcDatum<Datum>) => string
-    getColor: (d: PieArcDatum<Datum>) => string
-    getLink: (d: PieArcDatum<Datum>) => string | undefined
-    path: ArcType<unknown, PieArcDatum<Datum>>
-    arc: PieArcDatum<Datum>
-    onClick: onDatumClick
-    total: number
-    onPointerMove?: PointerEventHandler
-    onPointerOut?: PointerEventHandler
-}
-
+// Pie arc visual settings
 const CONNECTION_LINE_LENGTH = 15
 const CONNECTION_LINE_MARGIN = 2
 const LABEL_PADDING = 4
 
-// Don't have another way to add our own classes to label elements
+// We have no other way but to add our own classes to label in this way
 const TITLE_PROPS = { className: 'pie-chart__label-title' }
 const SUBTITLE_PROPS = { className: 'pie-chart__label-sub-title' }
 
+interface PieArcProps<Datum> {
+    /** Getter (accessor) to have a key (name) for current pie arc */
+    getKey: (d: PieArcDatum<Datum>) => string
+    /** Getter (accessor) to have a color for current pie arc */
+    getColor: (d: PieArcDatum<Datum>) => string
+    /** Getter (accessor) to have a link for current pie arc */
+    getLink: (d: PieArcDatum<Datum>) => string | undefined
+    /** The arc generator produces a circular or annular sector, as in a pie or donut chart. */
+    path: ArcType<unknown, PieArcDatum<Datum>>
+    /** Element of the Arc. The generic refers to the data type of an element in the input array. */
+    arc: PieArcDatum<Datum>
+    /** Sum of all arc in pie chart to calculate percent for current part (arc) of chart. */
+    total: number
+    /** On pie arc click handler */
+    onClick: onDatumClick
+    /** Callback to handle pointer (mouse, touch) move over arc */
+    onPointerMove?: PointerEventHandler
+    /** Callback to handle pointer (mouse, touch) out over arc */
+    onPointerOut?: PointerEventHandler
+}
+
+/**
+ * Display particular arc and annotation for PieChart.
+ * */
 export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
     const { total, path, arc, getColor, getKey, getLink, onClick, onPointerMove, onPointerOut } = props
 

@@ -1,5 +1,6 @@
 import { Accessors } from '../types'
 
+/** Returns minimal and maximal value from data series */
 export function getMinAndMax<Datum, Key extends string | number>(
     data: Datum[],
     accessors: Accessors<Datum, Key>

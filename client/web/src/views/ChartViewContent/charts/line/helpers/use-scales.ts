@@ -9,28 +9,45 @@ import { PickScaleConfigWithoutType } from '@visx/scale/lib/types/ScaleConfig'
 import { ScaleLinear, ScaleTime } from 'd3-scale'
 
 interface UseScalesProps<Datum> {
+    /**
+     * D3 scales configuration
+     * See https://github.com/d3/d3-scale#continuous_domain
+     */
     config: {
         x: ScaleConfig<AxisScaleOutput, any, any>
         y: ScaleConfig<AxisScaleOutput, any, any>
     }
+    /** Accessors map to get value from datum object */
     accessors: Accessors<Datum, string>
+    /** Chart width in px */
     width: number
+    /** Chart height in px */
     height: number
+    /** Dataset with all series (lines) of chart */
     data: Datum[]
 }
 
 interface UseScalesOutput {
+    /** Extended (with new domain) configuration for XYChart */
     config: {
         x: ScaleConfig<AxisScaleOutput, any, any>
         y: ScaleConfig<AxisScaleOutput, any, any>
     }
+
+    /** Time d3 scale (used to calculate x position for ticks label) */
     xScale: ScaleTime<number, number>
+
+    /** Continuous d3 scale (used to calculate y position for ticks label) */
     yScale: ScaleLinear<number, number>
 }
 
+/**
+ * Hook to generate d3 scales according chart configuration.
+ */
 export function useScales<Datum>(props: UseScalesProps<Datum>): UseScalesOutput {
     const { config, accessors, width, height, data } = props
 
+    // Extend origin config with calculated domain with vertical padding
     const scalesConfig = useMemo(
         () => ({
             ...config,

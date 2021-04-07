@@ -7,20 +7,34 @@ import { onDatumClick } from '../types'
 import { distributePieArcs } from './distribute-pie-data'
 import { PieArc } from './components/PieArc'
 
+// Visual settings
 const DEFAULT_FILL_COLOR = 'var(--color-bg-3)'
-const DEFAULT_MARGIN = { top: 20, right: 20, bottom: 20, left: 20 }
+const DEFAULT_PADDING = { top: 20, right: 20, bottom: 20, left: 20 }
 
 export interface PieChartProps<Datum extends object> extends PieChartContent<Datum> {
+    /** Chart width in px */
     width: number
+    /** Chart height in px */
     height: number
-    margin?: typeof DEFAULT_MARGIN
+    /** Click handler for pie arc element. */
     onDatumClick: onDatumClick
+    /** Chart padding in px */
+    padding?: typeof DEFAULT_PADDING
 }
 
+/**
+ * Display Pie chart with annotation.
+ */
 export function PieChart<Datum extends object>(props: PieChartProps<Datum>): ReactElement | null {
-    const { width, height, margin = DEFAULT_MARGIN, pies, onDatumClick } = props
+    const { width, height, padding = DEFAULT_PADDING, pies, onDatumClick } = props
 
-    const [activeArc, setActiveArc] = useState<PieArcDatum<Datum> | null>(null)
+    // We have to track which arc is hovered to change order of rendering.
+    // Due the fact svg elements don't have css z-index (in svg only order of renderings matters)
+    // we have to render PieArcs in different order to prevent visual label overlapping on small
+    // datasets. When user hovers one pie arc we change arcs order in a way to put this
+    // hovered arc last in arcs array. By that we sort of change z-index (ordering) of svg element
+    // and put hovered label and arc over other arc elements
+    const [hoveredArc, setHoveredArc] = useState<PieArcDatum<Datum> | null>(null)
 
     // For now we can ignore all other pies, we need to render only one pie per chart
     const content = pies[0]
@@ -28,13 +42,14 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
 
     const sortedData = useMemo(() => distributePieArcs(data, dataKey), [data, dataKey])
 
-    const innerWidth = width - margin.left - margin.right
-    const innerHeight = height - margin.top - margin.bottom
+    const innerWidth = width - padding.left - padding.right
+    const innerHeight = height - padding.top - padding.bottom
 
     const radius = Math.min(innerWidth, innerHeight) / 3
     const centerY = innerHeight / 2
     const centerX = innerWidth / 2
 
+    // Calculate total value (used in PieArc component to get percent value for particular arc)
     const total = useMemo(
         () =>
             sortedData.reduce(
@@ -55,7 +70,6 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
     const getLink = (arc: PieArcDatum<Datum>): string | undefined =>
         linkURLKey ? ((arc.data[linkURLKey] as unknown) as string) : undefined
 
-    // Accessors
     const getValue = (data: Datum): number => +data[dataKey]
 
     if (width < 10) {
@@ -65,7 +79,7 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
     return (
         /* eslint-disable react/jsx-no-bind */
         <svg className="pie-chart" width={width} height={height}>
-            <Group top={centerY + margin.top} left={centerX + margin.left}>
+            <Group top={centerY + padding.top} left={centerX + padding.left}>
                 <Pie
                     data={sortedData}
                     pieValue={getValue}
@@ -76,8 +90,8 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
                     padRadius={40}
                 >
                     {pie => {
-                        const arcs = activeArc
-                            ? [...pie.arcs.filter(arc => arc.index !== activeArc?.index), activeArc]
+                        const arcs = hoveredArc
+                            ? [...pie.arcs.filter(arc => arc.index !== hoveredArc?.index), hoveredArc]
                             : pie.arcs
 
                         return (
@@ -91,7 +105,7 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
                                         getColor={getFillColor}
                                         getKey={getKey}
                                         getLink={getLink}
-                                        onPointerMove={() => setActiveArc(arc)}
+                                        onPointerMove={() => setHoveredArc(arc)}
                                         onClick={onDatumClick}
                                     />
                                 ))}

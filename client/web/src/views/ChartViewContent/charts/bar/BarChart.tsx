@@ -12,23 +12,32 @@ import { BarChartContent } from 'sourcegraph'
 
 import { onDatumClick } from '../types'
 
-const DEFAULT_MARGIN = { top: 20, right: 20, bottom: 25, left: 40 }
+const DEFAULT_PADDING = { top: 20, right: 20, bottom: 25, left: 40 }
 
 // Tooltip timeout used below as semaphore to prevent tooltip flashing
 // in case if user is moving mouse very fast between bars
 let tooltipTimeout: number
 
+/** Data which needs to display tooltip with content. */
 interface TooltipData {
+    /** Label for current hovered bar */
     xLabel: string
+    /** Y value for hovered bar */
     value: number
 }
 
 interface BarChartProps<Datum extends object> extends Omit<BarChartContent<Datum, keyof Datum>, 'chart'> {
+    /** Chart width in px. */
     width: number
+    /** Chart height in px. */
     height: number
+    /** Callback calls every time when a bar on the chart was clicked */
     onDatumClick: onDatumClick
 }
 
+/**
+ * Displays bar chart with tooltip.
+ */
 export function BarChart<Datum extends object>(props: BarChartProps<Datum>): ReactElement {
     const {
         width,
@@ -43,40 +52,42 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
     // Refactor this in case if we need support stacked bar chart
     const { dataKey, fill, linkURLs } = series[0]
 
-    const xMax = width - DEFAULT_MARGIN.left - DEFAULT_MARGIN.right
-    const yMax = height - DEFAULT_MARGIN.top - DEFAULT_MARGIN.bottom
+    const innerWidth = width - DEFAULT_PADDING.left - DEFAULT_PADDING.right
+    const innerHeight = height - DEFAULT_PADDING.top - DEFAULT_PADDING.bottom
 
     const { tooltipOpen, tooltipLeft, tooltipTop, tooltipData, hideTooltip, showTooltip } = useTooltip<TooltipData>()
 
-    // Accessors
+    // Get access to y value of each bar (datum)
     const yAccessor = useCallback((data: Datum): number => +data[dataKey], [dataKey])
-
     const formatXLabel = useCallback((index: number): string => (data[index][xDataKey] as unknown) as string, [
         data,
         xDataKey,
     ])
 
-    // And then scale the graph by our data
+    // Create x (band) d3 scale (see https://observablehq.com/@d3/d3-scaleband)
+    // used below to place x axis label and bars in right position on the chart
     const xScale = useMemo(
         () =>
             scaleBand({
-                range: [0, xMax],
+                range: [0, innerWidth],
                 round: true,
                 domain: range(data.length),
                 padding: 0.2,
             }),
-        [xMax, data]
+        [innerWidth, data]
     )
 
+    // Create y linear d3 scale (see https://observablehq.com/@d3/d3-scalelinear)
+    // used below to calculate bar height according data and inner height of the chart
     const yScale = useMemo(
         () =>
             scaleLinear({
-                range: [yMax, 0],
+                range: [innerHeight, 0],
                 round: true,
                 nice: true,
                 domain: [0, Math.max(...data.map(yAccessor))],
             }),
-        [yMax, data, yAccessor]
+        [innerHeight, data, yAccessor]
     )
 
     // handlers
@@ -89,11 +100,11 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
     return (
         <div className="bar-chart">
             <svg width={width} height={height}>
-                <Group left={DEFAULT_MARGIN.left} top={DEFAULT_MARGIN.top}>
-                    <GridRows scale={yScale} width={xMax} height={yMax} className="bar-chart__grid" />
+                <Group left={DEFAULT_PADDING.left} top={DEFAULT_PADDING.top}>
+                    <GridRows scale={yScale} width={innerWidth} height={innerHeight} className="bar-chart__grid" />
 
                     {data.map((datum, index) => {
-                        const barHeight = yMax - (yScale(yAccessor(datum)) ?? 0)
+                        const barHeight = innerHeight - (yScale(yAccessor(datum)) ?? 0)
                         const link = linkURLs?.[index]
                         const classes = classnames('bar-chart__bar', { 'bar-chart__bar--with-link': link })
 
@@ -102,7 +113,7 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                                 <Bar
                                     className={classes}
                                     x={xScale(index)}
-                                    y={yMax - barHeight}
+                                    y={innerHeight - barHeight}
                                     height={barHeight}
                                     width={xScale.bandwidth()}
                                     fill={fill}
@@ -114,8 +125,6 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                                     }}
                                     /* eslint-disable-next-line react/jsx-no-bind */
                                     onMouseLeave={handleMouseLeave}
-                                    // In this case we have to use arrow function because we need
-                                    // get access to index and current datum within onMouseMove handler
                                     /* eslint-disable-next-line react/jsx-no-bind */
                                     onMouseMove={event => {
                                         if (tooltipTimeout) {
@@ -136,7 +145,7 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                     })}
 
                     <AxisBottom
-                        top={yMax}
+                        top={innerHeight}
                         scale={xScale}
                         tickFormat={formatXLabel}
                         axisClassName="bar-chart__axis"

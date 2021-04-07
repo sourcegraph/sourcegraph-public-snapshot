@@ -19,12 +19,13 @@
         }
     }
 
-    // Axes
     &__axis-line {
         stroke: var(--border-color);
         stroke-width: 3;
     }
 
+    // We are not able to add our own classnames for tick line and text elements
+    // because of that we have to use nested statements below
     &__axis-tick {
         // small tick line
         line {
@@ -44,8 +45,8 @@
         color: var(--body-color);
     }
 
-    // Grid
-
+    // We are not able to add our own classnames for grid lines elements
+    // because of that we have to use nested statements below
     &__grid-line {
         line {
             stroke: var(--border-color-2);
@@ -80,7 +81,10 @@
         border-radius: 50%;
     }
 
-    // Tooltip
+    /*
+       Tooltip element from visx package is adding some inline styles by himself.
+       There is no way to override them from css unless !important statement.
+     */
     &__tooltip {
         box-shadow: var(--border-color-2) 0 1px 2px !important;
         border: 1px solid var(--border-color);

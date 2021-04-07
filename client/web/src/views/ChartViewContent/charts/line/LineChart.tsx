@@ -6,6 +6,9 @@ import { LineChartContent, LineChartContentProps } from './components/LineChartC
 
 export interface LineChartProps<Datum extends object> extends LineChartContentProps<Datum> {}
 
+/**
+ * Display responsive line chart with legend below the chart.
+ */
 export function LineChart<Datum extends object>(props: LineChartProps<Datum>): ReactElement {
     const { width, height, ...otherProps } = props
     const hasLegend = props.series.every(line => !!line.name)

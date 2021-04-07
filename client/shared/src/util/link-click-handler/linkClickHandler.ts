@@ -4,7 +4,7 @@ import * as H from 'history'
 import { isExternalLink } from '../url'
 
 /**
- * Returns a click handler that will make sure clicks on in-app links are handled on the client
+ * Returns a click handler for link element that will make sure clicks on in-app links are handled on the client
  * and don't cause a full page reload.
  */
 export const createLinkClickHandler = (history: H.History): React.MouseEventHandler<unknown> => event => {
@@ -34,7 +34,11 @@ export const createLinkClickHandler = (history: H.History): React.MouseEventHand
     history.push(url.pathname + url.search + url.hash)
 }
 
-export const createProgrammaticallyLinkHandler = (history: H.History) => (
+/**
+ * Returns a click handler for any element that takes event and target URL
+ * that will redirect to this URL and in case if cmd+click happened that will open a new browser tab
+ */
+export const createProgrammaticLinkHandler = (history: H.History) => (
     event: React.MouseEvent<unknown>,
     target: string
 ): void => {
