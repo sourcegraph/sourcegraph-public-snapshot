@@ -114,23 +114,14 @@ describe('Search', () => {
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
         driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
 
-    describe('Visual tests', () => {
-        test('Landing page', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
-            await percySnapshot(driver.page, 'Search page')
-            await percySnapshot(driver.page, 'Search page', { theme: 'theme-dark' })
+    test('Styled correctly on results page', async () => {
+        testContext.overrideGraphQL({
+            ...commonSearchGraphQLResults,
         })
-
-        test('Results page', async () => {
-            testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
-            })
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
-            await driver.page.waitForSelector('#monaco-query-input')
-            await percySnapshot(driver.page, 'Search results page')
-            await percySnapshot(driver.page, 'Search results page', { theme: 'theme-dark' })
-        })
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
+        await driver.page.waitForSelector('#monaco-query-input')
+        await percySnapshot(driver.page, 'Search results page')
+        await percySnapshot(driver.page, 'Search results page', { theme: 'theme-dark' })
     })
 
     describe('Search filters', () => {

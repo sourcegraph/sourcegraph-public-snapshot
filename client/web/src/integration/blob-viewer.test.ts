@@ -59,15 +59,6 @@ describe('Blob viewer', () => {
     })
 
     describe('general layout for viewing a file', () => {
-        describe('Visual tests', () => {
-            it('Blob page', async () => {
-                await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}`)
-                await driver.page.waitForSelector('.test-repo-blob')
-                await percySnapshot(driver.page, 'Blob page')
-                await percySnapshot(driver.page, 'Blob page', { theme: 'theme-dark' })
-            })
-        })
-
         it('populates editor content and FILES tab', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}`)
             await driver.page.waitForSelector('.test-repo-blob')
