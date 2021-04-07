@@ -18,6 +18,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/conversion"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/validation"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 )
 
@@ -228,6 +229,20 @@ func runIndexer(ctx context.Context, indexer []string, directory, name string) (
 func validateDump(directory string) ([]byte, error) {
 	// TODO: Eventually this should use the package, rather than the installed module
 	//       but for now this will have to do.
+
+	indexFile := os.File(directory)
+
+	ctx := validation.NewValidationContext()
+	validator := &validation.Validator{Context: ctx}
+	errs := make(chan error, 1)
+
+	go func() {
+		defer close(errs)
+
+		if err := validator.Validate(directory); err != nil {
+			errs <- err
+		}
+	}()
 
 	cmd := exec.Command("lsif-validate", "dump.lsif")
 	cmd.Dir = directory

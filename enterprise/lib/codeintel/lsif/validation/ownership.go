@@ -1,15 +1,15 @@
 package validation
 
 import (
-	reader "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
-	reader2 "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/test/internal/reader"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/internal/reader"
+	protocolReader "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
 )
 
 // OwnershipContext bundles an document identifier and a contains edge that refers to that
 // document via its OutV property.
 type OwnershipContext struct {
 	DocumentID  int
-	LineContext reader2.LineContext
+	LineContext reader.LineContext
 }
 
 // ownershipMap uses the given context's Stasher to create a mapping from range identifiers
@@ -18,11 +18,11 @@ type OwnershipContext struct {
 func ownershipMap(ctx *ValidationContext) map[int]OwnershipContext {
 	ownershipMap := map[int]OwnershipContext{}
 
-	if !ctx.Stasher.Edges(func(lineContext reader2.LineContext, edge reader.Edge) bool {
+	if !ctx.Stasher.Edges(func(lineContext reader.LineContext, edge protocolReader.Edge) bool {
 		if lineContext.Element.Label != "contains" {
 			return true
 		}
-		edge, ok := lineContext.Element.Payload.(reader.Edge)
+		edge, ok := lineContext.Element.Payload.(protocolReader.Edge)
 		if !ok {
 			return true
 		}

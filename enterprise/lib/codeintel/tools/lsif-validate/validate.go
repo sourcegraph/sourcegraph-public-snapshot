@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/efritz/pentimento"
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/test/cmd/lsif-validate/internal/validation"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/validation"
 )
 
 var updateInterval = time.Second / 4

@@ -3,13 +3,13 @@ package validation
 import (
 	"strings"
 
-	reader "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
-	reader2 "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/test/internal/reader"
+	lsifReader "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/internal/reader"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
 )
 
-// validateContainsEdge ensures that a range edge attaches a document to a set of ranges.
-func validateContainsEdge(ctx *ValidationContext, lineContext reader2.LineContext) bool {
-	return validateEdge(ctx, lineContext, nil, func(ctx *ValidationContext, edgeContext, outContext, inContext reader2.LineContext) bool {
+// validateContainsEdge ensures that a range edge attaches a document to a set of ranges.
+func validateContainsEdge(ctx *ValidationContext, lineContext lsifReader.LineContext) bool {
+	return validateEdge(ctx, lineContext, nil, func(ctx *ValidationContext, edgeContext, outContext, inContext lsifReader.LineContext) bool {
 		if outContext.Element.Label != "document" {
 			// Skip validation of document/project edges
 			return true
@@ -21,8 +21,8 @@ func validateContainsEdge(ctx *ValidationContext, lineContext reader2.LineContex
 
 // validateItemEdge ensures that an item edge attaches definition/reference results to ranges
 // (or in the case of reference results, possibly another reference result).
-func validateItemEdge(ctx *ValidationContext, lineContext reader2.LineContext) bool {
-	return validateEdge(ctx, lineContext, nil, func(ctx *ValidationContext, edgeContext, outContext, inContext reader2.LineContext) bool {
+func validateItemEdge(ctx *ValidationContext, lineContext lsifReader.LineContext) bool {
+	return validateEdge(ctx, lineContext, nil, func(ctx *ValidationContext, edgeContext, outContext, inContext lsifReader.LineContext) bool {
 		if outContext.Element.Label == "referenceResult" {
 			return validateLabels(ctx, edgeContext, inContext, []string{"range", "referenceResult"})
 		}
@@ -35,29 +35,29 @@ func validateItemEdge(ctx *ValidationContext, lineContext reader2.LineContext) b
 // refers to a vertex with one of the given out labels, and the edge's inV/inVs properties refers
 // to vertices with with one of the given in labels.
 func makeGenericEdgeValidator(outLabels, inLabels []string) ElementValidator {
-	outValidator := func(ctx *ValidationContext, edgeContext, outContext reader2.LineContext) bool {
+	outValidator := func(ctx *ValidationContext, edgeContext, outContext lsifReader.LineContext) bool {
 		return validateLabels(ctx, edgeContext, outContext, outLabels)
 	}
 
-	inValidator := func(ctx *ValidationContext, edgeContext, outContext, inContext reader2.LineContext) bool {
+	inValidator := func(ctx *ValidationContext, edgeContext, outContext, inContext lsifReader.LineContext) bool {
 		return validateLabels(ctx, edgeContext, inContext, inLabels)
 	}
 
-	return func(ctx *ValidationContext, lineContext reader2.LineContext) bool {
+	return func(ctx *ValidationContext, lineContext lsifReader.LineContext) bool {
 		return validateEdge(ctx, lineContext, outValidator, inValidator)
 	}
 }
 
 // OutValidator is the type of function that is invoked to validate the source vertex of an edge.
-type OutValidator func(ctx *ValidationContext, edgeContext, outContext reader2.LineContext) bool
+type OutValidator func(ctx *ValidationContext, edgeContext, outContext lsifReader.LineContext) bool
 
 // InValidator is the type of function that is invoked to validate the sink vertex of an edge.
-type InValidator func(ctx *ValidationContext, edgeContext, outContext, inContext reader2.LineContext) bool
+type InValidator func(ctx *ValidationContext, edgeContext, outContext, inContext lsifReader.LineContext) bool
 
 // validateEdge validates the source and sink vertices of the given edge by invoking the given out and
 // in validators. This also ensures that there is at least one sink vertex attached to each edge, and
 // if a document property is present that it refers to a known document vertex.
-func validateEdge(ctx *ValidationContext, lineContext reader2.LineContext, outValidator OutValidator, inValidator InValidator) bool {
+func validateEdge(ctx *ValidationContext, lineContext lsifReader.LineContext, outValidator OutValidator, inValidator InValidator) bool {
 	edge, ok := lineContext.Element.Payload.(reader.Edge)
 	if !ok {
 		ctx.AddError("illegal payload").AddContext(lineContext)
@@ -81,18 +81,18 @@ func validateEdge(ctx *ValidationContext, lineContext reader2.LineContext, outVa
 }
 
 // validateOutV validates the OutV property of the given edge.
-func validateOutV(ctx *ValidationContext, lineContext reader2.LineContext, edge reader.Edge, outValidator OutValidator) (reader2.LineContext, bool) {
+func validateOutV(ctx *ValidationContext, lineContext lsifReader.LineContext, edge reader.Edge, outValidator OutValidator) (lsifReader.LineContext, bool) {
 	outContext, ok := ctx.Stasher.Vertex(edge.OutV)
 	if !ok {
 		ctx.AddError("no such vertex %d", edge.OutV).AddContext(lineContext)
-		return reader2.LineContext{}, false
+		return lsifReader.LineContext{}, false
 	}
 
 	return outContext, outValidator == nil || outValidator(ctx, lineContext, outContext)
 }
 
 // validateInVs validates the InV/InVs properties of the given edge.
-func validateInVs(ctx *ValidationContext, lineContext, outContext reader2.LineContext, edge reader.Edge, inValidator InValidator) bool {
+func validateInVs(ctx *ValidationContext, lineContext, outContext lsifReader.LineContext, edge reader.Edge, inValidator InValidator) bool {
 	if !forEachInV(edge, func(inV int) bool {
 		inContext, ok := ctx.Stasher.Vertex(inV)
 		if !ok {
@@ -114,7 +114,7 @@ func validateInVs(ctx *ValidationContext, lineContext, outContext reader2.LineCo
 }
 
 // validateEdgeDocument validates the document property of the given edge.
-func validateEdgeDocument(ctx *ValidationContext, lineContext reader2.LineContext, edge reader.Edge) bool {
+func validateEdgeDocument(ctx *ValidationContext, lineContext lsifReader.LineContext, edge reader.Edge) bool {
 	if edge.Document == 0 {
 		return true
 	}
@@ -134,7 +134,7 @@ func validateEdgeDocument(ctx *ValidationContext, lineContext reader2.LineContex
 // validateLabels marks an error and returns false if the given adjacentLineContext does not have one of the given
 // labels. The error will contain the given lineContext, which is meant to represent the edge that dictates the
 // relationship between its adjacent vertices.
-func validateLabels(ctx *ValidationContext, lineContext, adjacentLineContext reader2.LineContext, labels []string) bool {
+func validateLabels(ctx *ValidationContext, lineContext, adjacentLineContext lsifReader.LineContext, labels []string) bool {
 	for _, label := range labels {
 		if adjacentLineContext.Element.Label == label {
 			return true
