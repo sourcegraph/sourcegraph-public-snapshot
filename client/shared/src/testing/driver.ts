@@ -39,6 +39,13 @@ import { PUPPETEER_BROWSER_REVISION } from './puppeteer-browser-revision'
 export const oncePageEvent = <E extends keyof PageEventObj>(page: Page, eventName: E): Promise<PageEventObj[E]> =>
     new Promise(resolve => page.once(eventName, resolve))
 
+/**
+ * Takes a Percy snapshot.
+ * Will provide both `theme-redesign` and 'current' variations
+ * of the page whilst the redesign work is ongoing.
+ *
+ * Ticket to remove:
+ */
 export const percySnapshot: typeof realPercySnapshot = async (page, name, options) => {
     const percyEnabled = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
 
@@ -46,10 +53,26 @@ export const percySnapshot: typeof realPercySnapshot = async (page, name, option
         return Promise.resolve()
     }
 
+    // Theme-light
+    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }])
+    await realPercySnapshot(page, `${name} - light theme`, options)
+
+    // Theme-light with redesign
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
-    await realPercySnapshot(page, `${name} - Redesign`, options)
+    await realPercySnapshot(page, `${name} - light theme with redesign enabled`, options)
     await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
-    await realPercySnapshot(page, name, options)
+
+    // Theme-dark
+    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }])
+    await realPercySnapshot(page, `${name} - Dark Theme`, options)
+
+    // Theme-dark with redesign
+    await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
+    await realPercySnapshot(page, `${name} - dark theme with redesign enabled`, options)
+    await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
+
+    // Reset to light theme
+    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }])
 }
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
