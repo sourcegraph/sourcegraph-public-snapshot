@@ -53,6 +53,7 @@ export interface EventOptions {
     endDateTime?: string
     description?: string
     title: string
+    transparency: string
 }
 
 export async function ensureEvent(
@@ -65,6 +66,7 @@ export async function ensureEvent(
         endDateTime,
         description = '',
         title,
+        transparency,
     }: EventOptions,
     auth: OAuth2Client
 ): Promise<void> {
@@ -85,6 +87,7 @@ export async function ensureEvent(
             end: { date: endDate, dateTime: endDateTime },
             description,
             summary: title,
+            transparency: transparency,
         },
     })
 }
