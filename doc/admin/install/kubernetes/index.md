@@ -19,7 +19,7 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 ## Steps
 
-- Make sure you have configured `kubectl` to [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/).
+1. Make sure you have configured `kubectl` to [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/).
 
    - If you are using GCP, you'll need to give your user the ability to create roles in Kubernetes [(see GCP's documentation)](https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#prerequisites_for_using_role-based_access_control):
 
@@ -27,7 +27,7 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
        kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
        ```
 
-- Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository and check out the version tag you wish to deploy.
+1. Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository and check out the version tag you wish to deploy.
 
    ```bash
    # 🚨 The master branch tracks development. Use the branch of this repository corresponding to the version of Sourcegraph you wish to deploy, e.g. git checkout 3.24
@@ -38,41 +38,41 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
    git checkout $SOURCEGRAPH_VERSION
    ```
 
-- Configure the `sourcegraph` storage class for the cluster by reading through ["Configure a storage class"](./configure.md#configure-a-storage-class).
+1. Configure the `sourcegraph` storage class for the cluster by reading through ["Configure a storage class"](./configure.md#configure-a-storage-class).
 
-- By default `sourcegraph` will be deployed in the `default` kubernetes namespace. If you wish to deploy `sourcegraph` in a non-default namespace, it is highly recommended you use the provided overlays to ensure updates are made in all manifests correctly. Read through ["Use non-default namespace"](./configure.md#use-non-default-namespace) for full instructions on how to configure this.
+1. **(OPTIONAL)** By default `sourcegraph` will be deployed in the `default` kubernetes namespace. If you wish to deploy `sourcegraph` in a non-default namespace, it is highly recommended you use the provided overlays to ensure updates are made in all manifests correctly. Read through ["Use non-default namespace"](./configure.md#use-non-default-namespace) for full instructions on how to configure this.
 
-- If you want to add a large number of repositories to your instance, you should [configure the number of gitserver replicas](configure.md#configure-gitserver-replica-count) and [the number of indexed-search replicas](configure.md#configure-indexed-search-replica-count) _before_ you continue with the next step. (See ["Tuning replica counts for horizontal scalability"](scale.md#tuning-replica-counts-for-horizontal-scalability) for guidelines.)
+1. **(OPTIONAL)** If you want to add a large number of repositories to your instance, you should [configure the number of gitserver replicas](configure.md#configure-gitserver-replica-count) and [the number of indexed-search replicas](configure.md#configure-indexed-search-replica-count) _before_ you continue with the next step. (See ["Tuning replica counts for horizontal scalability"](scale.md#tuning-replica-counts-for-horizontal-scalability) for guidelines.)
 
-- Deploy the desired version of Sourcegraph to your cluster:
+1. Deploy the desired version of Sourcegraph to your cluster:
 
    ```bash
    ./kubectl-apply-all.sh
    ```
 
-- Monitor the status of the deployment.
+1. Monitor the status of the deployment:
 
    ```bash
    kubectl get pods -o wide -w
    ```
 
-- Once the deployment completes, verify Sourcegraph is running by temporarily making the frontend port accessible:
+1. Once the deployment completes, verify Sourcegraph is running by temporarily making the frontend port accessible:
 
-   kubectl 1.9.x:
+   - kubectl 1.9.x:
 
-   ```bash
-   kubectl port-forward $(kubectl get pod -l app=sourcegraph-frontend -o template --template="{{(index .items 0).metadata.name}}") 3080
-   ```
+      ```bash
+      kubectl port-forward $(kubectl get pod -l app=sourcegraph-frontend -o template --template="{{(index .items 0).metadata.name}}") 3080
+      ```
 
-   kubectl 1.10.0 or later:
+   - kubectl 1.10.0 or later:
 
-   ```
-   kubectl port-forward svc/sourcegraph-frontend 3080:30080
-   ```
+      ```
+      kubectl port-forward svc/sourcegraph-frontend 3080:30080
+      ```
 
-   Open http://localhost:3080 in your browser and you will see a setup page. Congrats, you have Sourcegraph up and running!
+1. Open http://localhost:3080 in your browser and you will see a setup page. Congrats, you have Sourcegraph up and running!
 
-- Now [configure your deployment](configure.md).
+1. Now [configure your deployment](configure.md).
 
 ### Configuration
 
