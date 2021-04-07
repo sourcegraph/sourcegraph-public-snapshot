@@ -4,7 +4,6 @@ import { Arc as ArcType } from 'd3-shape'
 import classnames from 'classnames'
 import { Group } from '@visx/group'
 import { Annotation, Connector } from '@visx/annotation'
-
 import { Label } from '../../../annotation/Label'
 import { onDatumClick } from '../../types'
 

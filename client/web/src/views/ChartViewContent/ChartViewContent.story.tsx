@@ -2,7 +2,6 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { createMemoryHistory } from 'history'
 import isChromatic from 'chromatic/isChromatic'
-
 import webStyles from '../../SourcegraphWebApp.scss'
 import { ChartViewContent } from './ChartViewContent'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'

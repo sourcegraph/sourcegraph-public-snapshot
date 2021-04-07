@@ -9,7 +9,6 @@ import { Bar } from '@visx/shape'
 import { GridRows } from '@visx/grid'
 import { useTooltip, TooltipWithBounds } from '@visx/tooltip'
 import { BarChartContent } from 'sourcegraph'
-
 import { onDatumClick } from '../types'
 
 const DEFAULT_PADDING = { top: 20, right: 20, bottom: 25, left: 40 }

@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { DefaultOutput, ScaleConfig, scaleLinear, scaleTime } from '@visx/scale'
-
 import { Accessors } from '../types'
 import { getRangeWithPadding } from './get-range-with-padding'
 import { getMinAndMax } from './get-min-max'

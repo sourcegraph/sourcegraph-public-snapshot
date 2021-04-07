@@ -2,7 +2,6 @@ import React, { ReactElement } from 'react'
 import classNames from 'classnames'
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
 import { LineChartContent } from 'sourcegraph'
-
 import { Accessors } from '../types'
 import { DEFAULT_LINE_STROKE } from '../colors'
 

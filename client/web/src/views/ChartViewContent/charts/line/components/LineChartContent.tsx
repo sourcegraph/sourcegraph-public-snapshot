@@ -13,7 +13,6 @@ import { Group } from '@visx/group'
 import { GlyphDot as Glyph } from '@visx/glyph'
 import isValidNumber from '@visx/xychart/lib/typeguards/isValidNumber'
 import { EventHandlerParams } from '@visx/xychart/lib/types'
-
 import { generateAccessors } from '../helpers/generate-accessors'
 import { GlyphDot } from './GlyphDot'
 import { TooltipContent } from './TooltipContent'

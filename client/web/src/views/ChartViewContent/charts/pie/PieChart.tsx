@@ -2,7 +2,6 @@ import React, { ReactElement, useMemo, useState } from 'react'
 import { PieChartContent } from 'sourcegraph'
 import Pie, { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
 import { Group } from '@visx/group'
-
 import { onDatumClick } from '../types'
 import { distributePieArcs } from './distribute-pie-data'
 import { PieArc } from './components/PieArc'
