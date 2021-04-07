@@ -1,6 +1,6 @@
 import { authenticatedUser } from '../../auth'
 import { logUserEvent, logEvent } from '../../user/settings/backend'
-import { UserEvent } from '../../../../shared/src/graphql-operations'
+import { UserEvent } from '@sourcegraph/shared/src/graphql-operations'
 
 class ServerAdminWrapper {
     /**

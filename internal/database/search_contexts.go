@@ -35,10 +35,72 @@ const listSearchContextsFmtStr = `
 SELECT id, name, description, public, namespace_user_id, namespace_org_id
 FROM search_contexts
 WHERE deleted_at IS NULL AND (%s)
+ORDER BY id ASC
+LIMIT %d
 `
 
-func (s *SearchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf.Query) ([]*types.SearchContext, error) {
-	rows, err := s.Query(ctx, sqlf.Sprintf(listSearchContextsFmtStr, cond))
+const countSearchContextsFmtStr = `
+SELECT COUNT(*)
+FROM search_contexts
+WHERE deleted_at IS NULL AND (%s)
+`
+
+type ListSearchContextsPageOptions struct {
+	First   int32
+	AfterID int64
+}
+
+// ListSearchContextsOptions specifies the options for listing search contexts.
+// If both NamespaceUserID and NamespaceOrgID are 0, instance-level search contexts are matched.
+type ListSearchContextsOptions struct {
+	// Name is used for partial matching of search contexts by name (case-insensitvely).
+	Name string
+	// NamespaceUserID matches search contexts by user. Mutually exclusive with NamespaceOrgID.
+	NamespaceUserID int32
+	// NamespaceOrgID matches search contexts by org. Mutually exclusive with NamespaceUserID.
+	NamespaceOrgID int32
+	// IncludeAll will include all search contexts when true (ignoring namespace options).
+	IncludeAll bool
+}
+
+func getSearchContextNamespaceQueryConditions(namespaceUserID, namespaceOrgID int32) ([]*sqlf.Query, error) {
+	conds := []*sqlf.Query{}
+	if namespaceUserID != 0 && namespaceOrgID != 0 {
+		return nil, errors.New("options NamespaceUserID and NamespaceOrgID are mutually exclusive")
+	}
+	if namespaceUserID == 0 {
+		conds = append(conds, sqlf.Sprintf("namespace_user_id IS NULL"))
+	} else {
+		conds = append(conds, sqlf.Sprintf("namespace_user_id = %s", namespaceUserID))
+	}
+	if namespaceOrgID == 0 {
+		conds = append(conds, sqlf.Sprintf("namespace_org_id IS NULL"))
+	} else {
+		conds = append(conds, sqlf.Sprintf("namespace_org_id = %s", namespaceOrgID))
+	}
+	return conds, nil
+}
+
+func getSearchContextsQueryConditions(opts ListSearchContextsOptions) ([]*sqlf.Query, error) {
+	conds := []*sqlf.Query{}
+	if !opts.IncludeAll {
+		namespaceConds, err := getSearchContextNamespaceQueryConditions(opts.NamespaceUserID, opts.NamespaceOrgID)
+		if err != nil {
+			return nil, err
+		}
+		conds = append(conds, namespaceConds...)
+	}
+
+	if opts.Name != "" {
+		// name column has type citext which automatically performs case-insensitive comparison
+		conds = append(conds, sqlf.Sprintf("name LIKE %s", "%"+opts.Name+"%"))
+	}
+
+	return conds, nil
+}
+
+func (s *SearchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf.Query, limit int32) ([]*types.SearchContext, error) {
+	rows, err := s.Query(ctx, sqlf.Sprintf(listSearchContextsFmtStr, cond, limit))
 	if err != nil {
 		return nil, err
 	}
@@ -46,21 +108,32 @@ func (s *SearchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf
 	return scanSearchContexts(rows)
 }
 
-func (s *SearchContextsStore) ListSearchContextsByUserID(ctx context.Context, userID int32) ([]*types.SearchContext, error) {
-	if Mocks.SearchContexts.ListSearchContextsByUserID != nil {
-		return Mocks.SearchContexts.ListSearchContextsByUserID(ctx, userID)
+func (s *SearchContextsStore) ListSearchContexts(ctx context.Context, pageOpts ListSearchContextsPageOptions, opts ListSearchContextsOptions) ([]*types.SearchContext, error) {
+	listSearchContextsConds, err := getSearchContextsQueryConditions(opts)
+	if err != nil {
+		return nil, err
 	}
-	return s.listSearchContexts(ctx, sqlf.Sprintf("namespace_user_id = %d", userID))
+	conds := []*sqlf.Query{sqlf.Sprintf("id > %d", pageOpts.AfterID)}
+	conds = append(conds, listSearchContextsConds...)
+	return s.listSearchContexts(ctx, sqlf.Join(conds, "\n AND "), pageOpts.First)
 }
 
-func (s *SearchContextsStore) ListInstanceLevelSearchContexts(ctx context.Context) ([]*types.SearchContext, error) {
-	if Mocks.SearchContexts.ListInstanceLevelSearchContexts != nil {
-		return Mocks.SearchContexts.ListInstanceLevelSearchContexts(ctx)
+func (s *SearchContextsStore) CountSearchContexts(ctx context.Context, opts ListSearchContextsOptions) (int32, error) {
+	conds, err := getSearchContextsQueryConditions(opts)
+	if err != nil {
+		return -1, err
 	}
-	return s.listSearchContexts(ctx, sqlf.Sprintf("namespace_user_id IS NULL AND namespace_org_id IS NULL"))
+	if len(conds) == 0 {
+		// If no conditions are present, append a catch-all condition to avoid a SQL syntax error
+		conds = append(conds, sqlf.Sprintf("1 = 1"))
+	}
+	var count int32
+	err = s.QueryRow(ctx, sqlf.Sprintf(countSearchContextsFmtStr, sqlf.Join(conds, "\n AND "))).Scan(&count)
+	if err != nil {
+		return -1, err
+	}
+	return count, err
 }
-
-const getSearchContextFmtStr = listSearchContextsFmtStr + "\nLIMIT 1"
 
 type GetSearchContextOptions struct {
 	Name            string
@@ -73,27 +146,15 @@ func (s *SearchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 		return Mocks.SearchContexts.GetSearchContext(ctx, opts)
 	}
 
-	conds := []*sqlf.Query{}
-
-	if opts.NamespaceUserID != 0 && opts.NamespaceOrgID != 0 {
-		return nil, errors.New("options NamespaceUserID and NamespaceOrgID are mutually exclusive")
-	}
-
-	if opts.NamespaceUserID == 0 {
-		conds = append(conds, sqlf.Sprintf("namespace_user_id IS NULL"))
-	} else {
-		conds = append(conds, sqlf.Sprintf("namespace_user_id = %s", opts.NamespaceUserID))
-	}
-	if opts.NamespaceOrgID == 0 {
-		conds = append(conds, sqlf.Sprintf("namespace_org_id IS NULL"))
-	} else {
-		conds = append(conds, sqlf.Sprintf("namespace_org_id = %s", opts.NamespaceOrgID))
+	conds, err := getSearchContextNamespaceQueryConditions(opts.NamespaceUserID, opts.NamespaceOrgID)
+	if err != nil {
+		return nil, err
 	}
 	if opts.Name != "" {
 		conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
 	}
 
-	rows, err := s.Query(ctx, sqlf.Sprintf(getSearchContextFmtStr, sqlf.Join(conds, "\n AND ")))
+	rows, err := s.Query(ctx, sqlf.Sprintf(listSearchContextsFmtStr, sqlf.Join(conds, "\n AND "), 1))
 	if err != nil {
 		return nil, err
 	}

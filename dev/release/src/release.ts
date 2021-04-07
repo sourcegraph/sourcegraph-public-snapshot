@@ -107,6 +107,7 @@ const steps: Step[] = [
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
                     attendees: [config.teamEmail],
+                    transparency: 'transparent',
                     ...calendarTime(config.releaseDate),
                 },
                 {
@@ -114,6 +115,7 @@ const steps: Step[] = [
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
                     attendees: [config.teamEmail],
+                    transparency: 'transparent',
                     ...calendarTime(config.oneWorkingDayAfterRelease),
                 },
             ]
@@ -595,6 +597,7 @@ Campaign: ${campaignURL}`,
                     title: 'TEST EVENT',
                     startDateTime: new Date(config.releaseDate).toISOString(),
                     endDateTime: addMinutes(new Date(config.releaseDate), 1).toISOString(),
+                    transparency: 'transparent',
                 },
                 googleCalendar
             )

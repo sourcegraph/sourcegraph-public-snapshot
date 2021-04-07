@@ -1,7 +1,7 @@
 import React from 'react'
 import { _fetchSavedSearches, authUser } from './utils'
 import { cleanup, fireEvent, render } from '@testing-library/react'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { SavedSearchesPanel } from './SavedSearchesPanel'
 import { SearchPatternType } from '../../graphql-operations'
 

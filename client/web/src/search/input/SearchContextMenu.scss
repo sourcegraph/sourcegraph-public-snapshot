@@ -21,12 +21,18 @@
     &__list {
         width: 30rem;
         padding: 0.25rem 0;
+        max-height: 300px;
+        overflow: auto;
     }
 
     &__item {
         display: flex;
         align-items: center;
         padding: 0.25rem 1rem;
+
+        &--error {
+            color: var(--danger) !important;
+        }
 
         &-name {
             width: 10rem;

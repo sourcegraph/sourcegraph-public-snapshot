@@ -82,10 +82,11 @@ func (m *ExternalServiceConfigMigrator) Up(ctx context.Context) (err error) {
 			return err
 		}
 
-		keyIdent, err := key.ID(ctx)
+		version, err := key.Version(ctx)
 		if err != nil {
 			return err
 		}
+		keyIdent := version.JSON()
 
 		// ensure encryption round-trip is valid with keyIdent
 		decrypted, err := key.Decrypt(ctx, encryptedCfg)
@@ -183,7 +184,7 @@ func (m *ExternalServiceConfigMigrator) listConfigsForUpdate(ctx context.Context
 // external services config on startup.
 // It periodically waits until a keyring is configured to determine
 // how many services it must migrate.
-// Scheduling and progress report is deleguated to the out of band
+// Scheduling and progress report is delegated to the out of band
 // migration package.
 // The migration is non destructive and can be reverted.
 type ExternalAccountsMigrator struct {
@@ -231,10 +232,12 @@ func (m *ExternalAccountsMigrator) Up(ctx context.Context) (err error) {
 		return nil
 	}
 
-	keyIdent, err := key.ID(ctx)
+	version, err := key.Version(ctx)
 	if err != nil {
 		return err
 	}
+
+	keyIdent := version.JSON()
 
 	tx, err := m.store.Transact(ctx)
 	if err != nil {

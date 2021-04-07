@@ -1,39 +1,137 @@
 # Developing batch changes
 
-## What are batch changes?
+## Getting started
 
-Before diving into the technical part of batch changes, make sure to read up on what batch changes are, what they're not and what we want them to be.
+Welcome, new batch change developer! This section will give you a rough overview of what Batch Changes is and how it works.
 
-1. Start by looking at the [batch changes description on about.sourcegraph.com](https://about.sourcegraph.com).
-1. Read through the [batch changes documentation](../../../batch_changes/index.md).
-	- Especially: "[Batch changes design doc](../../../batch_changes/explanations/batch_changes_design.md)" and "[How src executes a batch spec](../../../batch_changes/explanations/how_src_executes_a_batch_spec.md)".
+> NOTE: Never hesitate to ask in `#batch-changes-team` for help!
 
-## Starting up your environment
+### What are batch changes?
 
-1. Run `./enterprise/dev/start.sh` and wait until all repositories are cloned.
-1. Create [your first batch change](../../../batch_changes/quickstart.md). **Remember:** If you create a batch change, you're opening real PRs on GitHub. Make sure only [testing repositories](#github-testing-account) are affected. If you create a large batch change, it takes a while to preview/create but also helps a lot with finding bugs/errors, etc.
+Before diving into the technical part of batch changes, make sure to read up on what batch changes are, what they're not and what we want them to be:
+
+1. Look at the [batch changes product page](https://about.sourcegraph.com).
+1. Watch the 2min [demo video](https://www.youtube.com/watch?v=eOmiyXIWTCw)
+
+Next: **create your first batch change!**
+
+### Creating a batch change locally
+
+> NOTE: **Make sure your local development environment is set up** by going through the "[Getting started](https://docs.sourcegraph.com/dev/getting-started)" guide.
+
+1. Since Batch Changes is an enterprise-only feature, make sure to start your local environment with `./enterprise/dev/start.sh`.
+1. Go through the [Quickstart for Batch Changes](https://docs.sourcegraph.com/batch_changes/quickstart) to create a batch change in your local environment. See "[Testing repositories](#testing-repositories)" for a list of repositories in which you can safely publish changesets.
+1. Now combine what you just did with some background information by reading the following:
+
+- [Batch Changes architecture overview](https://docs.sourcegraph.com/dev/background-information/architecture#batch-changes)
+- [How src executes a batch spec](https://docs.sourcegraph.com/batch_changes/explanations/how_src_executes_a_batch_spec)
+- [Batch Changes design](https://docs.sourcegraph.com/batch_changes/explanations/batch_changes_design)
+
+### Code walkthrough
+
+To give you a rough overview where each part of the code lives, let's take a look at **which code gets executed** when you
+
+1. run `src batch preview -f your-batch-spec.yaml`
+1. click on the preview link
+1. click `Apply spec` to publish changesets on the code hosts
+
+It starts in [`src-cli`](https://github.com/sourcegraph/src-cli):
+
+1. `src batch preview` starts [the "preview" command in `src-cli`](https://github.com/sourcegraph/src-cli/blob/6cbaba6d47761b5f5041ed285aea686bf5b266c3/cmd/src/batch_preview.go)
+1. That executes your batch spec, which means it [parses it, validates it, resolves the namespace, prepares the docker images, and checks which workspaces are required](https://github.com/sourcegraph/src-cli/blob/6cbaba6d47761b5f5041ed285aea686bf5b266c3/cmd/src/batch_common.go#L187:6)
+1. Then, for each repository (or [workspace in each repository](https://docs.sourcegraph.com/batch_changes/how-tos/creating_changesets_per_project_in_monorepos)), it [runs the `steps` in the batch spec](https://github.com/sourcegraph/src-cli/blob/6cbaba6d47761b5f5041ed285aea686bf5b266c3/internal/batches/run_steps.go#L54) by downloading a repository archive, creating a workspace in which to execute the `steps`, and then starting the Docker containers.
+1. If changes were produced in a repository, these changes are turned into a `ChangesetSpec` (a specification of what a changeset should look like on the code host - title, body, commit, etc.) and [uploaded to the Sourcegraph instance](https://github.com/sourcegraph/src-cli/blob/6cbaba6d47761b5f5041ed285aea686bf5b266c3/cmd/src/batch_common.go#L297-L324)
+1. `src batch preview`'s last step is then to [create a `BatchSpec` on the Sourcegraph instance](https://github.com/sourcegraph/src-cli/blob/6cbaba6d47761b5f5041ed285aea686bf5b266c3/cmd/src/batch_common.go#L331-L336), which is a collection of the `ChangesetSpec`s that you can then preview or apply
+
+When you then click the "Preview the batch change" link that `src-cli` printed, you'll land on the preview page in the web frontend:
+
+1. The [`BatchChangePreviewPage` component](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/client/web/src/enterprise/batches/preview/BatchChangePreviewPage.tsx#L43) then sends a GraphQL request to the backend to [query the `BatchSpecByID`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/client/web/src/enterprise/batches/preview/backend.ts#L93-L107).
+1. Once you hit the "Apply spec" button, the component [uses the `applyBatchChange`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/client/web/src/enterprise/batches/preview/backend.ts#L140-L159) to apply the batch spec and create a batch change.
+1. You're then redirected to the [`BatchChangeDetailsPage` component](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/client/web/src/enterprise/batches/detail/BatchChangeDetailsPage.tsx#L65) that shows you you're newly-created batch change.
+
+In the backend, all Batch Changes related GraphQL queries and mutations start in the [`Resolver` of the `batches/resolver` package](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/resolvers/resolver.go):
+
+1. The [`CreateChangesetSpec`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/resolvers/resolver.go#L461) and [`CreateBatchSpec`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/resolvers/resolver.go#L401) mutations that `src-cli` called to create the changeset and batch specs are defined here.
+1. When you clicked "Apply Spec" the [`ApplyBatchChange` resolver](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/resolvers/resolver.go#L349) was executed to create the batch change.
+1. Most of that doesn't happen in the resolver layer, but in the service layer: [here is the `(*Service).ApplyBatchChange` method](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/service/service_apply_batch_change.go#L48:19) that talks to the database to create an entry in the `batch_changes` table.
+1. The most important thing that happens in `(*Service).ApplyBatchChange` is that [it calls the `rewirer`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/service/service_apply_batch_change.go#L119-L135) to wire the entries in the `changesets` table to the correct `changeset_specs`.
+1. Once that is done, the `changesets` are created or updated to point to the new `changeset_specs` that you created with `src-cli`.
+
+After that you can look at your new batch change in the UI while the rest happens asynchronously in the background:
+
+1. In a background process (which is started in (`enterprise/cmd/repo-updater`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/cmd/repo-updater/main.go#L58)) [a `worker` is running](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/background/background.go#L19) that monitors the `changesets` the table.
+1. Once a `changeset` has been rewired to a new `changeset_spec` and reset, this worker, called the [`Reconciler`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/reconciler/reconciler.go#L24:6), fetches the changeset from the database and "reconciles" its current state (not published yet) with its desired state ("published on code host X, with this diff, that title and this body")
+1. To do that, the `Reconciler` looks at the changeset's current and previous `ChangesetSpec` [to determine a plan](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/reconciler/reconciler.go#L65-L68) for what it should do ("publish", "push a commit", "update title", etc.)
+1. Once it has the plan, it hands over to the [`Executor`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/reconciler/executor.go#L28:6) which executes the plan.
+1. To push a commit to the code host, the `Executor` [sends a request](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/reconciler/executor.go#L462:20) to the [`gitserver` service](https://docs.sourcegraph.com/dev/background-information/architecture#code-syncing)
+1. To create or update a pull request or merge request on the code host it [builds a `ChangesetSource`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/reconciler/executor.go#L149) which is a wrapper around the GitHub, Bitbucket Server and GitLab HTTP clients.
+
+While that is going on in the background the [`BatchChangeDetailsPage` component is polling the GraphQL](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/client/web/src/enterprise/batches/detail/BatchChangeDetailsPage.tsx#L87-L90) to get the current state of the Batch Change and its changesets.
+
+Once all instances of the `Reconciler` worker are done determining plans and executing them, you'll see that your changesets have been published on the code hosts.
 
 ## Glossary
 
-The batch changes feature introduces a lot of new names, GraphQL queries and mutations and database tables. This section tries to explain the most common names and provide a mapping between the GraphQL types and their internal counterpart in the Go backend.
+Batch changes introduce a lot of new names, GraphQL queries & mutations, and database tables. This section tries to explain the most common names and provide a mapping between the GraphQL types and their internal counterpart in the Go backend.
 
-<!-- depends-on-source: ~/internal/batches/batch_change.go, ~/internal/batches/batch_spec.go, etc -->
-
-| GraphQL type        | Go type              | Database table     | Description |
-| ------------------- | -------------------- | -------------------| ----------- |
-| `BatchChange`       | `batches.BatchChange`    | `batch_changes`    | A batch change is a collection of changesets. The central entity. |
-| `ChangesetSpec`     | `batches.ChangesetSpec`  | `changeset_specs`  | A changeset spec describes the desired state of a changeset. |
-| `BatchSpec`         | `batches.BatchSpec`      | `batch_specs`      | A batch spec describes the desired state of a batch change. |
-| `ExternalChangeset` | `batches.Changeset`      | `changesets`       | Changeset is the unified name for pull requests/merge requests/etc. on code hosts.        |
+| GraphQL type        | Go type                  | Database table     | Description                                                                                                                                                                                                                                                    |
+| ------------------- | ------------------------ | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Changeset`         | `batches.Changeset`      | `changesets`       | A changeset is a generic abstraction for pull requests and merge requests.                                                                                                                                                                                     |
+| `BatchChange`       | `batches.BatchChange`    | `batch_changes`    | A batch change is a collection of changesets. The central entity.                                                                                                                                                                                              |
+| `BatchSpec`         | `batches.BatchSpec`      | `batch_specs`      | A batch spec describes the desired state of a single batch change.                                                                                                                                                                                                    |
+| `ChangesetSpec`     | `batches.ChangesetSpec`  | `changeset_specs`  | A changeset spec describes the desired state of a single changeset.                                                                                                                                                                                                   |
+| `ExternalChangeset` | `batches.Changeset`      | `changesets`       | Changeset is the unified name for pull requests/merge requests/etc. on code hosts.                                                                                                                                                                             |
 | `ChangesetEvent`    | `batches.ChangesetEvent` | `changeset_events` | A changeset event is an event on a code host, e.g. a comment or a review on a pull request on GitHub. They are created by syncing the changesets from the code host on a regular basis and by accepting webhook events and turning them into changeset events. |
 
-## Database layout
+## Structure of the Go backend code
 
-<!-- TODO(mrnugget): Outdated
-<!-- <object data="/dev/background-information/batch_changes/batch_changes_database_layout.svg" type="image/svg+xml" style="width:100%; max-width: 800px"> -->
-<!-- </object> -->
-<!--  -->
-<!-- (To re-generate the diagram from the `batch_changes_database_layout.dot` file with Graphviz, run: `dot -Tsvg -o batch_changes_database_layout.svg batch_changes_database_layout.dot`.) -->
+The following is a list of Go packages in the [`sourcegraph/sourcegraph`](https://github.com/sourcegraph/sourcegraph) repository and short explanations of what each package does:
+
+- `internal/batches`:
+
+    Type definitions of common `batches` types, such as `BatchChange`, `BatchSpec`, `Changeset`, etc. A few helper functions and methods, but no real business logic.
+- `enterprise/internal/batches`:
+
+    The two hooks, `InitBackgroundJobs` and `InitFrontend`, to inject batch changes code into `enterprise/{repo-updater,frontend}`. This is the "glue" in "glue code".
+- `enterprise/internal/batches/background`
+
+    Another bit of glue code that starts background goroutines: the changeset reconciler, the stuck-reconciler resetter, the old-changeset-spec expirer.
+- `enterprise/internal/batches/rewirer`:
+
+    The `ChangesetRewirer` maps existing/new changesets to the matching `ChangesetSpecs` when a user applies a batch spec.
+- `enterprise/internal/batches/state`:
+
+    All the logic concerned with calculating a changesets state at a given point in time, taking into account its current state, past events synced from regular code host APIs, and events received via webhooks.
+- `enterprise/internal/batches/search`:
+
+    Parsing text-field input for changeset searches and turning them into database-queryable structures.
+- `enterprise/internal/batches/search/syntax`:
+
+    The old Sourcegraph-search-query parser we inherited from the search team a week or two back (the plan is _not_ to keep it, but switch to the new one when we have time)
+- `enterprise/internal/batches/resolvers`:
+
+    The GraphQL resolvers that are injected into the `enterprise/frontend` by the aforementioned `InitFrontend`. They mostly concern themselves with input/argument parsing/validation, (bulk-)reading (and paginating) from the database via the `batches/store`, but delegate most business logic to `batches/service`.
+- `enterprise/internal/batches/resolvers/apitest`:
+
+    A package that helps with testing the resolvers by defining types that match the GraphQL schema.
+- `enterprise/internal/batches/testing`:
+
+    Common testing helpers we use across `enterprise/internal/batches/*` to create test data in the database, verify test output, etc.
+- `enterprise/internal/batches/reconciler`:
+
+    The `reconciler` is what gets kicked off by the `workerutil.Worker` initialised in `batches/background` when a `changeset` is enqueued. It's the heart of the declarative model of batches: compares changeset specs, creates execution plans, executes those.
+- `enterprise/internal/batches/syncer`:
+
+    This contains everything related to "sync changeset data from the code host to sourcegraph". The `Syncer` is started in the background, keeps state in memory (rate limit per external service), and syncs changesets either periodically (according to heuristics) or when directly enqueued from the `resolvers`.
+- `enterprise/internal/batches/service`:
+
+    This is what's often called the "service layer" in web architectures and contains a lot of the business logic: creating a batch change and validating whether the user can create one, applying new batch specs, calling the `rewirer`, deleting batch changes, closing batch changes, etc.
+- `enterprise/internal/batches/webhooks`:
+
+    These `webhooks` endpoints are injected by `InitFrontend` into the `frontend` and implement the `cmd/frontend/webhooks` interfaces.
+- `enterprise/internal/batches/store`:
+
+    This is the batch changes `Store` that takes `internal/batches` types and writes/reads them to/from the database. This contains everything related to SQL and database persistence, even some complex business logic queries.
 
 ## Diving into the code as a backend developer
 
@@ -42,14 +140,22 @@ The batch changes feature introduces a lot of new names, GraphQL queries and mut
 1. Compare that with the GraphQL definitions in `./cmd/frontend/graphqlbackend/schema.graphql`.
 1. Start reading through `./enterprise/internal/batches/resolvers/resolver.go` to see how the main mutations are implemented (look at `CreateBatchChange` and `ApplyBatchChange` to see how the two main operations are implemented).
 1. Then start from the other end, `enterprise/cmd/repo-updater/main.go`. `enterpriseInit()` creates two sets of batch change goroutines:
-  1. `batches.NewSyncRegistry` creates a pool of _syncers_ to pull changes from code hosts.
-  2. `batches.RunWorkers` creates a set of _reconciler_ workers to push changes to code hosts as batch changes are applied.
+1. `batches.NewSyncRegistry` creates a pool of _syncers_ to pull changes from code hosts.
+1. `batches.RunWorkers` creates a set of _reconciler_ workers to push changes to code hosts as batch changes are applied.
 
-## GitHub testing account
+## Testing repositories
 
-Batch changes create changesets (PRs) on code hosts. If you are not part of the Sourcegraph organization, we recommend you create dummy projects to safely test changes on so you do not spam real repositories with your tests. If you _are_ part of the Sourcegraph organization, we have an account set up for this purpose.
+Batch changes create changesets (PRs) on code hosts. For testing Batch Changes locally we recommend to use the following repositories:
 
-To use this account, follow these steps:
+- The [sourcegraph-testing GitHub organization](https://github.com/sourcegraph-testing) contains testing repositories in which you can open pull requests.
+- We have an `automation-testing` repository that exists on [Github](https://github.com/sourcegraph/automation-testing), [Bitbucket Server](https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/), and [GitLab](https://gitlab.sgdev.org/sourcegraph/automation-testing)
+- The GitHub user `sd9` was specifically created to be used for testing Batch Changes. See "[GitHub testing account](#github-testing-account)" for details.
+
+If you're lacking permissions to publish changesets in one of these repositories, feel free to reach out to a team member.
+
+### GitHub testing account
+
+To use the `sd9` GitHub testing account:
 
 1. Find the GitHub `sd9` user in 1Password
 2. Copy the `Campaigns Testing Token`
@@ -67,3 +173,11 @@ To use this account, follow these steps:
   ]
 }
 ```
+
+## Batch Spec examples
+
+Take a look at the following links to see some examples of batch changes and the batch specs that produced them:
+
+- [sourcegraph/batch-change-examples](https://github.com/sourcegraph/batch-change-examples)
+- [k8s.sgdev.org/batch-changes](https://k8s.sgdev.org/batch-changes)
+- [Batch Changes tutorials](https://docs.sourcegraph.com/batch_changes/tutorials)

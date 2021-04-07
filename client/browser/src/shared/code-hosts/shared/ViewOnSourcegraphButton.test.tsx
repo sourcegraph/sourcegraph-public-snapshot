@@ -1,5 +1,5 @@
 import { ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
-import { HTTPStatusError } from '../../../../../shared/src/backend/fetch'
+import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
 import * as React from 'react'
 import renderer, { ReactTestRenderer } from 'react-test-renderer'
 import { noop } from 'lodash'

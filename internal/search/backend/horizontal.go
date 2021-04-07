@@ -39,7 +39,8 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	dedupper := dedupper{}
 
 	g, ctx := errgroup.WithContext(ctx)
-	for _, c := range clients {
+	for endpoint, c := range clients {
+		endpoint := endpoint
 		c := c
 		g.Go(func() error {
 			return c.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
@@ -49,7 +50,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 				}
 
 				mu.Lock()
-				sr.Files = dedupper.Dedup(sr.Files)
+				sr.Files = dedupper.Dedup(endpoint, sr.Files)
 				mu.Unlock()
 
 				streamer.Send(sr)
@@ -225,12 +226,12 @@ func equalKeys(a map[string]zoekt.Streamer, b map[string]struct{}) bool {
 	return true
 }
 
-type dedupper map[string]struct{}
+type dedupper map[string]string // repoName -> endpoint
 
-// Dedup will in-place filter out matches on Repositories we already have
-// already seen. A Repository has been seen if a previous call to Dedup had a
-// match in it.
-func (seenRepo dedupper) Dedup(fms []zoekt.FileMatch) []zoekt.FileMatch {
+// Dedup will in-place filter out matches on Repositories we have already
+// seen. A Repository has been seen if a previous call to Dedup had a match in
+// it with a different endpoint.
+func (repoEndpoint dedupper) Dedup(endpoint string, fms []zoekt.FileMatch) []zoekt.FileMatch {
 	if len(fms) == 0 { // handles fms being nil
 		return fms
 	}
@@ -247,7 +248,7 @@ func (seenRepo dedupper) Dedup(fms []zoekt.FileMatch) []zoekt.FileMatch {
 			if lastSeen {
 				continue
 			}
-		} else if _, ok := seenRepo[fm.Repository]; ok {
+		} else if ep, ok := repoEndpoint[fm.Repository]; ok && ep != endpoint {
 			lastRepo = fm.Repository
 			lastSeen = true
 			continue
@@ -264,7 +265,7 @@ func (seenRepo dedupper) Dedup(fms []zoekt.FileMatch) []zoekt.FileMatch {
 	for _, fm := range dedup {
 		if lastRepo != fm.Repository {
 			lastRepo = fm.Repository
-			seenRepo[fm.Repository] = struct{}{}
+			repoEndpoint[fm.Repository] = endpoint
 		}
 	}
 

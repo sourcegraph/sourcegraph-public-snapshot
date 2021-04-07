@@ -19,18 +19,19 @@ func NewDocumentColumnSplitMigrator(store *lsifstore.Store, batchSize int) oobmi
 	}
 
 	return newMigrator(store, driver, migratorOptions{
-		tableName: "lsif_data_documents",
-		selectionFields: []string{
-			"path",
-			"data",
-			"ranges",
-			"hovers",
-			"monikers",
-			"packages",
-			"diagnostics",
-		},
+		tableName:     "lsif_data_documents",
 		targetVersion: 3,
 		batchSize:     batchSize,
+		fields: []fieldSpec{
+			{name: "dump_id", postgresType: "integer not null", primaryKey: true},
+			{name: "path", postgresType: "text not null", primaryKey: true},
+			{name: "data", postgresType: "bytea"},
+			{name: "ranges", postgresType: "bytea"},
+			{name: "hovers", postgresType: "bytea"},
+			{name: "monikers", postgresType: "bytea"},
+			{name: "packages", postgresType: "bytea"},
+			{name: "diagnostics", postgresType: "bytea"},
+		},
 	})
 }
 
@@ -45,11 +46,11 @@ func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) (updateSpec,
 		&dumpID,
 		&path,
 		&rawData,
-		&ignored,
-		&ignored,
-		&ignored,
-		&ignored,
-		&ignored,
+		&ignored, // ranges
+		&ignored, // hovers
+		&ignored, // monikers
+		&ignored, // packages
+		&ignored, // diagnostics
 	); err != nil {
 		return updateSpec{}, err
 	}
@@ -64,15 +65,16 @@ func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) (updateSpec,
 	}
 
 	return updateSpec{
-		DumpID:     dumpID,
-		Conditions: map[string]interface{}{"path": path},
-		Assignments: map[string]interface{}{
-			"data":        nil,
-			"ranges":      encoded.Ranges,
-			"hovers":      encoded.HoverResults,
-			"monikers":    encoded.Monikers,
-			"packages":    encoded.PackageInformation,
-			"diagnostics": encoded.Diagnostics,
+		dumpID: dumpID,
+		fieldValues: []interface{}{
+			dumpID,
+			path,
+			nil,                        // data
+			encoded.Ranges,             // ranges
+			encoded.HoverResults,       // hovers
+			encoded.Monikers,           // monikers
+			encoded.PackageInformation, // packages
+			encoded.Diagnostics,        // diagnostics
 		},
 	}, nil
 }
@@ -107,15 +109,16 @@ func (m *documentColumnSplitMigrator) MigrateRowDown(scanner scanner) (updateSpe
 	}
 
 	return updateSpec{
-		DumpID:     dumpID,
-		Conditions: map[string]interface{}{"path": path},
-		Assignments: map[string]interface{}{
-			"data":        reencoded,
-			"ranges":      nil,
-			"hovers":      nil,
-			"monikers":    nil,
-			"packages":    nil,
-			"diagnostics": nil,
+		dumpID: dumpID,
+		fieldValues: []interface{}{
+			dumpID,
+			path,
+			reencoded, // data
+			nil,       // ranges
+			nil,       // hovers
+			nil,       // monikers
+			nil,       // packages
+			nil,       // diagnostics
 		},
 	}, nil
 }

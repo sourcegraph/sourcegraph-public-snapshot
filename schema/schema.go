@@ -839,6 +839,7 @@ type MountedEncryptionKey struct {
 	Filepath   string `json:"filepath,omitempty"`
 	Keyname    string `json:"keyname"`
 	Type       string `json:"type"`
+	Version    string `json:"version,omitempty"`
 }
 
 // NoOpEncryptionKey description: This encryption key is a no op, leaving your data in plaintext (not recommended).
@@ -1049,12 +1050,22 @@ type PerforceConnection struct {
 	P4Port string `json:"p4.port"`
 	// P4User description: The user to be authenticated for p4 CLI (P4USER).
 	P4User string `json:"p4.user"`
+	// RateLimit description: Rate limit applied when making background API requests to Perforce.
+	RateLimit *PerforceRateLimit `json:"rateLimit,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Perforce depot. In the pattern, the variable "{depot}" is replaced with the Perforce depot's path.
 	//
 	// For example, if your Perforce depot path is "//Sourcegraph/" and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of "perforce/{depot}" would mean that the Perforce depot is available on Sourcegraph at https://src.example.com/perforce/Sourcegraph.
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this Perforce Server. If different Perforce Servers generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
+}
+
+// PerforceRateLimit description: Rate limit applied when making background API requests to Perforce.
+type PerforceRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
+	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
 // PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).

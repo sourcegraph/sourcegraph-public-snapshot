@@ -18,10 +18,15 @@ func NewDiagnosticsCountMigrator(store *lsifstore.Store, batchSize int) oobmigra
 	}
 
 	return newMigrator(store, driver, migratorOptions{
-		tableName:       "lsif_data_documents",
-		selectionFields: []string{"path", "data"},
-		targetVersion:   2,
-		batchSize:       batchSize,
+		tableName:     "lsif_data_documents",
+		targetVersion: 2,
+		batchSize:     batchSize,
+		fields: []fieldSpec{
+			{name: "dump_id", postgresType: "integer not null", primaryKey: true},
+			{name: "path", postgresType: "text not null", primaryKey: true},
+			{name: "data", postgresType: "bytea", readOnly: true},
+			{name: "num_diagnostics", postgresType: "integer not null", updateOnly: true},
+		},
 	})
 }
 
@@ -42,9 +47,8 @@ func (m *diagnosticsCountMigrator) MigrateRowUp(scanner scanner) (updateSpec, er
 	}
 
 	return updateSpec{
-		DumpID:      dumpID,
-		Conditions:  map[string]interface{}{"path": path},
-		Assignments: map[string]interface{}{"num_diagnostics": len(data.Diagnostics)},
+		dumpID:      dumpID,
+		fieldValues: []interface{}{dumpID, path, len(data.Diagnostics)},
 	}, nil
 }
 
@@ -59,8 +63,7 @@ func (m *diagnosticsCountMigrator) MigrateRowDown(scanner scanner) (updateSpec, 
 	}
 
 	return updateSpec{
-		DumpID:      dumpID,
-		Conditions:  map[string]interface{}{"path": path},
-		Assignments: map[string]interface{}{"num_diagnostics": 0},
+		dumpID:      dumpID,
+		fieldValues: []interface{}{dumpID, path, 0},
 	}, nil
 }

@@ -2015,6 +2015,31 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
+## postgres: invalid_indexes
+
+<p class="subtitle">invalid indexes (unusable by the query planner)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> postgres: 1+ invalid indexes (unusable by the query planner)
+
+**Possible solutions**
+
+- Drop and re-create the invalid trigger - please contact Sourcegraph to supply the trigger definition.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_postgres_invalid_indexes"
+]
+```
+
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-invalid-indexes).
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
 ## postgres: pg_exporter_err
 
 <p class="subtitle">errors scraping postgres exporter</p>

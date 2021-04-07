@@ -1,6 +1,6 @@
 import React from 'react'
 import { MemoryRouter, MemoryRouterProps } from 'react-router'
-import { ThemeProps } from '../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import brandedStyles from '../global-styles/index.scss'
 import { Tooltip } from './tooltip/Tooltip'
 import { useDarkMode } from 'storybook-dark-mode'

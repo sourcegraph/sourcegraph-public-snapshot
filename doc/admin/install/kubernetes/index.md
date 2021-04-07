@@ -53,7 +53,7 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 - Monitor the status of the deployment.
 
    ```bash
-   watch kubectl get pods -o wide
+   kubectl get pods -o wide -w
    ```
 
 - Once the deployment completes, verify Sourcegraph is running by temporarily making the frontend port accessible:

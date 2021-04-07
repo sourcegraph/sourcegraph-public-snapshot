@@ -1,9 +1,9 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React from 'react'
-import { asError } from '../../../shared/src/util/errors'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 import { upperFirst } from 'lodash'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { renderMarkdown } from '../../../shared/src/util/markdown'
+import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
 

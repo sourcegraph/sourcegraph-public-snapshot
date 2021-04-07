@@ -54,7 +54,7 @@ func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.D
 	return searchContext, nil
 }
 
-func GetUsersSearchContexts(ctx context.Context, db dbutil.DB) ([]*types.SearchContext, error) {
+func GetAutoDefinedSearchContexts(ctx context.Context, db dbutil.DB) ([]*types.SearchContext, error) {
 	searchContexts := []*types.SearchContext{GetGlobalSearchContext()}
 	a := actor.FromContext(ctx)
 	if a.IsAuthenticated() {
@@ -63,19 +63,7 @@ func GetUsersSearchContexts(ctx context.Context, db dbutil.DB) ([]*types.SearchC
 			return nil, err
 		}
 		searchContexts = append(searchContexts, GetUserSearchContext(user.Username, a.UID))
-
-		userCreatedSearchContexts, err := database.SearchContexts(db).ListSearchContextsByUserID(ctx, a.UID)
-		if err != nil {
-			return nil, err
-		}
-		searchContexts = append(searchContexts, userCreatedSearchContexts...)
 	}
-
-	instanceLevelSearchContexts, err := database.SearchContexts(db).ListInstanceLevelSearchContexts(ctx)
-	if err != nil {
-		return nil, err
-	}
-	searchContexts = append(searchContexts, instanceLevelSearchContexts...)
 	return searchContexts, nil
 }
 

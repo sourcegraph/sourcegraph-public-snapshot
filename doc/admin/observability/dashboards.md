@@ -1179,6 +1179,18 @@ A non-zero value indicates the database is online.
 
 <br />
 
+#### postgres: invalid_indexes
+
+This panel indicates invalid indexes (unusable by the query planner).
+
+A non-zero value indicates the that Postgres failed to build an index. Expect degraded performance until the index is manually rebuilt.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-invalid-indexes).
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
 #### postgres: pg_exporter_err
 
 This panel indicates errors scraping postgres exporter.
@@ -1200,38 +1212,6 @@ A 0 value indicates that no migration is in progress.
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#postgres-migration-in-progress).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
-### Postgres: Table bloat (dead tuples / live tuples)
-
-#### postgres: codeintel_commit_graph_db_bloat
-
-This panel indicates code intelligence commit graph tables.
-
-This value indicates the factor by which a table`s overhead outweighs its minimum overhead.
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### postgres: codeintel_package_versions_db_bloat
-
-This panel indicates code intelligence package version tables.
-
-This value indicates the factor by which a table`s overhead outweighs its minimum overhead.
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### postgres: codeintel_lsif_db_bloat
-
-This panel indicates code intelligence LSIF data tables (codeintel-db).
-
-This value indicates the factor by which a table`s overhead outweighs its minimum overhead.
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
