@@ -803,7 +803,6 @@ describe('Batches', () => {
             await driver.page.waitForSelector('.test-batches-settings-page')
             // Wait for list to load.
             await driver.page.waitForSelector('.test-code-host-connection-node')
-
             // Check no credential is configured.
             assert.strictEqual(await driver.page.$('.test-code-host-connection-node-enabled'), null)
             // Click "Add token".

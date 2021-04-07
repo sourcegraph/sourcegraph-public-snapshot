@@ -17,20 +17,6 @@ import type * as sourcegraph from 'sourcegraph'
 import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { Page } from 'puppeteer'
 
-export const getCommonBlobGraphQlResults = (
-    repositoryName: string,
-    repositoryUrl: string,
-    fileName: string
-): Partial<WebGraphQlOperations & SharedGraphQlOperations> => ({
-    ...commonWebGraphQlResults,
-    RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
-    ResolveRev: () => createResolveRevisionResult(repositoryUrl),
-    FileExternalLinks: ({ filePath }) =>
-        createFileExternalLinksResult(`https://${repositoryName}/blob/master/${filePath}`),
-    TreeEntries: () => createTreeEntriesResult(repositoryUrl, ['README.md', fileName]),
-    Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
-})
-
 describe('Blob viewer', () => {
     let driver: Driver
     before(async () => {
@@ -52,7 +38,16 @@ describe('Blob viewer', () => {
     const repositorySourcegraphUrl = `/${repositoryName}`
     const fileName = 'test.ts'
     const files = ['README.md', fileName]
-    const commonBlobGraphQlResults = getCommonBlobGraphQlResults(repositoryName, repositorySourcegraphUrl, fileName)
+
+    const commonBlobGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
+        ...commonWebGraphQlResults,
+        RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+        ResolveRev: () => createResolveRevisionResult(repositorySourcegraphUrl),
+        FileExternalLinks: ({ filePath }) =>
+            createFileExternalLinksResult(`https://${repositoryName}/blob/master/${filePath}`),
+        TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, ['README.md', fileName]),
+        Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
+    }
 
     beforeEach(() => {
         testContext.overrideGraphQL(commonBlobGraphQlResults)
@@ -197,13 +192,14 @@ describe('Blob viewer', () => {
                     response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                 })
         })
-
         it('truncates long file paths properly', async () => {
             await driver.page.goto(
                 `${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/this_is_a_long_file_path/apps/rest-showcase/src/main/java/org/demo/rest/example/OrdersController.java`
             )
             await driver.page.waitForSelector('.test-repo-blob')
             await driver.page.waitForSelector('.test-breadcrumb')
+            // Uncomment this snapshot once https://github.com/sourcegraph/sourcegraph/issues/15126 is resolved
+            // await percySnapshot(driver.page, this.test!.fullTitle())
         })
 
         it.skip('shows a hover overlay from a hover provider when a token is hovered', async () => {
@@ -221,6 +217,8 @@ describe('Blob viewer', () => {
 
             await driver.assertWindowLocation('/github.com/sourcegraph/test/-/blob/test.ts#L2:9')
             assert.deepStrictEqual(await getHoverContents(), ['Test hover content\n'])
+            // Uncomment this snapshot once https://github.com/sourcegraph/sourcegraph/issues/15126 is resolved
+            // await percySnapshot(driver.page, this.test!.fullTitle())
         })
 
         interface MockExtension {

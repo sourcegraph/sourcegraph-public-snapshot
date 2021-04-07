@@ -73,7 +73,7 @@ const searchResults = (): SearchResult => ({
     },
 })
 
-export const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
+const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
     Search: searchResults,
     SearchSuggestions: (): SearchSuggestionsResult => ({
@@ -502,6 +502,8 @@ describe('Search', () => {
                 visible: true,
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+
+            await percySnapshot(driver.page, 'Streaming diff search syntax highlighting')
         })
     })
 
@@ -598,7 +600,6 @@ describe('Search', () => {
             driver.page.evaluate(
                 () => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown')?.disabled
             )
-
         test('Search context selected based on URL', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:%40test+test&patternType=regexp')
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })

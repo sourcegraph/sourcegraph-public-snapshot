@@ -22,7 +22,7 @@ import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operati
 export const getCommonRepositoryGraphQlResults = (
     repositoryName: string,
     repositoryUrl: string,
-    fileEntries: string[]
+    fileEntries: string[] = []
 ): Partial<WebGraphQlOperations & SharedGraphQlOperations> => ({
     ...commonWebGraphQlResults,
     RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
@@ -380,10 +380,9 @@ describe('Repository', () => {
 
             await driver.page.waitForSelector('h2.tree-page__title')
 
-            await percySnapshot(driver.page, 'Repository Page')
-
             // Assert that the directory listing displays properly
             await driver.page.waitForSelector('.test-tree-entries')
+            await percySnapshot(driver.page, 'Repository index page')
 
             const numberOfFileEntries = await driver.page.evaluate(
                 () => document.querySelectorAll<HTMLButtonElement>('.test-tree-entry-file')?.length
@@ -431,7 +430,7 @@ describe('Repository', () => {
 
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
-                ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, []),
+                ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl),
                 FileExternalLinks: ({ filePath, repoName, revision }) =>
                     createFileExternalLinksResult(
                         `https://${encodeURIPathComponent(repoName)}/blob/${encodeURIPathComponent(
@@ -589,7 +588,7 @@ describe('Repository', () => {
 
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
-                ...getCommonRepositoryGraphQlResults(repoName, repositorySourcegraphUrl, []),
+                ...getCommonRepositoryGraphQlResults(repoName, repositorySourcegraphUrl),
                 FileExternalLinks: ({ filePath, repoName, revision }) =>
                     createFileExternalLinksResult(
                         `https://${encodeURIPathComponent(repoName)}/blob/${encodeURIPathComponent(
@@ -845,6 +844,7 @@ describe('Repository', () => {
                 },
                 'Incorrect decorations for nested on tree sidebar'
             )
+
             // Since nested is a single child, its children should be visible and decorated as well
 
             const testDecorations = await getDecorationsByFilename('sidebar', 'test.ts')
