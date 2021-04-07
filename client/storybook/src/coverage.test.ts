@@ -9,7 +9,7 @@ import { recordCoverage } from '@sourcegraph/shared/src/testing/coverage'
 // so it can be tracked in Codecov.
 
 initStoryshots({
-    configPath: path.resolve(__dirname),
+    configPath: __dirname,
     suite: 'Storybook',
     test: puppeteerTest({
         storybookUrl: pathToFileURL(path.resolve(__dirname, '../storybook-static')).href,
