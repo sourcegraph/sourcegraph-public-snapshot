@@ -380,6 +380,13 @@ func (e *ExternalServiceStore) validatePerforceConnection(ctx context.Context, i
 	for _, validate := range e.PerforceValidators {
 		err = multierror.Append(err, validate(c))
 	}
+
+	if c.Depots == nil {
+		err = multierror.Append(err, errors.New("depots must be set"))
+	}
+
+	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindPerforce, c))
+
 	return err.ErrorOrNil()
 }
 

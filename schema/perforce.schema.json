@@ -34,6 +34,29 @@
       "default": 1000,
       "minimum": 1
     },
+    "rateLimit": {
+      "description": "Rate limit applied when making background API requests to Perforce.",
+      "title": "PerforceRateLimit",
+      "type": "object",
+      "required": ["enabled", "requestsPerHour"],
+      "properties": {
+        "enabled": {
+          "description": "true if rate limiting is enabled.",
+          "type": "boolean",
+          "default": true
+        },
+        "requestsPerHour": {
+          "description": "Requests per hour permitted. This is an average, calculated per second.",
+          "type": "number",
+          "default": 5000,
+          "minimum": 0
+        }
+      },
+      "default": {
+        "enabled": true,
+        "requestsPerHour": 5000
+      }
+    },
     "authorization": {
       "title": "PerforceAuthorization",
       "description": "If non-null, enforces Perforce depot permissions.",
