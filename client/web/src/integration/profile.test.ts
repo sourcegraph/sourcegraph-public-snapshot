@@ -54,7 +54,6 @@ describe('User profile page', () => {
         await percySnapshot(driver.page, 'User profile page')
         await percySnapshot(driver.page, 'User profile page dark', { theme: 'theme-redesign' })
 
-        // await percySnapshot(driver.page, 'User profile page')
         await driver.replaceText({
             selector: '.test-UserProfileFormFields__displayName',
             newText: 'Test2',

@@ -503,8 +503,6 @@ describe('Search', () => {
                 visible: true,
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
-
-            // await percySnapshot(driver.page, 'Streaming diff search syntax highlighting')
         })
     })
 
