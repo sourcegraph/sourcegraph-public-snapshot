@@ -53,7 +53,7 @@ export const percySnapshot = async (page: Page, name: string, config?: PercySnap
 
     if (config?.theme) {
         await page.evaluate(() => document.documentElement.classList.add(config.theme))
-        await realPercySnapshot(page, name)
+        await realPercySnapshot(page, `${name} - ${config.theme}`)
         await page.evaluate(() => document.documentElement.classList.remove(config.theme))
     } else {
         return realPercySnapshot(page, name)
