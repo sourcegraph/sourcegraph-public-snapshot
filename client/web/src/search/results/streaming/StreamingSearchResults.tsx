@@ -33,6 +33,7 @@ import {
     MutableVersionContextProps,
 } from '../..'
 import { StreamingSearchResultsList } from './StreamingSearchResultsList'
+import { updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
@@ -176,9 +177,12 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
-            const newQuery = [query, ...additionalFilters].join(' ')
             telemetryService.log('SearchSkippedResultsAgainClicked')
-            submitSearch({ ...props, query: newQuery, source: 'excludedResults' })
+            submitSearch({
+                ...props,
+                query: applyAdditionalFilters(query, additionalFilters),
+                source: 'excludedResults',
+            })
         },
         [query, telemetryService, props]
     )
@@ -244,4 +248,13 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             </div>
         </div>
     )
+}
+
+const applyAdditionalFilters = (query: string, additionalFilters: string[]): string => {
+    let newQuery = query
+    for (const filter of additionalFilters) {
+        const fieldValue = filter.split(':', 2)
+        newQuery = updateFilters(newQuery, fieldValue[0], fieldValue[1])
+    }
+    return newQuery
 }
