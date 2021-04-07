@@ -159,17 +159,17 @@ export const NavLinks: React.FunctionComponent<Props> = props => {
                         {link}
                     </li>
                 ))}
-            {/* show status messages if user is logged in and either: user added code is enabled, user is admin or opted-in with a user tag  */}
-            {authenticatedUser &&
-                (window.context?.externalServicesUserModeEnabled ||
-                    authenticatedUser?.siteAdmin ||
-                    authenticatedUser?.tags?.some(
-                        tag => tag === 'AllowUserExternalServicePublic' || tag === 'AllowUserExternalServicePrivate'
-                    )) && (
-                    <li className="nav-item">
-                        <StatusMessagesNavItem isSiteAdmin={authenticatedUser.siteAdmin} history={history} />
-                    </li>
-                )}
+            {/* show status messages if authenticated user opted-in with a user tag  */}
+            {authenticatedUser?.tags?.includes('AllowUserExternalServicePublic') && (
+                <li className="nav-item">
+                    <StatusMessagesNavItem
+                        isSiteAdmin={authenticatedUser.siteAdmin}
+                        history={history}
+                        userCreatedAt={authenticatedUser.createdAt}
+                        userID={authenticatedUser.id}
+                    />
+                </li>
+            )}
             {!minimalNavLinks && (
                 <li className="nav-item">
                     <WebCommandListPopoverButton

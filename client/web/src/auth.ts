@@ -34,6 +34,7 @@ export function refreshAuthenticatedUser(): Observable<never> {
                 tags
                 url
                 settingsURL
+                createdAt
                 organizations {
                     nodes {
                         id
