@@ -46,19 +46,15 @@ interface PercySnapshotConfig {
 
 export const percySnapshot = async (page: Page, name: string, config?: PercySnapshotConfig): Promise<void> => {
     const percyEnabled = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
-    console.log('SNAPSHOT FOR', name)
 
     if (!percyEnabled) {
         return Promise.resolve()
     }
 
-    if (config?.theme) {
-        await page.evaluate(() => document.documentElement.classList.add(config.theme))
-        await realPercySnapshot(page, `${name} - ${config.theme}`)
-        await page.evaluate(() => document.documentElement.classList.remove(config.theme))
-    } else {
-        return realPercySnapshot(page, name)
-    }
+    await page.evaluate(() => document.documentElement.classList.add('theme-dark'))
+    await realPercySnapshot(page, `${name} - Redesgn`)
+    await page.evaluate(() => document.documentElement.classList.remove('theme-dark'))
+    await realPercySnapshot(page, name)
 }
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
