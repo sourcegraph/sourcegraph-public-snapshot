@@ -1,0 +1,126 @@
+# Authentication and authorization in Sourcegraph
+
+Sourcegraph has two authentication concepts to be mindful of:
+
+1. The system through which your users log in (SAML IdP, OAuth with a code host, username/password, OpenId Connect, Authentication Proxy)
+2. The system which controls user permissions (Code host, explicit permissions API in Sourcegraph)
+
+We suggest configuring both to use Sourcegraph Enterprise. If you do not configure permissions, all users will be able to see all of the code in the instance.
+
+## Authentication in Sourcegraph
+
+Sourcegraph supports username/password auth by default and SAML, OAuth, HTTP Proxy auth, and OpenId Connect if configured. Changing a username in Sourcegraph will allow the user to escalate permissions, so if you are syncing permissions, you will need to add:
+
+```
+
+auth.enableUsernameChanges: false
+
+```
+
+To your site config at https://sourcegraph.yourdomain.com/siteadmin/configuration ([more info](./site_config.md#view-and-edit-site-configuration)). 
+
+For users using any of the other authentication mechanisms, removing `builtin` as an authentication mechanism is best practice. (Customers in a managed instance environment will need to leave `builtin` enabled for Sourcegraph employee access. Consult with your Customer Engineer for more info.)
+
+## Authorization in Sourcegraph
+
+If you use Github, Gitlab, or Bitbucket Server, you can sync access permissions directly from the code host. Information is included in the section for the code host below. 
+
+If you do not use one of those listed code hosts, you will need to control access using our explicit permissions API, discussed below.
+
+## Username normalization
+
+Sourcegraph does not support email-style usernames. In contexts in which you are providing the username to Sourcegraph, it will be normalized, which can impact username matching where that is relevant. [Full documentation is available here](../auth/index.md#username-normalization).
+
+## Instructions for individual authentication/authorization pathways
+
+We recommend that you start at the instructions for your code host, if listed, for a complete explanation of the authentication/authorization options available to you when using that code host.
+
+### Built-in username/password authentication
+
+This is Sourcegraph’s default authentication option. To enable it, add the to your site config:
+
+```
+{
+// Other config settings go here
+  "auth.providers": [{
+​   "type": "builtin",
+    "allowSignup": true 
+  }]
+}
+
+Set `allowSignup` to `false` if you want to create user accounts instead of allowing the user to create their own.
+
+More info [here](../auth/index.md#builtin-password-authentication). 
+
+### Github Enterprise or Github Cloud Authentication and Authorization
+
+Github supports both permissions syncing and authentication (through OAuth). If you use Github as your code host, we do not officially support using another authentication mechanism (SAML, etc.). Instead, you’ll need to follow this flow:
+
+1. Use SAML (or another auth mechanism) to log in to Github
+2. Use Github OAuth to log in to Sourcegraph
+
+In this way, access to Sourcegraph will still be managed by your identity provider, using the code host as a middle step.
+
+[Follow these steps to configure authentication with Github via OAuth](../auth/index.md#github). 
+
+Once that is configured, follow [these steps](../repo/permissions.md#github) to configure access permissions. Users will log into Sourcegraph using Github OAuth, and permissions will be synced in the background.
+
+### Gitlab Enterprise or Cloud Authentication and Authorization
+
+Gitlab supports both permissions syncing and authentication (through OAuth). If you use Gitlab as your code host, you have two available authentication flows:
+
+1. Use SAML (or another auth mechanism) to log in to Gitlab
+2. Use Gitlab OAuth to log in to Sourcegraph
+
+In this way, access to Sourcegraph will still be managed by your identity provider, using the code host as a middle step. This option is the simplest to configure. To do so, follow [these instructions](../auth/index.md#gitlab) to set up Gitlab as an authentication option, and then [these instructions](../repo/permissions.md#oauth-application) to enable permissions syncing.
+
+Alternatively, you can configure SAML authentication in to Sourcegraph, and use Gitlab permissions syncing in the background to control access permissions. To implement this method, you will need to make sure that Gitlab is able to return a value in `identities.provider` for the `GET /users` endpoint ([Gitlab documentation](https://docs.gitlab.com/ee/api/users.html#for-admins)) that your identity provider is able to pass as the `nameId` in the SAML response. If that isn’t possible, you will need to use the first option. 
+
+To configure SAML auth with Gitlab permissions, you will need to first [configure permissions from Gitlab](../repo/permissions.md#administrator-sudo-level-access-token). Then, [configure SAML authentication](../auth/saml.md). The `nameId` passed by the Identity Provider will need to match the value of `identities.provider`. For example, if the Gitlab API returns:
+
+```
+"identities": [
+   {"provider": "saml", "extern_uid": "email@domain.com"}
+   ]
+```
+
+You will need to configure permission in Sourcegraph as:
+
+```
+{
+ "url": "https://gitlab.com",
+ "token": "$PERSONAL_ACCESS_TOKEN",
+ "authorization": {
+  "identityProvider": {
+   "type": "external",
+   "authProviderID": "$AUTH_PROVIDER_ID",
+   "authProviderType": "$AUTH_PROVIDER_TYPE",
+   "gitlabProvider": "saml"
+  }
+ }
+}
+```
+
+And configure the identity provider to pass the email address as the `nameId`. 
+
+### Bitbucket Server Authorization
+
+We do not currently support OAuth for Bitbucket Server. You will need to combine permissions syncing from Bitbucket Server with another auth mechanism (SAML, built-in auth, HTTP authentication proxies). Bitbucket only passes usernames to Sourcegraph, so you’ll need to make sure that those usernames are matched by whatever mechanism you chose to use for access.
+
+To sync Bitbucket server permissions, follow [these instructions](../repo/permissions.md#bitbucket-server). Then, do one of the following:
+
+1. Create the user accounts in Sourcegraph with matching usernames. (Access using `builtin` auth.)
+2. [Configure SAML authentication](../auth/saml.md). If you are using Bitbucket server, the `login` attribute is *not* optional—you need to pass the Bitbucket username as the `login` attribute. 
+3. [Configure an HTTP authentication proxy](../auth/index.md#http-authentication-proxies), passing the Bitbucket username value as the `usernameHeader`. 
+
+### Explicit Permissions API Authorization
+
+With any authentication mechanism, you can use our graphQL API to set permissions for all repositories. If you choose to do this, this is the *only* mechanism that can be used for permissions—all others will be ignored. Follow [these instructions](../repo/permissions.md#explicit-permissions-api) for the mutations needed within the graphQL API to configure access.
+
+### OpenId Connect Authentication
+
+Use this option if accessing using OpenID Connect, such as when logging in through a Google Workspace, or if other auth methods aren’t an option. [See setup instructions here](../auth/index.md#openid-connect). 
+
+### HTTP Authentication Proxy Authentication
+
+This is not generally recommended unless this is a common authentication process within your organization. [See configuration instructions here](../auth/index.md#http-authentication-proxies). 
