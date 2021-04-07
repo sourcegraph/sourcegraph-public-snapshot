@@ -503,7 +503,7 @@ describe('Repository', () => {
             )
 
             const blobContent = await driver.page.evaluate(() => document.querySelector('.test-repo-blob')?.textContent)
-            assert.strictEqual(blobContent, `content for: ${filePath}`)
+            assert.strictEqual(blobContent, `content for: ${filePath}\nsecond line\nthird line`)
         })
 
         it('works with a plus sign in the repository name', async () => {
