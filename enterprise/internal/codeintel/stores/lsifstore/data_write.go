@@ -23,6 +23,7 @@ const CurrentDefinitionsSchemaVersion = 2
 // CurrentReferencesSchemaVersion is the schema version used for new lsif_data_references rows.
 const CurrentReferencesSchemaVersion = 2
 
+// WriteMeta is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta semantic.MetaData) (err error) {
 	ctx, endObservation := s.operations.writeMeta.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
@@ -32,6 +33,7 @@ func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta semantic.MetaD
 	return s.Exec(ctx, sqlf.Sprintf("INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (%s, %s)", bundleID, meta.NumResultChunks))
 }
 
+// WriteDocuments is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan semantic.KeyedDocumentData) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocuments.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
@@ -101,6 +103,7 @@ SELECT %s, %s, source.path, source.data, source.num_diagnostics
 FROM t_lsif_data_documents source
 `
 
+// WriteResultChunks is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan semantic.IndexedResultChunkData) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeResultChunks.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
@@ -168,6 +171,7 @@ SELECT %s, source.idx, source.data
 FROM t_lsif_data_result_chunks source
 `
 
+// WriteDefinitions is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan semantic.MonikerLocations) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeDefinitions.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
@@ -177,6 +181,7 @@ func (s *Store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocat
 	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_definitions", CurrentDefinitionsSchemaVersion, monikerLocations, traceLog)
 }
 
+// WriteReferences is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocations chan semantic.MonikerLocations) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeReferences.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
@@ -257,7 +262,7 @@ SELECT %s, %s, source.scheme, source.identifier, source.data, source.num_locatio
 FROM t_%s source
 `
 
-// withBatchInserter runs batch.WithInserter in as a number of goroutines proportional to
+// withBatchInserter runs batch.WithInserter in a number of goroutines proportional to
 // the maximum number of CPUs that can be executing simultaneously.
 func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *batch.Inserter) error) (err error) {
 	return goroutine.RunWorkers(goroutine.SimplePoolWorker(func() error {
