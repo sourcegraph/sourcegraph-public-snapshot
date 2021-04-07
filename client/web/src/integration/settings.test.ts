@@ -95,7 +95,7 @@ describe('Settings', () => {
                 'Expected save button to be disabled'
             )
 
-            await percySnapshot(driver.page, 'Settings page')
+            await percySnapshot(driver.page, 'Settings page normal')
             await percySnapshot(driver.page, 'Settings page dark', { theme: 'theme-dark' })
 
             // Replace with new settings

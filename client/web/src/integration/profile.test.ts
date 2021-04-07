@@ -51,7 +51,7 @@ describe('User profile page', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/settings/profile')
         await driver.page.waitForSelector('.user-profile-form-fields')
 
-        await percySnapshot(driver.page, 'User profile page')
+        await percySnapshot(driver.page, 'User profile page normal')
         await percySnapshot(driver.page, 'User profile page dark', { theme: 'theme-redesign' })
 
         await driver.replaceText({

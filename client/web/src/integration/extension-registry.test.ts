@@ -203,7 +203,7 @@ describe('Extension Registry', () => {
         //  wait for initial set of extensions
         await driver.page.waitForSelector('[data-test="extension-toggle-sqs/word-count"]')
 
-        await percySnapshot(driver.page, 'Extension registry page')
+        await percySnapshot(driver.page, 'Extension registry page normal')
         await percySnapshot(driver.page, 'Extension registry page dark', { theme: 'theme-dark' })
     })
 

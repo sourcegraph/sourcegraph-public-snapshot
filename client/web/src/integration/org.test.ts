@@ -82,7 +82,7 @@ describe('Organizations', () => {
 
             await driver.page.waitForSelector('.test-create-org-button')
 
-            await percySnapshot(driver.page, 'Site admin org page')
+            await percySnapshot(driver.page, 'Site admin org page normal')
             await percySnapshot(driver.page, 'Site admin org page dark', { theme: 'theme-dark' })
 
             await driver.page.click('.test-create-org-button')

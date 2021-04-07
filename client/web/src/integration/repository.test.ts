@@ -380,7 +380,7 @@ describe('Repository', () => {
 
             await driver.page.waitForSelector('h2.tree-page__title')
 
-            await percySnapshot(driver.page, 'Repository Page')
+            await percySnapshot(driver.page, 'Repository Page normal')
             await percySnapshot(driver.page, 'Repository Page dark', { theme: 'theme-dark' })
 
             // Assert that the directory listing displays properly

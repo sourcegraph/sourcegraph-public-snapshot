@@ -117,7 +117,7 @@ describe('Code insights page', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
         await driver.page.waitForSelector('[data-testid="view-grid__view-title"]')
 
-        await percySnapshot(driver.page, 'Code insights page')
+        await percySnapshot(driver.page, 'Code insights page normal')
         await percySnapshot(driver.page, 'Code insights page dark', { theme: 'theme-redesign' })
     })
 })
