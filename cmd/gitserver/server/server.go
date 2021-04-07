@@ -1608,7 +1608,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 	defer cancel2()
 
 	if s.rpsLimiter.Limit() == 0 && s.rpsLimiter.Burst() == 0 {
-		// If both limit and burst are zero the call to wait below would block forever
+		// If both limit and burst are zero the call to Wait() below would block forever
 		return errors.New("doBackgroundRepoUpdate aborted as rate limit set to zero")
 	}
 	if err = s.rpsLimiter.Wait(ctx); err != nil {
