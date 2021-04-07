@@ -115,22 +115,25 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     useEffect(() => () => handlePointerMove.cancel(), [handlePointerMove])
 
     const handlePointerOut = useCallback(() => setActiveDatum(null), [setActiveDatum])
-    const handlePointerUp = useCallback((info: EventHandlerParams<Datum>) => {
-        info.event?.persist()
+    const handlePointerUp = useCallback(
+        (info: EventHandlerParams<Datum>) => {
+            info.event?.persist()
 
-        // By types from visx/xychart index can be undefined
-        const activeDatumIndex = activeDatum?.index
-        const line = series.find(line => line.dataKey === info.key)
+            // By types from visx/xychart index can be undefined
+            const activeDatumIndex = activeDatum?.index
+            const line = series.find(line => line.dataKey === info.key)
 
-        if (!info.event || !line || !isValidNumber(activeDatumIndex)) {
-            return
-        }
+            if (!info.event || !line || !isValidNumber(activeDatumIndex)) {
+                return
+            }
 
-        onDatumClick({
-            originEvent: info.event as MouseEvent<unknown>,
-            link: line?.linkURLs?.[activeDatumIndex],
-        })
-    }, [series, onDatumClick, activeDatum])
+            onDatumClick({
+                originEvent: info.event as MouseEvent<unknown>,
+                link: line?.linkURLs?.[activeDatumIndex],
+            })
+        },
+        [series, onDatumClick, activeDatum]
+    )
 
     const activeDatumLink = activeDatum?.line?.linkURLs?.[activeDatum?.index]
     const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!activeDatumLink })
