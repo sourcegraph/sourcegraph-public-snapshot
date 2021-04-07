@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -1888,16 +1887,4 @@ func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
 			}
 		})
 	return m
-}
-
-// orderedFuzzyRegexp interpolate a lazy 'match everything' regexp pattern
-// to achieve an ordered fuzzy regexp match.
-func orderedFuzzyRegexp(pieces []string) string {
-	if len(pieces) == 0 {
-		return ""
-	}
-	if len(pieces) == 1 {
-		return pieces[0]
-	}
-	return "(" + strings.Join(pieces, ").*?(") + ")"
 }
