@@ -184,7 +184,7 @@ func (m *ExternalServiceConfigMigrator) listConfigsForUpdate(ctx context.Context
 // external services config on startup.
 // It periodically waits until a keyring is configured to determine
 // how many services it must migrate.
-// Scheduling and progress report is deleguated to the out of band
+// Scheduling and progress report is delegated to the out of band
 // migration package.
 // The migration is non destructive and can be reverted.
 type ExternalAccountsMigrator struct {
