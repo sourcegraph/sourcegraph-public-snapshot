@@ -71,7 +71,7 @@ export const ConvertVersionContextsTab: React.FunctionComponent<ConvertVersionCo
                 <div className="convert-version-contexts-tab__header-title">Available version contexts</div>
                 <button
                     type="button"
-                    className="btn btn-outline-primary"
+                    className="btn btn-outline-primary test-convert-all-search-contexts-btn"
                     onClick={convertAll}
                     disabled={convertAllResult === LOADING}
                 >
@@ -83,7 +83,7 @@ export const ConvertVersionContextsTab: React.FunctionComponent<ConvertVersionCo
                 (convertAllResult === 0 ? (
                     <div className="alert alert-info">No version contexts to convert.</div>
                 ) : (
-                    <div className="alert alert-success">
+                    <div className="alert alert-success test-convert-all-search-contexts-success">
                         Sucessfully converted <strong>{convertAllResult}</strong> version contexts.
                     </div>
                 ))}

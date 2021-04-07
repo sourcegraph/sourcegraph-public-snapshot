@@ -57,11 +57,13 @@ export const ConvertVersionContextNode: React.FunctionComponent<ConvertVersionCo
             <div>{name}</div>
             {(convertOrError === LOADING || isConverted === LOADING) && <LoadingSpinner />}
             {isConverted === false && !convertOrError && (
-                <button type="button" className="btn btn-primary" onClick={convert}>
+                <button type="button" className="btn btn-primary test-convert-version-context-btn" onClick={convert}>
                     Convert
                 </button>
             )}
-            {!convertOrError && isConverted === true && <div className="text-muted">Converted</div>}
+            {!convertOrError && isConverted === true && (
+                <div className="text-muted test-converted-context">Converted</div>
+            )}
             {isErrorLike(convertOrError) && (
                 <div className="alert-danger mt-1 p-2">
                     <strong>Error:</strong> {convertOrError.message}

@@ -62,7 +62,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                 </a>
                             </div>
                             {props.authenticatedUser?.siteAdmin && (
-                                <div className="nav-item">
+                                <div className="nav-item test-convert-version-contexts-tab">
                                     {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                                     <a
                                         href=""
