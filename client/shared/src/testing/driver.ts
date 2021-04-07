@@ -39,14 +39,23 @@ import { PUPPETEER_BROWSER_REVISION } from './puppeteer-browser-revision'
 export const oncePageEvent = <E extends keyof PageEventObj>(page: Page, eventName: E): Promise<PageEventObj[E]> =>
     new Promise(resolve => page.once(eventName, resolve))
 
-/**
- * Takes a Percy snapshot.
- * Will provide both `theme-redesign` and 'current' variations
- * of the page whilst the redesign work is ongoing.
- *
- * Ticket to remove:
- */
-export const percySnapshot: typeof realPercySnapshot = async (page, name, options) => {
+interface AdditionalPercyConfig {
+    waitForSyntaxHighlightingToUpdate: boolean
+}
+
+const setColorScheme = async (page: Page, scheme: 'dark' | 'light', config?: AdditionalPercyConfig) => {
+    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }])
+    if (config?.waitForSyntaxHighlightingToUpdate) {
+        await page.waitForResponse(response => response.url().includes('.api/graphql?Blob'), { timeout: 5 })
+    }
+}
+
+export const percySnapshot = async (
+    page: Page,
+    name: String,
+    options?: any,
+    additionalConfig?: AdditionalPercyConfig
+) => {
     const percyEnabled = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
 
     if (!percyEnabled) {
@@ -54,7 +63,7 @@ export const percySnapshot: typeof realPercySnapshot = async (page, name, option
     }
 
     // Theme-light
-    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }])
+    await setColorScheme(page, 'light', additionalConfig)
     await realPercySnapshot(page, `${name} - light theme`, options)
 
     // Theme-light with redesign
@@ -63,7 +72,7 @@ export const percySnapshot: typeof realPercySnapshot = async (page, name, option
     await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
 
     // Theme-dark
-    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }])
+    await setColorScheme(page, 'dark', additionalConfig)
     await realPercySnapshot(page, `${name} - Dark Theme`, options)
 
     // Theme-dark with redesign
@@ -72,7 +81,7 @@ export const percySnapshot: typeof realPercySnapshot = async (page, name, option
     await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
 
     // Reset to light theme
-    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }])
+    await setColorScheme(page, 'light', additionalConfig)
 }
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
