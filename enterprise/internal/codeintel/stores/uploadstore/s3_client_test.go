@@ -35,9 +35,9 @@ func TestS3Init(t *testing.T) {
 		t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
 	}
 
-	if calls := s3Client.PutBucketLifecycleConfigurationFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of PutBucketLifecycleConfiguration calls. want=%d have=%d", 1, len(calls))
-	} else if value := *calls[0].Arg1.Bucket; value != "test-bucket" {
+	if calls := s3Client.EnforceBucketLifecycleFunc.History(); len(calls) != 1 {
+		t.Fatalf("unexpected number of EnforceBucketLifecycle calls. want=%d have=%d", 1, len(calls))
+	} else if value := calls[0].Arg1; value != "test-bucket" {
 		t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
 	}
 }
@@ -58,9 +58,9 @@ func TestS3InitBucketExists(t *testing.T) {
 			t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
 		}
 
-		if calls := s3Client.PutBucketLifecycleConfigurationFunc.History(); len(calls) != 1 {
-			t.Fatalf("unexpected number of PutBucketLifecycleConfiguration calls. want=%d have=%d", 1, len(calls))
-		} else if value := *calls[0].Arg1.Bucket; value != "test-bucket" {
+		if calls := s3Client.EnforceBucketLifecycleFunc.History(); len(calls) != 1 {
+			t.Fatalf("unexpected number of EnforceBucketLifecycle calls. want=%d have=%d", 1, len(calls))
+		} else if value := calls[0].Arg1; value != "test-bucket" {
 			t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
 		}
 	}
@@ -76,8 +76,8 @@ func TestS3UnmanagedInit(t *testing.T) {
 	if calls := s3Client.CreateBucketFunc.History(); len(calls) != 0 {
 		t.Fatalf("unexpected number of CreateBucket calls. want=%d have=%d", 0, len(calls))
 	}
-	if calls := s3Client.PutBucketLifecycleConfigurationFunc.History(); len(calls) != 0 {
-		t.Fatalf("unexpected number of PutBucketLifecycleConfiguration calls. want=%d have=%d", 0, len(calls))
+	if calls := s3Client.EnforceBucketLifecycleFunc.History(); len(calls) != 0 {
+		t.Fatalf("unexpected number of EnforceBucketLifecycle calls. want=%d have=%d", 0, len(calls))
 	}
 }
 
@@ -378,43 +378,6 @@ func TestS3Delete(t *testing.T) {
 		t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
 	} else if value := *calls[0].Arg1.Key; value != "test-key" {
 		t.Errorf("unexpected key argument. want=%s have=%s", "test-key", value)
-	}
-}
-
-func TestS3Lifecycle(t *testing.T) {
-	s3Client := NewMockS3API()
-	client := rawS3Client(s3Client, nil)
-
-	if lifecycle := client.lifecycle(); lifecycle == nil || len(lifecycle.Rules) != 2 {
-		t.Fatalf("unexpected lifecycle rules")
-	} else {
-		var objectExpiration *int64
-		for _, rule := range lifecycle.Rules {
-			if rule.Expiration != nil {
-				if value := rule.Expiration.Days; value != nil {
-					objectExpiration = value
-				}
-			}
-		}
-		if objectExpiration == nil {
-			t.Fatalf("expected object expiration to be configured")
-		} else if *objectExpiration != 3 {
-			t.Errorf("unexpected ttl for object expiration. want=%d have=%d", 3, *objectExpiration)
-		}
-
-		var multipartExpiration *int64
-		for _, rule := range lifecycle.Rules {
-			if rule.AbortIncompleteMultipartUpload != nil {
-				if value := rule.AbortIncompleteMultipartUpload.DaysAfterInitiation; value != nil {
-					multipartExpiration = value
-				}
-			}
-		}
-		if multipartExpiration == nil {
-			t.Fatalf("expected multipart upload expiration to be configured")
-		} else if *multipartExpiration != 3 {
-			t.Errorf("unexpected ttl for multipart upload expiration. want=%d have=%d", 3, *multipartExpiration)
-		}
 	}
 }
 

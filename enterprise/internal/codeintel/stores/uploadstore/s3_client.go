@@ -59,8 +59,15 @@ func newS3FromConfig(ctx context.Context, config *Config, operations *operations
 	}
 
 	s3Client := s3.New(sess)
-	api := &s3APIShim{s3Client}
 	uploader := &s3UploaderShim{s3manager.NewUploaderWithClient(s3Client)}
+
+	var api s3API
+	if config.Backend == "minio" {
+		api = &minioAPIShim{s3APIShim{s3Client}}
+	} else {
+		api = &s3APIShim{s3Client}
+	}
+
 	return newS3WithClients(api, uploader, config.Bucket, config.TTL, config.ManageBucket, operations), nil
 }
 
@@ -84,7 +91,7 @@ func (s *s3Store) Init(ctx context.Context) error {
 		return errors.Wrap(err, "failed to create bucket")
 	}
 
-	if err := s.update(ctx); err != nil {
+	if err := s.client.EnforceBucketLifecycle(ctx, s.bucket, s.ttl); err != nil {
 		return errors.Wrap(err, "failed to update bucket attributes")
 	}
 
@@ -297,37 +304,6 @@ func (s *s3Store) create(ctx context.Context) error {
 	}
 
 	return err
-}
-
-func (s *s3Store) update(ctx context.Context) error {
-	configureRequest := &s3.PutBucketLifecycleConfigurationInput{
-		Bucket:                 aws.String(s.bucket),
-		LifecycleConfiguration: s.lifecycle(),
-	}
-
-	_, err := s.client.PutBucketLifecycleConfiguration(ctx, configureRequest)
-	return err
-}
-
-func (s *s3Store) lifecycle() *s3.BucketLifecycleConfiguration {
-	days := aws.Int64(int64(s.ttl / (time.Hour * 24)))
-
-	return &s3.BucketLifecycleConfiguration{
-		Rules: []*s3.LifecycleRule{
-			{
-				ID:         aws.String("Expiration Rule"),
-				Status:     aws.String("Enabled"),
-				Filter:     &s3.LifecycleRuleFilter{Prefix: aws.String("")},
-				Expiration: &s3.LifecycleExpiration{Days: days},
-			},
-			{
-				ID:                             aws.String("Abort Incomplete Multipart Upload Rule"),
-				Status:                         aws.String("Enabled"),
-				Filter:                         &s3.LifecycleRuleFilter{Prefix: aws.String("")},
-				AbortIncompleteMultipartUpload: &s3.AbortIncompleteMultipartUpload{DaysAfterInitiation: days},
-			},
-		},
-	}
 }
 
 func (s *s3Store) deleteSources(ctx context.Context, bucket string, sources []string) error {

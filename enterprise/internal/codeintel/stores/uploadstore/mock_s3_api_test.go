@@ -4,10 +4,10 @@ package uploadstore
 
 import (
 	"context"
-	"sync"
-
 	s3 "github.com/aws/aws-sdk-go/service/s3"
 	s3manager "github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"sync"
+	"time"
 )
 
 // MockS3API is a mock implementation of the s3API interface (from the
@@ -30,16 +30,15 @@ type MockS3API struct {
 	// DeleteObjectFunc is an instance of a mock function object controlling
 	// the behavior of the method DeleteObject.
 	DeleteObjectFunc *S3APIDeleteObjectFunc
+	// EnforceBucketLifecycleFunc is an instance of a mock function object
+	// controlling the behavior of the method EnforceBucketLifecycle.
+	EnforceBucketLifecycleFunc *S3APIEnforceBucketLifecycleFunc
 	// GetObjectFunc is an instance of a mock function object controlling
 	// the behavior of the method GetObject.
 	GetObjectFunc *S3APIGetObjectFunc
 	// HeadObjectFunc is an instance of a mock function object controlling
 	// the behavior of the method HeadObject.
 	HeadObjectFunc *S3APIHeadObjectFunc
-	// PutBucketLifecycleConfigurationFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// PutBucketLifecycleConfiguration.
-	PutBucketLifecycleConfigurationFunc *S3APIPutBucketLifecycleConfigurationFunc
 	// UploadPartCopyFunc is an instance of a mock function object
 	// controlling the behavior of the method UploadPartCopy.
 	UploadPartCopyFunc *S3APIUploadPartCopyFunc
@@ -74,6 +73,11 @@ func NewMockS3API() *MockS3API {
 				return nil, nil
 			},
 		},
+		EnforceBucketLifecycleFunc: &S3APIEnforceBucketLifecycleFunc{
+			defaultHook: func(context.Context, string, time.Duration) error {
+				return nil
+			},
+		},
 		GetObjectFunc: &S3APIGetObjectFunc{
 			defaultHook: func(context.Context, *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
 				return nil, nil
@@ -81,11 +85,6 @@ func NewMockS3API() *MockS3API {
 		},
 		HeadObjectFunc: &S3APIHeadObjectFunc{
 			defaultHook: func(context.Context, *s3.HeadObjectInput) (*s3.HeadObjectOutput, error) {
-				return nil, nil
-			},
-		},
-		PutBucketLifecycleConfigurationFunc: &S3APIPutBucketLifecycleConfigurationFunc{
-			defaultHook: func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error) {
 				return nil, nil
 			},
 		},
@@ -106,9 +105,9 @@ type surrogateMockS3API interface {
 	CreateBucket(context.Context, *s3.CreateBucketInput) (*s3.CreateBucketOutput, error)
 	CreateMultipartUpload(context.Context, *s3.CreateMultipartUploadInput) (*s3.CreateMultipartUploadOutput, error)
 	DeleteObject(context.Context, *s3.DeleteObjectInput) (*s3.DeleteObjectOutput, error)
+	EnforceBucketLifecycle(context.Context, string, time.Duration) error
 	GetObject(context.Context, *s3.GetObjectInput) (*s3.GetObjectOutput, error)
 	HeadObject(context.Context, *s3.HeadObjectInput) (*s3.HeadObjectOutput, error)
-	PutBucketLifecycleConfiguration(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error)
 	UploadPartCopy(context.Context, *s3.UploadPartCopyInput) (*s3.UploadPartCopyOutput, error)
 }
 
@@ -131,14 +130,14 @@ func NewMockS3APIFrom(i surrogateMockS3API) *MockS3API {
 		DeleteObjectFunc: &S3APIDeleteObjectFunc{
 			defaultHook: i.DeleteObject,
 		},
+		EnforceBucketLifecycleFunc: &S3APIEnforceBucketLifecycleFunc{
+			defaultHook: i.EnforceBucketLifecycle,
+		},
 		GetObjectFunc: &S3APIGetObjectFunc{
 			defaultHook: i.GetObject,
 		},
 		HeadObjectFunc: &S3APIHeadObjectFunc{
 			defaultHook: i.HeadObject,
-		},
-		PutBucketLifecycleConfigurationFunc: &S3APIPutBucketLifecycleConfigurationFunc{
-			defaultHook: i.PutBucketLifecycleConfiguration,
 		},
 		UploadPartCopyFunc: &S3APIUploadPartCopyFunc{
 			defaultHook: i.UploadPartCopy,
@@ -690,6 +689,116 @@ func (c S3APIDeleteObjectFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// S3APIEnforceBucketLifecycleFunc describes the behavior when the
+// EnforceBucketLifecycle method of the parent MockS3API instance is
+// invoked.
+type S3APIEnforceBucketLifecycleFunc struct {
+	defaultHook func(context.Context, string, time.Duration) error
+	hooks       []func(context.Context, string, time.Duration) error
+	history     []S3APIEnforceBucketLifecycleFuncCall
+	mutex       sync.Mutex
+}
+
+// EnforceBucketLifecycle delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockS3API) EnforceBucketLifecycle(v0 context.Context, v1 string, v2 time.Duration) error {
+	r0 := m.EnforceBucketLifecycleFunc.nextHook()(v0, v1, v2)
+	m.EnforceBucketLifecycleFunc.appendCall(S3APIEnforceBucketLifecycleFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// EnforceBucketLifecycle method of the parent MockS3API instance is invoked
+// and the hook queue is empty.
+func (f *S3APIEnforceBucketLifecycleFunc) SetDefaultHook(hook func(context.Context, string, time.Duration) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// EnforceBucketLifecycle method of the parent MockS3API instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *S3APIEnforceBucketLifecycleFunc) PushHook(hook func(context.Context, string, time.Duration) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *S3APIEnforceBucketLifecycleFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, time.Duration) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *S3APIEnforceBucketLifecycleFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, time.Duration) error {
+		return r0
+	})
+}
+
+func (f *S3APIEnforceBucketLifecycleFunc) nextHook() func(context.Context, string, time.Duration) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *S3APIEnforceBucketLifecycleFunc) appendCall(r0 S3APIEnforceBucketLifecycleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of S3APIEnforceBucketLifecycleFuncCall objects
+// describing the invocations of this function.
+func (f *S3APIEnforceBucketLifecycleFunc) History() []S3APIEnforceBucketLifecycleFuncCall {
+	f.mutex.Lock()
+	history := make([]S3APIEnforceBucketLifecycleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// S3APIEnforceBucketLifecycleFuncCall is an object that describes an
+// invocation of method EnforceBucketLifecycle on an instance of MockS3API.
+type S3APIEnforceBucketLifecycleFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Duration
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c S3APIEnforceBucketLifecycleFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c S3APIEnforceBucketLifecycleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // S3APIGetObjectFunc describes the behavior when the GetObject method of
 // the parent MockS3API instance is invoked.
 type S3APIGetObjectFunc struct {
@@ -903,119 +1012,6 @@ func (c S3APIHeadObjectFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c S3APIHeadObjectFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// S3APIPutBucketLifecycleConfigurationFunc describes the behavior when the
-// PutBucketLifecycleConfiguration method of the parent MockS3API instance
-// is invoked.
-type S3APIPutBucketLifecycleConfigurationFunc struct {
-	defaultHook func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error)
-	hooks       []func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error)
-	history     []S3APIPutBucketLifecycleConfigurationFuncCall
-	mutex       sync.Mutex
-}
-
-// PutBucketLifecycleConfiguration delegates to the next hook function in
-// the queue and stores the parameter and result values of this invocation.
-func (m *MockS3API) PutBucketLifecycleConfiguration(v0 context.Context, v1 *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error) {
-	r0, r1 := m.PutBucketLifecycleConfigurationFunc.nextHook()(v0, v1)
-	m.PutBucketLifecycleConfigurationFunc.appendCall(S3APIPutBucketLifecycleConfigurationFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// PutBucketLifecycleConfiguration method of the parent MockS3API instance
-// is invoked and the hook queue is empty.
-func (f *S3APIPutBucketLifecycleConfigurationFunc) SetDefaultHook(hook func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// PutBucketLifecycleConfiguration method of the parent MockS3API instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *S3APIPutBucketLifecycleConfigurationFunc) PushHook(hook func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *S3APIPutBucketLifecycleConfigurationFunc) SetDefaultReturn(r0 *s3.PutBucketLifecycleConfigurationOutput, r1 error) {
-	f.SetDefaultHook(func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *S3APIPutBucketLifecycleConfigurationFunc) PushReturn(r0 *s3.PutBucketLifecycleConfigurationOutput, r1 error) {
-	f.PushHook(func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error) {
-		return r0, r1
-	})
-}
-
-func (f *S3APIPutBucketLifecycleConfigurationFunc) nextHook() func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *S3APIPutBucketLifecycleConfigurationFunc) appendCall(r0 S3APIPutBucketLifecycleConfigurationFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// S3APIPutBucketLifecycleConfigurationFuncCall objects describing the
-// invocations of this function.
-func (f *S3APIPutBucketLifecycleConfigurationFunc) History() []S3APIPutBucketLifecycleConfigurationFuncCall {
-	f.mutex.Lock()
-	history := make([]S3APIPutBucketLifecycleConfigurationFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// S3APIPutBucketLifecycleConfigurationFuncCall is an object that describes
-// an invocation of method PutBucketLifecycleConfiguration on an instance of
-// MockS3API.
-type S3APIPutBucketLifecycleConfigurationFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *s3.PutBucketLifecycleConfigurationInput
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *s3.PutBucketLifecycleConfigurationOutput
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c S3APIPutBucketLifecycleConfigurationFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c S3APIPutBucketLifecycleConfigurationFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
