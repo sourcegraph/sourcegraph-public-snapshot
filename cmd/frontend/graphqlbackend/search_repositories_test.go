@@ -97,16 +97,9 @@ func TestSearchRepositories(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			q, err := query.ParseLiteral(tc.q)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			pattern, err := getPatternInfo(q, &getPatternInfoOptions{fileMatchLimit: 1})
-			if err != nil {
-				t.Fatal(err)
-			}
-
+			q, _ := query.ParseLiteral(tc.q)
+			b, _ := query.ToBasicQuery(q)
+			pattern := search.ToTextPatternInfo(b, search.Batch, query.Identity)
 			results, _, err := searchRepositoriesBatch(context.Background(), db, &search.TextParameters{
 				PatternInfo: pattern,
 				RepoPromise: (&search.Promise{}).Resolve(repositories),
@@ -296,22 +289,16 @@ func BenchmarkSearchRepositories(b *testing.B) {
 		repo := &types.RepoName{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
 		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
 	}
-	q, err := query.ParseLiteral("context.WithValue")
-	if err != nil {
-		b.Fatal(err)
-	}
-	options := &getPatternInfoOptions{}
-	textPatternInfo, err := getPatternInfo(q, options)
-	if err != nil {
-		b.Fatal(err)
-	}
+	q, _ := query.ParseLiteral("context.WithValue")
+	bq, _ := query.ToBasicQuery(q)
+	pattern := search.ToTextPatternInfo(bq, search.Batch, query.Identity)
 	tp := search.TextParameters{
-		PatternInfo: textPatternInfo,
+		PatternInfo: pattern,
 		RepoPromise: (&search.Promise{}).Resolve(repos),
 		Query:       q,
 	}
 	for i := 0; i < b.N; i++ {
-		_, _, err = searchRepositoriesBatch(context.Background(), db, &tp, options.fileMatchLimit)
+		_, _, err := searchRepositoriesBatch(context.Background(), db, &tp, tp.PatternInfo.FileMatchLimit)
 		if err != nil {
 			b.Fatal(err)
 		}
