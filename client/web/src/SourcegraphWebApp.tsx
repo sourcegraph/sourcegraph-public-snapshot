@@ -73,7 +73,7 @@ import { aggregateStreamingSearch } from './search/stream'
 import { logCodeInsightsChanges } from './insights/analytics'
 import { listUserRepositories } from './site-admin/backend'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { REDESIGN_CLASS_NAME, REDESIGN_TOGGLE_KEY } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import { REDESIGN_CLASS_NAME, getIsRedesignEnabled } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -299,7 +299,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         document.documentElement.classList.add('theme')
 
-        if (process.env.NODE_ENV === 'development' && localStorage.getItem(REDESIGN_TOGGLE_KEY) === 'true') {
+        // NODE_ENV check ensures that this logic won't propagate to non-dev builds via Webpack dead code elimination
+        if (process.env.NODE_ENV === 'development' && getIsRedesignEnabled()) {
             document.documentElement.classList.add(REDESIGN_CLASS_NAME)
         }
 

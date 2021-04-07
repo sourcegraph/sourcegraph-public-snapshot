@@ -3,6 +3,10 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 export const REDESIGN_TOGGLE_KEY = 'isRedesignEnabled'
 export const REDESIGN_CLASS_NAME = 'theme-redesign'
 
+export const getIsRedesignEnabled = () => {
+    return localStorage.getItem(REDESIGN_TOGGLE_KEY) === 'true'
+}
+
 interface UseRedesignToggleReturn {
     isRedesignEnabled: boolean
     setIsRedesignEnabled: (isRedesignEnabled: boolean) => void

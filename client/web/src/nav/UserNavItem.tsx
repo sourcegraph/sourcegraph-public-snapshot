@@ -176,6 +176,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         <Shortcut key={index} {...keybinding} onMatch={onThemeCycle} />
                     ))}
                 </div>
+                {/* NODE_ENV check ensures that this logic won't propagate to non-dev builds via Webpack dead code elimination */}
                 {process.env.NODE_ENV === 'development' && <RedesignToggle />}
                 {props.authenticatedUser.organizations.nodes.length > 0 && (
                     <>
