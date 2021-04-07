@@ -1,13 +1,51 @@
-// Represents recognized predicates associated with fields.
-export const PREDICATES: Record<string, string[]> = {
-    ['repo']: ['contains'],
-    ['r']: ['contains'],
+interface Access {
+    name: string
+    fields?: Access[]
 }
 
-// Represents a predicates components corresponding to the syntax name(parameters).
+/**
+ * Represents recognized predicate accesses associated with fields. The
+ * data structure is a tree, where nodes are lists to preserve ordering
+ * for autocomplete suggestions.
+ */
+export const PREDICATES: Access[] = [
+    {
+        name: 'repo',
+        fields: [
+            {
+                name: 'contains',
+                fields: [
+                    { name: 'file' },
+                    { name: 'content' },
+                    {
+                        name: 'commit',
+                        fields: [{ name: 'after' }],
+                    },
+                ],
+            },
+        ],
+    },
+]
+
+/** Represents a predicate's components corresponding to the syntax path(parameters). */
 export interface Predicate {
-    name: string
+    path: string[]
     parameters: string
+}
+
+/** Returns the access tree for a predicate path. */
+export const resolveAccess = (path: string[], tree: Access[]): Access[] | undefined => {
+    if (path.length === 0) {
+        return tree
+    }
+    const subtree = tree.find(value => value.name === path[0])
+    if (!subtree) {
+        return undefined
+    }
+    if (!subtree.fields) {
+        return []
+    }
+    return resolveAccess(path.slice(1), subtree.fields)
 }
 
 export const scanBalancedParens = (input: string): string | undefined => {
@@ -48,18 +86,23 @@ export const scanBalancedParens = (input: string): string | undefined => {
 }
 
 /**
- * Scans predicate syntax of the form field:name(parameters) and
+ * Scans predicate syntax of the form field:foo.bar(parameters) and
  * returns the name and parameters components. It checks that:
  *
  * (1) The (field, name) pair is a recognized predicate.
  * (2) The parameters value is well-balanced.
  */
 export const scanPredicate = (field: string, value: string): Predicate | undefined => {
-    const match = value.match(/^[\da-z]+/i)
-    if (!(match && PREDICATES[field] && PREDICATES[field].some(pred => pred === match[0]))) {
+    const match = value.match(/^[a-z.]+/i)
+    if (!match) {
         return undefined
     }
     const name = match[0]
+    const path = name.split('.')
+    const access = resolveAccess([field, ...path], PREDICATES)
+    if (!access) {
+        return undefined
+    }
     const rest = value.slice(name.length)
     if (!rest.startsWith('(') || !rest.endsWith(')')) {
         return undefined
@@ -69,5 +112,5 @@ export const scanPredicate = (field: string, value: string): Predicate | undefin
         return undefined
     }
 
-    return { name, parameters }
+    return { path, parameters }
 }
