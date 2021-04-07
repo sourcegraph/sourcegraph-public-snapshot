@@ -645,10 +645,10 @@ describe('Search', () => {
                     isSearchContextAvailable: true,
                 }),
             })
-            await testContext.waitForGraphQLRequest(async () => {
-                await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
-                await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-            }, 'IsSearchContextAvailable')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp', {
+                waitUntil: 'networkidle2',
+            })
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
         })
 
@@ -659,13 +659,12 @@ describe('Search', () => {
         })
 
         test('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
-            await testContext.waitForGraphQLRequest(async () => {
-                await driver.page.goto(
-                    driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp'
-                )
-                await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-                await driver.page.waitForSelector('#monaco-query-input')
-            }, 'IsSearchContextAvailable')
+            await driver.page.goto(
+                driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp',
+                { waitUntil: 'networkidle2' }
+            )
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            await driver.page.waitForSelector('#monaco-query-input')
             expect(await getSearchFieldValue(driver)).toStrictEqual('context:@unavailableCtx test')
             expect(await isSearchContextDropdownDisabled()).toBeTruthy()
         })

@@ -258,8 +258,17 @@ func (s *Server) Handler() http.Handler {
 		if maxRequestsPerSecond := conf.GitMaxCodehostRequestsPerSecond(); maxRequestsPerSecond == -1 {
 			// As a special case, -1 means no limiting
 			s.rpsLimiter.SetLimit(rate.Inf)
+			s.rpsLimiter.SetBurst(10)
+		} else if maxRequestsPerSecond == 0 {
+			// A limiter with zero limit but a non-zero burst is not rejecting all events
+			// because the bucket is initially full with N tokens and refilled N tokens
+			// every second, where N is the burst size. See
+			// https://github.com/golang/go/issues/18763 for details.
+			s.rpsLimiter.SetLimit(0)
+			s.rpsLimiter.SetBurst(0)
 		} else {
 			s.rpsLimiter.SetLimit(rate.Limit(maxRequestsPerSecond))
+			s.rpsLimiter.SetBurst(10)
 		}
 	}
 	conf.Watch(func() {
