@@ -121,7 +121,7 @@ describe('Search', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
         await driver.page.waitForSelector('#monaco-query-input')
         await percySnapshot(driver.page, 'Search results page')
-        await percySnapshot(driver.page, 'Search results page', { theme: 'theme-dark' })
+        await percySnapshot(driver.page, 'Search results page dark', { theme: 'theme-dark' })
     })
 
     describe('Search filters', () => {

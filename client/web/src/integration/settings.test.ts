@@ -96,7 +96,7 @@ describe('Settings', () => {
             )
 
             await percySnapshot(driver.page, 'Settings page')
-            await percySnapshot(driver.page, 'Settings page', { theme: 'theme-dark' })
+            await percySnapshot(driver.page, 'Settings page dark', { theme: 'theme-dark' })
 
             // Replace with new settings
             const newSettings = '{ /* These are new settings */}'

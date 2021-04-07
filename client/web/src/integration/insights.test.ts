@@ -118,6 +118,6 @@ describe('Code insights page', () => {
         await driver.page.waitForSelector('[data-testid="view-grid__view-title"]')
 
         await percySnapshot(driver.page, 'Code insights page')
-        await percySnapshot(driver.page, 'Code insights page', { theme: 'theme-redesign' })
+        await percySnapshot(driver.page, 'Code insights page dark', { theme: 'theme-redesign' })
     })
 })
