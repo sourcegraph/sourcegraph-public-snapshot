@@ -402,7 +402,7 @@ describe('Batches', () => {
             )
 
             await percySnapshot(driver.page, 'Batch Changes List normal')
-            await percySnapshot(driver.page, 'Batch Changes List dark', { theme: 'theme-dark' })
+            // await percySnapshot(driver.page, 'Batch Changes List dark', { theme: 'theme-dark' })
         })
 
         it('lists user batch changes', async () => {

@@ -949,7 +949,7 @@ describe('Blob viewer', () => {
             await driver.page.click('.test-tooltip-find-references')
 
             await percySnapshot(driver.page, 'Blob Reference Panel normal')
-            await percySnapshot(driver.page, 'Blob Reference Panel dark', { theme: 'theme-dark' })
+            // await percySnapshot(driver.page, 'Blob Reference Panel dark', { theme: 'theme-dark' })
 
             // Click on the first reference
             await driver.page.waitForSelector('.test-file-match-children-item')
