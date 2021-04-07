@@ -44,6 +44,9 @@ type streamHandler struct {
 	newSearchResolver func(context.Context, dbutil.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
 }
 
+var flushTickerInternal = 100 * time.Millisecond
+var pingTickerInterval = 5 * time.Second
+
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
@@ -138,10 +141,10 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = matchesBuf.Append(m)
 	}
 
-	flushTicker := time.NewTicker(100 * time.Millisecond)
+	flushTicker := time.NewTicker(flushTickerInternal)
 	defer flushTicker.Stop()
 
-	pingTicker := time.NewTicker(5 * time.Second)
+	pingTicker := time.NewTicker(pingTickerInterval)
 	defer pingTicker.Stop()
 
 	first := true
@@ -172,7 +175,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				// that case we will always show all the results the user asked for. Only if the
 				// user asked for limit > args.Display results and we found more than
 				// args.Display results we inform the user that not all results are displayed.
-				if args.Display < limit {
+				if args.Display >= 0 && args.Display < limit {
 					progress.DisplayLimitHit = true
 				}
 				break
