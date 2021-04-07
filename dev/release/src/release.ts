@@ -597,6 +597,7 @@ Campaign: ${campaignURL}`,
                     title: 'TEST EVENT',
                     startDateTime: new Date(config.releaseDate).toISOString(),
                     endDateTime: addMinutes(new Date(config.releaseDate), 1).toISOString(),
+                    transparency: 'transparent',
                 },
                 googleCalendar
             )
