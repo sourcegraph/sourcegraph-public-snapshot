@@ -65,22 +65,30 @@ type queryExecDatabaseHandler interface {
 // privileges (even if all other users are deleted). This reduces the risk of (1) a site admin
 // accidentally deleting all user accounts and opening up their site to any attacker becoming a site
 // admin and (2) a bug in user account creation code letting attackers create site admin accounts.
-func EnsureInitialized(ctx context.Context, dbh queryExecDatabaseHandler) (alreadyInitialized bool, err error) {
-	if err := tryInsertNew(ctx, dbh); err != nil {
+func EnsureInitialized(ctx context.Context, dbh queryExecDatabaseHandler) (bool, error) {
+	state, err := getConfiguration(ctx)
+
+	// For any other non nil error apart from sql.ErrNoRows, return the error.
+	if err != nil && err != sql.ErrNoRows {
 		return false, err
 	}
 
-	// The "SELECT ... FOR UPDATE" prevents a race condition where two calls, each in their own transaction,
-	// would see this initialized value as false and then set it to true below.
-	if err := dbh.QueryRow(ctx, sqlf.Sprintf(`SELECT initialized FROM global_state FOR UPDATE LIMIT 1`)).Scan(&alreadyInitialized); err != nil {
-		return false, err
+	// Since there are no rows in global_state whatsover, we should try to insert a new row.
+	if err == sql.ErrNoRows {
+		if err := tryInsertNew(ctx, dbh); err != nil {
+			return false, err
+		}
 	}
 
-	if !alreadyInitialized {
-		err = dbh.Exec(ctx, sqlf.Sprintf("UPDATE global_state SET initialized=true"))
+	if !state.Initialized {
+		err = dbh.Exec(ctx, sqlf.Sprintf("UPDATE global_state SET initialized=true WHERE initialized=false"))
+		if err != nil {
+			return false, err
+		}
 	}
 
-	return alreadyInitialized, err
+	// A row with initialized=true already exists, so nothing else needs to be done.
+	return true, nil
 }
 
 func getConfiguration(ctx context.Context) (*State, error) {
@@ -89,6 +97,7 @@ func getConfiguration(ctx context.Context) (*State, error) {
 		&configuration.SiteID,
 		&configuration.Initialized,
 	)
+
 	return configuration, err
 }
 
