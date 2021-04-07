@@ -77,7 +77,7 @@ In this way, access to Sourcegraph will still be managed by your identity provid
 
 Alternatively, you can configure SAML authentication in to Sourcegraph, and use Gitlab permissions syncing in the background to control access permissions. To implement this method, you will need to make sure that Gitlab is able to return a value in `identities.provider` for the `GET /users` endpoint ([Gitlab documentation](https://docs.gitlab.com/ee/api/users.html#for-admins)) that your identity provider is able to pass as the `nameId` in the SAML response. If that isn’t possible, you will need to use the first option. 
 
-To configure SAML auth with Gitlab permissions, you will need to first [configure permissions from Gitlab](../repo/permissions.md#administrator-sudo-level-access-token). Then, [configure SAML authentication](../auth/saml.md). The `nameId` passed by the Identity Provider will need to match the value of `identities.provider`. For example, if the Gitlab API returns:
+To configure SAML auth with Gitlab permissions, you will need to first [configure permissions from Gitlab](../repo/permissions.md#administrator-sudo-level-access-token). Then, [configure SAML authentication](../auth/saml/index.md). The `nameId` passed by the Identity Provider will need to match the value of `identities.provider`. For example, if the Gitlab API returns:
 
 ```
 "identities": [
@@ -111,7 +111,7 @@ We do not currently support OAuth for Bitbucket Server. You will need to combine
 To sync Bitbucket server permissions, follow [these instructions](../repo/permissions.md#bitbucket-server). Then, do one of the following:
 
 1. Create the user accounts in Sourcegraph with matching usernames. (Access using `builtin` auth.)
-2. [Configure SAML authentication](../auth/saml.md). If you are using Bitbucket server, the `login` attribute is *not* optional—you need to pass the Bitbucket username as the `login` attribute. 
+2. [Configure SAML authentication](../auth/saml/index.md). If you are using Bitbucket server, the `login` attribute is *not* optional—you need to pass the Bitbucket username as the `login` attribute. 
 3. [Configure an HTTP authentication proxy](../auth/index.md#http-authentication-proxies), passing the Bitbucket username value as the `usernameHeader`. 
 
 ### Explicit Permissions API Authorization
