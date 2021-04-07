@@ -491,11 +491,16 @@ func MaybeDecrypt(ctx context.Context, key encryption.Key, data, keyIdent string
 		// data is not encrypted, return plaintext
 		return data, nil
 	}
+	if data == "" {
+		return data, nil
+	}
 	if key == nil {
 		return data, fmt.Errorf("couldn't decrypt encrypted data, key is nil")
 	}
 	decrypted, err := key.Decrypt(ctx, []byte(data))
 	if err != nil {
+		fmt.Println(data)
+		fmt.Println(keyIdent)
 		return data, err
 	}
 

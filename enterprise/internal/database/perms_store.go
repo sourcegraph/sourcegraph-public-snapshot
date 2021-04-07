@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+
 	"github.com/RoaringBitmap/roaring"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -1115,7 +1118,8 @@ SELECT
     id, user_id,
     service_type, service_id, client_id, account_id,
     auth_data, account_data,
-    created_at, updated_at
+    created_at, updated_at,
+	encryption_key_id
 FROM user_external_accounts
 WHERE
     user_id = %s
@@ -1130,20 +1134,34 @@ ORDER BY id ASC
 	defer rows.Close()
 
 	for rows.Next() {
-		var acct extsvc.Account
-		var authData, data sql.NullString
+		var (
+			acct            extsvc.Account
+			authData, data  sql.NullString
+			encryptionKeyID string
+		)
+
 		if err := rows.Scan(
 			&acct.ID, &acct.UserID,
 			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
 			&authData, &data,
 			&acct.CreatedAt, &acct.UpdatedAt,
+			&encryptionKeyID,
 		); err != nil {
 			return nil, err
 		}
 
 		if authData.Valid {
-			tmp := json.RawMessage(authData.String)
-			acct.AuthData = &tmp
+			tmp, err := database.MaybeDecrypt(
+				ctx,
+				keyring.Default().UserExternalAccountKey,
+				authData.String,
+				encryptionKeyID,
+			)
+			if err != nil {
+				return nil, err
+			}
+			msg := json.RawMessage(tmp)
+			acct.AuthData = &msg
 		}
 		if data.Valid {
 			tmp := json.RawMessage(data.String)
