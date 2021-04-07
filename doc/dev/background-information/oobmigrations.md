@@ -292,4 +292,4 @@ On or after the deprecation version of a migration, we can begin clean-up. This 
 - unregistering the migrator instance
 - removing the migrator code
 - cleaning up any backwards-compatible read routines to support only the new format
-- dropping old unused columns that
+- dropping columns that are no longer used by the new minimum supported format
