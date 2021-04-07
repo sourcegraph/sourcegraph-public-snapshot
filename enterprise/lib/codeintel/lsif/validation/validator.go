@@ -4,7 +4,7 @@ import (
 	"io"
 	"sync/atomic"
 
-	reader2 "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/test/internal/reader"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/internal/reader"
 )
 
 type Validator struct {
@@ -13,7 +13,7 @@ type Validator struct {
 }
 
 func (v *Validator) Validate(indexFile io.Reader) error {
-	if err := reader2.Read(indexFile, v.Context.Stasher, v.vertexMapper, v.edgeMapper); err != nil {
+	if err := reader.Read(indexFile, v.Context.Stasher, v.vertexMapper, v.edgeMapper); err != nil {
 		return err
 	}
 
@@ -26,7 +26,7 @@ func (v *Validator) Validate(indexFile io.Reader) error {
 	return nil
 }
 
-func (v *Validator) vertexMapper(lineContext reader2.LineContext) {
+func (v *Validator) vertexMapper(lineContext reader.LineContext) {
 	atomic.AddUint64(&v.Context.NumVertices, 1)
 
 	if v.Context.ProjectRoot == nil && !v.raisedMissingMetadataError && lineContext.Index != 1 {
@@ -39,7 +39,7 @@ func (v *Validator) vertexMapper(lineContext reader2.LineContext) {
 	}
 }
 
-func (v *Validator) edgeMapper(lineContext reader2.LineContext) {
+func (v *Validator) edgeMapper(lineContext reader.LineContext) {
 	atomic.AddUint64(&v.Context.NumEdges, 1)
 
 	if v.Context.ProjectRoot == nil && !v.raisedMissingMetadataError {

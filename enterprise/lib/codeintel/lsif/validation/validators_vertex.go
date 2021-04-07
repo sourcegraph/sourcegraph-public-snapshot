@@ -4,18 +4,18 @@ import (
 	"net/url"
 	"strings"
 
-	reader "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
-	reader2 "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/test/internal/reader"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/internal/reader"
+	protocolReader "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
 )
 
 // validateMetaDataVertex ensures that the given metadata vertex has a valid project root. The
 // project root is stashed in the validation context for use by validateDocumentVertex.
-func validateMetaDataVertex(ctx *ValidationContext, lineContext reader2.LineContext) bool {
+func validateMetaDataVertex(ctx *ValidationContext, lineContext reader.LineContext) bool {
 	if ctx.ProjectRoot != nil {
 		ctx.AddError("metaData defined multiple times").AddContext(lineContext)
 	}
 
-	metaData, ok := lineContext.Element.Payload.(reader.MetaData)
+	metaData, ok := lineContext.Element.Payload.(protocolReader.MetaData)
 	if !ok {
 		ctx.AddError("illegal payload").AddContext(lineContext)
 		return false
@@ -37,7 +37,7 @@ func validateMetaDataVertex(ctx *ValidationContext, lineContext reader2.LineCont
 
 // validateMetaDataVertex ensures that the given document vertex has a valid URI which is
 // relative to the project root.
-func validateDocumentVertex(ctx *ValidationContext, lineContext reader2.LineContext) bool {
+func validateDocumentVertex(ctx *ValidationContext, lineContext reader.LineContext) bool {
 	uri, ok := lineContext.Element.Payload.(string)
 	if !ok {
 		ctx.AddError("illegal payload").AddContext(lineContext)
@@ -63,8 +63,8 @@ func validateDocumentVertex(ctx *ValidationContext, lineContext reader2.LineCont
 }
 
 // validateRangeVertex ensures that the given range vertex has valid bounds and extents.
-func validateRangeVertex(ctx *ValidationContext, lineContext reader2.LineContext) bool {
-	r, ok := lineContext.Element.Payload.(reader.Range)
+func validateRangeVertex(ctx *ValidationContext, lineContext reader.LineContext) bool {
+	r, ok := lineContext.Element.Payload.(protocolReader.Range)
 	if !ok {
 		ctx.AddError("illegal payload").AddContext(lineContext)
 		return false
