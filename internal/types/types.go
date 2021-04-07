@@ -443,6 +443,19 @@ type ExternalService struct {
 	CloudDefault    bool // Whether this external service is our default public service on Cloud
 }
 
+// ExternalServiceSyncJob represents an sync job for an external service
+type ExternalServiceSyncJob struct {
+	ID                int64
+	State             string
+	FailureMessage    string
+	StartedAt         time.Time
+	FinishedAt        time.Time
+	ProcessAfter      time.Time
+	NumResets         int
+	ExternalServiceID int64
+	NumFailures       int
+}
+
 // URN returns a unique resource identifier of this external service,
 // used as the key in a repo's Sources map as well as the SourceInfo ID.
 func (e *ExternalService) URN() string {
