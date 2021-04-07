@@ -1,9 +1,11 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import webStyles from '../../SourcegraphWebApp.scss'
-import { ChartViewContent } from './ChartViewContent'
 import { createMemoryHistory } from 'history'
 import isChromatic from 'chromatic/isChromatic'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/out/src/telemetry/telemetryService';
+
+import webStyles from '../../SourcegraphWebApp.scss'
+import { ChartViewContent } from './ChartViewContent'
 
 const history = createMemoryHistory()
 
@@ -12,9 +14,10 @@ const commonProps = {
     animate: !isChromatic(),
     location: history.location,
     viewID: '1',
+    telemetryService: NOOP_TELEMETRY_SERVICE
 }
 
-const { add } = storiesOf('web/VisxChartViewContent', module).addDecorator(story => (
+const { add } = storiesOf('web/ChartViewContent', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
         {/* Chart will always fill the container, so we need to give the container an explicit size. */}

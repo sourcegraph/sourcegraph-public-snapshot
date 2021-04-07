@@ -2,9 +2,9 @@ import React, { FunctionComponent, useMemo } from 'react'
 import { ChartContent } from 'sourcegraph'
 import * as H from 'history'
 import { ParentSize } from '@visx/responsive'
+import { TelemetryService } from '@sourcegraph/shared/out/src/telemetry/telemetryService';
 import { createProgrammaticallyLinkHandler } from '@sourcegraph/shared/src/util/link-click-handler/linkClickHandler'
 
-import { eventLogger } from '../../tracking/eventLogger'
 import { LineChart } from './charts/line/LineChart'
 import { PieChart } from './charts/pie/PieChart'
 import { BarChart } from './charts/bar/BarChart'
@@ -17,11 +17,12 @@ export interface ChartViewContentProps {
     content: ChartContent
     history: H.History
     viewID: string
+    telemetryService: TelemetryService
     className?: string
 }
 
 export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props => {
-    const { content, className = '', history, viewID } = props
+    const { content, className = '', history, viewID, telemetryService } = props
 
     const linkHandler = useMemo(() => {
         const linkHandler = createProgrammaticallyLinkHandler(history)
@@ -30,10 +31,10 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
                 return
             }
 
-            eventLogger.log('InsightDataPointClick', { insightType: viewID.split('.')[0] })
+            telemetryService.log('InsightDataPointClick', { insightType: viewID.split('.')[0] })
             linkHandler(event.originEvent, event.link)
         }
-    }, [history, viewID])
+    }, [history, viewID, telemetryService])
 
     return (
         <div className={`chart-view-content ${className}`}>

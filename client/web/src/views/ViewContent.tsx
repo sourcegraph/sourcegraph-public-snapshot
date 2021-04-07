@@ -102,6 +102,7 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = ({
                         content={content}
                         viewID={viewID}
                         history={props.history}
+                        telemetryService={props.telemetryService}
                         className="view-content__chart"
                     />
                 ) : content.component === 'QueryInput' ? (

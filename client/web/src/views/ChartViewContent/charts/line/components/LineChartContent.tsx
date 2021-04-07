@@ -11,12 +11,12 @@ import { format } from 'd3-format'
 import { timeFormat } from 'd3-time-format'
 import { GridColumns, GridRows } from '@visx/grid'
 import { Group } from '@visx/group'
-import { GlyphDot } from '@visx/glyph'
+import { GlyphDot as Glyph } from '@visx/glyph'
 import isValidNumber from '@visx/xychart/lib/typeguards/isValidNumber'
 import { EventHandlerParams } from '@visx/xychart/lib/types'
 
 import { generateAccessors } from '../helpers/generate-accessors'
-import { GlyphDotComponent } from './GlyphDot'
+import { GlyphDot } from './GlyphDot'
 import { TooltipContent } from './TooltipContent'
 import { onDatumClick } from '../../types'
 import { DEFAULT_LINE_STROKE } from '../colors'
@@ -215,14 +215,14 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                             colorAccessor={() => line.stroke ?? DEFAULT_LINE_STROKE}
                             xAccessor={accessors.x}
                             yAccessor={accessors.y[line.dataKey as string]}
-                            renderGlyph={GlyphDotComponent}
+                            renderGlyph={GlyphDot}
                         />
                     </Group>
                 ))}
 
                 <Group top={MARGIN.top} left={MARGIN.left}>
                     {activeDatum && (
-                        <GlyphDot
+                        <Glyph
                             className="line-chart__glyph line-chart__glyph--active"
                             r={8}
                             fill={activeDatum.line.stroke ?? DEFAULT_LINE_STROKE}
