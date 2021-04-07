@@ -1119,7 +1119,7 @@ SELECT
     service_type, service_id, client_id, account_id,
     auth_data, account_data,
     created_at, updated_at,
-	encryption_key_id
+	  encryption_key_id
 FROM user_external_accounts
 WHERE
     user_id = %s
