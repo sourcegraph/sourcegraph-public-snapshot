@@ -381,11 +381,8 @@ func TestS3Delete(t *testing.T) {
 	}
 }
 
-func TestS3Lifecycle(t *testing.T) {
-	s3Client := NewMockS3API()
-	client := rawS3Client(s3Client, nil)
-
-	if lifecycle := client.lifecycle(); lifecycle == nil || len(lifecycle.Rules) != 2 {
+func TestS3BucketLifecycleConfiguration(t *testing.T) {
+	if lifecycle := s3BucketLifecycleConfiguration("s3", time.Hour*24*3); lifecycle == nil || len(lifecycle.Rules) != 2 {
 		t.Fatalf("unexpected lifecycle rules")
 	} else {
 		var objectExpiration *int64
