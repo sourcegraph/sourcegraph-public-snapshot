@@ -13,28 +13,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 )
 
-const MaxNumResultChunks = 1000
-const ResultsPerResultChunk = 500
-
-func getDefinitionResultID(r Range) int { return r.DefinitionResultID }
-func getReferenceResultID(r Range) int  { return r.ReferenceResultID }
+// resultsPerResultChunk is the number of target keys in a single result chunk. This may
+// not reflect the actual number of keys in a result sets, as result chunk identifiers
+// are hashed into buckets based on the total number of result sets (and this value).
+//
+// This number does not prevent pathological cases where a single result chunk will have
+// very large values, as only the number of keys (not total values within the keyspace)
+// are used to determine the hashing scheme.
+const resultsPerResultChunk = 512
 
 // groupBundleData converts a raw (but canonicalized) correlation State into a GroupedBundleData.
 func groupBundleData(ctx context.Context, state *State) (*semantic.GroupedBundleDataChans, error) {
 	numResults := len(state.DefinitionData) + len(state.ReferenceData)
-	numResultChunks := int(math.Min(
-		MaxNumResultChunks,
-		math.Max(
-			1,
-			math.Floor(float64(numResults)/ResultsPerResultChunk),
-		),
-	))
+	numResultChunks := int(math.Max(1, math.Floor(float64(numResults)/resultsPerResultChunk)))
 
 	meta := semantic.MetaData{NumResultChunks: numResultChunks}
 	documents := serializeBundleDocuments(ctx, state)
 	resultChunks := serializeResultChunks(ctx, state, numResultChunks)
-	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, getDefinitionResultID)
-	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, getReferenceResultID)
+	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, func(r Range) int { return r.DefinitionResultID })
+	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, func(r Range) int { return r.ReferenceResultID })
 	packages := gatherPackages(state)
 	packageReferences, err := gatherPackageReferences(state)
 	if err != nil {
