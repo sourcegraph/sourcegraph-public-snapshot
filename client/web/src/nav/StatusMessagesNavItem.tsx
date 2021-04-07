@@ -75,7 +75,7 @@ interface StatusMessageEntryProps {
     title?: string
 }
 
-function entryIcon(entryType: EntryType): JSX.Element {
+const entryIcon = (entryType: EntryType): JSX.Element => {
     switch (entryType) {
         case 'error': {
             return <InformationCircleIcon size={14} className="text-danger status-messages-nav-item__entry-icon" />
@@ -147,12 +147,17 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProp
     </div>
 )
 
+interface User {
+    id: string
+    username: string
+    createdAt: string
+    isSiteAdmin: boolean
+}
+
 interface Props {
     fetchMessages?: () => Observable<StatusMessagesResult['statusMessages']>
-    isSiteAdmin: boolean
+    user: User
     history: H.History
-    userCreatedAt: string
-    userID: string
 }
 
 enum ExternalServiceNoActivityReasons {
@@ -198,7 +203,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             queryExternalServices({
-                namespace: this.props.userID,
+                namespace: this.props.user.id,
                 first: null,
                 after: null,
             })
@@ -233,14 +238,14 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    // StatusMessageFields | ExternalServiceNoActivityReason | []
-    private renderMessage(
-        message: Message,
-        user: { isSiteAdmin: boolean; createdAt: string }
-    ): JSX.Element | JSX.Element[] {
-        const getExternalServicesLink = (id?: string): string =>
-            user.isSiteAdmin ? `/site-admin/external-services/${id || ''}` : '/code-hosts'
-        const repositoriesLink = '/repositories'
+    private renderMessage(message: Message, user: User): JSX.Element | JSX.Element[] {
+        const userSettingsLink = `/users/${user.username}/settings`
+
+        const getExternalServicesLink = (id?: string): string => {
+            return user.isSiteAdmin ? `/site-admin/external-services/${id || ''}` : `${userSettingsLink}/code-hosts`
+        }
+
+        const repositoriesLink = `/users/${user.username}/settings/repositories`
 
         // no status messages
         if (Array.isArray(message) && message.length === 0) {
@@ -293,7 +298,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         <StatusMessagesNavItemEntry
                             key={message.message}
                             message={message.message}
-                            messageHint="Your repositories may not be up to date.  "
+                            messageHint="Your repositories may not be up to date."
                             linkTo={repositoriesLink}
                             linkText="View status"
                             linkOnClick={this.toggleIsOpen}
@@ -372,7 +377,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         return (
             <CloudCheckIcon
                 className="icon-inline"
-                data-tooltip={this.state.isOpen ? undefined : 'Repositories up to date'}
+                data-tooltip={this.state.isOpen ? undefined : 'Repositories available for search'}
             />
         )
     }
@@ -397,10 +402,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                                 error={this.state.messagesOrError}
                             />
                         ) : (
-                            this.renderMessage(this.state.messagesOrError, {
-                                isSiteAdmin: this.props.isSiteAdmin,
-                                createdAt: this.props.userCreatedAt,
-                            })
+                            this.renderMessage(this.state.messagesOrError, this.props.user)
                         )}
                     </div>
                 </DropdownMenu>

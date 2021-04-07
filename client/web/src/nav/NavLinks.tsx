@@ -158,10 +158,13 @@ export const NavLinks: React.FC<Props> = props => {
             {authenticatedUser?.tags?.includes('AllowUserExternalServicePublic') && (
                 <li className="nav-item">
                     <StatusMessagesNavItem
-                        isSiteAdmin={authenticatedUser.siteAdmin}
+                        user={{
+                            id: authenticatedUser.id,
+                            isSiteAdmin: authenticatedUser.siteAdmin,
+                            createdAt: authenticatedUser.createdAt,
+                            username: authenticatedUser.username,
+                        }}
                         history={history}
-                        userCreatedAt={authenticatedUser.createdAt}
-                        userID={authenticatedUser.id}
                     />
                 </li>
             )}
