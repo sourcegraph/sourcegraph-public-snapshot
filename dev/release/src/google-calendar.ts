@@ -87,7 +87,7 @@ export async function ensureEvent(
             end: { date: endDate, dateTime: endDateTime },
             description,
             summary: title,
-            transparency: transparency,
+            transparency,
         },
     })
 }
