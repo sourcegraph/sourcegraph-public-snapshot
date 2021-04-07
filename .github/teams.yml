@@ -1,0 +1,52 @@
+team/frontend-platform:
+  - '@alicjasuska'
+  - '@umpox'
+  - '@valerybugakov'
+  - '@5h1ru'
+  - '@pdubroy'
+
+team/extensibility:
+  - '@muratsu'
+  - '@tjkandala'
+
+team/core-application:
+  - '@tsenart'
+  - '@artemruts'
+  - '@ryanslade'
+  - '@asdine'
+  - '@indradhanush'
+  - '@unknwon'
+  - '@arussellsaw'
+  - '@flying-robot'
+
+team/search:
+  - '@lguychard'
+  - '@limitedmage'
+  - '@keegancsmith'
+  - '@rmmh'
+  - '@rvantonder'
+  - '@novoselrok'
+  - '@camdencheek'
+  - '@stefanhengl'
+
+team/code-intelligence:
+  - '@macraig'
+  - '@efritz'
+  - '@scalabilitysolved'
+  - '@olafurpg'
+  - '@shrouxm'
+  - '@tjdevries'
+  - '@Strum355'
+
+team/code-insights:
+  - '@joelkw'
+  - '@felixfbecker'
+  - '@vovakulikov'
+
+team/distribution:
+  - '@pecigonzalo'
+  - '@davejrt'
+  - '@ggilmore'
+  - '@bobheadxi'
+  - '@daxmc99'
+  - '@abeatri'
