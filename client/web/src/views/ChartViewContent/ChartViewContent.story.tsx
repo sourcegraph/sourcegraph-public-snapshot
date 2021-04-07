@@ -1,13 +1,18 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
+import { noop } from 'rxjs';
 import { createMemoryHistory } from 'history'
 import isChromatic from 'chromatic/isChromatic'
 
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/out/src/telemetry/telemetryService'
 import webStyles from '../../SourcegraphWebApp.scss'
 import { ChartViewContent } from './ChartViewContent'
+import { TelemetryService } from '@sourcegraph/shared/out/src/telemetry/telemetryService';
 
 const history = createMemoryHistory()
+const NOOP_TELEMETRY_SERVICE: TelemetryService = {
+    log: noop,
+    logViewEvent: noop
+}
 
 const commonProps = {
     history,
