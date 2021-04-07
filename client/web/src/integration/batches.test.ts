@@ -401,8 +401,7 @@ describe('Batches', () => {
                 testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-batch-change'
             )
 
-            await percySnapshot(driver.page, 'Batch Changes List normal')
-            // await percySnapshot(driver.page, 'Batch Changes List dark', { theme: 'theme-dark' })
+            await percySnapshot(driver.page, 'Batch Changes List')
         })
 
         it('lists user batch changes', async () => {

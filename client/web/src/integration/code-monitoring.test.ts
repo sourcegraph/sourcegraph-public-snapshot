@@ -93,8 +93,7 @@ describe('Code monitoring', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring/new')
             await driver.page.waitForSelector('.test-name-input')
 
-            await percySnapshot(driver.page, 'Code monitoring - Form normal')
-            // await percySnapshot(driver.page, 'Code monitoring - Form dark', { theme: 'theme-dark' })
+            await percySnapshot(driver.page, 'Code monitoring - Form')
 
             await driver.page.type('.test-name-input', 'test monitor')
 
