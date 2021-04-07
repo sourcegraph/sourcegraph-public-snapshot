@@ -30,6 +30,13 @@ All notable changes to Sourcegraph are documented in this file.
 -
 
 ## 3.26.0
+## 3.26.2
+
+### Fixed
+
+- Our indexed search logic now correctly handles de-duplication of search results across multiple replicas. [#19743](https://github.com/sourcegraph/sourcegraph/pull/19743)
+
+## 3.26.1
 
 ### Added
 
