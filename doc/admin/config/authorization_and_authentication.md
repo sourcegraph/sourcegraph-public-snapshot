@@ -47,6 +47,7 @@ This is Sourcegraph’s default authentication option. To enable it, add the to 
     "allowSignup": true 
   }]
 }
+```
 
 Set `allowSignup` to `false` if you want to create user accounts instead of allowing the user to create their own.
 
