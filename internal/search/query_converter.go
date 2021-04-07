@@ -147,6 +147,7 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 
 		// Values dependent on parameters.
 		IncludePatterns:              filesInclude,
+		ExcludePattern:               unionRegexp(filesExclude),
 		FilePatternsReposMustInclude: filesReposMustInclude,
 		FilePatternsReposMustExclude: filesReposMustExclude,
 		Languages:                    langInclude,
@@ -154,6 +155,5 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 		CombyRule:                    q.FindValue(query.FieldCombyRule),
 		Index:                        q.Index(),
 		Select:                       selector,
-		ExcludePattern:               unionRegexp(filesExclude),
 	}
 }
