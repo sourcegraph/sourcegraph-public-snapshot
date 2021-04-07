@@ -410,7 +410,7 @@ func GetLimitFromConfig(kind string, config interface{}) (rlc RateLimitConfig, e
 		rlc.BaseURL = c.Url
 	case *schema.PerforceConnection:
 		// 2/s is the default limit we enforce
-		rlc.Limit = rate.Limit(2)
+		rlc.Limit = rate.Limit(5000.0 / 3600.0)
 		if c != nil && c.RateLimit != nil {
 			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 			rlc.IsDefault = false
