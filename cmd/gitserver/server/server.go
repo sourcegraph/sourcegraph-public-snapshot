@@ -1596,6 +1596,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 	if doBackgroundRepoUpdateMock != nil {
 		return doBackgroundRepoUpdateMock(repo)
 	}
+
 	// background context.
 	ctx, cancel1 := s.serverContext()
 	defer cancel1()
@@ -1606,6 +1607,9 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 	}
 	defer cancel2()
 
+	if s.rpsLimiter.Limit() == 0 && s.rpsLimiter.Burst() == 0 {
+		return errors.New("doBackgroundRepoUpdate aborted as rate limit set to zero")
+	}
 	if err = s.rpsLimiter.Wait(ctx); err != nil {
 		return err
 	}
