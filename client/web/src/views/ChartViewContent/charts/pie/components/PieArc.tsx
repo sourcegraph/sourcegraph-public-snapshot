@@ -5,16 +5,13 @@ import classnames from 'classnames'
 import { Group } from '@visx/group'
 import { Annotation, Connector } from '@visx/annotation'
 
-// Replace import below on standard @visx/annotation package
-// when ticket about bad label positioning will be resolve
-// https://github.com/airbnb/visx/issues/1126
 import { Label } from '../../../annotation/Label'
 import { onDatumClick } from '../../types'
 
 interface PieArcProps<Datum> {
     getKey: (d: PieArcDatum<Datum>) => string
     getColor: (d: PieArcDatum<Datum>) => string
-    getLink: (d: PieArcDatum<Datum>) => string
+    getLink: (d: PieArcDatum<Datum>) => string | undefined
     path: ArcType<unknown, PieArcDatum<Datum>>
     arc: PieArcDatum<Datum>
     onClick: onDatumClick

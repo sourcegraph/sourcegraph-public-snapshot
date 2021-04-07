@@ -1,7 +1,7 @@
-import React, { ReactElement, useCallback, useMemo, useState, MouseEvent } from 'react'
+import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useEffect } from 'react'
 import classnames from 'classnames'
 import { LineChartContent as LineChartContentType } from 'sourcegraph'
-import { useDebouncedCallback } from 'use-debounce'
+import { useThrottledCallback } from 'use-debounce'
 import { curveLinear } from '@visx/curve'
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
 import { Axis, GlyphSeries, LineSeries, Tooltip, XYChart } from '@visx/xychart'
@@ -93,9 +93,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
         [accessors, series]
     )
 
-    // Because xychart fires all consumer's handlers twice, we need to debounce our handler
-    // Remove debounce when https://github.com/airbnb/visx/issues/1077 will be resolved
-    const handlePointerMove = useDebouncedCallback(
+    const handlePointerMove = useThrottledCallback(
         (event: EventHandlerParams<Datum>) => {
             const line = series.find(line => line.dataKey === event.key)
 
@@ -108,19 +106,21 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                 line,
             })
         },
-        0,
+        100,
         { leading: true }
     )
 
-    const handlePointerOut = useDebouncedCallback(() => setActiveDatum(null))
+    // Cancel scheduled handlePointerMove callback in case if component was removed
+    // from render tree to avoid can't perform state update on an unmounted component error.
+    useEffect(() => () => handlePointerMove.cancel(), [handlePointerMove])
 
-    // Because xychart fires all consumer's handlers twice, we need to debounce our handler
-    // Remove debounce when https://github.com/airbnb/visx/issues/1077 will be resolved
-    const handlePointerUpDebounced = useDebouncedCallback((info: EventHandlerParams<Datum>) => {
-        const line = series.find(line => line.dataKey === info.key)
+    const handlePointerOut = useCallback(() => setActiveDatum(null), [setActiveDatum])
+    const handlePointerUp = useCallback((info: EventHandlerParams<Datum>) => {
+        info.event?.persist()
 
         // By types from visx/xychart index can be undefined
         const activeDatumIndex = activeDatum?.index
+        const line = series.find(line => line.dataKey === info.key)
 
         if (!info.event || !line || !isValidNumber(activeDatumIndex)) {
             return
@@ -130,22 +130,9 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
             originEvent: info.event as MouseEvent<unknown>,
             link: line?.linkURLs?.[activeDatumIndex],
         })
-    })
-
-    // If we pass delayed callback to handle pointer event we will lose event object
-    // due reusing event object by react between event handlers. So we have to have sync handler
-    // just to preserve event object by event.persist()
-    const handlePointerUpSync = useCallback(
-        (info: EventHandlerParams<Datum>) => {
-            info.event?.persist()
-
-            handlePointerUpDebounced(info)
-        },
-        [handlePointerUpDebounced]
-    )
+    }, [series, onDatumClick, activeDatum])
 
     const activeDatumLink = activeDatum?.line?.linkURLs?.[activeDatum?.index]
-
     const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!activeDatumLink })
 
     return (
@@ -158,7 +145,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                 captureEvents={true}
                 margin={MARGIN}
                 onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUpSync}
+                onPointerUp={handlePointerUp}
                 onPointerOut={handlePointerOut}
             >
                 <Group top={MARGIN.top} left={MARGIN.left}>

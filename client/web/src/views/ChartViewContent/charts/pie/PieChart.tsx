@@ -24,7 +24,7 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
 
     // For now we can ignore all other pies, we need to render only one pie per chart
     const content = pies[0]
-    const { data, dataKey, nameKey, linkURLKey = '' as keyof Datum, fillKey = '' as keyof Datum } = content
+    const { data, dataKey, nameKey, linkURLKey, fillKey } = content
 
     const sortedData = useMemo(() => distributePieArcs(data, dataKey), [data, dataKey])
 
@@ -51,8 +51,9 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
     // cause that's too generic to derive type by ts
     const getKey = (arc: PieArcDatum<Datum>): string => (arc.data[nameKey] as unknown) as string
     const getFillColor = (arc: PieArcDatum<Datum>): string =>
-        ((arc.data[fillKey] as unknown) as string) ?? DEFAULT_FILL_COLOR
-    const getLink = (arc: PieArcDatum<Datum>): string => (arc.data[linkURLKey] as unknown) as string
+        ((arc.data[fillKey as keyof Datum] as unknown) as string) ?? DEFAULT_FILL_COLOR
+    const getLink = (arc: PieArcDatum<Datum>): string | undefined =>
+        linkURLKey ? ((arc.data[linkURLKey] as unknown) as string) : undefined
 
     // Accessors
     const getValue = (data: Datum): number => +data[dataKey]

@@ -3742,7 +3742,7 @@
   dependencies:
     "@types/d3-color" "^1"
 
-"@types/d3-path@*", "@types/d3-path@^1", "@types/d3-path@^1.0.8":
+"@types/d3-path@*", "@types/d3-path@^1.0.8":
   version "1.0.9"
   resolved "https://registry.npmjs.org/@types/d3-path/-/d3-path-1.0.9.tgz#73526b150d14cd96e701597cbf346cfd1fd4a58c"
   integrity sha512-NaIeSIBiFgSC6IGUBjZWcscUJEq7vpVu7KthHN8eieTV9d9MqkSOZLH4chq1PmcKy06PNe3axLeKmRIyxJ+PZQ==
@@ -4914,10 +4914,10 @@
     d3-voronoi "^1.1.2"
     prop-types "^15.6.1"
 
-"@visx/xychart@^1.7.2":
-  version "1.7.2"
-  resolved "https://registry.npmjs.org/@visx/xychart/-/xychart-1.7.2.tgz#666acca923a72a81cb784da9ea42fc243139179b"
-  integrity sha512-um9P+YPf23mkWxPQtVQ3NHGIdUuW1dzGCm8xK9ZouguzEcZMuskKIxLSIN1Pq3F56h+u+perjAdXutXd80Xmcg==
+"@visx/xychart@^1.7.3":
+  version "1.7.3"
+  resolved "https://registry.npmjs.org/@visx/xychart/-/xychart-1.7.3.tgz#8a27d2819fcebc476f53c743f6ea5ed115dc0979"
+  integrity sha512-EpgvPxSn5byoGYop31PBZbClqjBFdZ3iTYQi2w09kQzSAJ3d2ZSzqQhsN5kp7HnAsWc+Ds5hpdt1Uj6wMqOd9w==
   dependencies:
     "@types/classnames" "^2.2.9"
     "@types/lodash" "^4.14.146"
@@ -8605,17 +8605,17 @@ cyclist@~0.2.2:
   resolved "https://registry.npmjs.org/cyclist/-/cyclist-0.2.2.tgz#1b33792e11e914a2fd6d6ed6447464444e5fa640"
   integrity sha1-GzN5LhHpFKL9bW7WRHRkRE5fpkA=
 
-"d3-array@1.2.0 - 2", d3-array@^2.3.0, d3-array@^2.6.0:
+d3-array@^1.2.0:
+  version "1.2.4"
+  resolved "https://registry.npmjs.org/d3-array/-/d3-array-1.2.4.tgz#635ce4d5eea759f6f605863dbcfc30edc737f71f"
+  integrity sha512-KHW6M86R+FUPYGb3R5XiYjXPq7VzwxZ22buHhAEVG5ztoEcZZMLov530mmccaqA1GghZArjQV46fuc8kUqhhHw==
+
+d3-array@^2.3.0, d3-array@^2.6.0:
   version "2.12.1"
   resolved "https://registry.npmjs.org/d3-array/-/d3-array-2.12.1.tgz#e20b41aafcdffdf5d50928004ececf815a465e81"
   integrity sha512-B0ErZK/66mHtEsR1TkPEEkwdy+WDesimkM5gpZr5Dsg54BiTA5RXtYW5qTLIAcekaS9xfZrzBLF/OAkB3Qn1YQ==
   dependencies:
     internmap "^1.0.0"
-
-d3-array@^1.2.0:
-  version "1.2.4"
-  resolved "https://registry.npmjs.org/d3-array/-/d3-array-1.2.4.tgz#635ce4d5eea759f6f605863dbcfc30edc737f71f"
-  integrity sha512-KHW6M86R+FUPYGb3R5XiYjXPq7VzwxZ22buHhAEVG5ztoEcZZMLov530mmccaqA1GghZArjQV46fuc8kUqhhHw==
 
 d3-axis@^1.0.12:
   version "1.0.12"
@@ -8627,7 +8627,7 @@ d3-collection@1:
   resolved "https://registry.npmjs.org/d3-collection/-/d3-collection-1.0.7.tgz#349bd2aa9977db071091c13144d5e4f16b5b310e"
   integrity sha512-ii0/r5f4sjKNTfh84Di+DpztYwqKhEyUlKoPrzUFfeSkWxjW49xU2QzO9qrPrNkpdI0XJkfzvmTu8V2Zylln6A==
 
-d3-color@1, "d3-color@1 - 2":
+d3-color@1:
   version "1.2.3"
   resolved "https://registry.npmjs.org/d3-color/-/d3-color-1.2.3.tgz#6c67bb2af6df3cc8d79efcc4d3a3e83e28c8048f"
   integrity sha512-x37qq3ChOTLd26hnps36lexMRhNXEtVxZ4B25rL0DVdDsGQIJGB18S7y9XDwlDD6MD/ZBzITCf4JjGMM10TZkw==
@@ -8647,7 +8647,7 @@ d3-interpolate-path@2.2.1:
   resolved "https://registry.npmjs.org/d3-interpolate-path/-/d3-interpolate-path-2.2.1.tgz#fd8ff20a90aff3f380bcd1c15305e7b531e55d07"
   integrity sha512-6qLLh/KJVzls0XtMsMpcxhqMhgVEN7VIbR/6YGZe2qlS8KDgyyVB20XcmGnDyB051HcefQXM/Tppa9vcANEA4Q==
 
-d3-interpolate@1, "d3-interpolate@1.2.0 - 2", d3-interpolate@^1.2.0, d3-interpolate@^1.3.0, d3-interpolate@^1.4.0:
+d3-interpolate@1, "d3-interpolate@1.2.0 - 2", d3-interpolate@^1.3.0, d3-interpolate@^1.4.0:
   version "1.4.0"
   resolved "https://registry.npmjs.org/d3-interpolate/-/d3-interpolate-1.4.0.tgz#526e79e2d80daa383f9e0c1c1c7dcc0f0583e987"
   integrity sha512-V9znK0zc3jOPV4VD2zZn0sDhZU3WAE2bmlxdIwwQPPzPjvyLkd8B3JUVdS1IDUFDkWZ72c9qnv1GK2ZagTZ8EA==

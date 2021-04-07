@@ -293,7 +293,7 @@
     "@visx/group": "^1.7.0",
     "@visx/mock-data": "^1.7.0",
     "@visx/scale": "^1.7.0",
-    "@visx/xychart": "^1.7.2",
+    "@visx/xychart": "^1.7.3",
     "bootstrap": "^4.5.2",
     "classnames": "^2.2.6",
     "comlink": "^4.3.0",
