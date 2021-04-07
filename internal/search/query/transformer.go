@@ -250,6 +250,16 @@ func fuzzifyGlobPattern(value string) string {
 	return "**" + value + "**"
 }
 
+// CountAll replaces count:all with count:999999.
+func CountAll(nodes []Node) ([]Node, error) {
+	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
+		if field == FieldCount && strings.ToLower(value) == "all" {
+			return Parameter{Field: field, Value: "999999", Negated: negated, Annotation: annotation}
+		}
+		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+	}), nil
+}
+
 // Globbing translates glob to regexp for fields repo, file, and repohasfile.
 func Globbing(nodes []Node) ([]Node, error) {
 	var globErrors []globError

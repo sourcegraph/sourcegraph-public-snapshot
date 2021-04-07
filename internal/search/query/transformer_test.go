@@ -960,3 +960,16 @@ func TestQueryField(t *testing.T) {
 	autogold.Want("omit repo", "pattern").Equal(t, test("repo:stuff pattern", "repo"))
 	autogold.Want("omit repo alias", "alias-pattern").Equal(t, test("r:stuff alias-pattern", "repo"))
 }
+
+func TestCountAll(t *testing.T) {
+	test := func(input string) string {
+		query, _ := Parse(input, SearchTypeLiteral)
+		q, _ := CountAll(query)
+		return toString(q)
+	}
+
+	autogold.Want("all", `(and "count:999999" "foo")`).Equal(t, test("foo count:all"))
+	autogold.Want("ALL", `(and "count:999999" "foo")`).Equal(t, test("foo count:ALL"))
+	autogold.Want("with integer count", `(and "count:3" "foo")`).Equal(t, test("foo count:3"))
+	autogold.Want("subexpressions", `(or (and "count:3" "foo") (and "count:999999" "bar"))`).Equal(t, test("(foo count:3) or (bar count:all)"))
+}
