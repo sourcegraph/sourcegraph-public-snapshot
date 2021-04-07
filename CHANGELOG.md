@@ -29,7 +29,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
-## 3.26.0
 ## 3.26.2
 
 ### Fixed
