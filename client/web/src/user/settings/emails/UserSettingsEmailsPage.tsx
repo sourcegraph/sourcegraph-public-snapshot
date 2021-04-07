@@ -3,10 +3,10 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { UserAreaUserFields, UserEmailsResult, UserEmailsVariables } from '../../../graphql-operations'
-import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { siteFlags } from '../../../site/backend'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import { ErrorAlert } from '../../../components/alerts'

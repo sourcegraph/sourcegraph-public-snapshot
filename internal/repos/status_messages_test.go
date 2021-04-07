@@ -77,8 +77,8 @@ func TestStatusMessages(t *testing.T) {
 		listRepoErr     error
 		res             []StatusMessage
 		user            *types.User
-		// maps repoName to external service id
-		repoOwner map[api.RepoName]int64
+		// maps repoName to external service
+		repoOwner map[api.RepoName]*types.ExternalService
 		cloud     bool
 		err       string
 	}{
@@ -94,8 +94,8 @@ func TestStatusMessages(t *testing.T) {
 			stored:          []*types.Repo{{Name: "foobar"}},
 			user:            admin,
 			gitserverCloned: []string{},
-			repoOwner: map[api.RepoName]int64{
-				"foobar": siteLevelService.ID,
+			repoOwner: map[api.RepoName]*types.ExternalService{
+				"foobar": siteLevelService,
 			},
 			res: []StatusMessage{
 				{
@@ -110,9 +110,9 @@ func TestStatusMessages(t *testing.T) {
 			stored:          []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
 			user:            admin,
 			gitserverCloned: []string{"foobar"},
-			repoOwner: map[api.RepoName]int64{
-				"foobar": siteLevelService.ID,
-				"barfoo": siteLevelService.ID,
+			repoOwner: map[api.RepoName]*types.ExternalService{
+				"foobar": siteLevelService,
+				"barfoo": siteLevelService,
 			},
 			res: []StatusMessage{
 				{
@@ -125,8 +125,8 @@ func TestStatusMessages(t *testing.T) {
 		{
 			name:   "non admin users should only count their own non cloned repos",
 			stored: []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			repoOwner: map[api.RepoName]int64{
-				"foobar": userService.ID,
+			repoOwner: map[api.RepoName]*types.ExternalService{
+				"foobar": userService,
 			},
 			user: nonAdmin,
 			res: []StatusMessage{
@@ -149,9 +149,9 @@ func TestStatusMessages(t *testing.T) {
 			stored:          []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
 			user:            admin,
 			gitserverCloned: []string{"one", "two", "three"},
-			repoOwner: map[api.RepoName]int64{
-				"foobar": siteLevelService.ID,
-				"barfoo": siteLevelService.ID,
+			repoOwner: map[api.RepoName]*types.ExternalService{
+				"foobar": siteLevelService,
+				"barfoo": siteLevelService,
 			},
 			res: []StatusMessage{
 				{
@@ -263,16 +263,19 @@ func TestStatusMessages(t *testing.T) {
 			// Set up ownership of repos
 			if tc.repoOwner != nil {
 				for _, repo := range stored {
-					svcID, ok := tc.repoOwner[repo.Name]
+					svc, ok := tc.repoOwner[repo.Name]
 					if !ok {
 						continue
 					}
-					_, err = db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES ($1, $2, 'example.com')`, svcID, repo.ID)
+					_, err = db.ExecContext(ctx, `
+						INSERT INTO external_service_repos(external_service_id, repo_id, user_id, clone_url)
+						VALUES ($1, $2, NULLIF($3, 0), 'example.com')
+					`, svc.ID, repo.ID, svc.NamespaceUserID)
 					if err != nil {
 						t.Fatal(err)
 					}
 					t.Cleanup(func() {
-						_, err = db.ExecContext(ctx, `DELETE FROM external_service_repos WHERE external_service_id = $1`, svcID)
+						_, err = db.ExecContext(ctx, `DELETE FROM external_service_repos WHERE external_service_id = $1`, svc.ID)
 						if err != nil {
 							t.Fatal(err)
 						}

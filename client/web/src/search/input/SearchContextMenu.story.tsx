@@ -1,6 +1,9 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
+import { Observable, of } from 'rxjs'
 import { WebStory } from '../../components/WebStory'
+import { ListSearchContextsResult } from '../../graphql-operations'
+import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
 const { add } = storiesOf('web/search/input/SearchContextMenu', module)
@@ -18,13 +21,14 @@ const { add } = storiesOf('web/search/input/SearchContextMenu', module)
     ))
 
 const defaultProps: SearchContextMenuProps = {
-    availableSearchContexts: [
+    fetchAutoDefinedSearchContexts: of([
         {
             __typename: 'SearchContext',
             id: '1',
             spec: 'global',
             autoDefined: true,
             description: 'All repositories on Sourcegraph',
+            repositories: [],
         },
         {
             __typename: 'SearchContext',
@@ -32,25 +36,42 @@ const defaultProps: SearchContextMenuProps = {
             spec: '@username',
             autoDefined: true,
             description: 'Your repositories on Sourcegraph',
+            repositories: [],
         },
-        {
-            __typename: 'SearchContext',
-            id: '3',
-            spec: '@username/test-version-1.5',
-            autoDefined: true,
-            description: 'Only code in version 1.5',
-        },
-    ],
+    ]),
+    fetchSearchContexts: (
+        first: number,
+        query?: string,
+        after?: string
+    ): Observable<ListSearchContextsResult['searchContexts']> =>
+        of({
+            nodes: [
+                {
+                    __typename: 'SearchContext',
+                    id: '3',
+                    spec: '@username/test-version-1.5',
+                    autoDefined: false,
+                    description: 'Only code in version 1.5',
+                    repositories: [],
+                },
+            ],
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            totalCount: 1,
+        }),
     defaultSearchContextSpec: 'global',
     selectedSearchContextSpec: 'global',
     selectSearchContextSpec: () => {},
     closeMenu: () => {},
 }
 
+const emptySearchContexts = {
+    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+    fetchSearchContexts: mockFetchSearchContexts,
+}
+
 add('default', () => <WebStory>{() => <SearchContextMenu {...defaultProps} />}</WebStory>, {})
 
-add(
-    'empty',
-    () => <WebStory>{() => <SearchContextMenu {...defaultProps} availableSearchContexts={[]} />}</WebStory>,
-    {}
-)
+add('empty', () => <WebStory>{() => <SearchContextMenu {...defaultProps} {...emptySearchContexts} />}</WebStory>, {})

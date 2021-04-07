@@ -5,7 +5,7 @@ import { RecentFilesPanel } from './RecentFilesPanel'
 import { RecentSearchesPanel } from './RecentSearchesPanel'
 import { RepositoriesPanel } from './RepositoriesPanel'
 import { SavedSearchesPanel } from './SavedSearchesPanel'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { RepogroupPanel } from './RepogroupPanel'
 
 interface Props extends Pick<PatternTypeProps, 'patternType'>, TelemetryProps, HomePanelsProps {

@@ -1,7 +1,7 @@
 import { builtinAuthProvider, siteGQLID, siteID } from './jscontext'
 import { WebGraphQlOperations } from '../graphql-operations'
-import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
-import { testUserID, sharedGraphQlResults } from '../../../shared/src/testing/integration/graphQlResults'
+import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { testUserID, sharedGraphQlResults } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
 /**
  * Predefined results for GraphQL requests that are made on almost every page.
@@ -142,14 +142,15 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             alwaysNil: null,
         },
     }),
-    SearchContexts: () => ({
-        searchContexts: [
+    AutoDefinedSearchContexts: () => ({
+        autoDefinedSearchContexts: [
             {
                 __typename: 'SearchContext',
                 id: '1',
                 spec: 'global',
                 autoDefined: true,
                 description: 'All repositories on Sourcegraph',
+                repositories: [],
             },
             {
                 __typename: 'SearchContext',
@@ -157,8 +158,19 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
                 spec: '@username',
                 autoDefined: true,
                 description: 'Your repositories on Sourcegraph',
+                repositories: [],
             },
         ],
+    }),
+    ListSearchContexts: () => ({
+        searchContexts: {
+            nodes: [],
+            totalCount: 0,
+            pageInfo: { hasNextPage: false, endCursor: null },
+        },
+    }),
+    IsSearchContextAvailable: () => ({
+        isSearchContextAvailable: false,
     }),
     UserRepositories: () => ({
         node: {

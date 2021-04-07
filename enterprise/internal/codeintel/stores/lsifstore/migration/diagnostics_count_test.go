@@ -1,4 +1,4 @@
-package lsifstore
+package migration
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -20,9 +21,9 @@ func TestDiagnosticsCountMigrator(t *testing.T) {
 		t.Skip()
 	}
 	dbtesting.SetupGlobalTestDB(t)
-	store := NewStore(dbconn.Global, &observation.TestContext)
-	migrator := NewDiagnosticsCountMigrator(store)
-	serializer := newSerializer()
+	store := lsifstore.NewStore(dbconn.Global, &observation.TestContext)
+	migrator := NewDiagnosticsCountMigrator(store, 1000)
+	serializer := lsifstore.NewSerializer()
 
 	assertProgress := func(expectedProgress float64) {
 		if progress, err := migrator.Progress(context.Background()); err != nil {
@@ -42,7 +43,7 @@ func TestDiagnosticsCountMigrator(t *testing.T) {
 		}
 	}
 
-	n := DiagnosticCountMigrationBatchSize * 2
+	n := 2000
 	expectedCounts := make([]int, 0, n)
 	diagnostics := make([]semantic.DiagnosticData, 0, n)
 
@@ -58,7 +59,8 @@ func TestDiagnosticsCountMigrator(t *testing.T) {
 		}
 
 		if err := store.Exec(context.Background(), sqlf.Sprintf(
-			"INSERT INTO lsif_data_documents (dump_id, path, data, schema_version, num_diagnostics) VALUES (42, %s, %s, 1, 0)",
+			"INSERT INTO lsif_data_documents (dump_id, path, data, schema_version, num_diagnostics) VALUES (%s, %s, %s, 1, 0)",
+			42+i/(n/2), // 50% id=42, 50% id=43
 			fmt.Sprintf("p%04d", i),
 			data,
 		)); err != nil {

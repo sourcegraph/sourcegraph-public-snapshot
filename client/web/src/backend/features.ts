@@ -1,6 +1,6 @@
 import { Observable, from, concat } from 'rxjs'
-import { HoverMerged } from '../../../shared/src/api/client/types/hover'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import {
     FileSpec,
     UIPositionSpec,
@@ -8,15 +8,15 @@ import {
     ResolvedRevisionSpec,
     toURIWithPath,
     toRootURI,
-} from '../../../shared/src/util/url'
+} from '@sourcegraph/shared/src/util/url'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { switchMap } from 'rxjs/operators'
-import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { DocumentHighlight } from 'sourcegraph'
-import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
+import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { Remote } from 'comlink'
-import { FlatExtensionHostAPI } from '../../../shared/src/api/contract'
-import { FileDecorationsByPath } from '../../../shared/src/api/extension/extensionHostApi'
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 /**
  * Fetches hover information for the given location.

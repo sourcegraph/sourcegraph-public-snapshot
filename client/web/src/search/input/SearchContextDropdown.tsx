@@ -5,8 +5,9 @@ import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { SearchContextMenu } from './SearchContextMenu'
 import { SubmitSearchParameters } from '../helpers'
-import { VersionContextProps } from '../../../../shared/src/search/util'
-import { isContextFilterInQuery } from '../../../../shared/src/search/query/validate'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 
 export interface SearchContextDropdownProps
     extends Omit<SearchContextProps, 'showSearchContext'>,
@@ -28,6 +29,8 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         selectedSearchContextSpec,
         setSelectedSearchContextSpec,
         submitSearch,
+        fetchAutoDefinedSearchContexts,
+        fetchSearchContexts,
     } = props
 
     const [isOpen, setIsOpen] = useState(false)
@@ -35,7 +38,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
     const [isDisabled, setIsDisabled] = useState(false)
 
     // Disable the dropdown if the query contains a context filter
-    useEffect(() => setIsDisabled(isContextFilterInQuery(query)), [query])
+    useEffect(() => setIsDisabled(filterExists(query, FilterType.context)), [query])
 
     const submitOnToggle = useCallback(
         (selectedSearchContextSpec: string): void => {
@@ -99,6 +102,8 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     <SearchContextMenu
                         {...props}
                         selectSearchContextSpec={selectSearchContextSpec}
+                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                        fetchSearchContexts={fetchSearchContexts}
                         closeMenu={toggleOpen}
                     />
                 </DropdownMenu>

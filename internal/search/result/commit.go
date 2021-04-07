@@ -1,6 +1,7 @@
 package result
 
 import (
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -38,3 +39,18 @@ func (r *CommitMatch) Limit(limit int) int {
 	}
 	return limit - len(r.Body.Highlights)
 }
+
+func (r *CommitMatch) Select(path filter.SelectPath) Match {
+	switch path.Type {
+	case filter.Repository:
+		return &RepoMatch{
+			Name: r.RepoName.Name,
+			ID:   r.RepoName.ID,
+		}
+	case filter.Commit:
+		return r
+	}
+	return nil
+}
+
+func (r *CommitMatch) searchResultMarker() {}

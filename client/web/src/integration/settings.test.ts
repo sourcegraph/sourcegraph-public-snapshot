@@ -1,10 +1,10 @@
 import assert from 'assert'
-import { retry } from '../../../shared/src/testing/utils'
-import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/testing/driver'
+import { retry } from '@sourcegraph/shared/src/testing/utils'
+import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
-import { settingsID, testUserID } from '../../../shared/src/testing/integration/graphQlResults'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+import { settingsID, testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 describe('Settings', () => {
     let driver: Driver

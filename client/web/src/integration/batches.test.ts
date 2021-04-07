@@ -1,8 +1,8 @@
 import assert from 'assert'
-import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { subDays, addDays } from 'date-fns'
 import {
     ChangesetCheckState,
@@ -25,7 +25,7 @@ import {
     ChangesetState,
     ExternalServiceKind,
     SharedGraphQlOperations,
-} from '../../../shared/src/graphql-operations'
+} from '@sourcegraph/shared/src/graphql-operations'
 import { percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 
 const batchChangeListNode: ListBatchChange = {

@@ -20,10 +20,11 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - The minimum supported version of Postgres has been bumped from `9.6` to `12`. The upgrade procedure is mostly automated for existing deployments, but may require action if using the single-container deployment or an external database. See the [upgrade documentation](https://docs.sourcegraph.com/admin/updates) for your deployment type for detailed instructions.
+- Changesets in batch changes will now be marked as archived instead of being detached when a new batch spec that doesn't include the changesets is applied. Once they're archived users can manually detach them in the UI. [#19527](https://github.com/sourcegraph/sourcegraph/pull/19527)
 
 ### Fixed
 
--
+- A regression caused by search onboarding tour logic to never focus input in the search bar on the homepage. Input now focuses on the homepage if the search tour isn't in effect. [#19678](https://github.com/sourcegraph/sourcegraph/pull/19678)
 
 ## 3.26.1
 
@@ -42,7 +43,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Commit search returning duplicate commits. [#19460](https://github.com/sourcegraph/sourcegraph/pull/19460)
 - Clicking the Code Monitoring tab tries to take users to a non-existent repo. [#19525](https://github.com/sourcegraph/sourcegraph/pull/19525)
-- Diff search not highlighting search terms correctly for some files. [#19543](https://github.com/sourcegraph/sourcegraph/pull/19543)
+- Diff and commit search not highlighting search terms correctly for some files. [#19543](https://github.com/sourcegraph/sourcegraph/pull/19543), [#19639](https://github.com/sourcegraph/sourcegraph/pull/19639)
 
 ### Removed
 

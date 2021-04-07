@@ -34,9 +34,6 @@ type ApplyBatchChangeOpts struct {
 	// When FailIfBatchChangeExists is true, ApplyBatchChange will fail if a batch change
 	// matching the given batch spec already exists.
 	FailIfBatchChangeExists bool
-
-	// Feature-flagged: archive changesets instead of detaching them
-	ArchiveChangesets bool
 }
 
 func (o ApplyBatchChangeOpts) String() string {
@@ -132,9 +129,7 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 	}
 
 	// And execute the mapping.
-	r := rewirer.New(mappings, batchChange.ID, opts.ArchiveChangesets)
-
-	changesets, err := r.Rewire()
+	changesets, err := rewirer.New(mappings, batchChange.ID).Rewire()
 	if err != nil {
 		return nil, err
 	}

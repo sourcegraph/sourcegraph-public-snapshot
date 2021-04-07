@@ -1,6 +1,6 @@
-import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
+import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
 import assert from 'assert'
@@ -49,8 +49,8 @@ describe('Search onboarding', () => {
             RepoGroups: () => ({
                 repoGroups: [],
             }),
-            SearchContexts: () => ({
-                searchContexts: [],
+            AutoDefinedSearchContexts: () => ({
+                autoDefinedSearchContexts: [],
             }),
             ViewerSettings: () => ({
                 viewerSettings: {

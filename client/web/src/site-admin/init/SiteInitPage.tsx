@@ -3,7 +3,7 @@ import { Redirect } from 'react-router'
 import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
 import { submitTrialRequest } from '../../marketing/backend'
 import { BrandLogo } from '../../components/branding/BrandLogo'
-import { ThemeProps } from '../../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AuthenticatedUser } from '../../auth'
 import { SourcegraphContext } from '../../jscontext'
 

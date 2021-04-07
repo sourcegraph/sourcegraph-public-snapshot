@@ -1,7 +1,7 @@
 import React from 'react'
 import { Timestamp } from '../../../components/time/Timestamp'
 import CreationIcon from 'mdi-react/CreationIcon'
-import { Link } from '../../../../../shared/src/components/Link'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SupersedingBatchSpecFields } from '../../../graphql-operations'
 import { parseISO } from 'date-fns'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'

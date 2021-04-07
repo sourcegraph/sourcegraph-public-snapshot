@@ -305,9 +305,6 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
             [supersedingBatchSpec, viewerCanAdminister, isClosed]
         )
 
-        // Toggle feature flag on
-        window.context.experimentalFeatures = { archiveBatchChangeChangesets: true }
-
         const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
         return (
             <EnterpriseWebStory initialEntries={[url]}>

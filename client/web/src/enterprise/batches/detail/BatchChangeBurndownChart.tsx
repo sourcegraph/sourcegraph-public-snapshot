@@ -12,10 +12,10 @@ import {
 } from 'recharts'
 import { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operations'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { queryChangesetCountsOverTime as _queryChangesetCountsOverTime } from './backend'
 import { getYear, parseISO } from 'date-fns'
-import { Toggle } from '../../../../../branded/src/components/Toggle'
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 
 interface Props {
     batchChangeID: Scalars['ID']
@@ -76,7 +76,6 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
     queryChangesetCountsOverTime = _queryChangesetCountsOverTime,
     width = '100%',
 }) => {
-    const archiveEnabled = window.context?.experimentalFeatures?.archiveBatchChangeChangesets
     const [includeArchived, setIncludeArchived] = useState<boolean>(false)
     const toggleIncludeArchived = useCallback((): void => setIncludeArchived(previousValue => !previousValue), [])
 
@@ -178,12 +177,8 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
                         setHiddenStates={setHiddenStates}
                     />
                 ))}
-                {archiveEnabled && (
-                    <>
-                        <hr className="flex-grow-1" />
-                        <IncludeArchivedToggle includeArchived={includeArchived} onToggle={toggleIncludeArchived} />
-                    </>
-                )}
+                <hr className="flex-grow-1" />
+                <IncludeArchivedToggle includeArchived={includeArchived} onToggle={toggleIncludeArchived} />
             </div>
         </div>
     )

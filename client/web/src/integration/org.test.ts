@@ -1,13 +1,13 @@
 import assert from 'assert'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { Driver, createDriverForTest, percySnapshot } from '../../../shared/src/testing/driver'
+import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
-import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
-import { emptyResponse } from '../../../shared/src/testing/integration/graphQlResults'
-import { subtypeOf } from '../../../shared/src/util/types'
-import { retry } from '../../../shared/src/testing/utils'
+import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
+import { subtypeOf } from '@sourcegraph/shared/src/util/types'
+import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 describe('Organizations', () => {
     const testOrg = subtypeOf<OrganizationResult['organization']>()({

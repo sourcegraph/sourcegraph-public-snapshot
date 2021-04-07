@@ -788,13 +788,9 @@ func TestPermissionLevels(t *testing.T) {
 
 							actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
 
-							archiveChangesets := true
 							conf.Mock(&conf.Unified{
 								SiteConfiguration: schema.SiteConfiguration{
 									BatchChangesRestrictToAdmins: &restrict,
-									ExperimentalFeatures: &schema.ExperimentalFeatures{
-										ArchiveBatchChangeChangesets: &archiveChangesets,
-									},
 								},
 							})
 							defer conf.Mock(nil)

@@ -4,6 +4,8 @@ import { isEqual } from 'lodash'
 import FileIcon from 'mdi-react/FileIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
+import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -15,24 +17,24 @@ import {
     ParsedSearchQueryProps,
     SearchContextProps,
 } from '..'
-import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
-import { FileMatch } from '../../../../shared/src/components/FileMatch'
-import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
-import { VirtualList } from '../../../../shared/src/components/VirtualList'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { isDefined, hasProperty } from '../../../../shared/src/util/types'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isDefined, hasProperty } from '@sourcegraph/shared/src/util/types'
 import { SearchResult } from '../../components/SearchResult'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { ThemeProps } from '../../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { ErrorAlert } from '../../components/alerts'
-import { VersionContextProps } from '../../../../shared/src/search/util'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { DeployType } from '../../jscontext'
 import { AuthenticatedUser } from '../../auth'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
@@ -520,8 +522,25 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         settingsCascade={this.props.settingsCascade}
                     />
                 )
+            case 'CommitSearchResult':
+                return (
+                    <SearchResult
+                        icon={SourceCommitIcon}
+                        result={result}
+                        isLightTheme={this.props.isLightTheme}
+                        history={this.props.history}
+                    />
+                )
+            case 'Repository':
+                return (
+                    <SearchResult
+                        icon={SourceRepositoryMultipleIcon}
+                        result={result}
+                        isLightTheme={this.props.isLightTheme}
+                        history={this.props.history}
+                    />
+                )
         }
-        return <SearchResult result={result} isLightTheme={this.props.isLightTheme} history={this.props.history} />
     }
 
     private itemKey = (item: GQL.GenericSearchResultInterface | GQL.IFileMatch): string => {

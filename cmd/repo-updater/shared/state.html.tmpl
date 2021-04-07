@@ -97,6 +97,40 @@
                 </tbody>
             </table>
         </div>
+        <div class="mt-5 w-9/12">
+            <h4 class="mb-3">Sync jobs</h4>
+            <p>
+                The current list of external service sync jobs, ordered by start date descending
+            </p>
+            <table class="table text-left mt-4">
+                <thead class="thead-light">
+                <tr>
+                    <th>Service</th>
+                    <th>State</th>
+                    <th>Started</th>
+                    <th>Finished</th>
+                    <th>Failure message</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{range $schedulerDump.SyncJobs}}
+                    <tr>
+                        <td>{{.ExternalServiceID}}</td>
+                        <td>{{.State}}</td>
+                        <td>{{.StartedAt}}</td>
+                        <td>{{.FinishedAt}}</td>
+                        <td>{{.FailureMessage}}</td>
+                    </tr>
+                {{else}}
+                    <tr>
+                        <td colspan="100" class="text-center">
+                            <p class="alert">No sync jobs</p>
+                        </td>
+                    </tr>
+                {{end}}
+                </tbody>
+            </table>
+        </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>

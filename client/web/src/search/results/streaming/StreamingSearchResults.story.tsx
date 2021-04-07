@@ -3,9 +3,9 @@ import { createBrowserHistory } from 'history'
 import React from 'react'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
-import { SearchPatternType } from '../../../../../shared/src/graphql-operations'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { WebStory } from '../../../components/WebStory'
 import { AggregateStreamingSearchResults } from '../../stream'
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
@@ -14,7 +14,7 @@ import {
     HIGHLIGHTED_FILE_LINES_LONG,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULT,
-} from '../../../../../shared/src/util/searchTestHelpers'
+} from '@sourcegraph/shared/src/util/searchTestHelpers'
 import { AuthenticatedUser } from '../../../auth'
 
 const history = createBrowserHistory()
@@ -36,7 +36,6 @@ const defaultProps: StreamingSearchResultsProps = {
     caseSensitive: false,
     patternType: SearchPatternType.literal,
     versionContext: undefined,
-    selectedSearchContextSpec: 'global',
     availableVersionContexts: [],
     previousVersionContext: null,
 

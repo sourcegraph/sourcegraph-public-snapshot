@@ -1,7 +1,7 @@
 import assert from 'assert'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { Driver, createDriverForTest, percySnapshot } from '../../../shared/src/testing/driver'
-import { ExtensionManifest } from '../../../shared/src/schema/extensionSchema'
+import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
     createRepositoryRedirectResult,
@@ -11,10 +11,10 @@ import {
     createBlobContentResult,
 } from './graphQlResponseHelpers'
 import { WebGraphQlOperations } from '../graphql-operations'
-import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
+import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { Settings } from '../schema/settings.schema'
 import type * as sourcegraph from 'sourcegraph'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { Page } from 'puppeteer'
 
 describe('Blob viewer', () => {

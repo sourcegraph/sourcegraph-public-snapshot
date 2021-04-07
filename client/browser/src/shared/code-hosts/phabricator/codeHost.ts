@@ -1,8 +1,8 @@
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { Position } from '@sourcegraph/extension-api-types'
 import { map } from 'rxjs/operators'
-import { PlatformContext } from '../../../../../shared/src/platform/context'
-import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '../../../../../shared/src/util/url'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { fetchBlobContentLines } from '../../repo/backend'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView, toCodeViewResolver } from '../shared/codeViews'
@@ -10,7 +10,7 @@ import { ViewResolver } from '../shared/views'
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import { diffDomFunctions, diffusionDOMFns } from './domFunctions'
 import { resolveDiffFileInfo, resolveDiffusionFileInfo, resolveRevisionFileInfo } from './fileInfo'
-import { NotificationType } from '../../../../../shared/src/api/extension/extensionHostApi'
+import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 /**
  * Gets the actual text content we care about and returns the number of characters we have stripped

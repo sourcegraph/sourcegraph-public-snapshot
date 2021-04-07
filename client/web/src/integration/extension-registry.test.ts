@@ -1,11 +1,11 @@
 import assert from 'assert'
-import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/testing/driver'
+import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
 import { siteGQLID, siteID } from './jscontext'
-import { ExtensionsResult } from '../../../shared/src/graphql-operations'
+import { ExtensionsResult } from '@sourcegraph/shared/src/graphql-operations'
 
 const typescriptRawManifest = JSON.stringify({
     activationEvents: ['*'],

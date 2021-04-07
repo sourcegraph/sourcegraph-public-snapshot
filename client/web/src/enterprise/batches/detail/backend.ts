@@ -1,5 +1,5 @@
 import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { Observable } from 'rxjs'
 import { diffStatFields, fileDiffFields } from '../../../backend/diff'
 import {

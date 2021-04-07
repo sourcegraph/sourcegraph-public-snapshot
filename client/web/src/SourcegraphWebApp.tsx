@@ -8,20 +8,20 @@ import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
 import { bufferCount, startWith, switchMap } from 'rxjs/operators'
-import { setLinkComponent } from '../../shared/src/components/Link'
+import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import {
     Controller as ExtensionsController,
     createController as createExtensionsController,
-} from '../../shared/src/extensions/controller'
-import { Notifications } from '../../shared/src/notifications/Notifications'
-import { PlatformContext } from '../../shared/src/platform/context'
-import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../../shared/src/settings/settings'
+} from '@sourcegraph/shared/src/extensions/controller'
+import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { RouterLinkOrAnchor } from './components/RouterLinkOrAnchor'
-import { Tooltip } from '../../branded/src/components/tooltip/Tooltip'
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
@@ -41,6 +41,7 @@ import {
     fetchSavedSearches,
     fetchRecentSearches,
     fetchRecentFileViews,
+    fetchAutoDefinedSearchContexts,
     fetchSearchContexts,
 } from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
@@ -52,7 +53,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { resolveVersionContext, parseSearchURL, resolveSearchContextSpec } from './search'
+import { resolveVersionContext, parseSearchURL, getAvailableSearchContextSpecOrDefault } from './search'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
@@ -66,13 +67,12 @@ import {
     defaultPatternTypeFromSettings,
     experimentalFeaturesFromSettings,
 } from './util/settings'
-import { SearchPatternType } from '../../shared/src/graphql-operations'
-import { HTTPStatusError } from '../../shared/src/backend/fetch'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
 import { aggregateStreamingSearch } from './search/stream'
-import { ISearchContext } from '../../shared/src/graphql/schema'
 import { logCodeInsightsChanges } from './insights/analytics'
 import { listUserRepositories } from './site-admin/backend'
-import { NotificationType } from '../../shared/src/api/extension/extensionHostApi'
+import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -162,9 +162,9 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     showEnterpriseHomePanels: boolean
 
     showSearchContext: boolean
-    availableSearchContexts: ISearchContext[]
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
+    hasUserDefinedContexts: boolean
     hasUserAddedRepositories: boolean
 
     /**
@@ -273,10 +273,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showRepogroupHomepage: false,
             showOnboardingTour: false,
             showSearchContext: false,
-            availableSearchContexts: [],
             selectedSearchContextSpec,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
+            hasUserDefinedContexts: false,
             showEnterpriseHomePanels: false,
             globbing: false,
             showMultilineSearchConsole: false,
@@ -333,12 +333,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         )
 
         this.subscriptions.add(
-            fetchSearchContexts.subscribe(contexts => {
-                this.setState({ availableSearchContexts: contexts })
-            })
-        )
-
-        this.subscriptions.add(
             combineLatest([this.userRepositoriesUpdates, authenticatedUser])
                 .pipe(
                     switchMap(([, authenticatedUser]) =>
@@ -349,6 +343,12 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                     const hasUserAddedRepositories = userRepositories !== null && userRepositories.nodes.length > 0
                     this.setState({ hasUserAddedRepositories })
                 })
+        )
+
+        this.subscriptions.add(
+            fetchSearchContexts(1).subscribe(({ totalCount }) =>
+                this.setState({ hasUserDefinedContexts: totalCount > 0 })
+            )
         )
 
         /**
@@ -467,7 +467,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     showSearchContext={this.canShowSearchContext()}
                                     selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
-                                    availableSearchContexts={this.state.availableSearchContexts}
+                                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                                    fetchSearchContexts={fetchSearchContexts}
                                     defaultSearchContextSpec={this.state.defaultSearchContextSpec}
                                     showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                     globbing={this.state.globbing}
@@ -541,24 +542,22 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.setState({ hasUserAddedRepositories: userRepoCount > 0 })
     }
 
-    private hasUserDefinedSearchContexts = (): boolean =>
-        !!this.state.availableSearchContexts.find(context => !context.autoDefined)
-
     private canShowSearchContext = (): boolean =>
-        this.state.showSearchContext && (this.state.hasUserAddedRepositories || this.hasUserDefinedSearchContexts())
+        this.state.showSearchContext && (this.state.hasUserAddedRepositories || this.state.hasUserDefinedContexts)
 
     private getSelectedSearchContextSpec = (): string | undefined =>
         this.canShowSearchContext() ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpec = (spec: string): void => {
-        const { availableSearchContexts, defaultSearchContextSpec } = this.state
-        const resolvedSearchContextSpec = resolveSearchContextSpec(
-            spec,
-            availableSearchContexts,
-            defaultSearchContextSpec
+        const { defaultSearchContextSpec } = this.state
+        this.subscriptions.add(
+            getAvailableSearchContextSpecOrDefault({ spec, defaultSpec: defaultSearchContextSpec }).subscribe(
+                availableSearchContextSpecOrDefault => {
+                    this.setState({ selectedSearchContextSpec: availableSearchContextSpecOrDefault })
+                    localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
+                }
+            )
         )
-        this.setState({ selectedSearchContextSpec: resolvedSearchContextSpec })
-        localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, resolvedSearchContextSpec)
     }
 }
 

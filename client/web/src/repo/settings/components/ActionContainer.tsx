@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { ErrorAlert } from '../../../components/alerts'
-import { asError } from '../../../../../shared/src/util/errors'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 import * as H from 'history'
 
 export const BaseActionContainer: React.FunctionComponent<{

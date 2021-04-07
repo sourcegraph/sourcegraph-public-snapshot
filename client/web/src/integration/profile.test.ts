@@ -1,8 +1,8 @@
 import assert from 'assert'
-import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/testing/driver'
+import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { UserAreaUserFields } from '../graphql-operations'
 
 describe('User profile page', () => {
