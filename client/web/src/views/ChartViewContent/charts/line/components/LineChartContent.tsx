@@ -6,7 +6,6 @@ import { curveLinear } from '@visx/curve'
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
 import { Axis, GlyphSeries, LineSeries, Tooltip, XYChart } from '@visx/xychart'
 import { GridScale } from '@visx/grid/lib/types'
-
 import { format } from 'd3-format'
 import { timeFormat } from 'd3-time-format'
 import { GridColumns, GridRows } from '@visx/grid'

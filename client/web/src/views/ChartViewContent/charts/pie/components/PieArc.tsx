@@ -12,7 +12,6 @@ import { Label } from '../../../annotation/Label'
 import { onDatumClick } from '../../types'
 
 interface PieArcProps<Datum> {
-    visible: boolean
     getKey: (d: PieArcDatum<Datum>) => string
     getColor: (d: PieArcDatum<Datum>) => string
     getLink: (d: PieArcDatum<Datum>) => string
@@ -33,7 +32,7 @@ const TITLE_PROPS = { className: 'pie-chart__label-title' }
 const SUBTITLE_PROPS = { className: 'pie-chart__label-sub-title' }
 
 export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
-    const { visible, total, path, arc, getColor, getKey, getLink, onClick, onPointerMove, onPointerOut } = props
+    const { total, path, arc, getColor, getKey, getLink, onClick, onPointerMove, onPointerOut } = props
 
     const pathValue = path(arc) ?? ''
     const name = getKey(arc)
@@ -66,7 +65,6 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
 
     const classes = classnames('pie-chart__arc', {
         'pie-chart__arc--with-link': link,
-        'pie-chart__arc--active': visible,
     })
 
     return (

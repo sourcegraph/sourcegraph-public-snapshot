@@ -2,10 +2,6 @@
     // Arcs
     &__arc {
         stroke: var(--body-bg);
-
-        &--active {
-            opacity: 0;
-        }
     }
 
     &__arc--with-link {

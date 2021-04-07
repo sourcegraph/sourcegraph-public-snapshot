@@ -83,17 +83,13 @@
     // Tooltip
     &__tooltip {
         box-shadow: var(--border-color-2) 0 1px 2px !important;
-        border: 1px solid var(--border-color) !important;
+        border: 1px solid var(--border-color);
         color: var(--body-color) !important;
         background: var(--body-bg) !important;
     }
 
     &__tooltip-content {
         margin: 0.25rem;
-    }
-
-    &__tooltip-date {
-        font-size: 1em;
     }
 
     &__tooltip-list {

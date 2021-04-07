@@ -13,7 +13,7 @@ export function generateAccessors<Datum extends object>(
             scale === 'time'
                 ? // as unknown as string quick hack for cast Datum[keyof Datum] to string
                   // fix that when we will have a value type for LineChartContent<D> generic
-                  new Date(data?.[xDataKey] as unknown as number)
+                  new Date((data?.[xDataKey] as unknown) as number)
                 : // In case if we got linear scale we have to operate with numbers
                   +(data?.[xDataKey] ?? 0),
         y: series.reduce<Record<string, (data: Datum) => any>>((accessors, currentLine) => {

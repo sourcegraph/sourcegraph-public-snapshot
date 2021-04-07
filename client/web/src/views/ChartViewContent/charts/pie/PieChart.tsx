@@ -74,46 +74,29 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
                     pieSortValues={null}
                     padRadius={40}
                 >
-                    {pie => (
-                        <Group>
-                            {pie.arcs.map(arc => (
-                                <PieArc
-                                    key={getKey(arc)}
-                                    visible={getKey(arc) === (activeArc && getKey(activeArc))}
-                                    arc={arc}
-                                    path={pie.path}
-                                    total={total}
-                                    getColor={getFillColor}
-                                    getKey={getKey}
-                                    getLink={getLink}
-                                    onPointerMove={() => setActiveArc(arc)}
-                                    onClick={onDatumClick}
-                                />
-                            ))}
+                    {pie => {
+                        const arcs = activeArc
+                            ? [...pie.arcs.filter(arc => arc.index !== activeArc?.index), activeArc]
+                            : pie.arcs
 
-                            {/*
-                                Due the fact svg elements don't have css z-index (in svg only order of renderings matters)
-                                we have to render PieArcs twice to prevent visual label overlapping on small datasets.
-                                When user hovers one pie arc above we change the opacity and replace this arc with one
-                                of the arcs below by that we sort of change z-index and svg element and put hovered
-                                label and arc over other elements above
-                             */}
-                            {pie.arcs.map(arc => (
-                                <PieArc
-                                    key={getKey(arc)}
-                                    visible={!(getKey(arc) === (activeArc && getKey(activeArc)))}
-                                    arc={arc}
-                                    path={pie.path}
-                                    total={total}
-                                    getColor={getFillColor}
-                                    getKey={getKey}
-                                    getLink={getLink}
-                                    onPointerMove={() => setActiveArc(arc)}
-                                    onClick={onDatumClick}
-                                />
-                            ))}
-                        </Group>
-                    )}
+                        return (
+                            <Group>
+                                {arcs.map(arc => (
+                                    <PieArc
+                                        key={getKey(arc)}
+                                        arc={arc}
+                                        path={pie.path}
+                                        total={total}
+                                        getColor={getFillColor}
+                                        getKey={getKey}
+                                        getLink={getLink}
+                                        onPointerMove={() => setActiveArc(arc)}
+                                        onClick={onDatumClick}
+                                    />
+                                ))}
+                            </Group>
+                        )
+                    }}
                 </Pie>
             </Group>
         </svg>

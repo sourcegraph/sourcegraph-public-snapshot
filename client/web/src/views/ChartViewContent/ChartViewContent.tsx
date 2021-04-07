@@ -2,7 +2,7 @@ import React, { FunctionComponent, useMemo } from 'react'
 import { ChartContent } from 'sourcegraph'
 import * as H from 'history'
 import { ParentSize } from '@visx/responsive'
-import { TelemetryService } from '@sourcegraph/shared/out/src/telemetry/telemetryService';
+import { TelemetryService } from '@sourcegraph/shared/out/src/telemetry/telemetryService'
 import { createProgrammaticallyLinkHandler } from '@sourcegraph/shared/src/util/link-click-handler/linkClickHandler'
 
 import { LineChart } from './charts/line/LineChart'
