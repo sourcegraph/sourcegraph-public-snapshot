@@ -66,18 +66,38 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User, cloud
 		return nil, errors.Wrap(err, "counting uncloned repos")
 	}
 	if notCloned > 0 {
-		noun := "repositories"
-		if notCloned == 1 {
-			noun = "repository"
-		}
 		messages = append(messages, StatusMessage{
 			Cloning: &CloningProgress{
-				Message: fmt.Sprintf("%d %s not yet cloned", notCloned, noun),
+				Message: fmt.Sprintf("%d %s not yet cloned", notCloned, getRepoNoun(notCloned)),
+			},
+		})
+	}
+
+	// Show the number of repos that we could not sync
+	opts = database.ReposListOptions{
+		ExternalServiceIDs: extsvcIDs,
+		FailedSync:         true,
+	}
+	failedSync, err := database.Repos(db).Count(ctx, opts)
+	if err != nil {
+		return nil, errors.Wrap(err, "counting repo sync failures")
+	}
+	if failedSync > 0 {
+		messages = append(messages, StatusMessage{
+			SyncError: &SyncError{
+				Message: fmt.Sprintf("%d %s could not be synced", failedSync, getRepoNoun(failedSync)),
 			},
 		})
 	}
 
 	return messages, nil
+}
+
+func getRepoNoun(count int) string {
+	if count == 1 {
+		return "repository"
+	}
+	return "repositories"
 }
 
 type CloningProgress struct {
