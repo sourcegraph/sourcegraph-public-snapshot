@@ -3,20 +3,13 @@ import React from 'react'
 import { MemoryRouter } from 'react-router'
 import { EMPTY, NEVER, of } from 'rxjs'
 import { noop } from 'lodash'
-import webStyles from '../../../../web/src/main.scss'
+import webStyles from '@sourcegraph/web/src/main.scss'
 import { Panel } from './Panel'
-import { extensionsController } from '../../../../shared/src/util/searchTestHelpers'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
-import { pretendProxySubscribable, pretendRemote } from '../../../../shared/src/api/util'
-import { FlatExtensionHostAPI } from '../../../../shared/src/api/contract'
-import { PanelViewData } from '../../../../shared/src/api/extension/extensionHostApi'
-
-const { add } = storiesOf('branded/Panel', module).addDecorator(story => (
-    <>
-        <div className="p-4">{story()}</div>
-        <style>{webStyles}</style>
-    </>
-))
+import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 const panels: PanelViewData[] = [
     {
@@ -42,6 +35,55 @@ const panels: PanelViewData[] = [
     },
 ]
 
+const { add } = storiesOf('branded/Panel', module)
+    .addDecorator(story => (
+        <>
+            <div className="p-4">
+                <MemoryRouter initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
+                    {story()}
+                </MemoryRouter>
+            </div>
+            <style>{webStyles}</style>
+        </>
+    ))
+    .addParameters({
+        chromatic: {
+            viewports: [320, 576, 978, 1440],
+        },
+    })
+
+const panelActions = [
+    {
+        id: 'a',
+        actionItem: {
+            label: 'Action A',
+            description: 'This is Action A',
+        },
+        command: 'open',
+        commandArguments: ['https://example.com'],
+    },
+    {
+        id: 'b',
+        actionItem: {
+            label: 'Action B',
+            description: 'This is Action B',
+        },
+        command: 'updateConfiguration',
+        commandArguments: [],
+    },
+]
+
+const panelMenus = {
+    'panel/toolbar': [
+        {
+            action: 'a',
+        },
+        {
+            action: 'b',
+        },
+    ],
+}
+
 const panelProps = {
     repoName: 'git://github.com/foo/bar',
     fetchHighlightedFileLineRanges: () => of([]),
@@ -64,48 +106,16 @@ const panelProps = {
     },
 }
 
-const PanelWithActions = (
+add('Simple', () => <Panel {...panelProps} />)
+
+add('With actions', () => (
     <Panel
         {...panelProps}
         extensionsController={{
             ...extensionsController,
             extHostAPI: Promise.resolve(
                 pretendRemote<FlatExtensionHostAPI>({
-                    getContributions: () =>
-                        pretendProxySubscribable(
-                            of({
-                                actions: [
-                                    {
-                                        id: 'a',
-                                        actionItem: {
-                                            label: 'Action A',
-                                            description: 'This is Action A',
-                                        },
-                                        command: 'open',
-                                        commandArguments: ['https://example.com'],
-                                    },
-                                    {
-                                        id: 'b',
-                                        actionItem: {
-                                            label: 'Action B',
-                                            description: 'This is Action B',
-                                        },
-                                        command: 'updateConfiguration',
-                                        commandArguments: [],
-                                    },
-                                ],
-                                menus: {
-                                    'panel/toolbar': [
-                                        {
-                                            action: 'a',
-                                        },
-                                        {
-                                            action: 'b',
-                                        },
-                                    ],
-                                },
-                            })
-                        ),
+                    getContributions: () => pretendProxySubscribable(of({ actions: panelActions, menus: panelMenus })),
                     registerContributions: () => pretendProxySubscribable(EMPTY).subscribe(noop as any),
                     haveInitialExtensionsLoaded: () => pretendProxySubscribable(of(true)),
                     getPanelViews: () => pretendProxySubscribable(of(panels)),
@@ -114,32 +124,4 @@ const PanelWithActions = (
             ),
         }}
     />
-)
-
-add('Simple', () => (
-    <MemoryRouter initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
-        <div>
-            <Panel {...panelProps} />
-        </div>
-    </MemoryRouter>
-))
-
-add('Simple mobile', () => (
-    <MemoryRouter initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
-        <div style={{ width: 320 }}>
-            <Panel {...panelProps} />
-        </div>
-    </MemoryRouter>
-))
-
-add('With actions', () => (
-    <MemoryRouter initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
-        <div>{PanelWithActions}</div>
-    </MemoryRouter>
-))
-
-add('With actions mobile', () => (
-    <MemoryRouter initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
-        <div style={{ width: 320 }}>{PanelWithActions}</div>
-    </MemoryRouter>
 ))
