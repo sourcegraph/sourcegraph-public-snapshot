@@ -91,16 +91,16 @@ You will need to configure permission in Sourcegraph as:
 
 ```
 {
- "url": "https://gitlab.com",
- "token": "$PERSONAL_ACCESS_TOKEN",
- "authorization": {
-  "identityProvider": {
-   "type": "external",
-   "authProviderID": "$AUTH_PROVIDER_ID",
-   "authProviderType": "$AUTH_PROVIDER_TYPE",
-   "gitlabProvider": "saml"
+  "url": "https://gitlab.com",
+  "token": "$PERSONAL_ACCESS_TOKEN",
+  "authorization": {
+    "identityProvider": {
+      "type": "external",
+      "authProviderID": "$AUTH_PROVIDER_ID",
+      "authProviderType": "$AUTH_PROVIDER_TYPE",
+      "gitlabProvider": "saml"
+    }
   }
- }
 }
 ```
 
