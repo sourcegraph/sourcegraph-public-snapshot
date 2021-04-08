@@ -112,7 +112,7 @@ func NewServerRoutine(ready <-chan struct{}, extra ...Endpoint) goroutine.Backgr
 
 		router.Handle("/", index)
 		router.Handle("/healthz", http.HandlerFunc(healthzHandler))
-		router.Handle("/ready", http.HandlerFunc(readyHandler(ready)))
+		router.Handle("/ready", readyHandler(ready))
 		router.Handle("/debug", index)
 		router.Handle("/vars", http.HandlerFunc(expvarHandler))
 		router.Handle("/gc", http.HandlerFunc(gcHandler))
