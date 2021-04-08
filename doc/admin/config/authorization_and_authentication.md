@@ -70,7 +70,7 @@ Once that is configured, follow [these steps to configure access permissions](..
 
 ### Gitlab Enterprise or Cloud Authentication and Authorization
 
-Gitlab supports both permissions syncing and authentication (through OAuth). If you use Gitlab as your code host, you have two available authentication flows:
+We support both authentication and permissions syncing (through OAuth) for GitLab. If you use GitLab as your code host, you have two available authentication flows:
 
 1. Use SAML (or another auth mechanism) to log in to Gitlab
 2. Use Gitlab OAuth to log in to Sourcegraph
