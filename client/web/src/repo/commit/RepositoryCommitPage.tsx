@@ -93,7 +93,7 @@ interface Props
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 }
 
-type DiffMode = 'split' | 'unified'
+export type DiffMode = 'split' | 'unified'
 
 interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
     /** The commit, undefined while loading, or an error. */

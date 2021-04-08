@@ -10,7 +10,10 @@
 }
 
 .diff-hunk {
+    $color-addition: $oc-green-7;
+    $color-deletion: $oc-red-7;
     &__num {
+        background-color: var(--color-bg-2);
         min-width: 2.5rem;
         font-size: 0.75rem;
         line-height: (20/12);
@@ -18,7 +21,6 @@
         text-align: right;
         user-select: none;
         vertical-align: top !important;
-
         font-family: $code-font-family;
         color: var(--text-muted);
         &:hover {
@@ -44,32 +46,44 @@
             padding-right: 0.5rem;
             content: attr(data-diff-marker);
         }
+        &--empty {
+            background-color: var(--color-bg-2);
+            // This cell is always empty opacity will not affect any content
+            opacity: 0.5;
+        }
     }
 
-    &__line--active &__num {
-        background-color: rgba($oc-yellow-5, 0.35) !important;
-    }
-    &__line--active,
-    &__line--active &__content {
-        background-color: rgba($oc-yellow-5, 0.25) !important;
+    &__line {
+        &--code {
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            div {
+                display: inline;
+            }
+        }
+        &--addition {
+            background-color: rgba($color-addition, 0.17);
+        }
+        &--deletion {
+            background-color: rgba($color-deletion, 0.17);
+        }
+        &--active {
+            background-color: rgba($oc-yellow-5, 0.25) !important;
+        }
     }
 
-    $color-addition: $oc-green-7;
-    $color-deletion: $oc-red-7;
     &__line--addition &__num {
         background-color: rgba($color-addition, 0.25);
     }
-    &__line--addition,
-    &__line--addition &__content {
-        background-color: rgba($color-addition, 0.17);
-    }
+
     &__line--deletion &__num {
         background-color: rgba($color-deletion, 0.25);
     }
-    &__line--deletion,
-    &__line--deletion &__content {
-        background-color: rgba($color-deletion, 0.17);
+
+    &__line--active &__num {
+        background-color: rgba($oc-yellow-5, 0.25) !important;
     }
+
     &__line--both &__num,
     &__num--both {
         background-color: var(--color-bg-2);

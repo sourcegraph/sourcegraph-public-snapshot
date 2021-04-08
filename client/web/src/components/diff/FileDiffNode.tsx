@@ -13,6 +13,7 @@ import { Link } from '../../../../shared/src/components/Link'
 import { Observable } from 'rxjs'
 import { ViewerId } from '../../../../shared/src/api/viewerTypes'
 import { ExtensionInfo } from './FileDiffConnection'
+import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
 
 export interface FileDiffNodeProps extends ThemeProps {
     node: FileDiffFields
@@ -36,7 +37,7 @@ export interface FileDiffNodeProps extends ThemeProps {
 
     /** Reflect selected line in url */
     persistLines?: boolean
-    diffMode: 'split' | 'unified'
+    diffMode?: DiffMode
 }
 
 /** A file diff. */
@@ -173,7 +174,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                             }
                             hunks={node.hunks}
                             lineNumbers={lineNumbers}
-                            diffMode={diffMode}
+                            diffMode={diffMode || 'unified'}
                         />
                     ))}
             </div>

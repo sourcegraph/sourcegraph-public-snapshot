@@ -9,7 +9,7 @@ import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { property, isDefined } from '../../../../shared/src/util/types'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
-import { useHistory, useLocation } from 'react-router'
+import { useLocation } from 'react-router'
 import { DiffBoundary } from './DiffBoundary'
 import { Link } from 'react-router-dom'
 
@@ -46,6 +46,7 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
     return (
         <>
             <DiffBoundary
+                diffMode="unified"
                 {...hunk}
                 lineNumberClassName="diff-hunk__num--both"
                 contentClassName="diff-hunk__content"

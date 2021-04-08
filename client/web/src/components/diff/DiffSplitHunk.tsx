@@ -4,7 +4,8 @@ import { DecorationMapByLine, decorationStyleForTheme } from '../../../../shared
 import { property, isDefined } from '../../../../shared/src/util/types'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
-import { useSplitDiff, useHooksAddLineNumber } from '@sourcegraph/wildcard/src/hooks'
+import { useSplitDiff } from './useSplitDiff'
+import { useHunksAddLineNumber } from './useHunksAddLineNumber'
 import { useLocation } from 'react-router'
 import { TextDocumentDecoration } from 'sourcegraph'
 import { Line, EmptyLine } from './Lines'
@@ -36,7 +37,7 @@ const addDecorations = (isLightTheme: boolean, decorationsForLine: TextDocumentD
     return { lineStyle, decorationsWithAfterProperty }
 }
 
-interface Hunk {
+export interface Hunk {
     kind: DiffHunkLineType
     html: string
     anchor: string
@@ -53,12 +54,16 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
     isLightTheme,
 }) => {
     const location = useLocation()
-    const { hunksWithLineNumber } = useHooksAddLineNumber(
+
+    console.log(hunk.highlight.lines, hunk.newRange.startLine, hunk.oldRange.startLine, fileDiffAnchor)
+    const { hunksWithLineNumber } = useHunksAddLineNumber(
         hunk.highlight.lines,
         hunk.newRange.startLine,
         hunk.oldRange.startLine,
         fileDiffAnchor
     )
+    console.log(hunksWithLineNumber)
+
     const { diff } = useSplitDiff(hunksWithLineNumber)
 
     const groupHunks = React.useCallback(
@@ -188,6 +193,7 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
                 lineNumberClassName="diff-hunk__num--both"
                 contentClassName="diff-hunk__content"
                 lineNumbers={lineNumbers}
+                diffMode="split"
             />
             {diffView}
         </>

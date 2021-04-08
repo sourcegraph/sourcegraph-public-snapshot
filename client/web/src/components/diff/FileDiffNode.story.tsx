@@ -193,6 +193,7 @@ add('All file node states overview', () => (
                 {FILE_DIFF_NODES.map((node, index) => (
                     <FileDiffNode
                         {...webProps}
+                        diffMode="unified"
                         key={index}
                         persistLines={boolean('persistLines', false)}
                         lineNumbers={boolean('lineNumbers', true)}

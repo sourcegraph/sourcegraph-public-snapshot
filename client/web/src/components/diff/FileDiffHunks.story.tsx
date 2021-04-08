@@ -59,6 +59,7 @@ add('One diff hunk', () => (
     <WebStory>
         {webProps => (
             <FileDiffHunks
+                diffMode="unified"
                 {...webProps}
                 persistLines={boolean('persistLines', false)}
                 fileDiffAnchor="abc"
