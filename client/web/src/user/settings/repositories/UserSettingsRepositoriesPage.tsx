@@ -129,8 +129,11 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
                                 setExternalServices(result.nodes)
 
+                                let repoCount = 0
+
                                 for (const node of result.nodes) {
                                     const nextSyncAt = new Date(node.nextSyncAt)
+                                    repoCount += node.repoCount
 
                                     // when the service was just added both
                                     // createdAt and updatedAt will have the same timestamp
@@ -142,6 +145,10 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                     if (now > nextSyncAt) {
                                         pending = 'pending'
                                     }
+                                }
+
+                                if (repoCount > 0) {
+                                    setHasRepos(true)
                                 }
 
                                 setPendingOrError(pending)
@@ -210,19 +217,11 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
             listUserRepositories({ ...args, id: userID }).pipe(
                 repeatUntil(
-                    (result): boolean => {
-                        // don't repeat the query when user doesn't have repos
-                        if (result.nodes && result.nodes.length === 0) {
-                            return true
-                        }
-
-                        return (
-                            result.nodes &&
-                            result.nodes.length > 0 &&
-                            result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned) &&
-                            !(pendingOrError === 'pending')
-                        )
-                    },
+                    (result): boolean =>
+                        result.nodes &&
+                        result.nodes.length > 0 &&
+                        result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned) &&
+                        !(pendingOrError === 'pending'),
 
                     { delay: 2000 }
                 )
