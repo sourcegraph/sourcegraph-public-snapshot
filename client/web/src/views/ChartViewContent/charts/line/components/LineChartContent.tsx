@@ -18,6 +18,7 @@ import { DEFAULT_LINE_STROKE } from '../colors'
 import { generateAccessors } from '../helpers/generate-accessors'
 import { useScales } from '../helpers/use-scales'
 import { usePointerEventEmitters } from '../helpers/use-event-emitters';
+import { MaybeLink } from '../../MaybeLink';
 
 import { GlyphDot } from './GlyphDot'
 import { TooltipContent } from './TooltipContent'
@@ -39,9 +40,15 @@ const SCALES_CONFIG = {
     },
 }
 
+// Line color accessor
+const getLineStroke = <Datum extends object>(line: LineChartContentType<Datum, keyof Datum>['series'][number]): string =>
+    line?.stroke ?? DEFAULT_LINE_STROKE
+
 // Date formatters
 const dateFormatter = timeFormat('%d %b')
 const formatDate = (date: Date): string => dateFormatter(date)
+
+const stopPropagation = (event: React.MouseEvent<unknown>): void => event.stopPropagation();
 
 export interface LineChartContentProps<Datum extends object>
     extends Omit<LineChartContentType<Datum, keyof Datum>, 'chart'> {
@@ -51,6 +58,8 @@ export interface LineChartContentProps<Datum extends object>
     height: number
     /** Callback calls every time when a point on the chart was clicked */
     onDatumClick: onDatumClick
+
+    onDatumLinkClick: () => void;
 }
 
 /**
@@ -66,7 +75,7 @@ interface ActiveDatum<Datum extends object> extends EventHandlerParams<Datum> {
  * Displays line chart content - line chart, tooltip, active point
  * */
 export function LineChartContent<Datum extends object>(props: LineChartContentProps<Datum>): ReactElement {
-    const { width, height, data, series, xAxis, onDatumClick } = props
+    const { width, height, data, series, xAxis, onDatumClick, onDatumLinkClick } = props
 
     // Calculate inner sizes for chart without padding values
     const innerWidth = width - MARGIN.left - MARGIN.right
@@ -122,10 +131,13 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                 return
             }
 
-            setActiveDatum({
-                ...event,
-                line,
-            })
+            if (activeDatum?.index !== event.index || activeDatum?.key !== event.key) {
+                console.log('update active datum')
+                setActiveDatum({
+                    ...event,
+                    line,
+                })
+            }
         },
         100,
         { leading: true }
@@ -156,18 +168,23 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
         [series, onDatumClick, activeDatum]
     )
 
-    const activeDatumLink = activeDatum?.line?.linkURLs?.[activeDatum?.index]
-    const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!activeDatumLink })
-
     const {
         onPointerMove = noop,
         onPointerOut = noop,
         ...otherHandlers
     } = usePointerEventEmitters({ source: XYCHART_EVENT_SOURCE })
 
+    // We only need to catch pointerout event on root element - chart
+    // we can't relay on event propagation here because this leads us to
+    // unnecessary calls when some child element had lost cursor he fired
+    // that unnecessary event. So we have t track pointerout by ourselves.
+    // This focused ref is kind of a flag to track do we have any event from
+    // user on chart or not used below in move and out handlers to fire pointerout
+    // event in right moment and avoid unnecessary onPointerOut calls.
     const focused = useRef(false);
 
     const handleRootPointerMove = useCallback((event: React.PointerEvent) => {
+        // Track user activity over chart
         focused.current = true;
         onPointerMove(event)
 
@@ -176,6 +193,13 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     const handleRootPointerOut = useCallback(
         (event: React.PointerEvent) => {
             event.persist();
+
+            // Some element has lost cursor and fired pointerout event but
+            // we don't know which element did that root element or some child element within root element
+            // So we mark this focused state as false = root element is not active and then schedule
+            // next frame check decide do we need fire callback or know. If child lost cursor then
+            // but cursor still on chart then we mark this focused state in pointerMove handler above
+            // and won't fire onPointerOut callback. In case if root element child lost cursor we fire onPointerOut
             focused.current = false
 
             requestAnimationFrame(() => {
@@ -193,112 +217,127 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
         ...otherHandlers
     };
 
+    const activeDatumLink = activeDatum?.line?.linkURLs?.[activeDatum?.index]
+    const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!activeDatumLink })
+
     return (
         <div className={rootClasses}>
-            <XYChart
+            {/*
+                Because XYChart wraps itself with context providers in case if consumer didn't add them
+                But this recursive wrapping leads to problem with event emitter context - double subscription all event
+                See https://github.com/airbnb/visx/blob/master/packages/visx-xychart/src/components/XYChart.tsx#L128-L138
+                If we need override EventEmitter (our case because we have to capture all event by ourselves) we
+                have to provide DataContext and TooltipContext as well to avoid problem with EmitterContext.
+            */}
+            <DataProvider
                 xScale={scalesConfig.x}
                 yScale={scalesConfig.y}
-                height={height}
-                width={width}
-                captureEvents={false}
-                margin={MARGIN}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-                onPointerOut={handlePointerOut}
+                initialDimensions={{ width, height, margin: MARGIN }}
             >
-                <Group top={MARGIN.top} left={MARGIN.left}>
-                    <GridRows
-                        scale={yScale as GridScale}
-                        numTicks={numberOfTicksY}
-                        width={innerWidth}
-                        className="line-chart__grid-line"
-                    />
-                </Group>
-
-                <Axis
-                    orientation="bottom"
-                    tickValues={xScale.ticks(numberOfTicksX)}
-                    tickFormat={formatDate}
-                    numTicks={numberOfTicksX}
-                    axisClassName="line-chart__axis"
-                    axisLineClassName="line-chart__axis-line"
-                    tickClassName="line-chart__axis-tick"
-                />
-                <Axis
-                    orientation="left"
-                    numTicks={numberOfTicksY}
-                    tickFormat={format('~s')}
-                    axisClassName="line-chart__axis"
-                    axisLineClassName="line-chart__axis-line line-chart__axis-line--vertical"
-                    tickClassName="line-chart__axis-tick line-chart__axis-tick--vertical"
-                />
-
-                {series.map(line => (
-                    <Group key={line.dataKey as string}>
-                        <LineSeries
-                            dataKey={line.dataKey as string}
-                            data={sortedData}
-                            strokeWidth={2}
-                            xAccessor={accessors.x}
-                            yAccessor={accessors.y[line.dataKey as string]}
-                            stroke={line.stroke ?? DEFAULT_LINE_STROKE}
-                            curve={curveLinear}
-                        />
-                    </Group>
-                ))}
-
-                <Group
-                    pointerEvents='bounding-box'
-                    {...eventEmitters}>
-
-                    <rect
-                        x={MARGIN.left}
-                        y={MARGIN.top}
-                        width={innerWidth}
-                        height={innerHeight}
-                        fill="transparent"
-                    />
-
-                    {series.map(line => (
-                        <Group key={line.dataKey as string}>
-
-                            <GlyphSeries
-                                dataKey={line.dataKey as string}
-                                data={sortedData}
-                                /* eslint-disable-next-line react/jsx-no-bind */
-                                colorAccessor={() => line.stroke ?? DEFAULT_LINE_STROKE}
-                                enableEvents={false}
-                                xAccessor={accessors.x}
-                                yAccessor={accessors.y[line.dataKey as string]}
-                                renderGlyph={GlyphDot}
+                <TooltipProvider>
+                    <XYChart
+                        height={height}
+                        width={width}
+                        captureEvents={false}
+                        margin={MARGIN}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={handlePointerUp}
+                        onPointerOut={handlePointerOut}
+                    >
+                        <Group top={MARGIN.top} left={MARGIN.left}>
+                            <GridRows
+                                scale={yScale as GridScale}
+                                numTicks={numberOfTicksY}
+                                width={innerWidth}
+                                className="line-chart__grid-line"
                             />
                         </Group>
-                    ))}
 
-                    <Group top={MARGIN.top} left={MARGIN.left}>
-                        {activeDatum && (
-                            <Glyph
-                                className="line-chart__glyph line-chart__glyph--active"
-                                r={6}
-                                stroke={activeDatum.line.stroke ?? DEFAULT_LINE_STROKE}
-                                cx={xScale(accessors.x(activeDatum.datum))}
-                                cy={yScale(accessors.y[activeDatum.key](activeDatum.datum))}
+                        <Axis
+                            orientation="bottom"
+                            tickValues={xScale.ticks(numberOfTicksX)}
+                            tickFormat={formatDate}
+                            numTicks={numberOfTicksX}
+                            axisClassName="line-chart__axis"
+                            axisLineClassName="line-chart__axis-line"
+                            tickClassName="line-chart__axis-tick"
+                        />
+                        <Axis
+                            orientation="left"
+                            numTicks={numberOfTicksY}
+                            tickFormat={format('~s')}
+                            axisClassName="line-chart__axis"
+                            axisLineClassName="line-chart__axis-line line-chart__axis-line--vertical"
+                            tickClassName="line-chart__axis-tick line-chart__axis-tick--vertical"
+                        />
+
+                        {series.map(line => (
+                            <LineSeries
+                                key={line.dataKey as string}
+                                dataKey={line.dataKey as string}
+                                data={sortedData}
+                                strokeWidth={2}
+                                xAccessor={accessors.x}
+                                yAccessor={accessors.y[line.dataKey as string]}
+                                stroke={getLineStroke(line)}
+                                curve={curveLinear}
                             />
-                        )}
-                    </Group>
-                </Group>
+                        ))}
 
-                <Tooltip
-                    className="line-chart__tooltip"
-                    showHorizontalCrosshair={false}
-                    showVerticalCrosshair={true}
-                    snapTooltipToDatumX={false}
-                    snapTooltipToDatumY={false}
-                    showDatumGlyph={false}
-                    showSeriesGlyphs={false}
-                    renderTooltip={renderTooltip}
-                />
-            </XYChart>
+                        <Group
+                            pointerEvents='bounding-box'
+                            {...eventEmitters}>
+
+                            <rect
+                                x={MARGIN.left}
+                                y={MARGIN.top}
+                                width={innerWidth}
+                                height={innerHeight}
+                                fill="transparent"
+                            />
+
+                            {series.map(line => (
+                                <GlyphSeries
+                                    key={line.dataKey as string}
+                                    dataKey={line.dataKey as string}
+                                    data={sortedData}
+                                    enableEvents={false}
+                                    xAccessor={accessors.x}
+                                    yAccessor={accessors.y[line.dataKey as string]}
+                                    // Don't have info about line in props. @visx/xychart doesn't expose this information
+                                    // Move this arrow function in separate component when API of GlyphSeries will be fixed.
+                                    /* eslint-disable-next-line react/jsx-no-bind */
+                                    renderGlyph={props => (
+                                        <MaybeLink
+                                            onPointerUp={stopPropagation}
+                                            onClick={onDatumLinkClick}
+                                            to={line.linkURLs?.[+props.key]}>
+
+                                            <Glyph
+                                                className="line-chart__glyph"
+                                                cx={props.x}
+                                                cy={props.y}
+                                                fill={getLineStroke(line)}
+                                                r={(activeDatum?.index === +props.key && activeDatum.key === line.dataKey) ? 8 : 6}/>
+                                        </MaybeLink>
+                                    )}
+                                />
+                            ))}
+                        </Group>
+
+                        <Tooltip
+                            className="line-chart__tooltip"
+                            showHorizontalCrosshair={false}
+                            showVerticalCrosshair={true}
+                            snapTooltipToDatumX={false}
+                            snapTooltipToDatumY={false}
+                            showDatumGlyph={false}
+                            showSeriesGlyphs={false}
+                            renderTooltip={renderTooltip}
+                        />
+                    </XYChart>
+                </TooltipProvider>
+            </DataProvider>
         </div>
     )
 }

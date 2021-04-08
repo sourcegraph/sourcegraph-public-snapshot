@@ -1,6 +1,6 @@
 import { ParentSize } from '@visx/responsive'
 import * as H from 'history'
-import React, { FunctionComponent, useMemo } from 'react'
+import React, { FunctionComponent, useCallback, useMemo } from 'react'
 import { ChartContent } from 'sourcegraph'
 
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -25,17 +25,26 @@ export interface ChartViewContentProps {
 export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props => {
     const { content, className = '', history, viewID, telemetryService } = props
 
+    const handleDatumLinkClick = useCallback(
+        () => {
+            telemetryService.log('InsightDataPointClick', { insightType: viewID.split('.')[0] })
+        },
+        [viewID, telemetryService]
+    )
+
+    // Click link handler for line chart only. Catch click around point and redirect user by
+    // link which we got from nearest datum to user cursor position
     const linkHandler = useMemo(() => {
         const linkHandler = createProgrammaticLinkHandler(history)
         return (event: DatumClickEvent): void => {
 
-            console.log('click link', event);
+            console.log('click link datum', event);
             if (!event.link) {
                 return
             }
 
             telemetryService.log('InsightDataPointClick', { insightType: viewID.split('.')[0] })
-            // linkHandler(event.originEvent, event.link)
+            linkHandler(event.originEvent, event.link)
         }
     }, [history, viewID, telemetryService])
 
@@ -43,12 +52,12 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
         <div className={`chart-view-content ${className}`}>
             <ParentSize className="chart-view-content__chart">
                 {({ width, height }) => {
-                    if (content.chart === 'bar') {
-                        return <BarChart {...content} width={width} height={height} onDatumClick={linkHandler} />
+                    if (content.chart === 'line') {
+                        return <LineChart {...content} onDatumClick={linkHandler} onDatumLinkClick={handleDatumLinkClick} width={width} height={height} />
                     }
 
-                    if (content.chart === 'line') {
-                        return <LineChart {...content} width={width} height={height} onDatumClick={linkHandler} />
+                    if (content.chart === 'bar') {
+                        return <BarChart {...content} width={width} height={height} onDatumClick={linkHandler} />
                     }
 
                     if (content.chart === 'pie') {
