@@ -1632,22 +1632,16 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 		return errors.Wrap(err, "get VCS syncer")
 	}
 
-	cmd, configRemoteOpts, err := syncer.FetchCommand(ctx, remoteURL)
-	if err != nil {
-		return errors.Wrap(err, "get fetch command")
-	}
-
-	dir.Set(cmd)
-
 	// drop temporary pack files after a fetch. this function won't
 	// return until this fetch has completed or definitely-failed,
 	// either way they can't still be in use. we don't care exactly
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
-	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
-		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
-		return errors.Wrap(err, "failed to update")
+	err = syncer.Fetch(ctx, remoteURL, dir)
+	if err != nil {
+		log15.Error("Failed to fetch", "repo", repo, "error", err)
+		return errors.Wrap(err, "failed to fetch")
 	}
 
 	removeBadRefs(ctx, dir)
