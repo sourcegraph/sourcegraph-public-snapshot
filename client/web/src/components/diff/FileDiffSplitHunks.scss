@@ -1,0 +1,39 @@
+.diff-hunk {
+    &__num {
+        background-color: var(--color-bg-2);
+        &:hover {
+            color: var(--body-color);
+        }
+    }
+    &__content {
+        &--empty {
+            background-color: var(--color-bg-2);
+            // This cell is always empty opacity will not affect any content
+            opacity: 0.5;
+        }
+    }
+
+    &__line {
+        &--code {
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            div {
+                display: inline;
+            }
+        }
+    }
+
+    &__line--active {
+        background-color: rgba($oc-yellow-5, 0.35) !important;
+    }
+
+    // $color-addition: $oc-green-7;
+    // $color-deletion: $oc-red-7;
+
+    // &__line--addition {
+    //     background-color: rgba($color-addition, 0.17);
+    // }
+    // &__line--deletion {
+    //     background-color: rgba($color-deletion, 0.17);
+    // }
+}

@@ -1,0 +1,195 @@
+/* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-noninteractive-element-interactions: warn */
+import * as React from 'react'
+import { DecorationMapByLine, decorationStyleForTheme } from '../../../../shared/src/api/extension/api/decorations'
+import { property, isDefined } from '../../../../shared/src/util/types'
+import { ThemeProps } from '../../../../shared/src/theme'
+import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
+import { useSplitDiff, useHooksAddLineNumber } from '@sourcegraph/wildcard/src/hooks'
+import { useLocation } from 'react-router'
+import { TextDocumentDecoration } from 'sourcegraph'
+import { Line, EmptyLine } from './Lines'
+import { DiffBoundary } from './DiffBoundary'
+
+interface DiffHunkProps extends ThemeProps {
+    /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
+    fileDiffAnchor: string
+    hunk: FileDiffHunkFields
+    lineNumbers: boolean
+    decorations: Record<'head' | 'base', DecorationMapByLine>
+    /**
+     * Reflect selected line in url
+     *
+     * @default true
+     */
+    persistLines?: boolean
+}
+
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+const addDecorations = (isLightTheme: boolean, decorationsForLine: TextDocumentDecoration[]) => {
+    const lineStyle = decorationsForLine
+        .filter(decoration => decoration.isWholeLine)
+        .map(decoration => decorationStyleForTheme(decoration, isLightTheme))
+        .reduce((style, decoration) => ({ ...style, ...decoration }), {})
+
+    const decorationsWithAfterProperty = decorationsForLine.filter(property('after', isDefined))
+
+    return { lineStyle, decorationsWithAfterProperty }
+}
+
+interface Hunk {
+    kind: DiffHunkLineType
+    html: string
+    anchor: string
+    oldLine?: number
+    newLine?: number
+}
+
+export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
+    fileDiffAnchor,
+    decorations,
+    hunk,
+    lineNumbers,
+    persistLines = true,
+    isLightTheme,
+}) => {
+    const location = useLocation()
+    const { hunksWithLineNumber } = useHooksAddLineNumber(
+        hunk.highlight.lines,
+        hunk.newRange.startLine,
+        hunk.oldRange.startLine,
+        fileDiffAnchor
+    )
+    const { diff } = useSplitDiff(hunksWithLineNumber)
+
+    const groupHunks = React.useCallback(
+        (hunks: Hunk[]): JSX.Element[] => {
+            const elements = []
+            for (let index = 0; index < hunks.length; index++) {
+                const current = hunks[index]
+
+                const lineNumber = (elements[index + 1] ? current.oldLine : current.newLine) as number
+                const active = location.hash === `#${current.anchor}`
+
+                const decorationsForLine = [
+                    // If the line was deleted, look for decorations in the base revision
+                    ...((current.kind === DiffHunkLineType.DELETED && decorations.base.get(lineNumber)) || []),
+                    // If the line wasn't deleted, look for decorations in the head revision
+                    ...((current.kind !== DiffHunkLineType.DELETED && decorations.head.get(lineNumber)) || []),
+                ] as TextDocumentDecoration[]
+
+                const { lineStyle, decorationsWithAfterProperty } = addDecorations(isLightTheme, decorationsForLine)
+
+                if (current.kind === DiffHunkLineType.UNCHANGED) {
+                    // UNCHANGED is displayed on both side
+                    elements.push(
+                        <tr key={current.anchor}>
+                            <Line
+                                lineStyle={lineStyle}
+                                decorations={decorationsWithAfterProperty}
+                                key={`L${current.anchor}`}
+                                kind={current.kind}
+                                lineNumber={current.oldLine}
+                                anchor={current.anchor}
+                                html={current.html}
+                                className={active ? 'diff-hunk__line--active' : ''}
+                            />
+                            <Line
+                                lineStyle={lineStyle}
+                                decorations={decorationsWithAfterProperty}
+                                key={`R${current.anchor}`}
+                                kind={current.kind}
+                                lineNumber={current.newLine}
+                                anchor={current.anchor}
+                                html={current.html}
+                                className={active ? 'diff-hunk__line--active' : ''}
+                            />
+                        </tr>
+                    )
+                } else if (current.kind === DiffHunkLineType.DELETED) {
+                    const next = hunks[index + 1]
+                    // If an ADDED change is following a DELETED change, they should be displayed side by side
+                    if (next?.kind === DiffHunkLineType.ADDED) {
+                        index = index + 1
+                        elements.push(
+                            <tr key={current.anchor}>
+                                <Line
+                                    lineStyle={lineStyle}
+                                    decorations={decorationsWithAfterProperty}
+                                    key={current.anchor}
+                                    kind={current.kind}
+                                    lineNumber={current.oldLine}
+                                    anchor={current.anchor}
+                                    html={current.html}
+                                    className={active ? 'diff-hunk__line--active' : ''}
+                                />
+                                <Line
+                                    lineStyle={lineStyle}
+                                    decorations={decorationsWithAfterProperty}
+                                    key={next.anchor}
+                                    kind={next.kind}
+                                    lineNumber={next.newLine}
+                                    anchor={next.anchor}
+                                    html={next.html}
+                                    className={location.hash === `#${next.anchor}` ? 'diff-hunk__line--active' : ''}
+                                />
+                            </tr>
+                        )
+                    } else {
+                        // DELETED is following by an empty line
+                        elements.push(
+                            <tr key={current.anchor}>
+                                <Line
+                                    lineStyle={lineStyle}
+                                    decorations={decorationsWithAfterProperty}
+                                    key={current.anchor}
+                                    kind={current.kind}
+                                    lineNumber={
+                                        current.kind === DiffHunkLineType.DELETED ? current.oldLine : lineNumber
+                                    }
+                                    anchor={current.anchor}
+                                    html={current.html}
+                                    className={active ? 'diff-hunk__line--active' : ''}
+                                />
+                                <EmptyLine />
+                            </tr>
+                        )
+                    }
+                } else {
+                    // ADDED is preceded by an empty line
+                    elements.push(
+                        <tr key={current.anchor}>
+                            <EmptyLine />
+                            <Line
+                                lineStyle={lineStyle}
+                                decorations={decorationsWithAfterProperty}
+                                key={current.anchor}
+                                kind={current.kind}
+                                lineNumber={lineNumber}
+                                anchor={current.anchor}
+                                html={current.html}
+                                className={active ? 'diff-hunk__line--active' : ''}
+                            />
+                        </tr>
+                    )
+                }
+            }
+
+            return elements
+        },
+        [decorations.base, decorations.head, isLightTheme, location.hash]
+    )
+
+    const diffView = React.useMemo(() => groupHunks(diff), [diff, groupHunks])
+
+    return (
+        <>
+            <DiffBoundary
+                {...hunk}
+                lineNumberClassName="diff-hunk__num--both"
+                contentClassName="diff-hunk__content"
+                lineNumbers={lineNumbers}
+            />
+            {diffView}
+        </>
+    )
+}
