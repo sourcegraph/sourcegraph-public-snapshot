@@ -550,8 +550,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         </Form>
     )
 
+    const preventSubmit = useCallback((event: React.FormEvent<HTMLFormElement>): void => event.preventDefault(), [])
+
     const filterControls: JSX.Element = (
-        <Form className="w-100 d-inline-flex justify-content-between flex-row mt-3">
+        <Form onSubmit={preventSubmit} className="w-100 d-inline-flex justify-content-between flex-row mt-3">
             <div className="d-inline-flex flex-row mr-3 align-items-baseline">
                 <p className="text-xl-center text-nowrap mr-2">Code Host:</p>
                 <select
