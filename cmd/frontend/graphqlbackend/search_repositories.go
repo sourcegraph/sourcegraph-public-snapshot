@@ -182,7 +182,7 @@ func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions, 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
 func reposToAdd(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos []*search.RepositoryRevisions) ([]*search.RepositoryRevisions, error) {
-	// matchingIds will contain the count of repohasfile patterns that matched.
+	// matchCounts will contain the count of repohasfile patterns that matched.
 	// For negations, we will explicitly set this to -1 if it matches.
 	matchCounts := make(map[api.RepoID]int)
 	if len(args.PatternInfo.FilePatternsReposMustInclude) > 0 {
