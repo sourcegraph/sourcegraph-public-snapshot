@@ -96,10 +96,10 @@ func (cfg *Configuration) Schedule() *Schedule {
 	return cfg.scheduleAt(time.Now())
 }
 
-// currentFor returns the current rollout window, if any, and the duration for
-// which that window applies from now. The duration will be nil if the current
-// window applies indefinitely.
-func (cfg *Configuration) currentFor(now time.Time) (*Window, *time.Duration) {
+// windowFor returns the rollout window for the given time, if any, and the
+// duration for which that window applies. The duration will be nil if the
+// current window applies indefinitely.
+func (cfg *Configuration) windowFor(now time.Time) (*Window, *time.Duration) {
 	// If there are no rollout windows, there's no current window. This should
 	// be checked before entry, but let's at least not panic here.
 	if len(cfg.windows) == 0 {
@@ -198,7 +198,7 @@ func (cfg *Configuration) currentFor(now time.Time) (*Window, *time.Duration) {
 func (cfg *Configuration) scheduleAt(at time.Time) *Schedule {
 	// Get the window in effect at this time, along with how long it's valid
 	// for.
-	window, validity := cfg.currentFor(at)
+	window, validity := cfg.windowFor(at)
 
 	// No window means a zero schedule should be returned until the next window
 	// change.

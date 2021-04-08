@@ -317,7 +317,7 @@ func TestConfiguration_currentFor(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			haveWindow, haveDuration := tc.cfg.currentFor(tc.when)
+			haveWindow, haveDuration := tc.cfg.windowFor(tc.when)
 
 			if tc.wantWindow == nil {
 				if haveWindow != nil {
