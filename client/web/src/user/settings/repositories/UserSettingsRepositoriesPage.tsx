@@ -102,7 +102,6 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 location={location}
                 emptyElement={emptyState}
                 totalCountSummaryComponent={TotalCountSummary}
-                hideControlsWhenEmpty={true}
                 inputClassName="user-settings-repos__filter-input"
             />
         )
@@ -221,16 +220,24 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         [pendingOrError, userID]
     )
 
-    const updated = useCallback((value: Connection<SiteAdminRepositoryFields> | ErrorLike | undefined): void => {
-        if (value as Connection<SiteAdminRepositoryFields>) {
-            const conn = value as Connection<SiteAdminRepositoryFields>
-            if (conn.totalCount !== 0) {
-                setHasRepos(true)
-            } else {
-                setHasRepos(false)
+    const updated = useCallback(
+        (value: Connection<SiteAdminRepositoryFields> | ErrorLike | undefined, query: string): void => {
+            if (value as Connection<SiteAdminRepositoryFields>) {
+                const conn = value as Connection<SiteAdminRepositoryFields>
+
+                // hasRepos is only useful when query is not set since user may
+                // still have repos that don't match given query
+                if (query === '') {
+                    if (conn.totalCount !== 0) {
+                        setHasRepos(true)
+                    } else {
+                        setHasRepos(false)
+                    }
+                }
             }
-        }
-    }, [])
+        },
+        []
+    )
 
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsRepositories')

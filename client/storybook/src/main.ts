@@ -18,6 +18,8 @@ const config = {
         'storybook-addon-designs',
         'storybook-dark-mode',
         '@storybook/addon-a11y',
+        '@storybook/addon-toolbars',
+        './redesign-toggle-toolbar/register.ts',
     ],
 
     webpackFinal: (config: Configuration) => {
