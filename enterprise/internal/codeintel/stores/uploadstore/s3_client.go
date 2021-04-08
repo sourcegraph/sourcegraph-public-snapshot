@@ -12,9 +12,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -25,12 +25,12 @@ import (
 )
 
 type s3Store struct {
-	bucket       string
-	ttl          time.Duration
-	manageBucket bool
-	client       s3API
-	uploader     s3Uploader
-	operations   *operations
+	bucket                       string
+	manageBucket                 bool
+	client                       s3API
+	uploader                     s3Uploader
+	bucketLifecycleConfiguration *s3.BucketLifecycleConfiguration
+	operations                   *operations
 }
 
 var _ Store = &s3Store{}
@@ -60,18 +60,18 @@ func newS3FromConfig(ctx context.Context, config *Config, operations *operations
 
 	s3Client := s3.NewFromConfig(cfg, s3ClientOptions(config.Backend, config.S3))
 	api := &s3APIShim{s3Client}
-	uploader := &s3UploaderShim{manager.NewUploader(s3Client)}
-	return newS3WithClients(api, uploader, config.Bucket, config.TTL, config.ManageBucket, operations), nil
+	uploader := &s3UploaderShim{s3manager.NewUploaderWithClient(s3Client)}
+	return newS3WithClients(api, uploader, config.Bucket, config.ManageBucket, s3BucketLifecycleConfiguration(config.Backend, config.TTL), operations), nil
 }
 
-func newS3WithClients(client s3API, uploader s3Uploader, bucket string, ttl time.Duration, manageBucket bool, operations *operations) *s3Store {
+func newS3WithClients(client s3API, uploader s3Uploader, bucket string, manageBucket bool, lifecycleConfiguration *s3.BucketLifecycleConfiguration, operations *operations) *s3Store {
 	return &s3Store{
-		bucket:       bucket,
-		ttl:          ttl,
-		manageBucket: manageBucket,
-		client:       client,
-		uploader:     uploader,
-		operations:   operations,
+		bucket:                       bucket,
+		manageBucket:                 manageBucket,
+		client:                       client,
+		uploader:                     uploader,
+		operations:                   operations,
+		bucketLifecycleConfiguration: lifecycleConfiguration,
 	}
 }
 
@@ -300,32 +300,11 @@ func (s *s3Store) create(ctx context.Context) error {
 func (s *s3Store) update(ctx context.Context) error {
 	configureRequest := &s3.PutBucketLifecycleConfigurationInput{
 		Bucket:                 aws.String(s.bucket),
-		LifecycleConfiguration: s.lifecycle(),
+		LifecycleConfiguration: s.bucketLifecycleConfiguration,
 	}
 
 	_, err := s.client.PutBucketLifecycleConfiguration(ctx, configureRequest)
 	return err
-}
-
-func (s *s3Store) lifecycle() *s3types.BucketLifecycleConfiguration {
-	days := int32(s.ttl / (time.Hour * 24))
-
-	return &s3types.BucketLifecycleConfiguration{
-		Rules: []s3types.LifecycleRule{
-			{
-				ID:         aws.String("Expiration Rule"),
-				Status:     s3types.ExpirationStatusEnabled,
-				Filter:     &s3types.LifecycleRuleFilterMemberPrefix{Value: ""},
-				Expiration: &s3types.LifecycleExpiration{Days: days},
-			},
-			{
-				ID:                             aws.String("Abort Incomplete Multipart Upload Rule"),
-				Status:                         s3types.ExpirationStatusEnabled,
-				Filter:                         &s3types.LifecycleRuleFilterMemberPrefix{Value: ""},
-				AbortIncompleteMultipartUpload: &s3types.AbortIncompleteMultipartUpload{DaysAfterInitiation: days},
-			},
-		},
-	}
 }
 
 func (s *s3Store) deleteSources(ctx context.Context, bucket string, sources []string) error {
@@ -390,4 +369,28 @@ func isConnectionResetError(err error) bool {
 	}
 
 	return false
+}
+
+func s3BucketLifecycleConfiguration(backend string, ttl time.Duration) *s3.BucketLifecycleConfiguration {
+	days := aws.Int64(int64(ttl / (time.Hour * 24)))
+
+	rules := []*s3.LifecycleRule{
+		{
+			ID:         aws.String("Expiration Rule"),
+			Status:     aws.String("Enabled"),
+			Filter:     &s3.LifecycleRuleFilter{Prefix: aws.String("")},
+			Expiration: &s3.LifecycleExpiration{Days: days},
+		},
+	}
+
+	if backend != "minio" {
+		rules = append(rules, &s3.LifecycleRule{
+			ID:                             aws.String("Abort Incomplete Multipart Upload Rule"),
+			Status:                         aws.String("Enabled"),
+			Filter:                         &s3.LifecycleRuleFilter{Prefix: aws.String("")},
+			AbortIncompleteMultipartUpload: &s3.AbortIncompleteMultipartUpload{DaysAfterInitiation: days},
+		})
+	}
+
+	return &s3.BucketLifecycleConfiguration{Rules: rules}
 }
