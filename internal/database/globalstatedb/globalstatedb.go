@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
@@ -25,6 +26,10 @@ func Get(ctx context.Context) (*State, error) {
 	configuration, err := getConfiguration(ctx)
 	if err == nil {
 		return configuration, nil
+	}
+
+	if err != sql.ErrNoRows {
+		return nil, errors.Wrap(err, "getConfiguration")
 	}
 
 	b := basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
