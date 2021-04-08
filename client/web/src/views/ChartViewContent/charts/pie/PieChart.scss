@@ -25,14 +25,20 @@
         }
     }
 
+    &__link:hover {
+        text-decoration: none;
+    }
+
     &__label-title {
         stroke: var(--body-color);
         font-weight: 200 !important;
         background-color: var(--body-bg);
+        text-decoration: none;
     }
 
     &__label-sub-title {
         stroke: var(--text-muted);
+        text-decoration: none;
     }
 
     &__label-line,

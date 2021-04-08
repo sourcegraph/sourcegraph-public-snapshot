@@ -13,12 +13,12 @@ import { timeFormat } from 'd3-time-format'
 import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useEffect } from 'react'
 import { LineChartContent as LineChartContentType } from 'sourcegraph'
 import { useThrottledCallback } from 'use-debounce'
-import { onDatumClick } from '../../types'
 import { DEFAULT_LINE_STROKE } from '../colors'
 import { generateAccessors } from '../helpers/generate-accessors'
 import { useScales } from '../helpers/use-scales'
-import { usePointerEventEmitters } from '../helpers/use-event-emitters';
-import { MaybeLink } from '../../MaybeLink';
+import { usePointerEventEmitters } from '../helpers/use-event-emitters'
+import { MaybeLink } from '../../MaybeLink'
+import { onDatumZoneClick } from '../types'
 
 import { GlyphDot } from './GlyphDot'
 import { TooltipContent } from './TooltipContent'
@@ -41,14 +41,15 @@ const SCALES_CONFIG = {
 }
 
 // Line color accessor
-const getLineStroke = <Datum extends object>(line: LineChartContentType<Datum, keyof Datum>['series'][number]): string =>
-    line?.stroke ?? DEFAULT_LINE_STROKE
+const getLineStroke = <Datum extends object>(
+    line: LineChartContentType<Datum, keyof Datum>['series'][number]
+): string => line?.stroke ?? DEFAULT_LINE_STROKE
 
 // Date formatters
 const dateFormatter = timeFormat('%d %b')
 const formatDate = (date: Date): string => dateFormatter(date)
 
-const stopPropagation = (event: React.MouseEvent<unknown>): void => event.stopPropagation();
+const stopPropagation = (event: React.MouseEvent): void => event.stopPropagation()
 
 export interface LineChartContentProps<Datum extends object>
     extends Omit<LineChartContentType<Datum, keyof Datum>, 'chart'> {
@@ -56,10 +57,13 @@ export interface LineChartContentProps<Datum extends object>
     width: number
     /** Chart height value in px */
     height: number
-    /** Callback calls every time when a point on the chart was clicked */
-    onDatumClick: onDatumClick
-
-    onDatumLinkClick: () => void;
+    /**
+     * Callback calls every time when a point-zone (zone around point) but not point itself
+     * on the chart was clicked.
+     */
+    onDatumZoneClick: onDatumZoneClick
+    /** Callback calls every time when link-point and only link-point on the chart was clicked. */
+    onDatumLinkClick: (event: React.MouseEvent) => void
 }
 
 /**
@@ -75,7 +79,7 @@ interface ActiveDatum<Datum extends object> extends EventHandlerParams<Datum> {
  * Displays line chart content - line chart, tooltip, active point
  * */
 export function LineChartContent<Datum extends object>(props: LineChartContentProps<Datum>): ReactElement {
-    const { width, height, data, series, xAxis, onDatumClick, onDatumLinkClick } = props
+    const { width, height, data, series, xAxis, onDatumZoneClick, onDatumLinkClick } = props
 
     // Calculate inner sizes for chart without padding values
     const innerWidth = width - MARGIN.left - MARGIN.right
@@ -160,19 +164,17 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                 return
             }
 
-            onDatumClick({
+            onDatumZoneClick({
                 originEvent: info.event as MouseEvent<unknown>,
                 link: line?.linkURLs?.[activeDatumIndex],
             })
         },
-        [series, onDatumClick, activeDatum]
+        [series, onDatumZoneClick, activeDatum]
     )
 
-    const {
-        onPointerMove = noop,
-        onPointerOut = noop,
-        ...otherHandlers
-    } = usePointerEventEmitters({ source: XYCHART_EVENT_SOURCE })
+    const { onPointerMove = noop, onPointerOut = noop, ...otherHandlers } = usePointerEventEmitters({
+        source: XYCHART_EVENT_SOURCE,
+    })
 
     // We only need to catch pointerout event on root element - chart
     // we can't relay on event propagation here because this leads us to
@@ -181,18 +183,20 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     // This focused ref is kind of a flag to track do we have any event from
     // user on chart or not used below in move and out handlers to fire pointerout
     // event in right moment and avoid unnecessary onPointerOut calls.
-    const focused = useRef(false);
+    const focused = useRef(false)
 
-    const handleRootPointerMove = useCallback((event: React.PointerEvent) => {
-        // Track user activity over chart
-        focused.current = true;
-        onPointerMove(event)
-
-    }, [onPointerMove])
+    const handleRootPointerMove = useCallback(
+        (event: React.PointerEvent) => {
+            // Track user activity over chart
+            focused.current = true
+            onPointerMove(event)
+        },
+        [onPointerMove]
+    )
 
     const handleRootPointerOut = useCallback(
         (event: React.PointerEvent) => {
-            event.persist();
+            event.persist()
 
             // Some element has lost cursor and fired pointerout event but
             // we don't know which element did that root element or some child element within root element
@@ -209,13 +213,13 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
             })
         },
         [focused, onPointerOut]
-    );
+    )
 
     const eventEmitters = {
         onPointerMove: handleRootPointerMove,
         onPointerOut: handleRootPointerOut,
-        ...otherHandlers
-    };
+        ...otherHandlers,
+    }
 
     const activeDatumLink = activeDatum?.line?.linkURLs?.[activeDatum?.index]
     const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!activeDatumLink })
@@ -284,10 +288,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                             />
                         ))}
 
-                        <Group
-                            pointerEvents='bounding-box'
-                            {...eventEmitters}>
-
+                        <Group pointerEvents="bounding-box" {...eventEmitters}>
                             <rect
                                 x={MARGIN.left}
                                 y={MARGIN.top}
@@ -311,14 +312,20 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                         <MaybeLink
                                             onPointerUp={stopPropagation}
                                             onClick={onDatumLinkClick}
-                                            to={line.linkURLs?.[+props.key]}>
-
+                                            to={line.linkURLs?.[+props.key]}
+                                        >
                                             <Glyph
                                                 className="line-chart__glyph"
                                                 cx={props.x}
                                                 cy={props.y}
                                                 fill={getLineStroke(line)}
-                                                r={(activeDatum?.index === +props.key && activeDatum.key === line.dataKey) ? 8 : 6}/>
+                                                r={
+                                                    activeDatum?.index === +props.key &&
+                                                    activeDatum.key === line.dataKey
+                                                        ? 8
+                                                        : 6
+                                                }
+                                            />
                                         </MaybeLink>
                                     )}
                                 />

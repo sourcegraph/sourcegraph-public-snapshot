@@ -6,7 +6,11 @@ import { PieChartContent } from 'sourcegraph'
 import { onDatumClick } from '../types'
 
 import { PieArc } from './components/PieArc'
+import Pie, { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
+import { Group } from '@visx/group'
 import { distributePieArcs } from './distribute-pie-data'
+import { PieArc } from './components/PieArc'
+import { MaybeLink } from '../MaybeLink'
 
 // Visual settings
 const DEFAULT_FILL_COLOR = 'var(--color-bg-3)'
@@ -17,8 +21,8 @@ export interface PieChartProps<Datum extends object> extends PieChartContent<Dat
     width: number
     /** Chart height in px */
     height: number
-    /** Click handler for pie arc element. */
-    onDatumClick: onDatumClick
+    /** Click handler for pie arc-link element. */
+    onDatumLinkClick: (event: React.MouseEvent) => void
     /** Chart padding in px */
     padding?: typeof DEFAULT_PADDING
 }
@@ -27,7 +31,7 @@ export interface PieChartProps<Datum extends object> extends PieChartContent<Dat
  * Display Pie chart with annotation.
  */
 export function PieChart<Datum extends object>(props: PieChartProps<Datum>): ReactElement | null {
-    const { width, height, padding = DEFAULT_PADDING, pies, onDatumClick } = props
+    const { width, height, padding = DEFAULT_PADDING, pies, onDatumLinkClick } = props
 
     // We have to track which arc is hovered to change order of rendering.
     // Due the fact svg elements don't have css z-index (in svg only order of renderings matters)
@@ -98,17 +102,22 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
                         return (
                             <Group>
                                 {arcs.map(arc => (
-                                    <PieArc
+                                    <MaybeLink
                                         key={getKey(arc)}
-                                        arc={arc}
-                                        path={pie.path}
-                                        total={total}
-                                        getColor={getFillColor}
-                                        getKey={getKey}
-                                        getLink={getLink}
-                                        onPointerMove={() => setHoveredArc(arc)}
-                                        onClick={onDatumClick}
-                                    />
+                                        to={getLink(arc)}
+                                        className="pie-chart__link"
+                                        onClick={onDatumLinkClick}
+                                    >
+                                        <PieArc
+                                            arc={arc}
+                                            path={pie.path}
+                                            total={total}
+                                            getColor={getFillColor}
+                                            getKey={getKey}
+                                            getLink={getLink}
+                                            onPointerMove={() => setHoveredArc(arc)}
+                                        />
+                                    </MaybeLink>
                                 ))}
                             </Group>
                         )

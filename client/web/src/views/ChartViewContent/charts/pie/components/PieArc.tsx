@@ -6,7 +6,6 @@ import { Arc as ArcType } from 'd3-shape'
 import React, { MouseEvent, PointerEventHandler, ReactElement, useCallback } from 'react'
 
 import { Label } from '../../../annotation/Label'
-import { onDatumClick } from '../../types'
 
 // Pie arc visual settings
 const CONNECTION_LINE_LENGTH = 15
@@ -30,8 +29,6 @@ interface PieArcProps<Datum> {
     arc: PieArcDatum<Datum>
     /** Sum of all arc in pie chart to calculate percent for current part (arc) of chart. */
     total: number
-    /** On pie arc click handler */
-    onClick: onDatumClick
     /** Callback to handle pointer (mouse, touch) move over arc */
     onPointerMove?: PointerEventHandler
     /** Callback to handle pointer (mouse, touch) out over arc */
@@ -42,7 +39,7 @@ interface PieArcProps<Datum> {
  * Display particular arc and annotation for PieChart.
  * */
 export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
-    const { total, path, arc, getColor, getKey, getLink, onClick, onPointerMove, onPointerOut } = props
+    const { total, path, arc, getColor, getKey, getLink, onPointerMove, onPointerOut } = props
 
     const pathValue = path(arc) ?? ''
     const name = getKey(arc)
@@ -70,15 +67,12 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
     const labelX = normalX * CONNECTION_LINE_LENGTH
     const labelY = normalY * CONNECTION_LINE_LENGTH
 
-    // Handlers
-    const handleGroupClick = useCallback((event: MouseEvent) => onClick({ originEvent: event, link }), [link, onClick])
-
     const classes = classnames('pie-chart__arc', {
         'pie-chart__arc--with-link': link,
     })
 
     return (
-        <Group className={classes} onClick={handleGroupClick} onPointerMove={onPointerMove} onPointerOut={onPointerOut}>
+        <Group className={classes} onPointerMove={onPointerMove} onPointerOut={onPointerOut}>
             <path className="pie-chart__arc-path" d={pathValue} fill={getColor(arc)} />
 
             <Annotation x={surfaceX} y={surfaceY} dx={labelX} dy={labelY}>

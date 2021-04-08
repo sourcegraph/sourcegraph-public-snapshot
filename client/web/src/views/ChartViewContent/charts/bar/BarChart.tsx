@@ -9,7 +9,7 @@ import classnames from 'classnames'
 import { range } from 'lodash'
 import React, { ReactElement, useCallback, useMemo } from 'react'
 import { BarChartContent } from 'sourcegraph'
-import { onDatumClick } from '../types'
+import { MaybeLink } from '../MaybeLink'
 
 const DEFAULT_PADDING = { top: 20, right: 20, bottom: 25, left: 40 }
 
@@ -30,8 +30,8 @@ interface BarChartProps<Datum extends object> extends Omit<BarChartContent<Datum
     width: number
     /** Chart height in px. */
     height: number
-    /** Callback calls every time when a bar on the chart was clicked */
-    onDatumClick: onDatumClick
+    /** Callback calls every time when a bar-link on the chart was clicked */
+    onDatumLinkClick: (event: React.MouseEvent) => void
 }
 
 /**
@@ -43,7 +43,7 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
         height,
         data,
         series,
-        onDatumClick,
+        onDatumLinkClick,
         xAxis: { dataKey: xDataKey },
     } = props
 
@@ -109,36 +109,32 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
 
                         return (
                             <Group key={`bar-${index}`}>
-                                <Bar
-                                    className={classes}
-                                    x={xScale(index)}
-                                    y={innerHeight - barHeight}
-                                    height={barHeight}
-                                    width={xScale.bandwidth()}
-                                    fill={fill}
-                                    /* eslint-disable-next-line react/jsx-no-bind */
-                                    onClick={event => {
-                                        const link = linkURLs?.[index]
+                                <MaybeLink to={linkURLs?.[index]} onClick={onDatumLinkClick}>
+                                    <Bar
+                                        className={classes}
+                                        x={xScale(index)}
+                                        y={innerHeight - barHeight}
+                                        height={barHeight}
+                                        width={xScale.bandwidth()}
+                                        fill={fill}
+                                        /* eslint-disable-next-line react/jsx-no-bind */
+                                        onMouseLeave={handleMouseLeave}
+                                        /* eslint-disable-next-line react/jsx-no-bind */
+                                        onMouseMove={event => {
+                                            if (tooltipTimeout) {
+                                                clearTimeout(tooltipTimeout)
+                                            }
 
-                                        onDatumClick({ originEvent: event, link })
-                                    }}
-                                    /* eslint-disable-next-line react/jsx-no-bind */
-                                    onMouseLeave={handleMouseLeave}
-                                    /* eslint-disable-next-line react/jsx-no-bind */
-                                    onMouseMove={event => {
-                                        if (tooltipTimeout) {
-                                            clearTimeout(tooltipTimeout)
-                                        }
+                                            const rectangle = localPoint(event)
 
-                                        const rectangle = localPoint(event)
-
-                                        showTooltip({
-                                            tooltipData: { xLabel: formatXLabel(index), value: yAccessor(datum) },
-                                            tooltipTop: rectangle?.y,
-                                            tooltipLeft: rectangle?.x,
-                                        })
-                                    }}
-                                />
+                                            showTooltip({
+                                                tooltipData: { xLabel: formatXLabel(index), value: yAccessor(datum) },
+                                                tooltipTop: rectangle?.y,
+                                                tooltipLeft: rectangle?.x,
+                                            })
+                                        }}
+                                    />
+                                </MaybeLink>
                             </Group>
                         )
                     })}
