@@ -18,7 +18,7 @@ func readyHandler(ready <-chan struct{}) http.HandlerFunc {
 		case <-ready:
 			w.WriteHeader(http.StatusOK)
 		default:
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusServiceUnavailable)
 		}
 	}
 }
