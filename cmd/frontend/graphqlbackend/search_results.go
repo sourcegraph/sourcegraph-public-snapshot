@@ -784,18 +784,17 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchRe
 // resolved.
 func invalidateRepoCache(plan query.Plan) bool {
 	var seenRepo, seenRevision, seenRepoGroup, seenContext int
-	q := plan.ToParseTree()
-	query.VisitField(q, query.FieldRepo, func(_ string, _ bool, _ query.Annotation) {
-		seenRepo += 1
-	})
-	query.VisitField(q, query.FieldRev, func(_ string, _ bool, _ query.Annotation) {
-		seenRevision += 1
-	})
-	query.VisitField(q, query.FieldRepoGroup, func(_ string, _ bool, _ query.Annotation) {
-		seenRepoGroup += 1
-	})
-	query.VisitField(q, query.FieldContext, func(_ string, _ bool, _ query.Annotation) {
-		seenContext += 1
+	query.VisitParameter(plan.ToParseTree(), func(field, _ string, _ bool, _ query.Annotation) {
+		switch field {
+		case query.FieldRepo:
+			seenRepo += 1
+		case query.FieldRev:
+			seenRevision += 1
+		case query.FieldRepoGroup:
+			seenRepoGroup += 1
+		case query.FieldContext:
+			seenContext += 1
+		}
 	})
 	return seenRepo+seenRepoGroup > 1 || seenRevision > 1 || seenContext > 1
 }
