@@ -147,7 +147,7 @@ export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
 /**
  * Renders breadcrumbs by depth.
  */
-export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[]; location: H.Location }> = ({
+export const Breadcrumbs: React.FunctionComponent<{ breadcrumbs: BreadcrumbAtDepth[]; location: H.Location }> = ({
     breadcrumbs,
     location,
 }) => (
