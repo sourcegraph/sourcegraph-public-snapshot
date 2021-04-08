@@ -116,7 +116,7 @@ To sync Bitbucket server permissions, follow [these instructions](../repo/permis
 2. [Configure SAML authentication](../auth/saml/index.md). If you are using Bitbucket server, the `login` attribute is *not* optional—you need to pass the Bitbucket username as the `login` attribute. 
 3. [Configure an HTTP authentication proxy](../auth/index.md#http-authentication-proxies), passing the Bitbucket Server username value as the `usernameHeader`. 
 
-### Explicit Permissions API Authorization
+### Explicit Permissions API authorization
 
 With any authentication mechanism, you can use our GraphQL API to set permissions for all repositories. If you choose to do this, this is the *only* mechanism that can be used for permissions—all others will be ignored. Follow [these instructions](../repo/permissions.md#explicit-permissions-api) for the mutations needed within the GraphQL API to configure access.
 
