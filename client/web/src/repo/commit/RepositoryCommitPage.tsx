@@ -93,9 +93,13 @@ interface Props
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 }
 
+type DiffMode = 'split' | 'unified'
+
 interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
     /** The commit, undefined while loading, or an error. */
     commitOrError?: GitCommitFields | ErrorLike
+    /** The visualization mode for file diff */
+    diffMode?: DiffMode
 }
 
 /** Displays a commit. */
@@ -114,7 +118,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
     /** Emits when the close button was clicked */
     private closeButtonClicks = new Subject<MouseEvent>()
     private nextCloseButtonClick = (event: MouseEvent): void => this.closeButtonClicks.next(event)
-
     private subscriptions = new Subscription()
     private hoverifier: Hoverifier<
         RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
@@ -148,7 +151,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
             pinningEnabled: true,
         })
         this.subscriptions.add(this.hoverifier)
-        this.state = this.hoverifier.hoverState
+        this.state = { ...this.hoverifier.hoverState, diffMode: 'unified' }
         this.subscriptions.add(
             this.hoverifier.hoverStateUpdates.subscribe(update => {
                 this.setState(update)
@@ -169,8 +172,15 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
         }
     }
 
+    private handleDiffMode(mode: DiffMode): void {
+        localStorage.setItem('diff-mode-visualizer', mode)
+        this.setState({ diffMode: mode })
+    }
+
     public componentDidMount(): void {
         this.props.telemetryService.logViewEvent('RepositoryCommit')
+        const diffMode = localStorage.getItem('diff-mode-visualizer') as DiffMode | null
+        this.setState({ diffMode: diffMode || 'unified' })
 
         this.subscriptions.add(
             this.componentUpdates
@@ -218,7 +228,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="repository-commit-page container mt-3" ref={this.nextRepositoryCommitPageElement}>
+            <div className="repository-commit-page m-3" ref={this.nextRepositoryCommitPageElement}>
                 <PageTitle
                     title={
                         this.state.commitOrError && !isErrorLike(this.state.commitOrError)
@@ -241,7 +251,30 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                 />
                             </div>
                         </div>
-                        <div className="mb-3" />
+                        <div className="py-2 text-right">
+                            <div role="group" className="btn-group">
+                                <button
+                                    onClick={() => this.handleDiffMode('unified')}
+                                    // onClick={() => this.setState({ diffMode: 'unified' })}
+                                    type="button"
+                                    className={`btn ${
+                                        this.state.diffMode === 'unified' ? 'btn-secondary' : 'btn-outline-secondary'
+                                    }`}
+                                >
+                                    Unified
+                                </button>
+                                <button
+                                    onClick={() => this.handleDiffMode('split')}
+                                    // onClick={() => this.setState({ diffMode: 'split' })}
+                                    type="button"
+                                    className={`btn ${
+                                        this.state.diffMode === 'split' ? 'btn-secondary' : 'btn-outline-secondary'
+                                    }`}
+                                >
+                                    Split
+                                </button>
+                            </div>
+                        </div>
                         <FileDiffConnection
                             listClassName="list-group list-group-flush"
                             noun="changed file"
@@ -267,6 +300,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                     extensionsController: this.props.extensionsController,
                                 },
                                 lineNumbers: true,
+                                diffMode: this.state.diffMode || 'unified',
                             }}
                             updateOnChange={`${this.props.repo.id}:${this.state.commitOrError.oid}:${String(
                                 this.props.isLightTheme

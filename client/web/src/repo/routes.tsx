@@ -38,14 +38,14 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
             <div className="repo-revision-container">
                 <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                     <RepositoryCommitPage {...context} />
+                    <ActionItemsBar
+                        extensionsController={context.extensionsController}
+                        platformContext={context.platformContext}
+                        useActionItemsBar={context.useActionItemsBar}
+                        location={context.location}
+                        telemetryService={context.telemetryService}
+                    />
                 </RepositoryGitDataContainer>
-                <ActionItemsBar
-                    extensionsController={context.extensionsController}
-                    platformContext={context.platformContext}
-                    useActionItemsBar={context.useActionItemsBar}
-                    location={context.location}
-                    telemetryService={context.telemetryService}
-                />
             </div>
         ),
     },

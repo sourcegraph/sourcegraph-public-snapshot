@@ -36,6 +36,7 @@ export interface FileDiffNodeProps extends ThemeProps {
 
     /** Reflect selected line in url */
     persistLines?: boolean
+    diffMode: 'split' | 'unified'
 }
 
 /** A file diff. */
@@ -48,6 +49,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
     className,
     extensionInfo,
     persistLines,
+    diffMode,
 }) => {
     const [expanded, setExpanded] = useState<boolean>(true)
     const [renderDeleted, setRenderDeleted] = useState<boolean>(false)
@@ -171,6 +173,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                             }
                             hunks={node.hunks}
                             lineNumbers={lineNumbers}
+                            diffMode={diffMode}
                         />
                     ))}
             </div>

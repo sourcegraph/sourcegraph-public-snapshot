@@ -8,6 +8,7 @@ import { isDefined, property } from '../../../../shared/src/util/types'
 import { toURIWithPath } from '../../../../shared/src/util/url'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { DiffHunk } from './DiffHunk'
+import { DiffSplitHunk } from './DiffSplitHunk'
 import { diffDomFunctions } from '../../repo/compare/dom-functions'
 import { FileDiffFields } from '../../graphql-operations'
 import { ViewerId } from '../../../../shared/src/api/viewerTypes'
@@ -48,19 +49,20 @@ export interface FileHunksProps extends ThemeProps {
     history: H.History
     /** Reflect selected line in url */
     persistLines?: boolean
+    diffMode: string
 }
 
 /** Displays hunks in a unified file diff. */
 export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
     className,
     fileDiffAnchor,
-    history,
     hunks,
     isLightTheme,
     lineNumbers,
     location,
     extensionInfo,
     persistLines,
+    diffMode,
 }) => {
     /**
      * Decorations for the file at the two revisions of the diff
@@ -225,28 +227,53 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                     <div className="text-muted m-2">No changes</div>
                 ) : (
                     <div className="file-diff-hunks__container" ref={nextCodeElement}>
-                        <table className="file-diff-hunks__table">
+                        <table
+                            className={`file-diff-hunks__table file-diff-hunks__table${
+                                diffMode === 'split' ? '--split' : ''
+                            }`}
+                        >
                             {lineNumbers && (
                                 <colgroup>
-                                    <col width="40" />
-                                    <col width="40" />
-                                    <col />
+                                    {diffMode === 'split' ? (
+                                        <>
+                                            <col width="40" />
+                                            <col />
+                                            <col width="40" />
+                                            <col />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <col width="40" />
+                                            <col width="40" />
+                                            <col />
+                                        </>
+                                    )}
                                 </colgroup>
                             )}
                             <tbody>
-                                {hunks.map((hunk, index) => (
-                                    <DiffHunk
-                                        fileDiffAnchor={fileDiffAnchor}
-                                        history={history}
-                                        isLightTheme={isLightTheme}
-                                        lineNumbers={lineNumbers}
-                                        location={location}
-                                        persistLines={persistLines}
-                                        key={index}
-                                        hunk={hunk}
-                                        decorations={decorations}
-                                    />
-                                ))}
+                                {hunks.map((hunk, index) =>
+                                    diffMode === 'split' ? (
+                                        <DiffSplitHunk
+                                            fileDiffAnchor={fileDiffAnchor}
+                                            isLightTheme={isLightTheme}
+                                            lineNumbers={lineNumbers}
+                                            persistLines={persistLines}
+                                            key={hunk.oldRange.startLine}
+                                            hunk={hunk}
+                                            decorations={decorations}
+                                        />
+                                    ) : (
+                                        <DiffHunk
+                                            fileDiffAnchor={fileDiffAnchor}
+                                            isLightTheme={isLightTheme}
+                                            lineNumbers={lineNumbers}
+                                            persistLines={persistLines}
+                                            key={hunk.oldRange.startLine}
+                                            hunk={hunk}
+                                            decorations={decorations}
+                                        />
+                                    )
+                                )}
                             </tbody>
                         </table>
                     </div>
