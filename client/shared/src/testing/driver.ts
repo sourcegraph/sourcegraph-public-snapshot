@@ -39,11 +39,21 @@ import { PUPPETEER_BROWSER_REVISION } from './puppeteer-browser-revision'
 export const oncePageEvent = <E extends keyof PageEventObj>(page: Page, eventName: E): Promise<PageEventObj[E]> =>
     new Promise(resolve => page.once(eventName, resolve))
 
-interface AdditionalPercyConfig {
+interface SnapshotConfig {
     waitForSyntaxHighlightingToUpdate: boolean
 }
 
-const setColorScheme = async (page: Page, scheme: 'dark' | 'light', config?: AdditionalPercyConfig) => {
+const waitForSyntaxHighlightingToUpdate = async (page: Page) => {
+    try {
+        await page.waitForResponse(response => response.url().includes('graphql?highlightCode'), {
+            timeout: 5,
+        })
+    } catch {
+        // noop: fail silently if request was missed
+    }
+}
+
+const setColorScheme = async (page: Page, scheme: 'dark' | 'light', config?: SnapshotConfig): Promise<void> => {
     const isAlreadySet = await page.evaluate(scheme => matchMedia(`(prefers-color-scheme: ${scheme})`).matches, scheme)
 
     if (isAlreadySet) {
@@ -53,50 +63,42 @@ const setColorScheme = async (page: Page, scheme: 'dark' | 'light', config?: Add
     await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }])
 
     if (config?.waitForSyntaxHighlightingToUpdate) {
-        await page.waitForResponse(response => response.url().includes('graphql?highlightCode'), {
-            timeout: 5,
-        })
+        await waitForSyntaxHighlightingToUpdate(page)
     }
 }
 
-export const percySnapshot = async (
-    page: Page,
-    name: String,
-    options?: any,
-    additionalConfig?: AdditionalPercyConfig
-) => {
+export const percySnapshot = async (page: Page, name: string, config?: SnapshotConfig): Promise<void> => {
     const percyEnabled = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
 
     if (!percyEnabled) {
-        console.log('Not enabled!')
-        // return Promise.resolve()
+        return Promise.resolve()
     }
 
     // Theme-light
     console.log('1: Light theme')
-    await setColorScheme(page, 'light', additionalConfig)
-    await realPercySnapshot(page, `${name} - light theme`, options)
+    await setColorScheme(page, 'light', config)
+    await realPercySnapshot(page, `${name} - light theme`)
     console.log('------------- Success 1')
 
     // Theme-light with redesign
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
-    await realPercySnapshot(page, `${name} - light theme with redesign enabled`, options)
+    await realPercySnapshot(page, `${name} - light theme with redesign enabled`)
     await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
     console.log('------------- Success 2')
 
     console.log('2: Dark theme')
     // Theme-dark
-    await setColorScheme(page, 'dark', additionalConfig)
-    await realPercySnapshot(page, `${name} - Dark Theme`, options)
+    await setColorScheme(page, 'dark', config)
+    await realPercySnapshot(page, `${name} - Dark Theme`)
     console.log('------------- Success 3')
 
     // Theme-dark with redesign
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
-    await realPercySnapshot(page, `${name} - dark theme with redesign enabled`, options)
+    await realPercySnapshot(page, `${name} - dark theme with redesign enabled`)
     await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
 
     // Reset to light theme
-    await setColorScheme(page, 'light', additionalConfig)
+    await setColorScheme(page, 'light', config)
 }
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'

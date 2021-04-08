@@ -499,12 +499,9 @@ describe('Search', () => {
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
 
-            await percySnapshot(
-                driver.page,
-                'Streaming diff search syntax highlighting',
-                {},
-                { waitForSyntaxHighlightingToUpdate: true }
-            )
+            await percySnapshot(driver.page, 'Streaming diff search syntax highlighting', {
+                waitForSyntaxHighlightingToUpdate: true,
+            })
         })
 
         test('Streaming commit search syntax highlighting', async () => {
@@ -553,12 +550,9 @@ describe('Search', () => {
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
 
-            await percySnapshot(
-                driver.page,
-                'Streaming commit search syntax highlighting',
-                {},
-                { waitForSyntaxHighlightingToUpdate: true }
-            )
+            await percySnapshot(driver.page, 'Streaming commit search syntax highlighting', {
+                waitForSyntaxHighlightingToUpdate: true,
+            })
         })
     })
 
