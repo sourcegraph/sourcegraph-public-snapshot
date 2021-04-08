@@ -84,7 +84,7 @@ To configure SAML auth with GitLab permissions, you will need to first [configur
 ```
 "identities": [
    {"provider": "saml", "extern_uid": "email@domain.com"}
-   ]
+]
 ```
 
 You will need to configure permission in Sourcegraph as:
