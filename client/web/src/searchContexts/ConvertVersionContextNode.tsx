@@ -40,7 +40,7 @@ export const ConvertVersionContextNode: React.FunctionComponent<ConvertVersionCo
         )
     )
 
-    const searchContextSpec = useMemo(() => name.replaceAll(versionContextNameToSearchContextSpecRegExp, '_'), [name])
+    const searchContextSpec = useMemo(() => name.replace(versionContextNameToSearchContextSpecRegExp, '_'), [name])
 
     const [isConverted, setIsConverted] = useState<boolean | typeof LOADING>(false)
     useEffect(() => {
