@@ -34,7 +34,10 @@ export function usePointerEventEmitters({
         [emit, source],
     );
     const emitPointerUp = useCallback(
-        (event: React.PointerEvent) => emit?.('pointerup', event, source),
+        (event: React.PointerEvent) => {
+            console.log('pointup')
+            return emit?.('pointerup', event, source);
+        },
         [emit, source],
     );
     const emitFocus = useCallback((event: React.FocusEvent) => emit?.('focus', event, source), [

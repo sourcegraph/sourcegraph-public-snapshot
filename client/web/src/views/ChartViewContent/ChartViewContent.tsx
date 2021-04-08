@@ -28,12 +28,14 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
     const linkHandler = useMemo(() => {
         const linkHandler = createProgrammaticLinkHandler(history)
         return (event: DatumClickEvent): void => {
+
+            console.log('click link', event);
             if (!event.link) {
                 return
             }
 
             telemetryService.log('InsightDataPointClick', { insightType: viewID.split('.')[0] })
-            linkHandler(event.originEvent, event.link)
+            // linkHandler(event.originEvent, event.link)
         }
     }, [history, viewID, telemetryService])
 

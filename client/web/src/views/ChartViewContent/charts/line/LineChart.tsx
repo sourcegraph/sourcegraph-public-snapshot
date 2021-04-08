@@ -18,35 +18,35 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
         return (
             <EventEmitterProvider>
                 <LineChartContent {...props} />
-            <EventEmitterProvider/>
+            </EventEmitterProvider>
         )
     }
 
     return (
-                <EventEmitterProvider>
-                    {/* eslint-disable-next-line react/forbid-dom-props */}
-        <div style={{ width, height }} className="line-chart">
-            {/*
-                In case if we have a legend to render we have to have responsive container for chart
-                just to calculate right sizes for chart content = rootContainerSizes - legendSizes
-            */}
-            <ParentSize className="line-chart__content-parent-size">
-                {({ width, height }) => <LineChartContent {...otherProps} width={width} height={height} />}
-            </ParentSize>
+        <EventEmitterProvider>
+            {/* eslint-disable-next-line react/forbid-dom-props */}
+            <div style={{ width, height }} className="line-chart">
+                {/*
+                    In case if we have a legend to render we have to have responsive container for chart
+                    just to calculate right sizes for chart content = rootContainerSizes - legendSizes
+                */}
+                <ParentSize className="line-chart__content-parent-size">
+                    {({ width, height }) => <LineChartContent {...otherProps} width={width} height={height} />}
+                </ParentSize>
 
-            <ul className="line-chart__legend">
-                {props.series.map(line => (
-                    <li key={line.dataKey.toString()} className="line-chart__legend-item">
-                        <div
-                            /* eslint-disable-next-line react/forbid-dom-props */
-                            style={{ backgroundColor: line.stroke ?? DEFAULT_LINE_STROKE }}
-                            className="line-chart__legend-mark"
-                        />
-                        {line.name}
-                    </li>
-                ))}
-            </ul>
-        </div>
-                    <EventEmitterProvider/>
+                <ul className="line-chart__legend">
+                    {props.series.map(line => (
+                        <li key={line.dataKey.toString()} className="line-chart__legend-item">
+                            <div
+                                /* eslint-disable-next-line react/forbid-dom-props */
+                                style={{ backgroundColor: line.stroke ?? DEFAULT_LINE_STROKE }}
+                                className="line-chart__legend-mark"
+                            />
+                            {line.name}
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        </EventEmitterProvider>
     )
 }

@@ -17,6 +17,7 @@ import { onDatumClick } from '../../types'
 import { DEFAULT_LINE_STROKE } from '../colors'
 import { generateAccessors } from '../helpers/generate-accessors'
 import { useScales } from '../helpers/use-scales'
+import { usePointerEventEmitters } from '../helpers/use-event-emitters';
 
 import { GlyphDot } from './GlyphDot'
 import { TooltipContent } from './TooltipContent'
@@ -158,6 +159,40 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     const activeDatumLink = activeDatum?.line?.linkURLs?.[activeDatum?.index]
     const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!activeDatumLink })
 
+    const {
+        onPointerMove = noop,
+        onPointerOut = noop,
+        ...otherHandlers
+    } = usePointerEventEmitters({ source: XYCHART_EVENT_SOURCE })
+
+    const focused = useRef(false);
+
+    const handleRootPointerMove = useCallback((event: React.PointerEvent) => {
+        focused.current = true;
+        onPointerMove(event)
+
+    }, [onPointerMove])
+
+    const handleRootPointerOut = useCallback(
+        (event: React.PointerEvent) => {
+            event.persist();
+            focused.current = false
+
+            requestAnimationFrame(() => {
+                if (!focused.current) {
+                    onPointerOut(event)
+                }
+            })
+        },
+        [focused, onPointerOut]
+    );
+
+    const eventEmitters = {
+        onPointerMove: handleRootPointerMove,
+        onPointerOut: handleRootPointerOut,
+        ...otherHandlers
+    };
+
     return (
         <div className={rootClasses}>
             <XYChart
@@ -165,7 +200,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                 yScale={scalesConfig.y}
                 height={height}
                 width={width}
-                captureEvents={true}
+                captureEvents={false}
                 margin={MARGIN}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
@@ -209,29 +244,48 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                             stroke={line.stroke ?? DEFAULT_LINE_STROKE}
                             curve={curveLinear}
                         />
-
-                        <GlyphSeries
-                            dataKey={line.dataKey as string}
-                            data={sortedData}
-                            /* eslint-disable-next-line react/jsx-no-bind */
-                            colorAccessor={() => line.stroke ?? DEFAULT_LINE_STROKE}
-                            xAccessor={accessors.x}
-                            yAccessor={accessors.y[line.dataKey as string]}
-                            renderGlyph={GlyphDot}
-                        />
                     </Group>
                 ))}
 
-                <Group top={MARGIN.top} left={MARGIN.left}>
-                    {activeDatum && (
-                        <Glyph
-                            className="line-chart__glyph line-chart__glyph--active"
-                            r={6}
-                            stroke={activeDatum.line.stroke ?? DEFAULT_LINE_STROKE}
-                            cx={xScale(accessors.x(activeDatum.datum))}
-                            cy={yScale(accessors.y[activeDatum.key](activeDatum.datum))}
-                        />
-                    )}
+                <Group
+                    pointerEvents='bounding-box'
+                    {...eventEmitters}>
+
+                    <rect
+                        x={MARGIN.left}
+                        y={MARGIN.top}
+                        width={innerWidth}
+                        height={innerHeight}
+                        fill="transparent"
+                    />
+
+                    {series.map(line => (
+                        <Group key={line.dataKey as string}>
+
+                            <GlyphSeries
+                                dataKey={line.dataKey as string}
+                                data={sortedData}
+                                /* eslint-disable-next-line react/jsx-no-bind */
+                                colorAccessor={() => line.stroke ?? DEFAULT_LINE_STROKE}
+                                enableEvents={false}
+                                xAccessor={accessors.x}
+                                yAccessor={accessors.y[line.dataKey as string]}
+                                renderGlyph={GlyphDot}
+                            />
+                        </Group>
+                    ))}
+
+                    <Group top={MARGIN.top} left={MARGIN.left}>
+                        {activeDatum && (
+                            <Glyph
+                                className="line-chart__glyph line-chart__glyph--active"
+                                r={6}
+                                stroke={activeDatum.line.stroke ?? DEFAULT_LINE_STROKE}
+                                cx={xScale(accessors.x(activeDatum.datum))}
+                                cy={yScale(accessors.y[activeDatum.key](activeDatum.datum))}
+                            />
+                        )}
+                    </Group>
                 </Group>
 
                 <Tooltip
