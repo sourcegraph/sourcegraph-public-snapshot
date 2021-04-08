@@ -116,7 +116,7 @@ export DISABLE_CODE_INSIGHTS_HISTORICAL="${DISABLE_CODE_INSIGHTS_HISTORICAL:-"tr
 # Sourcegraph running on port 3082). That is why Sourcegraph listens on 3082 despite the externalURL
 # having port 3080.
 export SRC_HTTP_ADDR=":3082"
-export WEBPACK_DEV_SERVER=1
+export WEBPACK_DEV_SERVER=0
 
 if [ -z "${DEV_NO_CONFIG-}" ]; then
   export SITE_CONFIG_FILE=${SITE_CONFIG_FILE:-./dev/site-config.json}
@@ -126,7 +126,7 @@ if [ -z "${DEV_NO_CONFIG-}" ]; then
 fi
 
 # WebApp
-export NODE_ENV=development
+export NODE_ENV=production
 export NODE_OPTIONS="--max_old_space_size=4096"
 
 # Ensure SQLite for symbols is built
@@ -171,7 +171,7 @@ export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 tmp_install_procfile=$(mktemp -t procfile_install_XXXXXXX)
 
 cat >"${tmp_install_procfile}" <<EOF
-yarn: cd $(pwd) && yarn --no-progress
+yarn: cd $(pwd) && NODE_ENV=development yarn --no-progress
 go-install: cd $(pwd) && ./dev/go-install.sh
 ctags-image: cd $(pwd) && ./cmd/symbols/build-ctags.sh
 EOF
