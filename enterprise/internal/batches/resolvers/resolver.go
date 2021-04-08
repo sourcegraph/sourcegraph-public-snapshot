@@ -726,6 +726,8 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateErrored}
 		case btypes.ChangesetStateFailed:
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateFailed}
+		case btypes.ChangesetStateScheduled:
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateScheduled}
 		default:
 			return opts, false, errors.Errorf("changeset state %q not supported in filtering", state)
 		}

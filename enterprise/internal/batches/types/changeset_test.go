@@ -7,11 +7,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
 
+	"github.com/sourcegraph/sourcegraph/internal/batches/scheduler/config"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestChangeset_Clone(t *testing.T) {
@@ -567,5 +570,77 @@ func TestChangesetMetadata(t *testing.T) {
 
 	if want, have := githubPR.URL, url; want != have {
 		t.Errorf("changeset url wrong. want=%q, have=%q", want, have)
+	}
+}
+
+func TestChangeset_ResetQueued(t *testing.T) {
+	// Set up configurations.
+	var (
+		noWindows = &conf.Unified{}
+		windows   = &conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				BatchChangesRolloutWindows: &[]*schema.BatchChangeRolloutWindow{
+					{Rate: "10/min"},
+				},
+			},
+		}
+	)
+
+	for name, tc := range map[string]struct {
+		changeset *Changeset
+		config    *conf.Unified
+		want      ReconcilerState
+	}{
+		"created changeset; has rollout windows": {
+			changeset: &Changeset{CurrentSpecID: 1},
+			config:    windows,
+			want:      ReconcilerStateScheduled,
+		},
+		"created changeset; no rollout windows": {
+			changeset: &Changeset{CurrentSpecID: 1},
+			config:    noWindows,
+			want:      ReconcilerStateQueued,
+		},
+		"tracking changeset; has rollout windows": {
+			changeset: &Changeset{CurrentSpecID: 0},
+			config:    windows,
+			want:      ReconcilerStateQueued,
+		},
+		"tracking changeset; no rollout windows": {
+			changeset: &Changeset{CurrentSpecID: 0},
+			config:    noWindows,
+			want:      ReconcilerStateQueued,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			config.Reset()
+			conf.Mock(tc.config)
+			defer conf.Mock(nil)
+
+			// Set up a funky changeset state so we verify that the fields that
+			// should be overwritten are.
+			msg := "an appropriate error"
+			tc.changeset.NumResets = 42
+			tc.changeset.NumFailures = 43
+			tc.changeset.FailureMessage = &msg
+			tc.changeset.SyncErrorMessage = &msg
+
+			tc.changeset.ResetQueued()
+			if have := tc.changeset.ReconcilerState; have != tc.want {
+				t.Errorf("unexpected reconciler state: have=%v want=%v", have, tc.want)
+			}
+			if have := tc.changeset.NumResets; have != 0 {
+				t.Errorf("unexpected number of resets: have=%d want=0", have)
+			}
+			if have := tc.changeset.NumFailures; have != 0 {
+				t.Errorf("unexpected number of failures: have=%d want=0", have)
+			}
+			if have := tc.changeset.FailureMessage; have != nil {
+				t.Errorf("unexpected non-nil failure message: %s", *have)
+			}
+			if have := tc.changeset.SyncErrorMessage; have != nil {
+				t.Errorf("unexpected non-nil sync error message: %s", *have)
+			}
+		})
 	}
 }

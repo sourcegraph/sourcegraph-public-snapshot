@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"testing"
 	"time"
@@ -721,6 +722,7 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 			btypes.ChangesetStateRetrying:    {ReconcilerState: btypes.ReconcilerStateErrored},
 			btypes.ChangesetStateFailed:      {ReconcilerState: btypes.ReconcilerStateFailed},
 			btypes.ChangesetStateProcessing:  {ReconcilerState: btypes.ReconcilerStateCompleted},
+			btypes.ChangesetStateScheduled:   {ReconcilerState: btypes.ReconcilerStateScheduled},
 			btypes.ChangesetStateUnpublished: {PublicationState: btypes.ChangesetPublicationStateUnpublished},
 			btypes.ChangesetStateDraft:       {ExternalState: btypes.ChangesetExternalStateDraft},
 			btypes.ChangesetStateOpen:        {ExternalState: btypes.ChangesetExternalStateOpen},
@@ -779,6 +781,42 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 			}
 		})
 	}
+
+	// Finally, PROCESSING is special, and should match everything that isn't
+	// retrying, failed, scheduled, or completed.
+	t.Run(string(btypes.ChangesetStateProcessing), func(t *testing.T) {
+		want := []int64{}
+		for state, changeset := range changesets {
+			switch state {
+			case btypes.ChangesetStateRetrying:
+			case btypes.ChangesetStateFailed:
+			case btypes.ChangesetStateScheduled:
+			default:
+				want = append(want, changeset.ID)
+			}
+		}
+
+		state := btypes.ChangesetStateProcessing
+		mappings, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
+			BatchSpecID:   newBatchSpec.ID,
+			BatchChangeID: batchChange.ID,
+			CurrentState:  &state,
+		})
+		if err != nil {
+			t.Errorf("unexpected error: %+v", err)
+		}
+
+		have := []int64{}
+		for _, mapping := range mappings {
+			have = append(have, mapping.ChangesetID)
+		}
+
+		sort.Slice(have, func(i, j int) bool { return have[i] < have[j] })
+		sort.Slice(want, func(i, j int) bool { return want[i] < want[j] })
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Errorf("unexpected changesets (-have +want):\n%s", diff)
+		}
+	})
 }
 
 func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {

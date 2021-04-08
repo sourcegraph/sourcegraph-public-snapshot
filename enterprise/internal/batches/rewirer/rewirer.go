@@ -96,12 +96,14 @@ func (r *ChangesetRewirer) createChangesetForSpec(repo *types.Repo, spec *btypes
 		CurrentSpecID:        spec.ID,
 
 		PublicationState: btypes.ChangesetPublicationStateUnpublished,
-		ReconcilerState:  btypes.ReconcilerStateQueued,
 	}
 
 	// Copy over diff stat from the spec.
 	diffStat := spec.DiffStat()
 	newChangeset.SetDiffStat(&diffStat)
+
+	// Set up the initial queue state of the changeset.
+	newChangeset.ResetQueued()
 
 	return newChangeset
 }

@@ -19,6 +19,7 @@ func TestIntegration(t *testing.T) {
 		t.Run("BatchChanges", storeTest(db, testStoreBatchChanges))
 		t.Run("Changesets", storeTest(db, testStoreChangesets))
 		t.Run("ChangesetEvents", storeTest(db, testStoreChangesetEvents))
+		t.Run("GetNextScheduledChangeset", storeTest(db, testStoreGetNextScheduledChangeset))
 		t.Run("ListChangesetSyncData", storeTest(db, testStoreListChangesetSyncData))
 		t.Run("ListChangesetsTextSearch", storeTest(db, testStoreListChangesetsTextSearch))
 		t.Run("BatchSpecs", storeTest(db, testStoreBatchSpecs))

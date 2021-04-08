@@ -8604,6 +8604,10 @@ The reconciler state of a changeset on Sourcegraph
 """
 enum ChangesetReconcilerState {
     """
+    The changeset is scheduled, and will be enqueued when its turn comes in Sourcegraph's rollout window.
+    """
+    SCHEDULED
+    """
     The changeset is enqueued for the reconciler to process it.
     """
     QUEUED
@@ -8699,6 +8703,10 @@ enum ChangesetState {
     changeset and will retry it for a number of retries.
     """
     RETRYING
+    """
+    The changeset is scheduled, and will be enqueued when its turn comes in Sourcegraph's rollout window.
+    """
+    SCHEDULED
     """
     The changeset reconciler is currently computing the delta between the
     If a delta exists, the reconciler tries to update the state of the

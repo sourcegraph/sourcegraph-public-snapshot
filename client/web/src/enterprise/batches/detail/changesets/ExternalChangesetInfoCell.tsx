@@ -78,6 +78,7 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                 ChangesetState.PROCESSING,
                 ChangesetState.RETRYING,
                 ChangesetState.UNPUBLISHED,
+                ChangesetState.SCHEDULED,
             ].includes(node.state) && (
                 <ChangesetLastSynced changeset={node} viewerCanAdminister={viewerCanAdminister} />
             )}
