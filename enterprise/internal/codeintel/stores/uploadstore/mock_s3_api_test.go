@@ -4,9 +4,10 @@ package uploadstore
 
 import (
 	"context"
+	"sync"
+
 	s3 "github.com/aws/aws-sdk-go/service/s3"
 	s3manager "github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"sync"
 )
 
 // MockS3API is a mock implementation of the s3API interface (from the
