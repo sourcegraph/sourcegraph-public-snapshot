@@ -20,19 +20,34 @@ const (
 	searchContextSpecPrefix = "@"
 )
 
+var namespacedSearchContextSpecRegexp = regexp.MustCompile(searchContextSpecPrefix + `(.*?)\/(.*)`)
+
 func ResolveSearchContextSpec(ctx context.Context, db dbutil.DB, searchContextSpec string) (*types.SearchContext, error) {
 	if IsGlobalSearchContextSpec(searchContextSpec) {
 		return GetGlobalSearchContext(), nil
+	} else if submatches := namespacedSearchContextSpecRegexp.FindStringSubmatch(searchContextSpec); len(submatches) == 3 {
+		// We expect 3 submatches, because FindStringSubmatch returns entire string as first submatch, and 2 captured groups
+		// as additional submatches
+		namespaceName, searchContextName := submatches[1], submatches[2]
+		namespace, err := database.Namespaces(db).GetByName(ctx, namespaceName)
+		if err != nil {
+			return nil, err
+		}
+		return database.SearchContexts(db).GetSearchContext(ctx, database.GetSearchContextOptions{
+			Name:            searchContextName,
+			NamespaceUserID: namespace.User,
+			NamespaceOrgID:  namespace.Organization,
+		})
 	} else if strings.HasPrefix(searchContextSpec, searchContextSpecPrefix) {
-		name := searchContextSpec[1:]
-		namespace, err := database.Namespaces(db).GetByName(ctx, name)
+		namespaceName := searchContextSpec[1:]
+		namespace, err := database.Namespaces(db).GetByName(ctx, namespaceName)
 		if err != nil {
 			return nil, err
 		}
 		if namespace.User == 0 {
 			return nil, fmt.Errorf("search context '%s' not found", searchContextSpec)
 		}
-		return GetUserSearchContext(name, namespace.User), nil
+		return GetUserSearchContext(namespaceName, namespace.User), nil
 	}
 	// Check if instance-level context
 	searchContext, err := database.SearchContexts(db).GetSearchContext(ctx, database.GetSearchContextOptions{Name: searchContextSpec})
@@ -112,8 +127,17 @@ func GetGlobalSearchContext() *types.SearchContext {
 func GetSearchContextSpec(searchContext *types.SearchContext) string {
 	if IsInstanceLevelSearchContext(searchContext) {
 		return searchContext.Name
+	} else if IsAutoDefinedSearchContext(searchContext) {
+		return searchContextSpecPrefix + searchContext.Name
+	} else {
+		var namespaceName string
+		if searchContext.NamespaceUserName != "" {
+			namespaceName = searchContext.NamespaceUserName
+		} else {
+			namespaceName = searchContext.NamespaceOrgName
+		}
+		return searchContextSpecPrefix + namespaceName + "/" + searchContext.Name
 	}
-	return searchContextSpecPrefix + searchContext.Name
 }
 
 func getVersionContextRepositoryRevisions(ctx context.Context, db dbutil.DB, versionContext *schema.VersionContext) ([]*types.SearchContextRepositoryRevisions, error) {

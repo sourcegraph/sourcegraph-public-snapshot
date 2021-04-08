@@ -1500,6 +1500,13 @@ type SearchContext struct {
 	Public          bool
 	NamespaceUserID int32 // if non-zero, the owner is this user. NamespaceUserID/NamespaceOrgID are mutually exclusive.
 	NamespaceOrgID  int32 // if non-zero, the owner is this organization. NamespaceUserID/NamespaceOrgID are mutually exclusive.
+
+	// We cache namespace names to avoid separate database lookups when constructing the search context spec
+
+	// NamespaceUserName is the name of the user if NamespaceUserID is present.
+	NamespaceUserName string
+	// NamespaceUserName is the name of the org if NamespaceOrgID is present.
+	NamespaceOrgName string
 }
 
 // SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions
