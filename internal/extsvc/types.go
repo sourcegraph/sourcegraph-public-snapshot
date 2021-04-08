@@ -321,44 +321,6 @@ func ExtractRateLimitConfig(config, kind, displayName string) (RateLimitConfig, 
 	return rlc, nil
 }
 
-// ExtractBaseURL will extract the normalised base URL from the given config
-// based on the vale of kind
-func ExtractBaseURL(kind, config string) (*url.URL, error) {
-	cfg, err := ParseConfig(kind, config)
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing config")
-	}
-
-	var rawURL string
-	switch c := cfg.(type) {
-	case *schema.AWSCodeCommitConnection:
-		return nil, errors.New("BaseURL unavailable for AWSCodeCommit")
-	case *schema.BitbucketServerConnection:
-		rawURL = c.Url
-	case *schema.GitHubConnection:
-		rawURL = c.Url
-	case *schema.GitLabConnection:
-		rawURL = c.Url
-	case *schema.GitoliteConnection:
-		rawURL = c.Host
-	case *schema.PerforceConnection:
-		return nil, errors.New("BaseURL unavailable for Perforce")
-	case *schema.PhabricatorConnection:
-		rawURL = c.Url
-	case *schema.OtherExternalServiceConnection:
-		rawURL = c.Url
-	default:
-		return nil, fmt.Errorf("unknown external service type %T", config)
-	}
-
-	parsed, err := url.Parse(rawURL)
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing service URL")
-	}
-
-	return NormalizeBaseURL(parsed), nil
-}
-
 // RateLimitConfig represents the internal rate limit configured for an external service
 type RateLimitConfig struct {
 	BaseURL     string
