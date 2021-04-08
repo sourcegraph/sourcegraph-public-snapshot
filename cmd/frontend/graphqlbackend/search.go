@@ -96,7 +96,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	plan, err = query.Pipeline(
 		query.Init(args.Query, searchType),
 		query.With(globbing, query.Globbing),
-		query.CountAll,
 	)
 	if err != nil {
 		return alertForQuery(args.Query, err).wrapSearchImplementer(db), nil

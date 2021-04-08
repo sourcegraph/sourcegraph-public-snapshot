@@ -961,10 +961,10 @@ func TestQueryField(t *testing.T) {
 	autogold.Want("omit repo alias", "alias-pattern").Equal(t, test("r:stuff alias-pattern", "repo"))
 }
 
-func TestCountAll(t *testing.T) {
+func TestSubstituteCountAll(t *testing.T) {
 	test := func(input string) string {
 		query, _ := Parse(input, SearchTypeLiteral)
-		q, _ := CountAll(query)
+		q := SubstituteCountAll(query)
 		return toString(q)
 	}
 
