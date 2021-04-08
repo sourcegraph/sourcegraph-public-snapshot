@@ -60,7 +60,7 @@ More info about [builtin password authentication](../auth/index.md#builtin-passw
 We support both authentication and permissions syncing (through OAuth) for GitHub. If you use GitHub as your code host, we do not officially support using another authentication mechanism (SAML, etc.). Instead, you’ll need to follow this flow:
 
 1. Use SAML (or another auth mechanism) to log in to GitHub
-2. Use Github OAuth to log in to Sourcegraph
+2. Use GitHub OAuth to log in to Sourcegraph
 
 In this way, access to Sourcegraph will still be managed by your identity provider, using the code host as a middle step.
 
