@@ -12,7 +12,7 @@ import (
 var ErrZeroSchedule = errors.New("schedule will never yield")
 
 // Schedule represents a single Schedule in time: for a certain amount of time,
-// this particular window will be in force.
+// this particular rate limit will be in enforced.
 type Schedule struct {
 	limiter ratelimit.Limiter
 
