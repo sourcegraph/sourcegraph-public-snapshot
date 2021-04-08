@@ -2,42 +2,34 @@ package window
 
 import (
 	"math"
-	"sync"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // Configuration represents the rollout windows configured on the site.
 type Configuration struct {
 	windows []Window
-	mu      sync.RWMutex
 }
 
 // NewConfiguration constructs a Configuration based on the current site
 // configuration, including watching the configuration for updates.
-func NewConfiguration() *Configuration {
-	cfg := &Configuration{}
+func NewConfiguration(raw *[]*schema.BatchChangeRolloutWindow) (*Configuration, error) {
+	windows, err := parseConfiguration(raw)
+	if err != nil {
+		return nil, err
+	}
 
-	conf.Watch(func() {
-		if err := cfg.update(conf.Get().BatchChangesRolloutWindows); err != nil {
-			log15.Warn("ignoring erroneous batchChanges.rolloutWindows configuration", "err", err)
-		}
-	})
-
-	return cfg
+	return &Configuration{windows: windows}, nil
 }
 
 // ValidateConfiguration validates the given site configuration.
 func ValidateConfiguration(raw *[]*schema.BatchChangeRolloutWindow) error {
-	return (&Configuration{
-		windows: []Window{},
-	}).update(raw)
+	_, err := parseConfiguration(raw)
+	return err
 }
 
 // Estimate attempts to estimate when the given entry in a queue of changesets
@@ -45,9 +37,6 @@ func ValidateConfiguration(raw *[]*schema.BatchChangeRolloutWindow) error {
 // reasonable estimate, either because all windows are zero or the estimate is
 // too far in the future to be reliable.
 func (cfg *Configuration) Estimate(now time.Time, n int) *time.Time {
-	cfg.mu.RLock()
-	defer cfg.mu.RUnlock()
-
 	if !cfg.HasRolloutWindows() {
 		return &now
 	}
@@ -103,9 +92,6 @@ func (cfg *Configuration) HasRolloutWindows() bool {
 // Schedule calculates a schedule for the near future (most likely about a
 // minute), based on the history.
 func (cfg *Configuration) Schedule() Schedule {
-	cfg.mu.RLock()
-	defer cfg.mu.RUnlock()
-
 	// If there are no rollout windows, then we return an unlimited schedule and
 	// have the scheduler check back in periodically in case the configuration
 	// updated. Ten minutes is probably safe enough.
@@ -249,22 +235,14 @@ func (cfg *Configuration) scheduleAt(at time.Time, minimal bool) Schedule {
 	return newSchedule(at, *validity, window.rate)
 }
 
-func (cfg *Configuration) update(raw *[]*schema.BatchChangeRolloutWindow) error {
+func parseConfiguration(raw *[]*schema.BatchChangeRolloutWindow) ([]Window, error) {
 	// Ensure we always start with an empty window slice.
 	windows := []Window{}
-
-	// Update atomically once we're done generating the new slice.
-	defer func() {
-		cfg.mu.Lock()
-		defer cfg.mu.Unlock()
-
-		cfg.windows = windows
-	}()
 
 	// If there's no window configuration, there are no windows, and we can just
 	// return here.
 	if raw == nil {
-		return nil
+		return windows, nil
 	}
 
 	var errs *multierror.Error
@@ -276,5 +254,5 @@ func (cfg *Configuration) update(raw *[]*schema.BatchChangeRolloutWindow) error 
 		}
 	}
 
-	return errs.ErrorOrNil()
+	return windows, errs.ErrorOrNil()
 }

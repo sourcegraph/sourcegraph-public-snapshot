@@ -19,8 +19,6 @@ type Schedule interface {
 	// a new Schedule must be created and used.
 	ValidUntil() time.Time
 
-	Sleep() time.Duration
-
 	// total returns the total number of events the schedule expects to be able
 	// to handle while valid. If the schedule does not apply any rate limiting,
 	// then this will be -1.
@@ -62,16 +60,6 @@ func newSchedule(base time.Time, d time.Duration, rate rate) Schedule {
 		rate:     rate,
 		until:    base.Add(d),
 	}
-}
-
-func (s *schedule) Sleep() time.Duration {
-	if s.rate.IsUnlimited() {
-		return time.Duration(0)
-	}
-	if s.limiter == nil {
-		return 1 * time.Minute
-	}
-	return s.rate.unit.AsDuration() / time.Duration(s.rate.n)
 }
 
 func (s *schedule) Take() (time.Time, error) {
