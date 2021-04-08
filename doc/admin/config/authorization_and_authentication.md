@@ -72,7 +72,7 @@ Once that is configured, follow [these steps to configure access permissions](..
 
 We support both authentication and permissions syncing (through OAuth) for GitLab. If you use GitLab as your code host, you have two available authentication flows:
 
-1. Use SAML (or another auth mechanism) to log in to Gitlab
+1. Use SAML (or another auth mechanism) to log in to GitLab
 2. Use GitLab OAuth to log in to Sourcegraph
 
 In this way, access to Sourcegraph will still be managed by your identity provider, using the code host as a middle step. This option is the simplest to configure. To do so, [set up GitLab as an authentication option](../auth/index.md#gitlab), and then [enable permissions syncing](../repo/permissions.md#oauth-application).
