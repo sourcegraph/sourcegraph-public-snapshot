@@ -11,7 +11,7 @@ import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { test } from 'mocha'
-import { siteGQLID, siteID } from './jscontext'
+import { createJsContext, siteGQLID, siteID } from './jscontext'
 import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '../search/stream'
 import { Key } from 'ts-key-enum'
@@ -84,6 +84,9 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     }),
     AutoDefinedSearchContexts: (): AutoDefinedSearchContextsResult => ({
         autoDefinedSearchContexts: [],
+    }),
+    ConvertVersionContextToSearchContext: ({ name }) => ({
+        convertVersionContextToSearchContext: { id: `id${name}`, spec: name },
     }),
 }
 
@@ -617,9 +620,28 @@ describe('Search', () => {
                 },
             }),
         }
+        const versionContexts = [
+            {
+                name: 'version-context-1',
+                description: 'v1',
+                revisions: [],
+            },
+            {
+                name: 'version-context-2',
+                description: 'v2',
+                revisions: [],
+            },
+        ]
 
         beforeEach(() => {
             testContext.overrideGraphQL(testContextForSearchContexts)
+            const context = createJsContext({ sourcegraphBaseUrl: driver.sourcegraphBaseUrl })
+            testContext.overrideJsContext({
+                ...context,
+                experimentalFeatures: {
+                    versionContexts,
+                },
+            })
         })
 
         afterEach(async () => {
@@ -685,6 +707,61 @@ describe('Search', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await driver.page.waitForSelector('#monaco-query-input')
             expect(await isSearchContextDropdownVisible()).toBeFalsy()
+        })
+
+        test('Convert version context', async () => {
+            testContext.overrideGraphQL({
+                ...testContextForSearchContexts,
+                IsSearchContextAvailable: () => ({
+                    isSearchContextAvailable: false,
+                }),
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts?tab=convert-version-contexts')
+
+            await driver.page.waitForSelector('.test-convert-version-context-btn')
+            await driver.page.click('.test-convert-version-context-btn')
+
+            await driver.page.waitForSelector('.convert-version-context-node .alert-success')
+
+            const successText = await driver.page.evaluate(
+                () => document.querySelector('.convert-version-context-node .alert-success')?.textContent
+            )
+            expect(successText).toBe('Version context successfully converted.')
+        })
+
+        test('Convert all version contexts', async () => {
+            testContext.overrideGraphQL({
+                ...testContextForSearchContexts,
+                IsSearchContextAvailable: () => ({
+                    isSearchContextAvailable: false,
+                }),
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts?tab=convert-version-contexts')
+
+            await driver.page.waitForSelector('.test-convert-all-search-contexts-btn')
+            await driver.page.click('.test-convert-all-search-contexts-btn')
+
+            testContext.overrideGraphQL({
+                ...testContextForSearchContexts,
+                IsSearchContextAvailable: () => ({
+                    isSearchContextAvailable: true,
+                }),
+            })
+
+            // Check that a success message appears with the correct number of converted contexts
+            await driver.page.waitForSelector('.test-convert-all-search-contexts-success')
+            const successText = await driver.page.evaluate(
+                () => document.querySelector('.test-convert-all-search-contexts-success')?.textContent
+            )
+            expect(successText).toBe(`Sucessfully converted ${versionContexts.length} version contexts.`)
+
+            // Check that individual context nodes have 'Converted' text
+            const convertedContexts = await driver.page.evaluate(
+                () => document.querySelectorAll('.test-converted-context').length
+            )
+            expect(convertedContexts).toBe(versionContexts.length)
         })
     })
 })

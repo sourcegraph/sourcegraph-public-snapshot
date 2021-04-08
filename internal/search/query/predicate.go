@@ -157,7 +157,8 @@ func (f *RepoContainsPredicate) Plan(parent Basic) (Plan, error) {
 
 	if f.Content != "" {
 		nodes = append(nodes, Pattern{
-			Value: f.Content,
+			Value:      f.Content,
+			Annotation: Annotation{Labels: Regexp},
 		})
 	}
 

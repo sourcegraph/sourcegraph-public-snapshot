@@ -391,7 +391,7 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
     queryConnection: (args: FilteredConnectionQueryArguments) => Observable<C>
 
     /** Called when the queryConnection Observable emits. */
-    onUpdate?: (value: C | ErrorLike | undefined) => void
+    onUpdate?: (value: C | ErrorLike | undefined, query: string) => void
 }
 
 /**
@@ -683,7 +683,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             }
                         }
                         if (this.props.onUpdate) {
-                            this.props.onUpdate(connectionOrError)
+                            this.props.onUpdate(connectionOrError, this.state.query)
                         }
                         this.setState({ connectionOrError, ...rest })
                     },

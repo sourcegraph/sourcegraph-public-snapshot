@@ -8,12 +8,12 @@
  *
  *     yarn run release _test:config
  */
-{
+ {
     // Captain information
-    "captainSlackUsername": "dax",
-    "captainGitHubUsername": "daxmc99",
+    "captainSlackUsername": "geoffrey",
+    "captainGitHubUsername": "ggilmore",
     // Release versions
-    "previousRelease": "3.26.1",
+    "previousRelease": "3.26.2",
     "upcomingRelease": "3.27.0",
     // Release dates
     "releaseDate": "20 April 2021 10:00 PST",
