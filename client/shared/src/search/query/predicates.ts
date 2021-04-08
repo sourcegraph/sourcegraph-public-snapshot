@@ -93,7 +93,7 @@ export const scanBalancedParens = (input: string): string | undefined => {
  * (2) The parameters value is well-balanced.
  */
 export const scanPredicate = (field: string, value: string): Predicate | undefined => {
-    const match = value.match(/^[a-z.]+/i)
+    const match = value.match(/^[.a-z]+/i)
     if (!match) {
         return undefined
     }

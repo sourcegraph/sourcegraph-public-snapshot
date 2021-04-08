@@ -40,19 +40,19 @@ describe('scanPredicate', () => {
 describe('resolveAccess', () => {
     test('resolves partial access tree', () => {
         expect(resolveAccess(['repo', 'contains'], PREDICATES)).toMatchInlineSnapshot(
-            `[{"name":"file"},{"name":"content"},{"name":"commit","fields":[{"name":"after"}]}]`
+            '[{"name":"file"},{"name":"content"},{"name":"commit","fields":[{"name":"after"}]}]'
         )
     })
 
     test('resolves partial access tree depth 2', () => {
-        expect(resolveAccess(['repo', 'contains', 'commit'], PREDICATES)).toMatchInlineSnapshot(`[{"name":"after"}]`)
+        expect(resolveAccess(['repo', 'contains', 'commit'], PREDICATES)).toMatchInlineSnapshot('[{"name":"after"}]')
     })
 
     test('resolves fully qualified path', () => {
-        expect(resolveAccess(['repo', 'contains', 'file'], PREDICATES)).toMatchInlineSnapshot(`[]`)
+        expect(resolveAccess(['repo', 'contains', 'file'], PREDICATES)).toMatchInlineSnapshot('[]')
     })
 
     test('undefind path', () => {
-        expect(resolveAccess(['OCOTILLO', 'contains', 'file'], PREDICATES)).toMatchInlineSnapshot(`invalid`)
+        expect(resolveAccess(['OCOTILLO', 'contains', 'file'], PREDICATES)).toMatchInlineSnapshot('invalid')
     })
 })
