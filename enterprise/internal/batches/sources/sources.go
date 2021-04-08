@@ -89,10 +89,8 @@ func (s *Sourcer) ForChangeset(ctx context.Context, ch *batches.Changeset) (*Bat
 
 // ForRepo returns a BatchesSource for the given repo.
 func (s *Sourcer) ForRepo(ctx context.Context, repo *types.Repo) (*BatchesSource, error) {
-	return s.loadBatchesSource(ctx, database.ExternalServicesListOptions{
-		// Consider all available external services for this repo.
-		IDs: repo.ExternalServiceIDs(),
-	})
+	// Consider all available external services for this repo.
+	return s.loadBatchesSource(ctx, repo.ExternalServiceIDs())
 }
 
 // ForExternalService returns a BatchesSource based on the provided external service opts.
@@ -101,9 +99,7 @@ func (s *Sourcer) ForExternalService(ctx context.Context, opts store.GetExternal
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service IDs")
 	}
-	return s.loadBatchesSource(ctx, database.ExternalServicesListOptions{
-		IDs: extSvcIDs,
-	})
+	return s.loadBatchesSource(ctx, extSvcIDs)
 }
 
 // FromRepoSource returns a BatchesSource for a given repos.Source.
@@ -111,8 +107,10 @@ func (s *Sourcer) FromRepoSource(src repos.Source) (*BatchesSource, error) {
 	return batchesSourceFromRepoSource(src, s.store)
 }
 
-func (s *Sourcer) loadBatchesSource(ctx context.Context, opts database.ExternalServicesListOptions) (*BatchesSource, error) {
-	extSvc, err := loadExternalService(ctx, s.store.ExternalServices(), opts)
+func (s *Sourcer) loadBatchesSource(ctx context.Context, externalServiceIDs []int64) (*BatchesSource, error) {
+	extSvc, err := loadExternalService(ctx, s.store.ExternalServices(), database.ExternalServicesListOptions{
+		IDs: externalServiceIDs,
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service")
 	}
@@ -368,7 +366,7 @@ func loadUserCredential(ctx context.Context, s SourcerStore, userID int32, repo 
 	return nil, nil
 }
 
-// v attempts to find a site credential for the given repo.
+// loadSiteCredential attempts to find a site credential for the given repo.
 // When no credential is found, nil is returned.
 func loadSiteCredential(ctx context.Context, s SourcerStore, repo *types.Repo) (auth.Authenticator, error) {
 	cred, err := s.GetSiteCredential(ctx, store.GetSiteCredentialOpts{
