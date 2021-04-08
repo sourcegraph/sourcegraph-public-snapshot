@@ -108,15 +108,19 @@ const writeDocumentsTemporaryTableQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:WriteDocuments
 CREATE TEMPORARY TABLE t_lsif_data_documents (
 	path text NOT NULL,
-	data bytea NOT NULL,
+	ranges bytea,
+	hovers bytea,
+	monikers bytea,
+	packages bytea,
+	diagnostics bytea,
 	num_diagnostics integer NOT NULL
 ) ON COMMIT DROP
 `
 
 const writeDocumentsInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:WriteDocuments
-INSERT INTO lsif_data_documents (dump_id, schema_version, path, data, num_diagnostics)
-SELECT %s, %s, source.path, source.data, source.num_diagnostics
+INSERT INTO lsif_data_documents (dump_id, schema_version, path, ranges, hovers, monikers, packages, diagnostics, num_diagnostics)
+SELECT %s, %s, source.path, source.ranges, source.hovers, source.monikers, source.packages, source.diagnostics, source.num_diagnostics
 FROM t_lsif_data_documents source
 `
 
