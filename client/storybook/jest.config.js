@@ -1,6 +1,6 @@
 // @ts-check
 
-const config = require('../jest.config.base')
+const config = require('../../jest.config.base')
 
 const exportedConfig = {
   ...config,

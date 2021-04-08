@@ -4373,6 +4373,14 @@
   resolved "https://registry.npmjs.org/@types/tapable/-/tapable-1.0.6.tgz#a9ca4b70a18b270ccb2bc0aaafefd1d486b7ea74"
   integrity sha512-W+bw9ds02rAQaMvaLYxAbJ6cvguW/iJXNT6lTssS1ps6QdrMKttqEAMEG/b5CR8TZl3/L7/lH0ZV5nNR1LXikA==
 
+"@types/terser-webpack-plugin@^4.2.0":
+  version "4.2.0"
+  resolved "https://registry.npmjs.org/@types/terser-webpack-plugin/-/terser-webpack-plugin-4.2.0.tgz#fe39917d334287c5cf25abcf370867a31ed59cd6"
+  integrity sha512-oGfGZzjwKY7s8gAYLZJuVuu9GXuc/ACo7bL/DQg7ROFkEMFQULB1W7qZjQrTXf2SkTfQx7/zcerfuLkUCVFGhg==
+  dependencies:
+    "@types/webpack" "*"
+    terser "^4.6.13"
+
 "@types/testing-library__jest-dom@^5.9.1", "@types/testing-library__jest-dom@^5.9.5":
   version "5.9.5"
   resolved "https://registry.npmjs.org/@types/testing-library__jest-dom/-/testing-library__jest-dom-5.9.5.tgz#5bf25c91ad2d7b38f264b12275e5c92a66d849b0"
@@ -21129,7 +21137,7 @@ terser-webpack-plugin@^4.2.3:
     terser "^5.3.4"
     webpack-sources "^1.4.3"
 
-terser@^4.1.2, terser@^4.6.3, terser@^4.8.0:
+terser@^4.1.2, terser@^4.6.13, terser@^4.6.3, terser@^4.8.0:
   version "4.8.0"
   resolved "https://registry.npmjs.org/terser/-/terser-4.8.0.tgz#63056343d7c70bb29f3af665865a46fe03a0df17"
   integrity sha512-EAPipTNeWsb/3wLPeup1tVPaXfIaU68xMnVdPafIL1TV05OhASArYyIfFvnvJCNrR2NIOvDVNNTFRa+Re2MWyw==
