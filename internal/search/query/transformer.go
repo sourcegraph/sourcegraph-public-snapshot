@@ -49,6 +49,16 @@ func LowercaseFieldNames(nodes []Node) []Node {
 	})
 }
 
+// SubstituteCountAll replaces count:all with count:999999.
+func SubstituteCountAll(nodes []Node) []Node {
+	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
+		if field == FieldCount && strings.ToLower(value) == "all" {
+			return Parameter{Field: field, Value: "999999", Negated: negated, Annotation: annotation}
+		}
+		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+	})
+}
+
 var ErrBadGlobPattern = errors.New("syntax error in glob pattern")
 
 // translateCharacterClass translates character classes like [a-zA-Z].

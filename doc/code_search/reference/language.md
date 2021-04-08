@@ -503,16 +503,17 @@ frame. This parameter is experimental.
 <script>
 ComplexDiagram(
 		Terminal("count:"),
-		Terminal("number")).addTo();
+		Choice(0,
+			Terminal("number"),
+			Terminal("all"))).addTo();
 </script>
 
-Retrieve at least N results. By default, Sourcegraph stops searching early and
+Retrieve N results. By default, Sourcegraph stops searching early and
 returns if it finds a full page of results. This is desirable for most
-interactive searches. To wait for all results, or to see results beyond the
-first page, use the count: keyword with a larger N.
+interactive searches. To wait for all results, use **count:all**.
 
 **Example:** `count:1000 function` [↗](https://sourcegraph.com/search?q=count:1000+repo:sourcegraph/sourcegraph%24+function&patternType=regexp)
-
+`count:all err`[↗](https://sourcegraph.com/search?q=repo:github.com/sourcegraph/sourcegraph+err+count:all&patternType=literal)
 ### Timeout
 
 <script>
