@@ -14,13 +14,13 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
   - Sourcegraph requires an SSD backed storage class
   - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.15 or later
-  - [Configure cluster access](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) for `kubectle`
+  - [Configure cluster access](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) for `kubectl`
 
 > WARNING: You need to create a [fork of our deployment reference.](configure.md#fork-this-repository)
 
 ## Steps
 
-1. After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/) with `kubectle`.
+1. After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/) with `kubectl`.
 
    - Google Cloud Platform (GCP) users are required to give their user the ability to create roles in Kubernetes [(see GCP's documentation)](https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#prerequisites_for_using_role-based_access_control):
 
@@ -66,11 +66,7 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
       kubectl port-forward svc/sourcegraph-frontend 3080:30080
       ```
 
-   - kubectl 1.9.x:
 
-      ```bash
-      kubectl port-forward $(kubectl get pod -l app=sourcegraph-frontend -o template --template="{{(index .items 0).metadata.name}}") 3080
-      ```
 
 1. Open http://localhost:3080 in your browser and you will see a setup page. 
 
