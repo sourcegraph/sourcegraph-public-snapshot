@@ -17,8 +17,8 @@ type Schedule struct {
 	limiter ratelimit.Limiter
 
 	// until really needs to contain a monotonic time, which means that care
-	// must be taken to construct the baseSchedule without a time zone in
-	// production use. (Testing doesn't really matter.) time.Now() is OK.
+	// must be taken to construct the schedule without a time zone in production
+	// use. (Testing doesn't really matter.) time.Now() is OK.
 	until time.Time
 
 	// Fields we need to keep around for total calculation.
