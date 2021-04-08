@@ -64,7 +64,7 @@ We support both authentication and permissions syncing (through OAuth) for GitHu
 
 In this way, access to Sourcegraph will still be managed by your identity provider, using the code host as a middle step.
 
-[Follow these steps to configure authentication with Github via OAuth](../auth/index.md#github). 
+[Follow these steps to configure authentication with GitHub via OAuth](../auth/index.md#github). 
 
 Once that is configured, follow [these steps](../repo/permissions.md#github) to configure access permissions. Users will log into Sourcegraph using Github OAuth, and permissions will be synced in the background.
 
