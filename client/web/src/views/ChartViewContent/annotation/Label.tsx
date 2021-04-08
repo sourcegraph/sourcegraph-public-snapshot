@@ -69,8 +69,7 @@ function getCompletePadding(padding: LabelProps['backgroundPadding']): typeof DE
     return { ...DEFAULT_PADDING, ...padding }
 }
 
-// This component is a fork of Lable component from @visx/annotaion package
-// Replace this component by original when https://github.com/airbnb/visx/issues/1126 will be resolved
+/** Display a label - annotation block for pie chart arc */
 export function Label({
     anchorLineStroke = '#222',
     backgroundFill = '#eaeaea',

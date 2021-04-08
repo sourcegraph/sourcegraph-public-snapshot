@@ -16,6 +16,9 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
 
     if (!hasLegend) {
         return (
+            // Because we need to catch all events from line chart by ourselves we have to
+            // use this chart's event emitter for override some events handler and bind them
+            // to custom elements within LineChartContent component.
             <EventEmitterProvider>
                 <LineChartContent {...props} />
             </EventEmitterProvider>

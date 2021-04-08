@@ -36,8 +36,8 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
     }, [viewID, telemetryService])
 
     // Click link-zone handler for line chart only. Catch click around point and redirect user by
-    // link which we've got from nearest datum point to user cursor position.
-    // This allows user not to aim on small point on the chart and just click somewhere around point.
+    // link which we've got from nearest datum point to user cursor position. This allows user
+    // not to aim on small point on the chart and just click somewhere around the point.
     const linkHandler = useMemo(() => {
         const linkHandler = createProgrammaticLinkHandler(history)
         return (event: DatumZoneClickEvent): void => {

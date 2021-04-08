@@ -127,36 +127,33 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
         [accessors, series]
     )
 
-    const handlePointerMove = useThrottledCallback(
+    const handlePointerMove = useCallback(
         (event: EventHandlerParams<Datum>) => {
-            const line = series.find(line => line.dataKey === event.key)
-
-            if (!line) {
+            // If active point has't been change we should't call setActiveDatum again
+            if (activeDatum?.index === event.index && activeDatum?.key === event.key) {
                 return
             }
 
-            if (activeDatum?.index !== event.index || activeDatum?.key !== event.key) {
-                console.log('update active datum')
-                setActiveDatum({
-                    ...event,
-                    line,
-                })
+            const line = series.find(line => line.dataKey === event.key)
+
+            if (!line) {
+                setActiveDatum(null)
+                return
             }
+
+            setActiveDatum({
+                ...event,
+                line,
+            })
         },
-        100,
-        { leading: true }
+        [series, activeDatum]
     )
 
-    // Cancel scheduled handlePointerMove callback in case if component was removed
-    // from render tree to avoid can't perform state update on an unmounted component error.
-    useEffect(() => () => handlePointerMove.cancel(), [handlePointerMove])
-
-    const handlePointerOut = useCallback(() => setActiveDatum(null), [setActiveDatum])
     const handlePointerUp = useCallback(
         (info: EventHandlerParams<Datum>) => {
             info.event?.persist()
 
-            // By types from visx/xychart index can be undefined
+            // According to types from visx/xychart index can be undefined
             const activeDatumIndex = activeDatum?.index
             const line = series.find(line => line.dataKey === info.key)
 
@@ -208,11 +205,12 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
 
             requestAnimationFrame(() => {
                 if (!focused.current) {
+                    setActiveDatum(null)
                     onPointerOut(event)
                 }
             })
         },
-        [focused, onPointerOut]
+        [focused, onPointerOut, setActiveDatum]
     )
 
     const eventEmitters = {
@@ -246,7 +244,6 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                         margin={MARGIN}
                         onPointerMove={handlePointerMove}
                         onPointerUp={handlePointerUp}
-                        onPointerOut={handlePointerOut}
                     >
                         <Group top={MARGIN.top} left={MARGIN.left}>
                             <GridRows
