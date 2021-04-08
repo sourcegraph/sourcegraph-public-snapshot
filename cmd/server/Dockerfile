@@ -101,7 +101,7 @@ RUN tar zxf /lib-x64.tgz --directory /
 COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards
 
 # hadolint ignore=DL3022
-COPY --from=prometheuscommunity/postgres-exporter:v0.9.0@sha256:eb0474c8ae5c9032806b7a4e1c813411fb8e464e7e2dbad3bd577c4afb17dd17 /postgres_exporter /bin/postgres_exporter
+COPY --from=sourcegraph/postgres_exporter:server /usr/local/bin/postgres_exporter /postgres_exporter
 
 RUN echo "hosts: files dns" > /etc/nsswitch.conf
 
