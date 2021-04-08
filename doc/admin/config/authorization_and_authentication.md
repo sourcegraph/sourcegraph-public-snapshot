@@ -9,7 +9,7 @@ We suggest configuring both to use Sourcegraph Enterprise. If you do not configu
 
 ## Authentication in Sourcegraph
 
-Sourcegraph supports username/password auth by default and SAML, OAuth, HTTP Proxy auth, and OpenId Connect if configured. Changing a username in Sourcegraph will allow the user to escalate permissions, so if you are syncing permissions, you will need to add:
+Sourcegraph supports username/password auth by default and SAML, OAuth, HTTP Proxy auth, and OpenID Connect if configured. Changing a username in Sourcegraph will allow the user to escalate permissions, so if you are syncing permissions, you will need to add:
 
 ```
 
