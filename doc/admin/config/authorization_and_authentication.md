@@ -2,7 +2,7 @@
 
 Sourcegraph has two authentication concepts to be mindful of:
 
-1. The system through which your users log in (SAML IdP, OAuth with a code host, username/password, OpenId Connect, Authentication Proxy)
+1. The system through which your users log in (SAML IdP, OAuth with a code host, username/password, OpenID Connect, Authentication Proxy)
 2. The system which controls user permissions (Code host, explicit permissions API in Sourcegraph)
 
 We suggest configuring both to use Sourcegraph Enterprise. If you do not configure permissions, all users will be able to see all of the code in the instance.
