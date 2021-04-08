@@ -13,11 +13,11 @@
     "captainSlackUsername": "geoffrey",
     "captainGitHubUsername": "ggilmore",
     // Release versions
-    "previousRelease": "3.26.1",
-    "upcomingRelease": "3.26.2",
+    "previousRelease": "3.26.2",
+    "upcomingRelease": "3.27.0",
     // Release dates
-    "releaseDate": "07 April 2021 10:00 PST",
-    "oneWorkingDayAfterRelease": "08 April 2021 10:00 PST",
+    "releaseDate": "20 April 2021 10:00 PST",
+    "oneWorkingDayAfterRelease": "21 April 2021 10:00 PST",
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "dev-announce",
     // Email for preparing calendar events
