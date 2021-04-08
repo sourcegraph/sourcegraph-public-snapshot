@@ -376,6 +376,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             console.error('Error sending initial version context to extensions', error)
         })
 
+        this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
+            console.error('Error sending search context to extensions', error)
+        })
+
         this.userRepositoriesUpdates.next()
     }
 
@@ -555,9 +559,18 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 availableSearchContextSpecOrDefault => {
                     this.setState({ selectedSearchContextSpec: availableSearchContextSpecOrDefault })
                     localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
+
+                    this.setWorkspaceSearchContext(availableSearchContextSpecOrDefault).catch(error => {
+                        console.error('Error sending search context to extensions', error)
+                    })
                 }
             )
         )
+    }
+
+    private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
+        const extensionHostAPI = await this.extensionsController.extHostAPI
+        await extensionHostAPI.setSearchContext(spec)
     }
 }
 

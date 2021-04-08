@@ -1236,6 +1236,14 @@ declare module 'sourcegraph' {
          * An event that is fired when a workspace's version context changes.
          */
         export const versionContextChanges: Subscribable<string | undefined>
+
+        /**
+         * The current search context of the workspace, if any.
+         *
+         * A search context is a set of repositories and revisions on a Sourcegraph instance.
+         * When set, extensions use it to scope search queries, code intelligence actions, etc.
+         */
+        export const searchContext: string | undefined
     }
 
     /**

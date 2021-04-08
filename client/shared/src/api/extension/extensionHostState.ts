@@ -34,6 +34,7 @@ export function createExtensionHostState(
         rootChanges: new Subject<void>(),
         versionContextChanges: new Subject<string | undefined>(),
         versionContext: undefined,
+        searchContext: undefined,
 
         // Most extensions never call `configuration.get()` synchronously in `activate()` to get
         // the initial settings data, and instead only subscribe to configuration changes.
@@ -108,6 +109,7 @@ export interface ExtensionHostState {
     rootChanges: Subject<void>
     versionContextChanges: Subject<string | undefined>
     versionContext: string | undefined
+    searchContext: string | undefined
 
     // Search
     queryTransformers: BehaviorSubject<readonly sourcegraph.QueryTransformer[]>

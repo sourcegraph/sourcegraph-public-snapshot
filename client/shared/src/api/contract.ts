@@ -42,6 +42,7 @@ export interface FlatExtensionHostAPI {
     removeWorkspaceRoot: (uri: string) => void
 
     setVersionContext: (versionContext: string | undefined) => void
+    setSearchContext: (searchContext: string | undefined) => void
 
     // Search
     transformSearchQuery: (query: string) => ProxySubscribable<string>
