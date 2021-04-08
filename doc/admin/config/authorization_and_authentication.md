@@ -41,11 +41,13 @@ This is Sourcegraph’s default authentication option. To enable it, add the fol
 
 ```
 {
-// Other config settings go here
-  "auth.providers": [{
-​   "type": "builtin",
-    "allowSignup": true 
-  }]
+  // Other config settings go here
+  "auth.providers": [
+    {
+      "type": "builtin",
+      "allowSignup": true 
+    }
+  ]
 }
 ```
 
