@@ -1,6 +1,6 @@
-import { gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { PlatformContext } from '../../../../shared/src/platform/context'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
 import { UserEvent, EventSource } from '../../graphql-operations'
 

@@ -4,12 +4,12 @@ import * as React from 'react'
 import { NavLink } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
-import { SymbolIcon } from '../../../shared/src/symbols/SymbolIcon'
+import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { parseBrowserRepoURL } from '../util/url'
-import { RevisionSpec } from '../../../shared/src/util/url'
+import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { requestGraphQL } from '../backend/graphql'
-import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import {
     Scalars,
     SymbolConnectionFields,

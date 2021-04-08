@@ -18,12 +18,12 @@ import {
     scan,
     share,
 } from 'rxjs/operators'
-import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { pluralize } from '../../../shared/src/util/strings'
-import { Form } from '../../../branded/src/components/Form'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorMessage } from './alerts'
-import { hasProperty } from '../../../shared/src/util/types'
-import { Scalars } from '../../../shared/src/graphql-operations'
+import { hasProperty } from '@sourcegraph/shared/src/util/types'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import classNames from 'classnames'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
@@ -391,7 +391,7 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
     queryConnection: (args: FilteredConnectionQueryArguments) => Observable<C>
 
     /** Called when the queryConnection Observable emits. */
-    onUpdate?: (value: C | ErrorLike | undefined) => void
+    onUpdate?: (value: C | ErrorLike | undefined, query: string) => void
 }
 
 /**
@@ -683,7 +683,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             }
                         }
                         if (this.props.onUpdate) {
-                            this.props.onUpdate(connectionOrError)
+                            this.props.onUpdate(connectionOrError, this.state.query)
                         }
                         this.setState({ connectionOrError, ...rest })
                     },

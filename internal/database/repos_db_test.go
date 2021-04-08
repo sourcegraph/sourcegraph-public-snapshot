@@ -1812,7 +1812,7 @@ func TestRepos_ListRepoNames_externalRepoPrefixes(t *testing.T) {
 	svc := &types.ExternalService{
 		Kind:        extsvc.KindPerforce,
 		DisplayName: "Perforce - Test",
-		Config:      `{"p4.port": "ssl:111.222.333.444:1666", "p4.user": "admin", "p4.passwd": "pa$$word", "repositoryPathPattern": "perforce/{depot}"}`,
+		Config:      `{"p4.port": "ssl:111.222.333.444:1666", "p4.user": "admin", "p4.passwd": "pa$$word", "depots": [], "repositoryPathPattern": "perforce/{depot}"}`,
 	}
 	if err := ExternalServices(db).Create(ctx, confGet, svc); err != nil {
 		t.Fatal(err)

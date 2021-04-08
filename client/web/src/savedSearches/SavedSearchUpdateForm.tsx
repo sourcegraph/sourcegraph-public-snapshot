@@ -13,14 +13,14 @@ import {
     switchMap,
     tap,
 } from 'rxjs/operators'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { NamespaceProps } from '../namespaces'
 import { fetchSavedSearch, updateSavedSearch } from '../search/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 import { AuthenticatedUser } from '../auth'
-import { Scalars } from '../../../shared/src/graphql-operations'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 interface Props extends RouteComponentProps<{ id: Scalars['ID'] }>, NamespaceProps {
     authenticatedUser: AuthenticatedUser | null

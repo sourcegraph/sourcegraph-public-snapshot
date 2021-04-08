@@ -9,7 +9,7 @@ import {
 } from '../../../../graphql-operations'
 import { of } from 'rxjs'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
-import { ChangesetSpecOperation, ChangesetState } from '../../../../../../shared/src/graphql-operations'
+import { ChangesetSpecOperation, ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 
 const { add } = storiesOf('web/batches/preview/VisibleChangesetApplyPreviewNode', module).addDecorator(story => (
     <div className="p-3 container web-content preview-list__grid">{story()}</div>

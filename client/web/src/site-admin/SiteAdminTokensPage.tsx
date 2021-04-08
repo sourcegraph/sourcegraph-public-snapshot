@@ -3,11 +3,11 @@ import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { requestGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { accessTokenFragment, AccessTokenNode, AccessTokenNodeProps } from '../settings/tokens/AccessTokenNode'
-import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { AuthenticatedUser } from '../auth'
 import {
@@ -16,7 +16,7 @@ import {
     SiteAdminAccessTokensResult,
     SiteAdminAccessTokensVariables,
 } from '../graphql-operations'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 interface Props extends Pick<RouteComponentProps<{}>, 'history' | 'location'>, TelemetryProps {
     authenticatedUser: AuthenticatedUser

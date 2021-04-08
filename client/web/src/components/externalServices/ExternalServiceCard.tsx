@@ -2,7 +2,7 @@ import * as H from 'history'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React from 'react'
 import { ExternalServiceKind } from '../../graphql-operations'
-import { Link } from '../../../../shared/src/components/Link'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 
 interface ExternalServiceCardProps {
     /**

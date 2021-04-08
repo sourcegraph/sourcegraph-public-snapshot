@@ -3,7 +3,7 @@ import * as H from 'history'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
 import React from 'react'
-import { asError, isErrorLike } from '../../../shared/src/util/errors'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { HeroPage } from './HeroPage'
 
 interface Props {

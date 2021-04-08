@@ -6,9 +6,9 @@ import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
-import { PhabricatorIcon } from '../../../../shared/src/components/icons'
-import { ThemeProps } from '../../../../shared/src/theme'
-import { SourcegraphLogo } from '../../../../branded/src/components/SourcegraphLogo'
+import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { getPlatformName } from '../../shared/util/context'
 
 const Video: React.FunctionComponent<

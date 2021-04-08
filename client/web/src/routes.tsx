@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { LayoutProps } from './Layout'
 import { lazyComponent } from './util/lazyComponent'
-import { isErrorLike } from '../../shared/src/util/errors'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RepogroupPage } from './repogroups/RepogroupPage'
 import { python2To3Metadata } from './repogroups/Python2To3'
 import { kubernetes } from './repogroups/Kubernetes'
@@ -198,6 +198,21 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/views',
         render: lazyComponent(() => import('./views/ViewsArea'), 'ViewsArea'),
+    },
+    {
+        path: '/contexts',
+        render: lazyComponent(() => import('./searchContexts/SearchContextsListPage'), 'SearchContextsListPage'),
+        exact: true,
+        condition: props =>
+            !isErrorLike(props.settingsCascade.final) &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext,
+    },
+    {
+        path: '/contexts/:id',
+        render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
+        condition: props =>
+            !isErrorLike(props.settingsCascade.final) &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext,
     },
     {
         path: '/refactor-python2-to-3',

@@ -475,10 +475,11 @@ func MaybeEncrypt(ctx context.Context, key encryption.Key, data string) (maybeEn
 			return "", "", err
 		}
 		data = string(encrypted)
-		keyIdent, err = key.ID(ctx)
+		version, err := key.Version(ctx)
 		if err != nil {
 			return "", "", err
 		}
+		keyIdent = version.JSON()
 	}
 
 	return data, keyIdent, nil
@@ -488,6 +489,9 @@ func MaybeEncrypt(ctx context.Context, key encryption.Key, data string) (maybeEn
 func MaybeDecrypt(ctx context.Context, key encryption.Key, data, keyIdent string) (string, error) {
 	if keyIdent == "" {
 		// data is not encrypted, return plaintext
+		return data, nil
+	}
+	if data == "" {
 		return data, nil
 	}
 	if key == nil {

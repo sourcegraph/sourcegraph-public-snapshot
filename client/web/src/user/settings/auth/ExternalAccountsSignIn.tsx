@@ -1,6 +1,6 @@
 import React from 'react'
-import { ExternalServiceKind } from '../../../../../shared/src/graphql-operations'
-import { ErrorLike } from '../../../../../shared/src/util/errors'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { ExternalAccount } from './ExternalAccount'
 import { ExternalAccountsByType, AuthProvidersByType } from './UserSettingsSecurityPage'

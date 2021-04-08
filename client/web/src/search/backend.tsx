@@ -1,14 +1,14 @@
 import { Observable, of, combineLatest, defer, from } from 'rxjs'
 import { catchError, map, switchMap, publishReplay, refCount } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike } from '../../../shared/src/util/errors'
-import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { asError, createAggregateError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
-import { SearchSuggestion } from '../../../shared/src/search/suggestions'
+import { SearchSuggestion } from '@sourcegraph/shared/src/search/suggestions'
 import { Remote } from 'comlink'
-import { FlatExtensionHostAPI } from '../../../shared/src/api/contract'
-import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { DeployType } from '../jscontext'
 import {
     SearchPatternType,
@@ -27,6 +27,10 @@ import {
     IsSearchContextAvailableResult,
     IsSearchContextAvailableVariables,
     Scalars,
+    FetchSearchContextResult,
+    FetchSearchContextVariables,
+    ConvertVersionContextToSearchContextResult,
+    ConvertVersionContextToSearchContextVariables,
 } from '../graphql-operations'
 
 export function search(
@@ -227,17 +231,50 @@ const repogroupSuggestions = defer(() =>
     refCount()
 )
 
+const searchContextFragment = gql`
+    fragment SearchContextFields on SearchContext {
+        __typename
+        id
+        spec
+        description
+        autoDefined
+        repositories {
+            __typename
+            repository {
+                name
+            }
+            revisions
+        }
+    }
+`
+
+export function convertVersionContextToSearchContext(
+    name: string
+): Observable<ConvertVersionContextToSearchContextResult['convertVersionContextToSearchContext']> {
+    return requestGraphQL<ConvertVersionContextToSearchContextResult, ConvertVersionContextToSearchContextVariables>(
+        gql`
+            mutation ConvertVersionContextToSearchContext($name: String!) {
+                convertVersionContextToSearchContext(name: $name) {
+                    id
+                    spec
+                }
+            }
+        `,
+        { name }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.convertVersionContextToSearchContext)
+    )
+}
+
 export const fetchAutoDefinedSearchContexts = defer(() =>
     requestGraphQL<AutoDefinedSearchContextsResult, AutoDefinedSearchContextsVariables>(gql`
         query AutoDefinedSearchContexts {
             autoDefinedSearchContexts {
-                __typename
-                id
-                spec
-                description
-                autoDefined
+                ...SearchContextFields
             }
         }
+        ${searchContextFragment}
     `)
 ).pipe(
     map(dataOrThrowErrors),
@@ -256,30 +293,41 @@ export function fetchSearchContexts(
             query ListSearchContexts($first: Int!, $after: String, $query: String) {
                 searchContexts(first: $first, after: $after, query: $query) {
                     nodes {
-                        __typename
-                        id
-                        spec
-                        description
-                        autoDefined
-                        repositories {
-                            __typename
-                            repository {
-                                name
-                            }
-                            revisions
-                        }
+                        ...SearchContextFields
                     }
                     pageInfo {
+                        hasNextPage
                         endCursor
                     }
                     totalCount
                 }
             }
+            ${searchContextFragment}
         `,
         { first, after: after ?? null, query: query ?? null }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.searchContexts)
+    )
+}
+
+export const fetchSearchContext = (id: Scalars['ID']): Observable<GQL.ISearchContext> => {
+    const query = gql`
+        query FetchSearchContext($id: ID!) {
+            node(id: $id) {
+                ... on SearchContext {
+                    ...SearchContextFields
+                }
+            }
+        }
+        ${searchContextFragment}
+    `
+
+    return requestGraphQL<FetchSearchContextResult, FetchSearchContextVariables>(query, {
+        id,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.node as GQL.ISearchContext)
     )
 }
 

@@ -1,9 +1,9 @@
 import { describe, before, test } from 'mocha'
-import { Driver } from '../../../shared/src/testing/driver'
+import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { createAndInitializeDriver } from './util/init'
-import { getConfig } from '../../../shared/src/testing/config'
+import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Key } from 'ts-key-enum'
-import { retry } from '../../../shared/src/testing/utils'
+import { retry } from '@sourcegraph/shared/src/testing/utils'
 import delay from 'delay'
 
 describe('Initialize new instance', () => {

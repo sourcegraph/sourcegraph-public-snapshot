@@ -18,10 +18,16 @@ func NewLocationsCountMigrator(store *lsifstore.Store, tableName string, batchSi
 	}
 
 	return newMigrator(store, driver, migratorOptions{
-		tableName:       tableName,
-		selectionFields: []string{"scheme", "identifier", "data"},
-		targetVersion:   2,
-		batchSize:       batchSize,
+		tableName:     tableName,
+		targetVersion: 2,
+		batchSize:     batchSize,
+		fields: []fieldSpec{
+			{name: "dump_id", postgresType: "integer not null", primaryKey: true},
+			{name: "scheme", postgresType: "text not null", primaryKey: true},
+			{name: "identifier", postgresType: "text not null", primaryKey: true},
+			{name: "data", postgresType: "bytea", readOnly: true},
+			{name: "num_locations", postgresType: "integer not null", updateOnly: true},
+		},
 	})
 }
 
@@ -42,9 +48,8 @@ func (m *locationsCountMigrator) MigrateRowUp(scanner scanner) (updateSpec, erro
 	}
 
 	return updateSpec{
-		DumpID:      dumpID,
-		Conditions:  map[string]interface{}{"scheme": scheme, "identifier": identifier},
-		Assignments: map[string]interface{}{"num_locations": len(data)},
+		dumpID:      dumpID,
+		fieldValues: []interface{}{dumpID, scheme, identifier, len(data)},
 	}, nil
 }
 
@@ -59,8 +64,7 @@ func (m *locationsCountMigrator) MigrateRowDown(scanner scanner) (updateSpec, er
 	}
 
 	return updateSpec{
-		DumpID:      dumpID,
-		Conditions:  map[string]interface{}{"scheme": scheme, "identifier": identifier},
-		Assignments: map[string]interface{}{"num_locations": 0},
+		dumpID:      dumpID,
+		fieldValues: []interface{}{dumpID, scheme, identifier, 0},
 	}, nil
 }

@@ -59,7 +59,7 @@ func For(searchType SearchType) step {
 	case SearchTypeStructural:
 		processType = succeeds(labelStructural, ellipsesForHoles, substituteConcat(space))
 	}
-	normalize := succeeds(LowercaseFieldNames, SubstituteAliases(searchType))
+	normalize := succeeds(LowercaseFieldNames, SubstituteAliases(searchType), SubstituteCountAll)
 	return sequence(normalize, processType)
 }
 
@@ -100,12 +100,12 @@ func Validate(disjuncts [][]Node) error {
 	return nil
 }
 
-// A basicPass is a transformation on Basic queries.
-type basicPass func(Basic) Basic
+// A BasicPass is a transformation on Basic queries.
+type BasicPass func(Basic) Basic
 
 // MapPlan applies a conversion to all Basic queries in a plan. It expects a
 // valid plan. guarantee transformation succeeds.
-func MapPlan(plan Plan, pass basicPass) Plan {
+func MapPlan(plan Plan, pass BasicPass) Plan {
 	updated := make([]Basic, 0, len(plan))
 	for _, query := range plan {
 		updated = append(updated, pass(query))
@@ -120,7 +120,7 @@ func ToPlan(disjuncts [][]Node) (Plan, error) {
 		if err != nil {
 			return nil, err
 		}
-		plan = append(plan, *basic)
+		plan = append(plan, basic)
 	}
 	return plan, nil
 }
