@@ -43,16 +43,6 @@ interface SnapshotConfig {
     waitForSyntaxHighlightingToUpdate: boolean
 }
 
-const waitForSyntaxHighlightingToUpdate = async (page: Page) => {
-    try {
-        await page.waitForResponse(response => response.url().includes('graphql?highlightCode'), {
-            timeout: 5,
-        })
-    } catch {
-        // noop: fail silently if request was missed
-    }
-}
-
 const setColorScheme = async (page: Page, scheme: 'dark' | 'light', config?: SnapshotConfig): Promise<void> => {
     const isAlreadySet = await page.evaluate(scheme => matchMedia(`(prefers-color-scheme: ${scheme})`).matches, scheme)
 
@@ -60,10 +50,17 @@ const setColorScheme = async (page: Page, scheme: 'dark' | 'light', config?: Sna
         return
     }
 
-    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }])
-
     if (config?.waitForSyntaxHighlightingToUpdate) {
-        await waitForSyntaxHighlightingToUpdate(page)
+        await Promise.all([
+            page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }]),
+            page
+                .waitForResponse(response => response.url().includes('graphql?highlightCode'), {
+                    timeout: 5,
+                })
+                .catch(() => /*noop*/ null),
+        ])
+    } else {
+        await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }])
     }
 }
 
@@ -75,22 +72,17 @@ export const percySnapshot = async (page: Page, name: string, config?: SnapshotC
     }
 
     // Theme-light
-    console.log('1: Light theme')
     await setColorScheme(page, 'light', config)
     await realPercySnapshot(page, `${name} - light theme`)
-    console.log('------------- Success 1')
 
     // Theme-light with redesign
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
     await realPercySnapshot(page, `${name} - light theme with redesign enabled`)
     await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
-    console.log('------------- Success 2')
 
-    console.log('2: Dark theme')
     // Theme-dark
     await setColorScheme(page, 'dark', config)
     await realPercySnapshot(page, `${name} - Dark Theme`)
-    console.log('------------- Success 3')
 
     // Theme-dark with redesign
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
