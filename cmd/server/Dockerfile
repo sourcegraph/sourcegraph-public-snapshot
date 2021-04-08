@@ -101,7 +101,7 @@ RUN tar zxf /lib-x64.tgz --directory /
 COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/postgres_exporter:server /usr/local/bin/postgres_exporter /postgres_exporter
+COPY --from=sourcegraph/postgres_exporter:server /usr/local/bin/postgres_exporter /usr/local/bin/postgres_exporter
 
 RUN echo "hosts: files dns" > /etc/nsswitch.conf
 
