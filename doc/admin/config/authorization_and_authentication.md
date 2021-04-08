@@ -108,7 +108,7 @@ And configure the identity provider to pass the email address as the `nameID`.
 
 ### Bitbucket Server authorization
 
-We do not currently support OAuth for Bitbucket Server. You will need to combine permissions syncing from Bitbucket Server with another auth mechanism (SAML, built-in auth, HTTP authentication proxies). Bitbucket only passes usernames to Sourcegraph, so you’ll need to make sure that those usernames are matched by whatever mechanism you chose to use for access.
+We do not currently support OAuth for Bitbucket Server. You will need to combine permissions syncing from Bitbucket Server with another auth mechanism (SAML, built-in auth, HTTP authentication proxies). Bitbucket Server only passes usernames to Sourcegraph, so you’ll need to make sure that those usernames are matched by whatever mechanism you chose to use for access.
 
 To sync Bitbucket server permissions, follow [these instructions](../repo/permissions.md#bitbucket-server). Then, do one of the following:
 
