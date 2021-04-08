@@ -12,7 +12,7 @@ describe('StatusMessagesNavItem', () => {
             mount(
                 <StatusMessagesNavItem
                     fetchMessages={fetchMessages}
-                    isSiteAdmin={false}
+                    user={{ isSiteAdmin: false, id: '1', createdAt: '1970-01-01T00:00:00', username: 'alice' }}
                     history={createMemoryHistory()}
                 />
             )
@@ -21,7 +21,7 @@ describe('StatusMessagesNavItem', () => {
 
     describe('one CloningProgress message', () => {
         const message: StatusMessageFields = {
-            __typename: 'CloningProgress',
+            type: 'CloningProgress',
             message: 'Currently cloning repositories...',
         }
 
@@ -31,7 +31,7 @@ describe('StatusMessagesNavItem', () => {
                 mount(
                     <StatusMessagesNavItem
                         fetchMessages={fetchMessages}
-                        isSiteAdmin={false}
+                        user={{ isSiteAdmin: false, id: '1', createdAt: '1970-01-01T00:00:00', username: 'alice' }}
                         history={createMemoryHistory()}
                     />
                 )
@@ -43,7 +43,7 @@ describe('StatusMessagesNavItem', () => {
                 mount(
                     <StatusMessagesNavItem
                         fetchMessages={fetchMessages}
-                        isSiteAdmin={true}
+                        user={{ isSiteAdmin: false, id: '1', createdAt: '1970-01-01T00:00:00', username: 'alice' }}
                         history={createMemoryHistory()}
                     />
                 )
@@ -53,7 +53,7 @@ describe('StatusMessagesNavItem', () => {
 
     describe('one ExternalServiceSyncError message', () => {
         const message: StatusMessageFields = {
-            __typename: 'ExternalServiceSyncError',
+            type: 'ExternalServiceSyncError',
             message: 'failed to list organization kubernetes repos: request returned status 404: Not Found',
             externalService: {
                 id: 'abcd',
@@ -67,7 +67,7 @@ describe('StatusMessagesNavItem', () => {
                 mount(
                     <StatusMessagesNavItem
                         fetchMessages={fetchMessages}
-                        isSiteAdmin={false}
+                        user={{ isSiteAdmin: false, id: '1', createdAt: '1970-01-01T00:00:00', username: 'alice' }}
                         history={createMemoryHistory()}
                     />
                 )
@@ -79,7 +79,7 @@ describe('StatusMessagesNavItem', () => {
                 mount(
                     <StatusMessagesNavItem
                         fetchMessages={fetchMessages}
-                        isSiteAdmin={true}
+                        user={{ isSiteAdmin: false, id: '1', createdAt: '1970-01-01T00:00:00', username: 'alice' }}
                         history={createMemoryHistory()}
                     />
                 )
@@ -89,7 +89,7 @@ describe('StatusMessagesNavItem', () => {
 
     describe('one SyncError message', () => {
         const message: StatusMessageFields = {
-            __typename: 'SyncError',
+            type: 'SyncError',
             message: 'syncer.sync.store.upsert-repos: pg: unique constraint foobar',
         }
 
@@ -99,7 +99,7 @@ describe('StatusMessagesNavItem', () => {
                 mount(
                     <StatusMessagesNavItem
                         fetchMessages={fetchMessages}
-                        isSiteAdmin={false}
+                        user={{ isSiteAdmin: false, id: '1', createdAt: '1970-01-01T00:00:00', username: 'alice' }}
                         history={createMemoryHistory()}
                     />
                 )
@@ -111,7 +111,7 @@ describe('StatusMessagesNavItem', () => {
                 mount(
                     <StatusMessagesNavItem
                         fetchMessages={fetchMessages}
-                        isSiteAdmin={true}
+                        user={{ isSiteAdmin: false, id: '1', createdAt: '1970-01-01T00:00:00', username: 'alice' }}
                         history={createMemoryHistory()}
                     />
                 )

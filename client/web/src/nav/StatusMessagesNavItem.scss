@@ -53,16 +53,16 @@
             }
         }
         &--border-error {
-            border-left: 0.125rem solid $danger;
+            border-left: 2px solid $danger;
         }
         &--border-success {
-            border-left: 0.125rem solid $success;
+            border-left: 2px solid $success;
         }
         &--border-warning {
-            border-left: 0.125rem solid $warning;
+            border-left: 2px solid $warning;
         }
         &--border-progress {
-            border-left: 0.125rem solid $primary;
+            border-left: 2px solid $primary;
         }
     }
 }

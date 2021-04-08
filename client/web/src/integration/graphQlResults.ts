@@ -16,6 +16,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             username: 'test',
             avatarURL: null,
             email: 'felix@sourcegraph.com',
+            createdAt: '1970-01-01T00:00:00',
             displayName: null,
             siteAdmin: true,
             tags: [],

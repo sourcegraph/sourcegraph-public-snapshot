@@ -239,12 +239,10 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     }
 
     private renderMessage(message: Message, user: User): JSX.Element | JSX.Element[] {
+        // TODO: fix routing
         const userSettingsLink = `/users/${user.username}/settings`
-
-        const getExternalServicesLink = (id?: string): string => {
-            return user.isSiteAdmin ? `/site-admin/external-services/${id || ''}` : `${userSettingsLink}/code-hosts`
-        }
-
+        const getExternalServicesLink = (id?: string): string =>
+            user.isSiteAdmin ? `/site-admin/external-services/${id || ''}` : `${userSettingsLink}/code-hosts`
         const repositoriesLink = `/users/${user.username}/settings/repositories`
 
         // no status messages

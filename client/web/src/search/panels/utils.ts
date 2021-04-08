@@ -11,6 +11,7 @@ export const authUser: AuthenticatedUser = {
     avatarURL: null,
     session: { canSignOut: true },
     displayName: null,
+    createdAt: '1970-01-01T00:00:00',
     url: '',
     settingsURL: '#',
     siteAdmin: true,
