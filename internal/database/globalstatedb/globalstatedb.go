@@ -113,14 +113,10 @@ func tryInsertNew(ctx context.Context, dbh execDatabaseHandler) error {
 	err = dbh.Exec(ctx, sqlf.Sprintf(`
 	INSERT INTO global_state(
 		site_id,
-		initialized,
-		mgmt_password_plaintext,
-		mgmt_password_bcrypt
+		initialized
 	) values(
 		%s,
-		EXISTS (SELECT 1 FROM users WHERE deleted_at IS NULL),
-		(SELECT COALESCE((SELECT mgmt_password_plaintext FROM global_state LIMIT 1), '')),
-		(SELECT COALESCE((SELECT mgmt_password_bcrypt FROM global_state LIMIT 1), ''))
+		EXISTS (SELECT 1 FROM users WHERE deleted_at IS NULL)
 	);`, siteID))
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok {

@@ -607,12 +607,10 @@ Foreign-key constraints:
 
 # Table "public.global_state"
 ```
-         Column          |  Type   | Collation | Nullable | Default  
--------------------------+---------+-----------+----------+----------
- site_id                 | uuid    |           | not null | 
- initialized             | boolean |           | not null | false
- mgmt_password_plaintext | text    |           | not null | ''::text
- mgmt_password_bcrypt    | text    |           | not null | ''::text
+   Column    |  Type   | Collation | Nullable | Default 
+-------------+---------+-----------+----------+---------
+ site_id     | uuid    |           | not null | 
+ initialized | boolean |           | not null | false
 Indexes:
     "global_state_pkey" PRIMARY KEY, btree (site_id)
 
