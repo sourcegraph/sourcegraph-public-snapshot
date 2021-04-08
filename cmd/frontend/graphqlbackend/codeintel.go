@@ -300,4 +300,5 @@ type DiagnosticResolver interface {
 	Source() (*string, error)
 	Message() (*string, error)
 	Location(ctx context.Context) (LocationResolver, error)
+	Tags() ([]int32, error)
 }

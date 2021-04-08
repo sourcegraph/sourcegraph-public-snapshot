@@ -3849,6 +3849,12 @@ type Diagnostic {
     The diagnostic's message.
     """
     message: String
+
+
+    """
+    Additional metadata about the diagnostic.
+    """
+    tags: [Int!]!
 }
 
 """
