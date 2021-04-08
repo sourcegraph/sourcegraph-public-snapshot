@@ -8,19 +8,19 @@ expect.addSnapshotSerializer({
 describe('scanPredicate', () => {
     test('scan recognized and valid syntax', () => {
         expect(scanPredicate('repo', 'contains(stuff)')).toMatchInlineSnapshot(
-            `{"path":["contains"],"parameters":"(stuff)"}`
+            '{"path":["contains"],"parameters":"(stuff)"}'
         )
     })
 
     test('scan recognized dot syntax', () => {
         expect(scanPredicate('repo', 'contains.commit.after(stuff)')).toMatchInlineSnapshot(
-            `{"path":["contains","commit","after"],"parameters":"(stuff)"}`
+            '{"path":["contains","commit","after"],"parameters":"(stuff)"}'
         )
     })
 
     test('scan recognized and valid syntax with escapes', () => {
         expect(scanPredicate('repo', 'contains(\\((stuff))')).toMatchInlineSnapshot(
-            `{"path":["contains"],"parameters":"(\\\\((stuff))"}`
+            '{"path":["contains"],"parameters":"(\\\\((stuff))"}'
         )
     })
 
