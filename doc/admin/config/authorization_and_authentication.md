@@ -79,7 +79,7 @@ In this way, access to Sourcegraph will still be managed by your identity provid
 
 Alternatively, you can configure SAML authentication in to Sourcegraph, and use GitLab permissions syncing in the background to control access permissions. To implement this method, you will need to make sure that GitLab is able to return a value in `identities.provider` for the `GET /users` endpoint ([GitLab documentation](https://docs.gitlab.com/ee/api/users.html#for-admins)) that your identity provider is able to pass as the `nameID` in the SAML response. If that isn’t possible, you will need to use the first option. 
 
-To configure SAML auth with Gitlab permissions, you will need to first [configure permissions from Gitlab](../repo/permissions.md#administrator-sudo-level-access-token). Then, [configure SAML authentication](../auth/saml/index.md). The `nameId` passed by the Identity Provider will need to match the value of `identities.provider`. For example, if the Gitlab API returns:
+To configure SAML auth with GitLab permissions, you will need to first [configure permissions from GitLab](../repo/permissions.md#administrator-sudo-level-access-token). Then, [configure SAML authentication](../auth/saml/index.md). The `nameID` passed by the identity provider will need to match the value of `identities.provider`. For example, if the GitLab API returns:
 
 ```
 "identities": [
