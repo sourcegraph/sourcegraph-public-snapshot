@@ -23,7 +23,7 @@ For users using any of the other authentication mechanisms, removing `builtin` a
 
 ## Authorization in Sourcegraph
 
-If you use Github, Gitlab, or Bitbucket Server, you can sync access permissions directly from the code host. Information is included in the section for the code host below. 
+If you use GitHub, GitLab, or Bitbucket Server, you can sync access permissions directly from the code host. Information is included in the section for the code host below. 
 
 If you do not use one of those listed code hosts, you will need to control access using our explicit permissions API, discussed below.
 
