@@ -7,7 +7,7 @@ github-proxy: github-proxy
 frontend: env CONFIGURATION_MODE=server SITE_CONFIG_ESCAPE_HATCH_PATH=$HOME/.sourcegraph/site-config.json frontend
 watch: ./dev/changewatch.sh
 caddy: ./dev/caddy.sh run --watch --config=dev/Caddyfile
-web: ./node_modules/.bin/gulp --silent --color dev
+web: ./node_modules/.bin/gulp --silent --color build
 syntect_server: ./dev/syntect_server.sh
 zoekt-indexserver-0: ./dev/zoekt/wrapper indexserver 0
 zoekt-indexserver-1: ./dev/zoekt/wrapper indexserver 1
