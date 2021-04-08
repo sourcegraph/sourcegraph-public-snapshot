@@ -293,12 +293,12 @@ func SearchSymbolsParallelism() int {
 }
 
 func BitbucketServerPluginPerm() bool {
-	val := Get().ExperimentalFeatures.BitbucketServerFastPerm
+	val := ExperimentalFeatures().BitbucketServerFastPerm
 	return val == "enabled"
 }
 
 func EventLoggingEnabled() bool {
-	val := Get().ExperimentalFeatures.EventLogging
+	val := ExperimentalFeatures().EventLogging
 	if val == "" {
 		return true
 	}
@@ -306,7 +306,7 @@ func EventLoggingEnabled() bool {
 }
 
 func StructuralSearchEnabled() bool {
-	val := Get().ExperimentalFeatures.StructuralSearch
+	val := ExperimentalFeatures().StructuralSearch
 	if val == "" {
 		return true
 	}
@@ -314,11 +314,11 @@ func StructuralSearchEnabled() bool {
 }
 
 func AndOrQueryEnabled() bool {
-	e := Get().ExperimentalFeatures
-	if e == nil || e.AndOrQuery == "" {
+	val := ExperimentalFeatures().AndOrQuery
+	if val == "" {
 		return true
 	}
-	return e.AndOrQuery == "enabled"
+	return val == "enabled"
 }
 
 func ExperimentalFeatures() schema.ExperimentalFeatures {

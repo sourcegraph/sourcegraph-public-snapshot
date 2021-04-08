@@ -31,6 +31,8 @@ import (
 )
 
 func TestNullIDResilience(t *testing.T) {
+	mockRSAKeygen(t)
+
 	db := dbtesting.GetDB(t)
 	sr := New(store.New(db))
 
@@ -827,6 +829,8 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		t.Skip()
 	}
 
+	mockRSAKeygen(t)
+
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 
@@ -863,12 +867,12 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		}
 
 		// Second time it should fail
-		errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
 
-		if len(errors) != 1 {
+		if len(errs) != 1 {
 			t.Fatalf("expected single errors, but got none")
 		}
-		if have, want := errors[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
+		if have, want := errs[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
 			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
 		}
 	})
@@ -914,6 +918,8 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	mockRSAKeygen(t)
 
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)

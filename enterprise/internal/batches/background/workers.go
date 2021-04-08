@@ -33,7 +33,7 @@ func newWorker(
 	sourcer repos.Sourcer,
 	metrics batchChangesMetrics,
 ) *workerutil.Worker {
-	r := &reconciler.Reconciler{GitserverClient: gitClient, Sourcer: sourcer, Store: s}
+	r := reconciler.New(gitClient, sourcer, s)
 
 	options := workerutil.WorkerOptions{
 		Name:        "batches_reconciler_worker",
