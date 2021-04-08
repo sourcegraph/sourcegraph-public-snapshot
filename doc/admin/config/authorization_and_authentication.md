@@ -55,7 +55,7 @@ Set `allowSignup` to `false` if you want to create user accounts instead of allo
 
 More info about [builtin password authentication](../auth/index.md#builtin-password-authentication). 
 
-### Github Enterprise or Github Cloud Authentication and Authorization
+### GitHub Enterprise or GitHub Cloud authentication and authorization
 
 Github supports both permissions syncing and authentication (through OAuth). If you use Github as your code host, we do not officially support using another authentication mechanism (SAML, etc.). Instead, you’ll need to follow this flow:
 
