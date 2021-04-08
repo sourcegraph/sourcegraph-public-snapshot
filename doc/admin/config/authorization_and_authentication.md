@@ -57,7 +57,7 @@ More info about [builtin password authentication](../auth/index.md#builtin-passw
 
 ### GitHub Enterprise or GitHub Cloud authentication and authorization
 
-Github supports both permissions syncing and authentication (through OAuth). If you use Github as your code host, we do not officially support using another authentication mechanism (SAML, etc.). Instead, you’ll need to follow this flow:
+We support both authentication and permissions syncing (through OAuth) for GitHub. If you use GitHub as your code host, we do not officially support using another authentication mechanism (SAML, etc.). Instead, you’ll need to follow this flow:
 
 1. Use SAML (or another auth mechanism) to log in to Github
 2. Use Github OAuth to log in to Sourcegraph
