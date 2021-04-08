@@ -1,4 +1,4 @@
-FROM prometheuscommunity/postgres-exporter:v0.9.0@sha256:eb0474c8ae5c9032806b7a4e1c813411fb8e464e7e2dbad3bd577c4afb17dd17 as postgres_exporter
+FROM prometheuscommunity/postgres-exporter:v0.9.0@sha256:9100e51f477827840e06638f7ebec111799eece916c603fac2d2369bfbc9f507 as postgres_exporter
 FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d
 LABEL com.sourcegraph.postgres_exporter.version=v0.9.0
 
