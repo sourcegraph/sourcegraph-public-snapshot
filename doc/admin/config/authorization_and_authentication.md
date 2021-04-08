@@ -106,7 +106,7 @@ You will need to configure permission in Sourcegraph as:
 
 And configure the identity provider to pass the email address as the `nameID`. 
 
-### Bitbucket Server Authorization
+### Bitbucket Server authorization
 
 We do not currently support OAuth for Bitbucket Server. You will need to combine permissions syncing from Bitbucket Server with another auth mechanism (SAML, built-in auth, HTTP authentication proxies). Bitbucket only passes usernames to Sourcegraph, so you’ll need to make sure that those usernames are matched by whatever mechanism you chose to use for access.
 
