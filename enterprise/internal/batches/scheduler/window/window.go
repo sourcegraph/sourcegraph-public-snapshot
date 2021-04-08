@@ -19,7 +19,7 @@ type Window struct {
 	rate  rate
 }
 
-func (w *Window) isTimeWithin(when timeOfDay) bool {
+func (w *Window) covers(when timeOfDay) bool {
 	if w.start == nil || w.end == nil {
 		return true
 	}
@@ -29,7 +29,7 @@ func (w *Window) isTimeWithin(when timeOfDay) bool {
 
 // IsOpen checks if this window is currently open.
 func (w *Window) IsOpen(at time.Time) bool {
-	return w.days.includes(at.Weekday()) && w.isTimeWithin(timeOfDayFromTime(at))
+	return w.days.includes(at.Weekday()) && w.covers(timeOfDayFromTime(at))
 }
 
 // NextOpenAfter returns the time that this window will next be open.
