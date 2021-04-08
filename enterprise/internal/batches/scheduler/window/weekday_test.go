@@ -19,13 +19,13 @@ var allWeekdays = []time.Weekday{
 // Equal is needed for test purposes, but not in normal use.
 func (ws *weekdaySet) Equal(other *weekdaySet) bool {
 	if ws != nil && other != nil {
-		return ws.d == other.d
+		return *ws == *other
 	}
 	return false
 }
 
 func TestWeekday_All(t *testing.T) {
-	for name, ws := range map[string]*weekdaySet{
+	for name, ws := range map[string]weekdaySet{
 		"zero": newWeekdaySet(),
 		"all":  newWeekdaySet(allWeekdays...),
 	} {

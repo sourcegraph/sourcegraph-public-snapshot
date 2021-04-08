@@ -13,7 +13,7 @@ import (
 
 // Window represents a single rollout window configured on a site.
 type Window struct {
-	days  *weekdaySet
+	days  weekdaySet
 	start *timeOfDay
 	end   *timeOfDay
 	rate  rate
