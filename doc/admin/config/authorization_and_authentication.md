@@ -53,7 +53,7 @@ This is Sourcegraph’s default authentication option. To enable it, add the fol
 
 Set `allowSignup` to `false` if you want to create user accounts instead of allowing the user to create their own.
 
-More info [here](../auth/index.md#builtin-password-authentication). 
+More info about [builtin password authentication](../auth/index.md#builtin-password-authentication). 
 
 ### Github Enterprise or Github Cloud Authentication and Authorization
 
