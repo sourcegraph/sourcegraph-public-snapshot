@@ -91,9 +91,17 @@ func TestParseRate(t *testing.T) {
 				in:   "UNLIMITED",
 				want: rate{n: -1},
 			},
-			"valid rate": {
+			"valid per-second rate": {
+				in:   "20/sec",
+				want: rate{n: 20, unit: ratePerSecond},
+			},
+			"valid per-minute rate": {
 				in:   "20/min",
 				want: rate{n: 20, unit: ratePerMinute},
+			},
+			"valid per-hour rate": {
+				in:   "20/hr",
+				want: rate{n: 20, unit: ratePerHour},
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
