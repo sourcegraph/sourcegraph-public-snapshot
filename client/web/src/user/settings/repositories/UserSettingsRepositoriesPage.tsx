@@ -67,16 +67,26 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const noReposState = (
         <div className="border rounded p-3">
             <h3>You have not added any repositories to Sourcegraph</h3>
-            <small>
-                <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
-                    Connect code hosts
-                </Link>{' '}
-                to start searching your own repositories, or{' '}
-                <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
-                    add public repositories
-                </Link>{' '}
-                from GitHub or GitLab.
-            </small>
+
+            {externalServices?.length === 0 ? (
+                <small>
+                    <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
+                        Connect code hosts
+                    </Link>{' '}
+                    to start searching your own repositories, or{' '}
+                    <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
+                        add public repositories
+                    </Link>{' '}
+                    from GitHub or GitLab.
+                </small>
+            ) : (
+                <small>
+                    <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
+                        Add repositories
+                    </Link>{' '}
+                    to start searching your code with Sourcegraph.
+                </small>
+            )}
         </div>
     )
     const showResults = (): JSX.Element => {
