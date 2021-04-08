@@ -134,11 +134,6 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 	}
 	code := string(p.Content)
 
-	themechoice := "Sourcegraph"
-	if p.IsLightTheme {
-		themechoice = "Sourcegraph (light)"
-	}
-
 	// Trim a single newline from the end of the file. This means that a file
 	// "a\n\n\n\n" will show line numbers 1-4 rather than 1-5, i.e. no blank
 	// line will be shown at the end of the file corresponding to the last
@@ -167,14 +162,20 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		stabilizeTimeout = 30 * time.Second
 	}
 
+	var maxLineLength *int
+	if !p.HighlightLongLines {
+		i := 2000
+		maxLineLength = &i
+	}
+
 	p.Filepath = normalizeFilepath(p.Filepath)
 
-	resp, err := client.Highlight(ctx, &gosyntect.Query{
+	resp, err := client.HighlightCSSTable(ctx, &gosyntect.CSSTableQuery{
 		Code:             code,
 		Filepath:         p.Filepath,
-		Theme:            themechoice,
 		StabilizeTimeout: stabilizeTimeout,
 		Tracer:           ot.GetTracer(ctx),
+		MaxLineLength:    maxLineLength,
 	})
 
 	if ctx.Err() == context.DeadlineExceeded {
@@ -222,22 +223,8 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		}
 		return "", false, err
 	}
-	// Note: resp.Data is properly HTML escaped by syntect_server
-	table, err := preSpansToTable(resp.Data)
-	if err != nil {
-		return "", false, err
-	}
-	if !p.HighlightLongLines {
-		// This number was arbitrarily chosen. We don't want long lines in general to be unhighlighted,
-		// but if there are super long lines OR many lines of near this length we don't want it to slow
-		// down the browser's rendering.
-		maxLineLength := 2000
-		table, err = unhighlightLongLines(table, maxLineLength)
-		if err != nil {
-			return "", false, err
-		}
-	}
-	return template.HTML(table), false, nil
+
+	return template.HTML(resp.Data), false, nil
 }
 
 // TODO (Dax): Determine if Histogram provides value and either use only histogram or counter, not both

@@ -22,5 +22,6 @@ if [[ "${INSECURE_DEV:-}" == '1' ]]; then
   addr+=("-e" "ROCKET_ADDRESS=0.0.0.0")
 fi
 
-docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server
-exec docker run --name=syntect_server --rm -p9238:9238 -e WORKERS=1 "${addr[@]}" sourcegraph/syntect_server:331beda@sha256:6b8950b41993af3d10300b5a160fab1c06c337cb4614978f4fdb76e2588afbfe
+cd ../syntect_server && ROCKET_PORT=9238 cargo run .
+# docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server
+# exec docker run --name=syntect_server --rm -p9238:9238 -e WORKERS=1 "${addr[@]}" docker.io/sourcegraph/syntect_server
