@@ -8,7 +8,6 @@ import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { Shortcut } from '@slimsag/react-shortcuts'
 
 const SOURCEGRAPH_LIGHT = 'sourcegraph-light'
-
 const SOURCEGRAPH_DARK = 'sourcegraph-dark'
 
 monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
