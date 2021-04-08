@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -34,18 +35,19 @@ import (
 // StreamHandler is an http handler which streams back search results.
 func StreamHandler(db dbutil.DB) http.Handler {
 	return &streamHandler{
-		db:                db,
-		newSearchResolver: defaultNewSearchResolver,
+		db:                  db,
+		newSearchResolver:   defaultNewSearchResolver,
+		flushTickerInternal: 100 * time.Millisecond,
+		pingTickerInterval:  5 * time.Second,
 	}
 }
 
 type streamHandler struct {
-	db                dbutil.DB
-	newSearchResolver func(context.Context, dbutil.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
+	db                  dbutil.DB
+	newSearchResolver   func(context.Context, dbutil.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
+	flushTickerInternal time.Duration
+	pingTickerInterval  time.Duration
 }
-
-var flushTickerInternal = 100 * time.Millisecond
-var pingTickerInterval = 5 * time.Second
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
@@ -102,11 +104,16 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	start := time.Now()
+
+	displayLimit := display
+	if display < 0 {
+		displayLimit = math.MaxInt32
+	}
 	progress := progressAggregator{
 		Start:        start,
 		Limit:        inputs.MaxResults(),
 		Trace:        traceURL,
-		DisplayLimit: display,
+		DisplayLimit: displayLimit,
 	}
 
 	sendProgress := func() {
@@ -142,10 +149,10 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = matchesBuf.Append(m)
 	}
 
-	flushTicker := time.NewTicker(flushTickerInternal)
+	flushTicker := time.NewTicker(h.flushTickerInternal)
 	defer flushTicker.Stop()
 
-	pingTicker := time.NewTicker(pingTickerInterval)
+	pingTicker := time.NewTicker(h.pingTickerInterval)
 	defer pingTicker.Stop()
 
 	first := true
@@ -172,13 +179,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		for _, result := range event.Results {
 			if display <= 0 {
-				// We don't want to report a display limit if args.Display >= limit because in
-				// that case we will always show all the results the user asked for. Only if the
-				// user asked for limit > args.Display results and we found more than
-				// args.Display results we inform the user that not all results are displayed.
-				if progress.DisplayLimit >= 0 && progress.DisplayLimit < limit {
-					progress.DisplayLimitHit = true
-				}
 				break
 			}
 

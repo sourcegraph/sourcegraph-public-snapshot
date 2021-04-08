@@ -47,8 +47,7 @@ type ProgressStats struct {
 
 	Trace string // only filled if requested
 
-	DisplayLimit    int
-	DisplayLimitHit bool
+	DisplayLimit int
 }
 
 func skippedReposHandler(repos []Namer, titleVerb, messageReason string, base Skipped) (Skipped, bool) {
@@ -107,7 +106,7 @@ func shardTimeoutHandler(resultsResolver ProgressStats) (Skipped, bool) {
 }
 
 func displayLimitHandler(resultsResolver ProgressStats) (Skipped, bool) {
-	if !resultsResolver.DisplayLimitHit {
+	if resultsResolver.DisplayLimit >= resultsResolver.MatchCount {
 		return Skipped{}, false
 	}
 

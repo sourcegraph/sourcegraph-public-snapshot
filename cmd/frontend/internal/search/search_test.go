@@ -30,6 +30,8 @@ func TestServeStream_empty(t *testing.T) {
 	mock.Close()
 
 	ts := httptest.NewServer(&streamHandler{
+		flushTickerInternal: 1 * time.Millisecond,
+		pingTickerInterval:  1 * time.Millisecond,
 		newSearchResolver: func(context.Context, dbutil.DB, *graphqlbackend.SearchArgs) (searchResolver, error) {
 			return mock, nil
 		}})
@@ -66,12 +68,6 @@ func TestDefaultNewSearchResolver(t *testing.T) {
 }
 
 func TestDisplayLimit(t *testing.T) {
-	old := pingTickerInterval
-	pingTickerInterval = time.Millisecond
-	defer func() {
-		pingTickerInterval = old
-	}()
-
 	cases := []struct {
 		queryString         string
 		displayLimit        int
@@ -129,6 +125,8 @@ func TestDisplayLimit(t *testing.T) {
 			}
 
 			ts := httptest.NewServer(&streamHandler{
+				flushTickerInternal: 1 * time.Millisecond,
+				pingTickerInterval:  1 * time.Millisecond,
 				newSearchResolver: func(_ context.Context, _ dbutil.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
 					mock.c = args.Stream
 					q, err := query.Parse(c.queryString, query.Literal)
