@@ -138,6 +138,11 @@ func Main(enterpriseInit EnterpriseInit) {
 	if err != nil {
 		log.Fatalf("failed to initialize database store: %v", err)
 	}
+	// Generally we'll mark the service as ready sometime after the database
+	// has been connected; migrations may take a while and we don't want to
+	// start accepting traffic until we've fully constructed the server we'll
+	// be exposing. We have a bit more to do in this method, though, and the
+	// process will be marked ready further down this function.
 
 	repos.MustRegisterMetrics(db)
 
@@ -372,13 +377,10 @@ func Main(enterpriseInit EnterpriseInit) {
 		_, _ = w.Write(resp)
 	})
 
-	// Migrations may take a while, but after they're done we'll immediately
-	// spin up a server and can accept traffic. Inform external clients we'll
-	// be ready for traffic.
-	//
-	// We also close this channel now AFTER assigning the additional endpoints
-	// in the debugserver. This ensures we don't have a race between becoming
-	// ready and a debugserver request failing directly after being unblocked.
+	// We mark the service as ready now AFTER assigning the additional endpoints in
+	// the debugserver constructed at the top of this function. This ensures we don't
+	// have a race between becoming ready and a debugserver request failing directly
+	// after being unblocked.
 	close(ready)
 
 	// NOTE: Internal actor is required to have full visibility of the repo table
