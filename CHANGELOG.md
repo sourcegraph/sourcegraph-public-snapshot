@@ -15,7 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- `count:` now supports "all" as value. Queries with `count:all` will return up to 999999 results. [#19756](https://github.com/sourcegraph/sourcegraph/pull/19756)
 
 ### Changed
 
