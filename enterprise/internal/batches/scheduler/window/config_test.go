@@ -101,7 +101,7 @@ func TestConfiguration_Estimate(t *testing.T) {
 				n:    120,
 				want: thursday.Truncate(24 * time.Hour),
 			},
-			"the next time we schedule anything, plus an hour": {
+			"the next time a window is open, plus an hour, since we're asking for the 10th item with a 10/hr limit": {
 				now:  thursday,
 				n:    10,
 				want: friday.Truncate(24 * time.Hour).Add(1 * time.Hour),
