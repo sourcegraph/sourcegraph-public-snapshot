@@ -77,7 +77,9 @@ type Dumper interface {
 }
 
 // NewServerRoutine returns a background routine that exposes pprof and metrics endpoints.
-func NewServerRoutine(extra ...Endpoint) goroutine.BackgroundRoutine {
+// The given channel should be closed once the ready endpoint should begin to return 200 OK.
+// Any extra endpoints supplied will be registered via their own declared path.
+func NewServerRoutine(ready <-chan struct{}, extra ...Endpoint) goroutine.BackgroundRoutine {
 	if addr == "" {
 		return goroutine.NoopRoutine()
 	}
@@ -109,6 +111,8 @@ func NewServerRoutine(extra ...Endpoint) goroutine.BackgroundRoutine {
 		})
 
 		router.Handle("/", index)
+		router.Handle("/healthz", http.HandlerFunc(healthzHandler))
+		router.Handle("/ready", http.HandlerFunc(readyHandler(ready)))
 		router.Handle("/debug", index)
 		router.Handle("/vars", http.HandlerFunc(expvarHandler))
 		router.Handle("/gc", http.HandlerFunc(gcHandler))
@@ -131,10 +135,4 @@ func NewServerRoutine(extra ...Endpoint) goroutine.BackgroundRoutine {
 	})
 
 	return httpserver.NewFromAddr(addr, &http.Server{Handler: handler})
-}
-
-// Start runs a debug server (pprof, prometheus, etc) if it is configured (via
-// SRC_PROF_HTTP environment variable). It is blocking.
-func Start(extra ...Endpoint) {
-	NewServerRoutine(extra...).Start()
 }
