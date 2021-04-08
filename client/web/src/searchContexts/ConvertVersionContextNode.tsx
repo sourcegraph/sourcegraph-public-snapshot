@@ -1,13 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { convertVersionContextToSearchContext } from '../search/backend'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { catchError, delay, mergeMap, switchMap } from 'rxjs/operators'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { merge, Observable, of, Subject } from 'rxjs'
-import { isSearchContextSpecAvailable } from '../search'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ConvertVersionContextsTabProps } from './ConvertVersionContextsTab'
 
-export interface ConvertVersionContextNodeProps {
+export interface ConvertVersionContextNodeProps
+    extends Pick<
+        ConvertVersionContextsTabProps,
+        'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable'
+    > {
     name: string
     isConvertedUpdates: Subject<void>
 }
@@ -19,6 +22,8 @@ const versionContextNameToSearchContextSpecRegExp = /\s+/g
 export const ConvertVersionContextNode: React.FunctionComponent<ConvertVersionContextNodeProps> = ({
     name,
     isConvertedUpdates,
+    convertVersionContextToSearchContext,
+    isSearchContextSpecAvailable,
 }) => {
     const [convert, convertOrError] = useEventObservable(
         useCallback(
@@ -31,7 +36,7 @@ export const ConvertVersionContextNode: React.FunctionComponent<ConvertVersionCo
                         return merge(of(LOADING), conversion.pipe(delay(500)))
                     })
                 ),
-            [name]
+            [convertVersionContextToSearchContext, name]
         )
     )
 
@@ -48,12 +53,12 @@ export const ConvertVersionContextNode: React.FunctionComponent<ConvertVersionCo
             .subscribe(result => setIsConverted(result))
 
         return () => subscription.unsubscribe()
-    }, [isConvertedUpdates, searchContextSpec])
+    }, [isSearchContextSpecAvailable, isConvertedUpdates, searchContextSpec])
 
     useEffect(() => isConvertedUpdates.next(), [isConvertedUpdates])
 
     return (
-        <div className="convert-version-context-node card mb-1 p-3">
+        <div className="convert-version-context-node card mb-1 p-3 d-flex justify-content-between align-items-center flex-row">
             <div>{name}</div>
             {(convertOrError === LOADING || isConverted === LOADING) && <LoadingSpinner />}
             {isConverted === false && !convertOrError && (

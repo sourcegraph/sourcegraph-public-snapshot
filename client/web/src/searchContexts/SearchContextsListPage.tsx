@@ -1,15 +1,13 @@
 import React, { useCallback, useState } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
-import { FilteredConnection } from '../components/FilteredConnection'
 import { Page } from '../components/Page'
-import { ListSearchContextsResult, ListSearchContextsVariables, SearchContextFields } from '../graphql-operations'
-import { fetchAutoDefinedSearchContexts, fetchSearchContexts } from '../search/backend'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { VersionContext } from '../schema/site.schema'
-import { SearchContextNode, SearchContextNodeProps } from './SearchContextNode'
 import { AuthenticatedUser } from '../auth'
+import { convertVersionContextToSearchContext } from '../search/backend'
+import { isSearchContextSpecAvailable } from '../search'
 import { ConvertVersionContextsTab } from './ConvertVersionContextsTab'
+import { SearchContextsListTab } from './SearchContextsListTab'
 
 export interface SearchContextsListPageProps {
     location: H.Location
@@ -20,26 +18,51 @@ export interface SearchContextsListPageProps {
 
 type SelectedTab = 'list' | 'convert-version-contexts'
 
+function getSelectedTabFromLocation(locationSearch: string): SelectedTab {
+    const urlParameters = new URLSearchParams(locationSearch)
+    switch (urlParameters.get('tab')) {
+        case 'list':
+            return 'list'
+        case 'convert-version-contexts':
+            return 'convert-version-contexts'
+    }
+    return 'list'
+}
+
+function setSelectedLocationTab(location: H.Location, history: H.History, selectedTab: SelectedTab): void {
+    const urlParameters = new URLSearchParams(location.search)
+    urlParameters.set('tab', selectedTab)
+    if (location.search !== urlParameters.toString()) {
+        history.replace({ ...location, search: urlParameters.toString() })
+    }
+}
+
 export const SearchContextsListPage: React.FunctionComponent<SearchContextsListPageProps> = props => {
-    const queryConnection = useCallback(
-        (args: Partial<ListSearchContextsVariables>) =>
-            fetchSearchContexts(args.first ?? 1, args.query ?? undefined, args.after ?? undefined),
-        []
+    const [selectedTab, setSelectedTab] = useState<SelectedTab>(getSelectedTabFromLocation(props.location.search))
+
+    const setTab = useCallback(
+        (tab: SelectedTab) => {
+            setSelectedTab(tab)
+            setSelectedLocationTab(props.location, props.history, tab)
+        },
+        [props.location, props.history]
     )
 
-    const [selectedTab, setSelectedTab] = useState<SelectedTab>('list')
+    const onSelectSearchContextsList = useCallback<React.MouseEventHandler>(
+        event => {
+            event.preventDefault()
+            setTab('list')
+        },
+        [setTab]
+    )
 
-    const onSelectSearchContextsList = useCallback<React.MouseEventHandler>(event => {
-        event.preventDefault()
-        setSelectedTab('list')
-    }, [])
-
-    const onSelectConvertVersionContexts = useCallback<React.MouseEventHandler>(event => {
-        event.preventDefault()
-        setSelectedTab('convert-version-contexts')
-    }, [])
-
-    const autoDefinedSearchContexts = useObservable(fetchAutoDefinedSearchContexts)
+    const onSelectConvertVersionContexts = useCallback<React.MouseEventHandler>(
+        event => {
+            event.preventDefault()
+            setTab('convert-version-contexts')
+        },
+        [setTab]
+    )
 
     return (
         <div className="w-100">
@@ -79,44 +102,14 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                             )}
                         </div>
                     </div>
-                    {selectedTab === 'list' && (
-                        <>
-                            <div className="mb-3">
-                                <h3>Auto-defined</h3>
-                                {autoDefinedSearchContexts?.map(context => (
-                                    <SearchContextNode
-                                        key={context.id}
-                                        node={context}
-                                        location={props.location}
-                                        history={props.history}
-                                    />
-                                ))}
-                            </div>
-
-                            <h3>User-defined</h3>
-                            <FilteredConnection<
-                                SearchContextFields,
-                                Omit<SearchContextNodeProps, 'node'>,
-                                ListSearchContextsResult['searchContexts']
-                            >
-                                history={props.history}
-                                location={props.location}
-                                defaultFirst={10}
-                                queryConnection={queryConnection}
-                                hideSearch={false}
-                                nodeComponent={SearchContextNode}
-                                nodeComponentProps={{
-                                    location: props.location,
-                                    history: props.history,
-                                }}
-                                noun="search context"
-                                pluralNoun="search contexts"
-                                noSummaryIfAllNodesVisible={true}
-                                cursorPaging={true}
-                            />
-                        </>
+                    {selectedTab === 'list' && <SearchContextsListTab {...props} />}
+                    {selectedTab === 'convert-version-contexts' && (
+                        <ConvertVersionContextsTab
+                            {...props}
+                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                            convertVersionContextToSearchContext={convertVersionContextToSearchContext}
+                        />
                     )}
-                    {selectedTab === 'convert-version-contexts' && <ConvertVersionContextsTab {...props} />}
                 </div>
             </Page>
         </div>

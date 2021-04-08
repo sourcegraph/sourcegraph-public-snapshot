@@ -1,15 +1,18 @@
 import React, { useCallback, useMemo, useState } from 'react'
+import { convertVersionContextToSearchContext as _convertVersionContextToSearchContext } from '../search/backend'
+import { isSearchContextSpecAvailable as _isSearchContextSpecAvailable } from '../search'
 import { VersionContext } from '../schema/site.schema'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { ConvertVersionContextNode } from './ConvertVersionContextNode'
 import { concat, from, Observable, of, Subject } from 'rxjs'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { convertVersionContextToSearchContext } from '../search/backend'
 import { catchError, delay, map, mergeMap, reduce, tap } from 'rxjs/operators'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 export interface ConvertVersionContextsTabProps {
     availableVersionContexts: VersionContext[] | undefined
+    convertVersionContextToSearchContext: typeof _convertVersionContextToSearchContext
+    isSearchContextSpecAvailable: typeof _isSearchContextSpecAvailable
 }
 
 const initialItemsToShow = 15
@@ -18,6 +21,8 @@ const LOADING = 'LOADING' as const
 
 export const ConvertVersionContextsTab: React.FunctionComponent<ConvertVersionContextsTabProps> = ({
     availableVersionContexts,
+    isSearchContextSpecAvailable,
+    convertVersionContextToSearchContext,
 }) => {
     const itemKey = useCallback((item: VersionContext): string => item.name, [])
 
@@ -33,9 +38,14 @@ export const ConvertVersionContextsTab: React.FunctionComponent<ConvertVersionCo
 
     const renderResult = useCallback(
         (item: VersionContext & { isConvertedUpdates: Subject<void> }): JSX.Element => (
-            <ConvertVersionContextNode name={item.name} isConvertedUpdates={item.isConvertedUpdates} />
+            <ConvertVersionContextNode
+                name={item.name}
+                isConvertedUpdates={item.isConvertedUpdates}
+                isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                convertVersionContextToSearchContext={convertVersionContextToSearchContext}
+            />
         ),
-        []
+        [isSearchContextSpecAvailable, convertVersionContextToSearchContext]
     )
 
     const [itemsToShow, setItemsToShow] = useState(initialItemsToShow)
@@ -61,13 +71,13 @@ export const ConvertVersionContextsTab: React.FunctionComponent<ConvertVersionCo
                         return concat(of(LOADING), convertAll.pipe(delay(500)))
                     })
                 ),
-            [versionContexts]
+            [convertVersionContextToSearchContext, versionContexts]
         )
     )
 
     return (
         <div className="convert-version-contexts-tab">
-            <div className="convert-version-contexts-tab__header ml-3 mr-3 mb-3">
+            <div className="convert-version-contexts-tab__header ml-3 mr-3 mb-3 d-flex flex-row justify-content-between align-items-center">
                 <div className="convert-version-contexts-tab__header-title">Available version contexts</div>
                 <button
                     type="button"

@@ -718,10 +718,7 @@ describe('Search', () => {
                 }),
             })
 
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts')
-
-            await driver.page.waitForSelector('.test-convert-version-contexts-tab')
-            await driver.page.click('.test-convert-version-contexts-tab')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts?tab=convert-version-contexts')
 
             await driver.page.waitForSelector('.test-convert-version-context-btn')
             await driver.page.click('.test-convert-version-context-btn')
@@ -742,10 +739,7 @@ describe('Search', () => {
                 }),
             })
 
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts')
-
-            await driver.page.waitForSelector('.test-convert-version-contexts-tab')
-            await driver.page.click('.test-convert-version-contexts-tab')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts?tab=convert-version-contexts')
 
             await driver.page.waitForSelector('.test-convert-all-search-contexts-btn')
             await driver.page.click('.test-convert-all-search-contexts-btn')
