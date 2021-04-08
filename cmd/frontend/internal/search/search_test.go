@@ -77,12 +77,14 @@ func TestDisplayLimit(t *testing.T) {
 		displayLimit        int
 		wantDisplayLimitHit bool
 		wantMatchCount      int
+		wantMessage         string
 	}{
 		{
 			queryString:         "foo count:2",
 			displayLimit:        1,
 			wantDisplayLimitHit: true,
 			wantMatchCount:      2,
+			wantMessage:         "We only display 1 result even if your search returned more results. To see all results and configure the display limit, use our CLI.",
 		},
 		{
 			queryString:         "foo count:2",
@@ -110,14 +112,14 @@ func TestDisplayLimit(t *testing.T) {
 		},
 	}
 
-	// any returns true if skipped contains an item matching reason.
-	any := func(reason api.SkippedReason, skipped []api.Skipped) bool {
+	// any returns item, true if skipped contains an item matching reason.
+	any := func(reason api.SkippedReason, skipped []api.Skipped) (api.Skipped, bool) {
 		for _, s := range skipped {
 			if s.Reason == reason {
-				return true
+				return s, true
 			}
 		}
-		return false
+		return api.Skipped{}, false
 	}
 
 	for _, c := range cases {
@@ -148,11 +150,13 @@ func TestDisplayLimit(t *testing.T) {
 			}
 
 			var displayLimitHit bool
+			var message string
 			var matchCount int
 			decoder := streamhttp.Decoder{
 				OnProgress: func(progress *api.Progress) {
-					if any(api.DisplayLimit, progress.Skipped) {
+					if skipped, ok := any(api.DisplayLimit, progress.Skipped); ok {
 						displayLimitHit = true
+						message = skipped.Message
 					}
 					matchCount = progress.MatchCount
 				},
@@ -185,6 +189,12 @@ func TestDisplayLimit(t *testing.T) {
 
 			if got := displayLimitHit; got != c.wantDisplayLimitHit {
 				t.Fatalf("got %t, want %t", got, c.wantDisplayLimitHit)
+			}
+
+			if c.wantDisplayLimitHit {
+				if got := message; got != c.wantMessage {
+					t.Fatalf("got %s, want %s", got, c.wantMessage)
+				}
 			}
 		})
 	}

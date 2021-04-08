@@ -92,13 +92,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	start := time.Now()
-	progress := progressAggregator{
-		Start: start,
-		Limit: inputs.MaxResults(),
-		Trace: traceURL,
-	}
-
 	// Display is the number of results we send down. If display is < 0 we
 	// want to send everything we find before hitting a limit. Otherwise we
 	// can only send up to limit results.
@@ -106,6 +99,14 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	limit := inputs.MaxResults()
 	if display < 0 || display > limit {
 		display = limit
+	}
+
+	start := time.Now()
+	progress := progressAggregator{
+		Start:        start,
+		Limit:        inputs.MaxResults(),
+		Trace:        traceURL,
+		DisplayLimit: display,
 	}
 
 	sendProgress := func() {
@@ -175,7 +176,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				// that case we will always show all the results the user asked for. Only if the
 				// user asked for limit > args.Display results and we found more than
 				// args.Display results we inform the user that not all results are displayed.
-				if args.Display >= 0 && args.Display < limit {
+				if progress.DisplayLimit >= 0 && progress.DisplayLimit < limit {
 					progress.DisplayLimitHit = true
 				}
 				break

@@ -24,6 +24,7 @@ type progressAggregator struct {
 	// DisplayLimitHit is true if we have hit the display limit but not the match
 	// limit.
 	DisplayLimitHit bool
+	DisplayLimit    int
 }
 
 func (p *progressAggregator) Update(event graphqlbackend.SearchEvent) {
@@ -65,6 +66,7 @@ func (p *progressAggregator) currentStats() api.ProgressStats {
 		SuggestedLimit:      suggestedLimit,
 		Trace:               p.Trace,
 		DisplayLimitHit:     p.DisplayLimitHit,
+		DisplayLimit:        p.DisplayLimit,
 	}
 }
 
