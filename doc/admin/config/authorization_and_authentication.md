@@ -118,7 +118,7 @@ To sync Bitbucket server permissions, follow [these instructions](../repo/permis
 
 ### Explicit Permissions API Authorization
 
-With any authentication mechanism, you can use our graphQL API to set permissions for all repositories. If you choose to do this, this is the *only* mechanism that can be used for permissions—all others will be ignored. Follow [these instructions](../repo/permissions.md#explicit-permissions-api) for the mutations needed within the graphQL API to configure access.
+With any authentication mechanism, you can use our GraphQL API to set permissions for all repositories. If you choose to do this, this is the *only* mechanism that can be used for permissions—all others will be ignored. Follow [these instructions](../repo/permissions.md#explicit-permissions-api) for the mutations needed within the GraphQL API to configure access.
 
 ### OpenId Connect Authentication
 
