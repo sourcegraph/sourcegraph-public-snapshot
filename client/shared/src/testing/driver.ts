@@ -51,6 +51,9 @@ const setColorScheme = async (page: Page, scheme: ColorScheme): Promise<void> =>
         (scheme: ColorScheme) => matchMedia(`(prefers-color-scheme: ${scheme})`).matches,
         scheme
     )
+    page.on('console', message =>
+        console.log(`${message.type().slice(0, 3).toUpperCase()} ${message.text()}`)
+    ).on('pageerror', ({ message }) => console.log(message))
 
     if (isAlreadySet) {
         return
@@ -59,7 +62,10 @@ const setColorScheme = async (page: Page, scheme: ColorScheme): Promise<void> =>
     await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }])
 
     // Note: Monaco doesn't have a reliable way of exposing the current theme, so we force set it here
-    await page.evaluate(() => (window as any).monaco.editor.setTheme(ColorSchemeToMonacoEditorMapping[scheme]))
+    await page.evaluate(
+        (editorTheme: string) => (window as any).monaco.editor.setTheme(editorTheme),
+        ColorSchemeToMonacoEditorMapping[scheme]
+    )
 }
 
 export const percySnapshot: typeof realPercySnapshot = async (page, name, options) => {
