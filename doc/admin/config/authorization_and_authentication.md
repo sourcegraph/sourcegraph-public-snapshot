@@ -114,7 +114,7 @@ To sync Bitbucket server permissions, follow [these instructions](../repo/permis
 
 1. Create the user accounts in Sourcegraph with matching usernames. (Access using `builtin` auth.)
 2. [Configure SAML authentication](../auth/saml/index.md). If you are using Bitbucket server, the `login` attribute is *not* optional—you need to pass the Bitbucket username as the `login` attribute. 
-3. [Configure an HTTP authentication proxy](../auth/index.md#http-authentication-proxies), passing the Bitbucket username value as the `usernameHeader`. 
+3. [Configure an HTTP authentication proxy](../auth/index.md#http-authentication-proxies), passing the Bitbucket Server username value as the `usernameHeader`. 
 
 ### Explicit Permissions API Authorization
 
