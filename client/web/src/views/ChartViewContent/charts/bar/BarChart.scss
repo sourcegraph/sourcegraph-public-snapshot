@@ -16,14 +16,14 @@
     // Axes
     &__axis-line {
         stroke: var(--border-color);
-        stroke-width: 3;
+        stroke-width: 2;
     }
 
     &__axis-tick {
         // small tick line
         line {
             stroke: var(--border-color);
-            stroke-width: 2;
+            stroke-width: 1;
         }
 
         // tick label

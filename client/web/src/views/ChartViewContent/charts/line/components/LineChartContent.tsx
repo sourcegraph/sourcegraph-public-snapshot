@@ -177,13 +177,6 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                         width={innerWidth}
                         className="line-chart__grid-line"
                     />
-
-                    <GridColumns
-                        scale={xScale as GridScale}
-                        numTicks={numberOfTicksX}
-                        height={innerHeight}
-                        className="line-chart__grid-line"
-                    />
                 </Group>
 
                 <Axis
