@@ -12,7 +12,7 @@ import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
 import { QueryInputInViewContent } from './QueryInputInViewContent'
 import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '../search'
-import { ChartViewContent } from './ChartViewContent/ChartViewContent'
+import { ChartViewContent } from './ChartViewContent'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>
     isObject(input) && hasProperty('value')(input) && typeof input.value === 'string'
