@@ -104,7 +104,7 @@ You will need to configure permission in Sourcegraph as:
 }
 ```
 
-And configure the identity provider to pass the email address as the `nameId`. 
+And configure the identity provider to pass the email address as the `nameID`. 
 
 ### Bitbucket Server Authorization
 
