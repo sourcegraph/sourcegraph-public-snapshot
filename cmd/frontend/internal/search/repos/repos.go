@@ -112,28 +112,17 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		return Resolved{}, err
 	}
 
-	var defaultRepos []*types.RepoName
+	var repos []*types.RepoName
+	var excluded ExcludedRepos
 
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !query.HasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
-		start := time.Now()
-		defaultRepos, err = defaultRepositories(ctx, r.DefaultReposFunc, r.Zoekt, excludePatterns)
+		repos, err = defaultRepositories(ctx, r.DefaultReposFunc, r.Zoekt, excludePatterns)
 		if err != nil {
 			return Resolved{}, errors.Wrap(err, "getting list of default repos")
 		}
-		tr.LazyPrintf("defaultrepos: took %s to add %d repos", time.Since(start), len(defaultRepos))
-
 		// Search all default repos since indexed search is fast.
-		if len(defaultRepos) > maxRepoListSize {
-			maxRepoListSize = len(defaultRepos)
-		}
-	}
-
-	var repos []*types.RepoName
-	var excluded ExcludedRepos
-	if len(defaultRepos) > 0 {
-		repos = defaultRepos
 		if len(repos) > maxRepoListSize {
-			repos = repos[:maxRepoListSize]
+			maxRepoListSize = len(repos)
 		}
 	} else {
 		tr.LazyPrintf("Repos.List - start")
@@ -636,6 +625,7 @@ func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFun
 		}
 	}
 	tr.LazyPrintf("filtering - done")
+	tr.LazyPrintf("%d default repositories", len(repos))
 
 	return repos, nil
 }
