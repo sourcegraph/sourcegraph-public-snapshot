@@ -202,7 +202,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                         <LineSeries
                             dataKey={line.dataKey as string}
                             data={sortedData}
-                            strokeWidth={3}
+                            strokeWidth={2}
                             xAccessor={accessors.x}
                             yAccessor={accessors.y[line.dataKey as string]}
                             stroke={line.stroke ?? DEFAULT_LINE_STROKE}
@@ -225,8 +225,8 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                     {activeDatum && (
                         <Glyph
                             className="line-chart__glyph line-chart__glyph--active"
-                            r={8}
-                            fill={activeDatum.line.stroke ?? DEFAULT_LINE_STROKE}
+                            r={6}
+                            stroke={activeDatum.line.stroke ?? DEFAULT_LINE_STROKE}
                             cx={xScale(accessors.x(activeDatum.datum))}
                             cy={yScale(accessors.y[activeDatum.key](activeDatum.datum))}
                         />

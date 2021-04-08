@@ -56,7 +56,11 @@
 
     &__glyph {
         stroke-width: 2;
-        stroke: var(--body-bg);
+        fill: var(--body-bg);
+
+        &--active {
+            stroke-width: 3;
+        }
     }
 
     &__legend {

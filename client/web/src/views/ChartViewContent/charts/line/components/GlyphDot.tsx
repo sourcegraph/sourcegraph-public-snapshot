@@ -9,5 +9,5 @@ export function GlyphDot<Datum extends object>(props: GlyphProps<Datum>): ReactE
     const { x: xCoord, y: yCoord, color, onPointerMove, onPointerOut, onPointerUp } = props
     const handlers = { onPointerMove, onPointerOut, onPointerUp }
 
-    return <Glyph className="line-chart__glyph" cx={xCoord} cy={yCoord} fill={color} r={6} {...handlers} />
+    return <Glyph className="line-chart__glyph" cx={xCoord} cy={yCoord} stroke={color} r={4} {...handlers} />
 }
