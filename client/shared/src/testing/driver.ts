@@ -74,16 +74,12 @@ const setColorScheme = async (page: Page, scheme: ColorScheme, config?: Snapshot
         return
     }
 
-    if (config?.waitForCodeHighlighting) {
-        await Promise.all([
-            page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }]),
-            waitForCodeHighlighting(page),
-        ])
-    } else {
-        await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }])
-    }
+    await Promise.all([
+        page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }]),
+        config?.waitForCodeHighlighting ? waitForCodeHighlighting(page) : Promise.resolve(),
+    ])
 
-    // Note: Monaco doesn't have a reliable way of exposing the current theme, so we force set it here
+    // Note: Monaco doesn't have a reliable way of exposing the current theme for us to check, we force set it here to avoid potential flakiness
     await page.evaluate(
         (editorTheme: string) => (window as any).monaco.editor.setTheme(editorTheme),
         ColorSchemeToMonacoEditorMapping[scheme]
