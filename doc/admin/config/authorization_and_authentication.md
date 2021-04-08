@@ -120,7 +120,7 @@ To sync Bitbucket server permissions, follow [these instructions](../repo/permis
 
 With any authentication mechanism, you can use our GraphQL API to set permissions for all repositories. If you choose to do this, this is the *only* mechanism that can be used for permissions—all others will be ignored. Follow [these instructions](../repo/permissions.md#explicit-permissions-api) for the mutations needed within the GraphQL API to configure access.
 
-### OpenId Connect Authentication
+### OpenID Connect authentication
 
 Use this option if accessing using OpenID Connect, such as when logging in through a Google Workspace, or if other auth methods aren’t an option. [See setup instructions here](../auth/index.md#openid-connect). 
 
