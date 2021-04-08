@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -878,6 +879,39 @@ func TestService(t *testing.T) {
 			err := svc.DetachChangesets(ctx, batchChange.ID, []int64{detachedChangeset.ID})
 			if err != ErrChangesetsToDetachNotFound {
 				t.Fatalf("wrong error. want=%s, got=%s", ErrChangesetsToDetachNotFound, err)
+			}
+		})
+	})
+
+	t.Run("ValidateAuthenticator", func(t *testing.T) {
+		t.Run("valid", func(t *testing.T) {
+			fakeSource.AuthenticatorIsValid = true
+			fakeSource.ValidateAuthenticatorCalled = false
+			if err := svc.ValidateAuthenticator(
+				ctx,
+				"https://github.com/",
+				extsvc.TypeGitHub,
+				&auth.OAuthBearerToken{Token: "test123"},
+			); err != nil {
+				t.Fatal(err)
+			}
+			if !fakeSource.ValidateAuthenticatorCalled {
+				t.Fatal("ValidateAuthenticator on Source not called")
+			}
+		})
+		t.Run("invalid", func(t *testing.T) {
+			fakeSource.AuthenticatorIsValid = false
+			fakeSource.ValidateAuthenticatorCalled = false
+			if err := svc.ValidateAuthenticator(
+				ctx,
+				"https://github.com/",
+				extsvc.TypeGitHub,
+				&auth.OAuthBearerToken{Token: "test123"},
+			); err == nil {
+				t.Fatal("unexpected nil-error returned from ValidateAuthenticator")
+			}
+			if !fakeSource.ValidateAuthenticatorCalled {
+				t.Fatal("ValidateAuthenticator on Source not called")
 			}
 		})
 	})
