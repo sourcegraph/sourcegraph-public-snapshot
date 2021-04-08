@@ -46,20 +46,42 @@ const ColorSchemeToMonacoEditorMapping: Record<ColorScheme, string> = {
     light: 'sourcegraph-light',
 }
 
-const setColorScheme = async (page: Page, scheme: ColorScheme): Promise<void> => {
+interface SnapshotConfig {
+    waitForCodeHighlighting: boolean
+}
+
+const waitForCodeHighlighting = async (page: Page): Promise<void> => {
+    const requestDidFire = await page
+        .waitForRequest(request => request.url().includes('graphql?highlightCode'), { timeout: 5000 })
+        .catch(
+            () =>
+                // request won't always fire if data is cached
+                false
+        )
+
+    if (requestDidFire) {
+        await page.waitForResponse(response => response.url().includes('graphql?highlightCode'), { timeout: 5000 })
+    }
+}
+
+const setColorScheme = async (page: Page, scheme: ColorScheme, config?: SnapshotConfig): Promise<void> => {
     const isAlreadySet = await page.evaluate(
         (scheme: ColorScheme) => matchMedia(`(prefers-color-scheme: ${scheme})`).matches,
         scheme
     )
-    page.on('console', message =>
-        console.log(`${message.type().slice(0, 3).toUpperCase()} ${message.text()}`)
-    ).on('pageerror', ({ message }) => console.log(message))
 
     if (isAlreadySet) {
         return
     }
 
-    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }])
+    if (config?.waitForCodeHighlighting) {
+        await Promise.all([
+            page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }]),
+            waitForCodeHighlighting(page),
+        ])
+    } else {
+        await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }])
+    }
 
     // Note: Monaco doesn't have a reliable way of exposing the current theme, so we force set it here
     await page.evaluate(
@@ -68,7 +90,7 @@ const setColorScheme = async (page: Page, scheme: ColorScheme): Promise<void> =>
     )
 }
 
-export const percySnapshot: typeof realPercySnapshot = async (page, name, options) => {
+export const percySnapshot = async (page: Page, name: string, config?: SnapshotConfig): Promise<void> => {
     const percyEnabled = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
 
     if (!percyEnabled) {
@@ -76,25 +98,25 @@ export const percySnapshot: typeof realPercySnapshot = async (page, name, option
     }
 
     // Theme-light
-    await setColorScheme(page, 'light')
-    await realPercySnapshot(page, `${name} - light theme`, options)
+    await setColorScheme(page, 'light', config)
+    await realPercySnapshot(page, `${name} - light theme`)
 
     // Theme-light with redesign
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
-    await realPercySnapshot(page, `${name} - light theme with redesign enabled`, options)
+    await realPercySnapshot(page, `${name} - light theme with redesign enabled`)
     await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
 
     // Theme-dark
-    await setColorScheme(page, 'dark')
-    await realPercySnapshot(page, `${name} - Dark Theme`, options)
+    await setColorScheme(page, 'dark', config)
+    await realPercySnapshot(page, `${name} - Dark Theme`)
 
     // Theme-dark with redesign
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
-    await realPercySnapshot(page, `${name} - dark theme with redesign enabled`, options)
+    await realPercySnapshot(page, `${name} - dark theme with redesign enabled`)
     await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
 
     // Reset to light theme
-    await setColorScheme(page, 'light')
+    await setColorScheme(page, 'light', config)
 }
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
