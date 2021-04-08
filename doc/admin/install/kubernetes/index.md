@@ -36,7 +36,7 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
    git clone https://github.com/sourcegraph/deploy-sourcegraph
    cd deploy-sourcegraph
-   SOURCEGRAPH_VERSION="v3.26.2"
+   SOURCEGRAPH_VERSION="v3.26.3"
    git checkout $SOURCEGRAPH_VERSION
    ```
 
