@@ -469,10 +469,10 @@ type ReposListOptions struct {
 	// is non-zero. Note that these are not repos owned by this user, just ones they are interested in.
 	IncludeUserPublicRepos bool
 
-	// FailedSync, if true, will filter to only repos that failed to sync when last
-	// attempted. Specifically, this means that they have a non-null last_error value
-	// in the gitserver_repos table.
-	FailedSync bool
+	// FailedFetch, if true, will filter to only repos that failed to clone or fetch
+	// when last attempted. Specifically, this means that they have a non-null
+	// last_error value in the gitserver_repos table.
+	FailedFetch bool
 
 	*LimitOffset
 }
@@ -719,7 +719,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		// where = append(where, sqlf.Sprintf("gr.clone_status = 'cloned'"))
 		where = append(where, sqlf.Sprintf("(gr.clone_status = 'cloned' OR (gr.clone_status IS NULL AND repo.cloned))"))
 	}
-	if opt.FailedSync {
+	if opt.FailedFetch {
 		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
 	}
 	if opt.NoPrivate {
@@ -764,7 +764,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned || opt.FailedSync {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch {
 		from = append(from, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 

@@ -76,7 +76,7 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User, cloud
 	// Show the number of repos that we could not sync
 	opts = database.ReposListOptions{
 		ExternalServiceIDs: extsvcIDs,
-		FailedSync:         true,
+		FailedFetch:        true,
 	}
 	failedSync, err := database.Repos(db).Count(ctx, opts)
 	if err != nil {
