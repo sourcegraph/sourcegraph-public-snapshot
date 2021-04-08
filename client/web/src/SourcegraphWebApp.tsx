@@ -8,24 +8,32 @@ import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
 import { bufferCount, startWith, switchMap } from 'rxjs/operators'
+
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
+import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
 import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import {
     Controller as ExtensionsController,
     createController as createExtensionsController,
 } from '@sourcegraph/shared/src/extensions/controller'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { REDESIGN_CLASS_NAME, getIsRedesignEnabled } from '@sourcegraph/shared/src/util/useRedesignToggle'
+
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { RouterLinkOrAnchor } from './components/RouterLinkOrAnchor'
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
+import { logCodeInsightsChanges } from './insights/analytics'
+import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
 import { OrgAreaRoute } from './org/area/OrgArea'
@@ -35,7 +43,11 @@ import { fetchHighlightedFileLineRanges } from './repo/backend'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
+import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
+import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
+import { VersionContext } from './schema/site.schema'
+import { resolveVersionContext, parseSearchURL, getAvailableSearchContextSpecOrDefault } from './search'
 import {
     search,
     fetchSavedSearches,
@@ -44,6 +56,9 @@ import {
     fetchAutoDefinedSearchContexts,
     fetchSearchContexts,
 } from './search/backend'
+import { QueryState } from './search/helpers'
+import { aggregateStreamingSearch } from './search/stream'
+import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreference } from './theme'
@@ -53,12 +68,6 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { resolveVersionContext, parseSearchURL, getAvailableSearchContextSpecOrDefault } from './search'
-import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
-import { QueryState } from './search/helpers'
-import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
-import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import { VersionContext } from './schema/site.schema'
 import { globbingEnabledFromSettings } from './util/globbing'
 import {
     SITE_SUBJECT_NO_ADMIN,
@@ -67,13 +76,6 @@ import {
     defaultPatternTypeFromSettings,
     experimentalFeaturesFromSettings,
 } from './util/settings'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
-import { aggregateStreamingSearch } from './search/stream'
-import { logCodeInsightsChanges } from './insights/analytics'
-import { listUserRepositories } from './site-admin/backend'
-import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { REDESIGN_CLASS_NAME, getIsRedesignEnabled } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
