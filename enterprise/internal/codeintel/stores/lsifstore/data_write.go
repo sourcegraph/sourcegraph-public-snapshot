@@ -15,7 +15,7 @@ import (
 )
 
 // CurrentDocumentSchemaVersion is the schema version used for new lsif_data_documents rows.
-const CurrentDocumentSchemaVersion = 2
+const CurrentDocumentSchemaVersion = 3
 
 // CurrentDefinitionsSchemaVersion is the schema version used for new lsif_data_definitions rows.
 const CurrentDefinitionsSchemaVersion = 2
@@ -59,7 +59,16 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 				return err
 			}
 
-			if err := inserter.Insert(ctx, v.Path, data, len(v.Document.Diagnostics)); err != nil {
+			if err := inserter.Insert(
+				ctx,
+				v.Path,
+				data.Ranges,
+				data.HoverResults,
+				data.Monikers,
+				data.PackageInformation,
+				data.Diagnostics,
+				len(v.Document.Diagnostics),
+			); err != nil {
 				return err
 			}
 
@@ -74,7 +83,15 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 		ctx,
 		tx.Handle().DB(),
 		"t_lsif_data_documents",
-		[]string{"path", "data", "num_diagnostics"},
+		[]string{
+			"path",
+			"ranges",
+			"hovers",
+			"monikers",
+			"packages",
+			"diagnostics",
+			"num_diagnostics",
+		},
 		inserter,
 	); err != nil {
 		return err
@@ -91,15 +108,19 @@ const writeDocumentsTemporaryTableQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:WriteDocuments
 CREATE TEMPORARY TABLE t_lsif_data_documents (
 	path text NOT NULL,
-	data bytea NOT NULL,
+	ranges bytea,
+	hovers bytea,
+	monikers bytea,
+	packages bytea,
+	diagnostics bytea,
 	num_diagnostics integer NOT NULL
 ) ON COMMIT DROP
 `
 
 const writeDocumentsInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:WriteDocuments
-INSERT INTO lsif_data_documents (dump_id, schema_version, path, data, num_diagnostics)
-SELECT %s, %s, source.path, source.data, source.num_diagnostics
+INSERT INTO lsif_data_documents (dump_id, schema_version, path, ranges, hovers, monikers, packages, diagnostics, num_diagnostics)
+SELECT %s, %s, source.path, source.ranges, source.hovers, source.monikers, source.packages, source.diagnostics, source.num_diagnostics
 FROM t_lsif_data_documents source
 `
 

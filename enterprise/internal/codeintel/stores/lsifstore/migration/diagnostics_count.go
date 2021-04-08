@@ -10,7 +10,7 @@ type diagnosticsCountMigrator struct {
 }
 
 // NewDiagnosticsCountMigrator creates a new Migrator instance that reads records from
-// the lsif_data_document table with a schema version of 1 and populates that record's
+// the lsif_data_documents table with a schema version of 1 and populates that record's
 // (new) num_diagnostics column. Updated records will have a schema version of 2.
 func NewDiagnosticsCountMigrator(store *lsifstore.Store, batchSize int) oobmigration.Migrator {
 	driver := &diagnosticsCountMigrator{
@@ -41,7 +41,7 @@ func (m *diagnosticsCountMigrator) MigrateRowUp(scanner scanner) (updateSpec, er
 		return updateSpec{}, err
 	}
 
-	data, err := m.serializer.UnmarshalDocumentData(rawData)
+	data, err := m.serializer.UnmarshalLegacyDocumentData(rawData)
 	if err != nil {
 		return updateSpec{}, err
 	}
