@@ -66,7 +66,7 @@ In this way, access to Sourcegraph will still be managed by your identity provid
 
 [Follow these steps to configure authentication with GitHub via OAuth](../auth/index.md#github). 
 
-Once that is configured, follow [these steps](../repo/permissions.md#github) to configure access permissions. Users will log into Sourcegraph using Github OAuth, and permissions will be synced in the background.
+Once that is configured, follow [these steps to configure access permissions](../repo/permissions.md#github). Users will log into Sourcegraph using Github OAuth, and permissions will be synced in the background.
 
 ### Gitlab Enterprise or Cloud Authentication and Authorization
 
