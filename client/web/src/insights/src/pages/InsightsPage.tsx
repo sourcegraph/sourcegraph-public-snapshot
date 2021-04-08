@@ -1,24 +1,33 @@
-import React, { useCallback, useEffect } from 'react'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/out/src/extensions/controller'
-import { InsightsViewGrid, InsightsViewGridProps } from './components/InsightsViewGrid/InsightsViewGrid'
-import { InsightsIcon } from './components'
+import React, { useCallback, useEffect, useMemo, useContext } from 'react'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import PlusIcon from 'mdi-react/PlusIcon'
+import GearIcon from 'mdi-react/GearIcon'
+import { Link } from 'react-router-dom'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { PageHeader } from '../../components/PageHeader'
-import { FeedbackBadge } from '../../components/FeedbackBadge'
-import { Page } from '../../components/Page'
-import { TelemetryProps } from '@sourcegraph/shared/out/src/telemetry/telemetryService'
-import { ViewInsightProviderResult } from './core/backend'
-import { Link } from 'react-router-dom';
-import PlusIcon from 'mdi-react/PlusIcon';
-import GearIcon from 'mdi-react/GearIcon';
 
-interface InsightsPageProps extends ExtensionsControllerProps, Omit<InsightsViewGridProps, 'views'>, TelemetryProps {
-    views: ViewInsightProviderResult[]
-}
+import { PageHeader } from '../../../components/PageHeader'
+import { FeedbackBadge } from '../../../components/FeedbackBadge'
+import { Page } from '../../../components/Page'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { InsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../components'
+import { InsightsApiContext } from '../core/backend/api-provider';
 
-// Main entry point to code insight page
-export const InsightPage: React.FunctionComponent<InsightsPageProps> = props => {
-    const views = props.views ?? [];
+interface InsightsPageProps extends ExtensionsControllerProps, Omit<InsightsViewGridProps, 'views'>, TelemetryProps {}
+
+export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
+    const { getInsightCombinedViews } = useContext(InsightsApiContext);
+
+    const views = useObservable(
+        useMemo(
+            () => getInsightCombinedViews(props.extensionsController?.extHostAPI),
+            [props.extensionsController, getInsightCombinedViews]
+        )
+    )
+
+    useEffect(() => {
+        props.telemetryService.logViewEvent('Insights')
+    }, [props.telemetryService])
 
     const logConfigureClick = useCallback(() => {
         props.telemetryService.log('InsightConfigureClick')
@@ -27,29 +36,6 @@ export const InsightPage: React.FunctionComponent<InsightsPageProps> = props => 
     const logAddMoreClick = useCallback(() => {
         props.telemetryService.log('InsightAddMoreClick')
     }, [props.telemetryService])
-
-    useEffect(() => {
-        props.telemetryService.logViewEvent('Insights')
-    }, [props.telemetryService])
-
-    return (
-        <InsightsPageContent
-            {...props}
-            logConfigureClick={logConfigureClick}
-            logAddMoreClick={logAddMoreClick}
-            views={views}/>
-    );
-}
-
-interface InsightsPageContentProps extends InsightsPageProps {
-    views?: ViewInsightProviderResult[];
-    logConfigureClick?: () => void;
-    logAddMoreClick?: () => void;
-}
-
-export const InsightsPageContent: React.FunctionComponent<InsightsPageContentProps> = props => {
-
-    const { views, logAddMoreClick, logConfigureClick, } = props;
 
     return (
         <div className="w-100">
@@ -84,5 +70,3 @@ export const InsightsPageContent: React.FunctionComponent<InsightsPageContentPro
         </div>
     )
 }
-
-

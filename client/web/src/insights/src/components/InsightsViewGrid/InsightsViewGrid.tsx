@@ -11,7 +11,7 @@ import { Layout as ReactGridLayout, Layouts as ReactGridLayouts, Responsive, Wid
 import { ViewContent, ViewContentProps } from '../../../../views/ViewContent'
 import { ErrorAlert } from '../../../../components/alerts'
 import { ErrorBoundary } from '../../../../components/ErrorBoundary'
-import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../../core/backend'
+import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../../core/backend/types'
 
 // TODO use a method to get width that also triggers when file explorer is closed
 // (WidthProvider only listens to window resize events)
@@ -93,16 +93,16 @@ const getInsightViewIcon = (source: ViewInsightProviderSourceType): MdiReactIcon
 }
 
 export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = props => {
-    // const onResizeOrDragStart: ReactGridLayout.ItemCallback = useCallback(
-    //     (_layout, item) => {
-    //         try {
-    //             props.telemetryService.log('InsightUICustomization', { insightType: item.i.split('.')[0] })
-    //         } catch {
-    //             // noop
-    //         }
-    //     },
-    //     [props.telemetryService]
-    // )
+    const onResizeOrDragStart: ReactGridLayout.ItemCallback = useCallback(
+        (_layout, item) => {
+            try {
+                props.telemetryService.log('InsightUICustomization', { insightType: item.i.split('.')[0] })
+            } catch {
+                // noop
+            }
+        },
+        [props.telemetryService]
+    )
 
     return (
         <div className={classNames(props.className, 'insights-view-grid')}>
@@ -114,6 +114,8 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
                 rowHeight={6 * 16}
                 containerPadding={[0, 0]}
                 margin={[12, 12]}
+                onResizeStart={onResizeOrDragStart}
+                onDragStart={onResizeOrDragStart}
             >
                 {props.views.map(({ id, view, source }) => (
                     <div key={id} className={classNames('card insights-view-grid__item')}>

@@ -7,7 +7,7 @@ import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
 import UserIcon from 'mdi-react/UserIcon'
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
+import React, { useState, useMemo, useCallback, useEffect, useContext } from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { Observable, EMPTY, from } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
@@ -48,8 +48,8 @@ import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphq
 import { getFileDecorations } from '../../backend/features'
 import { FileDecorationsByPath } from '../../../../shared/src/api/extension/extensionHostApi'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import { getCombinedViews } from '../../insights/src/core/backend'
 import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
+import { InsightsApiContext } from '../../insights/src/core/backend/api-provider';
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -260,6 +260,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
             [props.extensionsController]
         )
     )
+
+    const { getCombinedViews } = useContext(InsightsApiContext);
     const views = useObservable(
         useMemo(
             () =>
@@ -284,7 +286,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                           )
                       )
                     : EMPTY,
-            [showCodeInsights, workspaceUri, uri, props.extensionsController]
+            [getCombinedViews, showCodeInsights, workspaceUri, uri, props.extensionsController]
         )
     )
 

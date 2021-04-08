@@ -189,7 +189,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/insights',
         exact: true,
-        render: lazyComponent(() => import('./insights/src/InsightsPage'), 'InsightsPage'),
+        render: lazyComponent(() => import('./insights/src/pages/InsightsPage'), 'InsightsPage'),
         condition: props =>
             !isErrorLike(props.settingsCascade.final) &&
             !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&

@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useCallback, useEffect, useMemo } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo } from 'react'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
@@ -22,7 +22,7 @@ import { Link } from '../../../../shared/src/components/Link'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
-import { InsightsViewGrid } from '../../insights/src/components/InsightsViewGrid/InsightsViewGrid'
+import { InsightsViewGrid } from '../../insights/src/components'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { EMPTY, from } from 'rxjs'
@@ -36,9 +36,9 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { HomePanels } from '../panels/HomePanels'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
-import { getCombinedViews } from '../../insights/src/core/backend'
 import { switchMap } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
+import { InsightsApiContext } from '../../insights/src/core/backend/api-provider';
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
@@ -94,6 +94,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
         !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
         props.settingsCascade.final['insights.displayLocation.homepage'] !== false
 
+    const { getCombinedViews } = useContext(InsightsApiContext);
     const views = useObservable(
         useMemo(
             () =>
@@ -104,7 +105,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                           )
                       )
                     : EMPTY,
-            [showCodeInsights, props.extensionsController]
+            [getCombinedViews, showCodeInsights, props.extensionsController]
         )
     )
     return (
