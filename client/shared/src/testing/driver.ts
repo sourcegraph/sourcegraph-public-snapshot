@@ -44,9 +44,18 @@ interface AdditionalPercyConfig {
 }
 
 const setColorScheme = async (page: Page, scheme: 'dark' | 'light', config?: AdditionalPercyConfig) => {
+    const isAlreadySet = await page.evaluate(scheme => matchMedia(`(prefers-color-scheme: ${scheme})`).matches, scheme)
+
+    if (isAlreadySet) {
+        return
+    }
+
     await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }])
+
     if (config?.waitForSyntaxHighlightingToUpdate) {
-        await page.waitForResponse(response => response.url().includes('.api/graphql?Blob'), { timeout: 5 })
+        await page.waitForResponse(response => response.url().includes('graphql?highlightCode'), {
+            timeout: 5,
+        })
     }
 }
 
@@ -59,21 +68,27 @@ export const percySnapshot = async (
     const percyEnabled = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
 
     if (!percyEnabled) {
-        return Promise.resolve()
+        console.log('Not enabled!')
+        // return Promise.resolve()
     }
 
     // Theme-light
+    console.log('1: Light theme')
     await setColorScheme(page, 'light', additionalConfig)
     await realPercySnapshot(page, `${name} - light theme`, options)
+    console.log('------------- Success 1')
 
     // Theme-light with redesign
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
     await realPercySnapshot(page, `${name} - light theme with redesign enabled`, options)
     await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
+    console.log('------------- Success 2')
 
+    console.log('2: Dark theme')
     // Theme-dark
     await setColorScheme(page, 'dark', additionalConfig)
     await realPercySnapshot(page, `${name} - Dark Theme`, options)
+    console.log('------------- Success 3')
 
     // Theme-dark with redesign
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
