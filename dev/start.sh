@@ -187,6 +187,8 @@ trap 'kill $build_ts_pid; exit' EXIT
 (yarn --silent run build-ts || true) &
 build_ts_pid="$!"
 
+export NODE_ENV=production
+
 # Now launch the services in $PROCFILE
 export PROCFILE=${PROCFILE:-dev/Procfile}
 
