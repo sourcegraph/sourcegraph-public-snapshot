@@ -122,7 +122,7 @@ With any authentication mechanism, you can use our GraphQL API to set permission
 
 ### OpenID Connect authentication
 
-Use this option if accessing using OpenID Connect, such as when logging in through a Google Workspace, or if other auth methods aren’t an option. [See setup instructions here](../auth/index.md#openid-connect). 
+Use OpenID Connect authentication if accessing using OpenID Connect, such as when logging in through a Google Workspace, or if other authentication methods aren’t an option. See [how to set up OpenID Connect authentication](../auth/index.md#openid-connect).
 
 ### HTTP authentication proxy authentication
 
