@@ -87,7 +87,7 @@ type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
 const promptPayload = JSON.stringify({
     header: 'Discard unsaved changes?',
     message: 'Currently synced repositories will be unchanged',
-    btn_ok_text: 'Discard',
+    button_ok_text: 'Discard',
 })
 
 const isLoading = (status: initialFetchingReposState): boolean => {
