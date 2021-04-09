@@ -420,7 +420,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             ),
 
-        getInsightsViews: context => proxySubscribable(callViewProviders(context, state.insightsPageViewProviders)),
+        getInsightsViews: context => proxySubscribable(callViewProvidersSequentially(context, state.insightsPageViewProviders)),
         getHomepageViews: context => proxySubscribable(callViewProviders(context, state.homepageViewProviders)),
         getGlobalPageViews: context => proxySubscribable(callViewProviders(context, state.globalPageViewProviders)),
         getDirectoryViews: context =>
@@ -664,7 +664,12 @@ function callViewProviders<W extends ContributableViewContainer>(
     )
 }
 
-export function callViewProvidersSequentially<W extends ContributableViewContainer>(
+/**
+ * Call all extensions to get view provider results sequentially one by one
+ * When first provider out of three will be resolved we get [data, null, null]
+ * When second provider out of three will be resolved we get [data, data, null]...
+ */
+function callViewProvidersSequentially<W extends ContributableViewContainer>(
     context: ViewContexts[W],
     providers: Observable<readonly RegisteredViewProvider<W>[]>
 ): Observable<ViewProviderResult[]> {
@@ -682,11 +687,11 @@ export function callViewProvidersSequentially<W extends ContributableViewContain
                         map(view => ({ id, view }))
                     )
                 ),
-                scan<ViewProviderResult, ViewProviderResult[]>((accumulator, current) => {
-                    accumulator.push(current);
+                scan<ViewProviderResult, ViewProviderResult[]>((accumulator, current, index) => {
+                    accumulator[index] = current;
 
                     return accumulator;
-                }, [])
+                }, providers.map(provider => ({ id: provider.id, view: undefined })))
             )
         ),
         map(views => views.filter(allOf(isDefined, property('view', isNot(isExactly(null))))))
