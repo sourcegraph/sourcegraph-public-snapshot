@@ -69,7 +69,7 @@ describe('DiffSplitHunk', () => {
     describe('Split Lines Diff', () => {
         beforeEach(() => {
             queries = renderWithProps({
-                hunk: hunk,
+                hunk,
                 decorations: { head: new Map(), base: new Map() },
                 lineNumbers: true,
                 isLightTheme: true,

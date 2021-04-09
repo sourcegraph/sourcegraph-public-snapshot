@@ -193,7 +193,7 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
 
             return elements
         },
-        [decorations.base, decorations.head, isLightTheme, location.hash]
+        [decorations.base, decorations.head, isLightTheme, location.hash, lineNumbers, persistLines]
     )
 
     const diffView = React.useMemo(() => groupHunks(diff), [diff, groupHunks])

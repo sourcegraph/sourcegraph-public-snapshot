@@ -151,7 +151,11 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
             pinningEnabled: true,
         })
         this.subscriptions.add(this.hoverifier)
-        this.state = { ...this.hoverifier.hoverState, diffMode: 'unified' }
+        this.state = {
+            ...this.hoverifier.hoverState,
+            diffMode: (localStorage.getItem('diff-mode-visualizer') as DiffMode | null) || 'unified',
+        }
+
         this.subscriptions.add(
             this.hoverifier.hoverStateUpdates.subscribe(update => {
                 this.setState(update)
@@ -179,9 +183,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.props.telemetryService.logViewEvent('RepositoryCommit')
-        const diffMode = localStorage.getItem('diff-mode-visualizer') as DiffMode | null
-        this.setState({ diffMode: diffMode || 'unified' })
-
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(

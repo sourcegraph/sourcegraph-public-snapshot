@@ -401,7 +401,9 @@ describe('useSplitDiff', () => {
         ]
         const { result } = renderHook(() => useSplitDiff(mockedHunk))
 
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         act(() => {
+            // eslint-disable-next-line no-unused-expressions
             result.current.diff
         })
 
