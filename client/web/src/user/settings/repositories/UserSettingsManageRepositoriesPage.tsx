@@ -388,7 +388,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
             const didRepoSelectionChange = !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
 
-            console.log('didRepoSelectionChange =>', didRepoSelectionChange)
             if (didRepoSelectionChange) {
                 return promptPayload
             }
