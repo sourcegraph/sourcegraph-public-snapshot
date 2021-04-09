@@ -114,6 +114,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
                 userID={props.user.id}
                 context={window.context}
                 routingPrefix={props.user.url + '/settings'}
+                onUserRepositoriesUpdate={props.onUserRepositoriesUpdate}
             />
         ),
         exact: true,
