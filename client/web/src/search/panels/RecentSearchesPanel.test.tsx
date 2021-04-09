@@ -1,6 +1,6 @@
 import React from 'react'
 import { mount } from 'enzyme'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { of } from 'rxjs'
 import { RecentSearchesPanel } from './RecentSearchesPanel'
 

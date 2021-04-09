@@ -1,8 +1,8 @@
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import * as GQL from '../../../shared/src/graphql/schema'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { NavItemWithIconDescriptor, RouteDescriptor } from '../util/contributions'
 import { PatternTypeProps } from '../search'
-import { ThemeProps } from '../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AuthenticatedUser } from '../auth'
 
 /**

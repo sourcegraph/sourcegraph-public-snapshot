@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -151,8 +152,10 @@ func assertRepoResolverHydrated(ctx context.Context, t *testing.T, r *Repository
 func TestRepositoryLabel(t *testing.T) {
 	test := func(name string) string {
 		r := &RepositoryResolver{
-			name: api.RepoName(name),
-			id:   api.RepoID(0),
+			RepoMatch: result.RepoMatch{
+				Name: api.RepoName(name),
+				ID:   api.RepoID(0),
+			},
 		}
 		result, _ := r.Label()
 		return result.HTML()

@@ -12,7 +12,7 @@ interface FeedbackBadgeProps extends BadgeProps {
     className?: string
 }
 
-export const FeedbackBadge: React.FC<FeedbackBadgeProps> = props => {
+export const FeedbackBadge: React.FunctionComponent<FeedbackBadgeProps> = props => {
     const {
         className,
         status,

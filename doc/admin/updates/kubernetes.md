@@ -15,6 +15,14 @@ and any manual migration steps you must perform.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
+## 3.26 -> 3.27
+
+> Warning: ⚠️ Sourcegraph 3.27 now requires **Postgres 12+**.
+
+If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12.6 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied supplied database images.
+
+> Warning: ⚠️ We have updated the default replicas for `sourcegraph-frontend` and `precise-code-intel-worker` to `2`. If you use a custom value, make sure you do not merge the replica change.
+
 ## 3.25 -> 3.26
 
 No manual migration required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your deployment.

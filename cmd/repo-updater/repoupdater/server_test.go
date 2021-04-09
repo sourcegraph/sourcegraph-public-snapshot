@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -344,7 +345,7 @@ func testServerSetRepoEnabled(t *testing.T, store *repos.Store) func(t *testing.
 				s := &Server{Store: store}
 				srv := httptest.NewServer(s.Handler())
 				defer srv.Close()
-				cli := repoupdater.Client{URL: srv.URL}
+				cli := repoupdater.NewClient(srv.URL)
 
 				if tc.err == "" {
 					tc.err = "<nil>"
@@ -480,7 +481,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *repos.Store) func(t *testi
 				s := &Server{Store: tc.store, Scheduler: &fakeScheduler{}}
 				srv := httptest.NewServer(s.Handler())
 				defer srv.Close()
-				cli := repoupdater.Client{URL: srv.URL}
+				cli := repoupdater.NewClient(srv.URL)
 
 				if tc.err == "" {
 					tc.err = "<nil>"
@@ -581,7 +582,7 @@ func testServerRepoExternalServices(t *testing.T, store *repos.Store) func(t *te
 		s := &Server{Store: store}
 		srv := httptest.NewServer(s.Handler())
 		defer srv.Close()
-		cli := repoupdater.Client{URL: srv.URL}
+		cli := repoupdater.NewClient(srv.URL)
 		for _, tc := range testCases {
 			tc := tc
 			t.Run(tc.name, func(t *testing.T) {
@@ -1043,7 +1044,7 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(
 					srv := httptest.NewServer(s.Handler())
 					defer srv.Close()
 
-					cli := repoupdater.Client{URL: srv.URL}
+					cli := repoupdater.NewClient(srv.URL)
 
 					if tc.err == "" {
 						tc.err = "<nil>"
@@ -1199,6 +1200,9 @@ type testSource struct {
 	fn func() error
 }
 
+var _ repos.Source = &testSource{}
+var _ repos.UserSource = &testSource{}
+
 func (t testSource) ListRepos(ctx context.Context, results chan repos.SourceResult) {
 }
 
@@ -1206,7 +1210,11 @@ func (t testSource) ExternalServices() types.ExternalServices {
 	return nil
 }
 
-func (t testSource) ValidateToken(ctx context.Context) error {
+func (t testSource) WithAuthenticator(a auth.Authenticator) (repos.Source, error) {
+	return t, nil
+}
+
+func (t testSource) ValidateAuthenticator(ctx context.Context) error {
 	return t.fn()
 }
 

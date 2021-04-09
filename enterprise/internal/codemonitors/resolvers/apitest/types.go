@@ -35,7 +35,7 @@ type Monitor struct {
 }
 
 type UserOrg struct {
-	Name string `json:"username" json:"name"`
+	Name string `json:"username"`
 }
 
 type PageInfo struct {

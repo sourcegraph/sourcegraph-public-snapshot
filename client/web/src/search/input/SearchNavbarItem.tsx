@@ -1,7 +1,7 @@
 import * as H from 'history'
 import React, { useCallback } from 'react'
-import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
-import { Form } from '../../../../branded/src/components/Form'
+import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { submitSearch, QueryState } from '../helpers'
 import { SearchButton } from './SearchButton'
 import {
@@ -11,9 +11,9 @@ import {
     OnboardingTourProps,
     SearchContextProps,
 } from '..'
-import { ThemeProps } from '../../../../shared/src/theme'
-import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { VersionContextProps } from '../../../../shared/src/search/util'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import { useSearchOnboardingTour } from './SearchOnboardingTour'
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
@@ -27,6 +28,10 @@ func Get(ctx context.Context) (*State, error) {
 		return configuration, nil
 	}
 
+	if err != sql.ErrNoRows {
+		return nil, errors.Wrap(err, "getConfiguration")
+	}
+
 	b := basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
 	err = tryInsertNew(ctx, b)
 	if err != nil {
@@ -45,6 +50,11 @@ func SiteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
 	return alreadyInitialized, err
 }
 
+type queryExecDatabaseHandler interface {
+	QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row
+	Exec(ctx context.Context, query *sqlf.Query) error
+}
+
 // EnsureInitialized ensures the site is marked as having been initialized. If the site was already
 // initialized, it does nothing. It returns whether the site was already initialized prior to the
 // call.
@@ -55,10 +65,7 @@ func SiteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
 // privileges (even if all other users are deleted). This reduces the risk of (1) a site admin
 // accidentally deleting all user accounts and opening up their site to any attacker becoming a site
 // admin and (2) a bug in user account creation code letting attackers create site admin accounts.
-func EnsureInitialized(ctx context.Context, dbh interface {
-	QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row
-	Exec(ctx context.Context, query *sqlf.Query) error
-}) (alreadyInitialized bool, err error) {
+func EnsureInitialized(ctx context.Context, dbh queryExecDatabaseHandler) (alreadyInitialized bool, err error) {
 	if err := tryInsertNew(ctx, dbh); err != nil {
 		return false, err
 	}
@@ -85,9 +92,11 @@ func getConfiguration(ctx context.Context) (*State, error) {
 	return configuration, err
 }
 
-func tryInsertNew(ctx context.Context, dbh interface {
+type execDatabaseHandler interface {
 	Exec(ctx context.Context, query *sqlf.Query) error
-}) error {
+}
+
+func tryInsertNew(ctx context.Context, dbh execDatabaseHandler) error {
 	siteID, err := uuid.NewRandom()
 	if err != nil {
 		return err
@@ -104,14 +113,10 @@ func tryInsertNew(ctx context.Context, dbh interface {
 	err = dbh.Exec(ctx, sqlf.Sprintf(`
 	INSERT INTO global_state(
 		site_id,
-		initialized,
-		mgmt_password_plaintext,
-		mgmt_password_bcrypt
+		initialized
 	) values(
 		%s,
-		EXISTS (SELECT 1 FROM users WHERE deleted_at IS NULL),
-		(SELECT COALESCE((SELECT mgmt_password_plaintext FROM global_state LIMIT 1), '')),
-		(SELECT COALESCE((SELECT mgmt_password_bcrypt FROM global_state LIMIT 1), ''))
+		EXISTS (SELECT 1 FROM users WHERE deleted_at IS NULL)
 	);`, siteID))
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok {

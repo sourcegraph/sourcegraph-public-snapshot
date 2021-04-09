@@ -1021,10 +1021,6 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 	results := zoektFileMatchToSymbolResults(repo, "master", file)
 	var symbols []result.Symbol
 	for _, res := range results {
-		// Check the fields which are not specific to the symbol
-		if got, want := res.Lang, "go"; got != want {
-			t.Fatalf("lang: got %q want %q", got, want)
-		}
 		if got, want := res.BaseURI.URL.String(), "git://foo?master"; got != want {
 			t.Fatalf("baseURI: got %q want %q", got, want)
 		}
@@ -1055,6 +1051,7 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		want[i].Parent = "parent"
 		want[i].ParentKind = "parentkind"
 		want[i].Path = "bar.go"
+		want[i].Language = "go"
 	}
 
 	if diff := cmp.Diff(want, symbols); diff != "" {

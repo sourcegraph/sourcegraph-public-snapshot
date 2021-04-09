@@ -33,10 +33,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
 fi
 
 echo "Building pg_exporter docker image"
-docker build -f "$REPO_ROOT"/docker-images/postgres_exporter/Dockerfile -t ${IMAGE} \
-  --progress=plain \
-  --quiet \
-  "$REPO_ROOT"/docker-images/postgres_exporter/ >/dev/null
+env IMAGE="${IMAGE}" "${REPO_ROOT}/docker-images/postgres_exporter/build.sh"
 
 exec docker run --rm -p9187:9187 ${NET_ARG} --name="$CONTAINER" \
-  -e DATA_SOURCE_NAME="${DATA_SOURCE_NAME}" ${IMAGE}
+  -e DATA_SOURCE_NAME="${DATA_SOURCE_NAME}" "${IMAGE}"

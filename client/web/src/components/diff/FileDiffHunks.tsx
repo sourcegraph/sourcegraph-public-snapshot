@@ -3,19 +3,19 @@ import * as H from 'history'
 import React, { useCallback, useMemo, useState, useEffect } from 'react'
 import { combineLatest, from, NEVER, Observable, of, ReplaySubject, Subscription } from 'rxjs'
 import { filter, first, map, switchMap, tap } from 'rxjs/operators'
-import { DecorationMapByLine, groupDecorationsByLine } from '../../../../shared/src/api/extension/api/decorations'
-import { isDefined, property } from '../../../../shared/src/util/types'
-import { toURIWithPath } from '../../../../shared/src/util/url'
-import { ThemeProps } from '../../../../shared/src/theme'
+import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { isDefined, property } from '@sourcegraph/shared/src/util/types'
+import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { DiffHunk } from './DiffHunk'
 import { DiffSplitHunk } from './DiffSplitHunk'
 import { diffDomFunctions } from '../../repo/compare/dom-functions'
 import { FileDiffFields } from '../../graphql-operations'
-import { ViewerId } from '../../../../shared/src/api/viewerTypes'
+import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ExtensionInfo } from './FileDiffConnection'
-import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
-import { useObservable } from '../../../../shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { StatusBar } from '../../extensions/components/StatusBar'
 
 export interface FileHunksProps extends ThemeProps {
@@ -202,6 +202,7 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                         const { repoName, revision, filePath, commitID } = extensionInfo[hoveredToken.part || 'head']
 
                         // If a hover or go-to-definition was invoked on this part, we know the file path must exist
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                         return { repoName, filePath: filePath!, revision, commitID }
                     },
                 })

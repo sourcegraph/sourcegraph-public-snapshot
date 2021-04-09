@@ -6,9 +6,9 @@ import { PageTitle } from '../../../components/PageTitle'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { ErrorAlert } from '../../../components/alerts'
-import { Link } from '../../../../../shared/src/components/Link'
-import { isDefined, keyExistsIn } from '../../../../../shared/src/util/types'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { isDefined, keyExistsIn } from '@sourcegraph/shared/src/util/types'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { SourcegraphContext } from '../../../jscontext'
@@ -92,8 +92,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         services.length > 0 ? (
             <div className="alert alert-success mb-4" role="alert" key="add-repos">
                 Connected with {services.join(', ')}. Next,{' '}
-                <Link className="text-primary" to={`${routingPrefix}/repositories`}>
-                    <b>add your repositories →</b>
+                <Link
+                    className="alert-link"
+                    style={{ textDecoration: 'underline' }}
+                    to={`${routingPrefix}/repositories/manage`}
+                >
+                    add your repositories →
                 </Link>
             </div>
         ) : null
@@ -220,7 +224,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 </div>
                 <p className="text-muted">
                     Connect with your code hosts. Then,{' '}
-                    <Link className="text-primary" to={`${routingPrefix}/repositories`}>
+                    <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
                         add repositories
                     </Link>{' '}
                     to search with Sourcegraph.

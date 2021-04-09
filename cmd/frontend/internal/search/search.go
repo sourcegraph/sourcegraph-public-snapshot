@@ -197,7 +197,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if repo, ok := result.ToRepository(); ok {
 				display = repo.Limit(display)
 
-				matchesAppend(fromRepository(repo))
+				matchesAppend(fromRepository(repo.RepoMatch))
 			}
 			if commit, ok := result.ToCommitSearchResult(); ok {
 				display = commit.Limit(display)
@@ -436,15 +436,15 @@ func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []streamhttp.
 	}
 }
 
-func fromRepository(repo *graphqlbackend.RepositoryResolver) *streamhttp.EventRepoMatch {
+func fromRepository(rm result.RepoMatch) *streamhttp.EventRepoMatch {
 	var branches []string
-	if rev := repo.Rev(); rev != "" {
+	if rev := rm.Rev; rev != "" {
 		branches = []string{rev}
 	}
 
 	return &streamhttp.EventRepoMatch{
 		Type:       streamhttp.RepoMatchType,
-		Repository: repo.Name(),
+		Repository: string(rm.Name),
 		Branches:   branches,
 	}
 }
@@ -463,7 +463,6 @@ func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) *streamhttp.E
 	}
 	return &streamhttp.EventCommitMatch{
 		Type:    streamhttp.CommitMatchType,
-		Icon:    commit.Icon(),
 		Label:   commit.Label().Text(),
 		URL:     commit.URL(),
 		Detail:  commit.Detail().Text(),

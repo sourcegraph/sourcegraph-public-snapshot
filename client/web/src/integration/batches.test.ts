@@ -1,8 +1,8 @@
 import assert from 'assert'
-import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { subDays, addDays } from 'date-fns'
 import {
     ChangesetCheckState,
@@ -25,7 +25,7 @@ import {
     ChangesetState,
     ExternalServiceKind,
     SharedGraphQlOperations,
-} from '../../../shared/src/graphql-operations'
+} from '@sourcegraph/shared/src/graphql-operations'
 
 const batchChangeListNode: ListBatchChange = {
     id: 'batch123',
@@ -765,7 +765,7 @@ describe('Batches', () => {
                                     credential: isCreated
                                         ? {
                                               id: '123',
-                                              createdAt: new Date().toISOString(),
+                                              isSiteCredential: false,
                                               sshPublicKey: 'ssh-rsa randorandorandorando',
                                           }
                                         : null,
@@ -780,7 +780,7 @@ describe('Batches', () => {
                     return {
                         createBatchChangesCredential: {
                             id: '123',
-                            createdAt: new Date().toISOString(),
+                            isSiteCredential: false,
                             sshPublicKey: 'ssh-rsa randorandorandorando',
                         },
                     }

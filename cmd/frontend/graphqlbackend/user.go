@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -430,7 +431,7 @@ func (r *UserResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaig
 }
 
 func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error) {
-	args.UserID = r.user.ID
+	args.UserID = &r.user.ID
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
@@ -480,9 +481,11 @@ func (r *UserResolver) PublicRepositories(ctx context.Context) ([]*RepositoryRes
 	var out []*RepositoryResolver
 	for _, repo := range repos {
 		out = append(out, &RepositoryResolver{
-			id:   repo.RepoID,
-			name: api.RepoName(repo.RepoURI),
-			db:   r.db,
+			RepoMatch: result.RepoMatch{
+				ID:   repo.RepoID,
+				Name: api.RepoName(repo.RepoURI),
+			},
+			db: r.db,
 			innerRepo: &types.Repo{
 				ID: repo.RepoID,
 			},

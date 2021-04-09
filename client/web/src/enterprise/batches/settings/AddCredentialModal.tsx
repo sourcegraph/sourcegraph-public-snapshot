@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from 'react'
 import Dialog from '@reach/dialog'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Form } from '../../../../../branded/src/components/Form'
-import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
 import { createBatchChangesCredential as _createBatchChangesCredential } from './backend'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
@@ -13,7 +13,7 @@ import { ModalHeader } from './ModalHeader'
 export interface AddCredentialModalProps {
     onCancel: () => void
     afterCreate: () => void
-    userID: Scalars['ID']
+    userID: Scalars['ID'] | null
     externalServiceKind: ExternalServiceKind
     externalServiceURL: string
     requiresSSH: boolean

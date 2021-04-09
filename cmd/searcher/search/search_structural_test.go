@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
@@ -494,6 +495,17 @@ func bar() {
 		}
 		if gotMatchCount != wantMatchCount {
 			t.Fatalf("got match count %d, want %d", gotMatchCount, wantMatchCount)
+		}
+	})
+}
+
+func TestBuildQuery(t *testing.T) {
+	pattern := ":[x~*]"
+	want := "error parsing regexp: missing argument to repetition operator: `*`"
+	t.Run("build query", func(t *testing.T) {
+		_, err := buildQuery(&search.TextPatternInfo{Pattern: pattern}, nil, nil, false)
+		if diff := cmp.Diff(err.Error(), want); diff != "" {
+			t.Error(diff)
 		}
 	})
 }

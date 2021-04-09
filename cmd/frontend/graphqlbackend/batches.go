@@ -177,7 +177,7 @@ type ChangesetEventsConnectionArgs struct {
 type CreateBatchChangesCredentialArgs struct {
 	ExternalServiceKind string
 	ExternalServiceURL  string
-	User                graphql.ID
+	User                *graphql.ID
 	Credential          string
 }
 
@@ -188,13 +188,18 @@ type DeleteBatchChangesCredentialArgs struct {
 type ListBatchChangesCodeHostsArgs struct {
 	First  int32
 	After  *string
-	UserID int32
+	UserID *int32
 }
 
 type ListViewerBatchChangesCodeHostsArgs struct {
 	First                 int32
 	After                 *string
 	OnlyWithoutCredential bool
+}
+
+type DetachChangesetsArgs struct {
+	BatchChange graphql.ID
+	Changesets  []graphql.ID
 }
 
 type BatchChangesResolver interface {
@@ -223,6 +228,7 @@ type BatchChangesResolver interface {
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
+	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (*EmptyResponse, error)
 
 	// Queries
 
@@ -459,6 +465,7 @@ type BatchChangesCredentialResolver interface {
 	ExternalServiceURL() string
 	SSHPublicKey() *string
 	CreatedAt() DateTime
+	IsSiteCredential() bool
 }
 
 type ChangesetCountsArgs struct {
@@ -711,6 +718,10 @@ func (defaultBatchChangesResolver) CreateBatchChangesCredential(ctx context.Cont
 }
 
 func (defaultBatchChangesResolver) DeleteBatchChangesCredential(ctx context.Context, args *DeleteBatchChangesCredentialArgs) (*EmptyResponse, error) {
+	return nil, batchChangesOnlyInEnterprise
+}
+
+func (defaultBatchChangesResolver) DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (*EmptyResponse, error) {
 	return nil, batchChangesOnlyInEnterprise
 }
 

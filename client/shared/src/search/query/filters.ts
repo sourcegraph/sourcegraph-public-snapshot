@@ -188,7 +188,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         suggestions: 'SearchContext',
     },
     [FilterType.count]: {
-        description: 'Number of results to fetch (integer)',
+        description: 'Number of results to fetch (integer) or "all"',
         singular: true,
     },
     [FilterType.file]: {

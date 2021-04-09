@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -241,4 +242,30 @@ func pruneUserCredentials(t *testing.T, db dbutil.DB) {
 			t.Fatal(err)
 		}
 	}
+}
+
+func pruneSiteCredentials(t *testing.T, cstore *store.Store) {
+	t.Helper()
+	creds, _, err := cstore.ListSiteCredentials(context.Background(), store.ListSiteCredentialsOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range creds {
+		if err := cstore.DeleteSiteCredential(context.Background(), c.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func mockRSAKeygen(t *testing.T) {
+	encryption.MockGenerateRSAKey = func() (key *encryption.RSAKey, err error) {
+		return &encryption.RSAKey{
+			PrivateKey: "private",
+			Passphrase: "pass",
+			PublicKey:  "public",
+		}, nil
+	}
+	t.Cleanup(func() {
+		encryption.MockGenerateRSAKey = nil
+	})
 }

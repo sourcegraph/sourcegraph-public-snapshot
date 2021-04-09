@@ -469,6 +469,11 @@ type ReposListOptions struct {
 	// is non-zero. Note that these are not repos owned by this user, just ones they are interested in.
 	IncludeUserPublicRepos bool
 
+	// FailedFetch, if true, will filter to only repos that failed to clone or fetch
+	// when last attempted. Specifically, this means that they have a non-null
+	// last_error value in the gitserver_repos table.
+	FailedFetch bool
+
 	*LimitOffset
 }
 
@@ -714,6 +719,9 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		// where = append(where, sqlf.Sprintf("gr.clone_status = 'cloned'"))
 		where = append(where, sqlf.Sprintf("(gr.clone_status = 'cloned' OR (gr.clone_status IS NULL AND repo.cloned))"))
 	}
+	if opt.FailedFetch {
+		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
+	}
 	if opt.NoPrivate {
 		where = append(where, sqlf.Sprintf("NOT private"))
 	}
@@ -756,7 +764,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch {
 		from = append(from, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 
@@ -801,10 +809,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 }
 
 const userReposQuery = `
-SELECT repo_id as id
-FROM external_service_repos esr
-JOIN external_services es ON esr.external_service_id = es.id
-WHERE es.namespace_user_id = %d AND es.deleted_at IS NULL
+SELECT repo_id as id FROM external_service_repos WHERE user_id = %d
 `
 
 const userPublicReposQuery = `
@@ -1118,13 +1123,16 @@ insert_sources AS (
   INSERT INTO external_service_repos (
     external_service_id,
     repo_id,
+    user_id,
     clone_url
   )
   SELECT
     external_service_id,
     repo_id,
+    es.namespace_user_id,
     clone_url
   FROM sources_list
+  JOIN external_services es ON (es.id = external_service_id)
   ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_unique
   DO
     UPDATE SET clone_url = EXCLUDED.clone_url

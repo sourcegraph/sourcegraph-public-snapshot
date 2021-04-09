@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 import * as H from 'history'
 import { closeBatchChange as _closeBatchChange } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { isErrorLike, asError } from '../../../../../shared/src/util/errors'
+import { isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
 import { Scalars } from '../../../graphql-operations'
 
@@ -73,16 +73,19 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
                                     Also close all {totalCount} open changesets on code hosts.
                                 </label>
                             </div>
-                            {!viewerCanAdminister && (
-                                <p className="text-warning">
-                                    You don't have permission to close this batch change. See{' '}
-                                    <a href="https://docs.sourcegraph.com/batch_changes/explanations/permissions_in_batch_changes">
-                                        Permissions in batch changes
-                                    </a>{' '}
-                                    for more information about the batch changes permission model.
-                                </p>
-                            )}
                         </>
+                    )}
+                    {!viewerCanAdminister && (
+                        <div className="alert alert-warning">
+                            You don't have permission to close this batch change. See{' '}
+                            <a
+                                className="alert-link"
+                                href="https://docs.sourcegraph.com/batch_changes/explanations/permissions_in_batch_changes"
+                            >
+                                Permissions in batch changes
+                            </a>{' '}
+                            for more information about the batch changes permission model.
+                        </div>
                     )}
                     <div className="d-flex justify-content-end">
                         <button

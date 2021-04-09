@@ -36,7 +36,12 @@ add('Overview', () => (
                                 requiresSSH: false,
                             },
                             {
-                                credential: null,
+                                credential: {
+                                    id: '123',
+                                    isSiteCredential: true,
+                                    sshPublicKey:
+                                        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                                },
                                 externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
                                 externalServiceURL: 'https://bitbucket.sgdev.org/',
                                 requiresSSH: true,
@@ -66,7 +71,7 @@ add('Config added', () => (
                             {
                                 credential: {
                                     id: '123',
-                                    createdAt: new Date().toISOString(),
+                                    isSiteCredential: false,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                 },
@@ -77,7 +82,7 @@ add('Config added', () => (
                             {
                                 credential: {
                                     id: '123',
-                                    createdAt: new Date().toISOString(),
+                                    isSiteCredential: false,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                 },
@@ -88,7 +93,7 @@ add('Config added', () => (
                             {
                                 credential: {
                                     id: '123',
-                                    createdAt: new Date().toISOString(),
+                                    isSiteCredential: false,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                 },

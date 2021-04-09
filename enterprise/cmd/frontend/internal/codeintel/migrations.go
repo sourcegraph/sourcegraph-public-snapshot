@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore/migration"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -13,7 +13,10 @@ import (
 // the current version of Sourcegraph.
 func registerMigrations(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
 	migrators := map[int]oobmigration.Migrator{
-		lsifstore.DiagnosticsCountMigrationID: lsifstore.NewDiagnosticsCountMigrator(services.lsifStore),
+		migration.DiagnosticsCountMigrationID:    migration.NewDiagnosticsCountMigrator(services.lsifStore, config.DiagnosticsCountMigrationBatchSize),
+		migration.DefinitionsCountMigrationID:    migration.NewLocationsCountMigrator(services.lsifStore, "lsif_data_definitions", config.DefinitionsCountMigrationBatchSize),
+		migration.ReferencesCountMigrationID:     migration.NewLocationsCountMigrator(services.lsifStore, "lsif_data_references", config.ReferencesCountMigrationBatchSize),
+		migration.DocumentColumnSplitMigrationID: migration.NewDocumentColumnSplitMigrator(services.lsifStore, config.DocumentColumnSplitMigrationBatchSize),
 	}
 
 	for id, migrator := range migrators {

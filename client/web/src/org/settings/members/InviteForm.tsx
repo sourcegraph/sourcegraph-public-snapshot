@@ -4,16 +4,16 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import EmailOpenOutlineIcon from 'mdi-react/EmailOpenOutlineIcon'
 import React, { useCallback, useState } from 'react'
 import { map } from 'rxjs/operators'
-import { gql } from '../../../../../shared/src/graphql/graphql'
-import { asError, createAggregateError, isErrorLike } from '../../../../../shared/src/util/errors'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { requestGraphQL } from '../../../backend/graphql'
 import { CopyableText } from '../../../components/CopyableText'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
-import { Form } from '../../../../../branded/src/components/Form'
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { ErrorAlert } from '../../../components/alerts'
 import { AuthenticatedUser } from '../../../auth'
-import { Scalars } from '../../../../../shared/src/graphql-operations'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import {
     InviteUserToOrganizationResult,
     InviteUserToOrganizationVariables,
@@ -22,7 +22,7 @@ import {
     InviteUserToOrganizationFields,
 } from '../../../graphql-operations'
 import classNames from 'classnames'
-import { Link } from '../../../../../shared/src/components/Link'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 
 const emailInvitesEnabled = window.context.emailEnabled
 

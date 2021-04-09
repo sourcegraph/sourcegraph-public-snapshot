@@ -4,11 +4,11 @@ import isAbsoluteUrl from 'is-absolute-url'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
-} from '../../../../shared/src/api/extension/api/decorations'
-import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
-import { ThemeProps } from '../../../../shared/src/theme'
+} from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-import { isDefined, property } from '../../../../shared/src/util/types'
+import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import { ReplaySubject } from 'rxjs'
 
 export interface LineDecoratorProps extends ThemeProps {

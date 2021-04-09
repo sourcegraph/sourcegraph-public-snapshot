@@ -1,16 +1,16 @@
 # Table "public.access_tokens"
 ```
-     Column      |           Type           |                         Modifiers                          
------------------+--------------------------+------------------------------------------------------------
- id              | bigint                   | not null default nextval('access_tokens_id_seq'::regclass)
- subject_user_id | integer                  | not null
- value_sha256    | bytea                    | not null
- note            | text                     | not null
- created_at      | timestamp with time zone | not null default now()
- last_used_at    | timestamp with time zone | 
- deleted_at      | timestamp with time zone | 
- creator_user_id | integer                  | not null
- scopes          | text[]                   | not null
+     Column      |           Type           | Collation | Nullable |                  Default                  
+-----------------+--------------------------+-----------+----------+-------------------------------------------
+ id              | bigint                   |           | not null | nextval('access_tokens_id_seq'::regclass)
+ subject_user_id | integer                  |           | not null | 
+ value_sha256    | bytea                    |           | not null | 
+ note            | text                     |           | not null | 
+ created_at      | timestamp with time zone |           | not null | now()
+ last_used_at    | timestamp with time zone |           |          | 
+ deleted_at      | timestamp with time zone |           |          | 
+ creator_user_id | integer                  |           | not null | 
+ scopes          | text[]                   |           | not null | 
 Indexes:
     "access_tokens_pkey" PRIMARY KEY, btree (id)
     "access_tokens_value_sha256_key" UNIQUE CONSTRAINT, btree (value_sha256)
@@ -23,20 +23,20 @@ Foreign-key constraints:
 
 # Table "public.batch_changes"
 ```
-       Column       |           Type           |                         Modifiers                          
---------------------+--------------------------+------------------------------------------------------------
- id                 | bigint                   | not null default nextval('batch_changes_id_seq'::regclass)
- name               | text                     | not null
- description        | text                     | 
- initial_applier_id | integer                  | 
- namespace_user_id  | integer                  | 
- namespace_org_id   | integer                  | 
- created_at         | timestamp with time zone | not null default now()
- updated_at         | timestamp with time zone | not null default now()
- closed_at          | timestamp with time zone | 
- batch_spec_id      | bigint                   | not null
- last_applier_id    | bigint                   | 
- last_applied_at    | timestamp with time zone | not null
+       Column       |           Type           | Collation | Nullable |                  Default                  
+--------------------+--------------------------+-----------+----------+-------------------------------------------
+ id                 | bigint                   |           | not null | nextval('batch_changes_id_seq'::regclass)
+ name               | text                     |           | not null | 
+ description        | text                     |           |          | 
+ initial_applier_id | integer                  |           |          | 
+ namespace_user_id  | integer                  |           |          | 
+ namespace_org_id   | integer                  |           |          | 
+ created_at         | timestamp with time zone |           | not null | now()
+ updated_at         | timestamp with time zone |           | not null | now()
+ closed_at          | timestamp with time zone |           |          | 
+ batch_spec_id      | bigint                   |           | not null | 
+ last_applier_id    | bigint                   |           |          | 
+ last_applied_at    | timestamp with time zone |           | not null | 
 Indexes:
     "batch_changes_pkey" PRIMARY KEY, btree (id)
     "batch_changes_namespace_org_id" btree (namespace_org_id)
@@ -53,23 +53,39 @@ Foreign-key constraints:
 Referenced by:
     TABLE "changesets" CONSTRAINT "changesets_owned_by_batch_spec_id_fkey" FOREIGN KEY (owned_by_batch_change_id) REFERENCES batch_changes(id) ON DELETE SET NULL DEFERRABLE
 Triggers:
-    trig_delete_batch_change_reference_on_changesets AFTER DELETE ON batch_changes FOR EACH ROW EXECUTE PROCEDURE delete_batch_change_reference_on_changesets()
+    trig_delete_batch_change_reference_on_changesets AFTER DELETE ON batch_changes FOR EACH ROW EXECUTE FUNCTION delete_batch_change_reference_on_changesets()
+
+```
+
+# Table "public.batch_changes_site_credentials"
+```
+        Column         |           Type           | Collation | Nullable |                          Default                           
+-----------------------+--------------------------+-----------+----------+------------------------------------------------------------
+ id                    | bigint                   |           | not null | nextval('batch_changes_site_credentials_id_seq'::regclass)
+ external_service_type | text                     |           | not null | 
+ external_service_id   | text                     |           | not null | 
+ credential            | text                     |           | not null | 
+ created_at            | timestamp with time zone |           | not null | now()
+ updated_at            | timestamp with time zone |           | not null | now()
+Indexes:
+    "batch_changes_site_credentials_pkey" PRIMARY KEY, btree (id)
+    "batch_changes_site_credentials_unique" UNIQUE, btree (external_service_type, external_service_id)
 
 ```
 
 # Table "public.batch_specs"
 ```
-      Column       |           Type           |                        Modifiers                         
--------------------+--------------------------+----------------------------------------------------------
- id                | bigint                   | not null default nextval('batch_specs_id_seq'::regclass)
- rand_id           | text                     | not null
- raw_spec          | text                     | not null
- spec              | jsonb                    | not null default '{}'::jsonb
- namespace_user_id | integer                  | 
- namespace_org_id  | integer                  | 
- user_id           | integer                  | 
- created_at        | timestamp with time zone | not null default now()
- updated_at        | timestamp with time zone | not null default now()
+      Column       |           Type           | Collation | Nullable |                 Default                 
+-------------------+--------------------------+-----------+----------+-----------------------------------------
+ id                | bigint                   |           | not null | nextval('batch_specs_id_seq'::regclass)
+ rand_id           | text                     |           | not null | 
+ raw_spec          | text                     |           | not null | 
+ spec              | jsonb                    |           | not null | '{}'::jsonb
+ namespace_user_id | integer                  |           |          | 
+ namespace_org_id  | integer                  |           |          | 
+ user_id           | integer                  |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
     "batch_specs_rand_id" btree (rand_id)
@@ -85,15 +101,15 @@ Referenced by:
 
 # Table "public.changeset_events"
 ```
-    Column    |           Type           |                           Modifiers                           
---------------+--------------------------+---------------------------------------------------------------
- id           | bigint                   | not null default nextval('changeset_events_id_seq'::regclass)
- changeset_id | bigint                   | not null
- kind         | text                     | not null
- key          | text                     | not null
- created_at   | timestamp with time zone | not null default now()
- metadata     | jsonb                    | not null default '{}'::jsonb
- updated_at   | timestamp with time zone | not null default now()
+    Column    |           Type           | Collation | Nullable |                   Default                    
+--------------+--------------------------+-----------+----------+----------------------------------------------
+ id           | bigint                   |           | not null | nextval('changeset_events_id_seq'::regclass)
+ changeset_id | bigint                   |           | not null | 
+ kind         | text                     |           | not null | 
+ key          | text                     |           | not null | 
+ created_at   | timestamp with time zone |           | not null | now()
+ metadata     | jsonb                    |           | not null | '{}'::jsonb
+ updated_at   | timestamp with time zone |           | not null | now()
 Indexes:
     "changeset_events_pkey" PRIMARY KEY, btree (id)
     "changeset_events_changeset_id_kind_key_unique" UNIQUE CONSTRAINT, btree (changeset_id, kind, key)
@@ -108,23 +124,23 @@ Foreign-key constraints:
 
 # Table "public.changeset_specs"
 ```
-      Column       |           Type           |                          Modifiers                           
--------------------+--------------------------+--------------------------------------------------------------
- id                | bigint                   | not null default nextval('changeset_specs_id_seq'::regclass)
- rand_id           | text                     | not null
- raw_spec          | text                     | not null
- spec              | jsonb                    | not null default '{}'::jsonb
- batch_spec_id     | bigint                   | 
- repo_id           | integer                  | not null
- user_id           | integer                  | 
- diff_stat_added   | integer                  | 
- diff_stat_changed | integer                  | 
- diff_stat_deleted | integer                  | 
- created_at        | timestamp with time zone | not null default now()
- updated_at        | timestamp with time zone | not null default now()
- head_ref          | text                     | 
- title             | text                     | 
- external_id       | text                     | 
+      Column       |           Type           | Collation | Nullable |                   Default                   
+-------------------+--------------------------+-----------+----------+---------------------------------------------
+ id                | bigint                   |           | not null | nextval('changeset_specs_id_seq'::regclass)
+ rand_id           | text                     |           | not null | 
+ raw_spec          | text                     |           | not null | 
+ spec              | jsonb                    |           | not null | '{}'::jsonb
+ batch_spec_id     | bigint                   |           |          | 
+ repo_id           | integer                  |           | not null | 
+ user_id           | integer                  |           |          | 
+ diff_stat_added   | integer                  |           |          | 
+ diff_stat_changed | integer                  |           |          | 
+ diff_stat_deleted | integer                  |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ head_ref          | text                     |           |          | 
+ title             | text                     |           |          | 
+ external_id       | text                     |           |          | 
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
     "changeset_specs_external_id" btree (external_id)
@@ -143,42 +159,42 @@ Referenced by:
 
 # Table "public.changesets"
 ```
-          Column          |           Type           |                        Modifiers                        
---------------------------+--------------------------+---------------------------------------------------------
- id                       | bigint                   | not null default nextval('changesets_id_seq'::regclass)
- batch_change_ids         | jsonb                    | not null default '{}'::jsonb
- repo_id                  | integer                  | not null
- created_at               | timestamp with time zone | not null default now()
- updated_at               | timestamp with time zone | not null default now()
- metadata                 | jsonb                    | default '{}'::jsonb
- external_id              | text                     | 
- external_service_type    | text                     | not null
- external_deleted_at      | timestamp with time zone | 
- external_branch          | text                     | 
- external_updated_at      | timestamp with time zone | 
- external_state           | text                     | 
- external_review_state    | text                     | 
- external_check_state     | text                     | 
- diff_stat_added          | integer                  | 
- diff_stat_changed        | integer                  | 
- diff_stat_deleted        | integer                  | 
- sync_state               | jsonb                    | not null default '{}'::jsonb
- current_spec_id          | bigint                   | 
- previous_spec_id         | bigint                   | 
- publication_state        | text                     | default 'UNPUBLISHED'::text
- owned_by_batch_change_id | bigint                   | 
- reconciler_state         | text                     | default 'queued'::text
- failure_message          | text                     | 
- started_at               | timestamp with time zone | 
- finished_at              | timestamp with time zone | 
- process_after            | timestamp with time zone | 
- num_resets               | integer                  | not null default 0
- closing                  | boolean                  | not null default false
- num_failures             | integer                  | not null default 0
- log_contents             | text                     | 
- execution_logs           | json[]                   | 
- syncer_error             | text                     | 
- external_title           | text                     | 
+          Column          |           Type           | Collation | Nullable |                Default                 
+--------------------------+--------------------------+-----------+----------+----------------------------------------
+ id                       | bigint                   |           | not null | nextval('changesets_id_seq'::regclass)
+ batch_change_ids         | jsonb                    |           | not null | '{}'::jsonb
+ repo_id                  | integer                  |           | not null | 
+ created_at               | timestamp with time zone |           | not null | now()
+ updated_at               | timestamp with time zone |           | not null | now()
+ metadata                 | jsonb                    |           |          | '{}'::jsonb
+ external_id              | text                     |           |          | 
+ external_service_type    | text                     |           | not null | 
+ external_deleted_at      | timestamp with time zone |           |          | 
+ external_branch          | text                     |           |          | 
+ external_updated_at      | timestamp with time zone |           |          | 
+ external_state           | text                     |           |          | 
+ external_review_state    | text                     |           |          | 
+ external_check_state     | text                     |           |          | 
+ diff_stat_added          | integer                  |           |          | 
+ diff_stat_changed        | integer                  |           |          | 
+ diff_stat_deleted        | integer                  |           |          | 
+ sync_state               | jsonb                    |           | not null | '{}'::jsonb
+ current_spec_id          | bigint                   |           |          | 
+ previous_spec_id         | bigint                   |           |          | 
+ publication_state        | text                     |           |          | 'UNPUBLISHED'::text
+ owned_by_batch_change_id | bigint                   |           |          | 
+ reconciler_state         | text                     |           |          | 'queued'::text
+ failure_message          | text                     |           |          | 
+ started_at               | timestamp with time zone |           |          | 
+ finished_at              | timestamp with time zone |           |          | 
+ process_after            | timestamp with time zone |           |          | 
+ num_resets               | integer                  |           | not null | 0
+ closing                  | boolean                  |           | not null | false
+ num_failures             | integer                  |           | not null | 0
+ log_contents             | text                     |           |          | 
+ execution_logs           | json[]                   |           |          | 
+ syncer_error             | text                     |           |          | 
+ external_title           | text                     |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -207,19 +223,19 @@ Referenced by:
 
 # Table "public.cm_action_jobs"
 ```
-     Column      |           Type           |                          Modifiers                          
------------------+--------------------------+-------------------------------------------------------------
- id              | integer                  | not null default nextval('cm_action_jobs_id_seq'::regclass)
- email           | bigint                   | not null
- state           | text                     | default 'queued'::text
- failure_message | text                     | 
- started_at      | timestamp with time zone | 
- finished_at     | timestamp with time zone | 
- process_after   | timestamp with time zone | 
- num_resets      | integer                  | not null default 0
- num_failures    | integer                  | not null default 0
- log_contents    | text                     | 
- trigger_event   | integer                  | 
+     Column      |           Type           | Collation | Nullable |                  Default                   
+-----------------+--------------------------+-----------+----------+--------------------------------------------
+ id              | integer                  |           | not null | nextval('cm_action_jobs_id_seq'::regclass)
+ email           | bigint                   |           | not null | 
+ state           | text                     |           |          | 'queued'::text
+ failure_message | text                     |           |          | 
+ started_at      | timestamp with time zone |           |          | 
+ finished_at     | timestamp with time zone |           |          | 
+ process_after   | timestamp with time zone |           |          | 
+ num_resets      | integer                  |           | not null | 0
+ num_failures    | integer                  |           | not null | 0
+ log_contents    | text                     |           |          | 
+ trigger_event   | integer                  |           |          | 
 Indexes:
     "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -230,17 +246,17 @@ Foreign-key constraints:
 
 # Table "public.cm_emails"
 ```
-   Column   |           Type           |                       Modifiers                        
-------------+--------------------------+--------------------------------------------------------
- id         | bigint                   | not null default nextval('cm_emails_id_seq'::regclass)
- monitor    | bigint                   | not null
- enabled    | boolean                  | not null
- priority   | cm_email_priority        | not null
- header     | text                     | not null
- created_by | integer                  | not null
- created_at | timestamp with time zone | not null default now()
- changed_by | integer                  | not null
- changed_at | timestamp with time zone | not null default now()
+   Column   |           Type           | Collation | Nullable |                Default                
+------------+--------------------------+-----------+----------+---------------------------------------
+ id         | bigint                   |           | not null | nextval('cm_emails_id_seq'::regclass)
+ monitor    | bigint                   |           | not null | 
+ enabled    | boolean                  |           | not null | 
+ priority   | cm_email_priority        |           | not null | 
+ header     | text                     |           | not null | 
+ created_by | integer                  |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+ changed_by | integer                  |           | not null | 
+ changed_at | timestamp with time zone |           | not null | now()
 Indexes:
     "cm_emails_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -255,17 +271,17 @@ Referenced by:
 
 # Table "public.cm_monitors"
 ```
-      Column       |           Type           |                        Modifiers                         
--------------------+--------------------------+----------------------------------------------------------
- id                | bigint                   | not null default nextval('cm_monitors_id_seq'::regclass)
- created_by        | integer                  | not null
- created_at        | timestamp with time zone | not null default now()
- description       | text                     | not null
- changed_at        | timestamp with time zone | not null default now()
- changed_by        | integer                  | not null
- enabled           | boolean                  | not null default true
- namespace_user_id | integer                  | 
- namespace_org_id  | integer                  | 
+      Column       |           Type           | Collation | Nullable |                 Default                 
+-------------------+--------------------------+-----------+----------+-----------------------------------------
+ id                | bigint                   |           | not null | nextval('cm_monitors_id_seq'::regclass)
+ created_by        | integer                  |           | not null | 
+ created_at        | timestamp with time zone |           | not null | now()
+ description       | text                     |           | not null | 
+ changed_at        | timestamp with time zone |           | not null | now()
+ changed_by        | integer                  |           | not null | 
+ enabled           | boolean                  |           | not null | true
+ namespace_user_id | integer                  |           |          | 
+ namespace_org_id  | integer                  |           |          | 
 Indexes:
     "cm_monitors_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -281,17 +297,17 @@ Referenced by:
 
 # Table "public.cm_queries"
 ```
-    Column     |           Type           |                        Modifiers                        
----------------+--------------------------+---------------------------------------------------------
- id            | bigint                   | not null default nextval('cm_queries_id_seq'::regclass)
- monitor       | bigint                   | not null
- query         | text                     | not null
- created_by    | integer                  | not null
- created_at    | timestamp with time zone | not null default now()
- changed_by    | integer                  | not null
- changed_at    | timestamp with time zone | not null default now()
- next_run      | timestamp with time zone | default now()
- latest_result | timestamp with time zone | 
+    Column     |           Type           | Collation | Nullable |                Default                 
+---------------+--------------------------+-----------+----------+----------------------------------------
+ id            | bigint                   |           | not null | nextval('cm_queries_id_seq'::regclass)
+ monitor       | bigint                   |           | not null | 
+ query         | text                     |           | not null | 
+ created_by    | integer                  |           | not null | 
+ created_at    | timestamp with time zone |           | not null | now()
+ changed_by    | integer                  |           | not null | 
+ changed_at    | timestamp with time zone |           | not null | now()
+ next_run      | timestamp with time zone |           |          | now()
+ latest_result | timestamp with time zone |           |          | 
 Indexes:
     "cm_queries_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -305,12 +321,12 @@ Referenced by:
 
 # Table "public.cm_recipients"
 ```
-      Column       |  Type   |                         Modifiers                          
--------------------+---------+------------------------------------------------------------
- id                | bigint  | not null default nextval('cm_recipients_id_seq'::regclass)
- email             | bigint  | not null
- namespace_user_id | integer | 
- namespace_org_id  | integer | 
+      Column       |  Type   | Collation | Nullable |                  Default                  
+-------------------+---------+-----------+----------+-------------------------------------------
+ id                | bigint  |           | not null | nextval('cm_recipients_id_seq'::regclass)
+ email             | bigint  |           | not null | 
+ namespace_user_id | integer |           |          | 
+ namespace_org_id  | integer |           |          | 
 Indexes:
     "cm_recipients_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -322,21 +338,21 @@ Foreign-key constraints:
 
 # Table "public.cm_trigger_jobs"
 ```
-     Column      |           Type           |                          Modifiers                           
------------------+--------------------------+--------------------------------------------------------------
- id              | integer                  | not null default nextval('cm_trigger_jobs_id_seq'::regclass)
- query           | bigint                   | not null
- state           | text                     | default 'queued'::text
- failure_message | text                     | 
- started_at      | timestamp with time zone | 
- finished_at     | timestamp with time zone | 
- process_after   | timestamp with time zone | 
- num_resets      | integer                  | not null default 0
- num_failures    | integer                  | not null default 0
- log_contents    | text                     | 
- query_string    | text                     | 
- results         | boolean                  | 
- num_results     | integer                  | 
+     Column      |           Type           | Collation | Nullable |                   Default                   
+-----------------+--------------------------+-----------+----------+---------------------------------------------
+ id              | integer                  |           | not null | nextval('cm_trigger_jobs_id_seq'::regclass)
+ query           | bigint                   |           | not null | 
+ state           | text                     |           |          | 'queued'::text
+ failure_message | text                     |           |          | 
+ started_at      | timestamp with time zone |           |          | 
+ finished_at     | timestamp with time zone |           |          | 
+ process_after   | timestamp with time zone |           |          | 
+ num_resets      | integer                  |           | not null | 0
+ num_failures    | integer                  |           | not null | 0
+ log_contents    | text                     |           |          | 
+ query_string    | text                     |           |          | 
+ results         | boolean                  |           |          | 
+ num_results     | integer                  |           |          | 
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -348,13 +364,13 @@ Referenced by:
 
 # Table "public.critical_and_site_config"
 ```
-   Column   |           Type           |                               Modifiers                               
-------------+--------------------------+-----------------------------------------------------------------------
- id         | integer                  | not null default nextval('critical_and_site_config_id_seq'::regclass)
- type       | critical_or_site         | not null
- contents   | text                     | not null
- created_at | timestamp with time zone | not null default now()
- updated_at | timestamp with time zone | not null default now()
+   Column   |           Type           | Collation | Nullable |                       Default                        
+------------+--------------------------+-----------+----------+------------------------------------------------------
+ id         | integer                  |           | not null | nextval('critical_and_site_config_id_seq'::regclass)
+ type       | critical_or_site         |           | not null | 
+ contents   | text                     |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+ updated_at | timestamp with time zone |           | not null | now()
 Indexes:
     "critical_and_site_config_pkey" PRIMARY KEY, btree (id)
     "critical_and_site_config_unique" UNIQUE, btree (id, type)
@@ -363,9 +379,9 @@ Indexes:
 
 # Table "public.default_repos"
 ```
- Column  |  Type   | Modifiers 
----------+---------+-----------
- repo_id | integer | not null
+ Column  |  Type   | Collation | Nullable | Default 
+---------+---------+-----------+----------+---------
+ repo_id | integer |           | not null | 
 Indexes:
     "default_repos_pkey" PRIMARY KEY, btree (repo_id)
 Foreign-key constraints:
@@ -375,16 +391,16 @@ Foreign-key constraints:
 
 # Table "public.discussion_comments"
 ```
-     Column     |           Type           |                            Modifiers                             
-----------------+--------------------------+------------------------------------------------------------------
- id             | bigint                   | not null default nextval('discussion_comments_id_seq'::regclass)
- thread_id      | bigint                   | not null
- author_user_id | integer                  | not null
- contents       | text                     | not null
- created_at     | timestamp with time zone | not null default now()
- updated_at     | timestamp with time zone | not null default now()
- deleted_at     | timestamp with time zone | 
- reports        | text[]                   | not null default '{}'::text[]
+     Column     |           Type           | Collation | Nullable |                     Default                     
+----------------+--------------------------+-----------+----------+-------------------------------------------------
+ id             | bigint                   |           | not null | nextval('discussion_comments_id_seq'::regclass)
+ thread_id      | bigint                   |           | not null | 
+ author_user_id | integer                  |           | not null | 
+ contents       | text                     |           | not null | 
+ created_at     | timestamp with time zone |           | not null | now()
+ updated_at     | timestamp with time zone |           | not null | now()
+ deleted_at     | timestamp with time zone |           |          | 
+ reports        | text[]                   |           | not null | '{}'::text[]
 Indexes:
     "discussion_comments_pkey" PRIMARY KEY, btree (id)
     "discussion_comments_author_user_id_idx" btree (author_user_id)
@@ -398,12 +414,12 @@ Foreign-key constraints:
 
 # Table "public.discussion_mail_reply_tokens"
 ```
-   Column   |           Type           | Modifiers 
-------------+--------------------------+-----------
- token      | text                     | not null
- user_id    | integer                  | not null
- thread_id  | bigint                   | not null
- deleted_at | timestamp with time zone | 
+   Column   |           Type           | Collation | Nullable | Default 
+------------+--------------------------+-----------+----------+---------
+ token      | text                     |           | not null | 
+ user_id    | integer                  |           | not null | 
+ thread_id  | bigint                   |           | not null | 
+ deleted_at | timestamp with time zone |           |          | 
 Indexes:
     "discussion_mail_reply_tokens_pkey" PRIMARY KEY, btree (token)
     "discussion_mail_reply_tokens_user_id_thread_id_idx" btree (user_id, thread_id)
@@ -415,16 +431,16 @@ Foreign-key constraints:
 
 # Table "public.discussion_threads"
 ```
-     Column     |           Type           |                            Modifiers                            
-----------------+--------------------------+-----------------------------------------------------------------
- id             | bigint                   | not null default nextval('discussion_threads_id_seq'::regclass)
- author_user_id | integer                  | not null
- title          | text                     | 
- target_repo_id | bigint                   | 
- created_at     | timestamp with time zone | not null default now()
- archived_at    | timestamp with time zone | 
- updated_at     | timestamp with time zone | not null default now()
- deleted_at     | timestamp with time zone | 
+     Column     |           Type           | Collation | Nullable |                    Default                     
+----------------+--------------------------+-----------+----------+------------------------------------------------
+ id             | bigint                   |           | not null | nextval('discussion_threads_id_seq'::regclass)
+ author_user_id | integer                  |           | not null | 
+ title          | text                     |           |          | 
+ target_repo_id | bigint                   |           |          | 
+ created_at     | timestamp with time zone |           | not null | now()
+ archived_at    | timestamp with time zone |           |          | 
+ updated_at     | timestamp with time zone |           | not null | now()
+ deleted_at     | timestamp with time zone |           |          | 
 Indexes:
     "discussion_threads_pkey" PRIMARY KEY, btree (id)
     "discussion_threads_author_user_id_idx" btree (author_user_id)
@@ -440,21 +456,21 @@ Referenced by:
 
 # Table "public.discussion_threads_target_repo"
 ```
-     Column      |  Type   |                                  Modifiers                                  
------------------+---------+-----------------------------------------------------------------------------
- id              | bigint  | not null default nextval('discussion_threads_target_repo_id_seq'::regclass)
- thread_id       | bigint  | not null
- repo_id         | integer | not null
- path            | text    | 
- branch          | text    | 
- revision        | text    | 
- start_line      | integer | 
- end_line        | integer | 
- start_character | integer | 
- end_character   | integer | 
- lines_before    | text    | 
- lines           | text    | 
- lines_after     | text    | 
+     Column      |  Type   | Collation | Nullable |                          Default                           
+-----------------+---------+-----------+----------+------------------------------------------------------------
+ id              | bigint  |           | not null | nextval('discussion_threads_target_repo_id_seq'::regclass)
+ thread_id       | bigint  |           | not null | 
+ repo_id         | integer |           | not null | 
+ path            | text    |           |          | 
+ branch          | text    |           |          | 
+ revision        | text    |           |          | 
+ start_line      | integer |           |          | 
+ end_line        | integer |           |          | 
+ start_character | integer |           |          | 
+ end_character   | integer |           |          | 
+ lines_before    | text    |           |          | 
+ lines           | text    |           |          | 
+ lines_after     | text    |           |          | 
 Indexes:
     "discussion_threads_target_repo_pkey" PRIMARY KEY, btree (id)
     "discussion_threads_target_repo_repo_id_path_idx" btree (repo_id, path)
@@ -468,17 +484,17 @@ Referenced by:
 
 # Table "public.event_logs"
 ```
-      Column       |           Type           |                        Modifiers                        
--------------------+--------------------------+---------------------------------------------------------
- id                | bigint                   | not null default nextval('event_logs_id_seq'::regclass)
- name              | text                     | not null
- url               | text                     | not null
- user_id           | integer                  | not null
- anonymous_user_id | text                     | not null
- source            | text                     | not null
- argument          | jsonb                    | not null
- version           | text                     | not null
- timestamp         | timestamp with time zone | not null
+      Column       |           Type           | Collation | Nullable |                Default                 
+-------------------+--------------------------+-----------+----------+----------------------------------------
+ id                | bigint                   |           | not null | nextval('event_logs_id_seq'::regclass)
+ name              | text                     |           | not null | 
+ url               | text                     |           | not null | 
+ user_id           | integer                  |           | not null | 
+ anonymous_user_id | text                     |           | not null | 
+ source            | text                     |           | not null | 
+ argument          | jsonb                    |           | not null | 
+ version           | text                     |           | not null | 
+ timestamp         | timestamp with time zone |           | not null | 
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
@@ -497,36 +513,39 @@ Check constraints:
 
 # Table "public.external_service_repos"
 ```
-       Column        |  Type   | Modifiers 
----------------------+---------+-----------
- external_service_id | bigint  | not null
- repo_id             | integer | not null
- clone_url           | text    | not null
+       Column        |  Type   | Collation | Nullable | Default 
+---------------------+---------+-----------+----------+---------
+ external_service_id | bigint  |           | not null | 
+ repo_id             | integer |           | not null | 
+ clone_url           | text    |           | not null | 
+ user_id             | integer |           |          | 
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_repos_external_service_id" btree (external_service_id)
     "external_service_repos_idx" btree (external_service_id, repo_id)
+    "external_service_user_repos_idx" btree (user_id, repo_id) WHERE user_id IS NOT NULL
 Foreign-key constraints:
     "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
     "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+    "external_service_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
 # Table "public.external_service_sync_jobs"
 ```
-       Column        |           Type           |                                Modifiers                                
----------------------+--------------------------+-------------------------------------------------------------------------
- id                  | integer                  | not null default nextval('external_service_sync_jobs_id_seq'::regclass)
- state               | text                     | not null default 'queued'::text
- failure_message     | text                     | 
- started_at          | timestamp with time zone | 
- finished_at         | timestamp with time zone | 
- process_after       | timestamp with time zone | 
- num_resets          | integer                  | not null default 0
- external_service_id | bigint                   | 
- num_failures        | integer                  | not null default 0
- log_contents        | text                     | 
- execution_logs      | json[]                   | 
+       Column        |           Type           | Collation | Nullable |                        Default                         
+---------------------+--------------------------+-----------+----------+--------------------------------------------------------
+ id                  | integer                  |           | not null | nextval('external_service_sync_jobs_id_seq'::regclass)
+ state               | text                     |           | not null | 'queued'::text
+ failure_message     | text                     |           |          | 
+ started_at          | timestamp with time zone |           |          | 
+ finished_at         | timestamp with time zone |           |          | 
+ process_after       | timestamp with time zone |           |          | 
+ num_resets          | integer                  |           | not null | 0
+ external_service_id | bigint                   |           |          | 
+ num_failures        | integer                  |           | not null | 0
+ log_contents        | text                     |           |          | 
+ execution_logs      | json[]                   |           |          | 
 Indexes:
     "external_service_sync_jobs_state_idx" btree (state)
 Foreign-key constraints:
@@ -536,21 +555,21 @@ Foreign-key constraints:
 
 # Table "public.external_services"
 ```
-      Column       |           Type           |                           Modifiers                            
--------------------+--------------------------+----------------------------------------------------------------
- id                | bigint                   | not null default nextval('external_services_id_seq'::regclass)
- kind              | text                     | not null
- display_name      | text                     | not null
- config            | text                     | not null
- created_at        | timestamp with time zone | not null default now()
- updated_at        | timestamp with time zone | not null default now()
- deleted_at        | timestamp with time zone | 
- last_sync_at      | timestamp with time zone | 
- next_sync_at      | timestamp with time zone | 
- namespace_user_id | integer                  | 
- unrestricted      | boolean                  | not null default false
- cloud_default     | boolean                  | not null default false
- encryption_key_id | text                     | not null default ''::text
+      Column       |           Type           | Collation | Nullable |                    Default                    
+-------------------+--------------------------+-----------+----------+-----------------------------------------------
+ id                | bigint                   |           | not null | nextval('external_services_id_seq'::regclass)
+ kind              | text                     |           | not null | 
+ display_name      | text                     |           | not null | 
+ config            | text                     |           | not null | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ deleted_at        | timestamp with time zone |           |          | 
+ last_sync_at      | timestamp with time zone |           |          | 
+ next_sync_at      | timestamp with time zone |           |          | 
+ namespace_user_id | integer                  |           |          | 
+ unrestricted      | boolean                  |           | not null | false
+ cloud_default     | boolean                  |           | not null | false
+ encryption_key_id | text                     |           | not null | ''::text
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
     "kind_cloud_default" UNIQUE, btree (kind, cloud_default) WHERE cloud_default = true AND deleted_at IS NULL
@@ -562,25 +581,24 @@ Foreign-key constraints:
 Referenced by:
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
     TABLE "external_service_sync_jobs" CONSTRAINT "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id)
-Triggers:
-    trig_delete_external_service_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON external_services FOR EACH ROW EXECUTE PROCEDURE delete_external_service_ref_on_external_service_repos()
 
 ```
 
 # Table "public.gitserver_repos"
 ```
-        Column         |           Type           |              Modifiers              
------------------------+--------------------------+-------------------------------------
- repo_id               | integer                  | not null
- clone_status          | text                     | not null default 'not_cloned'::text
- last_external_service | bigint                   | 
- shard_id              | text                     | not null
- last_error            | text                     | 
- updated_at            | timestamp with time zone | not null default now()
+        Column         |           Type           | Collation | Nullable |      Default       
+-----------------------+--------------------------+-----------+----------+--------------------
+ repo_id               | integer                  |           | not null | 
+ clone_status          | text                     |           | not null | 'not_cloned'::text
+ last_external_service | bigint                   |           |          | 
+ shard_id              | text                     |           | not null | 
+ last_error            | text                     |           |          | 
+ updated_at            | timestamp with time zone |           | not null | now()
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text
     "gitserver_repos_cloning_status_idx" btree (repo_id) WHERE clone_status = 'cloning'::text
+    "gitserver_repos_last_error_idx" btree (last_error) WHERE last_error IS NOT NULL
     "gitserver_repos_not_cloned_status_idx" btree (repo_id) WHERE clone_status = 'not_cloned'::text
 Foreign-key constraints:
     "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
@@ -589,12 +607,10 @@ Foreign-key constraints:
 
 # Table "public.global_state"
 ```
-         Column          |  Type   |         Modifiers         
--------------------------+---------+---------------------------
- site_id                 | uuid    | not null
- initialized             | boolean | not null default false
- mgmt_password_plaintext | text    | not null default ''::text
- mgmt_password_bcrypt    | text    | not null default ''::text
+   Column    |  Type   | Collation | Nullable | Default 
+-------------+---------+-----------+----------+---------
+ site_id     | uuid    |           | not null | 
+ initialized | boolean |           | not null | false
 Indexes:
     "global_state_pkey" PRIMARY KEY, btree (site_id)
 
@@ -602,20 +618,20 @@ Indexes:
 
 # Table "public.insights_query_runner_jobs"
 ```
-     Column      |           Type           |                                Modifiers                                
------------------+--------------------------+-------------------------------------------------------------------------
- id              | integer                  | not null default nextval('insights_query_runner_jobs_id_seq'::regclass)
- series_id       | text                     | not null
- search_query    | text                     | not null
- state           | text                     | default 'queued'::text
- failure_message | text                     | 
- started_at      | timestamp with time zone | 
- finished_at     | timestamp with time zone | 
- process_after   | timestamp with time zone | 
- num_resets      | integer                  | not null default 0
- num_failures    | integer                  | not null default 0
- execution_logs  | json[]                   | 
- record_time     | timestamp with time zone | 
+     Column      |           Type           | Collation | Nullable |                        Default                         
+-----------------+--------------------------+-----------+----------+--------------------------------------------------------
+ id              | integer                  |           | not null | nextval('insights_query_runner_jobs_id_seq'::regclass)
+ series_id       | text                     |           | not null | 
+ search_query    | text                     |           | not null | 
+ state           | text                     |           |          | 'queued'::text
+ failure_message | text                     |           |          | 
+ started_at      | timestamp with time zone |           |          | 
+ finished_at     | timestamp with time zone |           |          | 
+ process_after   | timestamp with time zone |           |          | 
+ num_resets      | integer                  |           | not null | 0
+ num_failures    | integer                  |           | not null | 0
+ execution_logs  | json[]                   |           |          | 
+ record_time     | timestamp with time zone |           |          | 
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
     "insights_query_runner_jobs_state_btree" btree (state)
@@ -626,12 +642,12 @@ See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://
 
 # Table "public.lsif_dirty_repositories"
 ```
-    Column     |           Type           | Modifiers 
----------------+--------------------------+-----------
- repository_id | integer                  | not null
- dirty_token   | integer                  | not null
- update_token  | integer                  | not null
- updated_at    | timestamp with time zone | 
+    Column     |           Type           | Collation | Nullable | Default 
+---------------+--------------------------+-----------+----------+---------
+ repository_id | integer                  |           | not null | 
+ dirty_token   | integer                  |           | not null | 
+ update_token  | integer                  |           | not null | 
+ updated_at    | timestamp with time zone |           |          | 
 Indexes:
     "lsif_dirty_repositories_pkey" PRIMARY KEY, btree (repository_id)
 
@@ -647,11 +663,11 @@ Stores whether or not the nearest upload data for a repository is out of date (w
 
 # Table "public.lsif_index_configuration"
 ```
-    Column     |  Type   |                               Modifiers                               
----------------+---------+-----------------------------------------------------------------------
- id            | bigint  | not null default nextval('lsif_index_configuration_id_seq'::regclass)
- repository_id | integer | not null
- data          | bytea   | not null
+    Column     |  Type   | Collation | Nullable |                       Default                        
+---------------+---------+-----------+----------+------------------------------------------------------
+ id            | bigint  |           | not null | nextval('lsif_index_configuration_id_seq'::regclass)
+ repository_id | integer |           | not null | 
+ data          | bytea   |           | not null | 
 Indexes:
     "lsif_index_configuration_pkey" PRIMARY KEY, btree (id)
     "lsif_index_configuration_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
@@ -666,15 +682,15 @@ Stores the configuration used for code intel index jobs for a repository.
 
 # Table "public.lsif_indexable_repositories"
 ```
-         Column         |           Type           |                                Modifiers                                 
-------------------------+--------------------------+--------------------------------------------------------------------------
- id                     | integer                  | not null default nextval('lsif_indexable_repositories_id_seq'::regclass)
- repository_id          | integer                  | not null
- search_count           | integer                  | not null default 0
- precise_count          | integer                  | not null default 0
- last_index_enqueued_at | timestamp with time zone | 
- last_updated_at        | timestamp with time zone | not null default now()
- enabled                | boolean                  | 
+         Column         |           Type           | Collation | Nullable |                         Default                         
+------------------------+--------------------------+-----------+----------+---------------------------------------------------------
+ id                     | integer                  |           | not null | nextval('lsif_indexable_repositories_id_seq'::regclass)
+ repository_id          | integer                  |           | not null | 
+ search_count           | integer                  |           | not null | 0
+ precise_count          | integer                  |           | not null | 0
+ last_index_enqueued_at | timestamp with time zone |           |          | 
+ last_updated_at        | timestamp with time zone |           | not null | now()
+ enabled                | boolean                  |           |          | 
 Indexes:
     "lsif_indexable_repositories_pkey" PRIMARY KEY, btree (id)
     "lsif_indexable_repositories_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
@@ -695,27 +711,27 @@ Stores the number of code intel events for repositories. Used for auto-index sch
 
 # Table "public.lsif_indexes"
 ```
-     Column      |           Type           |                         Modifiers                         
------------------+--------------------------+-----------------------------------------------------------
- id              | bigint                   | not null default nextval('lsif_indexes_id_seq'::regclass)
- commit          | text                     | not null
- queued_at       | timestamp with time zone | not null default now()
- state           | text                     | not null default 'queued'::text
- failure_message | text                     | 
- started_at      | timestamp with time zone | 
- finished_at     | timestamp with time zone | 
- repository_id   | integer                  | not null
- process_after   | timestamp with time zone | 
- num_resets      | integer                  | not null default 0
- num_failures    | integer                  | not null default 0
- docker_steps    | jsonb[]                  | not null
- root            | text                     | not null
- indexer         | text                     | not null
- indexer_args    | text[]                   | not null
- outfile         | text                     | not null
- log_contents    | text                     | 
- execution_logs  | json[]                   | 
- local_steps     | text[]                   | not null
+     Column      |           Type           | Collation | Nullable |                 Default                  
+-----------------+--------------------------+-----------+----------+------------------------------------------
+ id              | bigint                   |           | not null | nextval('lsif_indexes_id_seq'::regclass)
+ commit          | text                     |           | not null | 
+ queued_at       | timestamp with time zone |           | not null | now()
+ state           | text                     |           | not null | 'queued'::text
+ failure_message | text                     |           |          | 
+ started_at      | timestamp with time zone |           |          | 
+ finished_at     | timestamp with time zone |           |          | 
+ repository_id   | integer                  |           | not null | 
+ process_after   | timestamp with time zone |           |          | 
+ num_resets      | integer                  |           | not null | 0
+ num_failures    | integer                  |           | not null | 0
+ docker_steps    | jsonb[]                  |           | not null | 
+ root            | text                     |           | not null | 
+ indexer         | text                     |           | not null | 
+ indexer_args    | text[]                   |           | not null | 
+ outfile         | text                     |           | not null | 
+ log_contents    | text                     |           |          | 
+ execution_logs  | json[]                   |           |          | 
+ local_steps     | text[]                   |           | not null | 
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -745,11 +761,11 @@ Stores metadata about a code intel index job.
 
 # Table "public.lsif_nearest_uploads"
 ```
-    Column     |  Type   | Modifiers 
----------------+---------+-----------
- repository_id | integer | not null
- commit_bytea  | bytea   | not null
- uploads       | jsonb   | not null
+    Column     |  Type   | Collation | Nullable | Default 
+---------------+---------+-----------+----------+---------
+ repository_id | integer |           | not null | 
+ commit_bytea  | bytea   |           | not null | 
+ uploads       | jsonb   |           | not null | 
 Indexes:
     "lsif_nearest_uploads_repository_id_commit_bytea" btree (repository_id, commit_bytea)
 
@@ -763,12 +779,12 @@ Associates commits with the complete set of uploads visible from that commit. Ev
 
 # Table "public.lsif_nearest_uploads_links"
 ```
-        Column         |  Type   | Modifiers 
------------------------+---------+-----------
- repository_id         | integer | not null
- commit_bytea          | bytea   | not null
- ancestor_commit_bytea | bytea   | not null
- distance              | integer | not null
+        Column         |  Type   | Collation | Nullable | Default 
+-----------------------+---------+-----------+----------+---------
+ repository_id         | integer |           | not null | 
+ commit_bytea          | bytea   |           | not null | 
+ ancestor_commit_bytea | bytea   |           | not null | 
+ distance              | integer |           | not null | 
 Indexes:
     "lsif_nearest_uploads_links_repository_id_commit_bytea" btree (repository_id, commit_bytea)
 
@@ -784,13 +800,13 @@ Associates commits with the closest ancestor commit with usable upload data. Tog
 
 # Table "public.lsif_packages"
 ```
- Column  |  Type   |                         Modifiers                          
----------+---------+------------------------------------------------------------
- id      | integer | not null default nextval('lsif_packages_id_seq'::regclass)
- scheme  | text    | not null
- name    | text    | not null
- version | text    | 
- dump_id | integer | not null
+ Column  |  Type   | Collation | Nullable |                  Default                  
+---------+---------+-----------+----------+-------------------------------------------
+ id      | integer |           | not null | nextval('lsif_packages_id_seq'::regclass)
+ scheme  | text    |           | not null | 
+ name    | text    |           | not null | 
+ version | text    |           |          | 
+ dump_id | integer |           | not null | 
 Indexes:
     "lsif_packages_pkey" PRIMARY KEY, btree (id)
     "lsif_packages_scheme_name_version" btree (scheme, name, version)
@@ -811,14 +827,14 @@ Associates an upload with the set of packages they provide within a given packag
 
 # Table "public.lsif_references"
 ```
- Column  |  Type   |                          Modifiers                           
----------+---------+--------------------------------------------------------------
- id      | integer | not null default nextval('lsif_references_id_seq'::regclass)
- scheme  | text    | not null
- name    | text    | not null
- version | text    | 
- filter  | bytea   | not null
- dump_id | integer | not null
+ Column  |  Type   | Collation | Nullable |                   Default                   
+---------+---------+-----------+----------+---------------------------------------------
+ id      | integer |           | not null | nextval('lsif_references_id_seq'::regclass)
+ scheme  | text    |           | not null | 
+ name    | text    |           | not null | 
+ version | text    |           |          | 
+ filter  | bytea   |           | not null | 
+ dump_id | integer |           | not null | 
 Indexes:
     "lsif_references_pkey" PRIMARY KEY, btree (id)
     "lsif_references_package" btree (scheme, name, version)
@@ -841,25 +857,25 @@ Associates an upload with the set of packages they require within a given packag
 
 # Table "public.lsif_uploads"
 ```
-       Column        |           Type           |                        Modifiers                        
----------------------+--------------------------+---------------------------------------------------------
- id                  | integer                  | not null default nextval('lsif_dumps_id_seq'::regclass)
- commit              | text                     | not null
- root                | text                     | not null default ''::text
- uploaded_at         | timestamp with time zone | not null default now()
- state               | text                     | not null default 'queued'::text
- failure_message     | text                     | 
- started_at          | timestamp with time zone | 
- finished_at         | timestamp with time zone | 
- repository_id       | integer                  | not null
- indexer             | text                     | not null
- num_parts           | integer                  | not null
- uploaded_parts      | integer[]                | not null
- process_after       | timestamp with time zone | 
- num_resets          | integer                  | not null default 0
- upload_size         | bigint                   | 
- num_failures        | integer                  | not null default 0
- associated_index_id | bigint                   | 
+       Column        |           Type           | Collation | Nullable |                Default                 
+---------------------+--------------------------+-----------+----------+----------------------------------------
+ id                  | integer                  |           | not null | nextval('lsif_dumps_id_seq'::regclass)
+ commit              | text                     |           | not null | 
+ root                | text                     |           | not null | ''::text
+ uploaded_at         | timestamp with time zone |           | not null | now()
+ state               | text                     |           | not null | 'queued'::text
+ failure_message     | text                     |           |          | 
+ started_at          | timestamp with time zone |           |          | 
+ finished_at         | timestamp with time zone |           |          | 
+ repository_id       | integer                  |           | not null | 
+ indexer             | text                     |           | not null | 
+ num_parts           | integer                  |           | not null | 
+ uploaded_parts      | integer[]                |           | not null | 
+ process_after       | timestamp with time zone |           |          | 
+ num_resets          | integer                  |           | not null | 0
+ upload_size         | bigint                   |           |          | 
+ num_failures        | integer                  |           | not null | 0
+ associated_index_id | bigint                   |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -891,10 +907,10 @@ Stores metadata about an LSIF index uploaded by a user.
 
 # Table "public.lsif_uploads_visible_at_tip"
 ```
-    Column     |  Type   | Modifiers 
----------------+---------+-----------
- repository_id | integer | not null
- upload_id     | integer | not null
+    Column     |  Type   | Collation | Nullable | Default 
+---------------+---------+-----------+----------+---------
+ repository_id | integer |           | not null | 
+ upload_id     | integer |           | not null | 
 Indexes:
     "lsif_uploads_visible_at_tip_repository_id_upload_id" btree (repository_id, upload_id)
 
@@ -906,11 +922,11 @@ Associates a repository with the set of LSIF upload identifiers that can serve i
 
 # Table "public.names"
 ```
- Column  |  Type   | Modifiers 
----------+---------+-----------
- name    | citext  | not null
- user_id | integer | 
- org_id  | integer | 
+ Column  |  Type   | Collation | Nullable | Default 
+---------+---------+-----------+----------+---------
+ name    | citext  |           | not null | 
+ user_id | integer |           |          | 
+ org_id  | integer |           |          | 
 Indexes:
     "names_pkey" PRIMARY KEY, btree (name)
 Check constraints:
@@ -923,18 +939,18 @@ Foreign-key constraints:
 
 # Table "public.org_invitations"
 ```
-      Column       |           Type           |                          Modifiers                           
--------------------+--------------------------+--------------------------------------------------------------
- id                | bigint                   | not null default nextval('org_invitations_id_seq'::regclass)
- org_id            | integer                  | not null
- sender_user_id    | integer                  | not null
- recipient_user_id | integer                  | not null
- created_at        | timestamp with time zone | not null default now()
- notified_at       | timestamp with time zone | 
- responded_at      | timestamp with time zone | 
- response_type     | boolean                  | 
- revoked_at        | timestamp with time zone | 
- deleted_at        | timestamp with time zone | 
+      Column       |           Type           | Collation | Nullable |                   Default                   
+-------------------+--------------------------+-----------+----------+---------------------------------------------
+ id                | bigint                   |           | not null | nextval('org_invitations_id_seq'::regclass)
+ org_id            | integer                  |           | not null | 
+ sender_user_id    | integer                  |           | not null | 
+ recipient_user_id | integer                  |           | not null | 
+ created_at        | timestamp with time zone |           | not null | now()
+ notified_at       | timestamp with time zone |           |          | 
+ responded_at      | timestamp with time zone |           |          | 
+ response_type     | boolean                  |           |          | 
+ revoked_at        | timestamp with time zone |           |          | 
+ deleted_at        | timestamp with time zone |           |          | 
 Indexes:
     "org_invitations_pkey" PRIMARY KEY, btree (id)
     "org_invitations_singleflight" UNIQUE, btree (org_id, recipient_user_id) WHERE responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL
@@ -952,13 +968,13 @@ Foreign-key constraints:
 
 # Table "public.org_members"
 ```
-   Column   |           Type           |                        Modifiers                         
-------------+--------------------------+----------------------------------------------------------
- id         | integer                  | not null default nextval('org_members_id_seq'::regclass)
- org_id     | integer                  | not null
- created_at | timestamp with time zone | not null default now()
- updated_at | timestamp with time zone | not null default now()
- user_id    | integer                  | not null
+   Column   |           Type           | Collation | Nullable |                 Default                 
+------------+--------------------------+-----------+----------+-----------------------------------------
+ id         | integer                  |           | not null | nextval('org_members_id_seq'::regclass)
+ org_id     | integer                  |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+ updated_at | timestamp with time zone |           | not null | now()
+ user_id    | integer                  |           | not null | 
 Indexes:
     "org_members_pkey" PRIMARY KEY, btree (id)
     "org_members_org_id_user_id_key" UNIQUE CONSTRAINT, btree (org_id, user_id)
@@ -970,28 +986,28 @@ Foreign-key constraints:
 
 # Table "public.org_members_bkup_1514536731"
 ```
-   Column    |           Type           | Modifiers 
--------------+--------------------------+-----------
- id          | integer                  | 
- org_id      | integer                  | 
- user_id_old | text                     | 
- created_at  | timestamp with time zone | 
- updated_at  | timestamp with time zone | 
- user_id     | integer                  | 
+   Column    |           Type           | Collation | Nullable | Default 
+-------------+--------------------------+-----------+----------+---------
+ id          | integer                  |           |          | 
+ org_id      | integer                  |           |          | 
+ user_id_old | text                     |           |          | 
+ created_at  | timestamp with time zone |           |          | 
+ updated_at  | timestamp with time zone |           |          | 
+ user_id     | integer                  |           |          | 
 
 ```
 
 # Table "public.orgs"
 ```
-      Column       |           Type           |                     Modifiers                     
--------------------+--------------------------+---------------------------------------------------
- id                | integer                  | not null default nextval('orgs_id_seq'::regclass)
- name              | citext                   | not null
- created_at        | timestamp with time zone | not null default now()
- updated_at        | timestamp with time zone | not null default now()
- display_name      | text                     | 
- slack_webhook_url | text                     | 
- deleted_at        | timestamp with time zone | 
+      Column       |           Type           | Collation | Nullable |             Default              
+-------------------+--------------------------+-----------+----------+----------------------------------
+ id                | integer                  |           | not null | nextval('orgs_id_seq'::regclass)
+ name              | citext                   |           | not null | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ display_name      | text                     |           |          | 
+ slack_webhook_url | text                     |           |          | 
+ deleted_at        | timestamp with time zone |           |          | 
 Indexes:
     "orgs_pkey" PRIMARY KEY, btree (id)
     "orgs_name" UNIQUE, btree (name) WHERE deleted_at IS NULL
@@ -1015,19 +1031,19 @@ Referenced by:
 
 # Table "public.out_of_band_migrations"
 ```
-     Column      |           Type           |                              Modifiers                              
------------------+--------------------------+---------------------------------------------------------------------
- id              | integer                  | not null default nextval('out_of_band_migrations_id_seq'::regclass)
- team            | text                     | not null
- component       | text                     | not null
- description     | text                     | not null
- introduced      | text                     | not null
- deprecated      | text                     | 
- progress        | double precision         | not null default 0
- created         | timestamp with time zone | not null default now()
- last_updated    | timestamp with time zone | 
- non_destructive | boolean                  | not null
- apply_reverse   | boolean                  | not null default false
+     Column      |           Type           | Collation | Nullable |                      Default                       
+-----------------+--------------------------+-----------+----------+----------------------------------------------------
+ id              | integer                  |           | not null | nextval('out_of_band_migrations_id_seq'::regclass)
+ team            | text                     |           | not null | 
+ component       | text                     |           | not null | 
+ description     | text                     |           | not null | 
+ introduced      | text                     |           | not null | 
+ deprecated      | text                     |           |          | 
+ progress        | double precision         |           | not null | 0
+ created         | timestamp with time zone |           | not null | now()
+ last_updated    | timestamp with time zone |           |          | 
+ non_destructive | boolean                  |           | not null | 
+ apply_reverse   | boolean                  |           | not null | false
 Indexes:
     "out_of_band_migrations_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -1068,12 +1084,12 @@ Stores metadata and progress about an out-of-band migration routine.
 
 # Table "public.out_of_band_migrations_errors"
 ```
-    Column    |           Type           |                                 Modifiers                                  
---------------+--------------------------+----------------------------------------------------------------------------
- id           | integer                  | not null default nextval('out_of_band_migrations_errors_id_seq'::regclass)
- migration_id | integer                  | not null
- message      | text                     | not null
- created      | timestamp with time zone | not null default now()
+    Column    |           Type           | Collation | Nullable |                          Default                          
+--------------+--------------------------+-----------+----------+-----------------------------------------------------------
+ id           | integer                  |           | not null | nextval('out_of_band_migrations_errors_id_seq'::regclass)
+ migration_id | integer                  |           | not null | 
+ message      | text                     |           | not null | 
+ created      | timestamp with time zone |           | not null | now()
 Indexes:
     "out_of_band_migrations_errors_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -1095,15 +1111,15 @@ Stores errors that occurred while performing an out-of-band migration.
 
 # Table "public.phabricator_repos"
 ```
-   Column   |           Type           |                           Modifiers                            
-------------+--------------------------+----------------------------------------------------------------
- id         | integer                  | not null default nextval('phabricator_repos_id_seq'::regclass)
- callsign   | citext                   | not null
- repo_name  | citext                   | not null
- created_at | timestamp with time zone | not null default now()
- updated_at | timestamp with time zone | not null default now()
- deleted_at | timestamp with time zone | 
- url        | text                     | not null default ''::text
+   Column   |           Type           | Collation | Nullable |                    Default                    
+------------+--------------------------+-----------+----------+-----------------------------------------------
+ id         | integer                  |           | not null | nextval('phabricator_repos_id_seq'::regclass)
+ callsign   | citext                   |           | not null | 
+ repo_name  | citext                   |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+ updated_at | timestamp with time zone |           | not null | now()
+ deleted_at | timestamp with time zone |           |          | 
+ url        | text                     |           | not null | ''::text
 Indexes:
     "phabricator_repos_pkey" PRIMARY KEY, btree (id)
     "phabricator_repos_repo_name_key" UNIQUE CONSTRAINT, btree (repo_name)
@@ -1112,12 +1128,12 @@ Indexes:
 
 # Table "public.product_licenses"
 ```
-         Column          |           Type           |       Modifiers        
--------------------------+--------------------------+------------------------
- id                      | uuid                     | not null
- product_subscription_id | uuid                     | not null
- license_key             | text                     | not null
- created_at              | timestamp with time zone | not null default now()
+         Column          |           Type           | Collation | Nullable | Default 
+-------------------------+--------------------------+-----------+----------+---------
+ id                      | uuid                     |           | not null | 
+ product_subscription_id | uuid                     |           | not null | 
+ license_key             | text                     |           | not null | 
+ created_at              | timestamp with time zone |           | not null | now()
 Indexes:
     "product_licenses_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -1127,14 +1143,14 @@ Foreign-key constraints:
 
 # Table "public.product_subscriptions"
 ```
-         Column          |           Type           |       Modifiers        
--------------------------+--------------------------+------------------------
- id                      | uuid                     | not null
- user_id                 | integer                  | not null
- billing_subscription_id | text                     | 
- created_at              | timestamp with time zone | not null default now()
- updated_at              | timestamp with time zone | not null default now()
- archived_at             | timestamp with time zone | 
+         Column          |           Type           | Collation | Nullable | Default 
+-------------------------+--------------------------+-----------+----------+---------
+ id                      | uuid                     |           | not null | 
+ user_id                 | integer                  |           | not null | 
+ billing_subscription_id | text                     |           |          | 
+ created_at              | timestamp with time zone |           | not null | now()
+ updated_at              | timestamp with time zone |           | not null | now()
+ archived_at             | timestamp with time zone |           |          | 
 Indexes:
     "product_subscriptions_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -1146,29 +1162,29 @@ Referenced by:
 
 # Table "public.query_runner_state"
 ```
-      Column      |           Type           | Modifiers 
-------------------+--------------------------+-----------
- query            | text                     | 
- last_executed    | timestamp with time zone | 
- latest_result    | timestamp with time zone | 
- exec_duration_ns | bigint                   | 
+      Column      |           Type           | Collation | Nullable | Default 
+------------------+--------------------------+-----------+----------+---------
+ query            | text                     |           |          | 
+ last_executed    | timestamp with time zone |           |          | 
+ latest_result    | timestamp with time zone |           |          | 
+ exec_duration_ns | bigint                   |           |          | 
 
 ```
 
 # Table "public.registry_extension_releases"
 ```
-        Column         |           Type           |                                Modifiers                                 
------------------------+--------------------------+--------------------------------------------------------------------------
- id                    | bigint                   | not null default nextval('registry_extension_releases_id_seq'::regclass)
- registry_extension_id | integer                  | not null
- creator_user_id       | integer                  | not null
- release_version       | citext                   | 
- release_tag           | citext                   | not null
- manifest              | jsonb                    | not null
- bundle                | text                     | 
- created_at            | timestamp with time zone | not null default now()
- deleted_at            | timestamp with time zone | 
- source_map            | text                     | 
+        Column         |           Type           | Collation | Nullable |                         Default                         
+-----------------------+--------------------------+-----------+----------+---------------------------------------------------------
+ id                    | bigint                   |           | not null | nextval('registry_extension_releases_id_seq'::regclass)
+ registry_extension_id | integer                  |           | not null | 
+ creator_user_id       | integer                  |           | not null | 
+ release_version       | citext                   |           |          | 
+ release_tag           | citext                   |           | not null | 
+ manifest              | jsonb                    |           | not null | 
+ bundle                | text                     |           |          | 
+ created_at            | timestamp with time zone |           | not null | now()
+ deleted_at            | timestamp with time zone |           |          | 
+ source_map            | text                     |           |          | 
 Indexes:
     "registry_extension_releases_pkey" PRIMARY KEY, btree (id)
     "registry_extension_releases_version" UNIQUE, btree (registry_extension_id, release_version) WHERE release_version IS NOT NULL
@@ -1181,20 +1197,20 @@ Foreign-key constraints:
 
 # Table "public.registry_extensions"
 ```
-      Column       |           Type           |                            Modifiers                             
--------------------+--------------------------+------------------------------------------------------------------
- id                | integer                  | not null default nextval('registry_extensions_id_seq'::regclass)
- uuid              | uuid                     | not null
- publisher_user_id | integer                  | 
- publisher_org_id  | integer                  | 
- name              | citext                   | not null
- manifest          | text                     | 
- created_at        | timestamp with time zone | not null default now()
- updated_at        | timestamp with time zone | not null default now()
- deleted_at        | timestamp with time zone | 
+      Column       |           Type           | Collation | Nullable |                     Default                     
+-------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id                | integer                  |           | not null | nextval('registry_extensions_id_seq'::regclass)
+ uuid              | uuid                     |           | not null | 
+ publisher_user_id | integer                  |           |          | 
+ publisher_org_id  | integer                  |           |          | 
+ name              | citext                   |           | not null | 
+ manifest          | text                     |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ deleted_at        | timestamp with time zone |           |          | 
 Indexes:
     "registry_extensions_pkey" PRIMARY KEY, btree (id)
-    "registry_extensions_publisher_name" UNIQUE, btree ((COALESCE(publisher_user_id, 0)), (COALESCE(publisher_org_id, 0)), name) WHERE deleted_at IS NULL
+    "registry_extensions_publisher_name" UNIQUE, btree (COALESCE(publisher_user_id, 0), COALESCE(publisher_org_id, 0), name) WHERE deleted_at IS NULL
     "registry_extensions_uuid" UNIQUE, btree (uuid)
 Check constraints:
     "registry_extensions_name_length" CHECK (char_length(name::text) > 0 AND char_length(name::text) <= 128)
@@ -1210,23 +1226,23 @@ Referenced by:
 
 # Table "public.repo"
 ```
-        Column         |           Type           |                     Modifiers                     
------------------------+--------------------------+---------------------------------------------------
- id                    | integer                  | not null default nextval('repo_id_seq'::regclass)
- name                  | citext                   | not null
- description           | text                     | 
- fork                  | boolean                  | 
- created_at            | timestamp with time zone | not null default now()
- updated_at            | timestamp with time zone | 
- external_id           | text                     | 
- external_service_type | text                     | 
- external_service_id   | text                     | 
- archived              | boolean                  | not null default false
- uri                   | citext                   | 
- deleted_at            | timestamp with time zone | 
- metadata              | jsonb                    | not null default '{}'::jsonb
- private               | boolean                  | not null default false
- cloned                | boolean                  | not null default false
+        Column         |           Type           | Collation | Nullable |             Default              
+-----------------------+--------------------------+-----------+----------+----------------------------------
+ id                    | integer                  |           | not null | nextval('repo_id_seq'::regclass)
+ name                  | citext                   |           | not null | 
+ description           | text                     |           |          | 
+ fork                  | boolean                  |           |          | 
+ created_at            | timestamp with time zone |           | not null | now()
+ updated_at            | timestamp with time zone |           |          | 
+ external_id           | text                     |           |          | 
+ external_service_type | text                     |           |          | 
+ external_service_id   | text                     |           |          | 
+ archived              | boolean                  |           | not null | false
+ uri                   | citext                   |           |          | 
+ deleted_at            | timestamp with time zone |           |          | 
+ metadata              | jsonb                    |           | not null | '{}'::jsonb
+ private               | boolean                  |           | not null | false
+ cloned                | boolean                  |           | not null | false
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
@@ -1254,19 +1270,19 @@ Referenced by:
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
-    trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE PROCEDURE delete_repo_ref_on_external_service_repos()
+    trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()
 
 ```
 
 # Table "public.repo_pending_permissions"
 ```
-    Column     |           Type           |            Modifiers             
----------------+--------------------------+----------------------------------
- repo_id       | integer                  | not null
- permission    | text                     | not null
- user_ids      | bytea                    | not null default '\x'::bytea
- updated_at    | timestamp with time zone | not null
- user_ids_ints | integer[]                | not null default '{}'::integer[]
+    Column     |           Type           | Collation | Nullable |     Default     
+---------------+--------------------------+-----------+----------+-----------------
+ repo_id       | integer                  |           | not null | 
+ permission    | text                     |           | not null | 
+ user_ids      | bytea                    |           | not null | '\x'::bytea
+ updated_at    | timestamp with time zone |           | not null | 
+ user_ids_ints | integer[]                |           | not null | '{}'::integer[]
 Indexes:
     "repo_pending_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
 
@@ -1274,14 +1290,14 @@ Indexes:
 
 # Table "public.repo_permissions"
 ```
-    Column     |           Type           |            Modifiers             
----------------+--------------------------+----------------------------------
- repo_id       | integer                  | not null
- permission    | text                     | not null
- user_ids      | bytea                    | not null default '\x'::bytea
- updated_at    | timestamp with time zone | not null
- synced_at     | timestamp with time zone | 
- user_ids_ints | integer[]                | not null default '{}'::integer[]
+    Column     |           Type           | Collation | Nullable |     Default     
+---------------+--------------------------+-----------+----------+-----------------
+ repo_id       | integer                  |           | not null | 
+ permission    | text                     |           | not null | 
+ user_ids      | bytea                    |           | not null | '\x'::bytea
+ updated_at    | timestamp with time zone |           | not null | 
+ synced_at     | timestamp with time zone |           |          | 
+ user_ids_ints | integer[]                |           | not null | '{}'::integer[]
 Indexes:
     "repo_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
 
@@ -1289,18 +1305,18 @@ Indexes:
 
 # Table "public.saved_searches"
 ```
-      Column       |           Type           |                          Modifiers                          
--------------------+--------------------------+-------------------------------------------------------------
- id                | integer                  | not null default nextval('saved_searches_id_seq'::regclass)
- description       | text                     | not null
- query             | text                     | not null
- created_at        | timestamp with time zone | not null default now()
- updated_at        | timestamp with time zone | not null default now()
- notify_owner      | boolean                  | not null
- notify_slack      | boolean                  | not null
- user_id           | integer                  | 
- org_id            | integer                  | 
- slack_webhook_url | text                     | 
+      Column       |           Type           | Collation | Nullable |                  Default                   
+-------------------+--------------------------+-----------+----------+--------------------------------------------
+ id                | integer                  |           | not null | nextval('saved_searches_id_seq'::regclass)
+ description       | text                     |           | not null | 
+ query             | text                     |           | not null | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ notify_owner      | boolean                  |           | not null | 
+ notify_slack      | boolean                  |           | not null | 
+ user_id           | integer                  |           |          | 
+ org_id            | integer                  |           |          | 
+ slack_webhook_url | text                     |           |          | 
 Indexes:
     "saved_searches_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -1313,10 +1329,10 @@ Foreign-key constraints:
 
 # Table "public.schema_migrations"
 ```
- Column  |  Type   | Modifiers 
----------+---------+-----------
- version | bigint  | not null
- dirty   | boolean | not null
+ Column  |  Type   | Collation | Nullable | Default 
+---------+---------+-----------+----------+---------
+ version | bigint  |           | not null | 
+ dirty   | boolean |           | not null | 
 Indexes:
     "schema_migrations_pkey" PRIMARY KEY, btree (version)
 
@@ -1324,11 +1340,11 @@ Indexes:
 
 # Table "public.search_context_repos"
 ```
-      Column       |  Type   | Modifiers 
--------------------+---------+-----------
- search_context_id | bigint  | not null
- repo_id           | integer | not null
- revision          | text    | not null
+      Column       |  Type   | Collation | Nullable | Default 
+-------------------+---------+-----------+----------+---------
+ search_context_id | bigint  |           | not null | 
+ repo_id           | integer |           | not null | 
+ revision          | text    |           | not null | 
 Indexes:
     "search_context_repos_search_context_id_repo_id_revision_unique" UNIQUE CONSTRAINT, btree (search_context_id, repo_id, revision)
 Foreign-key constraints:
@@ -1339,17 +1355,17 @@ Foreign-key constraints:
 
 # Table "public.search_contexts"
 ```
-      Column       |           Type           |                          Modifiers                           
--------------------+--------------------------+--------------------------------------------------------------
- id                | bigint                   | not null default nextval('search_contexts_id_seq'::regclass)
- name              | citext                   | not null
- description       | text                     | not null
- public            | boolean                  | not null
- namespace_user_id | integer                  | 
- namespace_org_id  | integer                  | 
- created_at        | timestamp with time zone | not null default now()
- updated_at        | timestamp with time zone | not null default now()
- deleted_at        | timestamp with time zone | 
+      Column       |           Type           | Collation | Nullable |                   Default                   
+-------------------+--------------------------+-----------+----------+---------------------------------------------
+ id                | bigint                   |           | not null | nextval('search_contexts_id_seq'::regclass)
+ name              | citext                   |           | not null | 
+ description       | text                     |           | not null | 
+ public            | boolean                  |           | not null | 
+ namespace_user_id | integer                  |           |          | 
+ namespace_org_id  | integer                  |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ deleted_at        | timestamp with time zone |           |          | 
 Indexes:
     "search_contexts_pkey" PRIMARY KEY, btree (id)
     "search_contexts_name_namespace_org_id_unique" UNIQUE, btree (name, namespace_org_id) WHERE namespace_org_id IS NOT NULL
@@ -1367,14 +1383,14 @@ Referenced by:
 
 # Table "public.settings"
 ```
-     Column     |           Type           |                       Modifiers                       
-----------------+--------------------------+-------------------------------------------------------
- id             | integer                  | not null default nextval('settings_id_seq'::regclass)
- org_id         | integer                  | 
- contents       | text                     | 
- created_at     | timestamp with time zone | not null default now()
- user_id        | integer                  | 
- author_user_id | integer                  | 
+     Column     |           Type           | Collation | Nullable |               Default                
+----------------+--------------------------+-----------+----------+--------------------------------------
+ id             | integer                  |           | not null | nextval('settings_id_seq'::regclass)
+ org_id         | integer                  |           |          | 
+ contents       | text                     |           |          | 
+ created_at     | timestamp with time zone |           | not null | now()
+ user_id        | integer                  |           |          | 
+ author_user_id | integer                  |           |          | 
 Indexes:
     "settings_pkey" PRIMARY KEY, btree (id)
     "settings_org_id_idx" btree (org_id)
@@ -1387,29 +1403,29 @@ Foreign-key constraints:
 
 # Table "public.settings_bkup_1514702776"
 ```
-       Column       |           Type           | Modifiers 
---------------------+--------------------------+-----------
- id                 | integer                  | 
- org_id             | integer                  | 
- author_user_id_old | text                     | 
- contents           | text                     | 
- created_at         | timestamp with time zone | 
- user_id            | integer                  | 
- author_user_id     | integer                  | 
+       Column       |           Type           | Collation | Nullable | Default 
+--------------------+--------------------------+-----------+----------+---------
+ id                 | integer                  |           |          | 
+ org_id             | integer                  |           |          | 
+ author_user_id_old | text                     |           |          | 
+ contents           | text                     |           |          | 
+ created_at         | timestamp with time zone |           |          | 
+ user_id            | integer                  |           |          | 
+ author_user_id     | integer                  |           |          | 
 
 ```
 
 # Table "public.survey_responses"
 ```
-   Column   |           Type           |                           Modifiers                           
-------------+--------------------------+---------------------------------------------------------------
- id         | bigint                   | not null default nextval('survey_responses_id_seq'::regclass)
- user_id    | integer                  | 
- email      | text                     | 
- score      | integer                  | not null
- reason     | text                     | 
- better     | text                     | 
- created_at | timestamp with time zone | not null default now()
+   Column   |           Type           | Collation | Nullable |                   Default                    
+------------+--------------------------+-----------+----------+----------------------------------------------
+ id         | bigint                   |           | not null | nextval('survey_responses_id_seq'::regclass)
+ user_id    | integer                  |           |          | 
+ email      | text                     |           |          | 
+ score      | integer                  |           | not null | 
+ reason     | text                     |           |          | 
+ better     | text                     |           |          | 
+ created_at | timestamp with time zone |           | not null | now()
 Indexes:
     "survey_responses_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -1419,16 +1435,16 @@ Foreign-key constraints:
 
 # Table "public.user_credentials"
 ```
-        Column         |           Type           |                           Modifiers                           
------------------------+--------------------------+---------------------------------------------------------------
- id                    | bigint                   | not null default nextval('user_credentials_id_seq'::regclass)
- domain                | text                     | not null
- user_id               | integer                  | not null
- external_service_type | text                     | not null
- external_service_id   | text                     | not null
- credential            | text                     | not null
- created_at            | timestamp with time zone | not null default now()
- updated_at            | timestamp with time zone | not null default now()
+        Column         |           Type           | Collation | Nullable |                   Default                    
+-----------------------+--------------------------+-----------+----------+----------------------------------------------
+ id                    | bigint                   |           | not null | nextval('user_credentials_id_seq'::regclass)
+ domain                | text                     |           | not null | 
+ user_id               | integer                  |           | not null | 
+ external_service_type | text                     |           | not null | 
+ external_service_id   | text                     |           | not null | 
+ credential            | text                     |           | not null | 
+ created_at            | timestamp with time zone |           | not null | now()
+ updated_at            | timestamp with time zone |           | not null | now()
 Indexes:
     "user_credentials_pkey" PRIMARY KEY, btree (id)
     "user_credentials_domain_user_id_external_service_type_exter_key" UNIQUE CONSTRAINT, btree (domain, user_id, external_service_type, external_service_id)
@@ -1439,15 +1455,15 @@ Foreign-key constraints:
 
 # Table "public.user_emails"
 ```
-          Column           |           Type           |       Modifiers        
----------------------------+--------------------------+------------------------
- user_id                   | integer                  | not null
- email                     | citext                   | not null
- created_at                | timestamp with time zone | not null default now()
- verification_code         | text                     | 
- verified_at               | timestamp with time zone | 
- last_verification_sent_at | timestamp with time zone | 
- is_primary                | boolean                  | not null default false
+          Column           |           Type           | Collation | Nullable | Default 
+---------------------------+--------------------------+-----------+----------+---------
+ user_id                   | integer                  |           | not null | 
+ email                     | citext                   |           | not null | 
+ created_at                | timestamp with time zone |           | not null | now()
+ verification_code         | text                     |           |          | 
+ verified_at               | timestamp with time zone |           |          | 
+ last_verification_sent_at | timestamp with time zone |           |          | 
+ is_primary                | boolean                  |           | not null | false
 Indexes:
     "user_emails_no_duplicates_per_user" UNIQUE CONSTRAINT, btree (user_id, email)
     "user_emails_user_id_is_primary_idx" UNIQUE, btree (user_id, is_primary) WHERE is_primary = true
@@ -1459,21 +1475,22 @@ Foreign-key constraints:
 
 # Table "public.user_external_accounts"
 ```
-    Column     |           Type           |                              Modifiers                              
----------------+--------------------------+---------------------------------------------------------------------
- id            | integer                  | not null default nextval('user_external_accounts_id_seq'::regclass)
- user_id       | integer                  | not null
- service_type  | text                     | not null
- service_id    | text                     | not null
- account_id    | text                     | not null
- auth_data     | text                     | 
- account_data  | text                     | 
- created_at    | timestamp with time zone | not null default now()
- updated_at    | timestamp with time zone | not null default now()
- deleted_at    | timestamp with time zone | 
- client_id     | text                     | not null
- expired_at    | timestamp with time zone | 
- last_valid_at | timestamp with time zone | 
+      Column       |           Type           | Collation | Nullable |                      Default                       
+-------------------+--------------------------+-----------+----------+----------------------------------------------------
+ id                | integer                  |           | not null | nextval('user_external_accounts_id_seq'::regclass)
+ user_id           | integer                  |           | not null | 
+ service_type      | text                     |           | not null | 
+ service_id        | text                     |           | not null | 
+ account_id        | text                     |           | not null | 
+ auth_data         | text                     |           |          | 
+ account_data      | text                     |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ deleted_at        | timestamp with time zone |           |          | 
+ client_id         | text                     |           | not null | 
+ expired_at        | timestamp with time zone |           |          | 
+ last_valid_at     | timestamp with time zone |           |          | 
+ encryption_key_id | text                     |           | not null | ''::text
 Indexes:
     "user_external_accounts_pkey" PRIMARY KEY, btree (id)
     "user_external_accounts_account" UNIQUE, btree (service_type, service_id, client_id, account_id) WHERE deleted_at IS NULL
@@ -1485,17 +1502,17 @@ Foreign-key constraints:
 
 # Table "public.user_pending_permissions"
 ```
-     Column      |           Type           |                               Modifiers                               
------------------+--------------------------+-----------------------------------------------------------------------
- id              | integer                  | not null default nextval('user_pending_permissions_id_seq'::regclass)
- bind_id         | text                     | not null
- permission      | text                     | not null
- object_type     | text                     | not null
- object_ids      | bytea                    | not null default '\x'::bytea
- updated_at      | timestamp with time zone | not null
- service_type    | text                     | not null
- service_id      | text                     | not null
- object_ids_ints | integer[]                | not null default '{}'::integer[]
+     Column      |           Type           | Collation | Nullable |                       Default                        
+-----------------+--------------------------+-----------+----------+------------------------------------------------------
+ id              | integer                  |           | not null | nextval('user_pending_permissions_id_seq'::regclass)
+ bind_id         | text                     |           | not null | 
+ permission      | text                     |           | not null | 
+ object_type     | text                     |           | not null | 
+ object_ids      | bytea                    |           | not null | '\x'::bytea
+ updated_at      | timestamp with time zone |           | not null | 
+ service_type    | text                     |           | not null | 
+ service_id      | text                     |           | not null | 
+ object_ids_ints | integer[]                |           | not null | '{}'::integer[]
 Indexes:
     "user_pending_permissions_service_perm_object_unique" UNIQUE CONSTRAINT, btree (service_type, service_id, permission, object_type, bind_id)
 
@@ -1503,15 +1520,15 @@ Indexes:
 
 # Table "public.user_permissions"
 ```
-     Column      |           Type           |            Modifiers             
------------------+--------------------------+----------------------------------
- user_id         | integer                  | not null
- permission      | text                     | not null
- object_type     | text                     | not null
- object_ids      | bytea                    | not null default '\x'::bytea
- updated_at      | timestamp with time zone | not null
- synced_at       | timestamp with time zone | 
- object_ids_ints | integer[]                | not null default '{}'::integer[]
+     Column      |           Type           | Collation | Nullable |     Default     
+-----------------+--------------------------+-----------+----------+-----------------
+ user_id         | integer                  |           | not null | 
+ permission      | text                     |           | not null | 
+ object_type     | text                     |           | not null | 
+ object_ids      | bytea                    |           | not null | '\x'::bytea
+ updated_at      | timestamp with time zone |           | not null | 
+ synced_at       | timestamp with time zone |           |          | 
+ object_ids_ints | integer[]                |           | not null | '{}'::integer[]
 Indexes:
     "user_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type)
 
@@ -1519,11 +1536,11 @@ Indexes:
 
 # Table "public.user_public_repos"
 ```
-  Column  |  Type   | Modifiers 
-----------+---------+-----------
- user_id  | integer | not null
- repo_uri | text    | not null
- repo_id  | integer | not null
+  Column  |  Type   | Collation | Nullable | Default 
+----------+---------+-----------+----------+---------
+ user_id  | integer |           | not null | 
+ repo_uri | text    |           | not null | 
+ repo_id  | integer |           | not null | 
 Indexes:
     "user_public_repos_user_id_repo_id_key" UNIQUE CONSTRAINT, btree (user_id, repo_id)
 Foreign-key constraints:
@@ -1534,25 +1551,25 @@ Foreign-key constraints:
 
 # Table "public.users"
 ```
-         Column          |           Type           |                     Modifiers                      
--------------------------+--------------------------+----------------------------------------------------
- id                      | integer                  | not null default nextval('users_id_seq'::regclass)
- username                | citext                   | not null
- display_name            | text                     | 
- avatar_url              | text                     | 
- created_at              | timestamp with time zone | not null default now()
- updated_at              | timestamp with time zone | not null default now()
- deleted_at              | timestamp with time zone | 
- invite_quota            | integer                  | not null default 15
- passwd                  | text                     | 
- passwd_reset_code       | text                     | 
- passwd_reset_time       | timestamp with time zone | 
- site_admin              | boolean                  | not null default false
- page_views              | integer                  | not null default 0
- search_queries          | integer                  | not null default 0
- tags                    | text[]                   | default '{}'::text[]
- billing_customer_id     | text                     | 
- invalidated_sessions_at | timestamp with time zone | not null default now()
+         Column          |           Type           | Collation | Nullable |              Default              
+-------------------------+--------------------------+-----------+----------+-----------------------------------
+ id                      | integer                  |           | not null | nextval('users_id_seq'::regclass)
+ username                | citext                   |           | not null | 
+ display_name            | text                     |           |          | 
+ avatar_url              | text                     |           |          | 
+ created_at              | timestamp with time zone |           | not null | now()
+ updated_at              | timestamp with time zone |           | not null | now()
+ deleted_at              | timestamp with time zone |           |          | 
+ invite_quota            | integer                  |           | not null | 15
+ passwd                  | text                     |           |          | 
+ passwd_reset_code       | text                     |           |          | 
+ passwd_reset_time       | timestamp with time zone |           |          | 
+ site_admin              | boolean                  |           | not null | false
+ page_views              | integer                  |           | not null | 0
+ search_queries          | integer                  |           | not null | 0
+ tags                    | text[]                   |           |          | '{}'::text[]
+ billing_customer_id     | text                     |           |          | 
+ invalidated_sessions_at | timestamp with time zone |           | not null | now()
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL
@@ -1581,6 +1598,7 @@ Referenced by:
     TABLE "discussion_comments" CONSTRAINT "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_mail_reply_tokens" CONSTRAINT "discussion_mail_reply_tokens_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_threads" CONSTRAINT "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "external_service_repos" CONSTRAINT "external_service_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "external_services" CONSTRAINT "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "names" CONSTRAINT "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
@@ -1599,18 +1617,18 @@ Referenced by:
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 Triggers:
-    trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE PROCEDURE invalidate_session_for_userid_on_password_change()
-    trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE PROCEDURE soft_delete_user_reference_on_external_service()
+    trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE FUNCTION invalidate_session_for_userid_on_password_change()
+    trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE FUNCTION soft_delete_user_reference_on_external_service()
 
 ```
 
 # Table "public.versions"
 ```
-   Column   |           Type           |       Modifiers        
-------------+--------------------------+------------------------
- service    | text                     | not null
- version    | text                     | not null
- updated_at | timestamp with time zone | not null default now()
+   Column   |           Type           | Collation | Nullable | Default 
+------------+--------------------------+-----------+----------+---------
+ service    | text                     |           | not null | 
+ version    | text                     |           | not null | 
+ updated_at | timestamp with time zone |           | not null | now()
 Indexes:
     "versions_pkey" PRIMARY KEY, btree (service)
 
@@ -1618,18 +1636,18 @@ Indexes:
 
 # View "public.branch_changeset_specs_and_changesets"
 ```
-        Column         |  Type   | Modifiers 
------------------------+---------+-----------
- changeset_spec_id     | bigint  | 
- changeset_id          | bigint  | 
- repo_id               | integer | 
- batch_spec_id         | bigint  | 
- owner_batch_change_id | bigint  | 
- repo_name             | citext  | 
- changeset_name        | text    | 
- external_state        | text    | 
- publication_state     | text    | 
- reconciler_state      | text    | 
+        Column         |  Type   | Collation | Nullable | Default 
+-----------------------+---------+-----------+----------+---------
+ changeset_spec_id     | bigint  |           |          | 
+ changeset_id          | bigint  |           |          | 
+ repo_id               | integer |           |          | 
+ batch_spec_id         | bigint  |           |          | 
+ owner_batch_change_id | bigint  |           |          | 
+ repo_name             | citext  |           |          | 
+ changeset_name        | text    |           |          | 
+ external_state        | text    |           |          | 
+ publication_state     | text    |           |          | 
+ reconciler_state      | text    |           |          | 
 
 ```
 
@@ -1656,19 +1674,19 @@ Indexes:
 
 # View "public.external_service_sync_jobs_with_next_sync_at"
 ```
-       Column        |           Type           | Modifiers 
----------------------+--------------------------+-----------
- id                  | integer                  | 
- state               | text                     | 
- failure_message     | text                     | 
- started_at          | timestamp with time zone | 
- finished_at         | timestamp with time zone | 
- process_after       | timestamp with time zone | 
- num_resets          | integer                  | 
- num_failures        | integer                  | 
- execution_logs      | json[]                   | 
- external_service_id | bigint                   | 
- next_sync_at        | timestamp with time zone | 
+       Column        |           Type           | Collation | Nullable | Default 
+---------------------+--------------------------+-----------+----------+---------
+ id                  | integer                  |           |          | 
+ state               | text                     |           |          | 
+ failure_message     | text                     |           |          | 
+ started_at          | timestamp with time zone |           |          | 
+ finished_at         | timestamp with time zone |           |          | 
+ process_after       | timestamp with time zone |           |          | 
+ num_resets          | integer                  |           |          | 
+ num_failures        | integer                  |           |          | 
+ execution_logs      | json[]                   |           |          | 
+ external_service_id | bigint                   |           |          | 
+ next_sync_at        | timestamp with time zone |           |          | 
 
 ```
 
@@ -1692,26 +1710,26 @@ Indexes:
 
 # View "public.lsif_dumps"
 ```
-       Column        |           Type           | Modifiers 
----------------------+--------------------------+-----------
- id                  | integer                  | 
- commit              | text                     | 
- root                | text                     | 
- uploaded_at         | timestamp with time zone | 
- state               | text                     | 
- failure_message     | text                     | 
- started_at          | timestamp with time zone | 
- finished_at         | timestamp with time zone | 
- repository_id       | integer                  | 
- indexer             | text                     | 
- num_parts           | integer                  | 
- uploaded_parts      | integer[]                | 
- process_after       | timestamp with time zone | 
- num_resets          | integer                  | 
- upload_size         | bigint                   | 
- num_failures        | integer                  | 
- associated_index_id | bigint                   | 
- processed_at        | timestamp with time zone | 
+       Column        |           Type           | Collation | Nullable | Default 
+---------------------+--------------------------+-----------+----------+---------
+ id                  | integer                  |           |          | 
+ commit              | text                     |           |          | 
+ root                | text                     |           |          | 
+ uploaded_at         | timestamp with time zone |           |          | 
+ state               | text                     |           |          | 
+ failure_message     | text                     |           |          | 
+ started_at          | timestamp with time zone |           |          | 
+ finished_at         | timestamp with time zone |           |          | 
+ repository_id       | integer                  |           |          | 
+ indexer             | text                     |           |          | 
+ num_parts           | integer                  |           |          | 
+ uploaded_parts      | integer[]                |           |          | 
+ process_after       | timestamp with time zone |           |          | 
+ num_resets          | integer                  |           |          | 
+ upload_size         | bigint                   |           |          | 
+ num_failures        | integer                  |           |          | 
+ associated_index_id | bigint                   |           |          | 
+ processed_at        | timestamp with time zone |           |          | 
 
 ```
 
@@ -1742,27 +1760,27 @@ Indexes:
 
 # View "public.lsif_dumps_with_repository_name"
 ```
-       Column        |           Type           | Modifiers 
----------------------+--------------------------+-----------
- id                  | integer                  | 
- commit              | text                     | 
- root                | text                     | 
- uploaded_at         | timestamp with time zone | 
- state               | text                     | 
- failure_message     | text                     | 
- started_at          | timestamp with time zone | 
- finished_at         | timestamp with time zone | 
- repository_id       | integer                  | 
- indexer             | text                     | 
- num_parts           | integer                  | 
- uploaded_parts      | integer[]                | 
- process_after       | timestamp with time zone | 
- num_resets          | integer                  | 
- upload_size         | bigint                   | 
- num_failures        | integer                  | 
- associated_index_id | bigint                   | 
- processed_at        | timestamp with time zone | 
- repository_name     | citext                   | 
+       Column        |           Type           | Collation | Nullable | Default 
+---------------------+--------------------------+-----------+----------+---------
+ id                  | integer                  |           |          | 
+ commit              | text                     |           |          | 
+ root                | text                     |           |          | 
+ uploaded_at         | timestamp with time zone |           |          | 
+ state               | text                     |           |          | 
+ failure_message     | text                     |           |          | 
+ started_at          | timestamp with time zone |           |          | 
+ finished_at         | timestamp with time zone |           |          | 
+ repository_id       | integer                  |           |          | 
+ indexer             | text                     |           |          | 
+ num_parts           | integer                  |           |          | 
+ uploaded_parts      | integer[]                |           |          | 
+ process_after       | timestamp with time zone |           |          | 
+ num_resets          | integer                  |           |          | 
+ upload_size         | bigint                   |           |          | 
+ num_failures        | integer                  |           |          | 
+ associated_index_id | bigint                   |           |          | 
+ processed_at        | timestamp with time zone |           |          | 
+ repository_name     | citext                   |           |          | 
 
 ```
 
@@ -1795,28 +1813,28 @@ Indexes:
 
 # View "public.lsif_indexes_with_repository_name"
 ```
-     Column      |           Type           | Modifiers 
------------------+--------------------------+-----------
- id              | bigint                   | 
- commit          | text                     | 
- queued_at       | timestamp with time zone | 
- state           | text                     | 
- failure_message | text                     | 
- started_at      | timestamp with time zone | 
- finished_at     | timestamp with time zone | 
- repository_id   | integer                  | 
- process_after   | timestamp with time zone | 
- num_resets      | integer                  | 
- num_failures    | integer                  | 
- docker_steps    | jsonb[]                  | 
- root            | text                     | 
- indexer         | text                     | 
- indexer_args    | text[]                   | 
- outfile         | text                     | 
- log_contents    | text                     | 
- execution_logs  | json[]                   | 
- local_steps     | text[]                   | 
- repository_name | citext                   | 
+     Column      |           Type           | Collation | Nullable | Default 
+-----------------+--------------------------+-----------+----------+---------
+ id              | bigint                   |           |          | 
+ commit          | text                     |           |          | 
+ queued_at       | timestamp with time zone |           |          | 
+ state           | text                     |           |          | 
+ failure_message | text                     |           |          | 
+ started_at      | timestamp with time zone |           |          | 
+ finished_at     | timestamp with time zone |           |          | 
+ repository_id   | integer                  |           |          | 
+ process_after   | timestamp with time zone |           |          | 
+ num_resets      | integer                  |           |          | 
+ num_failures    | integer                  |           |          | 
+ docker_steps    | jsonb[]                  |           |          | 
+ root            | text                     |           |          | 
+ indexer         | text                     |           |          | 
+ indexer_args    | text[]                   |           |          | 
+ outfile         | text                     |           |          | 
+ log_contents    | text                     |           |          | 
+ execution_logs  | json[]                   |           |          | 
+ local_steps     | text[]                   |           |          | 
+ repository_name | citext                   |           |          | 
 
 ```
 
@@ -1850,26 +1868,26 @@ Indexes:
 
 # View "public.lsif_uploads_with_repository_name"
 ```
-       Column        |           Type           | Modifiers 
----------------------+--------------------------+-----------
- id                  | integer                  | 
- commit              | text                     | 
- root                | text                     | 
- uploaded_at         | timestamp with time zone | 
- state               | text                     | 
- failure_message     | text                     | 
- started_at          | timestamp with time zone | 
- finished_at         | timestamp with time zone | 
- repository_id       | integer                  | 
- indexer             | text                     | 
- num_parts           | integer                  | 
- uploaded_parts      | integer[]                | 
- process_after       | timestamp with time zone | 
- num_resets          | integer                  | 
- upload_size         | bigint                   | 
- num_failures        | integer                  | 
- associated_index_id | bigint                   | 
- repository_name     | citext                   | 
+       Column        |           Type           | Collation | Nullable | Default 
+---------------------+--------------------------+-----------+----------+---------
+ id                  | integer                  |           |          | 
+ commit              | text                     |           |          | 
+ root                | text                     |           |          | 
+ uploaded_at         | timestamp with time zone |           |          | 
+ state               | text                     |           |          | 
+ failure_message     | text                     |           |          | 
+ started_at          | timestamp with time zone |           |          | 
+ finished_at         | timestamp with time zone |           |          | 
+ repository_id       | integer                  |           |          | 
+ indexer             | text                     |           |          | 
+ num_parts           | integer                  |           |          | 
+ uploaded_parts      | integer[]                |           |          | 
+ process_after       | timestamp with time zone |           |          | 
+ num_resets          | integer                  |           |          | 
+ upload_size         | bigint                   |           |          | 
+ num_failures        | integer                  |           |          | 
+ associated_index_id | bigint                   |           |          | 
+ repository_name     | citext                   |           |          | 
 
 ```
 
@@ -1901,41 +1919,41 @@ Indexes:
 
 # View "public.reconciler_changesets"
 ```
-          Column          |           Type           | Modifiers 
---------------------------+--------------------------+-----------
- id                       | bigint                   | 
- batch_change_ids         | jsonb                    | 
- repo_id                  | integer                  | 
- created_at               | timestamp with time zone | 
- updated_at               | timestamp with time zone | 
- metadata                 | jsonb                    | 
- external_id              | text                     | 
- external_service_type    | text                     | 
- external_deleted_at      | timestamp with time zone | 
- external_branch          | text                     | 
- external_updated_at      | timestamp with time zone | 
- external_state           | text                     | 
- external_review_state    | text                     | 
- external_check_state     | text                     | 
- diff_stat_added          | integer                  | 
- diff_stat_changed        | integer                  | 
- diff_stat_deleted        | integer                  | 
- sync_state               | jsonb                    | 
- current_spec_id          | bigint                   | 
- previous_spec_id         | bigint                   | 
- publication_state        | text                     | 
- owned_by_batch_change_id | bigint                   | 
- reconciler_state         | text                     | 
- failure_message          | text                     | 
- started_at               | timestamp with time zone | 
- finished_at              | timestamp with time zone | 
- process_after            | timestamp with time zone | 
- num_resets               | integer                  | 
- closing                  | boolean                  | 
- num_failures             | integer                  | 
- log_contents             | text                     | 
- execution_logs           | json[]                   | 
- syncer_error             | text                     | 
+          Column          |           Type           | Collation | Nullable | Default 
+--------------------------+--------------------------+-----------+----------+---------
+ id                       | bigint                   |           |          | 
+ batch_change_ids         | jsonb                    |           |          | 
+ repo_id                  | integer                  |           |          | 
+ created_at               | timestamp with time zone |           |          | 
+ updated_at               | timestamp with time zone |           |          | 
+ metadata                 | jsonb                    |           |          | 
+ external_id              | text                     |           |          | 
+ external_service_type    | text                     |           |          | 
+ external_deleted_at      | timestamp with time zone |           |          | 
+ external_branch          | text                     |           |          | 
+ external_updated_at      | timestamp with time zone |           |          | 
+ external_state           | text                     |           |          | 
+ external_review_state    | text                     |           |          | 
+ external_check_state     | text                     |           |          | 
+ diff_stat_added          | integer                  |           |          | 
+ diff_stat_changed        | integer                  |           |          | 
+ diff_stat_deleted        | integer                  |           |          | 
+ sync_state               | jsonb                    |           |          | 
+ current_spec_id          | bigint                   |           |          | 
+ previous_spec_id         | bigint                   |           |          | 
+ publication_state        | text                     |           |          | 
+ owned_by_batch_change_id | bigint                   |           |          | 
+ reconciler_state         | text                     |           |          | 
+ failure_message          | text                     |           |          | 
+ started_at               | timestamp with time zone |           |          | 
+ finished_at              | timestamp with time zone |           |          | 
+ process_after            | timestamp with time zone |           |          | 
+ num_resets               | integer                  |           |          | 
+ closing                  | boolean                  |           |          | 
+ num_failures             | integer                  |           |          | 
+ log_contents             | text                     |           |          | 
+ execution_logs           | json[]                   |           |          | 
+ syncer_error             | text                     |           |          | 
 
 ```
 
@@ -1986,10 +2004,10 @@ Indexes:
 
 # View "public.site_config"
 ```
-   Column    |  Type   | Modifiers 
--------------+---------+-----------
- site_id     | uuid    | 
- initialized | boolean | 
+   Column    |  Type   | Collation | Nullable | Default 
+-------------+---------+-----------+----------+---------
+ site_id     | uuid    |           |          | 
+ initialized | boolean |           |          | 
 
 ```
 
@@ -2003,17 +2021,17 @@ Indexes:
 
 # View "public.tracking_changeset_specs_and_changesets"
 ```
-      Column       |  Type   | Modifiers 
--------------------+---------+-----------
- changeset_spec_id | bigint  | 
- changeset_id      | bigint  | 
- repo_id           | integer | 
- batch_spec_id     | bigint  | 
- repo_name         | citext  | 
- changeset_name    | text    | 
- external_state    | text    | 
- publication_state | text    | 
- reconciler_state  | text    | 
+      Column       |  Type   | Collation | Nullable | Default 
+-------------------+---------+-----------+----------+---------
+ changeset_spec_id | bigint  |           |          | 
+ changeset_id      | bigint  |           |          | 
+ repo_id           | integer |           |          | 
+ batch_spec_id     | bigint  |           |          | 
+ repo_name         | citext  |           |          | 
+ changeset_name    | text    |           |          | 
+ external_state    | text    |           |          | 
+ publication_state | text    |           |          | 
+ reconciler_state  | text    |           |          | 
 
 ```
 

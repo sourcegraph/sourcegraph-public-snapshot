@@ -27,9 +27,9 @@
     "cover-integration": "nyc --hook-require=false yarn test-integration",
     "test-e2e": "TS_NODE_PROJECT=client/web/src/end-to-end/tsconfig.json mocha ./client/web/src/end-to-end/end-to-end.test.ts",
     "cover-e2e": "nyc --hook-require=false --silent=true yarn test-e2e",
-    "storybook": "start-storybook -p 9001 -c .storybook -s ui/assets",
-    "build-storybook": "build-storybook -c .storybook -s ui/assets",
-    "cover-storybook": "nyc --hook-require=false yarn jest .storybook/coverage",
+    "storybook": "yarn workspace @sourcegraph/storybook run start",
+    "build-storybook": "yarn workspace @sourcegraph/storybook run build",
+    "cover-storybook": "nyc --hook-require=false yarn jest client/storybook/src/coverage",
     "deduplicate": "yarn-deduplicate -s fewer",
     "release": "cd dev/release && yarn run release",
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
@@ -58,7 +58,8 @@
     "exclude": [
       "node_modules",
       "**/*.d.ts",
-      "**/*.@(test|story).ts?(x)"
+      "**/*.@(test|story).ts?(x)",
+      "client/storybook"
     ]
   },
   "jscpd": {
@@ -113,6 +114,7 @@
     "@storybook/addon-links": "^6.1.11",
     "@storybook/addon-storyshots": "^6.1.11",
     "@storybook/addon-storyshots-puppeteer": "^6.1.11",
+    "@storybook/addon-toolbars": "6.1.21",
     "@storybook/addons": "^6.1.11",
     "@storybook/components": "^6.1.11",
     "@storybook/core": "^6.1.11",
@@ -174,6 +176,7 @@
     "@types/sinon": "9.0.4",
     "@types/socket.io": "2.1.10",
     "@types/socket.io-client": "1.4.33",
+    "@types/terser-webpack-plugin": "^4.2.0",
     "@types/testing-library__jest-dom": "^5.9.5",
     "@types/textarea-caret": "3.0.0",
     "@types/uuid": "8.0.1",
@@ -201,6 +204,7 @@
     "enzyme-to-json": "^3.5.0",
     "eslint": "^7.17.0",
     "eslint-formatter-lsif": "^1.0.3",
+    "eslint-plugin-monorepo": "^0.3.2",
     "execa": "^5.0.0",
     "fancy-log": "^1.3.3",
     "get-port": "^5.1.1",

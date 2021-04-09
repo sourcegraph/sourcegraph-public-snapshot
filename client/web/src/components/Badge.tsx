@@ -16,7 +16,7 @@ export interface BadgeProps {
     className?: string
 }
 
-export const Badge: React.FC<BadgeProps> = props => {
+export const Badge: React.FunctionComponent<BadgeProps> = props => {
     const { className, status, tooltip } = props
 
     return (

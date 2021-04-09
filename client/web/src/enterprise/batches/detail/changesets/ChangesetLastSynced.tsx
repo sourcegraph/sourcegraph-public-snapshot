@@ -5,7 +5,7 @@ import { syncChangeset } from '../backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import SyncIcon from 'mdi-react/SyncIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
-import { isErrorLike } from '../../../../../../shared/src/util/errors'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import { ExternalChangesetFields, HiddenExternalChangesetFields } from '../../../../graphql-operations'
 

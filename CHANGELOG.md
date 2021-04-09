@@ -15,6 +15,40 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- `count:` now supports "all" as value. Queries with `count:all` will return up to 999999 results. [#19756](https://github.com/sourcegraph/sourcegraph/pull/19756)
+- Credentials for Batch Changes are now validated when adding them. [#19602](https://github.com/sourcegraph/sourcegraph/pull/19602)
+
+### Changed
+
+- Bumped the minimum supported version of Postgres from `9.6` to `12`. The upgrade procedure is mostly automated for existing deployments, but may require action if using the single-container deployment or an external database. See the [upgrade documentation](https://docs.sourcegraph.com/admin/updates) for your deployment type for detailed instructions.
+- Changesets in batch changes will now be marked as archived instead of being detached when a new batch spec that doesn't include the changesets is applied. Once they're archived users can manually detach them in the UI. [#19527](https://github.com/sourcegraph/sourcegraph/pull/19527)
+- The default replica count on `sourcegraph-frontend` and `precise-code-intel-worker` for Kubernetes has changed from `1` -> `2`.
+- Changes to code monitor trigger search queries [#19680](https://github.com/sourcegraph/sourcegraph/pull/19680)
+  - A `repo:` filter is now required. This is due to an existing limitations where only 50 repositories can be searched at a time, so using a `repo:` filter makes sure the right code is being searched. Any existing code monitor without `repo:` in the trigger query will continue to work (with the limitation that not all repositories will be searched) but will require a `repo:` filter to be added when making any changes to it.
+  - A `patternType` filter is no longer required. `patternType:literal` will be added to a code monitor query if not specified.
+  - Added a new checklist UI to make it more intuitive to create code monitor trigger queries.
+
+### Fixed
+
+- A regression caused by search onboarding tour logic to never focus input in the search bar on the homepage. Input now focuses on the homepage if the search tour isn't in effect. [#19678](https://github.com/sourcegraph/sourcegraph/pull/19678)
+- New changes of a Perforce depot will now be reflected in `master` branch after the initial clone. [#19718](https://github.com/sourcegraph/sourcegraph/pull/19718)
+
+## 3.26.3
+
+### Fixed
+
+- Setting `gitMaxCodehostRequestsPerSecond` to `0` now actually blocks all Git operations happening on the gitserver. [#19716](https://github.com/sourcegraph/sourcegraph/pull/19716)
+
+## 3.26.2
+
+### Fixed
+
+- Our indexed search logic now correctly handles de-duplication of search results across multiple replicas. [#19743](https://github.com/sourcegraph/sourcegraph/pull/19743)
+
+## 3.26.1
+
+### Added
+
 - Experimental: Sync permissions of Perforce depots through the Sourcegraph UI. To enable, use the feature flag `"experimentalFeatures": { "perforce": "enabled" }`. For more information, see [how to enable permissions for your Perforce depots](https://docs.sourcegraph.com/admin/repo/perforce). [#16705](https://github.com/sourcegraph/sourcegraph/issues/16705)
 - Added support for user email headers in the HTTP auth proxy. See [HTTP Auth Proxy docs](https://docs.sourcegraph.com/admin/auth#http-authentication-proxies) for more information.
 - Ignore locked and disabled GitHub Enterprise repositories. [#19500](https://github.com/sourcegraph/sourcegraph/pull/19500)
@@ -28,6 +62,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Commit search returning duplicate commits. [#19460](https://github.com/sourcegraph/sourcegraph/pull/19460)
 - Clicking the Code Monitoring tab tries to take users to a non-existent repo. [#19525](https://github.com/sourcegraph/sourcegraph/pull/19525)
+- Diff and commit search not highlighting search terms correctly for some files. [#19543](https://github.com/sourcegraph/sourcegraph/pull/19543), [#19639](https://github.com/sourcegraph/sourcegraph/pull/19639)
 
 ### Removed
 

@@ -49,14 +49,6 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "archiveBatchChangeChangesets": {
-          "description": "When enabled, changesets that would be detached when a new batch spec is applied will be archived instead, thereby retaining an association with the batch change.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "eventLogging": {
           "description": "Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.",
           "type": "string",
@@ -288,6 +280,51 @@
       "!go": { "pointer": true },
       "group": "BatchChanges",
       "default": false
+    },
+    "batchChanges.rolloutWindows": {
+      "description": "Specifies specific windows, which can have associated rate limits, to be used when publishing changesets. All days and times are handled in UTC.",
+      "type": "array",
+      "!go": { "pointer": true },
+      "group": "BatchChanges",
+      "items": {
+        "title": "BatchChangeRolloutWindow",
+        "type": "object",
+        "required": ["rate"],
+        "additionalProperties": false,
+        "properties": {
+          "rate": {
+            "description": "The rate changesets will be published at.",
+            "oneOf": [
+              { "type": "number", "minimum": 0, "maximum": 0 },
+              {
+                "type": "string",
+                "pattern": "^(?i)(unlimited|[0-9]+/(sec|secs|second|seconds|min|mins|minute|minutes|hr|hrs|hour|hours))$"
+              }
+            ]
+          },
+          "start": {
+            "description": "Window start time. If omitted, no time window is applied to the day(s) that match this rule.",
+            "type": "string",
+            "pattern": "^[0-9]?[0-9]:[0-9]{2}$"
+          },
+          "end": {
+            "description": "Window end time. If omitted, no time window is applied to the day(s) that match this rule.",
+            "type": "string",
+            "pattern": "^[0-9]?[0-9]:[0-9]{2}$"
+          },
+          "days": {
+            "description": "Day(s) the window applies to. If omitted, this rule applies to all days of the week.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(?i)(mon(day)?|tue(s|sday)?|wed(nesday)?|thu(r|rs|rsday)?|fri(day)?|sat(urday)?|sun(day)?)$"
+            }
+          }
+        },
+        "dependencies": {
+          "start": ["end"]
+        }
+      }
     },
     "codeIntelAutoIndexing.enabled": {
       "description": "Enables/disables the code intel auto indexing feature.",
@@ -930,6 +967,9 @@
       "properties": {
         "externalServiceKey": {
           "$ref": "#/definitions/EncryptionKey"
+        },
+        "userExternalAccountKey": {
+          "$ref": "#/definitions/EncryptionKey"
         }
       }
     },
@@ -1361,10 +1401,20 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["cloudkms", "noop"]
+          "enum": ["cloudkms", "mounted", "noop"]
         }
       },
-      "oneOf": [{ "$ref": "#/definitions/CloudKMSEncryptionKey" }, { "$ref": "#/definitions/NoOpEncryptionKey" }],
+      "oneOf": [
+        {
+          "$ref": "#/definitions/CloudKMSEncryptionKey"
+        },
+        {
+          "$ref": "#/definitions/MountedEncryptionKey"
+        },
+        {
+          "$ref": "#/definitions/NoOpEncryptionKey"
+        }
+      ],
       "!go": {
         "taggedUnionType": true
       }
@@ -1379,6 +1429,29 @@
           "const": "cloudkms"
         },
         "keyname": {
+          "type": "string"
+        }
+      }
+    },
+    "MountedEncryptionKey": {
+      "description": "This encryption key is mounted from a given file path or an environment variable.",
+      "type": "object",
+      "required": ["type", "keyname"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "mounted"
+        },
+        "keyname": {
+          "type": "string"
+        },
+        "filepath": {
+          "type": "string"
+        },
+        "envVarName": {
+          "type": "string"
+        },
+        "version": {
           "type": "string"
         }
       }

@@ -29,4 +29,10 @@
         align-items: center;
         margin-right: 1rem;
     }
+
+    &__divider {
+        height: 1rem;
+        border-right: 1px solid var(--border-color);
+        margin: 0 0.5rem;
+    }
 }

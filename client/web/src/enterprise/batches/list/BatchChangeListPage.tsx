@@ -7,7 +7,7 @@ import {
 import { RouteComponentProps } from 'react-router'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
 import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     ListBatchChange,
     Scalars,
@@ -17,7 +17,7 @@ import {
     BatchChangesByNamespaceVariables,
 } from '../../../graphql-operations'
 import PlusIcon from 'mdi-react/PlusIcon'
-import { Link } from '../../../../../shared/src/components/Link'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { PageHeader } from '../../../components/PageHeader'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { BatchChangesListEmpty } from './BatchChangesListEmpty'
@@ -25,7 +25,7 @@ import { BatchChangesListIntro } from './BatchChangesListIntro'
 import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
 import { Observable, ReplaySubject } from 'rxjs'
 import classNames from 'classnames'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 export interface BatchChangeListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
     displayNamespace?: boolean

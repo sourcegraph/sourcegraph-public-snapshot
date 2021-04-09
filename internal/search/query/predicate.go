@@ -27,51 +27,44 @@ type Predicate interface {
 
 var DefaultPredicateRegistry = predicateRegistry{
 	FieldRepo: {
-		"contains": func() Predicate {
-			return &RepoContainsPredicate{}
-		},
+		"contains":              func() Predicate { return &RepoContainsPredicate{} },
+		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 	},
 }
 
 type predicateRegistry map[string]map[string]func() Predicate
 
-// Get returns a predicate for the given field with the given name. If no such predicate
-// exists, or the params provided are invalid, it returns an error.
-func (pr predicateRegistry) Get(field, name, params string) (Predicate, error) {
+// Get returns a predicate for the given field with the given name. It assumes
+// it exists, and panics otherwise.
+func (pr predicateRegistry) Get(field, name string) Predicate {
 	fieldPredicates, ok := pr[field]
 	if !ok {
-		return nil, fmt.Errorf("no predicates registered for field %s", field)
+		panic("predicate lookup for " + field + " is invalid")
 	}
-
 	newPredicateFunc, ok := fieldPredicates[name]
 	if !ok {
-		return nil, fmt.Errorf("field '%s' has no predicate named '%s'", field, name)
+		panic("predicate lookup for " + name + " on " + field + " is invalid")
 	}
-
-	predicate := newPredicateFunc()
-	if err := predicate.ParseParams(params); err != nil {
-		return nil, fmt.Errorf("failed to parse params: %s", err)
-	}
-	return predicate, nil
+	return newPredicateFunc()
 }
 
 var (
-	predicateRegexp = regexp.MustCompile(`^(?P<name>[a-z]+)\((?P<params>.*)\)$`)
+	predicateRegexp = regexp.MustCompile(`^(?P<name>[a-z\.]+)\((?P<params>.*)\)$`)
 	nameIndex       = predicateRegexp.SubexpIndex("name")
 	paramsIndex     = predicateRegexp.SubexpIndex("params")
 )
 
-// ParseAsPredicate attempts to parse a value as a predicate. It does not validate
-// that the parsed predicate is a defined predicate.
-func ParseAsPredicate(value string) (name, params string, err error) {
+// ParsePredicate returns the name and value of syntax conforming to
+// name(value). It assumes this syntax is already validated prior. If not, it
+// panics.
+func ParseAsPredicate(value string) (name, params string) {
 	match := predicateRegexp.FindStringSubmatch(value)
 	if match == nil {
-		return "", "", fmt.Errorf("value '%s' is not a predicate", value)
+		panic("Invariant broken: attempt to parse a predicate value " + value + " that has not been validated")
 	}
-
 	name = match[nameIndex]
 	params = match[paramsIndex]
-	return name, params, nil
+	return name, params
 }
 
 // RepoContainsPredicate represents the `repo:contains()` predicate,
@@ -88,29 +81,8 @@ func (f *RepoContainsPredicate) ParseParams(params string) error {
 	}
 
 	for _, node := range nodes {
-		switch v := node.(type) {
-		case Parameter:
-			switch strings.ToLower(v.Field) {
-			case "file":
-				if f.File != "" {
-					return errors.New("cannot specify file multiple times")
-				}
-				f.File = v.Value
-			case "content":
-				if f.Content != "" {
-					return errors.New("cannot specify content multiple times")
-				}
-				f.Content = v.Value
-			default:
-				return fmt.Errorf("unsupported option %q", v.Field)
-			}
-		case Pattern:
-			if f.Content != "" {
-				return errors.New("cannot specify content multiple times")
-			}
-			f.Content = v.Value
-		default:
-			return fmt.Errorf("unsupported node type %T", node)
+		if err := f.parseNode(node); err != nil {
+			return err
 		}
 	}
 
@@ -118,6 +90,49 @@ func (f *RepoContainsPredicate) ParseParams(params string) error {
 		return errors.New("one of file or content must be set")
 	}
 
+	return nil
+}
+
+func (f *RepoContainsPredicate) parseNode(n Node) error {
+	switch v := n.(type) {
+	case Parameter:
+		if v.Negated {
+			return errors.New("predicates do not currently support negated values")
+		}
+		switch strings.ToLower(v.Field) {
+		case "file":
+			if f.File != "" {
+				return errors.New("cannot specify file multiple times")
+			}
+			f.File = v.Value
+		case "content":
+			if f.Content != "" {
+				return errors.New("cannot specify content multiple times")
+			}
+			f.Content = v.Value
+		default:
+			return fmt.Errorf("unsupported option %q", v.Field)
+		}
+	case Pattern:
+		if v.Negated {
+			return errors.New("predicates do not currently support negated values")
+		}
+		if f.Content != "" {
+			return errors.New("cannot specify content multiple times")
+		}
+		f.Content = v.Value
+	case Operator:
+		if v.Kind == Or {
+			return errors.New("predicates do not currently support 'or' queries")
+		}
+		for _, operand := range v.Operands {
+			if err := f.parseNode(operand); err != nil {
+				return err
+			}
+		}
+	default:
+		return fmt.Errorf("unsupported node type %T", n)
+	}
 	return nil
 }
 
@@ -142,9 +157,37 @@ func (f *RepoContainsPredicate) Plan(parent Basic) (Plan, error) {
 
 	if f.Content != "" {
 		nodes = append(nodes, Pattern{
-			Value: f.Content,
+			Value:      f.Content,
+			Annotation: Annotation{Labels: Regexp},
 		})
 	}
+
+	nodes = append(nodes, nonPredicateRepos(parent)...)
+	return ToPlan(Dnf(nodes))
+}
+
+type RepoContainsCommitAfterPredicate struct {
+	TimeRef string
+}
+
+func (f *RepoContainsCommitAfterPredicate) ParseParams(params string) error {
+	f.TimeRef = params
+	return nil
+}
+
+func (f RepoContainsCommitAfterPredicate) Field() string { return FieldRepo }
+func (f RepoContainsCommitAfterPredicate) Name() string {
+	return "contains.commit.after"
+}
+func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
+	nodes := make([]Node, 0, 3)
+	nodes = append(nodes, Parameter{
+		Field: FieldCount,
+		Value: "99999",
+	}, Parameter{
+		Field: FieldRepoHasCommitAfter,
+		Value: f.TimeRef,
+	})
 
 	nodes = append(nodes, nonPredicateRepos(parent)...)
 	return ToPlan(Dnf(nodes))
@@ -154,7 +197,7 @@ func (f *RepoContainsPredicate) Plan(parent Basic) (Plan, error) {
 func nonPredicateRepos(q Basic) []Node {
 	var res []Node
 	VisitField(q.ToParseTree(), FieldRepo, func(value string, negated bool, ann Annotation) {
-		if _, _, err := ParseAsPredicate(value); err == nil {
+		if ann.Labels.IsSet(IsPredicate) {
 			// Skip predicates
 			return
 		}

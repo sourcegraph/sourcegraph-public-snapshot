@@ -64,7 +64,21 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 
 const rangesDocumentQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/ranges.go:Ranges
-SELECT dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path = %s LIMIT 1
+SELECT
+	dump_id,
+	path,
+	data,
+	ranges,
+	hovers,
+	NULL AS monikers,
+	NULL AS packages,
+	NULL AS diagnostics
+FROM
+	lsif_data_documents
+WHERE
+	dump_id = %s AND
+	path = %s
+LIMIT 1
 `
 
 // locationsWithinFile queries the file-local locations associated with the given definition or reference

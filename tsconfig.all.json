@@ -13,6 +13,7 @@
     { "path": "client/browser/src/end-to-end" },
     { "path": "client/extension-api" },
     { "path": "client/extension-api-types" },
+    { "path": "client/storybook" },
     { "path": "dev/release" },
     { "path": "schema" },
   ],

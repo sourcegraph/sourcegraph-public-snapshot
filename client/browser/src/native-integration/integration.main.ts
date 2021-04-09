@@ -1,6 +1,6 @@
-import '../../../shared/src/polyfills'
+import '@sourcegraph/shared/src/polyfills'
 
-import { setLinkComponent, AnchorLink } from '../../../shared/src/components/Link'
+import { setLinkComponent, AnchorLink } from '@sourcegraph/shared/src/components/Link'
 import { injectCodeIntelligence } from '../shared/code-hosts/shared/inject'
 import {
     EXTENSION_MARKER_ID,

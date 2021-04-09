@@ -7,7 +7,7 @@ import {
     UserRepositoriesResult,
     ListExternalServiceFields,
 } from '../../../graphql-operations'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Connection,
     FilteredConnection,
@@ -19,13 +19,13 @@ import { EMPTY, Observable } from 'rxjs'
 import { listUserRepositories } from '../../../site-admin/backend'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { RouteComponentProps } from 'react-router'
-import { Link } from '../../../../../shared/src/components/Link'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { RepositoryNode } from './RepositoryNode'
 import AddIcon from 'mdi-react/AddIcon'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { ErrorAlert } from '../../../components/alerts'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { catchError, map } from 'rxjs/operators'
 
 interface Props extends RouteComponentProps, TelemetryProps {
@@ -102,7 +102,6 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 location={location}
                 emptyElement={emptyState}
                 totalCountSummaryComponent={TotalCountSummary}
-                hideControlsWhenEmpty={true}
                 inputClassName="user-settings-repos__filter-input"
             />
         )
@@ -221,23 +220,31 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         [pendingOrError, userID]
     )
 
-    const updated = useCallback((value: Connection<SiteAdminRepositoryFields> | ErrorLike | undefined): void => {
-        if (value as Connection<SiteAdminRepositoryFields>) {
-            const conn = value as Connection<SiteAdminRepositoryFields>
-            if (conn.totalCount !== 0) {
-                setHasRepos(true)
-            } else {
-                setHasRepos(false)
+    const updated = useCallback(
+        (value: Connection<SiteAdminRepositoryFields> | ErrorLike | undefined, query: string): void => {
+            if (value as Connection<SiteAdminRepositoryFields>) {
+                const conn = value as Connection<SiteAdminRepositoryFields>
+
+                // hasRepos is only useful when query is not set since user may
+                // still have repos that don't match given query
+                if (query === '') {
+                    if (conn.totalCount !== 0) {
+                        setHasRepos(true)
+                    } else {
+                        setHasRepos(false)
+                    }
+                }
             }
-        }
-    }, [])
+        },
+        []
+    )
 
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
 
     return (
-        <div className="user-settings-repositories-page">
+        <div className="user-settings-repos">
             {pendingOrError === 'pending' && (
                 <div className="alert alert-info">
                     <span className="font-weight-bold">Some repositories are still being updated.</span> These
@@ -248,10 +255,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
                 <h2 className="mb-2">Repositories</h2>
-                <Link
-                    className="btn btn-primary test-goto-add-external-service-page"
-                    to={`${routingPrefix}/repositories/manage`}
-                >
+                <Link className="btn btn-primary" to={`${routingPrefix}/repositories/manage`}>
                     {(hasRepos && <>Manage Repositories</>) || (
                         <>
                             <AddIcon className="icon-inline" /> Add repositories
@@ -280,5 +284,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 }
 
 const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
-    <small>{totalCount} repositories total</small>
+    <div className="d-inline-block mt-4 mr-2">
+        <small>
+            {totalCount} {totalCount === 1 ? 'repository' : 'repositories'} total
+        </small>
+    </div>
 )

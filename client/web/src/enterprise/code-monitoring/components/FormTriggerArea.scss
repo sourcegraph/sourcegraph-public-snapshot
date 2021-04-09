@@ -24,18 +24,48 @@
             }
         }
 
-        &-error-message {
-            font-size: 0.75rem;
-        }
-
         &-field {
             border-top-right-radius: 0;
             border-bottom-right-radius: 0;
-            padding-right: 8rem;
+            font-size: 0.75rem;
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            height: calc(1rem + 0.5rem * 2 + 1px * 2); // 1rem for text, 0.5rem vertical padding, 1px border
         }
     }
 
     &__query-label {
         white-space: pre-wrap;
+    }
+
+    &__checklist {
+        list-style-type: none;
+        padding-left: 0;
+        margin-bottom: 0;
+
+        &-checkbox {
+            font-size: 0.65rem;
+            margin-right: 0.5rem;
+            color: var(--border-color);
+        }
+
+        &-children {
+            &--faded {
+                opacity: 0.4;
+            }
+        }
+
+        &-hint {
+            font-size: 0.65rem;
+            margin-left: 0.25rem;
+
+            &--faded {
+                opacity: 0.4;
+            }
+        }
+
+        &-tooltip {
+            text-align: left;
+            max-width: 16rem;
+        }
     }
 }

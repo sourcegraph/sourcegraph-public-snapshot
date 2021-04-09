@@ -38,7 +38,6 @@ type indexedRequestType string
 const (
 	textRequest   indexedRequestType = "text"
 	symbolRequest indexedRequestType = "symbol"
-	fileRequest   indexedRequestType = "file"
 )
 
 // indexedSearchRequest is responsible for translating a Sourcegraph search
@@ -198,17 +197,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c Sender) error {
 		since = s.since
 	}
 
-	var zoektStream func(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Sender) error
-	switch s.typ {
-	case textRequest, symbolRequest:
-		zoektStream = zoektSearch
-	case fileRequest:
-		zoektStream = zoektSearchHEADOnlyFiles
-	default:
-		return fmt.Errorf("unexpected indexedSearchRequest type: %q", s.typ)
-	}
-
-	return zoektStream(ctx, s.db, s.args, s.repos, s.typ, since, c)
+	return zoektSearch(ctx, s.db, s.args, s.repos, s.typ, since, c)
 }
 
 // zoektSearch searches repositories using zoekt.
@@ -542,7 +531,6 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 	// extra stuff. This is a sign that we can probably restructure
 	// resolvers to avoid this.
 	baseURI := &gituri.URI{URL: url.URL{Scheme: "git", Host: repo.Name(), RawQuery: url.QueryEscape(inputRev)}}
-	lang := strings.ToLower(file.Language)
 
 	symbols := make([]*result.SymbolMatch, 0, len(file.LineMatches))
 	for _, l := range file.LineMatches {
@@ -567,9 +555,9 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 					// This Pattern is directly accessible on the unindexed code path. But on the indexed code path, we need to
 					// populate it, or we will always compute a 0 offset, which messes up API use (e.g., highlighting).
 					// It must escape `/` or `\` in the line.
-					Pattern: fmt.Sprintf("/^%s$/", escape(string(l.Line))),
+					Pattern:  fmt.Sprintf("/^%s$/", escape(string(l.Line))),
+					Language: file.Language,
 				},
-				Lang:    lang,
 				BaseURI: baseURI,
 			})
 		}

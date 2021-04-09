@@ -28,5 +28,6 @@ func TestIntegration(t *testing.T) {
 		t.Run("ChangesetSpecsTextSearch", storeTest(db, testStoreChangesetSpecsTextSearch))
 		t.Run("CodeHosts", storeTest(db, testStoreCodeHost))
 		t.Run("UserDeleteCascades", storeTest(db, testUserDeleteCascades))
+		t.Run("SiteCredentials", storeTest(db, testStoreSiteCredentials))
 	})
 }

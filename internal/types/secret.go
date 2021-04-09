@@ -170,11 +170,6 @@ func unredactField(old, new string, cfg interface{}, fields ...jsonStringField) 
 	if err := unmarshalConfig(old, cfg); err != nil {
 		return "", err
 	}
-	// now take copies of the unredacted fields from the old JSON
-	oldSecrets := []string{}
-	for _, field := range fields {
-		oldSecrets = append(oldSecrets, *field.ptr)
-	}
 
 	// and apply edits to update those fields in the new config
 	var err error

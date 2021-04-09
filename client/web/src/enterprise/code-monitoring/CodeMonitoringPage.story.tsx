@@ -8,7 +8,7 @@ import { of } from 'rxjs'
 import { mockCodeMonitorNodes } from './testing/util'
 import sinon from 'sinon'
 import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
-import { EMPTY_SETTINGS_CASCADE } from '../../../../shared/src/settings/settings'
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/CodeMonitoringPage', module)
 

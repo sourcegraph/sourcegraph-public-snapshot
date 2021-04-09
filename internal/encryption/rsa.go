@@ -11,6 +11,9 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+// MockGenerateRSAKey can be used in tests to speed up key generation.
+var MockGenerateRSAKey func() (key *RSAKey, err error) = nil
+
 type RSAKey struct {
 	PrivateKey string
 	Passphrase string
@@ -20,6 +23,10 @@ type RSAKey struct {
 // GenerateRSAKey generates an RSA key pair and encrypts the
 // private key with a passphrase.
 func GenerateRSAKey() (key *RSAKey, err error) {
+	if MockGenerateRSAKey != nil {
+		return MockGenerateRSAKey()
+	}
+
 	// First generate the private key.
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
@@ -34,6 +41,7 @@ func GenerateRSAKey() (key *RSAKey, err error) {
 	passphrase := randID.String()
 
 	// And encrypt the private key using that pass phrase.
+	//nolint:staticcheck // See issue #19489
 	block, err := x509.EncryptPEMBlock(
 		rand.Reader,
 		"RSA PRIVATE KEY",

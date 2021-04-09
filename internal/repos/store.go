@@ -316,12 +316,15 @@ update_sources AS (
 INSERT INTO external_service_repos (
   external_service_id,
   repo_id,
+  user_id,
   clone_url
 ) SELECT
   external_service_id,
   repo_id,
+  es.namespace_user_id,
   clone_url
 FROM inserted_sources_list
+JOIN external_services es ON (id = external_service_id)
 ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_unique
 DO
   UPDATE SET clone_url = EXCLUDED.clone_url
@@ -475,12 +478,12 @@ func (s *Store) list(ctx context.Context, q *sqlf.Query, scan scanFunc) (last, c
 	return scanAll(rows, scan)
 }
 
-// UpsertRepos updates or inserts the given repos in the Sourcegraph repository store.
-// The ID field is used to distinguish between Repos that need to be updated and types.Repos
-// that need to be inserted. On inserts, the _ID field of each given Repo is set on inserts.
-// The cloned column is not updated by this function.
-// This method does NOT update sources in the external_services_repo table.
-// Use UpsertSources for that purpose.
+// UpsertRepos updates or inserts the given repos in the Sourcegraph repository
+// store. The ID field is used to distinguish between Repos that need to be
+// updated and types.Repos that need to be inserted. On inserts, the _ID field of
+// each given Repo is set on inserts. The cloned column is not updated by this
+// function. This method does NOT update sources in the external_services_repo
+// table. Use UpsertSources for that purpose.
 func (s *Store) UpsertRepos(ctx context.Context, repos ...*types.Repo) (err error) {
 	if s.Mocks.UpsertRepos != nil {
 		return s.Mocks.UpsertRepos(ctx, repos...)

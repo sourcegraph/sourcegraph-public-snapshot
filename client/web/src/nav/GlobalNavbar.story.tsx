@@ -3,14 +3,15 @@ import { createMemoryHistory } from 'history'
 import { storiesOf } from '@storybook/react'
 import { WebStory } from '../components/WebStory'
 import { GlobalNavbar } from './GlobalNavbar'
-import { NOOP_TELEMETRY_SERVICE } from '../../../shared/src/telemetry/telemetryService'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemePreference } from '../theme'
-import { ThemeProps } from '../../../shared/src/theme'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { SearchPatternType } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
 import { SuiteFunction } from 'mocha'
 import { AuthenticatedUser } from '../auth'
-import { extensionsController } from '../../../shared/src/util/searchTestHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../searchContexts/testHelpers'
 
 window.context = { assetsRoot: 'https://sourcegraph.com/.assets' } as SourcegraphContext & SuiteFunction
 
@@ -49,7 +50,6 @@ const defaultProps = (
     showSearchContext: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
-    availableSearchContexts: [],
     defaultSearchContextSpec: '',
     showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
@@ -61,6 +61,8 @@ const defaultProps = (
     activation: undefined,
     hideNavLinks: false,
     routes: [],
+    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+    fetchSearchContexts: mockFetchSearchContexts,
 })
 
 const { add } = storiesOf('web/nav/GlobalNav', module)

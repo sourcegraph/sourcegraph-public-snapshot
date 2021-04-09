@@ -21,27 +21,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-var repoupdaterURL = env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "repo-updater server URL")
-
 var requestMeter = metrics.NewRequestMeter("repoupdater", "Total number of requests sent to repoupdater.")
 
-// DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
-// REPO_UPDATER_URL environment variable.
-var DefaultClient = &Client{
-	URL: repoupdaterURL,
-	HTTPClient: &http.Client{
-		// ot.Transport will propagate opentracing spans and whether or not to trace
-		Transport: &ot.Transport{
-			RoundTripper: requestMeter.Transport(&http.Transport{
-				// Default is 2, but we can send many concurrent requests
-				MaxIdleConnsPerHost: 500,
-			}, func(u *url.URL) string {
-				// break it down by API function call (ie "/repo-update-scheduler-info", "/repo-lookup", etc)
-				return u.Path
-			}),
-		},
-	},
-}
+// DefaultClient is the default Client. Unless overwritten, it is
+// connected to the server specified by the REPO_UPDATER_URL
+// environment variable.
+var DefaultClient = NewClient(env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "repo-updater server URL"))
 
 // Client is a repoupdater client.
 type Client struct {
@@ -50,6 +35,25 @@ type Client struct {
 
 	// HTTP client to use
 	HTTPClient *http.Client
+}
+
+// NewClient will initiate a new repoupdater Client with the given serverURL.
+func NewClient(serverURL string) *Client {
+	return &Client{
+		URL: serverURL,
+		HTTPClient: &http.Client{
+			// ot.Transport will propagate opentracing spans and whether or not to trace
+			Transport: &ot.Transport{
+				RoundTripper: requestMeter.Transport(&http.Transport{
+					// Default is 2, but we can send many concurrent requests
+					MaxIdleConnsPerHost: 500,
+				}, func(u *url.URL) string {
+					// break it down by API function call (ie "/repo-update-scheduler-info", "/repo-lookup", etc)
+					return u.Path
+				}),
+			},
+		},
+	}
 }
 
 // RepoUpdateSchedulerInfo returns information about the state of the repo in the update scheduler.

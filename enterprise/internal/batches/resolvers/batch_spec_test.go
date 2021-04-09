@@ -217,10 +217,6 @@ func TestBatchSpecResolver(t *testing.T) {
 
 		// Expect creator to not be returned anymore.
 		want.Creator = nil
-		// Expect all set for admin user.
-		want.OnlyWithoutCredential = apitest.BatchChangesCodeHostsConnection{
-			Nodes: []apitest.BatchChangesCodeHost{},
-		}
 		// Expect no superseding batch spec, since this request is run as a
 		// different user.
 		want.SupersedingBatchSpec = nil
@@ -241,10 +237,6 @@ func TestBatchSpecResolver(t *testing.T) {
 
 		// Expect creator to not be returned anymore.
 		want.Creator = nil
-		// Expect all set for admin user.
-		want.OnlyWithoutCredential = apitest.BatchChangesCodeHostsConnection{
-			Nodes: []apitest.BatchChangesCodeHost{},
-		}
 
 		if diff := cmp.Diff(want, response.Node); diff != "" {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
