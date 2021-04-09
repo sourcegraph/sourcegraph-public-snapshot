@@ -23,6 +23,7 @@ import (
 
 type Service struct {
 	allowUnsupported bool
+	allowIgnored     bool
 	client           api.Client
 	features         featureFlags
 	imageCache       *docker.ImageCache
@@ -31,6 +32,7 @@ type Service struct {
 
 type ServiceOpts struct {
 	AllowUnsupported bool
+	AllowIgnored     bool
 	Client           api.Client
 	Workspace        string
 }
@@ -42,6 +44,7 @@ var (
 func NewService(opts *ServiceOpts) *Service {
 	return &Service{
 		allowUnsupported: opts.AllowUnsupported,
+		allowIgnored:     opts.AllowIgnored,
 		client:           opts.Client,
 		imageCache:       docker.NewImageCache(),
 		workspace:        opts.Workspace,
@@ -529,12 +532,21 @@ func (svc *Service) ResolveNamespace(ctx context.Context, namespace string) (str
 func (svc *Service) ResolveRepositories(ctx context.Context, spec *BatchSpec) ([]*graphql.Repository, error) {
 	seen := map[string]*graphql.Repository{}
 	unsupported := UnsupportedRepoSet{}
+	ignored := IgnoredRepoSet{}
 
 	// TODO: this could be trivially parallelised in the future.
 	for _, on := range spec.On {
 		repos, err := svc.ResolveRepositoriesOn(ctx, &on)
 		if err != nil {
 			return nil, errors.Wrapf(err, "resolving %q", on.String())
+		}
+
+		var repoBatchIgnores map[*graphql.Repository][]string
+		if !svc.allowIgnored {
+			repoBatchIgnores, err = svc.FindDirectoriesInRepos(ctx, ".batchignore", repos...)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		for _, repo := range repos {
@@ -552,6 +564,12 @@ func (svc *Service) ResolveRepositories(ctx context.Context, spec *BatchSpec) ([
 						unsupported.appendRepo(repo)
 					}
 				}
+
+				if !svc.allowIgnored {
+					if locations, ok := repoBatchIgnores[repo]; ok && len(locations) > 0 {
+						ignored.appendRepo(repo)
+					}
+				}
 			} else {
 				// If we've already seen this repository, we overwrite the
 				// Commit/Branch fields with the latest value we have
@@ -563,13 +581,17 @@ func (svc *Service) ResolveRepositories(ctx context.Context, spec *BatchSpec) ([
 
 	final := make([]*graphql.Repository, 0, len(seen))
 	for _, repo := range seen {
-		if !unsupported.includes(repo) {
+		if !unsupported.includes(repo) && !ignored.includes(repo) {
 			final = append(final, repo)
 		}
 	}
 
 	if unsupported.hasUnsupported() {
 		return final, unsupported
+	}
+
+	if ignored.hasIgnored() {
+		return final, ignored
 	}
 
 	return final, nil
@@ -678,6 +700,7 @@ func (svc *Service) resolveRepositorySearch(ctx context.Context, query string) (
 			}
 		}
 	}
+
 	if ok, err := svc.client.NewRequest(repositorySearchQuery, map[string]interface{}{
 		"query":       setDefaultQueryCount(query),
 		"queryCommit": false,
@@ -728,7 +751,7 @@ type findDirectoriesResult map[string]struct {
 // files matching the given file name in the repository.
 // The locations are paths relative to the root of the directory.
 // No "/" at the beginning.
-// An empty path ("") represents the root directory.
+// A dot (".") represents the root directory.
 func (svc *Service) FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*graphql.Repository) (map[*graphql.Repository][]string, error) {
 	const batchSize = 50
 

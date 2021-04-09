@@ -44,3 +44,33 @@ func (e UnsupportedRepoSet) appendRepo(repo *graphql.Repository) {
 func (e UnsupportedRepoSet) hasUnsupported() bool {
 	return len(e) > 0
 }
+
+// IgnoredRepoSet provides a set to manage repositories that are on
+// unsupported code hosts. This type implements error to allow it to be
+// returned directly as an error value if needed.
+type IgnoredRepoSet map[*graphql.Repository]struct{}
+
+func (e IgnoredRepoSet) includes(r *graphql.Repository) bool {
+	_, ok := e[r]
+	return ok
+}
+
+func (e IgnoredRepoSet) Error() string {
+	repos := []string{}
+	for repo := range e {
+		repos = append(repos, repo.Name)
+	}
+
+	return fmt.Sprintf(
+		"found repositories containing .batchignore files:\n\t%s",
+		strings.Join(repos, "\n\t"),
+	)
+}
+
+func (e IgnoredRepoSet) appendRepo(repo *graphql.Repository) {
+	e[repo] = struct{}{}
+}
+
+func (e IgnoredRepoSet) hasIgnored() bool {
+	return len(e) > 0
+}

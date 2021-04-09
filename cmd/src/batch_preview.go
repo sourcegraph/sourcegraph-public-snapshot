@@ -44,6 +44,7 @@ Examples:
 
 		svc := batches.NewService(&batches.ServiceOpts{
 			AllowUnsupported: flags.allowUnsupported,
+			AllowIgnored:     flags.allowIgnored,
 			Client:           cfg.apiClient(flags.api, flagSet.Output()),
 			Workspace:        flags.workspace,
 		})

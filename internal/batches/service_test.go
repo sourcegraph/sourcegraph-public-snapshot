@@ -118,11 +118,18 @@ const testResolveRepositorySearchResult = `{
 }
 `
 
-func mockGraphQLClient(response string) (client api.Client, done func()) {
+func mockGraphQLClient(responses ...string) (client api.Client, done func()) {
 	mux := http.NewServeMux()
+
+	var count int
 	mux.HandleFunc("/.api/graphql", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(response))
+
+		_, _ = w.Write([]byte(responses[count]))
+
+		if count < len(responses)-1 {
+			count += 1
+		}
 	})
 
 	ts := httptest.NewServer(mux)
@@ -144,7 +151,7 @@ func TestResolveRepositories_Unsupported(t *testing.T) {
 	}
 
 	t.Run("allowUnsupported:true", func(t *testing.T) {
-		svc := &Service{client: client, allowUnsupported: true}
+		svc := &Service{client: client, allowUnsupported: true, allowIgnored: true}
 
 		repos, err := svc.ResolveRepositories(context.Background(), spec)
 		if err != nil {
@@ -156,7 +163,7 @@ func TestResolveRepositories_Unsupported(t *testing.T) {
 	})
 
 	t.Run("allowUnsupported:false", func(t *testing.T) {
-		svc := &Service{client: client, allowUnsupported: false}
+		svc := &Service{client: client, allowUnsupported: false, allowIgnored: true}
 
 		repos, err := svc.ResolveRepositories(context.Background(), spec)
 		repoSet, ok := err.(UnsupportedRepoSet)
@@ -167,7 +174,7 @@ func TestResolveRepositories_Unsupported(t *testing.T) {
 			t.Fatalf("wrong number of repos. want=%d, have=%d", 1, len(repoSet))
 		}
 		if len(repos) != 3 {
-			t.Fatalf("wrong number of repos. want=%d, have=%d", 4, len(repos))
+			t.Fatalf("wrong number of repos. want=%d, have=%d", 3, len(repos))
 		}
 	})
 }
@@ -213,6 +220,104 @@ const testResolveRepositoriesUnsupported = `{
       }
     }
   }
+}
+`
+
+func TestResolveRepositories_Ignored(t *testing.T) {
+	spec := &BatchSpec{
+		On: []OnQueryOrRepository{
+			{RepositoriesMatchingQuery: "testquery"},
+		},
+	}
+
+	t.Run("allowIgnored:true", func(t *testing.T) {
+		client, done := mockGraphQLClient(testResolveRepositories, testBatchIgnoreInRepos)
+		defer done()
+
+		svc := &Service{client: client, allowIgnored: true}
+
+		repos, err := svc.ResolveRepositories(context.Background(), spec)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+		if len(repos) != 3 {
+			t.Fatalf("wrong number of repos. want=%d, have=%d", 3, len(repos))
+		}
+	})
+
+	t.Run("allowIgnored:false", func(t *testing.T) {
+		client, done := mockGraphQLClient(testResolveRepositories, testBatchIgnoreInRepos)
+		defer done()
+
+		svc := &Service{client: client, allowIgnored: false}
+
+		repos, err := svc.ResolveRepositories(context.Background(), spec)
+		ignored, ok := err.(IgnoredRepoSet)
+		if !ok {
+			t.Fatalf("err is not IgnoredRepoSet: %s", err)
+		}
+		if len(ignored) != 1 {
+			t.Fatalf("wrong number of ignored repos. want=%d, have=%d", 1, len(ignored))
+		}
+		if len(repos) != 2 {
+			t.Fatalf("wrong number of repos. want=%d, have=%d", 2, len(repos))
+		}
+	})
+}
+
+const testResolveRepositories = `{
+  "data": {
+    "search": {
+      "results": {
+        "results": [
+          {
+            "__typename": "Repository",
+            "id": "UmVwb3NpdG9yeToxMw==",
+            "name": "bitbucket.sgdev.org/SOUR/automation-testing",
+            "url": "/bitbucket.sgdev.org/SOUR/automation-testing",
+            "externalRepository": { "serviceType": "bitbucketserver" },
+            "defaultBranch": { "name": "refs/heads/master", "target": { "oid": "b978d56de5578a935ca0bf07b56528acc99d5a61" } }
+          },
+          {
+            "__typename": "Repository",
+            "id": "UmVwb3NpdG9yeTo0",
+            "name": "github.com/sourcegraph/automation-testing",
+            "url": "/github.com/sourcegraph/automation-testing",
+            "externalRepository": { "serviceType": "github" },
+            "defaultBranch": { "name": "refs/heads/master", "target": { "oid": "6ac8a32ecaf6c4dc5ce050b9af51bce3db8efd63" } }
+          },
+          {
+            "__typename": "Repository",
+            "id": "UmVwb3NpdG9yeTo2MQ==",
+            "name": "gitlab.sgdev.org/sourcegraph/automation-testing",
+            "url": "/gitlab.sgdev.org/sourcegraph/automation-testing",
+            "externalRepository": { "serviceType": "gitlab" },
+            "defaultBranch": { "name": "refs/heads/master", "target": { "oid": "3b79a5d479d2af9cfe91e0aad4e9dddca7278150" } }
+          }
+        ]
+      }
+    }
+  }
+}
+`
+
+const testBatchIgnoreInRepos = `{
+    "data": {
+        "repo_0": {
+            "results": {
+                "results": [
+                    {
+                        "__typename": "FileMatch",
+                        "file": {
+                            "path": ".batchignore"
+                        }
+                    }
+                ]
+            }
+        },
+        "repo_1": { "results": { "results": [] } },
+        "repo_2": { "results": { "results": [] } }
+    }
 }
 `
 
