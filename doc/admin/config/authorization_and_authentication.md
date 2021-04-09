@@ -37,7 +37,7 @@ We recommend that you start at the instructions for your code host, if listed, f
 
 ### Built-in username/password authentication
 
-This is Sourcegraph’s default authentication option. To enable it, add the following to your site config:
+Built-in username/password authentication is Sourcegraph’s default authentication option. To enable it, add the following to your site config:
 
 ```
 {
