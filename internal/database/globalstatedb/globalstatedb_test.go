@@ -3,9 +3,11 @@ package globalstatedb
 import (
 	"context"
 	"database/sql"
+	"flag"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -28,12 +30,14 @@ func TestGet(t *testing.T) {
 	}
 }
 
+var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
+
 func TestEnsureInitialized_EmptyGlobalStateTable(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, *dsn)
 	ctx := context.Background()
 
 	// Ensure that we are starting with an empty table.
@@ -110,7 +114,7 @@ func TestEnsureInitialized_NonEmptyGlobalStateTableInitializedFalse(t *testing.T
 		t.Skip()
 	}
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, *dsn)
 	ctx := context.Background()
 
 	dbStore := basestore.NewWithDB(db, sql.TxOptions{})
