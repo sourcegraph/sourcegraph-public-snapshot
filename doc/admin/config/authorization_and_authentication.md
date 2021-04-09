@@ -126,4 +126,4 @@ Use OpenID Connect authentication if accessing using OpenID Connect, such as whe
 
 ### HTTP authentication proxy authentication
 
-This is not generally recommended unless this is a common authentication process within your organization. [See configuration instructions here](../auth/index.md#http-authentication-proxies). 
+HTTP authentication proxy authentication is not generally recommended unless it's a common authentication process within your organization. See [how to configure HTTP authentication proxies](../auth/index.md#http-authentication-proxies).
