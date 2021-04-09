@@ -33,6 +33,8 @@ func TestGet(t *testing.T) {
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
 func TestEnsureInitialized_EmptyGlobalStateTable(t *testing.T) {
+	t.Skip()
+
 	if testing.Short() {
 		t.Skip()
 	}
@@ -110,6 +112,8 @@ func TestEnsureInitialized_EmptyGlobalStateTable(t *testing.T) {
 }
 
 func TestEnsureInitialized_NonEmptyGlobalStateTableInitializedFalse(t *testing.T) {
+	t.Skip()
+
 	if testing.Short() {
 		t.Skip()
 	}
