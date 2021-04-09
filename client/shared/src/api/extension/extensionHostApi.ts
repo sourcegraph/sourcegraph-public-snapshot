@@ -2,12 +2,14 @@ import { proxy } from 'comlink'
 import { castArray, groupBy, identity, isEqual } from 'lodash'
 import { combineLatest, concat, EMPTY, from, Observable, of, Subscribable } from 'rxjs'
 import {
-    catchError, concatMap,
+    catchError,
+    concatMap,
     debounceTime,
     defaultIfEmpty,
     distinctUntilChanged,
     map,
-    mergeMap, scan,
+    mergeMap,
+    scan,
     switchMap,
 } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
@@ -420,7 +422,8 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             ),
 
-        getInsightsViews: context => proxySubscribable(callViewProvidersSequentially(context, state.insightsPageViewProviders)),
+        getInsightsViews: context =>
+            proxySubscribable(callViewProvidersSequentially(context, state.insightsPageViewProviders)),
         getHomepageViews: context => proxySubscribable(callViewProviders(context, state.homepageViewProviders)),
         getGlobalPageViews: context => proxySubscribable(callViewProviders(context, state.globalPageViewProviders)),
         getDirectoryViews: context =>
@@ -687,11 +690,14 @@ function callViewProvidersSequentially<W extends ContributableViewContainer>(
                         map(view => ({ id, view }))
                     )
                 ),
-                scan<ViewProviderResult, ViewProviderResult[]>((accumulator, current, index) => {
-                    accumulator[index] = current;
+                scan<ViewProviderResult, ViewProviderResult[]>(
+                    (accumulator, current, index) => {
+                        accumulator[index] = current
 
-                    return accumulator;
-                }, providers.map(provider => ({ id: provider.id, view: undefined })))
+                        return accumulator
+                    },
+                    providers.map(provider => ({ id: provider.id, view: undefined }))
+                )
             )
         ),
         map(views => views.filter(allOf(isDefined, property('view', isNot(isExactly(null))))))
