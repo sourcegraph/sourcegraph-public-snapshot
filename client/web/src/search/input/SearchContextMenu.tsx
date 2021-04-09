@@ -3,7 +3,7 @@ import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Link } from '../../../../shared/src/components/Link'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, {
@@ -98,6 +98,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
     fetchAutoDefinedSearchContexts,
     fetchSearchContexts,
     closeMenu,
+    showSearchContextManagement,
 }) => {
     const inputElement = useRef<HTMLInputElement | null>(null)
 
@@ -299,13 +300,15 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                     Reset
                 </button>
                 <span className="flex-grow-1" />
-                <Link
-                    to="/contexts"
-                    className="btn btn-link btn-sm search-context-menu__footer-button"
-                    onClick={closeMenu}
-                >
-                    Manage
-                </Link>
+                {showSearchContextManagement && (
+                    <Link
+                        to="/contexts"
+                        className="btn btn-link btn-sm search-context-menu__footer-button"
+                        onClick={closeMenu}
+                    >
+                        Manage
+                    </Link>
+                )}
             </div>
         </div>
     )
