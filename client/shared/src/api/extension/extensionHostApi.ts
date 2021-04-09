@@ -680,19 +680,19 @@ function callViewProvidersSequentially<W extends ContributableViewContainer>(
         debounceTime(0),
         switchMap(providers =>
             from(providers).pipe(
-                concatMap(({ viewProvider, id }) =>
+                concatMap(({ viewProvider, id }, index) =>
                     providerResultToObservable(viewProvider.provideView(context)).pipe(
-                        // defaultIfEmpty<sourcegraph.View | null | undefined>(null),
                         catchError((error): [ErrorLike] => {
                             console.error('View provider errored:', error)
                             return [asError(error)]
                         }),
-                        map(view => ({ id, view }))
+                        map(view => ({ id, view, index }))
                     )
                 ),
-                scan<ViewProviderResult, ViewProviderResult[]>(
-                    (accumulator, current, index) => {
-                        accumulator[index] = current
+                scan<ViewProviderResult & { index: number }, ViewProviderResult[]>(
+                    (accumulator, current) => {
+                        const { index, ...payload } = current;
+                        accumulator[index] = payload
 
                         return accumulator
                     },
