@@ -10,7 +10,7 @@ import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { addSourcegraphSearchCodeIntelligence } from './input/MonacoQueryInput'
 import { BehaviorSubject, concat, NEVER, of } from 'rxjs'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { search, shouldDisplayPerformanceWarning } from './backend'
+import { fetchSuggestions, search, shouldDisplayPerformanceWarning } from './backend'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Omit } from 'utility-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -94,7 +94,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         if (!monacoInstance) {
             return
         }
-        const subscription = addSourcegraphSearchCodeIntelligence(monacoInstance, searchQuery, {
+        const subscription = addSourcegraphSearchCodeIntelligence(monacoInstance, searchQuery, fetchSuggestions, {
             patternType,
             globbing,
             enableSmartQuery: true,
