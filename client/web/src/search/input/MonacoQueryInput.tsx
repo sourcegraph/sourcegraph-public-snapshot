@@ -35,6 +35,7 @@ export interface MonacoQueryInputProps
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
+    submitSearchOnSearchContextChange?: boolean
 
     // Whether globbing is enabled for filters.
     globbing: boolean
