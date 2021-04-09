@@ -6,9 +6,12 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
+
+func init() {
+	dbtesting.DBNameSuffix = "globalstatedb"
+}
 
 func TestGet(t *testing.T) {
 	if testing.Short() {
@@ -30,9 +33,7 @@ func TestEnsureInitialized_EmptyGlobalStateTable(t *testing.T) {
 		t.Skip()
 	}
 
-	dbtesting.SetupGlobalTestDB(t)
-
-	db := dbconn.Global
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	// Ensure that we are starting with an empty table.
@@ -109,9 +110,7 @@ func TestEnsureInitialized_NonEmptyGlobalStateTableInitializedFalse(t *testing.T
 		t.Skip()
 	}
 
-	dbtesting.SetupGlobalTestDB(t)
-
-	db := dbconn.Global
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	dbStore := basestore.NewWithDB(db, sql.TxOptions{})
