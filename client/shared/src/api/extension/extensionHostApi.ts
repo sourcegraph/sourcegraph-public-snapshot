@@ -2,12 +2,12 @@ import { proxy } from 'comlink'
 import { castArray, groupBy, identity, isEqual } from 'lodash'
 import { combineLatest, concat, EMPTY, from, Observable, of, Subscribable } from 'rxjs'
 import {
-    catchError,
+    catchError, concatMap,
     debounceTime,
     defaultIfEmpty,
     distinctUntilChanged,
     map,
-    mergeMap,
+    mergeMap, scan,
     switchMap,
 } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
@@ -659,6 +659,35 @@ function callViewProviders<W extends ContributableViewContainer>(
                     ).pipe(map(view => ({ id, view })))
                 ),
             ])
+        ),
+        map(views => views.filter(allOf(isDefined, property('view', isNot(isExactly(null))))))
+    )
+}
+
+export function callViewProvidersSequentially<W extends ContributableViewContainer>(
+    context: ViewContexts[W],
+    providers: Observable<readonly RegisteredViewProvider<W>[]>
+): Observable<ViewProviderResult[]> {
+    return providers.pipe(
+        debounceTime(0),
+        switchMap(providers =>
+            from(providers).pipe(
+                concatMap(({ viewProvider, id }) =>
+                    providerResultToObservable(viewProvider.provideView(context)).pipe(
+                        // defaultIfEmpty<sourcegraph.View | null | undefined>(null),
+                        catchError((error): [ErrorLike] => {
+                            console.error('View provider errored:', error)
+                            return [asError(error)]
+                        }),
+                        map(view => ({ id, view }))
+                    )
+                ),
+                scan<ViewProviderResult, ViewProviderResult[]>((accumulator, current) => {
+                    accumulator.push(current);
+
+                    return accumulator;
+                }, [])
+            )
         ),
         map(views => views.filter(allOf(isDefined, property('view', isNot(isExactly(null))))))
     )
