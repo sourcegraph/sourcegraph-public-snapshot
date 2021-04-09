@@ -1,6 +1,6 @@
 # Authentication and authorization in Sourcegraph
 
-Sourcegraph has two authentication concepts to be mindful of:
+Sourcegraph has two authentication concepts:
 
 1. The system through which your users log in (SAML IdP, OAuth with a code host, username/password, OpenID Connect, Authentication Proxy)
 2. The system which controls user permissions (Code host, explicit permissions API in Sourcegraph)
