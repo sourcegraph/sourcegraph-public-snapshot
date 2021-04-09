@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
@@ -77,6 +78,8 @@ type Common struct {
 
 var webpackDevServer, _ = strconv.ParseBool(os.Getenv("WEBPACK_DEV_SERVER"))
 
+var once sync.Once
+
 // repoShortName trims the first path element of the given repo name if it has
 // at least two path components.
 func repoShortName(name api.RepoName) string {
@@ -120,9 +123,15 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		return mockNewCommon(w, r, title, serveError)
 	}
 
-	manifest, err := assets.LoadWebpackManifest()
-	if err != nil {
-		return nil, errors.Wrap(err, "loading webpack manifest")
+	var manifest *assets.WebpackManifest
+	var manifestError error
+
+	once.Do(func() {
+		manifest, manifestError = assets.LoadWebpackManifest()
+	})
+
+	if manifestError != nil {
+		return nil, errors.Wrap(manifestError, "loading webpack manifest")
 	}
 
 	common := &Common{
