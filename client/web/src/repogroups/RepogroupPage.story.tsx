@@ -93,6 +93,7 @@ const commonProps = () =>
         },
         availableVersionContexts: [],
         showSearchContext: false,
+        showSearchContextManagement: false,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
         defaultSearchContextSpec: '',

@@ -1304,6 +1304,8 @@ type SettingsExperimentalFeatures struct {
 	ShowRepogroupHomepage *bool `json:"showRepogroupHomepage,omitempty"`
 	// ShowSearchContext description: Enables the search context dropdown.
 	ShowSearchContext *bool `json:"showSearchContext,omitempty"`
+	// ShowSearchContextManagement description: Enables search context management.
+	ShowSearchContextManagement *bool `json:"showSearchContextManagement,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.

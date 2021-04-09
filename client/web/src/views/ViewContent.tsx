@@ -11,9 +11,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
-import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '../search'
-
-import { ChartViewContent } from './ChartViewContent'
+import { ChartViewContent } from './ChartViewContent/ChartViewContent'
 import { QueryInputInViewContent } from './QueryInputInViewContent'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>
@@ -100,7 +98,14 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = ({
                         )}
                     </React.Fragment>
                 ) : 'chart' in content ? (
-                    <ChartViewContent key={index} content={content} viewID={viewID} history={props.history} />
+                    <ChartViewContent
+                        key={index}
+                        content={content}
+                        viewID={viewID}
+                        history={props.history}
+                        telemetryService={props.telemetryService}
+                        className="view-content__chart"
+                    />
                 ) : content.component === 'QueryInput' ? (
                     <QueryInputInViewContent
                         {...props}

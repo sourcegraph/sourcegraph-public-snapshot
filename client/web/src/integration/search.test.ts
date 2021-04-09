@@ -560,7 +560,12 @@ describe('Search', () => {
                             viewerCanAdminister: false,
                             latestSettings: {
                                 id: 0,
-                                contents: JSON.stringify({ experimentalFeatures: { showSearchContext: true } }),
+                                contents: JSON.stringify({
+                                    experimentalFeatures: {
+                                        showSearchContext: true,
+                                        showSearchContextManagement: true,
+                                    },
+                                }),
                             },
                         },
                         {
@@ -569,7 +574,12 @@ describe('Search', () => {
                             siteID,
                             latestSettings: {
                                 id: 470,
-                                contents: JSON.stringify({ experimentalFeatures: { showSearchContext: true } }),
+                                contents: JSON.stringify({
+                                    experimentalFeatures: {
+                                        showSearchContext: true,
+                                        showSearchContextManagement: true,
+                                    },
+                                }),
                             },
                             settingsURL: '/site-admin/global-settings',
                             viewerCanAdminister: true,

@@ -3,7 +3,9 @@ import isChromatic from 'chromatic/isChromatic'
 import { createMemoryHistory } from 'history'
 import React from 'react'
 
-import webStyles from '../SourcegraphWebApp.scss'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
+import webStyles from '../../SourcegraphWebApp.scss'
 
 import { ChartViewContent } from './ChartViewContent'
 
@@ -14,6 +16,7 @@ const commonProps = {
     animate: !isChromatic(),
     location: history.location,
     viewID: '1',
+    telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
 const { add } = storiesOf('web/ChartViewContent', module).addDecorator(story => (

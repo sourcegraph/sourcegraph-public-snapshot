@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React, { useMemo } from 'react'
 
-import { createLinkClickHandler } from './linkClickHandler'
+import { createLinkClickHandler } from '../util/link-click-handler/linkClickHandler'
 
 interface Props {
     wrapper?: 'div' | 'span'

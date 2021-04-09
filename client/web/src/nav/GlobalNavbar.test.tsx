@@ -45,6 +45,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     setVersionContext: () => Promise.resolve(),
     availableVersionContexts: [],
     showSearchContext: false,
+    showSearchContextManagement: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
     defaultSearchContextSpec: '',
