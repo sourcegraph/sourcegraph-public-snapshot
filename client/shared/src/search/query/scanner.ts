@@ -15,6 +15,7 @@ import {
     CharacterRange,
     createLiteral,
 } from './token'
+import { scanPredicate } from './predicates'
 
 /**
  * A scanner produces a term, which is either a token or a list of tokens.
@@ -276,6 +277,26 @@ export const scanBalancedLiteral: Scanner<Literal> = (input, start) => {
     }
 }
 
+/**
+ * Scan predicate syntax like repo:contains(file:README.md). Predicate scanning
+ * takes precedence over other value scanners like scanBalancedLiteral.
+ */
+export const scanPredicateValue = (input: string, start: number, field: Literal): ScanResult<Literal> => {
+    const result = scanPredicate(field.value, input.slice(start))
+    if (!result) {
+        return {
+            type: 'error',
+            expected: 'recognized predicate',
+            at: start,
+        }
+    }
+    const value = `${result.path.join('.')}${result.parameters}`
+    return {
+        type: 'success',
+        term: createLiteral(value, { start, end: start + value.length }),
+    }
+}
+
 const whitespace = scanToken(/\s+/, (_input, range) => ({
     type: 'whitespace',
     range,
@@ -361,10 +382,15 @@ const filter: Scanner<Filter> = (input, start) => {
     if (scannedDelimiter.type === 'error') {
         return scannedDelimiter
     }
-    const scannedValue =
-        input[scannedDelimiter.term.range.end] === undefined
-            ? undefined
-            : filterValue(input, scannedDelimiter.term.range.end)
+    let scannedValue: ScanResult<Literal> | undefined
+    if (input[scannedDelimiter.term.range.end] === undefined) {
+        scannedValue = undefined
+    } else {
+        scannedValue = scanPredicateValue(input, scannedDelimiter.term.range.end, scannedKeyword.term)
+        if (scannedValue.type === 'error') {
+            scannedValue = filterValue(input, scannedDelimiter.term.range.end)
+        }
+    }
     if (scannedValue && scannedValue.type === 'error') {
         return scannedValue
     }
