@@ -69,7 +69,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                   />
                   <Memo(RadioboxBlankIcon)
                     aria-hidden={true}
-                    className="trigger-area__checklist-checkbox icon-inline"
+                    className="trigger-area__checklist-checkbox trigger-area__checklist-checkbox--unchecked icon-inline"
                   />
                   <span
                     className=""
