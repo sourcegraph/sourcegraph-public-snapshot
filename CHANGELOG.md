@@ -17,6 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - `count:` now supports "all" as value. Queries with `count:all` will return up to 999999 results. [#19756](https://github.com/sourcegraph/sourcegraph/pull/19756)
 - Credentials for Batch Changes are now validated when adding them. [#19602](https://github.com/sourcegraph/sourcegraph/pull/19602)
+- Batch Changes now ignore repositories that contain a `.batchignore` file.
 
 ### Changed
 
