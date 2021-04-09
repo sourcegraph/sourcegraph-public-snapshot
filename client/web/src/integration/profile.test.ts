@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -50,8 +50,6 @@ describe('User profile page', () => {
         })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/settings/profile')
         await driver.page.waitForSelector('.user-profile-form-fields')
-
-        await percySnapshot(driver.page, 'User profile page')
 
         await driver.replaceText({
             selector: '.test-UserProfileFormFields__displayName',
