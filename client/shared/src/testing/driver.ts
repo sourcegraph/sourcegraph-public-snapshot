@@ -52,9 +52,13 @@ interface SnapshotConfig {
     waitForCodeHighlighting: boolean
 }
 
+const CODE_HIGHLIGHTING_QUERIES = ['highlightCode', 'blob'] as const
+const isCodeHighlightQuery = (url: string): boolean =>
+    CODE_HIGHLIGHTING_QUERIES.some(query => url.includes(`graphql?${query}`))
+
 const waitForCodeHighlighting = async (page: Page): Promise<void> => {
     const requestDidFire = await page
-        .waitForRequest(request => request.url().includes('graphql?highlightCode'), { timeout: 5000 })
+        .waitForRequest(request => isCodeHighlightQuery(request.url()), { timeout: 5000 })
         .catch(
             () =>
                 // request won't always fire if data is cached
@@ -62,7 +66,7 @@ const waitForCodeHighlighting = async (page: Page): Promise<void> => {
         )
 
     if (requestDidFire) {
-        await page.waitForResponse(response => response.url().includes('graphql?highlightCode'), { timeout: 5000 })
+        await page.waitForResponse(request => isCodeHighlightQuery(request.url()), { timeout: 5000 })
     }
 }
 
@@ -103,7 +107,7 @@ export const percySnapshot = async (page: Page, name: string, config?: SnapshotC
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
     await realPercySnapshot(page, `${name} - light theme with redesign enabled`)
     await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
-
+    console.log('theme dark')
     // Theme-dark
     await setColorScheme(page, 'dark', config)
     await realPercySnapshot(page, `${name} - Dark Theme`)
