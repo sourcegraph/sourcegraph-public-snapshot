@@ -381,7 +381,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 return true
             }
 
-            const publicRepos = publicRepoState.repos ? publicRepoState.repos.split('\n') : []
+            const publicRepos =
+                publicRepoState.enabled && publicRepoState.repos ? publicRepoState.repos.split('\n') : []
             const affiliatedRepos = selectionState.repos.keys()
 
             const currentlySelectedRepos = [...publicRepos, ...affiliatedRepos]
@@ -394,7 +395,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
             return true
         },
-        [onloadSelectedRepos, publicRepoState.repos, selectionState.repos]
+        [onloadSelectedRepos, publicRepoState.repos, publicRepoState.enabled, selectionState.repos]
     )
 
     // save changes and update code hosts
