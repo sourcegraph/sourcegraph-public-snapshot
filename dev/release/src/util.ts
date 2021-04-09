@@ -1,7 +1,8 @@
-import * as readline from 'readline'
-import { readFile, writeFile, mkdir } from 'mz/fs'
 import * as path from 'path'
+import * as readline from 'readline'
 import { URL } from 'url'
+
+import { readFile, writeFile, mkdir } from 'mz/fs'
 
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 export function formatDate(date: Date): string {
