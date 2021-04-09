@@ -273,6 +273,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query: "repohasfile:README",
 			},
 			{
+				name:       "multiple repohasfile returns no results if one doesn't match",
+				query:      "repohasfile:README repohasfile:thisfiledoesnotexist_1571751",
+				zeroResult: true,
+			},
+			{
 				name:  "repo search by name, nonzero result",
 				query: "repo:go-diff$",
 			},
@@ -960,6 +965,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:   `or-expression on repo:contains`,
 				query:  `repo:contains(content:does-not-exist-D2E1E74C7279) or repo:contains(content:nextFileFirstLine)`,
 				counts: counts{Repo: 1},
+			},
+			{
+				name:   `and-expression on repo:contains`,
+				query:  `repo:contains(content:does-not-exist-D2E1E74C7279) and repo:contains(content:nextFileFirstLine)`,
+				counts: counts{Repo: 0},
 			},
 			{
 				name:   `repo contains file then search common`,

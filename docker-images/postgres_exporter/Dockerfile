@@ -20,7 +20,7 @@ RUN addgroup -S postgres_exporter && adduser --uid 20001 -S postgres_exporter -G
 
 USER postgres_exporter
 
-COPY ./queries.yaml /config/queries.yaml
+COPY ./*.yaml /config/
 ENV  PG_EXPORTER_EXTEND_QUERY_PATH=/config/queries.yaml
 
 EXPOSE 9187

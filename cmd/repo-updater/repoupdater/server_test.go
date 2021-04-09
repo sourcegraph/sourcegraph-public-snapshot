@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -1199,6 +1200,9 @@ type testSource struct {
 	fn func() error
 }
 
+var _ repos.Source = &testSource{}
+var _ repos.UserSource = &testSource{}
+
 func (t testSource) ListRepos(ctx context.Context, results chan repos.SourceResult) {
 }
 
@@ -1206,7 +1210,11 @@ func (t testSource) ExternalServices() types.ExternalServices {
 	return nil
 }
 
-func (t testSource) ValidateToken(ctx context.Context) error {
+func (t testSource) WithAuthenticator(a auth.Authenticator) (repos.Source, error) {
+	return t, nil
+}
+
+func (t testSource) ValidateAuthenticator(ctx context.Context) error {
 	return t.fn()
 }
 

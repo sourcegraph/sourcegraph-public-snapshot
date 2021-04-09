@@ -40,6 +40,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     copyQueryButton: false,
     versionContext: undefined,
     showSearchContext: false,
+    showSearchContextManagement: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => {},
     defaultSearchContextSpec: '',

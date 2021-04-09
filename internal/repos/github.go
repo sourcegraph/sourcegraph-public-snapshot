@@ -155,7 +155,6 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 				},
 			})
 		}
-
 	}
 
 	return &GithubSource{
@@ -196,7 +195,7 @@ type githubResult struct {
 	repo *github.Repository
 }
 
-func (s GithubSource) ValidateToken(ctx context.Context) error {
+func (s GithubSource) ValidateAuthenticator(ctx context.Context) error {
 	_, err := s.v3Client.GetAuthenticatedUser(ctx)
 	return err
 }

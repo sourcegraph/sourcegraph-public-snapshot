@@ -21,6 +21,7 @@ const { add } = storiesOf('web/search/input/SearchContextMenu', module)
     ))
 
 const defaultProps: SearchContextMenuProps = {
+    showSearchContextManagement: false,
     fetchAutoDefinedSearchContexts: of([
         {
             __typename: 'SearchContext',
@@ -75,3 +76,9 @@ const emptySearchContexts = {
 add('default', () => <WebStory>{() => <SearchContextMenu {...defaultProps} />}</WebStory>, {})
 
 add('empty', () => <WebStory>{() => <SearchContextMenu {...defaultProps} {...emptySearchContexts} />}</WebStory>, {})
+
+add(
+    'with manage link',
+    () => <WebStory>{() => <SearchContextMenu {...defaultProps} showSearchContextManagement={true} />}</WebStory>,
+    {}
+)

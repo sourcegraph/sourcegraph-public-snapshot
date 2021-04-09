@@ -26,6 +26,7 @@ const mockFetchAutoDefinedSearchContexts = () =>
 describe('SearchContextDropdown', () => {
     const defaultProps: SearchContextDropdownProps = {
         query: '',
+        showSearchContextManagement: false,
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
         defaultSearchContextSpec: '',
