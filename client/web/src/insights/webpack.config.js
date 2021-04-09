@@ -22,7 +22,7 @@ module.exports = {
     rules: [
       {
         test: /\.(ts|js)x?$/,
-        exclude: /node_modules\/(?!(@wrike-kit)\/).*/,
+        exclude: /node_modules/,
         use: ['babel-loader'],
       },
       {
