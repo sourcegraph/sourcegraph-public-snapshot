@@ -66,7 +66,7 @@ func (e *ExternalService) RedactConfigSecrets() error {
 		newCfg, err = redactField(e.Config, "p4.passwd")
 	case *schema.GitoliteConnection:
 		// no secret fields?
-		err = nil
+		newCfg, err = redactField(e.Config, "url")
 	case *schema.OtherExternalServiceConnection:
 		// no secret fields?
 		newCfg, err = redactField(e.Config, "url")
@@ -142,7 +142,7 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"p4.passwd", &cfg.P4Passwd})
 	case *schema.GitoliteConnection:
 		// no secret fields?
-		err = nil
+		unredacted, err = unredactField(old.Config, e.Config, &cfg)
 	case *schema.OtherExternalServiceConnection:
 		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"url", &cfg.Url})
 	default:
