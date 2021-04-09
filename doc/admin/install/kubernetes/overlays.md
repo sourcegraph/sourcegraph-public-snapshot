@@ -78,19 +78,28 @@ One benefit of generating manifest from base instead of modifying base directly 
   git checkout -b 3.26-kustomize   
   ```
   
-2. Create and customize the overlays for your deployment
+1. Create and customize the overlays for your deployment
 
-3. Generate the overlays with the `./overlay-generate-cluster` script
+1. Generate the overlays with the `./overlay-generate-cluster` script
 
-4. `kubectl apply` the generated cluster:
+1. apply the generated manifests from the `generated-cluster` directory using `kubectl apply` 
 
-5. Ensure the services came up correctly, then commit all the customizations to the new branch
+1. Ensure the services came up correctly, then commit all the customizations to the new branch
 
-   ```shell
-   git add /Overalys/$MY_OVERLAYS/*
-   git commit amend -m "Message" # Keeping all overlays contained to a single commit allows for easier cherry-picking
-   ```
+  ```shell
+  git add /Overalys/$MY_OVERLAYS/*
+  git commit amend -m "Message" # Keeping all overlays contained to a single commit allows for easier cherry-picking
+  ```
 
+1. Start Sourcegraph on your local machine by temporarily making the frontend port accessible:
+
+  ```
+  kubectl port-forward svc/sourcegraph-frontend 3080:30080
+  ```
+
+1. Open http://localhost:3080 in your browser and you will see a setup page. 
+
+1. 🎉 Congrats, you have Sourcegraph up and running! Now [configure your deployment](configure.md).
 
 ### Namespaced overlay
 
