@@ -28,6 +28,7 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
        ```bash
        kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
        ```
+       
 2. Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository and check out the version tag you wish to deploy:
 
    ```bash
