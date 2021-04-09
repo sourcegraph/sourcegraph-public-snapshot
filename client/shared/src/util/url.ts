@@ -1,11 +1,13 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
-import { replaceRange } from './strings'
-import { discreteValueAliases } from '../search/query/filters'
-import { tryCatch } from './errors'
-import { SearchPatternType } from '../graphql-operations'
-import { findFilter, FilterKind } from '../search/query/validate'
-import { appendContextFilter } from '../search/query/transformer'
+
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
+import { SearchPatternType } from '../graphql-operations'
+import { discreteValueAliases } from '../search/query/filters'
+import { appendContextFilter } from '../search/query/transformer'
+import { findFilter, FilterKind } from '../search/query/validate'
+
+import { tryCatch } from './errors'
+import { replaceRange } from './strings'
 
 export interface RepoSpec {
     /**

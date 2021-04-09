@@ -1,11 +1,12 @@
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { LayoutProps } from '../Layout'
-import { parseSearchURLPatternType } from '../search'
-import { SettingsExperimentalFeatures } from '../schema/settings.schema'
+
 import { AuthenticatedUser } from '../auth'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { LayoutProps } from '../Layout'
+import { SettingsExperimentalFeatures } from '../schema/settings.schema'
+import { parseSearchURLPatternType } from '../search'
 
 /** A fallback settings subject that can be constructed synchronously at initialization time. */
 export const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> = {

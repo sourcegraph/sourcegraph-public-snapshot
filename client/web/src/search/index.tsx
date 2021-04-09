@@ -1,12 +1,18 @@
 import { escapeRegExp } from 'lodash'
-import { replaceRange } from '@sourcegraph/shared/src/util/strings'
-import { discreteValueAliases, escapeSpaces, FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { Filter } from '@sourcegraph/shared/src/search/query/token'
-import { VersionContext } from '../schema/site.schema'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
+import { discreteValueAliases, escapeSpaces, FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { Filter } from '@sourcegraph/shared/src/search/query/token'
+import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
+import { replaceRange } from '@sourcegraph/shared/src/util/strings'
+
+import { VersionContext } from '../schema/site.schema'
+
 import {
     EventLogResult,
     isSearchContextAvailable,
@@ -14,9 +20,6 @@ import {
     fetchSearchContexts,
 } from './backend'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
-import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it

@@ -1,7 +1,9 @@
 import InfoCircleIcon from 'mdi-react/InfoCircleIcon'
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
+
 import { PageTitle } from '../../../components/PageTitle'
+
 import { queryGlobalBatchChangesCodeHosts } from './backend'
 import { CodeHostConnections } from './CodeHostConnections'
 

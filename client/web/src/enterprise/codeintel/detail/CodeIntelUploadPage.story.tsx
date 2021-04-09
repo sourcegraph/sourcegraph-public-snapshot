@@ -1,8 +1,10 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Observable, of } from 'rxjs'
+
 import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
 import { CodeIntelUploadPage } from './CodeIntelUploadPage'
 
 const { add } = storiesOf('web/codeintel/detail/CodeIntelUploadPage', module)

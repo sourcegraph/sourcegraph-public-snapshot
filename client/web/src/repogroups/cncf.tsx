@@ -1,5 +1,6 @@
-import { RepogroupMetadata } from './types'
 import * as React from 'react'
+
+import { RepogroupMetadata } from './types'
 
 export const cncf: RepogroupMetadata = {
     title: 'Cloud Native Computing Foundation (CNCF)',

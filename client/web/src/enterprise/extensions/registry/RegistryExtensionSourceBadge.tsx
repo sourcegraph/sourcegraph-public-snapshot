@@ -1,6 +1,7 @@
 import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import * as React from 'react'
+
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 

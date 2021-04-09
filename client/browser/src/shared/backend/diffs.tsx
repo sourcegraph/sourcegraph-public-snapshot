@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+
 import { RepoNotFoundError } from '@sourcegraph/shared/src/backend/errors'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'

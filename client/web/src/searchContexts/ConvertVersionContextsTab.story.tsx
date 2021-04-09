@@ -1,7 +1,9 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
+
 import { WebStory } from '../components/WebStory'
+
 import { ConvertVersionContextsTabProps, ConvertVersionContextsTab } from './ConvertVersionContextsTab'
 
 const { add } = storiesOf('web/searchContexts/ConvertVersionContextsTab', module)

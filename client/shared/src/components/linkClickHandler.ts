@@ -1,6 +1,7 @@
-import * as React from 'react'
-import { anyOf, isInstanceOf } from '../util/types'
 import * as H from 'history'
+import * as React from 'react'
+
+import { anyOf, isInstanceOf } from '../util/types'
 import { isExternalLink } from '../util/url'
 
 /**

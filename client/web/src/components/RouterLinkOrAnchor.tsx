@@ -1,6 +1,7 @@
+import isAbsoluteUrl from 'is-absolute-url'
 import * as React from 'react'
 import { Link, LinkProps as ReactRouterLinkProps } from 'react-router-dom'
-import isAbsoluteUrl from 'is-absolute-url'
+
 import { LinkProps } from '@sourcegraph/shared/src/components/Link'
 
 /**

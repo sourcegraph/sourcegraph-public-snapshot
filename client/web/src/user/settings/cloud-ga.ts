@@ -1,5 +1,5 @@
-import { UserAreaUserFields } from '../../graphql-operations'
 import { AuthenticatedUser } from '../../auth'
+import { UserAreaUserFields } from '../../graphql-operations'
 
 export interface UserProps {
     user: Pick<UserAreaUserFields, 'id' | 'tags' | 'builtinAuth'>

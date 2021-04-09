@@ -1,14 +1,17 @@
-import React from 'react'
-import { authUser } from '../panels/utils'
 import { cleanup, render } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import React from 'react'
 import { of } from 'rxjs'
-import { SearchPage, SearchPageProps } from './SearchPage'
-import { SearchPatternType } from '../../graphql-operations'
-import { ThemePreference } from '../../theme'
+
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+
+import { SearchPatternType } from '../../graphql-operations'
 import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+import { ThemePreference } from '../../theme'
+import { authUser } from '../panels/utils'
+
+import { SearchPage, SearchPageProps } from './SearchPage'
 
 // Mock the Monaco input box to make this a shallow test
 jest.mock('./SearchPageInput', () => ({

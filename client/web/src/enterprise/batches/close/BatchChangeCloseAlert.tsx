@@ -1,10 +1,13 @@
-import React, { useCallback, useState } from 'react'
 import * as H from 'history'
-import { closeBatchChange as _closeBatchChange } from './backend'
+import React, { useCallback, useState } from 'react'
+
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+
 import { ErrorAlert } from '../../../components/alerts'
 import { Scalars } from '../../../graphql-operations'
+
+import { closeBatchChange as _closeBatchChange } from './backend'
 
 export interface BatchChangeCloseAlertProps {
     batchChangeID: Scalars['ID']

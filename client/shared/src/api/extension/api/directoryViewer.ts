@@ -1,4 +1,5 @@
 import * as sourcegraph from 'sourcegraph'
+
 import { DirectoryViewerData, ViewerId } from '../../viewerTypes'
 
 export class ExtensionDirectoryViewer implements sourcegraph.DirectoryViewer {

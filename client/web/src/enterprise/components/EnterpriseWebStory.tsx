@@ -1,6 +1,7 @@
 import React from 'react'
-import enterpriseWebStyles from '../../enterprise.scss'
+
 import { WebStory, WebStoryProps } from '../../components/WebStory'
+import enterpriseWebStyles from '../../enterprise.scss'
 
 /**
  * Wrapper component for enterprise webapp Storybook stories that provides light theme and react-router props.

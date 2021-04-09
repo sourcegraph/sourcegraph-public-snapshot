@@ -1,16 +1,18 @@
-import React, { useCallback } from 'react'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import classNames from 'classnames'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { MdiReactIconComponentType } from 'mdi-react'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import { ErrorAlert } from '../../components/alerts'
-import { ViewContent, ViewContentProps } from '../../views/ViewContent'
+import React, { useCallback } from 'react'
 import { Layout as ReactGridLayout, Layouts as ReactGridLayouts, Responsive, WidthProvider } from 'react-grid-layout'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { ErrorAlert } from '../../components/alerts'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../../insights/backend'
+import { ViewContent, ViewContentProps } from '../../views/ViewContent'
 
 // TODO use a method to get width that also triggers when file explorer is closed
 // (WidthProvider only listens to window resize events)

@@ -1,7 +1,9 @@
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 import renderer from 'react-test-renderer'
+
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+
 import { ExtensionCard } from './ExtensionCard'
 
 describe('ExtensionCard', () => {

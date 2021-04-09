@@ -1,5 +1,4 @@
 import * as Monaco from 'monaco-editor'
-import { Token, Pattern, Literal, PatternKind, CharacterRange, createLiteral } from './token'
 import { RegExpParser, visitRegExpAST } from 'regexpp'
 import {
     Alternative,
@@ -12,6 +11,8 @@ import {
     Group,
     Quantifier,
 } from 'regexpp/ast'
+
+import { Token, Pattern, Literal, PatternKind, CharacterRange, createLiteral } from './token'
 
 /* eslint-disable unicorn/better-regex */
 

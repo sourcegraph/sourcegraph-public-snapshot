@@ -1,6 +1,6 @@
-import React, { useCallback, useState, useMemo } from 'react'
 import * as H from 'history'
-import { LineChartContent, BarChartContent, ChartContent, PieChartContent } from 'sourcegraph'
+import niceTicks from 'nice-ticks'
+import React, { useCallback, useState, useMemo } from 'react'
 import {
     LineChart,
     ResponsiveContainer,
@@ -22,8 +22,10 @@ import {
     ContentRenderer,
     PieLabelRenderProps,
 } from 'recharts'
+import { LineChartContent, BarChartContent, ChartContent, PieChartContent } from 'sourcegraph'
+
 import { createLinkClickHandler } from '@sourcegraph/shared/src/components/linkClickHandler'
-import niceTicks from 'nice-ticks'
+
 import { eventLogger } from '../tracking/eventLogger'
 
 /** Wraps the children in a link if an href is passed. */

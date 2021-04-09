@@ -1,6 +1,7 @@
+import { SearchPatternType } from '../../graphql-operations'
+
 import { scanSearchQuery, scanBalancedLiteral, toPatternResult } from './scanner'
 import { PatternKind } from './token'
-import { SearchPatternType } from '../../graphql-operations'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value),

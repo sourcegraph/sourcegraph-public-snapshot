@@ -1,9 +1,11 @@
 import { storiesOf } from '@storybook/react'
-import React from 'react'
-import webStyles from '../SourcegraphWebApp.scss'
-import { ChartViewContent } from './ChartViewContent'
-import { createMemoryHistory } from 'history'
 import isChromatic from 'chromatic/isChromatic'
+import { createMemoryHistory } from 'history'
+import React from 'react'
+
+import webStyles from '../SourcegraphWebApp.scss'
+
+import { ChartViewContent } from './ChartViewContent'
 
 const history = createMemoryHistory()
 

@@ -1,10 +1,12 @@
 import * as React from 'react'
 import { Redirect } from 'react-router'
+
 import { userSettingsAreaRoutes } from '../../../user/settings/routes'
 import { UserSettingsAreaRoute } from '../../../user/settings/UserSettingsArea'
 import { lazyComponent } from '../../../util/lazyComponent'
 import { SHOW_BUSINESS_FEATURES } from '../../dotcom/productSubscriptions/features'
 import { authExp } from '../../site-admin/SiteAdminAuthenticationProvidersPage'
+
 import { UserEventLogsPageProps } from './UserEventLogsPage'
 
 export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [

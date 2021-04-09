@@ -1,6 +1,7 @@
 import { Primitive } from 'utility-types'
-import { Expression, TemplateExpression } from '../extension/api/context/expr/evaluator'
+
 import { KeyPath } from '../client/services/settings'
+import { Expression, TemplateExpression } from '../extension/api/context/expr/evaluator'
 
 // NOTE: You must manually keep this file in sync with extension.schema.json#/properties/contributes (and possibly
 // extension_schema.go, if your changes are relevant to the subset of this schema used by our Go code).

@@ -1,12 +1,15 @@
-import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { createRenderer } from 'react-test-renderer/shallow'
-import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
 import { NEVER } from 'rxjs'
+
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
+
+import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { subtypeOf } from '../util/types'
+
+import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
 
 const renderShallow = (element: React.ReactElement<HoverOverlayProps>): React.ReactElement => {
     const renderer = createRenderer()

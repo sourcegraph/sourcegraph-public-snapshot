@@ -1,16 +1,19 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { PageTitle } from '../components/PageTitle'
-import { fetchSiteUpdateCheck } from './backend'
-import { ErrorAlert } from '../components/alerts'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { ErrorAlert } from '../components/alerts'
+import { PageTitle } from '../components/PageTitle'
+
+import { fetchSiteUpdateCheck } from './backend'
 
 interface Props extends TelemetryProps {}
 

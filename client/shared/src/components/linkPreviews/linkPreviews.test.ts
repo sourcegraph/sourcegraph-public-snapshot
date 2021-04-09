@@ -1,5 +1,7 @@
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
+
 import { LinkPreviewMerged } from '../../api/extension/extensionHostApi'
+
 import { applyLinkPreview, ApplyLinkPreviewOptions } from './linkPreviews'
 
 const OPTIONS: ApplyLinkPreviewOptions = {

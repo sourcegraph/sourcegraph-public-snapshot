@@ -1,9 +1,10 @@
 import * as H from 'history'
 import * as React from 'react'
 import { Redirect } from 'react-router'
+
 import { userURL } from '..'
-import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { AuthenticatedUser } from '../../auth'
+import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 
 /**
  * Redirects from /user/$PATH to /user/$USERNAME/$PATH, where $USERNAME is the currently

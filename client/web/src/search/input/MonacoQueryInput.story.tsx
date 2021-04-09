@@ -1,10 +1,12 @@
 import { storiesOf } from '@storybook/react'
 import { createMemoryHistory } from 'history'
 import React from 'react'
+
 import { WebStory } from '../../components/WebStory'
 import { SearchPatternType } from '../../graphql-operations'
-import { MonacoQueryInput, MonacoQueryInputProps } from './MonacoQueryInput'
 import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+
+import { MonacoQueryInput, MonacoQueryInputProps } from './MonacoQueryInput'
 
 const { add } = storiesOf('web/search/input/MonacoQueryInput', module)
     .addParameters({ chromatic: { viewports: [700] } })

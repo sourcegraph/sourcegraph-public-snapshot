@@ -1,10 +1,13 @@
-import React, { useCallback } from 'react'
 import * as H from 'history'
+import React, { useCallback } from 'react'
+
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { FilteredConnection } from '../components/FilteredConnection'
 import { ListSearchContextsResult, ListSearchContextsVariables, SearchContextFields } from '../graphql-operations'
-import { fetchAutoDefinedSearchContexts, fetchSearchContexts } from '../search/backend'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { VersionContext } from '../schema/site.schema'
+import { fetchAutoDefinedSearchContexts, fetchSearchContexts } from '../search/backend'
+
 import { SearchContextNode, SearchContextNodeProps } from './SearchContextNode'
 
 export interface SearchContextsListTabProps {

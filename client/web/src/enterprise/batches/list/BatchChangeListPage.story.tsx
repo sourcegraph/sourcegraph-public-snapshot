@@ -1,10 +1,12 @@
+import { useCallback } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
+import { of } from 'rxjs'
+
+import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
 import { BatchChangeListPage } from './BatchChangeListPage'
 import { nodes } from './testData'
-import { of } from 'rxjs'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
-import { useCallback } from '@storybook/addons'
 
 const { add } = storiesOf('web/batches/BatchChangeListPage', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)

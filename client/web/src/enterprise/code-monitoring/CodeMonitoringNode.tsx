@@ -1,15 +1,18 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import React, { useState, useCallback, useMemo } from 'react'
 import * as H from 'history'
+import React, { useState, useCallback, useMemo } from 'react'
 import { Observable, concat, of } from 'rxjs'
 import { switchMap, catchError, startWith, takeUntil, tap, delay, mergeMap } from 'rxjs/operators'
+
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
-import { sendTestEmail, toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled } from './backend'
+
 import { AuthenticatedUser } from '../../auth'
+import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
+
+import { sendTestEmail, toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled } from './backend'
 
 export interface CodeMonitorNodeProps {
     node: CodeMonitorFields

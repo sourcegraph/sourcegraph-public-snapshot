@@ -1,10 +1,5 @@
-import {
-    ChangesetCheckState,
-    ChangesetReviewState,
-    ChangesetSpecOperation,
-    ChangesetState,
-} from '../../graphql-operations'
 import { HoveredToken } from '@sourcegraph/codeintellify'
+import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import {
     RepoSpec,
     RevisionSpec,
@@ -13,7 +8,13 @@ import {
     UIPositionSpec,
     ModeSpec,
 } from '@sourcegraph/shared/src/util/url'
-import { getModeFromPath } from '@sourcegraph/shared/src/languages'
+
+import {
+    ChangesetCheckState,
+    ChangesetReviewState,
+    ChangesetSpecOperation,
+    ChangesetState,
+} from '../../graphql-operations'
 
 export function isValidChangesetReviewState(input: string): input is ChangesetReviewState {
     return Object.values<string>(ChangesetReviewState).includes(input)

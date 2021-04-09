@@ -1,6 +1,7 @@
 import classNames from 'classnames'
-import React, { useMemo } from 'react'
 import * as H from 'history'
+import React, { useMemo } from 'react'
+
 import { createLinkClickHandler } from './linkClickHandler'
 
 interface Props {

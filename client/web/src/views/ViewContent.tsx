@@ -1,17 +1,20 @@
-import React, { useEffect, useRef } from 'react'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import * as H from 'history'
-import { QueryInputInViewContent } from './QueryInputInViewContent'
-import { View, MarkupContent } from 'sourcegraph'
-import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '../search'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { hasProperty } from '@sourcegraph/shared/src/util/types'
 import { isObject } from 'lodash'
+import React, { useEffect, useRef } from 'react'
+import { View, MarkupContent } from 'sourcegraph'
+
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
+import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { ChartViewContent } from './ChartViewContent'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+import { hasProperty } from '@sourcegraph/shared/src/util/types'
+
+import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '../search'
+
+import { ChartViewContent } from './ChartViewContent'
+import { QueryInputInViewContent } from './QueryInputInViewContent'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>
     isObject(input) && hasProperty('value')(input) && typeof input.value === 'string'

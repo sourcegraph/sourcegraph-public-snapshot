@@ -2,14 +2,16 @@ import * as comlink from 'comlink'
 import { from, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { Unsubscribable } from 'sourcegraph'
+
 import { PlatformContext, ClosableEndpointPair } from '../../platform/context'
-import { ExtensionHostAPIFactory } from '../extension/api/api'
-import { InitData } from '../extension/extensionHost'
-import { ClientAPI } from './api/api'
-import { registerComlinkTransferHandlers } from '../util'
-import { ExposedToClient, initMainThreadAPI } from './mainthread-api'
 import { isSettingsValid } from '../../settings/settings'
 import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
+import { ExtensionHostAPIFactory } from '../extension/api/api'
+import { InitData } from '../extension/extensionHost'
+import { registerComlinkTransferHandlers } from '../util'
+
+import { ClientAPI } from './api/api'
+import { ExposedToClient, initMainThreadAPI } from './mainthread-api'
 
 export interface ExtensionHostClientConnection {
     /**
