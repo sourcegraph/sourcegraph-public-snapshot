@@ -50,7 +50,6 @@ describe('User profile page', () => {
         })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/settings/profile')
         await driver.page.waitForSelector('.user-profile-form-fields')
-
         await driver.replaceText({
             selector: '.test-UserProfileFormFields__displayName',
             newText: 'Test2',

@@ -53,9 +53,17 @@ interface SnapshotConfig {
 }
 
 const CODE_HIGHLIGHTING_QUERIES = ['highlightCode', 'blob'] as const
+
+/**
+ * Matches a URL against an expected query that will handle code highlighting.
+ */
 const isCodeHighlightQuery = (url: string): boolean =>
     CODE_HIGHLIGHTING_QUERIES.some(query => url.includes(`graphql?${query}`))
 
+/**
+ * Watches and waits for requests to complete that match expected code highlighting queries.
+ * Useful to ensure styles are fully loaded after changing the webapp color scheme.
+ */
 const waitForCodeHighlighting = async (page: Page): Promise<void> => {
     const requestDidFire = await page
         .waitForRequest(request => isCodeHighlightQuery(request.url()), { timeout: 5000 })
@@ -70,6 +78,9 @@ const waitForCodeHighlighting = async (page: Page): Promise<void> => {
     }
 }
 
+/**
+ * Update all theme styling on the Sourcegraph webapp to match a color scheme.
+ */
 const setColorScheme = async (page: Page, scheme: ColorScheme, config?: SnapshotConfig): Promise<void> => {
     const isAlreadySet = await page.evaluate(
         (scheme: ColorScheme) => matchMedia(`(prefers-color-scheme: ${scheme})`).matches,
@@ -92,6 +103,10 @@ const setColorScheme = async (page: Page, scheme: ColorScheme, config?: Snapshot
     )
 }
 
+/**
+ * Take a visual regression snapshot and upload to Percy.
+ * Will resolve without doing anything if `PERCY_ON` is not set to `true`.
+ */
 export const percySnapshot = async (page: Page, name: string, config?: SnapshotConfig): Promise<void> => {
     const percyEnabled = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
 
@@ -107,7 +122,7 @@ export const percySnapshot = async (page: Page, name: string, config?: SnapshotC
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
     await realPercySnapshot(page, `${name} - light theme with redesign enabled`)
     await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
-    console.log('theme dark')
+
     // Theme-dark
     await setColorScheme(page, 'dark', config)
     await realPercySnapshot(page, `${name} - Dark Theme`)
