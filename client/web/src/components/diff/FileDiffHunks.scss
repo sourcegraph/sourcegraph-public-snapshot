@@ -1,4 +1,7 @@
 .diff-boundary {
+    &__num {
+        background-color: var(--color-bg-2);
+    }
     &__num,
     &__content {
         padding-top: 0.325rem;
@@ -23,15 +26,13 @@
         vertical-align: top !important;
         font-family: $code-font-family;
         color: var(--text-muted);
-        &:hover {
-            color: var(--body-color);
-        }
         &--data-line,
         a {
             color: var(--text-muted);
             display: block;
             text-align: center;
             &:hover {
+                color: var(--body-color);
                 text-decoration: none;
             }
         }
