@@ -217,11 +217,19 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
             listUserRepositories({ ...args, id: userID }).pipe(
                 repeatUntil(
-                    (result): boolean =>
-                        result.nodes &&
-                        result.nodes.length > 0 &&
-                        result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned) &&
-                        !(pendingOrError === 'pending'),
+                    (result): boolean => {
+                        // don't repeat the query when user doesn't have repos
+                        if (result.nodes && result.nodes.length === 0) {
+                            return true
+                        }
+
+                        return (
+                            result.nodes &&
+                            result.nodes.length > 0 &&
+                            result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned) &&
+                            !(pendingOrError === 'pending')
+                        )
+                    },
 
                     { delay: 2000 }
                 )
