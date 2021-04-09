@@ -148,6 +148,29 @@ This overlays goes one step further than the `non-root` overlay by also removing
 If you are starting a fresh installation use the overlay `non-privileged-create-cluster`. After creation you can use the overlay
 `non-privileged`.
 
+### minikube overlay
+
+This kustomization deletes resource declarations and storage classnames to enable running Sourcegraph on minikube.
+
+To use it, execute the following command from the root directory:
+
+```./overlay-generate-cluster.sh minikube generated-cluster
+```
+
+After executing the script you can apply the generated manifests from the generated-cluster directory:
+
+```minikube start
+kubectl create namespace ns-sourcegraph
+kubectl -n ns-sourcegraph apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
+kubectl -n ns-sourcegraph expose deployment sourcegraph-frontend --type=NodePort --name sourcegraph --port=3080 --target-port=3080
+minikube service list
+```
+
+To tear it down:
+
+```kubectl delete namespaces ns-sourcegraph
+minikube stop
+```
 
 ## Upgrading sourcegraph with an overlay
 
