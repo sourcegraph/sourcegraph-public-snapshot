@@ -48,6 +48,7 @@ const defaultProps = (
     copyQueryButton: false,
     versionContext: undefined,
     showSearchContext: false,
+    showSearchContextManagement: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
     defaultSearchContextSpec: '',

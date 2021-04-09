@@ -65,6 +65,7 @@ export function experimentalFeaturesFromSettings(
     showEnterpriseHomePanels: boolean
     showMultilineSearchConsole: boolean
     showSearchContext: boolean
+    showSearchContextManagement: boolean
     showQueryBuilder: boolean
     enableSmartQuery: boolean
     enableCodeMonitoring: boolean
@@ -79,6 +80,7 @@ export function experimentalFeaturesFromSettings(
         showOnboardingTour = true, // Default to true if not set
         showEnterpriseHomePanels = true, // Default to true if not set
         showSearchContext = false,
+        showSearchContextManagement = false,
         showMultilineSearchConsole = false,
         showQueryBuilder = false,
         enableSmartQuery = true,
@@ -90,6 +92,7 @@ export function experimentalFeaturesFromSettings(
         showRepogroupHomepage,
         showOnboardingTour,
         showSearchContext,
+        showSearchContextManagement,
         showEnterpriseHomePanels,
         showMultilineSearchConsole,
         showQueryBuilder,

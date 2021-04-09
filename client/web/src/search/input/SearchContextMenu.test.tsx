@@ -61,6 +61,7 @@ const mockFetchSearchContexts = (first: number, query?: string, after?: string) 
 
 describe('SearchContextMenu', () => {
     const defaultProps: SearchContextMenuProps = {
+        showSearchContextManagement: false,
         defaultSearchContextSpec: 'global',
         selectedSearchContextSpec: 'global',
         selectSearchContextSpec: () => {},
