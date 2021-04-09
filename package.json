@@ -58,7 +58,9 @@
     "exclude": [
       "node_modules",
       "**/*.d.ts",
-      "**/*.@(test|story).ts?(x)"
+      "**/*.@(test|story).ts?(x)",
+      "client/storybook",
+      "client/shared/src/testing"
     ]
   },
   "jscpd": {
