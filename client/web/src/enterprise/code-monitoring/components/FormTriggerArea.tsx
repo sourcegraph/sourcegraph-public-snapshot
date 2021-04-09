@@ -53,7 +53,7 @@ const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?
                 />
             )}
 
-            <span className={checked ? 'trigger-area__checklist-children--faded' : ''}>{children}</span>
+            <small className={checked ? 'trigger-area__checklist-children--faded' : ''}>{children}</small>
 
             {hint && (
                 <>
