@@ -50,7 +50,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
     className,
     extensionInfo,
     persistLines,
-    diffMode,
+    diffMode = 'unified',
 }) => {
     const [expanded, setExpanded] = useState<boolean>(true)
     const [renderDeleted, setRenderDeleted] = useState<boolean>(false)
@@ -174,7 +174,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                             }
                             hunks={node.hunks}
                             lineNumbers={lineNumbers}
-                            diffMode={diffMode || 'unified'}
+                            diffMode={diffMode}
                         />
                     ))}
             </div>

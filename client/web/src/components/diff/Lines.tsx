@@ -1,8 +1,9 @@
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { decorationAttachmentStyleForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { DecorationAttachmentRenderOptions, TextDocumentDecoration, ThemableDecorationStyle } from 'sourcegraph'
+import { DecorationAttachmentRenderOptions, ThemableDecorationStyle } from 'sourcegraph'
 import { DiffHunkLineType } from '../../graphql-operations'
 
 const diffHunkTypeIndicators: Record<DiffHunkLineType, string> = {
@@ -24,6 +25,36 @@ interface Line {
     className: string
 }
 
+interface LineType {
+    dataPart: string
+    hunkContent: string
+}
+
+const lineType = (kind: DiffHunkLineType): LineType => {
+    switch (kind) {
+        case DiffHunkLineType.DELETED:
+            return {
+                dataPart: 'base',
+                hunkContent: 'diff-hunk__line--deletion',
+            }
+        case DiffHunkLineType.UNCHANGED:
+            return {
+                dataPart: 'base',
+                hunkContent: 'diff-hunk__line--both',
+            }
+        case DiffHunkLineType.ADDED:
+            return {
+                dataPart: 'head',
+                hunkContent: 'diff-hunk__line--addition',
+            }
+        default:
+            return {
+                dataPart: 'base',
+                hunkContent: '',
+            }
+    }
+}
+
 export const EmptyLine: React.FunctionComponent = () => (
     <>
         <td className="diff-hunk__num diff-hunk__num--empty" />
@@ -43,41 +74,6 @@ export const Line: React.FunctionComponent<Line> = ({
     decorations,
     className,
 }) => {
-    const lineType = (
-        type: DiffHunkLineType
-    ): {
-        dataPart: string
-        hunkContent: string
-        hash: string
-    } => {
-        switch (type) {
-            case DiffHunkLineType.DELETED:
-                return {
-                    dataPart: 'base',
-                    hunkContent: 'diff-hunk__line--deletion',
-                    hash: anchor,
-                }
-            case DiffHunkLineType.UNCHANGED:
-                return {
-                    dataPart: 'base',
-                    hunkContent: 'diff-hunk__line--both',
-                    hash: anchor,
-                }
-            case DiffHunkLineType.ADDED:
-                return {
-                    dataPart: 'head',
-                    hunkContent: 'diff-hunk__line--addition',
-                    hash: anchor,
-                }
-            default:
-                return {
-                    dataPart: 'base',
-                    hunkContent: '',
-                    hash: '',
-                }
-        }
-    }
-
     const hunkStyles = lineType(kind)
 
     return (
@@ -87,10 +83,10 @@ export const Line: React.FunctionComponent<Line> = ({
                     className={`diff-hunk__num ${className}`}
                     data-line={lineNumber}
                     data-part={hunkStyles.dataPart}
-                    id={id || hunkStyles.hash}
+                    id={id || anchor}
                 >
                     {persistLines && (
-                        <Link className="diff-hunk__num--data-line" to={{ hash: hunkStyles.hash }}>
+                        <Link className="diff-hunk__num--data-line" to={{ hash: anchor }}>
                             {lineNumber}
                         </Link>
                     )}

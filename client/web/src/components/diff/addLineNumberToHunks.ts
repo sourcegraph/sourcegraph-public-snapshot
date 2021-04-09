@@ -1,12 +1,7 @@
+import { DiffHunkLineType } from '../../graphql-operations'
 import { Hunk } from './DiffSplitHunk'
 
-enum DiffHunkLineType {
-    ADDED = 'ADDED',
-    UNCHANGED = 'UNCHANGED',
-    DELETED = 'DELETED',
-}
-
-export const useHunksAddLineNumber = (
+export const addLineNumberToHunks = (
     hunks: {
         kind: DiffHunkLineType
         html: string
@@ -30,13 +25,11 @@ export const useHunksAddLineNumber = (
             oldLine++
             hunk.oldLine = oldLine - 1
             hunk.anchor = `${fileDiffAnchor}L${oldLine - 1}`
-        }
-        if (hunkWithLineNumber.kind === DiffHunkLineType.ADDED) {
+        } else if (hunkWithLineNumber.kind === DiffHunkLineType.ADDED) {
             newLine++
             hunk.newLine = newLine - 1
             hunk.anchor = `${fileDiffAnchor}R${newLine - 1}`
-        }
-        if (hunkWithLineNumber.kind === DiffHunkLineType.UNCHANGED) {
+        } else if (hunkWithLineNumber.kind === DiffHunkLineType.UNCHANGED) {
             oldLine++
             newLine++
             hunk.newLine = newLine - 1

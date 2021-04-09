@@ -6,7 +6,7 @@ Array [
     className="diff-boundary"
   >
     <td
-      className="diff-boundary__num diff-hunk__num--both"
+      className="diff-boundary__num"
       colSpan={2}
     />
     <td
@@ -377,7 +377,7 @@ Array [
     className="diff-boundary"
   >
     <td
-      className="diff-boundary__num diff-hunk__num--both"
+      className="diff-boundary__num"
       colSpan={2}
     />
     <td
@@ -782,7 +782,7 @@ Array [
     className="diff-boundary"
   >
     <td
-      className="diff-boundary__num diff-hunk__num--both"
+      className="diff-boundary__num"
       colSpan={2}
     />
     <td

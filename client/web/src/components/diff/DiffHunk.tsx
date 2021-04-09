@@ -48,7 +48,6 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
             <DiffBoundary
                 diffMode="unified"
                 {...hunk}
-                lineNumberClassName="diff-hunk__num--both"
                 contentClassName="diff-hunk__content"
                 lineNumbers={lineNumbers}
             />

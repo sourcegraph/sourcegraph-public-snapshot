@@ -17,6 +17,7 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { StatusBar } from '../../extensions/components/StatusBar'
+import classNames from 'classnames'
 
 export interface FileHunksProps extends ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
@@ -229,9 +230,9 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                 ) : (
                     <div className="file-diff-hunks__container" ref={nextCodeElement}>
                         <table
-                            className={`file-diff-hunks__table file-diff-hunks__table${
-                                diffMode === 'split' ? '--split' : ''
-                            }`}
+                            className={classNames('file-diff-hunks__table file-diff-hunks__table', {
+                                'file-diff-hunks__table--split': diffMode === 'split',
+                            })}
                         >
                             {lineNumbers && (
                                 <colgroup>

@@ -1,14 +1,13 @@
-/* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-noninteractive-element-interactions: warn */
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { DecorationMapByLine, decorationStyleForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import * as React from 'react'
 import { useLocation } from 'react-router'
-import { TextDocumentDecoration } from 'sourcegraph'
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
+import { addLineNumberToHunks } from './addLineNumberToHunks'
 import { DiffBoundary } from './DiffBoundary'
 import { EmptyLine, Line } from './Lines'
-import { useHunksAddLineNumber } from './useHunksAddLineNumber'
 import { useSplitDiff } from './useSplitDiff'
 
 export interface DiffHunkProps extends ThemeProps {
@@ -55,11 +54,11 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
 }) => {
     const location = useLocation()
 
-    const { hunksWithLineNumber } = useHunksAddLineNumber(
+    const { hunksWithLineNumber } = addLineNumberToHunks(
         hunk.highlight.lines,
         hunk.newRange.startLine,
         hunk.oldRange.startLine,
-        'anchor_'
+        fileDiffAnchor
     )
 
     const { diff } = useSplitDiff(hunksWithLineNumber)
@@ -78,39 +77,36 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
                     ...((current.kind === DiffHunkLineType.DELETED && decorations.base.get(lineNumber)) || []),
                     // If the line wasn't deleted, look for decorations in the head revision
                     ...((current.kind !== DiffHunkLineType.DELETED && decorations.head.get(lineNumber)) || []),
-                ] as TextDocumentDecoration[]
+                ]
 
                 const { lineStyle, decorationsWithAfterProperty } = addDecorations(isLightTheme, decorationsForLine)
+
+                const lineProps = {
+                    persistLines,
+                    lineStyle,
+                    decorations: decorationsWithAfterProperty,
+                    className: active ? 'diff-hunk__line--active' : '',
+                    lineNumbers,
+                    html: current.html,
+                    anchor: current.anchor,
+                    kind: current.kind,
+                }
 
                 if (current.kind === DiffHunkLineType.UNCHANGED) {
                     // UNCHANGED is displayed on both side
                     elements.push(
                         <tr key={current.anchor} data-testid={current.anchor}>
                             <Line
-                                persistLines={persistLines}
-                                lineStyle={lineStyle}
-                                decorations={decorationsWithAfterProperty}
+                                {...lineProps}
                                 key={`L${current.anchor}`}
                                 id={`L${current.anchor}`}
-                                kind={current.kind}
                                 lineNumber={current.oldLine}
-                                anchor={current.anchor}
-                                html={current.html}
-                                className={active ? 'diff-hunk__line--active' : ''}
-                                lineNumbers={lineNumbers}
                             />
                             <Line
-                                persistLines={persistLines}
-                                lineStyle={lineStyle}
-                                decorations={decorationsWithAfterProperty}
+                                {...lineProps}
                                 key={`R${current.anchor}`}
                                 id={`R${current.anchor}`}
-                                kind={current.kind}
                                 lineNumber={current.newLine}
-                                anchor={current.anchor}
-                                html={current.html}
-                                className={active ? 'diff-hunk__line--active' : ''}
-                                lineNumbers={lineNumbers}
                             />
                         </tr>
                     )
@@ -121,29 +117,15 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
                         index = index + 1
                         elements.push(
                             <tr key={current.anchor} data-testid={current.anchor}>
+                                <Line {...lineProps} key={current.anchor} lineNumber={current.oldLine} />
                                 <Line
-                                    persistLines={persistLines}
-                                    lineStyle={lineStyle}
-                                    decorations={decorationsWithAfterProperty}
-                                    key={current.anchor}
-                                    kind={current.kind}
-                                    lineNumber={current.oldLine}
-                                    anchor={current.anchor}
-                                    html={current.html}
-                                    className={active ? 'diff-hunk__line--active' : ''}
-                                    lineNumbers={lineNumbers}
-                                />
-                                <Line
-                                    persistLines={persistLines}
-                                    lineStyle={lineStyle}
-                                    decorations={decorationsWithAfterProperty}
+                                    {...lineProps}
                                     key={next.anchor}
                                     kind={next.kind}
                                     lineNumber={next.newLine}
                                     anchor={next.anchor}
                                     html={next.html}
                                     className={location.hash === `#${next.anchor}` ? 'diff-hunk__line--active' : ''}
-                                    lineNumbers={lineNumbers}
                                 />
                             </tr>
                         )
@@ -152,18 +134,11 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
                         elements.push(
                             <tr key={current.anchor} data-testid={current.anchor}>
                                 <Line
-                                    persistLines={persistLines}
-                                    lineStyle={lineStyle}
-                                    decorations={decorationsWithAfterProperty}
+                                    {...lineProps}
                                     key={current.anchor}
-                                    kind={current.kind}
                                     lineNumber={
                                         current.kind === DiffHunkLineType.DELETED ? current.oldLine : lineNumber
                                     }
-                                    anchor={current.anchor}
-                                    html={current.html}
-                                    className={active ? 'diff-hunk__line--active' : ''}
-                                    lineNumbers={lineNumbers}
                                 />
                                 <EmptyLine />
                             </tr>
@@ -174,18 +149,7 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
                     elements.push(
                         <tr key={current.anchor} data-testid={current.anchor}>
                             <EmptyLine />
-                            <Line
-                                persistLines={persistLines}
-                                lineStyle={lineStyle}
-                                decorations={decorationsWithAfterProperty}
-                                key={current.anchor}
-                                kind={current.kind}
-                                lineNumber={lineNumber}
-                                anchor={current.anchor}
-                                html={current.html}
-                                className={active ? 'diff-hunk__line--active' : ''}
-                                lineNumbers={lineNumbers}
-                            />
+                            <Line {...lineProps} key={current.anchor} lineNumber={lineNumber} />
                         </tr>
                     )
                 }
@@ -200,13 +164,7 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
 
     return (
         <>
-            <DiffBoundary
-                {...hunk}
-                lineNumberClassName="diff-hunk__num--both"
-                contentClassName="diff-hunk__content"
-                lineNumbers={lineNumbers}
-                diffMode="split"
-            />
+            <DiffBoundary {...hunk} contentClassName="diff-hunk__content" lineNumbers={lineNumbers} diffMode="split" />
             {diffView}
         </>
     )

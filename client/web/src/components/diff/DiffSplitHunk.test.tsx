@@ -81,12 +81,14 @@ describe('DiffSplitHunk', () => {
             expect(diffLine).toBeInTheDocument()
 
             expect(diffLine.children).toHaveLength(4)
-            expect(diffLine.children[0]).toHaveClass('diff-hunk__num')
-            expect(diffLine.children[1]).toHaveClass('diff-hunk__line--deletion')
-            expect(diffLine.children[2]).toHaveClass('diff-hunk__num')
-            expect(diffLine.children[3]).toHaveClass('diff-hunk__line--addition')
-
-            expect(diffLine.firstChild).toHaveClass('diff-hunk__num')
+            expect(diffLine.children[0]).toHaveTextContent('162')
+            expect(diffLine.children[1]).toHaveTextContent(
+                'logger.log(`WebSocket connection to TypeScript backend opened`)'
+            )
+            expect(diffLine.children[2]).toHaveTextContent('162')
+            expect(diffLine.children[3]).toHaveTextContent(
+                'logger.log(`WebSocket connection to language server opened`)'
+            )
         })
 
         it('will show a single ADDED on the right and empty cell on the left', () => {
@@ -94,12 +96,10 @@ describe('DiffSplitHunk', () => {
             expect(diffLine).toBeInTheDocument()
 
             expect(diffLine.children).toHaveLength(4)
-            expect(diffLine.children[0]).toHaveClass('diff-hunk__num--empty')
-            expect(diffLine.children[1]).toHaveClass('diff-hunk__content--empty')
-            expect(diffLine.children[2]).toHaveClass('diff-hunk__num')
-            expect(diffLine.children[3]).toHaveClass('diff-hunk__line--addition')
-
-            expect(diffLine.firstChild).toHaveClass('diff-hunk__num')
+            expect(diffLine.children[0]).toHaveTextContent('')
+            expect(diffLine.children[1]).toHaveTextContent('')
+            expect(diffLine.children[2]).toHaveTextContent('163')
+            expect(diffLine.children[3]).toHaveTextContent('subscriptions.add(')
         })
 
         it('will show a single DELETED on the left and empty cell on the right', () => {
@@ -107,25 +107,25 @@ describe('DiffSplitHunk', () => {
             expect(diffLine).toBeInTheDocument()
 
             expect(diffLine.children).toHaveLength(4)
-            expect(diffLine.children[0]).toHaveClass('diff-hunk__num')
-            expect(diffLine.children[1]).toHaveClass('diff-hunk__line--deletion')
-            expect(diffLine.children[2]).toHaveClass('diff-hunk__num--empty')
-            expect(diffLine.children[3]).toHaveClass('diff-hunk__content--empty')
+            expect(diffLine.children[0]).toHaveTextContent('164')
+            expect(diffLine.children[1]).toHaveTextContent('const method = LSP_TO_LOG_LEVEL[type]')
+            expect(diffLine.children[2]).toHaveTextContent('')
+            expect(diffLine.children[3]).toHaveTextContent('')
         })
 
         it('will show UNCHANGED lines on both sides', () => {
-            const diffLine = queries.getByTestId('anchor_L163')
+            const diffLine = queries.getByTestId('anchor_L159')
             expect(diffLine).toBeInTheDocument()
 
             expect(diffLine.children).toHaveLength(4)
-            expect(diffLine.children[0]).toHaveClass('diff-hunk__num')
-            expect(diffLine.children[1]).toHaveClass('diff-hunk__line--both')
-            expect(diffLine.children[2]).toHaveClass('diff-hunk__num')
-            expect(diffLine.children[3]).toHaveClass('diff-hunk__line--both')
+            expect(diffLine.children[0]).toHaveTextContent('159')
+            expect(diffLine.children[1]).toHaveTextContent('const subscriptions = new Subscription()')
+            expect(diffLine.children[2]).toHaveTextContent('159')
+            expect(diffLine.children[1]).toHaveTextContent('const subscriptions = new Subscription()')
         })
 
         it('add active class when the anchor is clicked on UNCHANGED lines', () => {
-            const diffLine = queries.getByTestId('anchor_L163')
+            const diffLine = queries.getByTestId('anchor_L159')
             fireEvent.click(diffLine.children[0].children[0])
 
             expect(diffLine.children).toHaveLength(4)

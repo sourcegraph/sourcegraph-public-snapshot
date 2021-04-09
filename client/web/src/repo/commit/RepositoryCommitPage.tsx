@@ -102,6 +102,8 @@ interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> 
     diffMode?: DiffMode
 }
 
+const DIFF_MODE_VISUALIZER = 'diff-mode-visualizer'
+
 /** Displays a commit. */
 export class RepositoryCommitPage extends React.Component<Props, State> {
     private componentUpdates = new Subject<Props>()
@@ -153,7 +155,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
         this.subscriptions.add(this.hoverifier)
         this.state = {
             ...this.hoverifier.hoverState,
-            diffMode: (localStorage.getItem('diff-mode-visualizer') as DiffMode | null) || 'unified',
+            diffMode: (localStorage.getItem(DIFF_MODE_VISUALIZER) as DiffMode | null) || 'unified',
         }
 
         this.subscriptions.add(
@@ -256,7 +258,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                             <div role="group" className="btn-group">
                                 <button
                                     onClick={() => this.handleDiffMode('unified')}
-                                    // onClick={() => this.setState({ diffMode: 'unified' })}
                                     type="button"
                                     className={`btn ${
                                         this.state.diffMode === 'unified' ? 'btn-secondary' : 'btn-outline-secondary'
@@ -266,7 +267,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                 </button>
                                 <button
                                     onClick={() => this.handleDiffMode('split')}
-                                    // onClick={() => this.setState({ diffMode: 'split' })}
                                     type="button"
                                     className={`btn ${
                                         this.state.diffMode === 'split' ? 'btn-secondary' : 'btn-outline-secondary'
@@ -301,7 +301,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                     extensionsController: this.props.extensionsController,
                                 },
                                 lineNumbers: true,
-                                diffMode: this.state.diffMode || 'unified',
+                                diffMode: this.state.diffMode,
                             }}
                             updateOnChange={`${this.props.repo.id}:${this.state.commitOrError.oid}:${String(
                                 this.props.isLightTheme
