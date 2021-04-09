@@ -46,7 +46,10 @@ func main() {
 		os.Exit(0)
 	}()
 
-	go debugserver.Start()
+	// Ready immediately
+	ready := make(chan struct{})
+	close(ready)
+	go debugserver.NewServerRoutine(ready).Start()
 
 	ctx := context.Background()
 

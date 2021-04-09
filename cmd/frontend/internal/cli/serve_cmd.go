@@ -133,6 +133,9 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		log.Fatalf("failed to initialize profiling: %v", err)
 	}
 
+	ready := make(chan struct{})
+	go debugserver.NewServerRoutine(ready).Start()
+
 	db, err := InitDB()
 	if err != nil {
 		log.Fatalf("ERROR: %v", err)
@@ -234,8 +237,6 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		return err
 	}
 
-	go debugserver.Start()
-
 	siteid.Init()
 
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
@@ -287,6 +288,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		fmt.Println(" ")
 	}
 	fmt.Printf("✱ Sourcegraph is ready at: %s\n", globals.ExternalURL())
+	close(ready)
 
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 	return nil

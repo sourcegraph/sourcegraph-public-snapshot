@@ -17,7 +17,7 @@ import (
 type FakeChangesetSource struct {
 	Svc *types.ExternalService
 
-	authenticator auth.Authenticator
+	CurrentAuthenticator auth.Authenticator
 
 	CreateDraftChangesetCalled  bool
 	UndraftedChangesetsCalled   bool
@@ -29,6 +29,7 @@ type FakeChangesetSource struct {
 	CloseChangesetCalled        bool
 	ReopenChangesetCalled       bool
 	AuthenticatedUsernameCalled bool
+	ValidateAuthenticatorCalled bool
 
 	// The Changeset.HeadRef to be expected in CreateChangeset/UpdateChangeset calls.
 	WantHeadRef string
@@ -42,6 +43,9 @@ type FakeChangesetSource struct {
 	// Whether or not the changeset already ChangesetExists on the code host at the time
 	// when CreateChangeset is called.
 	ChangesetExists bool
+
+	// When true, ValidateAuthenticator will return no error.
+	AuthenticatorIsValid bool
 
 	// error to be returned from every method
 	Err error
@@ -229,8 +233,16 @@ func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *repos.Chan
 }
 
 func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (repos.Source, error) {
-	s.authenticator = a
+	s.CurrentAuthenticator = a
 	return s, nil
+}
+
+func (s *FakeChangesetSource) ValidateAuthenticator(context.Context) error {
+	s.ValidateAuthenticatorCalled = true
+	if s.AuthenticatorIsValid {
+		return nil
+	}
+	return errors.New("invalid authenticator in fake source")
 }
 
 func (s *FakeChangesetSource) AuthenticatedUsername(ctx context.Context) (string, error) {

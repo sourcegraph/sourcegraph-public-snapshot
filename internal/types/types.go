@@ -422,7 +422,7 @@ type GitserverRepo struct {
 	CloneStatus CloneStatus
 	// The last external service used to sync or clone this repo
 	LastExternalService int64
-	// The last error that occured or empty if the last action was successful
+	// The last error that occurred or empty if the last action was successful
 	LastError string
 	UpdatedAt time.Time
 }

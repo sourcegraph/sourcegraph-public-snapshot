@@ -57,10 +57,16 @@ func main() {
 	}
 
 	// Start debug server
-	go debugserver.NewServerRoutine().Start()
+	ready := make(chan struct{})
+	go debugserver.NewServerRoutine(ready).Start()
 
 	// Connect to databases
 	db := connectToDatabase()
+
+	// Migrations may take a while, but after they're done we'll immediately
+	// spin up a server and can accept traffic. Inform external clients we'll
+	// be ready for traffic.
+	close(ready)
 
 	// Initialize queues
 	queueOptions := map[string]apiserver.QueueOptions{

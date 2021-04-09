@@ -129,6 +129,17 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
+type BatchChangeRolloutWindow struct {
+	// Days description: Day(s) the window applies to. If omitted, this rule applies to all days of the week.
+	Days []string `json:"days,omitempty"`
+	// End description: Window end time. If omitted, no time window is applied to the day(s) that match this rule.
+	End string `json:"end,omitempty"`
+	// Rate description: The rate changesets will be published at.
+	Rate interface{} `json:"rate"`
+	// Start description: Window start time. If omitted, no time window is applied to the day(s) that match this rule.
+	Start string `json:"start,omitempty"`
+}
+
 // BatchSpec description: A batch specification, which describes the batch change and what kinds of changes to make (or what existing changesets to track).
 type BatchSpec struct {
 	// ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
@@ -1331,6 +1342,8 @@ type SiteConfiguration struct {
 	BatchChangesEnabled *bool `json:"batchChanges.enabled,omitempty"`
 	// BatchChangesRestrictToAdmins description: When enabled, only site admins can create and apply batch changes.
 	BatchChangesRestrictToAdmins *bool `json:"batchChanges.restrictToAdmins,omitempty"`
+	// BatchChangesRolloutWindows description: Specifies specific windows, which can have associated rate limits, to be used when publishing changesets. All days and times are handled in UTC.
+	BatchChangesRolloutWindows *[]*BatchChangeRolloutWindow `json:"batchChanges.rolloutWindows,omitempty"`
 	// Branding description: Customize Sourcegraph homepage logo and search icon.
 	//
 	// Only available in Sourcegraph Enterprise.
