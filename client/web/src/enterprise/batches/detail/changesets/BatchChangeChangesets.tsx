@@ -115,6 +115,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
         }
     }, [batchChangeID, selectedChangesets, setIsSubmittingSelected, deselectAll, telemetryService])
 
+    // TODO: We need to deselect all of setChangesetFilters is called
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
         state: null,
@@ -201,14 +202,14 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
 
     return (
         <>
-            {!hideFilters && selectedChangesets.size === 0 && (
+            {!hideFilters && (
                 <ChangesetFilterRow history={history} location={location} onFiltersChange={setChangesetFilters} />
             )}
-            {viewerCanAdminister && selectedChangesets.size > 0 && (
+            {viewerCanAdminister && enableSelect && (
                 <ChangesetSelectRow
                     selected={selectedChangesets}
                     onSubmit={onSubmitSelected}
-                    deselectAll={deselectAll}
+                    // deselectAll={deselectAll}
                     isSubmitting={isSubmittingSelected}
                 />
             )}
