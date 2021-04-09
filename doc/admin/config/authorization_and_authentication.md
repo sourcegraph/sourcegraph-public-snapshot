@@ -29,7 +29,7 @@ If you do not use one of those listed code hosts, you will need to control acces
 
 ## Username normalization
 
-Sourcegraph does not support email-style usernames. In contexts in which you are providing the username to Sourcegraph, it will be normalized, which can impact username matching where that is relevant. [Full documentation is available here](../auth/index.md#username-normalization).
+Sourcegraph does not support email-style usernames. In contexts in which you are providing the username to Sourcegraph, it will be normalized, which can impact username matching where that is relevant. See [full documentation for username normalization](../auth/index.md#username-normalization).
 
 ## Instructions for individual authentication/authorization pathways
 
