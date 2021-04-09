@@ -105,7 +105,7 @@ manifests that cannot be installed otherwise.
    ./kubectl-apply-all.sh -l sourcegraph-resource-requires=no-cluster-admin
    ```
 
-We also provide an [overlay](configure.md#non-privileged-overlay) that generates a version of the manifests that does not
+We also provide an [overlay](overlays.md#non-privileged-overlay) that generates a version of the manifests that does not
 require cluster-admin privileges.
 
 ## Cloud installation guides
