@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
@@ -38,14 +38,14 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	spec1 := &batches.BatchSpec{
+	spec1 := &btypes.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
 	if err := cstore.CreateBatchSpec(ctx, spec1); err != nil {
 		t.Fatal(err)
 	}
-	spec2 := &batches.BatchSpec{
+	spec2 := &btypes.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
@@ -53,7 +53,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	batchChange1 := &batches.BatchChange{
+	batchChange1 := &btypes.BatchChange{
 		Name:             "my-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
@@ -64,7 +64,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 	if err := cstore.CreateBatchChange(ctx, batchChange1); err != nil {
 		t.Fatal(err)
 	}
-	batchChange2 := &batches.BatchChange{
+	batchChange2 := &btypes.BatchChange{
 		Name:             "my-other-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
@@ -192,7 +192,7 @@ func TestBatchChangesListing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createBatchSpec := func(t *testing.T, spec *batches.BatchSpec) {
+	createBatchSpec := func(t *testing.T, spec *btypes.BatchSpec) {
 		t.Helper()
 
 		spec.UserID = userID
@@ -202,7 +202,7 @@ func TestBatchChangesListing(t *testing.T) {
 		}
 	}
 
-	createBatchChange := func(t *testing.T, c *batches.BatchChange) {
+	createBatchChange := func(t *testing.T, c *btypes.BatchChange) {
 		t.Helper()
 
 		c.Name = "n"
@@ -213,10 +213,10 @@ func TestBatchChangesListing(t *testing.T) {
 	}
 
 	t.Run("listing a users batch changes", func(t *testing.T) {
-		spec := &batches.BatchSpec{}
+		spec := &btypes.BatchSpec{}
 		createBatchSpec(t, spec)
 
-		batchChange := &batches.BatchChange{
+		batchChange := &btypes.BatchChange{
 			NamespaceUserID: userID,
 			BatchSpecID:     spec.ID,
 			LastApplierID:   userID,
@@ -246,10 +246,10 @@ func TestBatchChangesListing(t *testing.T) {
 	})
 
 	t.Run("listing an orgs batch changes", func(t *testing.T) {
-		spec := &batches.BatchSpec{}
+		spec := &btypes.BatchSpec{}
 		createBatchSpec(t, spec)
 
-		batchChange := &batches.BatchChange{
+		batchChange := &btypes.BatchChange{
 			NamespaceOrgID: orgID,
 			BatchSpecID:    spec.ID,
 			LastApplierID:  userID,

@@ -9,14 +9,15 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -44,7 +45,7 @@ var ErrNoSSHCredential = errors.New("authenticator doesn't support SSH")
 
 type SourcerStore interface {
 	DB() dbutil.DB
-	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*store.SiteCredential, error)
+	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
 	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
 	Repos() *database.RepoStore
 	ExternalServices() *database.ExternalServiceStore
@@ -53,16 +54,27 @@ type SourcerStore interface {
 
 // Sourcer exposes methods to get a BatchesSource based on a changeset, repo or
 // external service.
-type Sourcer struct {
-	sourcer repos.Sourcer
-	store   SourcerStore
+type Sourcer interface {
+	ForChangeset(ctx context.Context, ch *btypes.Changeset) (*BatchesSource, error)
+	ForRepo(ctx context.Context, repo *types.Repo) (*BatchesSource, error)
+	ForExternalService(ctx context.Context, opts store.GetExternalServiceIDsOpts) (*BatchesSource, error)
+}
+
+type sourcer struct {
+	cf    *httpcli.Factory
+	store SourcerStore
+}
+
+type fakeSourcer struct {
+	err    error
+	source *BatchesSource
 }
 
 // BatchesSource wraps repos.ChangesetSource and repos.UserSource, which are both
 // required to be a valid source used with Batch Changes. It exposes methods to
 // be authenticated with a user or site credential.
 type BatchesSource struct {
-	repos.ChangesetSource
+	ChangesetSource
 	repos.UserSource
 
 	au    auth.Authenticator
@@ -70,16 +82,36 @@ type BatchesSource struct {
 }
 
 // NewSourcer returns a new Sourcer to be used in Batch Changes.
-func NewSourcer(sourcer repos.Sourcer, store SourcerStore) *Sourcer {
-	return &Sourcer{
-		sourcer,
+func NewSourcer(cf *httpcli.Factory, store SourcerStore) Sourcer {
+	return &sourcer{
+		cf,
 		store,
 	}
 }
 
+// NewFakeSourcer returns a new Sourcer to be used in Batch Changes.
+func NewFakeSourcer(err error, source *BatchesSource) Sourcer {
+	return &fakeSourcer{
+		err,
+		source,
+	}
+}
+
+func (s *fakeSourcer) ForChangeset(ctx context.Context, ch *btypes.Changeset) (*BatchesSource, error) {
+	return s.source, s.err
+}
+
+func (s *fakeSourcer) ForRepo(ctx context.Context, repo *types.Repo) (*BatchesSource, error) {
+	return s.source, s.err
+}
+
+func (s *fakeSourcer) ForExternalService(ctx context.Context, opts store.GetExternalServiceIDsOpts) (*BatchesSource, error) {
+	return s.source, s.err
+}
+
 // ForChangeset returns a BatchesSource for the given changeset. The changeset.RepoID
 // is used to find the matching code host.
-func (s *Sourcer) ForChangeset(ctx context.Context, ch *batches.Changeset) (*BatchesSource, error) {
+func (s *sourcer) ForChangeset(ctx context.Context, ch *btypes.Changeset) (*BatchesSource, error) {
 	repo, err := s.store.Repos().Get(ctx, ch.RepoID)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading changeset repo")
@@ -88,13 +120,13 @@ func (s *Sourcer) ForChangeset(ctx context.Context, ch *batches.Changeset) (*Bat
 }
 
 // ForRepo returns a BatchesSource for the given repo.
-func (s *Sourcer) ForRepo(ctx context.Context, repo *types.Repo) (*BatchesSource, error) {
+func (s *sourcer) ForRepo(ctx context.Context, repo *types.Repo) (*BatchesSource, error) {
 	// Consider all available external services for this repo.
 	return s.loadBatchesSource(ctx, repo.ExternalServiceIDs())
 }
 
 // ForExternalService returns a BatchesSource based on the provided external service opts.
-func (s *Sourcer) ForExternalService(ctx context.Context, opts store.GetExternalServiceIDsOpts) (*BatchesSource, error) {
+func (s *sourcer) ForExternalService(ctx context.Context, opts store.GetExternalServiceIDsOpts) (*BatchesSource, error) {
 	extSvcIDs, err := s.store.GetExternalServiceIDs(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service IDs")
@@ -103,18 +135,18 @@ func (s *Sourcer) ForExternalService(ctx context.Context, opts store.GetExternal
 }
 
 // FromRepoSource returns a BatchesSource for a given repos.Source.
-func (s *Sourcer) FromRepoSource(src repos.Source) (*BatchesSource, error) {
-	return batchesSourceFromRepoSource(src, s.store)
-}
+// func (s *Sourcer) FromRepoSource(src repos.Source) (*BatchesSource, error) {
+// 	return batchesSourceFromRepoSource(src, s.store)
+// }
 
-func (s *Sourcer) loadBatchesSource(ctx context.Context, externalServiceIDs []int64) (*BatchesSource, error) {
+func (s *sourcer) loadBatchesSource(ctx context.Context, externalServiceIDs []int64) (*BatchesSource, error) {
 	extSvc, err := loadExternalService(ctx, s.store.ExternalServices(), database.ExternalServicesListOptions{
 		IDs: externalServiceIDs,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service")
 	}
-	css, err := buildChangesetSource(s.sourcer, s.store, extSvc)
+	css, err := buildChangesetSource(s.store, extSvc)
 	if err != nil {
 		return nil, errors.Wrap(err, "building changeset source")
 	}
@@ -193,8 +225,8 @@ func (s *BatchesSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushCon
 
 // DraftChangesetSource returns a repos.DraftChangesetSource, if the underlying
 // source supports it. Returns an error if not.
-func (s *BatchesSource) DraftChangesetSource() (repos.DraftChangesetSource, error) {
-	draftCss, ok := s.ChangesetSource.(repos.DraftChangesetSource)
+func (s *BatchesSource) DraftChangesetSource() (DraftChangesetSource, error) {
+	draftCss, ok := s.ChangesetSource.(DraftChangesetSource)
 	if !ok {
 		return nil, errors.New("changeset source doesn't implement DraftChangesetSource")
 	}
@@ -306,30 +338,28 @@ func loadExternalService(ctx context.Context, s *database.ExternalServiceStore, 
 
 // buildChangesetSource get an authenticated ChangesetSource for the given repo
 // to load the changeset state from.
-func buildChangesetSource(sourcer repos.Sourcer, store SourcerStore, externalService *types.ExternalService) (*BatchesSource, error) {
-	// Then, use the external service to build a ChangesetSource.
-	sources, err := sourcer(externalService)
-	if err != nil {
-		return nil, err
+func buildChangesetSource(store SourcerStore, externalService *types.ExternalService) (*BatchesSource, error) {
+	var source ChangesetSource
+	switch externalService.Kind {
+	case extsvc.KindGitHub:
+		source = &GithubSource{}
+	case extsvc.KindGitLab:
+		source = &GitLabSource{}
+	case extsvc.KindBitbucketServer:
+		source = &BitbucketServerSource{}
+	default:
+		return nil, fmt.Errorf("unsupported external service type %q", extsvc.KindToType(externalService.Kind))
 	}
-	if len(sources) != 1 {
-		return nil, fmt.Errorf("got no Source for external service of kind %q", externalService.Kind)
-	}
-	source := sources[0]
 	return batchesSourceFromRepoSource(source, store)
 }
 
-func batchesSourceFromRepoSource(src repos.Source, store SourcerStore) (*BatchesSource, error) {
-	css, ok := src.(repos.ChangesetSource)
-	if !ok {
-		return nil, fmt.Errorf("cannot create ChangesetSource from external service")
-	}
+func batchesSourceFromRepoSource(src ChangesetSource, store SourcerStore) (*BatchesSource, error) {
 	us, ok := src.(repos.UserSource)
 	if !ok {
 		return nil, fmt.Errorf("cannot create UserSource from external service")
 	}
 	return &BatchesSource{
-		ChangesetSource: css,
+		ChangesetSource: src,
 		UserSource:      us,
 		store:           store,
 	}, nil

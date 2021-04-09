@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -31,7 +31,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	cstore := store.New(db)
 
 	// Create a batch spec for the target batch change.
-	oldBatchSpec := &batches.BatchSpec{
+	oldBatchSpec := &btypes.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
@@ -56,7 +56,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		rs = append(rs, r)
 	}
 
-	changesetSpecs := make([]*batches.ChangesetSpec, 0, 2)
+	changesetSpecs := make([]*btypes.ChangesetSpec, 0, 2)
 	for i, r := range rs[:2] {
 		s := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
 			BatchSpec: batchSpec.ID,
@@ -79,7 +79,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		Repo:             rs[2].ID,
 		BatchChange:      batchChange.ID,
 		CurrentSpec:      closingChangesetSpec.ID,
-		PublicationState: batches.ChangesetPublicationStatePublished,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
 	})
 
 	// Add one changeset that doesn't matches a new spec (update).
@@ -93,7 +93,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		Repo:               rs[1].ID,
 		BatchChange:        batchChange.ID,
 		CurrentSpec:        updatedChangesetSpec.ID,
-		PublicationState:   batches.ChangesetPublicationStatePublished,
+		PublicationState:   btypes.ChangesetPublicationStatePublished,
 		OwnedByBatchChange: batchChange.ID,
 	})
 
@@ -113,7 +113,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	wantApplyPreview := []apitest.ChangesetApplyPreview{
 		{
 			Typename:   "VisibleChangesetApplyPreview",
-			Operations: []batches.ReconcilerOperation{batches.ReconcilerOperationDetach},
+			Operations: []btypes.ReconcilerOperation{btypes.ReconcilerOperationDetach},
 			Targets: apitest.ChangesetApplyPreviewTargets{
 				Typename:  "VisibleApplyPreviewTargetsDetach",
 				Changeset: apitest.Changeset{ID: string(marshalChangesetID(closingChangeset.ID))},
@@ -121,7 +121,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		},
 		{
 			Typename:   "VisibleChangesetApplyPreview",
-			Operations: []batches.ReconcilerOperation{},
+			Operations: []btypes.ReconcilerOperation{},
 			Targets: apitest.ChangesetApplyPreviewTargets{
 				Typename:      "VisibleApplyPreviewTargetsAttach",
 				ChangesetSpec: apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(changesetSpecs[0].RandID))},
@@ -129,7 +129,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		},
 		{
 			Typename:   "VisibleChangesetApplyPreview",
-			Operations: []batches.ReconcilerOperation{},
+			Operations: []btypes.ReconcilerOperation{},
 			Targets: apitest.ChangesetApplyPreviewTargets{
 				Typename:      "VisibleApplyPreviewTargetsUpdate",
 				ChangesetSpec: apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(changesetSpecs[1].RandID))},

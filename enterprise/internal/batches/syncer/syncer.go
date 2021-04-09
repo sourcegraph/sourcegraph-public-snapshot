@@ -14,8 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -38,12 +38,12 @@ type SyncRegistry struct {
 }
 
 type SyncStore interface {
-	ListCodeHosts(ctx context.Context, opts store.ListCodeHostsOpts) ([]*batches.CodeHost, error)
-	ListChangesetSyncData(context.Context, store.ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error)
-	GetChangeset(context.Context, store.GetChangesetOpts) (*batches.Changeset, error)
-	UpdateChangeset(ctx context.Context, cs *batches.Changeset) error
-	UpsertChangesetEvents(ctx context.Context, cs ...*batches.ChangesetEvent) error
-	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*store.SiteCredential, error)
+	ListCodeHosts(ctx context.Context, opts store.ListCodeHostsOpts) ([]*btypes.CodeHost, error)
+	ListChangesetSyncData(context.Context, store.ListChangesetSyncDataOpts) ([]*btypes.ChangesetSyncData, error)
+	GetChangeset(context.Context, store.GetChangesetOpts) (*btypes.Changeset, error)
+	UpdateChangeset(ctx context.Context, cs *btypes.Changeset) error
+	UpsertChangesetEvents(ctx context.Context, cs ...*btypes.ChangesetEvent) error
+	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
 	Transact(context.Context) (*store.Store, error)
 	Repos() *database.RepoStore
 	ExternalServices() *database.ExternalServiceStore
@@ -75,7 +75,7 @@ func NewSyncRegistry(ctx context.Context, cstore SyncStore, cf *httpcli.Factory)
 
 // Add adds a syncer for the code host associated with the supplied code host if the syncer hasn't
 // already been added and starts it.
-func (s *SyncRegistry) Add(codeHost *batches.CodeHost) {
+func (s *SyncRegistry) Add(codeHost *btypes.CodeHost) {
 	// This should never happen since the store does the filtering for us, but let's be super duper extra cautious.
 	if !codeHost.IsSupported() {
 		log15.Info("Code host not support by batch changes", "type", codeHost.ExternalServiceType, "url", codeHost.ExternalServiceID)
@@ -123,7 +123,7 @@ func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) e
 
 // HandleExternalServiceSync handles changes to external services.
 func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
-	if batches.IsKindSupported(es.Kind) {
+	if btypes.IsKindSupported(es.Kind) {
 		if err := s.syncCodeHosts(s.ctx); err != nil {
 			log15.Error("Syncing on change of code hosts", "err", err)
 		}
@@ -133,7 +133,7 @@ func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
 // handlePriorityItems fetches changesets in the priority queue from the database and passes them
 // to the appropriate syncer.
 func (s *SyncRegistry) handlePriorityItems() {
-	fetchSyncData := func(ids []int64) ([]*batches.ChangesetSyncData, error) {
+	fetchSyncData := func(ids []int64) ([]*btypes.ChangesetSyncData, error) {
 		ctx, cancel := context.WithTimeout(s.ctx, 10*time.Second)
 		defer cancel()
 		return s.syncStore.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: ids})
@@ -184,7 +184,7 @@ func (s *SyncRegistry) syncCodeHosts(ctx context.Context) error {
 		return err
 	}
 
-	codeHostsByExternalServiceID := make(map[string]*batches.CodeHost)
+	codeHostsByExternalServiceID := make(map[string]*btypes.CodeHost)
 
 	// Add and start syncers
 	for _, host := range codeHosts {
@@ -404,8 +404,8 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		ID: id,
 
 		// Enforce precondition given in changeset sync state query.
-		ReconcilerState:  batches.ReconcilerStateCompleted,
-		PublicationState: batches.ChangesetPublicationStatePublished,
+		ReconcilerState:  btypes.ReconcilerStateCompleted,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
 	})
 	if err != nil {
 		if err == store.ErrNoResults {
@@ -430,10 +430,10 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 
 // SyncChangeset refreshes the metadata of the given changeset and
 // updates them in the database.
-func SyncChangeset(ctx context.Context, syncStore SyncStore, source *sources.BatchesSource, repo *types.Repo, c *batches.Changeset) (err error) {
-	repoChangeset := &repos.Changeset{Repo: repo, Changeset: c}
+func SyncChangeset(ctx context.Context, syncStore SyncStore, source *sources.BatchesSource, repo *types.Repo, c *btypes.Changeset) (err error) {
+	repoChangeset := &sources.Changeset{Repo: repo, Changeset: c}
 	if err := source.LoadChangeset(ctx, repoChangeset); err != nil {
-		_, ok := err.(repos.ChangesetNotFoundError)
+		_, ok := err.(sources.ChangesetNotFoundError)
 		if !ok {
 			// Store the error as the syncer error.
 			errMsg := err.Error()

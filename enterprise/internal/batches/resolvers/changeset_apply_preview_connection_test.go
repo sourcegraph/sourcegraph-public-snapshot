@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -32,7 +32,7 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 
 	cstore := store.New(db)
 
-	batchSpec := &batches.BatchSpec{
+	batchSpec := &btypes.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
@@ -53,10 +53,10 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 		rs = append(rs, r)
 	}
 
-	changesetSpecs := make([]*batches.ChangesetSpec, 0, len(rs))
+	changesetSpecs := make([]*btypes.ChangesetSpec, 0, len(rs))
 	for i, r := range rs {
 		repoID := graphqlbackend.MarshalRepositoryID(r.ID)
-		s, err := batches.NewChangesetSpecFromRaw(ct.NewRawChangesetSpecGitBranch(repoID, fmt.Sprintf("d34db33f-%d", i)))
+		s, err := btypes.NewChangesetSpecFromRaw(ct.NewRawChangesetSpecGitBranch(repoID, fmt.Sprintf("d34db33f-%d", i)))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -173,13 +173,13 @@ query($batchSpec: ID!, $first: Int!, $after: String) {
 `
 
 func TestRewirerMappings(t *testing.T) {
-	addResolverFixture := func(rw *rewirerMappingsFacade, mapping *store.RewirerMapping, resolver graphqlbackend.ChangesetApplyPreviewResolver) {
+	addResolverFixture := func(rw *rewirerMappingsFacade, mapping *btypes.RewirerMapping, resolver graphqlbackend.ChangesetApplyPreviewResolver) {
 		rw.resolversMu.Lock()
 		defer rw.resolversMu.Unlock()
 
 		rw.resolvers[mapping] = resolver
 	}
-	opPtr := func(op batches.ReconcilerOperation) *batches.ReconcilerOperation {
+	opPtr := func(op btypes.ReconcilerOperation) *btypes.ReconcilerOperation {
 		return &op
 	}
 	ctx := context.Background()
@@ -187,17 +187,17 @@ func TestRewirerMappings(t *testing.T) {
 	t.Run("Page", func(t *testing.T) {
 		// Set up a scenario that allows for some filtering.
 		var (
-			detach   = &store.RewirerMapping{ChangesetSpecID: 1}
-			hidden   = &store.RewirerMapping{ChangesetSpecID: 2}
-			noAction = &store.RewirerMapping{ChangesetSpecID: 3}
-			publishA = &store.RewirerMapping{ChangesetSpecID: 4}
-			publishB = &store.RewirerMapping{ChangesetSpecID: 5}
+			detach   = &btypes.RewirerMapping{ChangesetSpecID: 1}
+			hidden   = &btypes.RewirerMapping{ChangesetSpecID: 2}
+			noAction = &btypes.RewirerMapping{ChangesetSpecID: 3}
+			publishA = &btypes.RewirerMapping{ChangesetSpecID: 4}
+			publishB = &btypes.RewirerMapping{ChangesetSpecID: 5}
 		)
 		rmf := newRewirerMappingsFacade(nil, 0)
-		rmf.All = store.RewirerMappings{detach, hidden, noAction, publishA, publishB}
+		rmf.All = btypes.RewirerMappings{detach, hidden, noAction, publishA, publishB}
 		addResolverFixture(rmf, detach, &mockChangesetApplyPreviewResolver{
 			visible: &mockVisibleChangesetApplyPreviewResolver{
-				operations: []batches.ReconcilerOperation{batches.ReconcilerOperationDetach},
+				operations: []btypes.ReconcilerOperation{btypes.ReconcilerOperationDetach},
 			},
 		})
 		addResolverFixture(rmf, hidden, &mockChangesetApplyPreviewResolver{
@@ -205,17 +205,17 @@ func TestRewirerMappings(t *testing.T) {
 		})
 		addResolverFixture(rmf, noAction, &mockChangesetApplyPreviewResolver{
 			visible: &mockVisibleChangesetApplyPreviewResolver{
-				operations: []batches.ReconcilerOperation{},
+				operations: []btypes.ReconcilerOperation{},
 			},
 		})
 		addResolverFixture(rmf, publishA, &mockChangesetApplyPreviewResolver{
 			visible: &mockVisibleChangesetApplyPreviewResolver{
-				operations: []batches.ReconcilerOperation{batches.ReconcilerOperationPublish},
+				operations: []btypes.ReconcilerOperation{btypes.ReconcilerOperationPublish},
 			},
 		})
 		addResolverFixture(rmf, publishB, &mockChangesetApplyPreviewResolver{
 			visible: &mockVisibleChangesetApplyPreviewResolver{
-				operations: []batches.ReconcilerOperation{batches.ReconcilerOperationPublish},
+				operations: []btypes.ReconcilerOperation{btypes.ReconcilerOperationPublish},
 			},
 		})
 
@@ -265,7 +265,7 @@ func TestRewirerMappings(t *testing.T) {
 					LimitOffset: &database.LimitOffset{Limit: -1},
 				},
 				want: rewirerMappingPage{
-					Mappings:   store.RewirerMappings{},
+					Mappings:   btypes.RewirerMappings{},
 					TotalCount: len(rmf.All),
 				},
 			},
@@ -274,7 +274,7 @@ func TestRewirerMappings(t *testing.T) {
 					LimitOffset: &database.LimitOffset{Offset: -1},
 				},
 				want: rewirerMappingPage{
-					Mappings:   store.RewirerMappings{},
+					Mappings:   btypes.RewirerMappings{},
 					TotalCount: len(rmf.All),
 				},
 			},
@@ -283,55 +283,55 @@ func TestRewirerMappings(t *testing.T) {
 					LimitOffset: &database.LimitOffset{Offset: 5},
 				},
 				want: rewirerMappingPage{
-					Mappings:   store.RewirerMappings{},
+					Mappings:   btypes.RewirerMappings{},
 					TotalCount: len(rmf.All),
 				},
 			},
 			"non-existent op": {
 				opts: rewirerMappingPageOpts{
-					Op: opPtr(batches.ReconcilerOperationClose),
+					Op: opPtr(btypes.ReconcilerOperationClose),
 				},
 				want: rewirerMappingPage{
-					Mappings:   store.RewirerMappings{},
+					Mappings:   btypes.RewirerMappings{},
 					TotalCount: 0,
 				},
 			},
 			"extant op, no limit": {
 				opts: rewirerMappingPageOpts{
-					Op: opPtr(batches.ReconcilerOperationPublish),
+					Op: opPtr(btypes.ReconcilerOperationPublish),
 				},
 				want: rewirerMappingPage{
-					Mappings:   store.RewirerMappings{publishA, publishB},
+					Mappings:   btypes.RewirerMappings{publishA, publishB},
 					TotalCount: 2,
 				},
 			},
 			"extant op, high limit": {
 				opts: rewirerMappingPageOpts{
 					LimitOffset: &database.LimitOffset{Limit: 5},
-					Op:          opPtr(batches.ReconcilerOperationPublish),
+					Op:          opPtr(btypes.ReconcilerOperationPublish),
 				},
 				want: rewirerMappingPage{
-					Mappings:   store.RewirerMappings{publishA, publishB},
+					Mappings:   btypes.RewirerMappings{publishA, publishB},
 					TotalCount: 2,
 				},
 			},
 			"extant op, low limit": {
 				opts: rewirerMappingPageOpts{
 					LimitOffset: &database.LimitOffset{Limit: 1},
-					Op:          opPtr(batches.ReconcilerOperationPublish),
+					Op:          opPtr(btypes.ReconcilerOperationPublish),
 				},
 				want: rewirerMappingPage{
-					Mappings:   store.RewirerMappings{publishA},
+					Mappings:   btypes.RewirerMappings{publishA},
 					TotalCount: 2,
 				},
 			},
 			"extant op, low limit and offset": {
 				opts: rewirerMappingPageOpts{
 					LimitOffset: &database.LimitOffset{Limit: 1, Offset: 1},
-					Op:          opPtr(batches.ReconcilerOperationPublish),
+					Op:          opPtr(btypes.ReconcilerOperationPublish),
 				},
 				want: rewirerMappingPage{
-					Mappings:   store.RewirerMappings{publishB},
+					Mappings:   btypes.RewirerMappings{publishB},
 					TotalCount: 2,
 				},
 			},
@@ -367,7 +367,7 @@ func TestRewirerMappings(t *testing.T) {
 		})
 
 		if _, err := rmf.Page(ctx, rewirerMappingPageOpts{
-			Op: opPtr(batches.ReconcilerOperationClose),
+			Op: opPtr(btypes.ReconcilerOperationClose),
 		}); err == nil {
 			t.Error("unexpected nil error")
 		}
@@ -396,9 +396,9 @@ func TestRewirerMappings(t *testing.T) {
 
 		s := &store.Store{}
 		rmf := newRewirerMappingsFacade(s, 1)
-		rmf.batchChange = &batches.BatchChange{}
+		rmf.batchChange = &btypes.BatchChange{}
 
-		mapping := &store.RewirerMapping{}
+		mapping := &btypes.RewirerMapping{}
 
 		have := rmf.Resolver(mapping).(*changesetApplyPreviewResolver)
 		want := &changesetApplyPreviewResolver{
@@ -438,7 +438,7 @@ var _ graphqlbackend.ChangesetApplyPreviewResolver = &mockChangesetApplyPreviewR
 
 type mockHiddenChangesetApplyPreviewResolver struct{}
 
-func (*mockHiddenChangesetApplyPreviewResolver) Operations(context.Context) ([]batches.ReconcilerOperation, error) {
+func (*mockHiddenChangesetApplyPreviewResolver) Operations(context.Context) ([]string, error) {
 	return nil, errors.New("hidden changeset")
 }
 func (*mockHiddenChangesetApplyPreviewResolver) Delta(context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
@@ -451,15 +451,19 @@ func (*mockHiddenChangesetApplyPreviewResolver) Targets() graphqlbackend.HiddenA
 var _ graphqlbackend.HiddenChangesetApplyPreviewResolver = &mockHiddenChangesetApplyPreviewResolver{}
 
 type mockVisibleChangesetApplyPreviewResolver struct {
-	operations    []batches.ReconcilerOperation
+	operations    []btypes.ReconcilerOperation
 	operationsErr error
 	delta         graphqlbackend.ChangesetSpecDeltaResolver
 	deltaErr      error
 	targets       graphqlbackend.VisibleApplyPreviewTargetsResolver
 }
 
-func (r *mockVisibleChangesetApplyPreviewResolver) Operations(context.Context) ([]batches.ReconcilerOperation, error) {
-	return r.operations, r.operationsErr
+func (r *mockVisibleChangesetApplyPreviewResolver) Operations(context.Context) ([]string, error) {
+	strOps := make([]string, 0, len(r.operations))
+	for _, op := range r.operations {
+		strOps = append(strOps, string(op))
+	}
+	return strOps, r.operationsErr
 }
 func (r *mockVisibleChangesetApplyPreviewResolver) Delta(context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
 	return r.delta, r.deltaErr

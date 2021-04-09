@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"encoding/json"
-	"sort"
 	"strconv"
 
 	"github.com/dineshappavoo/basex"
@@ -11,11 +10,9 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // changesetSpecInsertColumns is the list of changeset_specs columns that are
@@ -59,7 +56,7 @@ var changesetSpecColumns = []*sqlf.Query{
 }
 
 // CreateChangesetSpec creates the given ChangesetSpec.
-func (s *Store) CreateChangesetSpec(ctx context.Context, c *batches.ChangesetSpec) error {
+func (s *Store) CreateChangesetSpec(ctx context.Context, c *btypes.ChangesetSpec) error {
 	q, err := s.createChangesetSpecQuery(c)
 	if err != nil {
 		return err
@@ -74,7 +71,7 @@ INSERT INTO changeset_specs (%s)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s`
 
-func (s *Store) createChangesetSpecQuery(c *batches.ChangesetSpec) (*sqlf.Query, error) {
+func (s *Store) createChangesetSpecQuery(c *btypes.ChangesetSpec) (*sqlf.Query, error) {
 	spec, err := jsonbColumn(c.Spec)
 	if err != nil {
 		return nil, err
@@ -129,7 +126,7 @@ func (s *Store) createChangesetSpecQuery(c *batches.ChangesetSpec) (*sqlf.Query,
 }
 
 // UpdateChangesetSpec updates the given ChangesetSpec.
-func (s *Store) UpdateChangesetSpec(ctx context.Context, c *batches.ChangesetSpec) error {
+func (s *Store) UpdateChangesetSpec(ctx context.Context, c *btypes.ChangesetSpec) error {
 	q, err := s.updateChangesetSpecQuery(c)
 	if err != nil {
 		return err
@@ -147,7 +144,7 @@ SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING %s`
 
-func (s *Store) updateChangesetSpecQuery(c *batches.ChangesetSpec) (*sqlf.Query, error) {
+func (s *Store) updateChangesetSpecQuery(c *btypes.ChangesetSpec) (*sqlf.Query, error) {
 	spec, err := jsonbColumn(c.Spec)
 	if err != nil {
 		return nil, err
@@ -243,10 +240,10 @@ type GetChangesetSpecOpts struct {
 }
 
 // GetChangesetSpec gets a changeset spec matching the given options.
-func (s *Store) GetChangesetSpec(ctx context.Context, opts GetChangesetSpecOpts) (*batches.ChangesetSpec, error) {
+func (s *Store) GetChangesetSpec(ctx context.Context, opts GetChangesetSpecOpts) (*btypes.ChangesetSpec, error) {
 	q := getChangesetSpecQuery(&opts)
 
-	var c batches.ChangesetSpec
+	var c btypes.ChangesetSpec
 	err := s.query(ctx, q, func(sc scanner) error {
 		return scanChangesetSpec(&c, sc)
 	})
@@ -262,7 +259,7 @@ func (s *Store) GetChangesetSpec(ctx context.Context, opts GetChangesetSpecOpts)
 }
 
 // GetChangesetSpecByID gets a changeset spec with the given ID.
-func (s *Store) GetChangesetSpecByID(ctx context.Context, id int64) (*batches.ChangesetSpec, error) {
+func (s *Store) GetChangesetSpecByID(ctx context.Context, id int64) (*btypes.ChangesetSpec, error) {
 	return s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: id})
 }
 
@@ -310,12 +307,12 @@ type ListChangesetSpecsOpts struct {
 }
 
 // ListChangesetSpecs lists ChangesetSpecs with the given filters.
-func (s *Store) ListChangesetSpecs(ctx context.Context, opts ListChangesetSpecsOpts) (cs batches.ChangesetSpecs, next int64, err error) {
+func (s *Store) ListChangesetSpecs(ctx context.Context, opts ListChangesetSpecsOpts) (cs btypes.ChangesetSpecs, next int64, err error) {
 	q := listChangesetSpecsQuery(&opts)
 
-	cs = make(batches.ChangesetSpecs, 0, opts.DBLimit())
+	cs = make(btypes.ChangesetSpecs, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) error {
-		var c batches.ChangesetSpec
+		var c btypes.ChangesetSpec
 		if err := scanChangesetSpec(&c, sc); err != nil {
 			return err
 		}
@@ -379,7 +376,7 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 // DeleteExpiredChangesetSpecs deletes ChangesetSpecs that have not been
 // attached to a BatchSpec within ChangesetSpecTTL.
 func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) error {
-	expirationTime := s.now().Add(-batches.ChangesetSpecTTL)
+	expirationTime := s.now().Add(-btypes.ChangesetSpecTTL)
 	q := sqlf.Sprintf(deleteExpiredChangesetSpecsQueryFmtstr, expirationTime)
 	return s.Store.Exec(ctx, q)
 }
@@ -407,7 +404,7 @@ AND
 );
 `
 
-func scanChangesetSpec(c *batches.ChangesetSpec, s scanner) error {
+func scanChangesetSpec(c *btypes.ChangesetSpec, s scanner) error {
 	var spec json.RawMessage
 
 	err := s.Scan(
@@ -429,121 +426,12 @@ func scanChangesetSpec(c *batches.ChangesetSpec, s scanner) error {
 		return errors.Wrap(err, "scanning changeset spec")
 	}
 
-	c.Spec = new(batches.ChangesetSpecDescription)
+	c.Spec = new(btypes.ChangesetSpecDescription)
 	if err = json.Unmarshal(spec, c.Spec); err != nil {
 		return errors.Wrap(err, "scanChangesetSpec: failed to unmarshal spec")
 	}
 
 	return nil
-}
-
-// RewirerMapping maps a connection between ChangesetSpec and Changeset.
-// If the ChangesetSpec doesn't match a Changeset (ie. it describes a to-be-created Changeset), ChangesetID is 0.
-// If the ChangesetSpec is 0, the Changeset will be non-zero and means "to be closed".
-// If both are non-zero values, the changeset should be updated with the changeset spec in the mapping.
-type RewirerMapping struct {
-	ChangesetSpecID int64
-	ChangesetSpec   *batches.ChangesetSpec
-	ChangesetID     int64
-	Changeset       *batches.Changeset
-	RepoID          api.RepoID
-	Repo            *types.Repo
-}
-
-type RewirerMappings []*RewirerMapping
-
-func (rm RewirerMappings) Hydrate(ctx context.Context, store *Store) error {
-	changesetsByID := map[int64]*batches.Changeset{}
-	changesetSpecsByID := map[int64]*batches.ChangesetSpec{}
-
-	changesetSpecIDs := rm.ChangesetSpecIDs()
-	if len(changesetSpecIDs) > 0 {
-		changesetSpecs, _, err := store.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{
-			IDs: changesetSpecIDs,
-		})
-		if err != nil {
-			return err
-		}
-		for _, c := range changesetSpecs {
-			changesetSpecsByID[c.ID] = c
-		}
-	}
-
-	changesetIDs := rm.ChangesetIDs()
-	if len(changesetIDs) > 0 {
-		changesets, _, err := store.ListChangesets(ctx, ListChangesetsOpts{IDs: changesetIDs})
-		if err != nil {
-			return err
-		}
-		for _, c := range changesets {
-			changesetsByID[c.ID] = c
-		}
-	}
-
-	accessibleReposByID, err := store.Repos().GetReposSetByIDs(ctx, rm.RepoIDs()...)
-	if err != nil {
-		return err
-	}
-
-	for _, m := range rm {
-		if m.ChangesetID != 0 {
-			m.Changeset = changesetsByID[m.ChangesetID]
-		}
-		if m.ChangesetSpecID != 0 {
-			m.ChangesetSpec = changesetSpecsByID[m.ChangesetSpecID]
-		}
-		if m.RepoID != 0 {
-			// This can be nil, but that's okay. It just means the ctx actor has no access to the repo.
-			m.Repo = accessibleReposByID[m.RepoID]
-		}
-	}
-	return nil
-}
-
-// ChangesetIDs returns a list of unique changeset IDs in the slice of mappings.
-func (rm RewirerMappings) ChangesetIDs() []int64 {
-	changesetIDMap := make(map[int64]struct{})
-	for _, m := range rm {
-		if m.ChangesetID != 0 {
-			changesetIDMap[m.ChangesetID] = struct{}{}
-		}
-	}
-	changesetIDs := make([]int64, 0, len(changesetIDMap))
-	for id := range changesetIDMap {
-		changesetIDs = append(changesetIDs, id)
-	}
-	sort.Slice(changesetIDs, func(i, j int) bool { return changesetIDs[i] < changesetIDs[j] })
-	return changesetIDs
-}
-
-// ChangesetSpecIDs returns a list of unique changeset spec IDs in the slice of mappings.
-func (rm RewirerMappings) ChangesetSpecIDs() []int64 {
-	changesetSpecIDMap := make(map[int64]struct{})
-	for _, m := range rm {
-		if m.ChangesetSpecID != 0 {
-			changesetSpecIDMap[m.ChangesetSpecID] = struct{}{}
-		}
-	}
-	changesetSpecIDs := make([]int64, 0, len(changesetSpecIDMap))
-	for id := range changesetSpecIDMap {
-		changesetSpecIDs = append(changesetSpecIDs, id)
-	}
-	sort.Slice(changesetSpecIDs, func(i, j int) bool { return changesetSpecIDs[i] < changesetSpecIDs[j] })
-	return changesetSpecIDs
-}
-
-// RepoIDs returns a list of unique repo IDs in the slice of mappings.
-func (rm RewirerMappings) RepoIDs() []api.RepoID {
-	repoIDMap := make(map[api.RepoID]struct{})
-	for _, m := range rm {
-		repoIDMap[m.RepoID] = struct{}{}
-	}
-	repoIDs := make([]api.RepoID, 0, len(repoIDMap))
-	for id := range repoIDMap {
-		repoIDs = append(repoIDs, id)
-	}
-	sort.Slice(repoIDs, func(i, j int) bool { return repoIDs[i] < repoIDs[j] })
-	return repoIDs
 }
 
 type GetRewirerMappingsOpts struct {
@@ -552,7 +440,7 @@ type GetRewirerMappingsOpts struct {
 
 	LimitOffset  *database.LimitOffset
 	TextSearch   []search.TextSearchTerm
-	CurrentState *batches.ChangesetState
+	CurrentState *btypes.ChangesetState
 }
 
 // GetRewirerMappings returns RewirerMappings between changeset specs and changesets.
@@ -605,20 +493,67 @@ type GetRewirerMappingsOpts struct {
 // Spec 3 should get a new Changeset, since its branch doesn't match Changeset 3's branch. (ChangesetSpec = 3, Changeset = 0)
 // Spec 4 should be attached to Changeset 4, since it tracks PR #333 in Repo C. (ChangesetSpec = 4, Changeset = 4)
 // Changeset 3 doesn't have a matching spec and should be detached from the batch change (and closed) (ChangesetSpec == 0, Changeset = 3).
-func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsOpts) (mappings RewirerMappings, err error) {
+func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsOpts) (mappings btypes.RewirerMappings, err error) {
 	q, err := getRewirerMappingsQuery(opts)
 	if err != nil {
 		return nil, err
 	}
 
 	err = s.query(ctx, q, func(sc scanner) error {
-		var c RewirerMapping
+		var c btypes.RewirerMapping
 		if err := sc.Scan(&c.ChangesetSpecID, &c.ChangesetID, &c.RepoID); err != nil {
 			return err
 		}
 		mappings = append(mappings, &c)
 		return nil
 	})
+
+	// Hydrate the rewirer mappings:
+	changesetsByID := map[int64]*btypes.Changeset{}
+	changesetSpecsByID := map[int64]*btypes.ChangesetSpec{}
+
+	changesetSpecIDs := mappings.ChangesetSpecIDs()
+	if len(changesetSpecIDs) > 0 {
+		changesetSpecs, _, err := s.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{
+			IDs: changesetSpecIDs,
+		})
+		if err != nil {
+			return nil, err
+		}
+		for _, c := range changesetSpecs {
+			changesetSpecsByID[c.ID] = c
+		}
+	}
+
+	changesetIDs := mappings.ChangesetIDs()
+	if len(changesetIDs) > 0 {
+		changesets, _, err := s.ListChangesets(ctx, ListChangesetsOpts{IDs: changesetIDs})
+		if err != nil {
+			return nil, err
+		}
+		for _, c := range changesets {
+			changesetsByID[c.ID] = c
+		}
+	}
+
+	accessibleReposByID, err := s.Repos().GetReposSetByIDs(ctx, mappings.RepoIDs()...)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, m := range mappings {
+		if m.ChangesetID != 0 {
+			m.Changeset = changesetsByID[m.ChangesetID]
+		}
+		if m.ChangesetSpecID != 0 {
+			m.ChangesetSpec = changesetSpecsByID[m.ChangesetSpecID]
+		}
+		if m.RepoID != 0 {
+			// This can be nil, but that's okay. It just means the ctx actor has no access to the repo.
+			m.Repo = accessibleReposByID[m.RepoID]
+		}
+	}
+
 	return mappings, err
 }
 
@@ -654,7 +589,7 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) (*sqlf.Query, error) {
 	), nil
 }
 
-func getRewirerMappingCurrentState(state *batches.ChangesetState) (*sqlf.Query, error) {
+func getRewirerMappingCurrentState(state *btypes.ChangesetState) (*sqlf.Query, error) {
 	if state == nil {
 		return sqlf.Sprintf(""), nil
 	}
@@ -663,24 +598,24 @@ func getRewirerMappingCurrentState(state *batches.ChangesetState) (*sqlf.Query, 
 	// that if one changes, so should the other.
 	var q *sqlf.Query
 	switch *state {
-	case batches.ChangesetStateRetrying:
-		q = sqlf.Sprintf("reconciler_state = %s", batches.ReconcilerStateErrored.ToDB())
-	case batches.ChangesetStateFailed:
-		q = sqlf.Sprintf("reconciler_state = %s", batches.ReconcilerStateFailed.ToDB())
-	case batches.ChangesetStateProcessing:
-		q = sqlf.Sprintf("reconciler_state = %s", batches.ReconcilerStateCompleted.ToDB())
-	case batches.ChangesetStateUnpublished:
-		q = sqlf.Sprintf("publication_state = %s", batches.ChangesetPublicationStateUnpublished)
-	case batches.ChangesetStateDraft:
-		q = sqlf.Sprintf("external_state = %s", batches.ChangesetExternalStateDraft)
-	case batches.ChangesetStateOpen:
-		q = sqlf.Sprintf("external_state = %s", batches.ChangesetExternalStateOpen)
-	case batches.ChangesetStateClosed:
-		q = sqlf.Sprintf("external_state = %s", batches.ChangesetExternalStateClosed)
-	case batches.ChangesetStateMerged:
-		q = sqlf.Sprintf("external_state = %s", batches.ChangesetExternalStateMerged)
-	case batches.ChangesetStateDeleted:
-		q = sqlf.Sprintf("external_state = %s", batches.ChangesetExternalStateDeleted)
+	case btypes.ChangesetStateRetrying:
+		q = sqlf.Sprintf("reconciler_state = %s", btypes.ReconcilerStateErrored.ToDB())
+	case btypes.ChangesetStateFailed:
+		q = sqlf.Sprintf("reconciler_state = %s", btypes.ReconcilerStateFailed.ToDB())
+	case btypes.ChangesetStateProcessing:
+		q = sqlf.Sprintf("reconciler_state = %s", btypes.ReconcilerStateCompleted.ToDB())
+	case btypes.ChangesetStateUnpublished:
+		q = sqlf.Sprintf("publication_state = %s", btypes.ChangesetPublicationStateUnpublished)
+	case btypes.ChangesetStateDraft:
+		q = sqlf.Sprintf("external_state = %s", btypes.ChangesetExternalStateDraft)
+	case btypes.ChangesetStateOpen:
+		q = sqlf.Sprintf("external_state = %s", btypes.ChangesetExternalStateOpen)
+	case btypes.ChangesetStateClosed:
+		q = sqlf.Sprintf("external_state = %s", btypes.ChangesetExternalStateClosed)
+	case btypes.ChangesetStateMerged:
+		q = sqlf.Sprintf("external_state = %s", btypes.ChangesetExternalStateMerged)
+	case btypes.ChangesetStateDeleted:
+		q = sqlf.Sprintf("external_state = %s", btypes.ChangesetExternalStateDeleted)
 	default:
 		return nil, errors.Errorf("unknown changeset state: %q", *state)
 	}

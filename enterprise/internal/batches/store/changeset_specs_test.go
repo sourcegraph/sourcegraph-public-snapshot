@@ -11,8 +11,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -32,11 +32,11 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		t.Fatal(err)
 	}
 
-	changesetSpecs := make(batches.ChangesetSpecs, 0, 3)
+	changesetSpecs := make(btypes.ChangesetSpecs, 0, 3)
 	for i := 0; i < cap(changesetSpecs); i++ {
-		c := &batches.ChangesetSpec{
+		c := &btypes.ChangesetSpec{
 			RawSpec: `{"externalID":"12345"}`,
-			Spec: &batches.ChangesetSpecDescription{
+			Spec: &btypes.ChangesetSpecDescription{
 				ExternalID: "123456",
 			},
 			UserID:      int32(i + 1234),
@@ -57,16 +57,16 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	// We create this ChangesetSpec to make sure that it's not returned when
 	// listing or getting ChangesetSpecs, since we don't want to load
 	// ChangesetSpecs whose repository has been (soft-)deleted.
-	changesetSpecDeletedRepo := &batches.ChangesetSpec{
+	changesetSpecDeletedRepo := &btypes.ChangesetSpec{
 		UserID:      int32(424242),
-		Spec:        &batches.ChangesetSpecDescription{},
+		Spec:        &btypes.ChangesetSpecDescription{},
 		BatchSpecID: int64(424242),
 		RawSpec:     `{}`,
 		RepoID:      deletedRepo.ID,
 	}
 
 	t.Run("Create", func(t *testing.T) {
-		toCreate := make(batches.ChangesetSpecs, 0, len(changesetSpecs)+1)
+		toCreate := make(btypes.ChangesetSpecs, 0, len(changesetSpecs)+1)
 		toCreate = append(toCreate, changesetSpecDeletedRepo)
 		toCreate = append(toCreate, changesetSpecs...)
 
@@ -216,7 +216,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 					t.Fatal(err)
 				}
 
-				want := batches.ChangesetSpecs{c}
+				want := btypes.ChangesetSpecs{c}
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
@@ -231,7 +231,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 					t.Fatal(err)
 				}
 
-				want := batches.ChangesetSpecs{c}
+				want := btypes.ChangesetSpecs{c}
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
@@ -262,7 +262,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 					t.Fatal(err)
 				}
 
-				want := batches.ChangesetSpecs{c}
+				want := btypes.ChangesetSpecs{c}
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
@@ -361,8 +361,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	})
 
 	t.Run("DeleteExpiredChangesetSpecs", func(t *testing.T) {
-		underTTL := clock.Now().Add(-batches.ChangesetSpecTTL + 24*time.Hour)
-		overTTL := clock.Now().Add(-batches.ChangesetSpecTTL - 24*time.Hour)
+		underTTL := clock.Now().Add(-btypes.ChangesetSpecTTL + 24*time.Hour)
+		overTTL := clock.Now().Add(-btypes.ChangesetSpecTTL - 24*time.Hour)
 
 		type testCase struct {
 			createdAt time.Time
@@ -410,7 +410,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		}
 
 		for _, tc := range tests {
-			batchSpec := &batches.BatchSpec{UserID: 4567, NamespaceUserID: 4567}
+			batchSpec := &btypes.BatchSpec{UserID: 4567, NamespaceUserID: 4567}
 
 			if tc.hasBatchSpec {
 				if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
@@ -418,7 +418,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				}
 
 				if tc.batchSpecApplied {
-					batchChange := &batches.BatchChange{
+					batchChange := &btypes.BatchChange{
 						Name:             fmt.Sprintf("batch change for spec %d", batchSpec.ID),
 						BatchSpecID:      batchSpec.ID,
 						InitialApplierID: batchSpec.UserID,
@@ -432,7 +432,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				}
 			}
 
-			changesetSpec := &batches.ChangesetSpec{
+			changesetSpec := &btypes.ChangesetSpec{
 				BatchSpecID: batchSpec.ID,
 				// Need to set a RepoID otherwise GetChangesetSpec filters it out.
 				RepoID:    repo.ID,
@@ -444,7 +444,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			}
 
 			if tc.isCurrentSpec {
-				changeset := &batches.Changeset{
+				changeset := &btypes.Changeset{
 					ExternalServiceType: "github",
 					RepoID:              1,
 					CurrentSpecID:       changesetSpec.ID,
@@ -455,7 +455,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			}
 
 			if tc.isPreviousSpec {
-				changeset := &batches.Changeset{
+				changeset := &btypes.Changeset{
 					ExternalServiceType: "github",
 					RepoID:              1,
 					PreviousSpecID:      changesetSpec.ID,
@@ -488,7 +488,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		// Create some test data
 		user := ct.CreateTestUser(t, s.DB(), true)
 		batchSpec := ct.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID)
-		var mappings RewirerMappings = make(RewirerMappings, 3)
+		var mappings btypes.RewirerMappings = make(btypes.RewirerMappings, 3)
 		changesetSpecIDs := make([]int64, 0, cap(mappings))
 		for i := 0; i < cap(mappings); i++ {
 			spec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
@@ -497,7 +497,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				BatchSpec: batchSpec.ID,
 			})
 			changesetSpecIDs = append(changesetSpecIDs, spec.ID)
-			mappings[i] = &RewirerMapping{
+			mappings[i] = &btypes.RewirerMapping{
 				ChangesetSpecID: spec.ID,
 				RepoID:          repo.ID,
 			}
@@ -701,22 +701,22 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 
 	// Now for some changeset specs.
 	var (
-		changesets = map[batches.ChangesetState]*batches.Changeset{}
-		oldSpecs   = map[batches.ChangesetState]*batches.ChangesetSpec{}
-		newSpecs   = map[batches.ChangesetState]*batches.ChangesetSpec{}
+		changesets = map[btypes.ChangesetState]*btypes.Changeset{}
+		oldSpecs   = map[btypes.ChangesetState]*btypes.ChangesetSpec{}
+		newSpecs   = map[btypes.ChangesetState]*btypes.ChangesetSpec{}
 
 		// The keys are the desired current state that we'll search for; the
 		// values the changeset options we need to set on the changeset.
-		states = map[batches.ChangesetState]*ct.TestChangesetOpts{
-			batches.ChangesetStateRetrying:    {ReconcilerState: batches.ReconcilerStateErrored},
-			batches.ChangesetStateFailed:      {ReconcilerState: batches.ReconcilerStateFailed},
-			batches.ChangesetStateProcessing:  {ReconcilerState: batches.ReconcilerStateCompleted},
-			batches.ChangesetStateUnpublished: {PublicationState: batches.ChangesetPublicationStateUnpublished},
-			batches.ChangesetStateDraft:       {ExternalState: batches.ChangesetExternalStateDraft},
-			batches.ChangesetStateOpen:        {ExternalState: batches.ChangesetExternalStateOpen},
-			batches.ChangesetStateClosed:      {ExternalState: batches.ChangesetExternalStateClosed},
-			batches.ChangesetStateMerged:      {ExternalState: batches.ChangesetExternalStateMerged},
-			batches.ChangesetStateDeleted:     {ExternalState: batches.ChangesetExternalStateDeleted},
+		states = map[btypes.ChangesetState]*ct.TestChangesetOpts{
+			btypes.ChangesetStateRetrying:    {ReconcilerState: btypes.ReconcilerStateErrored},
+			btypes.ChangesetStateFailed:      {ReconcilerState: btypes.ReconcilerStateFailed},
+			btypes.ChangesetStateProcessing:  {ReconcilerState: btypes.ReconcilerStateCompleted},
+			btypes.ChangesetStateUnpublished: {PublicationState: btypes.ChangesetPublicationStateUnpublished},
+			btypes.ChangesetStateDraft:       {ExternalState: btypes.ChangesetExternalStateDraft},
+			btypes.ChangesetStateOpen:        {ExternalState: btypes.ChangesetExternalStateOpen},
+			btypes.ChangesetStateClosed:      {ExternalState: btypes.ChangesetExternalStateClosed},
+			btypes.ChangesetStateMerged:      {ExternalState: btypes.ChangesetExternalStateMerged},
+			btypes.ChangesetStateDeleted:     {ExternalState: btypes.ChangesetExternalStateDeleted},
 		}
 	)
 	for state, opts := range states {
@@ -795,7 +795,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 
 	// Now we'll add three old and new pairs of changeset specs. Two will have
 	// matching statuses, and a different two will have matching names.
-	createChangesetSpecPair := func(t *testing.T, ctx context.Context, s *Store, oldBatchSpec, newBatchSpec *batches.BatchSpec, opts ct.TestSpecOpts) (old, new *batches.ChangesetSpec) {
+	createChangesetSpecPair := func(t *testing.T, ctx context.Context, s *Store, oldBatchSpec, newBatchSpec *btypes.BatchSpec, opts ct.TestSpecOpts) (old, new *btypes.ChangesetSpec) {
 		opts.BatchSpec = oldBatchSpec.ID
 		old = ct.CreateChangesetSpec(t, ctx, s, opts)
 
@@ -836,7 +836,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		CurrentSpec:         oldOpenFoo.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 		ExternalID:          "5678",
-		ExternalState:       batches.ChangesetExternalStateOpen,
+		ExternalState:       btypes.ChangesetExternalStateOpen,
 		OwnedByBatchChange:  batchChange.ID,
 		Metadata: map[string]interface{}{
 			"Title": "foo",
@@ -848,7 +848,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		CurrentSpec:         oldOpenBar.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 		ExternalID:          "5679",
-		ExternalState:       batches.ChangesetExternalStateOpen,
+		ExternalState:       btypes.ChangesetExternalStateOpen,
 		OwnedByBatchChange:  batchChange.ID,
 		Metadata: map[string]interface{}{
 			"Title": "bar",
@@ -860,48 +860,48 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		CurrentSpec:         oldClosedFoo.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 		ExternalID:          "5680",
-		ExternalState:       batches.ChangesetExternalStateClosed,
+		ExternalState:       btypes.ChangesetExternalStateClosed,
 		OwnedByBatchChange:  batchChange.ID,
 		Metadata: map[string]interface{}{
 			"Title": "foo",
 		},
 	})
 
-	statePtr := func(state batches.ChangesetState) *batches.ChangesetState {
+	statePtr := func(state btypes.ChangesetState) *btypes.ChangesetState {
 		return &state
 	}
 
 	for name, tc := range map[string]struct {
 		opts GetRewirerMappingsOpts
-		want []*batches.Changeset
+		want []*btypes.Changeset
 	}{
 		"state and text": {
 			opts: GetRewirerMappingsOpts{
 				TextSearch:   []search.TextSearchTerm{{Term: "foo"}},
-				CurrentState: statePtr(batches.ChangesetStateOpen),
+				CurrentState: statePtr(btypes.ChangesetStateOpen),
 			},
-			want: []*batches.Changeset{openFoo},
+			want: []*btypes.Changeset{openFoo},
 		},
 		"state and not text": {
 			opts: GetRewirerMappingsOpts{
 				TextSearch:   []search.TextSearchTerm{{Term: "foo", Not: true}},
-				CurrentState: statePtr(batches.ChangesetStateOpen),
+				CurrentState: statePtr(btypes.ChangesetStateOpen),
 			},
-			want: []*batches.Changeset{openBar},
+			want: []*btypes.Changeset{openBar},
 		},
 		"state match only": {
 			opts: GetRewirerMappingsOpts{
 				TextSearch:   []search.TextSearchTerm{{Term: "bar"}},
-				CurrentState: statePtr(batches.ChangesetStateClosed),
+				CurrentState: statePtr(btypes.ChangesetStateClosed),
 			},
-			want: []*batches.Changeset{},
+			want: []*btypes.Changeset{},
 		},
 		"text match only": {
 			opts: GetRewirerMappingsOpts{
 				TextSearch:   []search.TextSearchTerm{{Term: "foo"}},
-				CurrentState: statePtr(batches.ChangesetStateMerged),
+				CurrentState: statePtr(btypes.ChangesetStateMerged),
 			},
-			want: []*batches.Changeset{},
+			want: []*btypes.Changeset{},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -1071,22 +1071,22 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	// Well, OK, I lied: we're not _quite_ done with the boilerplate. To keep
 	// the test cases somewhat readable, we'll define the four possible mappings
 	// we can get before we get to defining the test cases.
-	trackedGitHub := &RewirerMapping{
+	trackedGitHub := &btypes.RewirerMapping{
 		ChangesetSpecID: newTrackedGitHub.ID,
 		ChangesetID:     oldTrackedGitHub.ID,
 		RepoID:          repos[0].ID,
 	}
-	trackedGitLab := &RewirerMapping{
+	trackedGitLab := &btypes.RewirerMapping{
 		ChangesetSpecID: newTrackedGitLab.ID,
 		ChangesetID:     oldTrackedGitLab.ID,
 		RepoID:          repos[1].ID,
 	}
-	branchGitHub := &RewirerMapping{
+	branchGitHub := &btypes.RewirerMapping{
 		ChangesetSpecID: newBranchGitHub.ID,
 		ChangesetID:     oldBranchGitHub.ID,
 		RepoID:          repos[0].ID,
 	}
-	branchGitLab := &RewirerMapping{
+	branchGitLab := &btypes.RewirerMapping{
 		ChangesetSpecID: newBranchGitLab.ID,
 		ChangesetID:     oldBranchGitLab.ID,
 		RepoID:          repos[1].ID,
@@ -1094,14 +1094,14 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 
 	for name, tc := range map[string]struct {
 		search []search.TextSearchTerm
-		want   RewirerMappings
+		want   btypes.RewirerMappings
 	}{
 		"nil search": {
-			want: RewirerMappings{trackedGitHub, trackedGitLab, branchGitHub, branchGitLab},
+			want: btypes.RewirerMappings{trackedGitHub, trackedGitLab, branchGitHub, branchGitLab},
 		},
 		"empty search": {
 			search: []search.TextSearchTerm{},
-			want:   RewirerMappings{trackedGitHub, trackedGitLab, branchGitHub, branchGitLab},
+			want:   btypes.RewirerMappings{trackedGitHub, trackedGitLab, branchGitHub, branchGitLab},
 		},
 		"no matches": {
 			search: []search.TextSearchTerm{{Term: "this is not a thing"}},
@@ -1123,43 +1123,43 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		},
 		"one term, matched on title": {
 			search: []search.TextSearchTerm{{Term: "New GitHub branch"}},
-			want:   RewirerMappings{branchGitHub},
+			want:   btypes.RewirerMappings{branchGitHub},
 		},
 		"two terms, matched on title AND title": {
 			search: []search.TextSearchTerm{
 				{Term: "New GitHub"},
 				{Term: "branch"},
 			},
-			want: RewirerMappings{branchGitHub},
+			want: btypes.RewirerMappings{branchGitHub},
 		},
 		"two terms, matched on title AND repo": {
 			search: []search.TextSearchTerm{
 				{Term: "New"},
 				{Term: string(repos[0].Name)},
 			},
-			want: RewirerMappings{branchGitHub},
+			want: btypes.RewirerMappings{branchGitHub},
 		},
 		"one term, matched on repo": {
 			search: []search.TextSearchTerm{{Term: string(repos[0].Name)}},
-			want:   RewirerMappings{trackedGitHub, branchGitHub},
+			want:   btypes.RewirerMappings{trackedGitHub, branchGitHub},
 		},
 		"one negated term, three title matches": {
 			search: []search.TextSearchTerm{{Term: "New GitHub branch", Not: true}},
-			want:   RewirerMappings{trackedGitHub, trackedGitLab, branchGitLab},
+			want:   btypes.RewirerMappings{trackedGitHub, trackedGitLab, branchGitLab},
 		},
 		"two negated terms, one title AND repo match": {
 			search: []search.TextSearchTerm{
 				{Term: "New", Not: true},
 				{Term: string(repos[0].Name), Not: true},
 			},
-			want: RewirerMappings{trackedGitLab},
+			want: btypes.RewirerMappings{trackedGitLab},
 		},
 		"mixed positive and negative terms": {
 			search: []search.TextSearchTerm{
 				{Term: "New", Not: true},
 				{Term: string(repos[0].Name)},
 			},
-			want: RewirerMappings{trackedGitHub},
+			want: btypes.RewirerMappings{trackedGitHub},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -1189,7 +1189,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 					t.Errorf("unexpected error: %+v", err)
 				}
 
-				var want RewirerMappings
+				var want btypes.RewirerMappings
 				if len(tc.want) > 0 {
 					want = tc.want[0:1]
 				}
@@ -1209,7 +1209,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 					t.Errorf("unexpected error: %+v", err)
 				}
 
-				var want RewirerMappings
+				var want btypes.RewirerMappings
 				if len(tc.want) > 1 {
 					want = tc.want[1:2]
 				}

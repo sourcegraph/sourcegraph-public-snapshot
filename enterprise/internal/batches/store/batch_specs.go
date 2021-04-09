@@ -9,12 +9,12 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // batchSpecColumns are used by the batchSpec related Store methods to insert,
-// update and query batches.
+// update and query btypes.
 var batchSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_specs.id"),
 	sqlf.Sprintf("batch_specs.rand_id"),
@@ -43,7 +43,7 @@ var batchSpecInsertColumns = []*sqlf.Query{
 const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s)`
 
 // CreateBatchSpec creates the given BatchSpec.
-func (s *Store) CreateBatchSpec(ctx context.Context, c *batches.BatchSpec) error {
+func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) error {
 	q, err := s.createBatchSpecQuery(c)
 	if err != nil {
 		return err
@@ -57,7 +57,7 @@ INSERT INTO batch_specs (%s)
 VALUES ` + batchSpecInsertColsFmt + `
 RETURNING %s`
 
-func (s *Store) createBatchSpecQuery(c *batches.BatchSpec) (*sqlf.Query, error) {
+func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 	spec, err := jsonbColumn(c.Spec)
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (s *Store) createBatchSpecQuery(c *batches.BatchSpec) (*sqlf.Query, error) 
 }
 
 // UpdateBatchSpec updates the given BatchSpec.
-func (s *Store) UpdateBatchSpec(ctx context.Context, c *batches.BatchSpec) error {
+func (s *Store) UpdateBatchSpec(ctx context.Context, c *btypes.BatchSpec) error {
 	q, err := s.updateBatchSpecQuery(c)
 	if err != nil {
 		return err
@@ -111,7 +111,7 @@ SET (%s) = ` + batchSpecInsertColsFmt + `
 WHERE id = %s
 RETURNING %s`
 
-func (s *Store) updateBatchSpecQuery(c *batches.BatchSpec) (*sqlf.Query, error) {
+func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 	spec, err := jsonbColumn(c.Spec)
 	if err != nil {
 		return nil, err
@@ -163,10 +163,10 @@ type GetBatchSpecOpts struct {
 }
 
 // GetBatchSpec gets a BatchSpec matching the given options.
-func (s *Store) GetBatchSpec(ctx context.Context, opts GetBatchSpecOpts) (*batches.BatchSpec, error) {
+func (s *Store) GetBatchSpec(ctx context.Context, opts GetBatchSpecOpts) (*btypes.BatchSpec, error) {
 	q := getBatchSpecQuery(&opts)
 
-	var c batches.BatchSpec
+	var c btypes.BatchSpec
 	err := s.query(ctx, q, func(sc scanner) (err error) {
 		return scanBatchSpec(&c, sc)
 	})
@@ -221,10 +221,10 @@ type GetNewestBatchSpecOpts struct {
 
 // GetNewestBatchSpec returns the newest batch spec that matches the given
 // options.
-func (s *Store) GetNewestBatchSpec(ctx context.Context, opts GetNewestBatchSpecOpts) (*batches.BatchSpec, error) {
+func (s *Store) GetNewestBatchSpec(ctx context.Context, opts GetNewestBatchSpecOpts) (*btypes.BatchSpec, error) {
 	q := getNewestBatchSpecQuery(&opts)
 
-	var c batches.BatchSpec
+	var c btypes.BatchSpec
 	err := s.query(ctx, q, func(sc scanner) (err error) {
 		return scanBatchSpec(&c, sc)
 	})
@@ -282,12 +282,12 @@ type ListBatchSpecsOpts struct {
 }
 
 // ListBatchSpecs lists BatchSpecs with the given filters.
-func (s *Store) ListBatchSpecs(ctx context.Context, opts ListBatchSpecsOpts) (cs []*batches.BatchSpec, next int64, err error) {
+func (s *Store) ListBatchSpecs(ctx context.Context, opts ListBatchSpecsOpts) (cs []*btypes.BatchSpec, next int64, err error) {
 	q := listBatchSpecsQuery(&opts)
 
-	cs = make([]*batches.BatchSpec, 0, opts.DBLimit())
+	cs = make([]*btypes.BatchSpec, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) error {
-		var c batches.BatchSpec
+		var c btypes.BatchSpec
 		if err := scanBatchSpec(&c, sc); err != nil {
 			return err
 		}
@@ -325,7 +325,7 @@ func listBatchSpecsQuery(opts *ListBatchSpecsOpts) *sqlf.Query {
 // DeleteExpiredBatchSpecs deletes BatchSpecs that have not been attached
 // to a Batch change within BatchSpecTTL.
 func (s *Store) DeleteExpiredBatchSpecs(ctx context.Context) error {
-	expirationTime := s.now().Add(-batches.BatchSpecTTL)
+	expirationTime := s.now().Add(-btypes.BatchSpecTTL)
 	q := sqlf.Sprintf(deleteExpiredBatchSpecsQueryFmtstr, expirationTime)
 
 	return s.Store.Exec(ctx, q)
@@ -346,7 +346,7 @@ AND NOT EXISTS (
 );
 `
 
-func scanBatchSpec(c *batches.BatchSpec, s scanner) error {
+func scanBatchSpec(c *btypes.BatchSpec, s scanner) error {
 	var spec json.RawMessage
 
 	err := s.Scan(

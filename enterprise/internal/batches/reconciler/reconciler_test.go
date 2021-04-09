@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -39,7 +40,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
 	defer func() { internalClient = api.InternalClient }()
 
-	githubPR := buildGithubPR(time.Now(), batches.ChangesetExternalStateOpen)
+	githubPR := buildGithubPR(time.Now(), btypes.ChangesetExternalStateOpen)
 	githubHeadRef := git.EnsureRefPrefix(githubPR.HeadRefName)
 
 	type testCase struct {
@@ -68,16 +69,16 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			},
 
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalID:       "12345",
 				ExternalBranch:   "head-ref-on-github",
 			},
 
 			wantChangeset: ct.ChangesetAssertions{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalID:       githubPR.ID,
 				ExternalBranch:   githubHeadRef,
-				ExternalState:    batches.ChangesetExternalStateOpen,
+				ExternalState:    btypes.ChangesetExternalStateOpen,
 				DiffStat:         state.DiffStat,
 				// We update the title/body but want the title/body returned by the code host.
 				Title: githubPR.Title,
@@ -109,7 +110,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			// Create the changeset with correct associations.
 			changesetOpts := tc.changeset
 			changesetOpts.Repo = rs[0].ID
-			changesetOpts.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
+			changesetOpts.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
 			changesetOpts.OwnedByBatchChange = batchChange.ID
 			if changesetSpec != nil {
 				changesetOpts.CurrentSpec = changesetSpec.ID
@@ -127,7 +128,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 
 			// Setup the sourcer that's used to create a Source with which
 			// to create/update a changeset.
-			fakeSource := &ct.FakeChangesetSource{Svc: extSvc, FakeMetadata: githubPR}
+			fakeSource := &sources.FakeChangesetSource{Svc: extSvc, FakeMetadata: githubPR}
 			if changesetSpec != nil {
 				fakeSource.WantHeadRef = changesetSpec.Spec.HeadRef
 				fakeSource.WantBaseRef = changesetSpec.Spec.BaseRef

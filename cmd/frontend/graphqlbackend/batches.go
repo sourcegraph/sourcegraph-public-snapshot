@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 )
 
 // TODO(campaigns-deprecation)
@@ -160,8 +159,8 @@ type ChangesetApplyPreviewConnectionArgs struct {
 	First        int32
 	After        *string
 	Search       *string
-	CurrentState *batches.ChangesetState
-	Action       *batches.ReconcilerOperation
+	CurrentState *string
+	Action       *string
 }
 
 type BatchChangeArgs struct {
@@ -285,7 +284,7 @@ type BatchSpecResolver interface {
 	AppliesToCampaign(ctx context.Context) (BatchChangeResolver, error)
 	SupersedingCampaignSpec(context.Context) (BatchSpecResolver, error)
 	ViewerCampaignsCodeHosts(ctx context.Context, args *ListViewerCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
-	// This should be removed once we remove batches. It's here so that in
+	// This should be removed once we remove btypes. It's here so that in
 	// the NodeResolver we can have the same resolver, BatchChangeResolver, act
 	// as a Campaign and a BatchChange.
 	ActAsCampaignSpec() bool
@@ -302,13 +301,13 @@ type ChangesetApplyPreviewResolver interface {
 }
 
 type VisibleChangesetApplyPreviewResolver interface {
-	Operations(ctx context.Context) ([]batches.ReconcilerOperation, error)
+	Operations(ctx context.Context) ([]string, error)
 	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
 	Targets() VisibleApplyPreviewTargetsResolver
 }
 
 type HiddenChangesetApplyPreviewResolver interface {
-	Operations(ctx context.Context) ([]batches.ReconcilerOperation, error)
+	Operations(ctx context.Context) ([]string, error)
 	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
 	Targets() HiddenApplyPreviewTargetsResolver
 }
@@ -381,7 +380,7 @@ type ChangesetSpecConnectionResolver interface {
 
 type ChangesetSpecResolver interface {
 	ID() graphql.ID
-	Type() batches.ChangesetSpecDescriptionType
+	Type() string
 	ExpiresAt() *DateTime
 
 	ToHiddenChangesetSpec() (HiddenChangesetSpecResolver, bool)
@@ -435,7 +434,7 @@ type GitBranchChangesetDescriptionResolver interface {
 
 	Commits() []GitCommitDescriptionResolver
 
-	Published() batches.PublishedValue
+	Published() interface{}
 }
 
 type GitCommitDescriptionResolver interface {
@@ -477,12 +476,12 @@ type ChangesetCountsArgs struct {
 type ListChangesetsArgs struct {
 	First            int32
 	After            *string
-	PublicationState *batches.ChangesetPublicationState
-	ReconcilerState  *[]batches.ReconcilerState
-	ExternalState    *batches.ChangesetExternalState
-	State            *batches.ChangesetState
-	ReviewState      *batches.ChangesetReviewState
-	CheckState       *batches.ChangesetCheckState
+	PublicationState *string
+	ReconcilerState  *[]string
+	ExternalState    *string
+	State            *string
+	ReviewState      *string
+	CheckState       *string
 	// old
 	OnlyPublishedByThisCampaign *bool
 	//new
@@ -512,7 +511,7 @@ type BatchChangeResolver interface {
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	CurrentSpec(ctx context.Context) (BatchSpecResolver, error)
 
-	// TODO(campaigns-deprecation): This should be removed once we remove batches.
+	// TODO(campaigns-deprecation): This should be removed once we remove btypes.
 	// It's here so that in the NodeResolver we can have the same resolver,
 	// BatchChangeResolver, act as a Campaign and a BatchChange.
 	ActAsCampaign() bool
@@ -558,10 +557,10 @@ type ChangesetResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	NextSyncAt(ctx context.Context) (*DateTime, error)
-	PublicationState() batches.ChangesetPublicationState
-	ReconcilerState() batches.ReconcilerState
-	ExternalState() *batches.ChangesetExternalState
-	State() (batches.ChangesetState, error)
+	PublicationState() string
+	ReconcilerState() string
+	ExternalState() *string
+	State() (string, error)
 	BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
@@ -591,8 +590,8 @@ type ExternalChangesetResolver interface {
 	Body(context.Context) (*string, error)
 	Author() (*PersonResolver, error)
 	ExternalURL() (*externallink.Resolver, error)
-	ReviewState(context.Context) *batches.ChangesetReviewState
-	CheckState() *batches.ChangesetCheckState
+	ReviewState(context.Context) *string
+	CheckState() *string
 	Repository(ctx context.Context) *RepositoryResolver
 
 	Events(ctx context.Context, args *ChangesetEventsConnectionArgs) (ChangesetEventsConnectionResolver, error)

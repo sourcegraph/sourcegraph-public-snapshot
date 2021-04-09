@@ -7,8 +7,8 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 )
 
 type TestSpecOpts struct {
@@ -42,10 +42,10 @@ type TestSpecOpts struct {
 
 var TestChangsetSpecDiffStat = &diff.Stat{Added: 10, Changed: 5, Deleted: 2}
 
-func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *batches.ChangesetSpec {
+func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *btypes.ChangesetSpec {
 	t.Helper()
 
-	published := batches.PublishedValue{Val: opts.Published}
+	published := btypes.PublishedValue{Val: opts.Published}
 	if opts.Published == nil {
 		// Set false as the default.
 		published.Val = false
@@ -54,12 +54,12 @@ func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *batches.ChangesetSpec 
 		t.Fatalf("invalid value for published passed, got %v (%T)", opts.Published, opts.Published)
 	}
 
-	spec := &batches.ChangesetSpec{
+	spec := &btypes.ChangesetSpec{
 		ID:          opts.ID,
 		UserID:      opts.User,
 		RepoID:      opts.Repo,
 		BatchSpecID: opts.BatchSpec,
-		Spec: &batches.ChangesetSpecDescription{
+		Spec: &btypes.ChangesetSpecDescription{
 			BaseRepository: graphqlbackend.MarshalRepositoryID(opts.Repo),
 
 			BaseRev: opts.BaseRev,
@@ -72,7 +72,7 @@ func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *batches.ChangesetSpec 
 			Title: opts.Title,
 			Body:  opts.Body,
 
-			Commits: []batches.GitCommitDescription{
+			Commits: []btypes.GitCommitDescription{
 				{
 					Message:     opts.CommitMessage,
 					Diff:        opts.CommitDiff,
@@ -90,7 +90,7 @@ func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *batches.ChangesetSpec 
 }
 
 type CreateChangesetSpecer interface {
-	CreateChangesetSpec(ctx context.Context, changesetSpec *batches.ChangesetSpec) error
+	CreateChangesetSpec(ctx context.Context, changesetSpec *btypes.ChangesetSpec) error
 }
 
 func CreateChangesetSpec(
@@ -98,7 +98,7 @@ func CreateChangesetSpec(
 	ctx context.Context,
 	store CreateChangesetSpecer,
 	opts TestSpecOpts,
-) *batches.ChangesetSpec {
+) *btypes.ChangesetSpec {
 	t.Helper()
 
 	spec := BuildChangesetSpec(t, opts)

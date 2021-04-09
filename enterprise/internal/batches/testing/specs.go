@@ -8,7 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
 const TestRawBatchSpec = `{
@@ -81,16 +81,16 @@ index e5af166..d44c3fc 100644
  Line 10
 `
 
-var baseChangesetSpecGitBranch = batches.ChangesetSpecDescription{
+var baseChangesetSpecGitBranch = btypes.ChangesetSpecDescription{
 	BaseRef: "refs/heads/master",
 
 	HeadRef: "refs/heads/my-branch",
 	Title:   "the title",
 	Body:    "the body of the PR",
 
-	Published: batches.PublishedValue{Val: false},
+	Published: btypes.PublishedValue{Val: false},
 
-	Commits: []batches.GitCommitDescription{
+	Commits: []btypes.GitCommitDescription{
 		{
 			Message:     "git commit message\n\nand some more content in a second paragraph.",
 			Diff:        ChangesetSpecDiff,
@@ -113,7 +113,7 @@ func NewRawChangesetSpecGitBranch(repo graphql.ID, baseRev string) string {
 	return string(rawSpec)
 }
 
-func NewPublishedRawChangesetSpecGitBranch(repo graphql.ID, baseRev string, published batches.PublishedValue) string {
+func NewPublishedRawChangesetSpecGitBranch(repo graphql.ID, baseRev string, published btypes.PublishedValue) string {
 	spec := baseChangesetSpecGitBranch
 	spec.BaseRepository = repo
 	spec.BaseRev = baseRev

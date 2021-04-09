@@ -11,8 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -60,7 +60,7 @@ type CreateBatchSpecOpts struct {
 }
 
 // CreateBatchSpec creates the BatchSpec.
-func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts) (spec *batches.BatchSpec, err error) {
+func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
 	actor := actor.FromContext(ctx)
 	tr, ctx := trace.New(ctx, "Service.CreateBatchSpec", fmt.Sprintf("Actor %s", actor))
 	defer func() {
@@ -68,7 +68,7 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 		tr.Finish()
 	}()
 
-	spec, err = batches.NewBatchSpecFromRaw(opts.RawSpec)
+	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 		return nil, err
 	}
 
-	byRandID := make(map[string]*batches.ChangesetSpec, len(cs))
+	byRandID := make(map[string]*btypes.ChangesetSpec, len(cs))
 	for _, changesetSpec := range cs {
 		// 🚨 SECURITY: We return an error if the user doesn't have access to one
 		// of the repositories associated with a ChangesetSpec.
@@ -138,14 +138,14 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 }
 
 // CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
-func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userID int32) (spec *batches.ChangesetSpec, err error) {
+func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userID int32) (spec *btypes.ChangesetSpec, err error) {
 	tr, ctx := trace.New(ctx, "Service.CreateChangesetSpec", fmt.Sprintf("User %d", userID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	spec, err = batches.NewChangesetSpecFromRaw(rawSpec)
+	spec, err = btypes.NewChangesetSpecFromRaw(rawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 // applies to, if that BatchChange already exists.
 // If it doesn't exist yet, both return values are nil.
 // It accepts a *store.Store so that it can be used inside a transaction.
-func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *batches.BatchSpec) (*batches.BatchChange, error) {
+func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *btypes.BatchSpec) (*btypes.BatchChange, error) {
 	opts := store.GetBatchChangeOpts{
 		Name:            spec.Spec.Name,
 		NamespaceUserID: spec.NamespaceUserID,
@@ -203,7 +203,7 @@ func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *bat
 
 // GetNewestBatchSpec returns the newest batch spec that matches the given
 // spec's namespace and name and is owned by the given user, or nil if none is found.
-func (s *Service) GetNewestBatchSpec(ctx context.Context, tx *store.Store, spec *batches.BatchSpec, userID int32) (*batches.BatchSpec, error) {
+func (s *Service) GetNewestBatchSpec(ctx context.Context, tx *store.Store, spec *btypes.BatchSpec, userID int32) (*btypes.BatchSpec, error) {
 	opts := store.GetNewestBatchSpecOpts{
 		UserID:          userID,
 		NamespaceUserID: spec.NamespaceUserID,
@@ -243,7 +243,7 @@ func (o MoveBatchChangeOpts) String() string {
 
 // MoveBatchChange moves the batch change from one namespace to another and/or renames
 // the batch change.
-func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts) (batchChange *batches.BatchChange, err error) {
+func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
 	tr, ctx := trace.New(ctx, "Service.MoveBatchChange", opts.String())
 	defer func() {
 		tr.SetError(err)
@@ -289,7 +289,7 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 }
 
 // CloseBatchChange closes the BatchChange with the given ID if it has not been closed yet.
-func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangesets bool) (batchChange *batches.BatchChange, err error) {
+func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangesets bool) (batchChange *btypes.BatchChange, err error) {
 	traceTitle := fmt.Sprintf("batchChange: %d, closeChangesets: %t", id, closeChangesets)
 	tr, ctx := trace.New(ctx, "service.CloseBatchChange", traceTitle)
 	defer func() {
@@ -417,7 +417,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 // ReenqueueChangeset loads the given changeset from the database, checks
 // whether the actor in the context has permission to enqueue a reconciler run and then
 // enqueues it by calling ResetQueued.
-func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *batches.Changeset, repo *types.Repo, err error) {
+func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *btypes.Changeset, repo *types.Repo, err error) {
 	traceTitle := fmt.Sprintf("changeset: %d", id)
 	tr, ctx := trace.New(ctx, "service.RenqueueChangeset", traceTitle)
 	defer func() {
@@ -462,7 +462,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 		return nil, nil, authErr
 	}
 
-	if changeset.ReconcilerState != batches.ReconcilerStateFailed {
+	if changeset.ReconcilerState != btypes.ReconcilerStateFailed {
 		return nil, nil, errors.New("cannot re-enqueue changeset not in failed state")
 	}
 

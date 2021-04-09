@@ -1,4 +1,4 @@
-package batches
+package types
 
 import (
 	"encoding/json"

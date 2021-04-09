@@ -6,7 +6,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -43,7 +43,7 @@ func New(gitClient GitserverClient, sourcer repos.Sourcer, store *store.Store) *
 // workerutil.Worker to process queued changesets.
 func (r *Reconciler) HandlerFunc() dbworker.HandlerFunc {
 	return func(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
-		return r.process(ctx, r.store.With(tx), record.(*batches.Changeset))
+		return r.process(ctx, r.store.With(tx), record.(*btypes.Changeset))
 	}
 }
 
@@ -61,7 +61,7 @@ func (r *Reconciler) HandlerFunc() dbworker.HandlerFunc {
 // If an error is returned, the workerutil.Worker that called this function
 // (through the HandlerFunc) will set the changeset's ReconcilerState to
 // errored and set its FailureMessage to the error.
-func (r *Reconciler) process(ctx context.Context, tx *store.Store, ch *batches.Changeset) error {
+func (r *Reconciler) process(ctx context.Context, tx *store.Store, ch *btypes.Changeset) error {
 	// Reset the error message.
 	ch.FailureMessage = nil
 
@@ -87,7 +87,7 @@ func (r *Reconciler) process(ctx context.Context, tx *store.Store, ch *batches.C
 	)
 }
 
-func loadChangesetSpecs(ctx context.Context, tx *store.Store, ch *batches.Changeset) (prev, curr *batches.ChangesetSpec, err error) {
+func loadChangesetSpecs(ctx context.Context, tx *store.Store, ch *btypes.Changeset) (prev, curr *btypes.ChangesetSpec, err error) {
 	if ch.CurrentSpecID != 0 {
 		curr, err = tx.GetChangesetSpecByID(ctx, ch.CurrentSpecID)
 		if err != nil {

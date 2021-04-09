@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -53,7 +53,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 	testRev := api.CommitID("b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec")
 	mockBackendCommits(t, testRev)
 
-	batchSpec, err := batches.NewBatchSpecFromRaw(`name: awesome-test`)
+	batchSpec, err := btypes.NewBatchSpecFromRaw(`name: awesome-test`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,12 +70,12 @@ func TestChangesetSpecResolver(t *testing.T) {
 	tests := []struct {
 		name    string
 		rawSpec string
-		want    func(spec *batches.ChangesetSpec) apitest.ChangesetSpec
+		want    func(spec *btypes.ChangesetSpec) apitest.ChangesetSpec
 	}{
 		{
 			name:    "GitBranchChangesetDescription",
 			rawSpec: ct.NewRawChangesetSpecGitBranch(repoID, string(testRev)),
-			want: func(spec *batches.ChangesetSpec) apitest.ChangesetSpec {
+			want: func(spec *btypes.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
 					Typename: "VisibleChangesetSpec",
 					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
@@ -107,7 +107,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 								Body:    "and some more content in a second paragraph.",
 							},
 						},
-						Published: batches.PublishedValue{Val: false},
+						Published: btypes.PublishedValue{Val: false},
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{
@@ -129,8 +129,8 @@ func TestChangesetSpecResolver(t *testing.T) {
 		},
 		{
 			name:    "GitBranchChangesetDescription Draft",
-			rawSpec: ct.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), batches.PublishedValue{Val: "draft"}),
-			want: func(spec *batches.ChangesetSpec) apitest.ChangesetSpec {
+			rawSpec: ct.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), btypes.PublishedValue{Val: "draft"}),
+			want: func(spec *btypes.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
 					Typename: "VisibleChangesetSpec",
 					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
@@ -162,7 +162,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 								Body:    "and some more content in a second paragraph.",
 							},
 						},
-						Published: batches.PublishedValue{Val: "draft"},
+						Published: btypes.PublishedValue{Val: "draft"},
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{
@@ -185,7 +185,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		{
 			name:    "ExistingChangesetReference",
 			rawSpec: ct.NewRawChangesetSpecExisting(repoID, "9999"),
-			want: func(spec *batches.ChangesetSpec) apitest.ChangesetSpec {
+			want: func(spec *btypes.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
 					Typename: "VisibleChangesetSpec",
 					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
@@ -204,7 +204,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			spec, err := batches.NewChangesetSpecFromRaw(tc.rawSpec)
+			spec, err := btypes.NewChangesetSpecFromRaw(tc.rawSpec)
 			if err != nil {
 				t.Fatal(err)
 			}
