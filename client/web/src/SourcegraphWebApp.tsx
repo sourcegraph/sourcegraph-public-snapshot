@@ -74,6 +74,7 @@ import { logCodeInsightsChanges } from './insights/analytics'
 import { listUserRepositories } from './site-admin/backend'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { REDESIGN_CLASS_NAME, getIsRedesignEnabled } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import { UserConfirmationModal } from './components/UserConfirmationModal'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -431,7 +432,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         return (
             <ErrorBoundary location={null}>
                 <ShortcutProvider>
-                    <BrowserRouter key={0}>
+                    <BrowserRouter key={0} getUserConfirmation={UserConfirmationModal}>
                         {/* eslint-disable react/jsx-no-bind */}
                         <Route
                             path="/"

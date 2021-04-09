@@ -1,7 +1,9 @@
 import React, { FormEvent, useCallback, useEffect, useState } from 'react'
 import classNames from 'classnames'
+import { isEqual } from 'lodash'
+import * as H from 'history'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, Prompt } from 'react-router'
 import { PageTitle } from '../../../components/PageTitle'
 import { CheckboxRepositoryNode } from './RepositoryNode'
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -51,6 +53,7 @@ interface GitLabConfig {
 const PER_PAGE = 25
 const SIX_SECONDS = 6000
 const EIGHT_SECONDS = 8000
+const ALLOW_NAVIGATION = 'allow'
 
 // initial state constants
 const emptyRepos: Repo[] = []
@@ -80,6 +83,12 @@ const initialSelectionState = {
 
 type initialFetchingReposState = undefined | 'loading' | 'slow' | 'slower'
 type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
+
+const promptPayload = JSON.stringify({
+    header: 'Discard unsaved changes?',
+    message: 'Currently synced repositories will be unchanged',
+    btn_ok_text: 'Discard',
+})
 
 const isLoading = (status: initialFetchingReposState): boolean => {
     if (!status) {
@@ -140,6 +149,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [repoState, setRepoState] = useState(initialRepoState)
     const [publicRepoState, setPublicRepoState] = useState(initialPublicRepoState)
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
+    const [onloadSelectedRepos, setOnloadSelectedRepos] = useState<string[]>([])
     const [selectionState, setSelectionState] = useState(initialSelectionState)
     const [currentPage, setPage] = useState(1)
     const [query, setQuery] = useState('')
@@ -243,8 +253,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             setPublicRepoState({ ...initialPublicRepoState, loaded: true })
         } else {
             // public repos separated by a new line
-            const publicRepos = result.map(({ name }) => name).join('\n')
-            setPublicRepoState({ repos: publicRepos, loaded: true, enabled: result.length > 0 })
+            const publicRepos = result.map(({ name }) => name)
+
+            // safe off initial selection state
+            setOnloadSelectedRepos(previousValue => [...previousValue, ...publicRepos])
+
+            setPublicRepoState({ repos: publicRepos.join('\n'), loaded: true, enabled: result.length > 0 })
         }
     }, [userID])
 
@@ -311,6 +325,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         loaded: true,
                     }))
 
+                    // safe off initial selection state
+                    setOnloadSelectedRepos(previousValue => [...previousValue, ...selectedRepos.keys()])
+
                     setSelectionState({
                         repos: selectedRepos,
                         radio: selectionState.radio,
@@ -357,6 +374,30 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         setPage(1)
     }, [repoState.repos, codeHostFilter, query])
 
+    const displayPromptIfReposChanged = useCallback(
+        (location: H.Location): string | boolean => {
+            // skip Prompt for programmatic navigation
+            if (location.state === ALLOW_NAVIGATION) {
+                return true
+            }
+
+            const publicRepos = publicRepoState.repos ? publicRepoState.repos.split('\n') : []
+            const affiliatedRepos = selectionState.repos.keys()
+
+            const currentlySelectedRepos = [...publicRepos, ...affiliatedRepos]
+
+            const didRepoSelectionChange = !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
+
+            console.log('didRepoSelectionChange =>', didRepoSelectionChange)
+            if (didRepoSelectionChange) {
+                return promptPayload
+            }
+
+            return true
+        },
+        [onloadSelectedRepos, publicRepoState.repos, selectionState.repos]
+    )
+
     // save changes and update code hosts
     const submit = useCallback(
         async (event: FormEvent<HTMLFormElement>): Promise<void> => {
@@ -378,7 +419,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
 
             if (!selectionState.radio) {
-                return history.push(routingPrefix + '/repositories')
+                return history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
             }
 
             const syncTimes = new Map<string, string>()
@@ -439,7 +480,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 const repoCount = result.nodes.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
                                 onUserRepositoriesUpdate(repoCount)
                                 // push the user back to the repo list page
-                                history.push(routingPrefix + '/repositories')
+                                history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
                                 // cancel the repeatUntil
                                 return true
                             }
@@ -780,6 +821,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 )}
             </ul>
             {isErrorLike(otherPublicRepoError) && displayError(otherPublicRepoError)}
+            <Prompt message={displayPromptIfReposChanged} />
             <Form className="mt-4 d-flex" onSubmit={submit}>
                 <LoaderButton
                     loading={isLoading(fetchingRepos)}
