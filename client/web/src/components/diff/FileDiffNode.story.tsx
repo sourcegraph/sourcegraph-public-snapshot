@@ -1,5 +1,5 @@
 import { storiesOf } from '@storybook/react'
-import { boolean } from '@storybook/addon-knobs'
+import { boolean, select } from '@storybook/addon-knobs'
 import React from 'react'
 import { FileDiffNode } from './FileDiffNode'
 import { DEMO_HUNKS } from './FileDiffHunks.story'
@@ -193,7 +193,7 @@ add('All file node states overview', () => (
                 {FILE_DIFF_NODES.map((node, index) => (
                     <FileDiffNode
                         {...webProps}
-                        diffMode="unified"
+                        diffMode={select('diffMode', { split: 'split', unified: 'unified' }, 'unified')}
                         key={index}
                         persistLines={boolean('persistLines', false)}
                         lineNumbers={boolean('lineNumbers', true)}

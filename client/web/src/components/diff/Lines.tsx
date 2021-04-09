@@ -14,6 +14,9 @@ const diffHunkTypeIndicators: Record<DiffHunkLineType, string> = {
 interface Line {
     kind: DiffHunkLineType
     lineNumber?: number
+    lineNumbers: boolean
+    id?: string
+    persistLines: boolean
     anchor: string
     html: string
     lineStyle: ThemableDecorationStyle
@@ -29,8 +32,11 @@ export const EmptyLine: React.FunctionComponent = () => (
 )
 
 export const Line: React.FunctionComponent<Line> = ({
+    persistLines,
     kind,
     lineNumber,
+    lineNumbers,
+    id,
     anchor,
     html,
     lineStyle,
@@ -76,16 +82,20 @@ export const Line: React.FunctionComponent<Line> = ({
 
     return (
         <>
-            <td
-                className={`diff-hunk__num ${className}`}
-                data-line={lineNumber}
-                data-part={hunkStyles.dataPart}
-                id={hunkStyles.hash}
-            >
-                <Link className="diff-hunk__num--data-line" to={{ hash: hunkStyles.hash }}>
-                    {lineNumber}
-                </Link>
-            </td>
+            {lineNumbers && (
+                <td
+                    className={`diff-hunk__num ${className}`}
+                    data-line={lineNumber}
+                    data-part={hunkStyles.dataPart}
+                    id={id || hunkStyles.hash}
+                >
+                    {persistLines && (
+                        <Link className="diff-hunk__num--data-line" to={{ hash: hunkStyles.hash }}>
+                            {lineNumber}
+                        </Link>
+                    )}
+                </td>
+            )}
             <td
                 className={`diff-hunk__line diff-hunk__content ${hunkStyles.hunkContent} ${className}`}
                 // eslint-disable-next-line react/forbid-dom-props
