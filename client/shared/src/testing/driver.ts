@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import expect from 'expect'
 import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'

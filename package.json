@@ -59,8 +59,7 @@
       "node_modules",
       "**/*.d.ts",
       "**/*.@(test|story).ts?(x)",
-      "client/storybook",
-      "client/shared/src/testing"
+      "client/storybook"
     ]
   },
   "jscpd": {
