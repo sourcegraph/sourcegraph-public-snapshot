@@ -32,38 +32,30 @@ func (s *Store) scanDocumentData(rows *sql.Rows, queryErr error) (_ []QualifiedD
 	return values, nil
 }
 
-// makeDocumentVisitor returns a function that accepts a mapping function, reads
-// document values from the given row object and calls the mapping function on each
-// decoded document.
-func (s *Store) makeDocumentVisitor(rows *sql.Rows, queryErr error) func(func(string, semantic.DocumentData)) error {
-	return func(f func(string, semantic.DocumentData)) (err error) {
+// makeDocumentVisitor returns a function that calls the given visitor function over each
+// matching decoded document value.
+func (s *Store) makeDocumentVisitor(f func(string, semantic.DocumentData)) func(rows *sql.Rows, queryErr error) error {
+	return func(rows *sql.Rows, queryErr error) (err error) {
 		if queryErr != nil {
 			return queryErr
 		}
 		defer func() { err = basestore.CloseRows(rows, err) }()
 
-		var rawData []byte
 		for rows.Next() {
-			var path string
-			if err := rows.Scan(&path, &rawData); err != nil {
-				return err
-			}
-
-			data, err := s.serializer.UnmarshalDocumentData(rawData)
+			record, err := s.scanSingleDocumentDataObject(rows)
 			if err != nil {
 				return err
 			}
 
-			f(path, data)
+			f(record.Path, record.Document)
 		}
 
 		return nil
 	}
 }
 
-// scanFirstDocumentData reads qualified document data values from the given row
-// object and returns the first one. If no rows match the query, a false-valued
-// flag is returned.
+// scanFirstDocumentData reads qualified document data from its given row object and returns
+// the first one. If no rows match the query, a false-valued flag is returned.
 func (s *Store) scanFirstDocumentData(rows *sql.Rows, queryErr error) (_ QualifiedDocumentData, _ bool, err error) {
 	if queryErr != nil {
 		return QualifiedDocumentData{}, false, queryErr
@@ -82,20 +74,38 @@ func (s *Store) scanFirstDocumentData(rows *sql.Rows, queryErr error) (_ Qualifi
 	return QualifiedDocumentData{}, false, nil
 }
 
-// scanSingleDocumentDataObject populates a qualified document data value from the
-// given cursor.
+// scanSingleDocumentDataObject populates a qualified document data value from the given cursor.
 func (s *Store) scanSingleDocumentDataObject(rows *sql.Rows) (QualifiedDocumentData, error) {
 	var rawData []byte
+	var encoded MarshalledDocumentData
 	var record QualifiedDocumentData
-	if err := rows.Scan(&record.UploadID, &record.Path, &rawData); err != nil {
+
+	if err := rows.Scan(
+		&record.UploadID,
+		&record.Path,
+		&rawData,
+		&encoded.Ranges,
+		&encoded.HoverResults,
+		&encoded.Monikers,
+		&encoded.PackageInformation,
+		&encoded.Diagnostics,
+	); err != nil {
 		return QualifiedDocumentData{}, err
 	}
 
-	data, err := s.serializer.UnmarshalDocumentData(rawData)
-	if err != nil {
-		return QualifiedDocumentData{}, err
+	if len(rawData) != 0 {
+		data, err := s.serializer.UnmarshalLegacyDocumentData(rawData)
+		if err != nil {
+			return QualifiedDocumentData{}, err
+		}
+		record.Document = data
+	} else {
+		data, err := s.serializer.UnmarshalDocumentData(encoded)
+		if err != nil {
+			return QualifiedDocumentData{}, err
+		}
+		record.Document = data
 	}
-	record.Document = data
 
 	return record, nil
 }

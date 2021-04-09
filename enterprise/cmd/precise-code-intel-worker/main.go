@@ -60,7 +60,8 @@ func main() {
 	}
 
 	// Start debug server
-	go debugserver.NewServerRoutine().Start()
+	ready := make(chan struct{})
+	go debugserver.NewServerRoutine(ready).Start()
 
 	if err := keyring.Init(context.Background()); err != nil {
 		log.Fatalf("Failed to intialise keyring: %v", err)
@@ -69,6 +70,11 @@ func main() {
 	// Connect to databases
 	db := mustInitializeDB()
 	codeIntelDB := mustInitializeCodeIntelDB()
+
+	// Migrations may take a while, but after they're done we'll immediately
+	// spin up a server and can accept traffic. Inform external clients we'll
+	// be ready for traffic.
+	close(ready)
 
 	// Initialize stores
 	dbStore := dbstore.NewWithDB(db, observationContext)

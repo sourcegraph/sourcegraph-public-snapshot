@@ -598,6 +598,7 @@ Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text
     "gitserver_repos_cloning_status_idx" btree (repo_id) WHERE clone_status = 'cloning'::text
+    "gitserver_repos_last_error_idx" btree (last_error) WHERE last_error IS NOT NULL
     "gitserver_repos_not_cloned_status_idx" btree (repo_id) WHERE clone_status = 'not_cloned'::text
 Foreign-key constraints:
     "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
@@ -606,12 +607,10 @@ Foreign-key constraints:
 
 # Table "public.global_state"
 ```
-         Column          |  Type   | Collation | Nullable | Default  
--------------------------+---------+-----------+----------+----------
- site_id                 | uuid    |           | not null | 
- initialized             | boolean |           | not null | false
- mgmt_password_plaintext | text    |           | not null | ''::text
- mgmt_password_bcrypt    | text    |           | not null | ''::text
+   Column    |  Type   | Collation | Nullable | Default 
+-------------+---------+-----------+----------+---------
+ site_id     | uuid    |           | not null | 
+ initialized | boolean |           | not null | false
 Indexes:
     "global_state_pkey" PRIMARY KEY, btree (site_id)
 

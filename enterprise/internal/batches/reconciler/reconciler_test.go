@@ -138,9 +138,9 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			// Run the reconciler
 			rec := Reconciler{
 				noSleepBeforeSync: true,
-				GitserverClient:   gitClient,
-				Sourcer:           sourcer,
-				Store:             store,
+				gitserverClient:   gitClient,
+				sourcer:           sourcer,
+				store:             store,
 			}
 			err := rec.process(ctx, store, changeset)
 			if err != nil {

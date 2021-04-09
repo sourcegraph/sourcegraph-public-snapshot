@@ -1,5 +1,4 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
-import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { BehaviorSubject, from, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
@@ -37,8 +36,6 @@ interface Props
         TelemetryProps,
         ThemeProps,
         VersionContextProps {
-    location: H.Location
-    history: H.History
     repoName?: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
@@ -120,7 +117,8 @@ export const Panel = React.memo<Props>(props => {
     )
 
     const [tabIndex, setTabIndex] = useState(0)
-    const { hash, pathname } = useLocation()
+    const location = useLocation()
+    const { hash, pathname } = location
     const history = useHistory()
     const handlePanelClose = useCallback(() => history.replace(pathname), [history, pathname])
     const [currentTabLabel, currentTabID] = hash.split('=')
@@ -196,18 +194,19 @@ export const Panel = React.memo<Props>(props => {
                               label: panelView.title,
                               id: panelView.id,
                               priority: panelView.priority,
-                              element: <PanelView {...props} panelView={panelView} />,
+                              element: (
+                                  <PanelView {...props} panelView={panelView} history={history} location={location} />
+                              ),
                               hasLocations: !!panelView.locationProvider,
                           })
                       )
                       .sort((a, b) => b.priority - a.priority)
                 : [],
-        [panelViews, props]
+        [history, location, panelViews, props]
     )
 
     useEffect(() => {
         const subscription = registerPanelToolbarContributions(props.extensionsController.extHostAPI)
-
         return () => subscription.unsubscribe()
     }, [props.extensionsController])
 
@@ -257,6 +256,7 @@ export const Panel = React.memo<Props>(props => {
                                 hasLocations: Boolean(activeTab.hasLocations),
                             }}
                             wrapInList={true}
+                            location={location}
                         />
                     )}
                     <button

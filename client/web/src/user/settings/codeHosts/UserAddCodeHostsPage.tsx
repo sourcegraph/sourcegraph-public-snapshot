@@ -92,8 +92,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         services.length > 0 ? (
             <div className="alert alert-success mb-4" role="alert" key="add-repos">
                 Connected with {services.join(', ')}. Next,{' '}
-                <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
-                    <b>add your repositories →</b>
+                <Link
+                    className="alert-link"
+                    style={{ textDecoration: 'underline' }}
+                    to={`${routingPrefix}/repositories/manage`}
+                >
+                    add your repositories →
                 </Link>
             </div>
         ) : null

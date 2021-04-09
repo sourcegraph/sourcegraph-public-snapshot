@@ -326,15 +326,15 @@ func (s *Store) readRangesFromDocuments(ctx context.Context, bundleID int, ids [
 			batch, paths = paths[:documentBatchSize], paths[documentBatchSize:]
 		}
 
+		visitDocuments := s.makeDocumentVisitor(func(path string, document semantic.DocumentData) {
+			totalCount += s.readRangesFromDocument(bundleID, rangeIDsByResultID, locationsByResultID, path, document, traceLog)
+		})
+
 		pathQueries := make([]*sqlf.Query, 0, len(batch))
 		for _, path := range batch {
 			pathQueries = append(pathQueries, sqlf.Sprintf("%s", path))
 		}
-		visitDocuments := s.makeDocumentVisitor(s.Store.Query(ctx, sqlf.Sprintf(readRangesFromDocumentsQuery, bundleID, sqlf.Join(pathQueries, ","))))
-
-		if err := visitDocuments(func(path string, document semantic.DocumentData) {
-			totalCount += s.readRangesFromDocument(bundleID, rangeIDsByResultID, locationsByResultID, path, document, traceLog)
-		}); err != nil {
+		if err := visitDocuments(s.Store.Query(ctx, sqlf.Sprintf(readRangesFromDocumentsQuery, bundleID, sqlf.Join(pathQueries, ",")))); err != nil {
 			return nil, 0, err
 		}
 	}
@@ -344,7 +344,20 @@ func (s *Store) readRangesFromDocuments(ctx context.Context, bundleID int, ids [
 
 const readRangesFromDocumentsQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/locations.go:readRangesFromDocuments
-SELECT path, data FROM lsif_data_documents WHERE dump_id = %s AND path IN (%s)
+SELECT
+	dump_id,
+	path,
+	data,
+	ranges,
+	NULL AS hovers,
+	NULL AS monikers,
+	NULL AS packages,
+	NULL AS diagnostics
+FROM
+	lsif_data_documents
+WHERE
+	dump_id = %s AND
+	path IN (%s)
 `
 
 // readRangesFromDocument extracts range data from the given document. This method populates the given locationsByResultId
@@ -445,5 +458,19 @@ func extractResultIDs(ranges []semantic.RangeData, fn func(r semantic.RangeData)
 
 const locationsDocumentQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/locations.go:{Definitions,References}
-SELECT dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path = %s LIMIT 1
+SELECT
+	dump_id,
+	path,
+	data,
+	ranges,
+	NULL AS hovers,
+	NULL AS monikers,
+	NULL AS packages,
+	NULL AS diagnostics
+FROM
+	lsif_data_documents
+WHERE
+	dump_id = %s AND
+	path = %s
+LIMIT 1
 `

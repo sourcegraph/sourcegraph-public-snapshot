@@ -99,7 +99,7 @@ const getMinimizableNavItems = (props: Props): JSX.Element[] => {
     ])
 }
 
-export const NavLinks: React.FC<Props> = props => {
+export const NavLinks: React.FunctionComponent<Props> = props => {
     const {
         settingsCascade,
         location,

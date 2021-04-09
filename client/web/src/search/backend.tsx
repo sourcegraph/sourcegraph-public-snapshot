@@ -29,6 +29,8 @@ import {
     Scalars,
     FetchSearchContextResult,
     FetchSearchContextVariables,
+    ConvertVersionContextToSearchContextResult,
+    ConvertVersionContextToSearchContextVariables,
 } from '../graphql-operations'
 
 export function search(
@@ -245,6 +247,25 @@ const searchContextFragment = gql`
         }
     }
 `
+
+export function convertVersionContextToSearchContext(
+    name: string
+): Observable<ConvertVersionContextToSearchContextResult['convertVersionContextToSearchContext']> {
+    return requestGraphQL<ConvertVersionContextToSearchContextResult, ConvertVersionContextToSearchContextVariables>(
+        gql`
+            mutation ConvertVersionContextToSearchContext($name: String!) {
+                convertVersionContextToSearchContext(name: $name) {
+                    id
+                    spec
+                }
+            }
+        `,
+        { name }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.convertVersionContextToSearchContext)
+    )
+}
 
 export const fetchAutoDefinedSearchContexts = defer(() =>
     requestGraphQL<AutoDefinedSearchContextsResult, AutoDefinedSearchContextsVariables>(gql`

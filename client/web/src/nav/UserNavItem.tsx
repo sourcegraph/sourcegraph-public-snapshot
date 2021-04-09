@@ -13,6 +13,8 @@ import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManage
 import { AuthenticatedUser } from '../auth'
 import { ThemePreference, ThemePreferenceProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
+import { RedesignToggle } from './RedesignToggle'
+
 export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, ExtensionAlertAnimationProps {
     location: H.Location
     authenticatedUser: Pick<
@@ -174,6 +176,8 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         <Shortcut key={index} {...keybinding} onMatch={onThemeCycle} />
                     ))}
                 </div>
+                {/* NODE_ENV check ensures that this logic won't propagate to non-dev builds via Webpack dead code elimination */}
+                {process.env.NODE_ENV === 'development' && <RedesignToggle />}
                 {props.authenticatedUser.organizations.nodes.length > 0 && (
                     <>
                         <DropdownItem divider={true} />

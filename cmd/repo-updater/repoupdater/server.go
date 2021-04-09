@@ -401,8 +401,10 @@ func externalServiceValidate(ctx context.Context, req protocol.ExternalServiceSy
 
 	results := make(chan repos.SourceResult)
 
-	if v, ok := src.(TokenValidator); ok {
-		return v.ValidateToken(ctx)
+	if v, ok := src.(repos.UserSource); ok {
+		if err := v.ValidateAuthenticator(ctx); err != nil {
+			return err
+		}
 	} else {
 		go func() {
 			src.ListRepos(ctx, results)
@@ -725,8 +727,4 @@ func isUnauthorized(err error) bool {
 
 func isTemporarilyUnavailable(err error) bool {
 	return github.IsRateLimitExceeded(err)
-}
-
-type TokenValidator interface {
-	ValidateToken(ctx context.Context) error
 }

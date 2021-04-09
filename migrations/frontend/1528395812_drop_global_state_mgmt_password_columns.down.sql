@@ -1,0 +1,7 @@
+BEGIN;
+
+ALTER TABLE global_state
+ADD COLUMN IF NOT EXISTS mgmt_password_plaintext TEXT NOT NULL DEFAULT '',
+ADD COLUMN IF NOT EXISTS mgmt_password_bcrypt TEXT NOT NULL DEFAULT '';
+
+COMMIT;
