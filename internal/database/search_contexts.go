@@ -32,17 +32,19 @@ func (s *SearchContextsStore) Transact(ctx context.Context) (*SearchContextsStor
 }
 
 const listSearchContextsFmtStr = `
-SELECT id, name, description, public, namespace_user_id, namespace_org_id
-FROM search_contexts
-WHERE deleted_at IS NULL AND (%s)
-ORDER BY id ASC
+SELECT sc.id, sc.name, sc.description, sc.public, sc.namespace_user_id, sc.namespace_org_id, u.username, o.name
+FROM search_contexts sc
+LEFT JOIN users u on sc.namespace_user_id = u.id
+LEFT JOIN orgs o on sc.namespace_org_id = o.id
+WHERE sc.deleted_at IS NULL AND (%s)
+ORDER BY sc.id ASC
 LIMIT %d
 `
 
 const countSearchContextsFmtStr = `
 SELECT COUNT(*)
-FROM search_contexts
-WHERE deleted_at IS NULL AND (%s)
+FROM search_contexts sc
+WHERE sc.deleted_at IS NULL AND (%s)
 `
 
 type ListSearchContextsPageOptions struct {
@@ -69,14 +71,14 @@ func getSearchContextNamespaceQueryConditions(namespaceUserID, namespaceOrgID in
 		return nil, errors.New("options NamespaceUserID and NamespaceOrgID are mutually exclusive")
 	}
 	if namespaceUserID == 0 {
-		conds = append(conds, sqlf.Sprintf("namespace_user_id IS NULL"))
+		conds = append(conds, sqlf.Sprintf("sc.namespace_user_id IS NULL"))
 	} else {
-		conds = append(conds, sqlf.Sprintf("namespace_user_id = %s", namespaceUserID))
+		conds = append(conds, sqlf.Sprintf("sc.namespace_user_id = %s", namespaceUserID))
 	}
 	if namespaceOrgID == 0 {
-		conds = append(conds, sqlf.Sprintf("namespace_org_id IS NULL"))
+		conds = append(conds, sqlf.Sprintf("sc.namespace_org_id IS NULL"))
 	} else {
-		conds = append(conds, sqlf.Sprintf("namespace_org_id = %s", namespaceOrgID))
+		conds = append(conds, sqlf.Sprintf("sc.namespace_org_id = %s", namespaceOrgID))
 	}
 	return conds, nil
 }
@@ -93,7 +95,7 @@ func getSearchContextsQueryConditions(opts ListSearchContextsOptions) ([]*sqlf.Q
 
 	if opts.Name != "" {
 		// name column has type citext which automatically performs case-insensitive comparison
-		conds = append(conds, sqlf.Sprintf("name LIKE %s", "%"+opts.Name+"%"))
+		conds = append(conds, sqlf.Sprintf("sc.name LIKE %s", "%"+opts.Name+"%"))
 	}
 
 	return conds, nil
@@ -113,7 +115,7 @@ func (s *SearchContextsStore) ListSearchContexts(ctx context.Context, pageOpts L
 	if err != nil {
 		return nil, err
 	}
-	conds := []*sqlf.Query{sqlf.Sprintf("id > %d", pageOpts.AfterID)}
+	conds := []*sqlf.Query{sqlf.Sprintf("sc.id > %d", pageOpts.AfterID)}
 	conds = append(conds, listSearchContextsConds...)
 	return s.listSearchContexts(ctx, sqlf.Join(conds, "\n AND "), pageOpts.First)
 }
@@ -151,7 +153,7 @@ func (s *SearchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 		return nil, err
 	}
 	if opts.Name != "" {
-		conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
+		conds = append(conds, sqlf.Sprintf("sc.name = %s", opts.Name))
 	}
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(listSearchContextsFmtStr, sqlf.Join(conds, "\n AND "), 1))
@@ -166,7 +168,6 @@ const insertSearchContextFmtStr = `
 INSERT INTO search_contexts
 (name, description, public, namespace_user_id, namespace_org_id)
 VALUES (%s, %s, %s, %s, %s)
-RETURNING id, name, description, public, namespace_user_id, namespace_org_id;
 `
 
 func (s *SearchContextsStore) CreateSearchContextWithRepositoryRevisions(ctx context.Context, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (createdSearchContext *types.SearchContext, err error) {
@@ -221,7 +222,7 @@ func (s *SearchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Co
 }
 
 func (s *SearchContextsStore) createSearchContext(ctx context.Context, searchContext *types.SearchContext) (*types.SearchContext, error) {
-	rows, err := s.Query(ctx, sqlf.Sprintf(
+	err := s.Exec(ctx, sqlf.Sprintf(
 		insertSearchContextFmtStr,
 		searchContext.Name,
 		searchContext.Description,
@@ -233,8 +234,11 @@ func (s *SearchContextsStore) createSearchContext(ctx context.Context, searchCon
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	return scanSingleSearchContext(rows)
+	return s.GetSearchContext(ctx, GetSearchContextOptions{
+		Name:            searchContext.Name,
+		NamespaceUserID: searchContext.NamespaceUserID,
+		NamespaceOrgID:  searchContext.NamespaceOrgID,
+	})
 }
 
 func scanSingleSearchContext(rows *sql.Rows) (*types.SearchContext, error) {
@@ -259,6 +263,8 @@ func scanSearchContexts(rows *sql.Rows) ([]*types.SearchContext, error) {
 			&sc.Public,
 			&dbutil.NullInt32{N: &sc.NamespaceUserID},
 			&dbutil.NullInt32{N: &sc.NamespaceOrgID},
+			&dbutil.NullString{S: &sc.NamespaceUserName},
+			&dbutil.NullString{S: &sc.NamespaceOrgName},
 		)
 		if err != nil {
 			return nil, err
