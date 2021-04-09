@@ -21,7 +21,11 @@
 
     &__axis-line {
         stroke: var(--border-color);
-        stroke-width: 2;
+        stroke-width: 1;
+
+        &--vertical {
+            stroke-width: 0;
+        }
     }
 
     // We are not able to add our own classnames for tick line and text elements
@@ -30,7 +34,7 @@
         // small tick line
         line {
             stroke: var(--border-color);
-            stroke-width: 2;
+            stroke-width: 1;
         }
 
         // tick label
@@ -38,6 +42,12 @@
             fill: var(--text-muted);
             font-size: 0.75rem;
             font-weight: 400;
+        }
+
+        &--vertical {
+            line {
+                stroke-width: 0;
+            }
         }
     }
 

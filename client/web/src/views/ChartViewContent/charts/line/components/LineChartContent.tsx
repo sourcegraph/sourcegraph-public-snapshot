@@ -193,8 +193,8 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                     numTicks={numberOfTicksY}
                     tickFormat={format('~s')}
                     axisClassName="line-chart__axis"
-                    axisLineClassName="line-chart__axis-line"
-                    tickClassName="line-chart__axis-tick"
+                    axisLineClassName="line-chart__axis-line line-chart__axis-line--vertical"
+                    tickClassName="line-chart__axis-tick line-chart__axis-tick--vertical"
                 />
 
                 {series.map(line => (
