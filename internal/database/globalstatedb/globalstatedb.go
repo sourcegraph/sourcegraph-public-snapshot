@@ -18,6 +18,14 @@ type State struct {
 	Initialized bool // whether the initial site admin account has been created
 }
 
+func (s *State) IsEmpty() bool {
+	if s.SiteID == "" && !s.Initialized {
+		return true
+	}
+
+	return false
+}
+
 func Get(ctx context.Context) (*State, error) {
 	if Mock.Get != nil {
 		return Mock.Get(ctx)
@@ -66,25 +74,28 @@ type queryExecDatabaseHandler interface {
 // accidentally deleting all user accounts and opening up their site to any attacker becoming a site
 // admin and (2) a bug in user account creation code letting attackers create site admin accounts.
 func EnsureInitialized(ctx context.Context, dbh queryExecDatabaseHandler) (bool, error) {
-	state, err := getConfiguration(ctx)
+	state, err := getCurrentSiteState(ctx, dbh)
 
 	// For any other non nil error apart from sql.ErrNoRows, return the error.
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil {
 		return false, err
 	}
 
-	// Since there are no rows in global_state whatsover, we should try to insert a new row.
-	if err == sql.ErrNoRows {
+	if state.IsEmpty() {
+		// Since there are no rows in global_state whatsover, we should try to insert a new row.
 		if err := tryInsertNew(ctx, dbh); err != nil {
 			return false, err
 		}
 	}
 
-	if !state.Initialized {
-		err = dbh.Exec(ctx, sqlf.Sprintf("UPDATE global_state SET initialized=true WHERE initialized=false"))
-		if err != nil {
-			return false, err
-		}
+	if state.Initialized {
+		return true, nil
+	}
+
+	updateInitialized := sqlf.Sprintf("UPDATE global_state SET initialized=true WHERE initialized=false")
+	err = dbh.Exec(ctx, updateInitialized)
+	if err != nil {
+		return false, err
 	}
 
 	// A row with initialized=true already exists, so nothing else needs to be done.
@@ -99,6 +110,22 @@ func getConfiguration(ctx context.Context) (*State, error) {
 	)
 
 	return configuration, err
+}
+
+func getCurrentSiteState(ctx context.Context, dbh queryExecDatabaseHandler) (*State, error) {
+	state := &State{}
+
+	getStateQuery := sqlf.Sprintf("SELECT site_id, initialized FROM global_state LIMIT 1")
+	row := dbh.QueryRow(ctx, getStateQuery)
+
+	err := row.Scan(&state.SiteID, &state.Initialized)
+	if err == sql.ErrNoRows {
+		return state, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return state, nil
 }
 
 type execDatabaseHandler interface {
