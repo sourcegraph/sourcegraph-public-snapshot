@@ -591,3 +591,56 @@ spec:
           name: ns-sourcegraph
 ```
 
+### Using NetworkPolicy with Namespaced Overlay
+
+1. Create a yaml file (`networkPolicy.yaml` for example) in the root directory:
+
+```yaml
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: np-sourcegraph
+  namespace: ns-<REPLACE THIS>
+spec:
+  # For all pods with the label "deploy: sourcegraph"
+  podSelector:
+    matchLabels:
+      deploy: sourcegraph
+  policyTypes:
+  - Ingress
+  - Egress
+  # Allow all traffic inside the ns-<REPLACE THIS> namespace
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ns-sourcegraph
+          namespace: ns-<REPLACE THIS>
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: ns-<REPLACE THIS>
+```
+
+1. `k apply -f networkPolicy.yaml` => networkpolicy.networking.k8s.io/np-sourcegraph created
+
+1. `k apply -f generated-cluster/networking.k8s.io_v1beta1_ingress_sourcegraph-frontend.yaml` => ingress.networking.k8s.io/sourcegraph-frontend configured
+
+1. Check for duplicate `sourcegraph-frontend` using `kubectl get ingresses -A`
+
+1. Remove duplicate with `kubectl delete ingress sourcegraph-frontend -n default`
+
+1. Apply setting to all using `k apply -f .`
+
+1. Run `kubectl get pods -A` to check for the namespaces and their status --it should now be up and running 🎉
+
+1. Start Sourcegraph on your local machine by temporarily making the frontend port accessible:
+
+   ```
+   kubectl port-forward svc/sourcegraph-frontend 3080:30080
+   ```
+
+1. Open http://localhost:3080 in your browser and you will see a setup page. 
+
+1. 🎉 Congrats, you have Sourcegraph up and running! Now [configure your deployment](configure.md).
