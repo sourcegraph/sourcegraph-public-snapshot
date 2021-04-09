@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -20,12 +21,12 @@ const (
 	searchContextSpecPrefix = "@"
 )
 
-var namespacedSearchContextSpecRegexp = regexp.MustCompile(searchContextSpecPrefix + `(.*?)\/(.*)`)
+var namespacedSearchContextSpecRegexp = lazyregexp.New(searchContextSpecPrefix + `(.*?)\/(.*)`)
 
 func ResolveSearchContextSpec(ctx context.Context, db dbutil.DB, searchContextSpec string) (*types.SearchContext, error) {
 	if IsGlobalSearchContextSpec(searchContextSpec) {
 		return GetGlobalSearchContext(), nil
-	} else if submatches := namespacedSearchContextSpecRegexp.FindStringSubmatch(searchContextSpec); len(submatches) == 3 {
+	} else if submatches := namespacedSearchContextSpecRegexp.FindStringSubmatch(searchContextSpec); submatches != nil {
 		// We expect 3 submatches, because FindStringSubmatch returns entire string as first submatch, and 2 captured groups
 		// as additional submatches
 		namespaceName, searchContextName := submatches[1], submatches[2]
