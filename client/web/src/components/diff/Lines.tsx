@@ -1,6 +1,6 @@
+import { decorationAttachmentStyleForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import * as React from 'react'
-import { decorationAttachmentStyleForTheme } from '../../../../shared/src/api/extension/api/decorations'
-import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import { Link } from 'react-router-dom'
 import { DecorationAttachmentRenderOptions, TextDocumentDecoration, ThemableDecorationStyle } from 'sourcegraph'
 import { DiffHunkLineType } from '../../graphql-operations'

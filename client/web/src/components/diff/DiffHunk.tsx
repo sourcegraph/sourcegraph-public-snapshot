@@ -1,17 +1,17 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-noninteractive-element-interactions: warn */
-import * as React from 'react'
 import {
     decorationAttachmentStyleForTheme,
     DecorationMapByLine,
     decorationStyleForTheme,
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { property, isDefined } from '@sourcegraph/shared/src/util/types'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
+import { isDefined, property } from '@sourcegraph/shared/src/util/types'
+import * as React from 'react'
 import { useLocation } from 'react-router'
-import { DiffBoundary } from './DiffBoundary'
 import { Link } from 'react-router-dom'
+import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
+import { DiffBoundary } from './DiffBoundary'
 
 const diffHunkTypeIndicators: Record<DiffHunkLineType, string> = {
     ADDED: '+',

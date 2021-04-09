@@ -1,15 +1,15 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-noninteractive-element-interactions: warn */
+import { DecorationMapByLine, decorationStyleForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import * as React from 'react'
-import { DecorationMapByLine, decorationStyleForTheme } from '../../../../shared/src/api/extension/api/decorations'
-import { property, isDefined } from '../../../../shared/src/util/types'
-import { ThemeProps } from '../../../../shared/src/theme'
-import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
-import { useSplitDiff } from './useSplitDiff'
-import { useHunksAddLineNumber } from './useHunksAddLineNumber'
 import { useLocation } from 'react-router'
 import { TextDocumentDecoration } from 'sourcegraph'
-import { Line, EmptyLine } from './Lines'
+import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
 import { DiffBoundary } from './DiffBoundary'
+import { EmptyLine, Line } from './Lines'
+import { useHunksAddLineNumber } from './useHunksAddLineNumber'
+import { useSplitDiff } from './useSplitDiff'
 
 export interface DiffHunkProps extends ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */

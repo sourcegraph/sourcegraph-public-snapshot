@@ -1,9 +1,9 @@
-import React from 'react'
-import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react'
-import { DiffSplitHunk, DiffHunkProps } from './DiffSplitHunk'
+import { cleanup, fireEvent, render, RenderResult } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
-import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
+import React from 'react'
 import { Router } from 'react-router'
+import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
+import { DiffHunkProps, DiffSplitHunk } from './DiffSplitHunk'
 
 describe('DiffSplitHunk', () => {
     const hunk: FileDiffHunkFields = {
