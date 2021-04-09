@@ -16,7 +16,7 @@ CODEINTEL_OUTPUT_FILE="${OUTPUT}/code_intel_queries.yaml"
 for source in ./config/*.yaml; do
   {
     if [[ "$source" == *"codeintel"* ]]; then
-      printf "Skipping %s\n" "$source"
+      echo "Skipping $source"
       continue
     fi
     echo "# source: ${source}"
@@ -28,7 +28,7 @@ done
 for source in ./config/*.yaml; do
   {
     if [[ "$source" == *"standard"* ]]; then
-      printf "Skipping %s\n" "$source"
+      echo "Skipping $source"
       continue
     fi
     echo "# source: ${source}"
