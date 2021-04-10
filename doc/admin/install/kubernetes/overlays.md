@@ -2,11 +2,16 @@
 
 - [Overlays](#overlays)
   - [Overlay basic principles](#overlay-basic-principles)
-  - [Handling overlays in this repository](#handling-overlays-in-this-repository)
-  - [Namespaced overlay](#namespaced-overlay)
-  - [Non-root overlay](#non-root-overlay)
-  - [Non-privileged overlay](#non-privileged-overlay)
-- [Git Strategies when using overlays to reduce conflicts](#git-strategies-with-overlays)
+  - [Handling overlays](#handling-overlays-in-this-repository)
+  - [Git Strategies when using overlays to reduce conflicts](#git-strategies-with-overlays)
+    - [Steps to setup overlay](#steps-to-setup-overlays)
+      - [Namespaced overlay](#namespaced-overlay)
+      - [Non-root overlay](#non-root-overlay)
+      - [Migrate-to-nonroot overlay](#igrate-to-nonroot-overlay)
+      - [Non-privileged overlay](#non-privileged-overlay)
+      - [minibus overlay](#minibus-overlay)
+    - [Upgrading sourcegraph with an overlay](#upgrading-sourcegraph-with-an-overlay)
+  - [Troubleshooting](#troubleshooting)
 
 ## Overlay basic principles
 
@@ -209,6 +214,6 @@ minikube stop
 
 > error: error retrieving RESTMappings to prune: invalid resource networking.k8s.io/v1, Kind=Ingress, Namespaced=true: no matches for kind "Ingress" in version "networking.k8s.io/v1"
 
-- See the ["Configure network access"](https://docs.sourcegraph.com/admin/install/kubernetes/configure#configure-network-access)
+- See the ["Configure network access"](configure.md#configure-network-access)
 - Check for duplicate `sourcegraph-frontend` using `kubectl get ingresses -A`
 - Delete duplicate using `kubectl delete ingress sourcegraph-frontend -n default`
