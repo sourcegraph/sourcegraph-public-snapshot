@@ -22,54 +22,59 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 1. After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/) with `kubectl`.
 
-   - Google Cloud Platform (GCP) users are required to give their user the ability to create roles in Kubernetes [(see GCP's documentation)](https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#prerequisites_for_using_role-based_access_control):
+      ```bash
+      # Google Cloud Platform (GCP) users are required to give their user the ability to create roles in Kubernetes [(see GCP's documentation)](https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#prerequisites_for_using_role-based_access_control):
+      kubectl create clusterrolebinding cluster-admin-binding \
+        --clusterrole cluster-admin --user $(gcloud config get-value account)
+      ```
 
-       ```bash
-       kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
-       ```
-2. Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository and check out the version tag you wish to deploy:
+1. Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository and check out the version tag you wish to deploy:
 
-   ```bash
-   # 🚨 The master branch tracks development. 
-   # Use the branch of this repository corresponding to the version of Sourcegraph you wish to deploy, e.g. git checkout 3.24
+      ```bash
+      # 🚨 The master branch tracks development. 
+      # Use the branch of this repository corresponding to the version of Sourcegraph you wish to deploy, e.g. git checkout 3.24
 
-   git clone https://github.com/sourcegraph/deploy-sourcegraph
-   cd deploy-sourcegraph
-   SOURCEGRAPH_VERSION="v3.26.3"
-   git checkout $SOURCEGRAPH_VERSION
-   ```
+      git clone https://github.com/sourcegraph/deploy-sourcegraph
+      cd deploy-sourcegraph
+      SOURCEGRAPH_VERSION="v3.26.3"
+      git checkout $SOURCEGRAPH_VERSION
+      ```
 
-3. Configure the `sourcegraph` storage class for the cluster by following ["Configure a storage class"](./configure.md#configure-a-storage-class).
+1. Configure the `sourcegraph` storage class for the cluster by following ["Configure a storage class"](./configure.md#configure-a-storage-class).
 
-4. (OPTIONAL) By default `sourcegraph` will be deployed in the `default` kubernetes namespace. If you wish to deploy `sourcegraph` in a non-default namespace, it is highly recommended you use the provided overlays to ensure updates are made in all manifests correctly. See the ["Overlays docs"](./overlays.md) for full instructions on how to use overlays with Sourcegraph and learn more about ["Use non-default namespace"](./overlays.md#use-non-default-namespace).
+1. (OPTIONAL) By default `sourcegraph` will be deployed in the `default` kubernetes namespace. If you wish to deploy `sourcegraph` in a non-default namespace, it is highly recommended you use the provided overlays to ensure updates are made in all manifests correctly. See the ["Overlays docs"](./overlays.md) for full instructions on how to use overlays with Sourcegraph and learn more about ["Use non-default namespace"](./overlays.md#use-non-default-namespace).
 
-5. (OPTIONAL) If you want to add a large number of repositories to your instance, you should [configure the number of gitserver replicas](configure.md#configure-gitserver-replica-count) and [the number of indexed-search replicas](configure.md#configure-indexed-search-replica-count) _before_ you continue with the next step. (See ["Tuning replica counts for horizontal scalability"](scale.md#tuning-replica-counts-for-horizontal-scalability) for guidelines.)
+1. (OPTIONAL) If you want to add a large number of repositories to your instance, you should [configure the number of gitserver replicas](configure.md#configure-gitserver-replica-count) and [the number of indexed-search replicas](configure.md#configure-indexed-search-replica-count) _before_ you continue with the next step. (See ["Tuning replica counts for horizontal scalability"](scale.md#tuning-replica-counts-for-horizontal-scalability) for guidelines.)
 
-6. Deploy the desired version of Sourcegraph to your cluster:
+1. Deploy the desired version of Sourcegraph to your cluster:
 
    ```bash
    ./kubectl-apply-all.sh
    ```
 
-7. Monitor the status of the deployment:
+1. Monitor the status of the deployment:
 
    ```bash
    kubectl get pods -o wide -w
    ```
 
-8. After deployement is completed, verify Sourcegraph is running by temporarily making the frontend port accessible:
+1. After deployement is completed, verify Sourcegraph is running by temporarily making the frontend port accessible:
 
    ```
    kubectl port-forward svc/sourcegraph-frontend 3080:30080
    ```
 
-9. Open http://localhost:3080 in your browser and you will see a setup page. 
+1. Open http://localhost:3080 in your browser and you will see a setup page. 
 
-10. 🎉 Congrats, you have Sourcegraph up and running! Now [configure your deployment](configure.md).
+1. 🎉 Congrats, you have Sourcegraph up and running! Now [configure your deployment](configure.md).
 
 ### Configuration
 
 See the [Configuration docs](configure.md).
+
+### Configuration
+
+See the [Overlays docs](overlays.md).
 
 ### Troubleshooting
 
@@ -77,8 +82,8 @@ See the [Troubleshooting docs](troubleshoot.md).
 
 ### Updating
 
-See the [Updating Sourcegraph docs](update.md) on how to upgrade.<br/>
-See the [Updating a Kubernetes Sourcegraph instance docs](../../updates/kubernetes.md) for details on changes in each version to determine if manual migration steps are necessary.
+- See the [Updating Sourcegraph docs](update.md) on how to upgrade.<br/>
+- See the [Updating a Kubernetes Sourcegraph instance docs](../../updates/kubernetes.md) for details on changes in each version to determine if manual migration steps are necessary.
 
 ### Restarting
 
