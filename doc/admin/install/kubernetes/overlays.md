@@ -31,9 +31,9 @@ command is a directory containing a `kustomization.yaml` file.
 The second way to use overlays is with the `kustomize` tool. This does generate manifest files that are then applied
 in the conventional way using `kubectl apply -f`.
 
-## Handling overlays in this repository
+## Handling overlays
 
-The overlays provided in this repository rely on the `kustomize` tool and the `overlay-generate-cluster.sh` script in the
+The overlays provided in our [overlays directory](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays) rely on the `kustomize` tool and the `overlay-generate-cluster.sh` script in the
 root directory of this repository to generate the manifests. There are two reasons why it was set up like this:
 
 - It avoids having to put a `kustomization.yaml` file in the `base` directory and forcing users that don't use overlays
@@ -105,7 +105,7 @@ One benefit of generating manifest from base instead of modifying base directly 
 
 This overlay adds a namespace declaration to all the manifests. 
 
-1. Change the namespace by replacing `ns-sourcegraph` to name of your choice (`<REPLACE THIS>` in this example) in the
+1. Change the namespace by replacing `ns-sourcegraph` to name of your choice (`<EXAMPLE NAMESPACE>` in this example) in the
 [overlays/namespaced/kustomization.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/namespaced/kustomization.yaml) file.
 
 1. Execute this from the root directory of the repository to generate:
@@ -116,13 +116,13 @@ This overlay adds a namespace declaration to all the manifests.
 
 1. Create the namespace if it doesn't exist yet:
 
-  ```kubectl create namespace ns-<REPLACE THIS>
-  kubectl label namespace ns-<REPLACE THIS> name=ns-sourcegraph
+  ```kubectl create namespace ns-<EXAMPLE NAMESPACE>
+  kubectl label namespace ns-<EXAMPLE NAMESPACE> name=ns-sourcegraph
   ```
 
 1. Execute this from the root directory of the repository to apply the generated manifests from the `generated-cluster` directory:
 
-  ```kubectl apply -n ns-<REPLACE THIS> --prune -l deploy=sourcegraph -f generated-cluster --recursive
+  ```kubectl apply -n ns-<EXAMPLE NAMESPACE> --prune -l deploy=sourcegraph -f generated-cluster --recursive
   ```
 
 1. Run `kubectl get pods -A` to check for the namespaces and their status --it should now be up and running 🎉
@@ -131,7 +131,7 @@ This overlay adds a namespace declaration to all the manifests.
 ### Non-root overlay
 
 The manifests in the `base` directory specify user `root` for all containers. This overlay changes the specification to be
-a non-root user.
+a `non-root` user.
 
 If you are starting a fresh installation use the overlay `non-root-create-cluster`. After creation you can use the overlay
 `non-root`.
@@ -140,6 +140,18 @@ If you already are running a Sourcegraph instance using user `root` and want to 
 you need to apply a migration step that will change the permissions of all persistent volumes so that the volumes can be
 used by the non-root user. This migration is provided as overlay `migrate-to-nonroot`. After the migration you can use
 overlay `non-root`.
+
+### Migrate-to-nonroot overlay
+
+This kustomization injects initContainers in all pods with persistent volumes to transfer ownership of directories to specified non-root users. It is used for migrating existing installations to a non-root environment.
+
+```./overlay-generate-cluster.sh migrate-to-nonroot generated-cluster
+```
+
+After executing the script you can apply the generated manifests from the generated-cluster directory:
+
+```kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
+```
 
 ### Non-privileged overlay
 
