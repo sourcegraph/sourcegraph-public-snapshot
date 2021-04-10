@@ -11,8 +11,8 @@ import {
     Group,
     Quantifier,
 } from 'regexpp/ast'
-import { Predicate, scanPredicate } from './predicates'
 
+import { Predicate, scanPredicate } from './predicates'
 import { Token, Pattern, Literal, PatternKind, CharacterRange, createLiteral } from './token'
 
 /* eslint-disable unicorn/better-regex */
