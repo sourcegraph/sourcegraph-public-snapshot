@@ -6,8 +6,10 @@
   - [Git Strategies when using overlays to reduce conflicts](#git-strategies-with-overlays)
     - [Steps to setup overlay](#steps-to-setup-overlays)
       - [Namespaced overlay](#namespaced-overlay)
+      - [Non-root create cluster overlay](#non-root-create-cluster)
       - [Non-root overlay](#non-root-overlay)
-      - [Migrate-to-nonroot overlay](#igrate-to-nonroot-overlay)
+      - [Migrate-to-nonroot overlay](#migrate-to-nonroot-overlay)
+      - [Non-privileged create cluster overlay](#non-privileged-create-cluster)
       - [Non-privileged overlay](#non-privileged-overlay)
       - [minibus overlay](#minibus-overlay)
     - [Upgrading sourcegraph with an overlay](#upgrading-sourcegraph-with-an-overlay)
@@ -133,6 +135,31 @@ This overlay adds a namespace declaration to all the manifests.
 1. Run `kubectl get pods -A` to check for the namespaces and their status --it should now be up and running 🎉
 
 
+## Non-root create cluster overlay
+
+This kustomization is for creating fresh Sourcegraph installations that want to run containers as non-root user.
+
+This kustomization injects a `fsGroup` security context in each pod so that the volumes are mounted with the specified supplemental group id and non-root pod users can write to the mounted volumes.
+
+This is only done once at cluster creation time so this overlay is only referenced by the `create-new-cluster.sh` script.
+
+The reason for this approach is the behavior of `fsGroup`: on every mount it recursively chmod/chown the disk to add the group specified by `fsGroup` and to change permissions to 775 (so group can write). This can take a long time for large disks and sometimes times out the whole pod scheduling.
+
+If we only do it at cluster creation time (when the disks are empty) it is fast and since the disks are persistent volumes we know that the pod user can write to it even without the `fsGroup` and subsequent apply operations.
+
+In Kubernetes 1.18 `fsGroup` gets an additional [feature](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#configure-volume-permission-and-ownership-change-policy-for-pods) called `fsGroupChangePolicy` that will allow us to control the chmod/chown better.
+
+To use it execute the following command from the root directory of this repository:
+
+```./overlay-generate-cluster.sh non-root-create-cluster generated-cluster
+```
+
+After executing the script you can apply the generated manifests from the generated-cluster directory:
+
+```kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
+```
+
+
 ### Non-root overlay
 
 The manifests in the `base` directory specify user `root` for all containers. This overlay changes the specification to be
@@ -141,12 +168,26 @@ a `non-root` user.
 If you are starting a fresh installation use the overlay `non-root-create-cluster`. After creation you can use the overlay
 `non-root`.
 
+This kustomization is for Sourcegraph installations that want to run containers as non-root user.
+
+> Note: To create a fresh installation use non-root-create-cluster first and then use this overlay.
+
+To use it, execute the following command from the root directory of this repository:
+
+```./overlay-generate-cluster.sh non-root generated-cluster
+```
+
+After executing the script you can apply the generated manifests from the generated-cluster directory:
+
+```kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
+```
+
+### Migrate-to-nonroot overlay
+
 If you already are running a Sourcegraph instance using user `root` and want to convert to running with non-root user then
 you need to apply a migration step that will change the permissions of all persistent volumes so that the volumes can be
 used by the non-root user. This migration is provided as overlay `migrate-to-nonroot`. After the migration you can use
 overlay `non-root`.
-
-### Migrate-to-nonroot overlay
 
 This kustomization injects initContainers in all pods with persistent volumes to transfer ownership of directories to specified non-root users. It is used for migrating existing installations to a non-root environment.
 
@@ -158,12 +199,31 @@ After executing the script you can apply the generated manifests from the genera
 ```kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 ```
 
+
+### Non-privileged create cluster overlay
+This kustomization is for Sourcegraph installations in clusters with security restrictions. It avoids creating Roles and does all the rolebinding in a namespace. It configures Prometheus to work in the namespace and not require ClusterRole wide privileges when doing service discovery for scraping targets. It also disables cAdvisor.
+
+This version and `non-privileged` need to stay in sync. This version is only used for cluster creation.
+
+To use it, execute the following command from the root directory of this repository:
+
+```./overlay-generate-cluster.sh non-privileged generated-cluster
+```
+
+After executing the script you can apply the generated manifests from the generated-cluster directory:
+
+```kubectl create namespace ns-sourcegraph
+kubectl apply -n ns-sourcegraph --prune -l deploy=sourcegraph -f generated-cluster --recursive
+```
+
+
 ### Non-privileged overlay
 
 This overlays goes one step further than the `non-root` overlay by also removing cluster roles and cluster role bindings.
 
 If you are starting a fresh installation use the overlay `non-privileged-create-cluster`. After creation you can use the overlay
 `non-privileged`.
+
 
 ### minikube overlay
 
@@ -188,6 +248,7 @@ To tear it down:
 ```kubectl delete namespaces ns-sourcegraph
 minikube stop
 ```
+
 
 ## Upgrading sourcegraph with an overlay
 
