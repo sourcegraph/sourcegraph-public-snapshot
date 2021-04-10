@@ -11,6 +11,7 @@ import {
     Group,
     Quantifier,
 } from 'regexpp/ast'
+import { Predicate, scanPredicate } from './predicates'
 
 import { Token, Pattern, Literal, PatternKind, CharacterRange, createLiteral } from './token'
 
@@ -36,6 +37,7 @@ export type MetaToken =
     | MetaContextPrefix
     | MetaSelector
     | MetaPath
+    | MetaPredicate
 
 /**
  * Defines common properties for meta tokens.
@@ -170,6 +172,21 @@ export interface MetaPath {
     range: CharacterRange
     kind: MetaPathKind
     value: string
+}
+
+export enum MetaPredicateKind {
+    NameAccess = 'NameAccess',
+    Dot = 'Dot',
+    Parenthesis = 'Parenthesis',
+}
+
+/**
+ * Predicate members for decoration.
+ */
+export interface MetaPredicate {
+    type: 'metaPredicate'
+    range: CharacterRange
+    kind: MetaPredicateKind
 }
 
 /**
@@ -814,6 +831,47 @@ const decorateSelector = (token: Literal): DecoratedToken[] => {
     return [{ type: 'metaSelector', range: token.range, value: token.value, kind }]
 }
 
+const decoratePredicate = (predicate: Predicate, range: CharacterRange): DecoratedToken[] => {
+    let offset = range.start
+    const decorated: DecoratedToken[] = []
+    for (const nameAccess of predicate.path) {
+        decorated.push({
+            type: 'metaPredicate',
+            kind: MetaPredicateKind.NameAccess,
+            range: { start: offset, end: offset + nameAccess.length },
+        })
+        offset = offset + nameAccess.length
+        decorated.push({
+            type: 'metaPredicate',
+            kind: MetaPredicateKind.Dot,
+            range: { start: offset, end: offset + 1 },
+        })
+        offset = offset + 1
+    }
+    decorated.pop() // Pop trailling '.'
+    offset = offset - 1 // Backtrack offset
+    const parametersBody = predicate.parameters.slice(1, -1)
+    decorated.push({
+        type: 'metaPredicate',
+        kind: MetaPredicateKind.Parenthesis,
+        range: { start: offset, end: offset + 1 },
+    })
+    offset = offset + 1
+    decorated.push({
+        type: 'literal',
+        value: parametersBody,
+        range: { start: offset, end: offset + parametersBody.length },
+        quoted: false,
+    })
+    offset = offset + parametersBody.length
+    decorated.push({
+        type: 'metaPredicate',
+        kind: MetaPredicateKind.Parenthesis,
+        range: { start: offset, end: offset + 1 },
+    })
+    return decorated
+}
+
 export const decorate = (token: Token): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     switch (token.type) {
@@ -836,6 +894,11 @@ export const decorate = (token: Token): DecoratedToken[] => {
                 range: token.field.range,
                 value: token.field.value,
             })
+            const predicate = scanPredicate(token.field.value, token.value?.value || '')
+            if (predicate && token.value) {
+                decorated.push(...decoratePredicate(predicate, token.value.range))
+                break
+            }
             if (
                 token.value &&
                 token.field.value.toLowerCase().match(/^-?(repo|r)$/i) &&
@@ -889,6 +952,7 @@ const decoratedToMonaco = (token: DecoratedToken): Monaco.languages.IToken => {
         case 'metaRevision':
         case 'metaRegexp':
         case 'metaStructural':
+        case 'metaPredicate':
             // The scopes value is derived from the token type and its kind.
             // E.g., regexpMetaDelimited derives from {@link RegexpMeta} and {@link RegexpMetaKind}.
             return {

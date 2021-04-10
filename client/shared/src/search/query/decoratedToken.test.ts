@@ -1237,4 +1237,40 @@ describe('getMonacoTokens()', () => {
             ]
         `)
     })
+
+    test('highlight recognized predicate', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:contains.file(README.md)')), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "metaPredicateDot"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 18,
+                "scopes": "metaPredicateParenthesis"
+              },
+              {
+                "startIndex": 19,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 28,
+                "scopes": "metaPredicateParenthesis"
+              }
+            ]
+        `)
+    })
 })
