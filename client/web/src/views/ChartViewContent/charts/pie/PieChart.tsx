@@ -1,10 +1,12 @@
+import { Group } from '@visx/group'
+import Pie, { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
 import React, { ReactElement, useMemo, useState } from 'react'
 import { PieChartContent } from 'sourcegraph'
-import Pie, { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
-import { Group } from '@visx/group'
+
 import { onDatumClick } from '../types'
-import { distributePieArcs } from './distribute-pie-data'
+
 import { PieArc } from './components/PieArc'
+import { distributePieArcs } from './distribute-pie-data'
 
 // Visual settings
 const DEFAULT_FILL_COLOR = 'var(--color-bg-3)'

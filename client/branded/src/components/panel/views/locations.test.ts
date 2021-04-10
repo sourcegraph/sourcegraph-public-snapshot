@@ -1,4 +1,5 @@
 import { Location } from '@sourcegraph/extension-api-types'
+
 import { GroupedLocations, groupLocations } from './locations'
 
 type TestLocation = string

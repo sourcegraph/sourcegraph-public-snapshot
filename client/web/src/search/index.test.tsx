@@ -1,5 +1,6 @@
-import { parseSearchURL, repoFilterForRepoRevision, resolveVersionContext } from '.'
 import { SearchPatternType } from '../graphql-operations'
+
+import { parseSearchURL, repoFilterForRepoRevision, resolveVersionContext } from '.'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value),

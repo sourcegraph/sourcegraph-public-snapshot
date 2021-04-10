@@ -1,5 +1,6 @@
-import React from 'react'
 import { mount } from 'enzyme'
+import React from 'react'
+
 import { EditUserProfileForm } from './EditUserProfileForm'
 
 jest.mock('./UserProfileFormFields', () => ({ UserProfileFormFields: 'mock-UserProfileFormFields' }))

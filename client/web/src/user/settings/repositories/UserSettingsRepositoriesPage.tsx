@@ -1,13 +1,18 @@
+import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { RouteComponentProps } from 'react-router'
+import { EMPTY, Observable } from 'rxjs'
+import { catchError, map } from 'rxjs/operators'
+
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { PageTitle } from '../../../components/PageTitle'
-import {
-    RepositoriesResult,
-    SiteAdminRepositoryFields,
-    UserRepositoriesResult,
-    ListExternalServiceFields,
-} from '../../../graphql-operations'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { ErrorAlert } from '../../../components/alerts'
+import { queryExternalServices } from '../../../components/externalServices/backend'
 import {
     Connection,
     FilteredConnection,
@@ -15,18 +20,16 @@ import {
     FilteredConnectionQueryArguments,
     FilterValue,
 } from '../../../components/FilteredConnection'
-import { EMPTY, Observable } from 'rxjs'
+import { PageTitle } from '../../../components/PageTitle'
+import {
+    RepositoriesResult,
+    SiteAdminRepositoryFields,
+    UserRepositoriesResult,
+    ListExternalServiceFields,
+} from '../../../graphql-operations'
 import { listUserRepositories } from '../../../site-admin/backend'
-import { queryExternalServices } from '../../../components/externalServices/backend'
-import { RouteComponentProps } from 'react-router'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+
 import { RepositoryNode } from './RepositoryNode'
-import AddIcon from 'mdi-react/AddIcon'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
-import { ErrorAlert } from '../../../components/alerts'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { catchError, map } from 'rxjs/operators'
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string

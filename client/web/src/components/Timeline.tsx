@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import { formatDistance } from 'date-fns/esm'
 import React, { FunctionComponent, ReactNode } from 'react'
+
 import { Collapsible } from './Collapsible'
 import { Timestamp } from './time/Timestamp'
 

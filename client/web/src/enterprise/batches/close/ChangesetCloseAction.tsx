@@ -1,7 +1,7 @@
-import React from 'react'
+import classNames from 'classnames'
 import CloseCircleOutlineIcon from 'mdi-react/CloseCircleOutlineIcon'
 import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
-import classNames from 'classnames'
+import React from 'react'
 
 const iconClassNames = 'm-0 text-nowrap d-block d-sm-flex flex-column align-items-center justify-content-center'
 

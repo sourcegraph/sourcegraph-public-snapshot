@@ -1,5 +1,6 @@
-import React from 'react'
 import classNames from 'classnames'
+import React from 'react'
+
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 
 type BreadcrumbIcon = React.ComponentType<{ className?: string }>

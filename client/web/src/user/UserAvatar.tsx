@@ -1,6 +1,6 @@
+import classNames from 'classnames'
 import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
 import React from 'react'
-import classNames from 'classnames'
 
 interface Props {
     size?: number

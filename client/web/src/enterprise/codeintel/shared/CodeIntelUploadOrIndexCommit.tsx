@@ -1,5 +1,7 @@
 import React, { FunctionComponent } from 'react'
+
 import { Link } from '@sourcegraph/shared/src/components/Link'
+
 import { LsifIndexFields, LsifUploadFields } from '../../../graphql-operations'
 
 export interface CodeIntelUploadOrIndexCommitProps {

@@ -1,18 +1,21 @@
-import * as H from 'history'
-import prettyBytes from 'pretty-bytes'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import React, { useState, useCallback } from 'react'
-import { DiffStat } from './DiffStat'
-import { FileDiffHunks } from './FileDiffHunks'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import classNames from 'classnames'
-import { dirname } from '../../util/path'
-import { FileDiffFields } from '../../graphql-operations'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import * as H from 'history'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import prettyBytes from 'pretty-bytes'
+import React, { useState, useCallback } from 'react'
 import { Observable } from 'rxjs'
+
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
+import { FileDiffFields } from '../../graphql-operations'
+import { dirname } from '../../util/path'
+
+import { DiffStat } from './DiffStat'
 import { ExtensionInfo } from './FileDiffConnection'
+import { FileDiffHunks } from './FileDiffHunks'
 
 export interface FileDiffNodeProps extends ThemeProps {
     node: FileDiffFields

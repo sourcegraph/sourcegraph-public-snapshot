@@ -1,19 +1,22 @@
+import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
 import React, { useEffect, useMemo, useCallback, useState } from 'react'
 import { Redirect } from 'react-router'
 import { Subject } from 'rxjs'
 import { tap } from 'rxjs/operators'
+
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { AuthenticatedUser } from '../../auth'
+import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../FilteredConnection'
 import { PageTitle } from '../PageTitle'
-import * as H from 'history'
+
 import { queryExternalServices as _queryExternalServices } from './backend'
 import { ExternalServiceNodeProps, ExternalServiceNode } from './ExternalServiceNode'
-import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { AuthenticatedUser } from '../../auth'
-import { isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 interface Props extends ActivationProps, TelemetryProps {
     history: H.History

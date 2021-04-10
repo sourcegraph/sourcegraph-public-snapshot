@@ -1,14 +1,15 @@
-import React, { ReactElement, useCallback, useMemo } from 'react'
-import classnames from 'classnames'
-import { range } from 'lodash'
-import { scaleBand, scaleLinear } from '@visx/scale'
 import { AxisBottom, AxisLeft } from '@visx/axis'
 import { localPoint } from '@visx/event'
-import { Group } from '@visx/group'
-import { Bar } from '@visx/shape'
 import { GridRows } from '@visx/grid'
+import { Group } from '@visx/group'
+import { scaleBand, scaleLinear } from '@visx/scale'
+import { Bar } from '@visx/shape'
 import { useTooltip, TooltipWithBounds } from '@visx/tooltip'
+import classnames from 'classnames'
+import { range } from 'lodash'
+import React, { ReactElement, useCallback, useMemo } from 'react'
 import { BarChartContent } from 'sourcegraph'
+
 import { onDatumClick } from '../types'
 
 const DEFAULT_PADDING = { top: 20, right: 20, bottom: 25, left: 40 }

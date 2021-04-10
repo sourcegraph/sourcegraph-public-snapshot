@@ -1,6 +1,8 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
+
 import { WebStory } from '../components/WebStory'
+
 import { OrDivider } from './OrDivider'
 
 const { add } = storiesOf('web/OrDivider', module).addDecorator(story => (

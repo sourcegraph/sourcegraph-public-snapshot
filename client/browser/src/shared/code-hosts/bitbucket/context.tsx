@@ -1,4 +1,5 @@
 import { RawRepoSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+
 import { CodeHostContext } from '../shared/codeHost'
 
 // example pathname: /projects/TEST/repos/some-repo/browse/src/extension.ts

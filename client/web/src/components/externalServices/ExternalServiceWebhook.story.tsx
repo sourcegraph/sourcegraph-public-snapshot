@@ -1,8 +1,10 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { ExternalServiceWebhook } from './ExternalServiceWebhook'
+
 import { ExternalServiceKind } from '../../graphql-operations'
 import { WebStory } from '../WebStory'
+
+import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
 const { add } = storiesOf('web/External services/ExternalServiceWebhook', module).addDecorator(story => (
     <WebStory>{() => <div className="p-3 container">{story()}</div>}</WebStory>

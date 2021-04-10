@@ -1,5 +1,6 @@
 import format from 'date-fns/format'
 import React from 'react'
+
 import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../productSubscription/helpers'
 
 /** Displays an expiration date (for product subscriptions or licenses). */

@@ -1,6 +1,7 @@
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 import renderer from 'react-test-renderer'
+
 import { PersonLink } from './PersonLink'
 
 describe('PersonLink', () => {

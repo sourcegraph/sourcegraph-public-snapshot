@@ -1,9 +1,10 @@
+import { mount } from 'enzyme'
 import * as H from 'history'
 import React from 'react'
-import { mount } from 'enzyme'
-import { ActivationDropdown } from './ActivationDropdown'
 import sinon from 'sinon'
+
 import { Activation } from './Activation'
+import { ActivationDropdown } from './ActivationDropdown'
 
 const baseActivation: Activation = {
     steps: [

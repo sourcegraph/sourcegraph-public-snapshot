@@ -1,13 +1,14 @@
-import { from, Observable, Subscription, Unsubscribable } from 'rxjs'
-import { InitData } from '../api/extension/extensionHost'
-import { PlatformContext } from '../platform/context'
-import { createExtensionHostClientConnection } from '../api/client/connection'
 import { Remote } from 'comlink'
-import { FlatExtensionHostAPI } from '../api/contract'
-import { PlainNotification } from '../api/extension/extensionHostApi'
-import { CommandEntry, ExecuteCommandParameters } from '../api/client/mainthread-api'
+import { from, Observable, Subscription, Unsubscribable } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
+
+import { createExtensionHostClientConnection } from '../api/client/connection'
+import { CommandEntry, ExecuteCommandParameters } from '../api/client/mainthread-api'
+import { FlatExtensionHostAPI } from '../api/contract'
+import { InitData } from '../api/extension/extensionHost'
+import { PlainNotification } from '../api/extension/extensionHostApi'
 import { syncPromiseSubscription } from '../api/util'
+import { PlatformContext } from '../platform/context'
 
 export interface Controller extends Unsubscribable {
     /**

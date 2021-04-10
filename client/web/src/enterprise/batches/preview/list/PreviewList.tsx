@@ -1,15 +1,18 @@
-import React, { useCallback, useState } from 'react'
 import * as H from 'history'
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import React, { useCallback, useState } from 'react'
+
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
+import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
+
 import { queryChangesetApplyPreview as _queryChangesetApplyPreview, queryChangesetSpecFileDiffs } from './backend'
 import { ChangesetApplyPreviewNode, ChangesetApplyPreviewNodeProps } from './ChangesetApplyPreviewNode'
-import { PreviewListHeader } from './PreviewListHeader'
 import { EmptyPreviewListElement } from './EmptyPreviewListElement'
 import { PreviewFilterRow, PreviewFilters } from './PreviewFilterRow'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
+import { PreviewListHeader } from './PreviewListHeader'
 
 interface Props extends ThemeProps {
     batchSpecID: Scalars['ID']

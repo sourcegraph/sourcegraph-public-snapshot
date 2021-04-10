@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useRedesignToggle, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 

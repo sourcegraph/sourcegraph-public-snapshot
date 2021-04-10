@@ -1,6 +1,8 @@
-import * as React from 'react'
 import * as H from 'history'
+import * as React from 'react'
+
 import { Progress, StreamingResultsState } from '../../../stream'
+
 import { StreamingProgressCount } from './StreamingProgressCount'
 import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton'
 

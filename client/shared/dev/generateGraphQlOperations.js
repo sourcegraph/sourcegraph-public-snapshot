@@ -1,7 +1,8 @@
 // @ts-check
 
-const { generate } = require('@graphql-codegen/cli')
 const path = require('path')
+
+const { generate } = require('@graphql-codegen/cli')
 
 const ROOT_FOLDER = path.resolve(__dirname, '../../../')
 

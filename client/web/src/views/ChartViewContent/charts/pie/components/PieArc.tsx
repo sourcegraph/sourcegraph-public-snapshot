@@ -1,9 +1,10 @@
-import React, { MouseEvent, PointerEventHandler, ReactElement, useCallback } from 'react'
-import { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
-import { Arc as ArcType } from 'd3-shape'
-import classnames from 'classnames'
-import { Group } from '@visx/group'
 import { Annotation, Connector } from '@visx/annotation'
+import { Group } from '@visx/group'
+import { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
+import classnames from 'classnames'
+import { Arc as ArcType } from 'd3-shape'
+import React, { MouseEvent, PointerEventHandler, ReactElement, useCallback } from 'react'
+
 import { Label } from '../../../annotation/Label'
 import { onDatumClick } from '../../types'
 

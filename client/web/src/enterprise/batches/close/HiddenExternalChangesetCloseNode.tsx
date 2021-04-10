@@ -1,9 +1,11 @@
 import React from 'react'
-import { ChangesetCloseActionKept } from './ChangesetCloseAction'
+
 import {
     HiddenExternalChangesetInfoCellProps,
     HiddenExternalChangesetInfoCell,
 } from '../detail/changesets/HiddenExternalChangesetInfoCell'
+
+import { ChangesetCloseActionKept } from './ChangesetCloseAction'
 
 export interface HiddenExternalChangesetCloseNodeProps {
     node: HiddenExternalChangesetInfoCellProps['node']

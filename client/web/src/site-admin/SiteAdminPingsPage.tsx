@@ -1,15 +1,17 @@
+import { isEmpty, noop } from 'lodash'
+import * as Monaco from 'monaco-editor'
 import React, { useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router-dom'
-import { PageTitle } from '../components/PageTitle'
-import { eventLogger } from '../tracking/eventLogger'
-import { isEmpty, noop } from 'lodash'
+import { fromFetch } from 'rxjs/fetch'
+
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import * as Monaco from 'monaco-editor'
-import { MonacoEditor } from '../components/MonacoEditor'
+import { checkOk } from '@sourcegraph/shared/src/backend/fetch'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { fromFetch } from 'rxjs/fetch'
-import { checkOk } from '@sourcegraph/shared/src/backend/fetch'
+
+import { MonacoEditor } from '../components/MonacoEditor'
+import { PageTitle } from '../components/PageTitle'
+import { eventLogger } from '../tracking/eventLogger'
 
 interface Props extends RouteComponentProps, ThemeProps {}
 

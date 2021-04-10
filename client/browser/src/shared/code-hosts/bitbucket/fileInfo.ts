@@ -1,6 +1,8 @@
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
+
 import { DiffInfo, BlobInfo } from '../shared/codeHost'
+
 import { getBaseCommit, getCommitsForPR } from './api'
 import {
     getCommitInfoFromComparePage,

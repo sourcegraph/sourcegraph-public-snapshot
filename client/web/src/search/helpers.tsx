@@ -1,12 +1,16 @@
 import * as H from 'history'
+
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { eventLogger } from '../tracking/eventLogger'
-import { SearchType } from './results/SearchResults'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '.'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+
+import { eventLogger } from '../tracking/eventLogger'
+
+import { SearchType } from './results/SearchResults'
+
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '.'
 
 export interface SubmitSearchParameters
     extends Partial<Pick<ActivationProps, 'activation'>>,

@@ -1,7 +1,9 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
+
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
 import { CodeIntelIndexConfigurationPage } from './CodeIntelIndexConfigurationPage'
 
 const { add } = storiesOf('web/codeintel/configuration/CodeIntelIndexConfigurationPage', module)

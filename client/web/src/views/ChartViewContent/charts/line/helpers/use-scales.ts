@@ -1,11 +1,13 @@
-import { useMemo } from 'react'
-import { DefaultOutput, ScaleConfig, scaleLinear, scaleTime } from '@visx/scale'
-import { Accessors } from '../types'
-import { getRangeWithPadding } from './get-range-with-padding'
-import { getMinAndMax } from './get-min-max'
 import { AxisScaleOutput } from '@visx/axis'
+import { DefaultOutput, ScaleConfig, scaleLinear, scaleTime } from '@visx/scale'
 import { PickScaleConfigWithoutType } from '@visx/scale/lib/types/ScaleConfig'
 import { ScaleLinear, ScaleTime } from 'd3-scale'
+import { useMemo } from 'react'
+
+import { Accessors } from '../types'
+
+import { getMinAndMax } from './get-min-max'
+import { getRangeWithPadding } from './get-range-with-padding'
 
 interface UseScalesProps<Datum> {
     /**

@@ -1,5 +1,6 @@
-import { isComplete, isInvalidForVersion } from './SiteAdminMigrationsPage'
 import { OutOfBandMigrationFields } from '../graphql-operations'
+
+import { isComplete, isInvalidForVersion } from './SiteAdminMigrationsPage'
 
 describe('isComplete', () => {
     it('should interpret ->0% as incomplete', () => {

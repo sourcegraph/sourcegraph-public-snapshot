@@ -1,6 +1,8 @@
-import { testCodeHostMountGetters as testMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
-import { getToolbarMount, gitlabCodeHost } from './codeHost'
 import { readFile } from 'mz/fs'
+
+import { testCodeHostMountGetters as testMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
+
+import { getToolbarMount, gitlabCodeHost } from './codeHost'
 
 describe('gitlab/codeHost', () => {
     describe('gitlabCodeHost', () => {

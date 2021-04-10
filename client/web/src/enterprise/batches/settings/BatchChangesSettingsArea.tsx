@@ -1,7 +1,9 @@
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
+
 import { PageTitle } from '../../../components/PageTitle'
 import { UserAreaUserFields } from '../../../graphql-operations'
+
 import { queryUserBatchChangesCodeHosts } from './backend'
 import { CodeHostConnections } from './CodeHostConnections'
 

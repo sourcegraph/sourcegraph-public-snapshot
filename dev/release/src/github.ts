@@ -1,12 +1,14 @@
-import Octokit from '@octokit/rest'
-import { readLine, formatDate, timezoneLink, cacheFolder } from './util'
-import { promisify } from 'util'
-import * as semver from 'semver'
 import { mkdtemp as original_mkdtemp } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
-import execa from 'execa'
+import { promisify } from 'util'
+
+import Octokit from '@octokit/rest'
 import commandExists from 'command-exists'
+import execa from 'execa'
+import * as semver from 'semver'
+
+import { readLine, formatDate, timezoneLink, cacheFolder } from './util'
 const mkdtemp = promisify(original_mkdtemp)
 
 export async function getAuthenticatedGitHubClient(): Promise<Octokit> {

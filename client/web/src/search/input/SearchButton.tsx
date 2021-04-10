@@ -1,5 +1,6 @@
 import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
+
 import { SearchHelpDropdownButton } from './SearchHelpDropdownButton'
 
 interface Props {

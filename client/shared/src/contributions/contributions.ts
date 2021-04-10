@@ -1,4 +1,5 @@
 import { sortBy } from 'lodash'
+
 import { ActionItemAction } from '../actions/ActionItem'
 import { ContributableMenu, Contributions, Evaluated } from '../api/protocol'
 

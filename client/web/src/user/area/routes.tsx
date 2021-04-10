@@ -1,7 +1,9 @@
 import React from 'react'
 import { Redirect } from 'react-router'
+
 import { namespaceAreaRoutes } from '../../namespaces/routes'
 import { lazyComponent } from '../../util/lazyComponent'
+
 import { UserAreaRoute } from './UserArea'
 
 const UserSettingsArea = lazyComponent(() => import('../settings/UserSettingsArea'), 'UserSettingsArea')

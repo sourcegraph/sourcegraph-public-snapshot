@@ -1,15 +1,18 @@
 import classNames from 'classnames'
 import FileCodeIcon from 'mdi-react/FileCodeIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { AuthenticatedUser } from '../../auth'
-import { EventLogResult } from '../backend'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { LoadingPanelView } from './LoadingPanelView'
 import { Observable } from 'rxjs'
-import { PanelContainer } from './PanelContainer'
-import { ShowMoreButton } from './ShowMoreButton'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { AuthenticatedUser } from '../../auth'
+import { EventLogResult } from '../backend'
+
+import { LoadingPanelView } from './LoadingPanelView'
+import { PanelContainer } from './PanelContainer'
+import { ShowMoreButton } from './ShowMoreButton'
 
 interface Props extends TelemetryProps {
     className?: string

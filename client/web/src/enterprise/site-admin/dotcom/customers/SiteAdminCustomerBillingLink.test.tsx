@@ -1,5 +1,6 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
+
 import { SiteAdminCustomerBillingLink } from './SiteAdminCustomerBillingLink'
 
 jest.mock('mdi-react/ExternalLinkIcon', () => 'ExternalLinkIcon')

@@ -1,6 +1,6 @@
-import React, { ReactElement } from 'react'
-import { GlyphProps } from '@visx/xychart'
 import { GlyphDot as Glyph } from '@visx/glyph'
+import { GlyphProps } from '@visx/xychart'
+import React, { ReactElement } from 'react'
 
 /**
  * Displays glyph (point) on the chart with our own className so that we can style glyphs by css.
