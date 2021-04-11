@@ -37,6 +37,12 @@ const config = {
         './redesign-toggle-toolbar/register.ts',
     ],
 
+    features: {
+        // Explicitly disable the deprecated, not used postCSS support,
+        // so no warning is rendered on each start of storybook.
+        postcss: false,
+    },
+
     typescript: {
         check: false,
         reactDocgen: false,
@@ -63,22 +69,23 @@ const config = {
         )
 
         if (shouldMinify) {
-            config.optimization = {
-                namedModules: false,
-                minimize: true,
-                minimizer: [
-                    new TerserPlugin({
-                        terserOptions: {
-                            sourceMap: true,
-                            compress: {
-                                // Don't inline functions, which causes name collisions with uglify-es:
-                                // https://github.com/mishoo/UglifyJS2/issues/2842
-                                inline: 1,
-                            },
-                        },
-                    }),
-                ],
+            if (!config.optimization) {
+                throw new Error('The structure of the config changed, expected config.optimization to be not-null')
             }
+            config.optimization.namedModules = false
+            config.optimization.minimize = true
+            config.optimization.minimizer = [
+                new TerserPlugin({
+                    terserOptions: {
+                        sourceMap: true,
+                        compress: {
+                            // Don't inline functions, which causes name collisions with uglify-es:
+                            // https://github.com/mishoo/UglifyJS2/issues/2842
+                            inline: 1,
+                        },
+                    },
+                }),
+            ]
         }
 
         if (process.env.CI) {
