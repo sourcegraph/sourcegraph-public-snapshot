@@ -486,11 +486,12 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 		// Stub out serveError to newCommon so that it is not reentrant.
 		commonServeErr = err
 	})
-	common.Error = pageErrorContext
 	if commonErr == nil && commonServeErr == nil {
 		if common == nil {
 			return // request handled by newCommon
 		}
+
+		common.Error = pageErrorContext
 		fancyErr := renderTemplate(w, "app.html", &struct {
 			*Common
 		}{
