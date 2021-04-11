@@ -1,6 +1,6 @@
+import * as H from 'history'
 import React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
-import * as H from 'history'
 
 interface MaybeLinkProps<S = H.LocationState> extends Omit<LinkProps<S>, 'to'> {
     to?: H.LocationDescriptor<S> | ((location: H.Location<S>) => H.LocationDescriptor<S>)

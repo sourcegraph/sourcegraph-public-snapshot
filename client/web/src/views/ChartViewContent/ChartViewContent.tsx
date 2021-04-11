@@ -8,8 +8,8 @@ import { createProgrammaticLinkHandler } from '@sourcegraph/shared/src/util/link
 
 import { BarChart } from './charts/bar/BarChart'
 import { LineChart } from './charts/line/LineChart'
-import { PieChart } from './charts/pie/PieChart'
 import { DatumZoneClickEvent } from './charts/line/types'
+import { PieChart } from './charts/pie/PieChart'
 
 /**
  * Displays chart view content.

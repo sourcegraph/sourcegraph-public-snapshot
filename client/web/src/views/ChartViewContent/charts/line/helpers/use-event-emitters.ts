@@ -1,5 +1,5 @@
-import { FocusEventHandler, MouseEventHandler, useCallback } from 'react'
 import { useEventEmitter } from '@visx/xychart'
+import { FocusEventHandler, MouseEventHandler, useCallback } from 'react'
 
 interface PointerEventEmitterParameters {
     /** Source of the events, e.g., the component name. */
@@ -41,13 +41,7 @@ export function usePointerEventEmitters({
         emit,
         source,
     ])
-    const emitPointerUp = useCallback(
-        (event: React.PointerEvent) => {
-            console.log('pointup')
-            return emit?.('pointerup', event, source)
-        },
-        [emit, source]
-    )
+    const emitPointerUp = useCallback((event: React.PointerEvent) => emit?.('pointerup', event, source), [emit, source])
     const emitFocus = useCallback((event: React.FocusEvent) => emit?.('focus', event, source), [emit, source])
     const emitBlur = useCallback((event: React.FocusEvent) => emit?.('blur', event, source), [emit, source])
 

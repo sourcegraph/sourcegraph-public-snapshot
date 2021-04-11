@@ -1,8 +1,8 @@
 import { storiesOf } from '@storybook/react'
 import isChromatic from 'chromatic/isChromatic'
-import { BrowserRouter } from 'react-router-dom'
 import { createMemoryHistory } from 'history'
 import React from 'react'
+import { BrowserRouter } from 'react-router-dom'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 

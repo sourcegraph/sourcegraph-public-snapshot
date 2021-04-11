@@ -3,24 +3,25 @@ import { GlyphDot as Glyph } from '@visx/glyph'
 import { GridRows } from '@visx/grid'
 import { GridScale } from '@visx/grid/lib/types'
 import { Group } from '@visx/group'
-import { Axis, GlyphSeries, LineSeries, Tooltip, XYChart } from '@visx/xychart'
+import { Axis, DataProvider, GlyphSeries, LineSeries, Tooltip, TooltipProvider, XYChart } from '@visx/xychart'
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
+import { XYCHART_EVENT_SOURCE } from '@visx/xychart/lib/constants'
 import isValidNumber from '@visx/xychart/lib/typeguards/isValidNumber'
 import { EventHandlerParams } from '@visx/xychart/lib/types'
 import classnames from 'classnames'
 import { format } from 'd3-format'
 import { timeFormat } from 'd3-time-format'
-import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useEffect } from 'react'
+import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useRef } from 'react'
+import { noop } from 'rxjs'
 import { LineChartContent as LineChartContentType } from 'sourcegraph'
-import { useThrottledCallback } from 'use-debounce'
+
+import { MaybeLink } from '../../MaybeLink'
 import { DEFAULT_LINE_STROKE } from '../colors'
 import { generateAccessors } from '../helpers/generate-accessors'
-import { useScales } from '../helpers/use-scales'
 import { usePointerEventEmitters } from '../helpers/use-event-emitters'
-import { MaybeLink } from '../../MaybeLink'
+import { useScales } from '../helpers/use-scales'
 import { onDatumZoneClick } from '../types'
 
-import { GlyphDot } from './GlyphDot'
 import { TooltipContent } from './TooltipContent'
 
 // Chart configuration
@@ -129,7 +130,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
 
     const handlePointerMove = useCallback(
         (event: EventHandlerParams<Datum>) => {
-            // If active point has't been change we should't call setActiveDatum again
+            // If active point hasn't been change we shouldn't call setActiveDatum again
             if (activeDatum?.index === event.index && activeDatum?.key === event.key) {
                 return
             }
@@ -286,6 +287,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                         ))}
 
                         <Group pointerEvents="bounding-box" {...eventEmitters}>
+                            {/* Spread size of parent group element by transparent rect with width and height */}
                             <rect
                                 x={MARGIN.left}
                                 y={MARGIN.top}
@@ -305,26 +307,28 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                     // Don't have info about line in props. @visx/xychart doesn't expose this information
                                     // Move this arrow function in separate component when API of GlyphSeries will be fixed.
                                     /* eslint-disable-next-line react/jsx-no-bind */
-                                    renderGlyph={props => (
-                                        <MaybeLink
-                                            onPointerUp={stopPropagation}
-                                            onClick={onDatumLinkClick}
-                                            to={line.linkURLs?.[+props.key]}
-                                        >
-                                            <Glyph
-                                                className="line-chart__glyph"
-                                                cx={props.x}
-                                                cy={props.y}
-                                                fill={getLineStroke(line)}
-                                                r={
-                                                    activeDatum?.index === +props.key &&
-                                                    activeDatum.key === line.dataKey
-                                                        ? 8
-                                                        : 6
-                                                }
-                                            />
-                                        </MaybeLink>
-                                    )}
+                                    renderGlyph={props => {
+                                        const hovered =
+                                            activeDatum?.index === +props.key && activeDatum.key === line.dataKey
+
+                                        return (
+                                            <MaybeLink
+                                                onPointerUp={stopPropagation}
+                                                onClick={onDatumLinkClick}
+                                                to={line.linkURLs?.[+props.key]}
+                                            >
+                                                <Glyph
+                                                    className={classnames('line-chart__glyph', {
+                                                        'line-chart__glyph--active': hovered,
+                                                    })}
+                                                    cx={props.x}
+                                                    cy={props.y}
+                                                    stroke={getLineStroke(line)}
+                                                    r={hovered ? 6 : 4}
+                                                />
+                                            </MaybeLink>
+                                        )
+                                    }}
                                 />
                             ))}
                         </Group>
