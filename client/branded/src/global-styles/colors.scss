@@ -30,6 +30,24 @@ $gray-22: #151c28;
 $gray-23: #0e121b;
 $black: #07090d;
 
+// Redesign colors
+$redesign-gray-01: #f9fafb;
+$redesign-gray-02: #f0f1f2;
+$redesign-gray-03: #e6ebf2;
+$redesign-gray-04: #dbe2f0;
+$redesign-gray-05: #a6b6d9;
+$redesign-gray-06: #778299;
+$redesign-gray-07: #5e6e8c;
+$redesign-gray-08: #343a4d;
+$redesign-gray-09: #262b38;
+$redesign-gray-10: #1d212f;
+$redesign-gray-11: #181b26;
+$redesign-gray-12: #14171f;
+$redesign-black: #0f111a;
+$redesign-logo-orange: #f96216;
+$redesign-logo-blue: #00b4f2;
+$redesign-logo-purple: #a305e1;
+
 // Tell Bootstrap to use colors from OpenColor
 $blue: $oc-blue-7;
 $indigo: $oc-indigo-7;
@@ -154,14 +172,109 @@ $text-muted: var(--text-muted);
     --disabled-action-bg-color: #{$oc-gray-8};
     --disabled-action-text-color: #{$oc-gray-9};
 }
-.theme-light.theme-redesign,
+
+:root.theme-redesign,
 // Descendant selector is required for Storybook `addRedesignVariants` helper.
-.theme-light .theme-redesign {
-    --link-color: #0bdbd1;
-    --web-content-link-color: #0bdbd1;
+:root .theme-redesign {
+    --primary: #0b70db;
+    --primary-hover: #0864c6;
+    --secondary: #a305e1;
+    --secondary-2: #d68cf3;
+    --success: #{$oc-green-7};
+    --success-2: #afe0b8;
+    --info: #72dbe8;
+    --warning: #{$oc-yellow-7};
+    --warning-2: #fbd999;
+    --danger: #{$oc-red-9};
+    --danger-2: #e9aaaa;
+    --merged: #{$oc-violet-7};
+    --merged-2: #c6b6f6;
+    --merged-3: #6b47d6;
+    --line-number-color: #{$redesign-gray-06};
+    --header-icon-color: #{$redesign-gray-05};
+    --reversed-text: #{$white};
 }
+
+.theme-light.theme-redesign,
+.theme-light .theme-redesign {
+    --primary-2: #a3d0ff;
+    --success-3: #319e44;
+    --info-2: #a8dbe2;
+    --info-3: #0bb3ca;
+    --warning-3: #e09200;
+
+    --danger-3: #b52626;
+    --body-color: #{$redesign-gray-08};
+    --body-bg: #{$redesign-gray-01};
+    --color-bg-1: #{$white};
+    --color-bg-2: #{$redesign-gray-03};
+    --color-bg-3: #{$redesign-gray-04};
+
+    // TODO: Check gradient and color
+    --mark-bg: rgba(255, 218, 30, 0.5);
+
+    --text-muted: #{$redesign-gray-07};
+
+    --link-color: var(--primary);
+    --link-active-color: #0c7bf0;
+    --link-hover-color: #0c7bf0;
+    --border-color: #{$redesign-gray-03};
+    --border-color-2: #{$redesign-gray-04};
+    --border-active-color: var(--primary);
+    --search-query-text-color: #{$redesign-gray-12};
+    --search-filter-keyword-color: var(--primary);
+    --search-keyword-color: var(--secondary);
+    --infobar-warning-color: #{$oc-red-8};
+
+    // TODO: Remove from use
+    --link-hover-bg-color: var(--color-bg-2);
+    --link-hover-bg-color-2: var(--color-bg-3);
+    --disabled-action-bg-color: var(--color-bg-3);
+    --disabled-action-text-color: var(--text-muted);
+
+    --icon-color: #{$redesign-gray-06};
+    --code-bg: #{$white};
+    --intel-bg: #{$white};
+}
+
 .theme-dark.theme-redesign,
 .theme-dark .theme-redesign {
-    --link-color: #edb1ff;
-    --web-content-link-color: #edb1ff;
+    --primary-2: #0f59aa;
+    --success-3: #237332;
+    --info-2: #99cdd6;
+    --info-3: #005766;
+    --warning-3: #9c6500;
+
+    --danger-3: #801b1b;
+    --body-color: #{$redesign-gray-04};
+    --body-bg: #{$redesign-gray-12};
+    --color-bg-1: #{$redesign-gray-11};
+    --color-bg-2: #{$redesign-gray-10};
+    --color-bg-3: #{$redesign-gray-08};
+
+    // TODO: Check gradient and color
+    --mark-bg: rgba(16, 104, 2, 0.5);
+
+    --text-muted: #{$redesign-gray-05};
+
+    --link-color: #4393e7;
+    --link-active-color: #489ffa;
+    --link-hover-color: #489ffa;
+    --border-color: #{$redesign-gray-09};
+    --border-color-2: #{$redesign-gray-08};
+    --border-active-color: #4393e7;
+    --search-query-text-color: #{$redesign-gray-04};
+    --search-filter-keyword-color: #4393e7;
+    --search-keyword-color: var(--secondary-2);
+    --infobar-warning-color: #f05151;
+
+    // TODO: Remove from use
+    --link-hover-bg-color: var(--color-bg-2);
+    --link-hover-bg-color-2: var(--color-bg-3);
+    --disabled-action-bg-color: var(--color-bg-3);
+    --disabled-action-text-color: var(--text-muted);
+
+    --icon-color: #{$redesign-gray-05};
+    --code-bg: #{$redesign-gray-10};
+    --intel-bg: #{$redesign-gray-12};
 }
