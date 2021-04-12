@@ -383,3 +383,19 @@ func GitMaxCodehostRequestsPerSecond() int {
 	}
 	return *val
 }
+
+func UserReposMaxPerUser() int {
+	v := Get().UserReposMaxPerUser
+	if v == 0 {
+		return 2000
+	}
+	return v
+}
+
+func UserReposMaxPerSite() int {
+	v := Get().UserReposMaxPerSite
+	if v == 0 {
+		return 200000
+	}
+	return v
+}

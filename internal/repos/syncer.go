@@ -174,7 +174,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		// If we are over our limit for user added repos we abort the sync
 		totalAllowed := uint64(s.UserReposMaxPerSite)
 		if totalAllowed == 0 {
-			totalAllowed = uint64(ConfUserReposMaxPerSite())
+			totalAllowed = uint64(conf.UserReposMaxPerSite())
 		}
 		userAdded, err := tx.CountUserAddedRepos(ctx)
 		if err != nil {
@@ -189,7 +189,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		var sourcedRepoCount int64
 		maxAllowed := s.UserReposMaxPerUser
 		if maxAllowed == 0 {
-			maxAllowed = ConfUserReposMaxPerUser()
+			maxAllowed = conf.UserReposMaxPerUser()
 		}
 		onSourced = func(r *types.Repo) error {
 			newCount := atomic.AddInt64(&sourcedRepoCount, 1)
