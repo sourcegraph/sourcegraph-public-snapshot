@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import * as H from 'history'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { RouteComponentProps, Prompt } from 'react-router'
+import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../../../components/PageTitle'
 import { CheckboxRepositoryNode } from './RepositoryNode'
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -26,6 +26,7 @@ import { queryUserPublicRepositories, setUserPublicRepositories } from '../../..
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { PageSelector } from '@sourcegraph/wildcard'
+import { showAwayModal } from './showAwayModal'
 
 interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
     userID: string
@@ -83,12 +84,6 @@ const initialSelectionState = {
 
 type initialFetchingReposState = undefined | 'loading' | 'slow' | 'slower'
 type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
-
-const promptPayload = JSON.stringify({
-    header: 'Discard unsaved changes?',
-    message: 'Currently synced repositories will be unchanged',
-    button_ok_text: 'Discard',
-})
 
 const isLoading = (status: initialFetchingReposState): boolean => {
     if (!status) {
@@ -374,29 +369,44 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         setPage(1)
     }, [repoState.repos, codeHostFilter, query])
 
-    const displayPromptIfReposChanged = useCallback(
-        (location: H.Location): string | boolean => {
-            // skip Prompt for programmatic navigation
+    const didRepoSelectionChange = useCallback((): boolean => {
+        const publicRepos = publicRepoState.enabled && publicRepoState.repos ? publicRepoState.repos.split('\n') : []
+        const affiliatedRepos = selectionState.repos.keys()
+
+        const currentlySelectedRepos = [...publicRepos, ...affiliatedRepos]
+
+        return !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
+    }, [onloadSelectedRepos, publicRepoState.enabled, publicRepoState.repos, selectionState.repos])
+
+    useEffect(() => {
+        const unblock = history.block((location: H.Location) => {
             if (location.state === ALLOW_NAVIGATION) {
-                return true
+                return unblock()
             }
 
-            const publicRepos =
-                publicRepoState.enabled && publicRepoState.repos ? publicRepoState.repos.split('\n') : []
-            const affiliatedRepos = selectionState.repos.keys()
+            if (didRepoSelectionChange()) {
+                showAwayModal({
+                    labels: {
+                        header: 'Discard unsaved changes?',
+                        message: 'Currently synced repositories will be unchanged',
+                        button_ok_text: 'Discard',
+                    },
+                    unblockNavigation: unblock,
+                    history,
+                    location,
+                })
 
-            const currentlySelectedRepos = [...publicRepos, ...affiliatedRepos]
-
-            const didRepoSelectionChange = !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
-
-            if (didRepoSelectionChange) {
-                return promptPayload
+                // prevent navigation - we're delegating to the AwayModal
+                return false
             }
 
-            return true
-        },
-        [onloadSelectedRepos, publicRepoState.repos, publicRepoState.enabled, selectionState.repos]
-    )
+            return unblock()
+        })
+
+        return () => {
+            unblock()
+        }
+    }, [didRepoSelectionChange, history])
 
     // save changes and update code hosts
     const submit = useCallback(
@@ -821,7 +831,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 )}
             </ul>
             {isErrorLike(otherPublicRepoError) && displayError(otherPublicRepoError)}
-            <Prompt message={displayPromptIfReposChanged} />
             <Form className="mt-4 d-flex" onSubmit={submit}>
                 <LoaderButton
                     loading={isLoading(fetchingRepos)}

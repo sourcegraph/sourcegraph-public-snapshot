@@ -1,27 +1,43 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import Dialog from '@reach/dialog'
+import * as H from 'history'
 
-type Callback = (state: boolean) => void
-interface MessageObject {
+type Unblock = () => void
+
+interface Labels {
     message: string
     header?: string
     button_ok_text?: string
     button_cancel_text?: string
 }
 
-export const UserConfirmationModal = (messagePayload: string, callback: Callback): void => {
-    const { message, header = 'Navigate away?', button_ok_text = 'OK', button_cancel_text = 'Cancel' } = JSON.parse(
-        messagePayload
-    ) as MessageObject
+interface AwayModalArguments {
+    labels: Labels
+    unblockNavigation: Unblock
+    history: H.History
+    location: H.Location
+}
+
+export const showAwayModal = (modalArguments: AwayModalArguments): void => {
+    const {
+        labels: { message, header = 'Navigate away?', button_ok_text = 'OK', button_cancel_text = 'Cancel' },
+        unblockNavigation,
+        history,
+        location,
+    } = modalArguments
 
     const container = document.createElement('div')
     document.body.append(container)
 
-    const closeUserConfirmationModal = (callbackState: boolean): void => {
+    const closeUserConfirmationModal = (shouldNavigate: boolean): void => {
         ReactDOM.unmountComponentAtNode(container)
         container.remove()
-        callback(callbackState)
+
+        if (shouldNavigate) {
+            unblockNavigation()
+            history.push(location)
+        }
     }
 
     ReactDOM.render(
