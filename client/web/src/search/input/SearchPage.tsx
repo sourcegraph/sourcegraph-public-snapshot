@@ -30,7 +30,7 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
-import { InsightsApiContext } from '../../insights';
+import { InsightsApiContext } from '../../insights'
 import { InsightsViewGrid } from '../../insights/components'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { repogroupList, homepageLanguageList } from '../../repogroups/HomepageConfig'

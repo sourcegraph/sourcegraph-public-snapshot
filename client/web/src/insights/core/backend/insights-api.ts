@@ -16,7 +16,8 @@ export class InsightsAPI implements ApiService {
     /** Get combined (backend and extensions) code insights */
     public getCombinedViews = (
         getExtensionsInsights: () => Observable<ViewProviderResult[]>
-    ): Observable<ViewInsightProviderResult[]> => combineLatest([
+    ): Observable<ViewInsightProviderResult[]> =>
+        combineLatest([
             getExtensionsInsights().pipe(
                 map(extensionInsights =>
                     extensionInsights.map(insight => ({ ...insight, source: ViewInsightProviderSourceType.Extension }))
@@ -48,7 +49,10 @@ export class InsightsAPI implements ApiService {
             ),
         ]).pipe(map(([extensionViews, backendInsights]) => [...backendInsights, ...extensionViews]))
 
-    public getInsightCombinedViews = (extensionApi: Promise<Remote<FlatExtensionHostAPI>>) => this.getCombinedViews(() =>
+    public getInsightCombinedViews = (
+        extensionApi: Promise<Remote<FlatExtensionHostAPI>>
+    ): Observable<ViewInsightProviderResult[]> =>
+        this.getCombinedViews(() =>
             from(extensionApi).pipe(
                 switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightsViews({})))
             )
