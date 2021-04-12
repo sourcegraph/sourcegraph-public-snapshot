@@ -6,6 +6,7 @@ import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
 import { SubmitSearchParameters } from '../helpers'
@@ -21,6 +22,8 @@ export interface SearchContextDropdownProps
     query: string
     history: H.History
 }
+
+export const HAS_SEEN_HIGHLIGHT_BUBBLE_KEY = 'has-seen-search-contexts-dropdown-highlight-bubble'
 
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
     const {
@@ -69,6 +72,9 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         [submitOnToggle, setSelectedSearchContextSpec]
     )
 
+    const [hasSeenHighlightBubble, setHasSeenHighlightBubble] = useLocalStorage(HAS_SEEN_HIGHLIGHT_BUBBLE_KEY, false)
+    const onCloseHighlightBubble = useCallback(() => setHasSeenHighlightBubble(true), [setHasSeenHighlightBubble])
+
     return (
         <>
             <Dropdown
@@ -111,6 +117,23 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     />
                 </DropdownMenu>
             </Dropdown>
+            {!hasSeenHighlightBubble && (
+                <div className="search-context-dropdown__highlight-bubble">
+                    <div>
+                        <strong>New: Search contexts</strong>
+                    </div>
+                    <div className="mt-2 mb-2">Search just the code you care about with search contexts.</div>
+                    <div>
+                        {/* TODO */}
+                        <a href="https://docs.sourcegraph.com/">Learn more</a>
+                    </div>
+                    <div className="d-flex justify-content-end">
+                        <button type="button" className="btn btn-sm" onClick={onCloseHighlightBubble}>
+                            Close
+                        </button>
+                    </div>
+                </div>
+            )}
             <div className="search-context-dropdown__separator" />
         </>
     )
