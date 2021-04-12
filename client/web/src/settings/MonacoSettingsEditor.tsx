@@ -266,7 +266,7 @@ function setDiagnosticsOptions(editor: typeof monaco, jsonSchema: any): void {
         allowComments: true,
         schemas: [
             {
-                uri: 'root#', // doesn't matter as long as it doesn't collide
+                uri: 'file:///root',
                 schema: jsonSchema,
                 fileMatch: ['*'],
             },
