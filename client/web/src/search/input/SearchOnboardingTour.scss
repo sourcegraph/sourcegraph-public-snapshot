@@ -15,6 +15,8 @@
 
 .shepherd-element {
     background: var(--color-bg-3);
+    isolation: isolate;
+    z-index: 1001; // Bootstrap's dropdowns are 1000, needs to be higher.
 }
 
 .shepherd-arrow::after {
