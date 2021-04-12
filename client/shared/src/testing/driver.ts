@@ -123,18 +123,30 @@ export const percySnapshot = async (page: Page, name: string, config?: SnapshotC
     await realPercySnapshot(page, `${name} - light theme`)
 
     // Theme-light with redesign
-    await page.evaluate(() => document.documentElement.classList.add(REDESIGN_CLASS_NAME))
+    await page.evaluate(
+        redesignClassName => document.documentElement.classList.add(redesignClassName),
+        REDESIGN_CLASS_NAME
+    )
     await realPercySnapshot(page, `${name} - light theme with redesign enabled`)
-    await page.evaluate(() => document.documentElement.classList.remove(REDESIGN_CLASS_NAME))
+    await page.evaluate(
+        redesignClassName => document.documentElement.classList.remove(redesignClassName),
+        REDESIGN_CLASS_NAME
+    )
 
     // Theme-dark
     await setColorScheme(page, 'dark', config)
     await realPercySnapshot(page, `${name} - Dark Theme`)
 
     // Theme-dark with redesign
-    await page.evaluate(() => document.documentElement.classList.add(REDESIGN_CLASS_NAME))
+    await page.evaluate(
+        redesignClassName => document.documentElement.classList.add(redesignClassName),
+        REDESIGN_CLASS_NAME
+    )
     await realPercySnapshot(page, `${name} - dark theme with redesign enabled`)
-    await page.evaluate(() => document.documentElement.classList.remove(REDESIGN_CLASS_NAME))
+    await page.evaluate(
+        redesignClassName => document.documentElement.classList.remove(redesignClassName),
+        REDESIGN_CLASS_NAME
+    )
 
     // Reset to light theme
     await setColorScheme(page, 'light', config)
