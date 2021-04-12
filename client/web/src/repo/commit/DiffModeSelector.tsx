@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { DiffMode } from './RepositoryCommitPage'
 
 interface DiffModeSelectorProps {
