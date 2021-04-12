@@ -122,7 +122,11 @@ interface MonacoEditorWithKeybindingsService extends Monaco.editor.IStandaloneCo
         }
     }
     _standaloneKeybindingService: {
-        addDynamicKeybinding(keybinding: string): void
+        addDynamicKeybinding(
+            commandId: string,
+            _keybinding: number | undefined,
+            handler: Monaco.editor.ICommandHandler
+        ): void
     }
 }
 
@@ -246,14 +250,8 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         if (!editor || !onCompletionItemSelected) {
             return
         }
-        if (!hasCommandService(editor)) {
-            throw new Error('Could not call onCompletionItemSelected: editor has no commandService')
-        }
 
-        editor._commandService.addCommand({
-            id: 'completionItemSelected',
-            handler: onCompletionItemSelected,
-        })
+        Monaco.editor.registerCommand('completionItemSelected', onCompletionItemSelected)
     }, [editor, onCompletionItemSelected])
 
     // Disable default Monaco keybindings
@@ -272,11 +270,11 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 continue
             }
             // Prefixing action ids with `-` to unbind the default actions.
-            editor._standaloneKeybindingService.addDynamicKeybinding(`-${action}`)
+            editor._standaloneKeybindingService.addDynamicKeybinding(`-${action}`, undefined, () => {})
         }
         // Free CMD+L keybinding, which is part of Monaco's CoreNavigationCommands, and
         // not exposed on editor._actions.
-        editor._standaloneKeybindingService.addDynamicKeybinding('-expandLineSelection')
+        editor._standaloneKeybindingService.addDynamicKeybinding('-expandLineSelection', undefined, () => {})
     }, [editor])
 
     // Accessibility: allow tab usage to move focus to
