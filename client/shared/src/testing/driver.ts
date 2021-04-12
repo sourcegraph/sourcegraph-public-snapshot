@@ -42,9 +42,100 @@ import { readEnvironmentBoolean, retry } from './utils'
 export const oncePageEvent = <E extends keyof PageEventObj>(page: Page, eventName: E): Promise<PageEventObj[E]> =>
     new Promise(resolve => page.once(eventName, resolve))
 
-export const percySnapshot = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
-    ? realPercySnapshot
-    : () => Promise.resolve()
+type ColorScheme = 'dark' | 'light'
+
+const ColorSchemeToMonacoEditorMapping: Record<ColorScheme, string> = {
+    dark: 'sourcegraph-dark',
+    light: 'sourcegraph-light',
+}
+
+interface SnapshotConfig {
+    waitForCodeHighlighting: boolean
+}
+
+const CODE_HIGHLIGHTING_QUERIES = ['highlightCode', 'blob', 'HighlightFile'] as const
+
+/**
+ * Matches a URL against an expected query that will handle code highlighting.
+ */
+const isCodeHighlightQuery = (url: string): boolean =>
+    CODE_HIGHLIGHTING_QUERIES.some(query => url.includes(`graphql?${query}`))
+
+/**
+ * Watches and waits for requests to complete that match expected code highlighting queries.
+ * Useful to ensure styles are fully loaded after changing the webapp color scheme.
+ */
+const waitForCodeHighlighting = async (page: Page): Promise<void> => {
+    const requestDidFire = await page
+        .waitForRequest(request => isCodeHighlightQuery(request.url()), { timeout: 5000 })
+        .catch(
+            () =>
+                // request won't always fire if data is cached
+                false
+        )
+
+    if (requestDidFire) {
+        await page.waitForResponse(request => isCodeHighlightQuery(request.url()), { timeout: 5000 })
+    }
+}
+
+/**
+ * Update all theme styling on the Sourcegraph webapp to match a color scheme.
+ */
+const setColorScheme = async (page: Page, scheme: ColorScheme, config?: SnapshotConfig): Promise<void> => {
+    const isAlreadySet = await page.evaluate(
+        (scheme: ColorScheme) => matchMedia(`(prefers-color-scheme: ${scheme})`).matches,
+        scheme
+    )
+
+    if (isAlreadySet) {
+        return
+    }
+
+    await Promise.all([
+        page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: scheme }]),
+        config?.waitForCodeHighlighting ? waitForCodeHighlighting(page) : Promise.resolve(),
+    ])
+
+    // Note: Monaco doesn't have a reliable way of exposing the current theme for us to check, we force set it here to avoid potential flakiness
+    await page.evaluate(
+        (editorTheme: string) => (window as any).monaco.editor.setTheme(editorTheme),
+        ColorSchemeToMonacoEditorMapping[scheme]
+    )
+}
+
+/**
+ * Take a visual regression snapshot and upload to Percy.
+ * Will resolve without doing anything if `PERCY_ON` is not set to `true`.
+ */
+export const percySnapshot = async (page: Page, name: string, config?: SnapshotConfig): Promise<void> => {
+    const percyEnabled = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
+
+    if (!percyEnabled) {
+        return Promise.resolve()
+    }
+
+    // Theme-light
+    await setColorScheme(page, 'light', config)
+    await realPercySnapshot(page, `${name} - light theme`)
+
+    // Theme-light with redesign
+    await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
+    await realPercySnapshot(page, `${name} - light theme with redesign enabled`)
+    await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
+
+    // Theme-dark
+    await setColorScheme(page, 'dark', config)
+    await realPercySnapshot(page, `${name} - Dark Theme`)
+
+    // Theme-dark with redesign
+    await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
+    await realPercySnapshot(page, `${name} - dark theme with redesign enabled`)
+    await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
+
+    // Reset to light theme
+    await setColorScheme(page, 'light', config)
+}
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
 
