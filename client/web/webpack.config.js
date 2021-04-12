@@ -13,7 +13,9 @@ const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 logger.info('Using mode', mode)
 
-const devtool = mode === 'production' ? 'source-map' : 'cheap-module-eval-source-map'
+const isDevelopment = mode === 'development'
+const isProduction = mode === 'production'
+const devtool = isProduction ? 'source-map' : 'cheap-module-eval-source-map'
 
 const shouldAnalyze = process.env.WEBPACK_ANALYZER === '1'
 if (shouldAnalyze) {
@@ -37,12 +39,27 @@ const babelLoader = {
 
 const extensionHostWorker = /main\.worker\.ts$/
 
+const getCSSLoaders = (...loaders) => [
+  isDevelopment ? 'style-loader' : MiniCssExtractPlugin.loader,
+  ...loaders,
+  'postcss-loader',
+  {
+    loader: 'sass-loader',
+    options: {
+      sassOptions: {
+        implementation: require('sass'),
+        includePaths: [nodeModulesPath],
+      },
+    },
+  },
+]
+
 /** @type {import('webpack').Configuration} */
 const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
   mode,
   optimization: {
-    minimize: mode === 'production',
+    minimize: isProduction,
     minimizer: [
       new TerserPlugin({
         sourceMap: true,
@@ -57,7 +74,7 @@ const config = {
     ],
     namedModules: false,
 
-    ...(mode === 'development'
+    ...(isDevelopment
       ? {
           removeAvailableModules: false,
           removeEmptyChunks: false,
@@ -134,7 +151,7 @@ const config = {
         include: path.join(__dirname, 'src'),
         exclude: extensionHostWorker,
         use: [
-          ...(mode === 'production' ? ['thread-loader'] : []),
+          ...(isProduction ? ['thread-loader'] : []),
           {
             loader: 'babel-loader',
             options: {
@@ -156,24 +173,34 @@ const config = {
       {
         test: /\.[jt]sx?$/,
         exclude: [path.join(__dirname, 'src'), extensionHostWorker],
-        use: [...(mode === 'production' ? ['thread-loader'] : []), babelLoader],
+        use: [...(isProduction ? ['thread-loader'] : []), babelLoader],
       },
       {
         test: /\.(sass|scss)$/,
-        use: [
-          mode === 'production' ? MiniCssExtractPlugin.loader : 'style-loader',
-          'css-loader',
-          'postcss-loader',
+        include: /\.module\.(sass|scss)$/,
+        use: getCSSLoaders(
           {
-            loader: 'sass-loader',
+            loader: 'css-modules-typescript-loader',
             options: {
-              sassOptions: {
-                implementation: require('sass'),
-                includePaths: [nodeModulesPath],
-              },
+              mode: process.env.CI ? 'verify' : 'emit',
             },
           },
-        ],
+          {
+            loader: 'css-loader',
+            options: {
+              sourceMap: isDevelopment,
+              localsConvention: 'camelCase',
+              modules: {
+                localIdentName: isDevelopment ? '[name]__[local]' : '[hash:base64]',
+              },
+            },
+          }
+        ),
+      },
+      {
+        test: /\.(sass|scss)$/,
+        exclude: /\.module\.(sass|scss)$/,
+        use: getCSSLoaders('css-loader'),
       },
       {
         // CSS rule for monaco-editor and other external plain CSS (skip SASS and PostCSS for build perf)

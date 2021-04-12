@@ -199,6 +199,7 @@
     "command-exists": "^1.2.9",
     "cross-env": "^7.0.2",
     "css-loader": "^3.6.0",
+    "css-modules-typescript-loader": "^4.0.1",
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.4",
     "enzyme-to-json": "^3.5.0",

@@ -17,7 +17,7 @@
             text-decoration: none;
         }
 
-        &:hover:not(.btn-primary):not(:disabled) {
+        &:hover:not(:global(.btn-primary)):not(:disabled) {
             background-color: var(--color-bg-2);
             color: var(--link-color);
         }
