@@ -61,6 +61,10 @@
                 display: none;
             }
         }
+        .minimap {
+            // Minimap is disabled but will still be rendered and affect eg. visual tests, force hide to prevent this.
+            display: none;
+        }
 
         // Override our :focus-visible style, which gets applied to the textarea
         .inputarea.focus-visible {
