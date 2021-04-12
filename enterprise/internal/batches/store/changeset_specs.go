@@ -499,14 +499,16 @@ func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsO
 		return nil, err
 	}
 
-	err = s.query(ctx, q, func(sc scanner) error {
+	if err = s.query(ctx, q, func(sc scanner) error {
 		var c btypes.RewirerMapping
 		if err := sc.Scan(&c.ChangesetSpecID, &c.ChangesetID, &c.RepoID); err != nil {
 			return err
 		}
 		mappings = append(mappings, &c)
 		return nil
-	})
+	}); err != nil {
+		return nil, err
+	}
 
 	// Hydrate the rewirer mappings:
 	changesetsByID := map[int64]*btypes.Changeset{}
