@@ -3,6 +3,8 @@ package types
 import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 type ChangesetSpecDescription struct {
@@ -23,7 +25,7 @@ type ChangesetSpecDescription struct {
 
 	Commits []GitCommitDescription `json:"commits,omitempty"`
 
-	Published PublishedValue `json:"published,omitempty"`
+	Published batches.PublishedValue `json:"published,omitempty"`
 }
 
 // Type returns the ChangesetSpecDescriptionType of the ChangesetSpecDescription.

@@ -5,10 +5,10 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -23,7 +23,7 @@ type GitserverClient interface {
 // ChangesetSpec associated with the changeset.
 type Reconciler struct {
 	gitserverClient GitserverClient
-	sourcer         repos.Sourcer
+	sourcer         sources.Sourcer
 	store           *store.Store
 
 	// This is used to disable a time.Sleep for operationSleep so that the
@@ -31,7 +31,7 @@ type Reconciler struct {
 	noSleepBeforeSync bool
 }
 
-func New(gitClient GitserverClient, sourcer repos.Sourcer, store *store.Store) *Reconciler {
+func New(gitClient GitserverClient, sourcer sources.Sourcer, store *store.Store) *Reconciler {
 	return &Reconciler{
 		gitserverClient: gitClient,
 		sourcer:         sourcer,

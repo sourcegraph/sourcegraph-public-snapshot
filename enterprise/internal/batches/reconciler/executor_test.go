@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -492,7 +491,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				fakeSource.WantBaseRef = changesetSpec.Spec.BaseRef
 			}
 
-			sourcer := repos.NewFakeSourcer(nil, fakeSource)
+			sourcer := sources.NewFakeSourcer(nil, fakeSource)
 
 			tc.plan.Changeset = changeset
 			tc.plan.ChangesetSpec = changesetSpec
@@ -619,7 +618,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 	plan.Changeset = ct.BuildChangeset(ct.TestChangesetOpts{Repo: rs[0].ID})
 
-	err := executePlan(ctx, nil, repos.NewFakeSourcer(nil, &sources.FakeChangesetSource{}), true, cstore, plan)
+	err := executePlan(ctx, nil, sources.NewFakeSourcer(nil, &sources.FakeChangesetSource{}), true, cstore, plan)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
@@ -656,8 +655,8 @@ func TestLoadChangesetSource(t *testing.T) {
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if fakeSource.CurrentAuthenticator != nil {
-			t.Errorf("unexpected non-nil authenticator: %v", fakeSource.CurrentAuthenticator)
+		if fakeSource.CurrentInternalAuthenticator != nil {
+			t.Errorf("unexpected non-nil authenticator: %v", fakeSource.CurrentInternalAuthenticator)
 		}
 	})
 
@@ -673,21 +672,21 @@ func TestLoadChangesetSource(t *testing.T) {
 			ct.TruncateTables(t, db, "batch_changes_site_credentials")
 		})
 		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 0,
 		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator); diff != "" {
+		if diff := cmp.Diff(token, fakeSource.CurrentInternalAuthenticator); diff != "" {
 			t.Errorf("unexpected authenticator:\n%s", diff)
 		}
 	})
 
 	t.Run("owned by missing batch change", func(t *testing.T) {
 		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 1234,
 		}, repo)
@@ -698,21 +697,21 @@ func TestLoadChangesetSource(t *testing.T) {
 
 	t.Run("owned by admin user without credential", func(t *testing.T) {
 		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: adminBatchChange.ID,
 		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if fakeSource.CurrentAuthenticator != nil {
-			t.Errorf("unexpected non-nil authenticator: %v", fakeSource.CurrentAuthenticator)
+		if fakeSource.CurrentInternalAuthenticator != nil {
+			t.Errorf("unexpected non-nil authenticator: %v", fakeSource.CurrentInternalAuthenticator)
 		}
 	})
 
 	t.Run("owned by normal user without credential", func(t *testing.T) {
 		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
@@ -732,14 +731,14 @@ func TestLoadChangesetSource(t *testing.T) {
 		}
 
 		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: adminBatchChange.ID,
 		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator); diff != "" {
+		if diff := cmp.Diff(token, fakeSource.CurrentInternalAuthenticator); diff != "" {
 			t.Errorf("unexpected authenticator:\n%s", diff)
 		}
 	})
@@ -758,14 +757,14 @@ func TestLoadChangesetSource(t *testing.T) {
 		})
 
 		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator); diff != "" {
+		if diff := cmp.Diff(token, fakeSource.CurrentInternalAuthenticator); diff != "" {
 			t.Errorf("unexpected authenticator:\n%s", diff)
 		}
 	})
@@ -783,14 +782,14 @@ func TestLoadChangesetSource(t *testing.T) {
 		})
 
 		fakeSource := &sources.FakeChangesetSource{}
-		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator); diff != "" {
+		if diff := cmp.Diff(token, fakeSource.CurrentInternalAuthenticator); diff != "" {
 			t.Errorf("unexpected authenticator:\n%s", diff)
 		}
 	})
@@ -823,7 +822,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 
 	gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
 	fakeSource := &sources.FakeChangesetSource{Svc: extSvc}
-	sourcer := repos.NewFakeSourcer(nil, fakeSource)
+	sourcer := sources.NewFakeSourcer(nil, fakeSource)
 
 	plan := &Plan{}
 	plan.AddOp(btypes.ReconcilerOperationPush)

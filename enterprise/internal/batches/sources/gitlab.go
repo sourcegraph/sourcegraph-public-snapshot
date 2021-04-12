@@ -2,16 +2,104 @@ package sources
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 	"strconv"
 
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type GitLabSource struct {
-	client gitlab.Client
+	client *gitlab.Client
+	au     auth.Authenticator
+}
+
+// NewGitLabSource returns a new GitLabSource from the given external service.
+func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
+	var c schema.GitLabConnection
+	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
+	return newGitLabSource(svc, &c, cf, nil)
+}
+
+func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory, au auth.Authenticator) (*GitLabSource, error) {
+	baseURL, err := url.Parse(c.Url)
+	if err != nil {
+		return nil, err
+	}
+	baseURL = extsvc.NormalizeBaseURL(baseURL)
+
+	if cf == nil {
+		cf = httpcli.NewExternalHTTPClientFactory()
+	}
+
+	var opts []httpcli.Opt
+	if c.Certificate != "" {
+		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
+	}
+
+	cli, err := cf.Doer(opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Don't modify passed-in parameter.
+	var authr auth.Authenticator
+	if au == nil && c.Token != "" {
+		switch c.TokenType {
+		case "oauth":
+			authr = &auth.OAuthBearerToken{Token: c.Token}
+		default:
+			authr = &gitlab.SudoableToken{Token: c.Token}
+		}
+	} else {
+		authr = au
+	}
+
+	provider := gitlab.NewClientProvider(baseURL, cli)
+	return &GitLabSource{
+		// svc:                 svc,
+		// config:              c,
+		// baseURL:             baseURL,
+		// provider:            provider,
+		au:     authr,
+		client: provider.GetAuthenticatorClient(authr),
+	}, nil
+}
+
+func (s GitLabSource) CurrentAuthenticator() auth.Authenticator {
+	return s.au
+}
+
+func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
+	switch a.(type) {
+	case *auth.OAuthBearerToken,
+		*auth.OAuthBearerTokenWithSSH:
+		break
+
+	default:
+		return nil, newUnsupportedAuthenticatorError("GitLabSource", a)
+	}
+
+	sc := s
+	sc.au = a
+	sc.client = sc.client.WithAuthenticator(a)
+
+	return &sc, nil
+}
+
+func (s GitLabSource) ValidateAuthenticator(ctx context.Context) error {
+	return s.client.ValidateToken(ctx)
 }
 
 // CreateChangeset creates a GitLab merge request. If it already exists,

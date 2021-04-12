@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -430,7 +429,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 
 // SyncChangeset refreshes the metadata of the given changeset and
 // updates them in the database.
-func SyncChangeset(ctx context.Context, syncStore SyncStore, source *sources.BatchesSource, repo *types.Repo, c *btypes.Changeset) (err error) {
+func SyncChangeset(ctx context.Context, syncStore SyncStore, source sources.ChangesetSource, repo *types.Repo, c *btypes.Changeset) (err error) {
 	repoChangeset := &sources.Changeset{Repo: repo, Changeset: c}
 	if err := source.LoadChangeset(ctx, repoChangeset); err != nil {
 		_, ok := err.(sources.ChangesetNotFoundError)
@@ -469,15 +468,15 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source *sources.Bat
 	return tx.UpsertChangesetEvents(ctx, events...)
 }
 
-func loadChangesetSource(ctx context.Context, cf *httpcli.Factory, syncStore SyncStore, repo *types.Repo) (*sources.BatchesSource, error) {
-	srcer := sources.NewSourcer(repos.NewSourcer(cf), syncStore)
+func loadChangesetSource(ctx context.Context, cf *httpcli.Factory, syncStore SyncStore, repo *types.Repo) (sources.ChangesetSource, error) {
+	srcer := sources.NewSourcer(cf)
 	// This is a ChangesetSource authenticated with the external service
 	// token.
-	source, err := srcer.ForRepo(ctx, repo)
+	source, err := srcer.ForRepo(ctx, syncStore, repo)
 	if err != nil {
 		return nil, err
 	}
 	// Try to use a site credential. If none is present, this falls back to
 	// the external service config. This code path should error in the future.
-	return source.WithSiteAuthenticator(ctx, repo)
+	return srcer.WithSiteAuthenticator(ctx, syncStore, source, repo)
 }

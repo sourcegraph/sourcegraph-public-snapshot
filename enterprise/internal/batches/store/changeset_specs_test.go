@@ -503,6 +503,16 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			}
 		}
 
+		cmpOpts := cmp.FilterPath(func(p cmp.Path) bool {
+			println(p.String())
+			switch p.String() {
+			case "Changeset", "ChangesetSpec", "Repo":
+				return true
+			default:
+				return false
+			}
+		}, cmp.Ignore())
+
 		t.Run("NoLimit", func(t *testing.T) {
 			// Empty limit should return all entries.
 			opts := GetRewirerMappingsOpts{
@@ -519,7 +529,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 					t.Fatalf("listed %d repo ids, want: %d", len(have), len(want))
 				}
 
-				if diff := cmp.Diff(have, want); diff != "" {
+				if diff := cmp.Diff(have, want, cmpOpts); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
 			}
@@ -530,7 +540,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 					t.Fatalf("listed %d changeset ids, want: %d", len(have), len(want))
 				}
 
-				if diff := cmp.Diff(have, want); diff != "" {
+				if diff := cmp.Diff(have, want, cmpOpts); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
 			}
@@ -541,7 +551,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 					t.Fatalf("listed %d changeset spec ids, want: %d", len(have), len(want))
 				}
 
-				if diff := cmp.Diff(have, want); diff != "" {
+				if diff := cmp.Diff(have, want, cmpOpts); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
 			}
@@ -552,7 +562,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 					t.Fatalf("listed %d mappings, want: %d", len(have), len(want))
 				}
 
-				if diff := cmp.Diff(have, want); diff != "" {
+				if diff := cmp.Diff(have, want, cmpOpts); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
 			}
@@ -576,7 +586,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 							t.Fatalf("listed %d repo ids, want: %d", len(have), len(want))
 						}
 
-						if diff := cmp.Diff(have, want); diff != "" {
+						if diff := cmp.Diff(have, want, cmpOpts); diff != "" {
 							t.Fatalf("opts: %+v, diff: %s", opts, diff)
 						}
 					}
@@ -587,7 +597,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 							t.Fatalf("listed %d changeset ids, want: %d", len(have), len(want))
 						}
 
-						if diff := cmp.Diff(have, want); diff != "" {
+						if diff := cmp.Diff(have, want, cmpOpts); diff != "" {
 							t.Fatalf("opts: %+v, diff: %s", opts, diff)
 						}
 					}
@@ -598,7 +608,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 							t.Fatalf("listed %d changeset spec ids, want: %d", len(have), len(want))
 						}
 
-						if diff := cmp.Diff(have, want); diff != "" {
+						if diff := cmp.Diff(have, want, cmpOpts); diff != "" {
 							t.Fatalf("opts: %+v, diff: %s", opts, diff)
 						}
 					}
@@ -609,7 +619,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 							t.Fatalf("listed %d mappings, want: %d", len(have), len(want))
 						}
 
-						if diff := cmp.Diff(have, want); diff != "" {
+						if diff := cmp.Diff(have, want, cmpOpts); diff != "" {
 							t.Fatal(diff)
 						}
 					}
@@ -636,7 +646,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 							t.Fatalf("listed %d repo ids, want: %d", len(have), len(want))
 						}
 
-						if diff := cmp.Diff(have, want); diff != "" {
+						if diff := cmp.Diff(have, want, cmpOpts); diff != "" {
 							t.Fatalf("opts: %+v, diff: %s", opts, diff)
 						}
 					}
@@ -647,7 +657,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 							t.Fatalf("listed %d changeset ids, want: %d", len(have), len(want))
 						}
 
-						if diff := cmp.Diff(have, want); diff != "" {
+						if diff := cmp.Diff(have, want, cmpOpts); diff != "" {
 							t.Fatalf("opts: %+v, diff: %s", opts, diff)
 						}
 					}
@@ -658,14 +668,14 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 							t.Fatalf("listed %d changeset spec ids, want: %d", len(have), len(want))
 						}
 
-						if diff := cmp.Diff(have, want); diff != "" {
+						if diff := cmp.Diff(have, want, cmpOpts); diff != "" {
 							t.Fatalf("opts: %+v, diff: %s", opts, diff)
 						}
 					}
 
 					{
 						have, want := ts, mappings[i-1:i]
-						if diff := cmp.Diff(have, want); diff != "" {
+						if diff := cmp.Diff(have, want, cmpOpts); diff != "" {
 							t.Fatalf("opts: %+v, diff: %s", opts, diff)
 						}
 					}

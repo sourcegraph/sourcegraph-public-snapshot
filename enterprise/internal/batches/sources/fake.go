@@ -6,17 +6,44 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+type fakeSourcer struct {
+	err    error
+	source ChangesetSource
+}
+
+func (s *fakeSourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset) (ChangesetSource, error) {
+	return s.source, s.err
+}
+
+func (s *fakeSourcer) ForRepo(ctx context.Context, tx SourcerStore, repo *types.Repo) (ChangesetSource, error) {
+	return s.source, s.err
+}
+
+func (s *fakeSourcer) ForExternalService(ctx context.Context, tx SourcerStore, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error) {
+	return s.source, s.err
+}
+
+func (s *fakeSourcer) WithSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, repo *types.Repo) (ChangesetSource, error) {
+	return s.source, s.err
+}
+
+func (s *fakeSourcer) WithAuthenticatorForUser(ctx context.Context, tx SourcerStore, css ChangesetSource, userID int32, repo *types.Repo) (ChangesetSource, error) {
+	return s.source, s.err
+}
 
 // FakeChangesetSource is a fake implementation of the ChangesetSource
 // interface to be used in tests.
 type FakeChangesetSource struct {
 	Svc *types.ExternalService
 
-	CurrentAuthenticator auth.Authenticator
+	CurrentInternalAuthenticator auth.Authenticator
 
 	CreateDraftChangesetCalled  bool
 	UndraftedChangesetsCalled   bool
@@ -75,7 +102,6 @@ type FakeChangesetSource struct {
 
 var _ ChangesetSource = &FakeChangesetSource{}
 var _ DraftChangesetSource = &FakeChangesetSource{}
-var _ repos.UserSource = &FakeChangesetSource{}
 
 func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
 	s.CreateDraftChangesetCalled = true
@@ -231,8 +257,12 @@ func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *Changeset)
 	return c.SetMetadata(s.FakeMetadata)
 }
 
-func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (repos.Source, error) {
-	s.CurrentAuthenticator = a
+func (s *FakeChangesetSource) CurrentAuthenticator() auth.Authenticator {
+	return s.CurrentInternalAuthenticator
+}
+
+func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
+	s.CurrentInternalAuthenticator = a
 	return s, nil
 }
 

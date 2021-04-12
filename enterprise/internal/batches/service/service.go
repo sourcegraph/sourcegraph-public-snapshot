@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -31,7 +30,7 @@ func New(store *store.Store) *Service {
 // NewWithClock returns a Service the given clock used
 // to generate timestamps.
 func NewWithClock(store *store.Store, clock func() time.Time) *Service {
-	svc := &Service{store: store, sourcer: repos.NewSourcer(httpcli.NewExternalHTTPClientFactory()), clock: clock}
+	svc := &Service{store: store, sourcer: sources.NewSourcer(httpcli.NewExternalHTTPClientFactory()), clock: clock}
 
 	return svc
 }
@@ -39,7 +38,7 @@ func NewWithClock(store *store.Store, clock func() time.Time) *Service {
 type Service struct {
 	store *store.Store
 
-	sourcer repos.Sourcer
+	sourcer sources.Sourcer
 
 	clock func() time.Time
 }
@@ -509,8 +508,7 @@ var ErrNoNamespace = errors.New("no namespace given")
 // Since Bitbucket sends the username as a header in REST responses, we can
 // take it from there and complete the UserCredential.
 func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, externalServiceID, externalServiceType, token string) (string, error) {
-	srcer := sources.NewSourcer(s.sourcer, s.store)
-	css, err := srcer.ForExternalService(ctx, store.GetExternalServiceIDsOpts{
+	css, err := s.sourcer.ForExternalService(ctx, s.store, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
 	})
@@ -522,7 +520,7 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 		return "", err
 	}
 
-	usernameSource, ok := css.ChangesetSource.(usernameSource)
+	usernameSource, ok := css.(usernameSource)
 	if !ok {
 		return "", errors.New("external service source doesn't implement AuthenticatedUsername")
 	}
@@ -540,7 +538,7 @@ type usernameSource interface {
 	AuthenticatedUsername(ctx context.Context) (string, error)
 }
 
-var _ usernameSource = &repos.BitbucketServerSource{}
+var _ usernameSource = &sources.BitbucketServerSource{}
 
 // ValidateAuthenticator creates a ChangesetSource, configures it with the given
 // authenticator and validates it can correctly access the remote server.
@@ -549,8 +547,7 @@ func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, 
 		return Mocks.ValidateAuthenticator(ctx, externalServiceID, externalServiceType, a)
 	}
 
-	srcer := sources.NewSourcer(s.sourcer, s.store)
-	css, err := srcer.ForExternalService(ctx, store.GetExternalServiceIDsOpts{
+	css, err := s.sourcer.ForExternalService(ctx, s.store, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
 	})

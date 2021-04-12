@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 type GitTarget struct {
@@ -293,7 +294,7 @@ type ChangesetSpecDescription struct {
 
 	Commits []GitCommitDescription
 
-	Published btypes.PublishedValue
+	Published batches.PublishedValue
 
 	Diff struct {
 		FileDiffs FileDiffs

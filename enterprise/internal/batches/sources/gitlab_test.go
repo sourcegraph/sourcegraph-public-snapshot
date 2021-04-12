@@ -3,6 +3,7 @@ package sources
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"testing"
@@ -735,8 +736,7 @@ func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTe
 			TargetBranch: "base",
 		},
 		source: &GitLabSource{
-			client:   prov.GetClient(),
-			provider: prov,
+			client: prov.GetClient(),
 		},
 		t: t,
 	}
@@ -858,4 +858,73 @@ func (p *gitLabChangesetSourceTestProvider) unmock() {
 	gitlab.MockGetMergeRequestPipelines = nil
 	gitlab.MockGetOpenMergeRequestByRefs = nil
 	gitlab.MockUpdateMergeRequest = nil
+}
+
+// panicDoer provides a httpcli.Doer implementation that panics if any attempt
+// is made to issue a HTTP request; thereby ensuring that our unit tests don't
+// actually try to talk to GitLab.
+type panicDoer struct{}
+
+func (d *panicDoer) Do(r *http.Request) (*http.Response, error) {
+	panic("this function should not be called; a mock must be missing")
+}
+
+// paginatedNoteIterator essentially fakes the pagination behaviour implemented
+// by gitlab.GetMergeRequestNotes with a canned notes list.
+func paginatedNoteIterator(notes []*gitlab.Note, pageSize int) func() ([]*gitlab.Note, error) {
+	page := 0
+
+	return func() ([]*gitlab.Note, error) {
+		low := pageSize * page
+		high := pageSize * (page + 1)
+		page++
+
+		if low >= len(notes) {
+			return []*gitlab.Note{}, nil
+		}
+		if high > len(notes) {
+			return notes[low:], nil
+		}
+		return notes[low:high], nil
+	}
+}
+
+// paginatedResourceStateEventIterator essentially fakes the pagination behaviour implemented
+// by gitlab.GetMergeRequestResourceStateEvents with a canned resource state events list.
+func paginatedResourceStateEventIterator(events []*gitlab.ResourceStateEvent, pageSize int) func() ([]*gitlab.ResourceStateEvent, error) {
+	page := 0
+
+	return func() ([]*gitlab.ResourceStateEvent, error) {
+		low := pageSize * page
+		high := pageSize * (page + 1)
+		page++
+
+		if low >= len(events) {
+			return []*gitlab.ResourceStateEvent{}, nil
+		}
+		if high > len(events) {
+			return events[low:], nil
+		}
+		return events[low:high], nil
+	}
+}
+
+// paginatedPipelineIterator essentially fakes the pagination behaviour
+// implemented by gitlab.GetMergeRequestPipelines with a canned pipelines list.
+func paginatedPipelineIterator(pipelines []*gitlab.Pipeline, pageSize int) func() ([]*gitlab.Pipeline, error) {
+	page := 0
+
+	return func() ([]*gitlab.Pipeline, error) {
+		low := pageSize * page
+		high := pageSize * (page + 1)
+		page++
+
+		if low >= len(pipelines) {
+			return []*gitlab.Pipeline{}, nil
+		}
+		if high > len(pipelines) {
+			return pipelines[low:], nil
+		}
+		return pipelines[low:high], nil
+	}
 }

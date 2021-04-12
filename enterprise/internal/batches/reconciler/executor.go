@@ -17,15 +17,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // executePlan executes the given reconciler plan.
-func executePlan(ctx context.Context, gitserverClient GitserverClient, sourcer repos.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
+func executePlan(ctx context.Context, gitserverClient GitserverClient, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
 	e := &executor{
 		gitserverClient:   gitserverClient,
-		sourcer:           sources.NewSourcer(sourcer, tx),
+		sourcer:           sourcer,
 		noSleepBeforeSync: noSleepBeforeSync,
 		tx:                tx,
 		ch:                plan.Changeset,
@@ -38,14 +37,14 @@ func executePlan(ctx context.Context, gitserverClient GitserverClient, sourcer r
 
 type executor struct {
 	gitserverClient   GitserverClient
-	sourcer           *sources.Sourcer
+	sourcer           sources.Sourcer
 	noSleepBeforeSync bool
 	tx                *store.Store
 	ch                *btypes.Changeset
 	spec              *btypes.ChangesetSpec
 	delta             *ChangesetSpecDelta
 
-	css  *sources.BatchesSource
+	css  sources.ChangesetSource
 	repo *types.Repo
 }
 
@@ -144,7 +143,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	// Figure out which authenticator we should use to modify the changeset.
 	// au is nil if we want to use the global credentials stored in the external
 	// service configuration.
-	pushConf, err := e.css.GitserverPushConfig(e.repo)
+	pushConf, err := sources.GitserverPushConfig(e.repo, e.css.CurrentAuthenticator())
 	if err != nil {
 		return err
 	}
@@ -175,7 +174,7 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 	var exists bool
 	if asDraft {
 		// If the changeset shall be published in draft mode, make sure the changeset source implements DraftChangesetSource.
-		draftCss, err := e.css.DraftChangesetSource()
+		draftCss, err := sources.ToDraftChangesetSource(e.css)
 		if err != nil {
 			return err
 		}
@@ -315,7 +314,7 @@ func (e *executor) closeChangeset(ctx context.Context) (err error) {
 
 // undraftChangeset marks the given changeset on its code host as ready for review.
 func (e *executor) undraftChangeset(ctx context.Context) (err error) {
-	draftCss, err := e.css.DraftChangesetSource()
+	draftCss, err := sources.ToDraftChangesetSource(e.css)
 	if err != nil {
 		return err
 	}
@@ -342,10 +341,10 @@ func (e *executor) sleep() {
 	}
 }
 
-func loadChangesetSource(ctx context.Context, s *store.Store, sourcer *sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (*sources.BatchesSource, error) {
+func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
 	// This is a changeset source using the external service config for authentication,
 	// based on our heuristic in the sources package.
-	css, err := sourcer.ForRepo(ctx, repo)
+	css, err := sourcer.ForRepo(ctx, s, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +356,7 @@ func loadChangesetSource(ctx context.Context, s *store.Store, sourcer *sources.S
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load owning batch change")
 		}
-		css, err = css.WithAuthenticatorForUser(ctx, batchChange.LastApplierID, repo)
+		css, err = sourcer.WithAuthenticatorForUser(ctx, s, css, batchChange.LastApplierID, repo)
 		if err != nil {
 			switch err {
 			case sources.ErrMissingCredentials:
@@ -378,7 +377,7 @@ func loadChangesetSource(ctx context.Context, s *store.Store, sourcer *sources.S
 		// a site-credential, but it's ok if it doesn't exist.
 		// TODO: This code-path will fail once the site credentials are the only
 		// fallback we want to use.
-		css, err = css.WithSiteAuthenticator(ctx, repo)
+		css, err = sourcer.WithSiteAuthenticator(ctx, s, css, repo)
 		if err != nil {
 			return nil, err
 		}

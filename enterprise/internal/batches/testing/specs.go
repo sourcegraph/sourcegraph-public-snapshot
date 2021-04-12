@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 const TestRawBatchSpec = `{
@@ -88,7 +89,7 @@ var baseChangesetSpecGitBranch = btypes.ChangesetSpecDescription{
 	Title:   "the title",
 	Body:    "the body of the PR",
 
-	Published: btypes.PublishedValue{Val: false},
+	Published: batches.PublishedValue{Val: false},
 
 	Commits: []btypes.GitCommitDescription{
 		{
@@ -113,7 +114,7 @@ func NewRawChangesetSpecGitBranch(repo graphql.ID, baseRev string) string {
 	return string(rawSpec)
 }
 
-func NewPublishedRawChangesetSpecGitBranch(repo graphql.ID, baseRev string, published btypes.PublishedValue) string {
+func NewPublishedRawChangesetSpecGitBranch(repo graphql.ID, baseRev string, published batches.PublishedValue) string {
 	spec := baseChangesetSpecGitBranch
 	spec.BaseRepository = repo
 	spec.BaseRev = baseRev

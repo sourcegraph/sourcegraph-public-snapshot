@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -188,7 +187,7 @@ func TestService(t *testing.T) {
 	rs, _ := ct.CreateTestRepos(t, ctx, db, 4)
 
 	fakeSource := &sources.FakeChangesetSource{}
-	sourcer := repos.NewFakeSourcer(nil, fakeSource)
+	sourcer := sources.NewFakeSourcer(nil, fakeSource)
 
 	svc := New(s)
 	svc.sourcer = sourcer
@@ -802,7 +801,7 @@ func TestService(t *testing.T) {
 
 	t.Run("FetchUsernameForBitbucketServerToken", func(t *testing.T) {
 		fakeSource := &sources.FakeChangesetSource{Username: "my-bbs-username"}
-		sourcer := repos.NewFakeSourcer(nil, fakeSource)
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
 
 		// Create a fresh service for this test as to not mess with state
 		// possibly used by other tests.

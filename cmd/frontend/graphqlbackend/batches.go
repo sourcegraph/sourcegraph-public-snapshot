@@ -6,6 +6,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/sourcegraph/lib/batches"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
@@ -434,7 +436,7 @@ type GitBranchChangesetDescriptionResolver interface {
 
 	Commits() []GitCommitDescriptionResolver
 
-	Published() interface{}
+	Published() batches.PublishedValue
 }
 
 type GitCommitDescriptionResolver interface {

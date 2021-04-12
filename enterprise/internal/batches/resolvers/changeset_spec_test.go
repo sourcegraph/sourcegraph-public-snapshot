@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func TestChangesetSpecResolver(t *testing.T) {
@@ -107,7 +108,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 								Body:    "and some more content in a second paragraph.",
 							},
 						},
-						Published: btypes.PublishedValue{Val: false},
+						Published: batches.PublishedValue{Val: false},
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{
@@ -129,7 +130,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		},
 		{
 			name:    "GitBranchChangesetDescription Draft",
-			rawSpec: ct.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), btypes.PublishedValue{Val: "draft"}),
+			rawSpec: ct.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), batches.PublishedValue{Val: "draft"}),
 			want: func(spec *btypes.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
 					Typename: "VisibleChangesetSpec",
@@ -162,7 +163,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 								Body:    "and some more content in a second paragraph.",
 							},
 						},
-						Published: btypes.PublishedValue{Val: "draft"},
+						Published: batches.PublishedValue{Val: "draft"},
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{

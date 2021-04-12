@@ -667,14 +667,16 @@ mutation($batchChange: ID!, $newName: String, $newNamespace: ID){
 
 func TestListChangesetOptsFromArgs(t *testing.T) {
 	var wantFirst int32 = 10
-	wantPublicationStates := []string{
+	wantPublicationStates := []btypes.ChangesetPublicationState{
 		"PUBLISHED",
 		"INVALID",
 	}
-	wantStates := []string{"OPEN", "INVALID"}
-	wantExternalStates := []string{"OPEN"}
-	wantReviewStates := []string{"APPROVED", "INVALID"}
-	wantCheckStates := []string{"PENDING", "INVALID"}
+	haveStates := []string{"OPEN", "INVALID"}
+	haveReviewStates := []string{"APPROVED", "INVALID"}
+	haveCheckStates := []string{"PENDING", "INVALID"}
+	wantExternalStates := []btypes.ChangesetExternalState{"OPEN"}
+	wantReviewStates := []btypes.ChangesetReviewState{"APPROVED", "INVALID"}
+	wantCheckStates := []btypes.ChangesetCheckState{"PENDING", "INVALID"}
 	truePtr := func() *bool { val := true; return &val }()
 	wantSearches := []search.TextSearchTerm{{Term: "foo"}, {Term: "bar", Not: true}}
 	var batchChangeID int64 = 1
@@ -702,7 +704,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting state is safe and transferred to opts.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				State: &wantStates[0],
+				State: &haveStates[0],
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
@@ -714,14 +716,14 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting invalid state fails.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				State: &wantStates[1],
+				State: &haveStates[1],
 			},
 			wantErr: "changeset state not valid",
 		},
 		// Setting review state is not safe and transferred to opts.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				ReviewState: &wantReviewStates[0],
+				ReviewState: &haveReviewStates[0],
 			},
 			wantSafe:   false,
 			wantParsed: store.ListChangesetsOpts{ExternalReviewState: &wantReviewStates[0]},
@@ -729,14 +731,14 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting invalid review state fails.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				ReviewState: &wantReviewStates[1],
+				ReviewState: &haveReviewStates[1],
 			},
 			wantErr: "changeset review state not valid",
 		},
 		// Setting check state is not safe and transferred to opts.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				CheckState: &wantCheckStates[0],
+				CheckState: &haveCheckStates[0],
 			},
 			wantSafe:   false,
 			wantParsed: store.ListChangesetsOpts{ExternalCheckState: &wantCheckStates[0]},
@@ -744,7 +746,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting invalid check state fails.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				CheckState: &wantCheckStates[1],
+				CheckState: &haveCheckStates[1],
 			},
 			wantErr: "changeset check state not valid",
 		},

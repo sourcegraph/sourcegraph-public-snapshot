@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -36,6 +37,15 @@ type DraftChangesetSource interface {
 
 // A ChangesetSource can load the latest state of a list of Changesets.
 type ChangesetSource interface {
+	CurrentAuthenticator() auth.Authenticator
+	// WithAuthenticator returns a copy of the original Source configured to use
+	// the given authenticator, provided that authenticator type is supported by
+	// the code host.
+	WithAuthenticator(auth.Authenticator) (ChangesetSource, error)
+	// ValidateAuthenticator validates the currently set authenticator is usable.
+	// Returns an error, when validating the Authenticator yielded an error.
+	ValidateAuthenticator(ctx context.Context) error
+
 	// LoadChangeset loads the given Changeset from the source and updates it.
 	// If the Changeset could not be found on the source, a ChangesetNotFoundError is returned.
 	LoadChangeset(context.Context, *Changeset) error

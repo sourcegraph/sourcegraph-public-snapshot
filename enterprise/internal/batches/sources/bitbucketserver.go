@@ -8,12 +8,94 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type BitbucketServerSource struct {
-	client bitbucketserver.Client
+	client *bitbucketserver.Client
+	au     auth.Authenticator
+}
+
+// NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
+func NewBitbucketServerSource(svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+	var c schema.BitbucketServerConnection
+	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
+	return newBitbucketServerSource(svc, &c, cf, nil)
+}
+
+func newBitbucketServerSource(svc *types.ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory, au auth.Authenticator) (*BitbucketServerSource, error) {
+	if cf == nil {
+		cf = httpcli.NewExternalHTTPClientFactory()
+	}
+
+	var opts []httpcli.Opt
+	if c.Certificate != "" {
+		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
+	}
+
+	cli, err := cf.Doer(opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := bitbucketserver.NewClient(c, cli)
+	if err != nil {
+		return nil, err
+	}
+
+	if au != nil {
+		client = client.WithAuthenticator(au)
+	}
+
+	return &BitbucketServerSource{
+		// svc:     svc,
+		// config:  c,
+		au:     client.Auth,
+		client: client,
+	}, nil
+}
+
+func (s BitbucketServerSource) CurrentAuthenticator() auth.Authenticator {
+	return s.au
+}
+
+func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
+	switch a.(type) {
+	case *auth.OAuthBearerToken,
+		*auth.OAuthBearerTokenWithSSH,
+		*auth.BasicAuth,
+		*auth.BasicAuthWithSSH,
+		*bitbucketserver.SudoableOAuthClient:
+		break
+
+	default:
+		return nil, newUnsupportedAuthenticatorError("BitbucketServerSource", a)
+	}
+
+	sc := s
+	sc.client = sc.client.WithAuthenticator(a)
+
+	return &sc, nil
+}
+
+// AuthenticatedUsername uses the underlying bitbucketserver.Client to get the
+// username belonging to the credentials associated with the
+// BitbucketServerSource.
+func (s *BitbucketServerSource) AuthenticatedUsername(ctx context.Context) (string, error) {
+	return s.client.AuthenticatedUsername(ctx)
+}
+
+func (s *BitbucketServerSource) ValidateAuthenticator(ctx context.Context) error {
+	_, err := s.client.AuthenticatedUsername(ctx)
+	return err
 }
 
 // CreateChangeset creates the given *Changeset in the code host.

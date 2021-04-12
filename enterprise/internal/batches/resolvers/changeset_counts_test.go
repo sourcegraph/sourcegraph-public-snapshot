@@ -119,7 +119,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	defer mockState.Unmock()
 
 	cstore := store.New(db)
-	sourcer := sources.NewSourcer(nil, cstore)
+	sourcer := sources.NewSourcer(nil)
 
 	spec := &btypes.BatchSpec{
 		NamespaceUserID: userID,
@@ -166,7 +166,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		src, err := sourcer.FromRepoSource(githubSrc)
+		src, err := sourcer.ForRepo(ctx, cstore, githubRepo)
 		if err != nil {
 			t.Fatal(err)
 		}

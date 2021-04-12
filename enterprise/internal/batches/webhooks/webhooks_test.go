@@ -91,7 +91,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		}
 
 		s := store.NewWithClock(db, clock)
-		sourcer := sources.NewSourcer(repos.NewSourcer(nil), s)
+		sourcer := sources.NewSourcer(nil)
 
 		spec := &btypes.BatchSpec{
 			NamespaceUserID: userID,
@@ -138,7 +138,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		})
 		defer state.Unmock()
 
-		src, err := sourcer.FromRepoSource(githubSrc)
+		src, err := sourcer.ForRepo(ctx, s, githubRepo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -275,7 +275,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		}
 
 		s := store.NewWithClock(db, clock)
-		sourcer := sources.NewSourcer(repos.NewSourcer(nil), s)
+		sourcer := sources.NewSourcer(nil)
 
 		spec := &btypes.BatchSpec{
 			NamespaceUserID: userID,
@@ -328,7 +328,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			if err := s.CreateChangeset(ctx, ch); err != nil {
 				t.Fatal(err)
 			}
-			src, err := sourcer.FromRepoSource(bitbucketSource)
+			src, err := sourcer.ForRepo(ctx, s, bitbucketRepo)
 			if err != nil {
 				t.Fatal(err)
 			}

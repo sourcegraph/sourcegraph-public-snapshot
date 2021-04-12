@@ -12,6 +12,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func marshalChangesetSpecRandID(id string) graphql.ID {
@@ -148,7 +149,7 @@ func (r *changesetDescriptionResolver) HeadRepository() *graphqlbackend.Reposito
 func (r *changesetDescriptionResolver) HeadRef() string { return git.AbbreviateRef(r.desc.HeadRef) }
 func (r *changesetDescriptionResolver) Title() string   { return r.desc.Title }
 func (r *changesetDescriptionResolver) Body() string    { return r.desc.Body }
-func (r *changesetDescriptionResolver) Published() interface{} {
+func (r *changesetDescriptionResolver) Published() batches.PublishedValue {
 	return r.desc.Published
 }
 

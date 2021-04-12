@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 type TestSpecOpts struct {
@@ -45,7 +46,7 @@ var TestChangsetSpecDiffStat = &diff.Stat{Added: 10, Changed: 5, Deleted: 2}
 func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *btypes.ChangesetSpec {
 	t.Helper()
 
-	published := btypes.PublishedValue{Val: opts.Published}
+	published := batches.PublishedValue{Val: opts.Published}
 	if opts.Published == nil {
 		// Set false as the default.
 		published.Val = false

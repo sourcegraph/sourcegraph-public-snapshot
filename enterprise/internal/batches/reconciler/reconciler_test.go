@@ -12,7 +12,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -134,7 +133,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 				fakeSource.WantBaseRef = changesetSpec.Spec.BaseRef
 			}
 
-			sourcer := repos.NewFakeSourcer(nil, fakeSource)
+			sourcer := sources.NewFakeSourcer(nil, fakeSource)
 
 			// Run the reconciler
 			rec := Reconciler{

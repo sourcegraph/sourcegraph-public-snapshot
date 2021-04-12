@@ -60,6 +60,20 @@ func (c *V3Client) GetAuthenticatedUser(ctx context.Context) (*User, error) {
 	return &u, nil
 }
 
+func (c *V4Client) GetAuthenticatedUser(ctx context.Context) (*User, error) {
+	var u User
+	err := c.requestGraphQL(ctx, `query GetAuthenticatedUser {
+    viewer {
+        id
+        login
+    }
+}`, nil, &u)
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
 // GetAuthenticatedUserEmails returns the first 100 emails associated with the currently
 // authenticated user.
 func (c *V3Client) GetAuthenticatedUserEmails(ctx context.Context) ([]*UserEmail, error) {

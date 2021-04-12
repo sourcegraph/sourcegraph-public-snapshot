@@ -2,16 +2,102 @@ package sources
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type GithubSource struct {
-	v4Client github.V4Client
+	client *github.V4Client
+	au     auth.Authenticator
+}
+
+func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+	var c schema.GitHubConnection
+	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
+	return newGithubSource(svc, &c, cf, nil)
+}
+
+func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Authenticator) (*GithubSource, error) {
+	baseURL, err := url.Parse(c.Url)
+	if err != nil {
+		return nil, err
+	}
+	baseURL = extsvc.NormalizeBaseURL(baseURL)
+
+	apiURL /*githubDotCom*/, _ := github.APIRoot(baseURL)
+
+	if cf == nil {
+		cf = httpcli.NewExternalHTTPClientFactory()
+	}
+
+	opts := []httpcli.Opt{
+		// Use a 30s timeout to avoid running into EOF errors, because GitHub
+		// closes idle connections after 60s
+		httpcli.NewIdleConnTimeoutOpt(30 * time.Second),
+	}
+
+	if c.Certificate != "" {
+		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
+	}
+
+	cli, err := cf.Doer(opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	if au == nil {
+		au = &auth.OAuthBearerToken{Token: c.Token}
+	}
+
+	return &GithubSource{
+		// svc:          svc,
+		// config:       c,
+		// baseURL:      baseURL,
+		// githubDotCom: githubDotCom,
+		au:     au,
+		client: github.NewV4Client(apiURL, au, cli),
+	}, nil
+}
+
+func (s GithubSource) CurrentAuthenticator() auth.Authenticator {
+	return s.au
+}
+
+func (s GithubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
+	switch a.(type) {
+	case *auth.OAuthBearerToken,
+		*auth.OAuthBearerTokenWithSSH:
+		break
+
+	default:
+		return nil, newUnsupportedAuthenticatorError("GithubSource", a)
+	}
+
+	sc := s
+	sc.au = a
+	sc.client = sc.client.WithAuthenticator(a)
+
+	return &sc, nil
+}
+
+func (s GithubSource) ValidateAuthenticator(ctx context.Context) error {
+	_, err := s.client.GetAuthenticatedUser(ctx)
+	return err
 }
 
 // CreateChangeset creates the given changeset on the code host.
@@ -39,7 +125,7 @@ func buildCreatePullRequestInput(c *Changeset) *github.CreatePullRequestInput {
 
 func (s GithubSource) createChangeset(ctx context.Context, c *Changeset, prInput *github.CreatePullRequestInput) (bool, error) {
 	var exists bool
-	pr, err := s.v4Client.CreatePullRequest(ctx, prInput)
+	pr, err := s.client.CreatePullRequest(ctx, prInput)
 	if err != nil {
 		if err != github.ErrPullRequestAlreadyExists {
 			return exists, err
@@ -49,7 +135,7 @@ func (s GithubSource) createChangeset(ctx context.Context, c *Changeset, prInput
 		if err != nil {
 			return exists, errors.Wrap(err, "getting repo owner and name")
 		}
-		pr, err = s.v4Client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRef, c.HeadRef)
+		pr, err = s.client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRef, c.HeadRef)
 		if err != nil {
 			return exists, errors.Wrap(err, "fetching existing PR")
 		}
@@ -71,7 +157,7 @@ func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
-	err := s.v4Client.ClosePullRequest(ctx, pr)
+	err := s.client.ClosePullRequest(ctx, pr)
 	if err != nil {
 		return err
 	}
@@ -86,7 +172,7 @@ func (s GithubSource) UndraftChangeset(ctx context.Context, c *Changeset) error 
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
-	err := s.v4Client.MarkPullRequestReadyForReview(ctx, pr)
+	err := s.client.MarkPullRequestReadyForReview(ctx, pr)
 	if err != nil {
 		return err
 	}
@@ -107,7 +193,7 @@ func (s GithubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 		Number:        number,
 	}
 
-	if err := s.v4Client.LoadPullRequest(ctx, pr); err != nil {
+	if err := s.client.LoadPullRequest(ctx, pr); err != nil {
 		if github.IsNotFound(err) {
 			return ChangesetNotFoundError{Changeset: cs}
 		}
@@ -128,7 +214,7 @@ func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
-	updated, err := s.v4Client.UpdatePullRequest(ctx, &github.UpdatePullRequestInput{
+	updated, err := s.client.UpdatePullRequest(ctx, &github.UpdatePullRequestInput{
 		PullRequestID: pr.ID,
 		Title:         c.Title,
 		Body:          c.Body,
@@ -149,7 +235,7 @@ func (s GithubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
-	err := s.v4Client.ReopenPullRequest(ctx, pr)
+	err := s.client.ReopenPullRequest(ctx, pr)
 	if err != nil {
 		return err
 	}
