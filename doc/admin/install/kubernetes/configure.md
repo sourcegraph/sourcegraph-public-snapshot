@@ -19,7 +19,7 @@ This will make upgrades far easier and is a good practice not just for Sourcegra
    When you upgrade Sourcegraph, you will merge upstream into this branch.
 
    ```bash
-   SOURCEGRAPH_VERSION="3.24"
+   SOURCEGRAPH_VERSION="3.26.3"
    git checkout $SOURCEGRAPH_VERSION -b release
    ```
 
@@ -28,7 +28,7 @@ This will make upgrades far easier and is a good practice not just for Sourcegra
 - Commit customizations to your release branch:
 
    - Commit manual modifications to Kubernetes YAML files.
-   - _Warning_: Modifications to files inside the `base` increases the odds of encountering git merge conflicts when upgrading. Consider using [overlays](overlays.md#git-strategies-with-overlays) instead.
+   - _Warning_: Modifications to files inside the `base` increases the odds of encountering git merge conflicts when upgrading. Consider using [overlays](overlays.md) instead.
    - Commit commands that should be run on every update (e.g. `kubectl apply`) to [kubectl-apply-all.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/kubectl-apply-all.sh).
    - Commit commands that generally only need to be run once per cluster to (e.g. `kubectl create secret`, `kubectl expose`) to [create-new-cluster.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/create-new-cluster.sh).
 
@@ -76,11 +76,11 @@ you need the [kustomize](https://kustomize.io/) tool installed.
 
 ### Working with overlays
 
-- [Overlay basic principles](#overlay-basic-principles)
-- [Handling overlays in this repository](#handling-overlays-in-this-repository)
+- [Overlay basic principles](overlays.md#overlay-basic-principles)
+- [Handling overlays in this repository](overlays.md#handling-overlays)
 - [namespaced overlay](#namespaced-overlay)
-- [non-root overlay](#non-root-overlay)
-- [non-privileged overlay](#non-privileged-overlay)
+- [non-root overlay](overlays.md#non-root-overlay)
+- [non-privileged overlay](overlays.md#non-privileged-overlay)
 
 ## Security - Configure network access
 

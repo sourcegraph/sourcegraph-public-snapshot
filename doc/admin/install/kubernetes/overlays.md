@@ -275,6 +275,6 @@ minikube stop
 
 > error: error retrieving RESTMappings to prune: invalid resource networking.k8s.io/v1, Kind=Ingress, Namespaced=true: no matches for kind "Ingress" in version "networking.k8s.io/v1"
 
-- See the ["Configure network access"](configure.md#configure-network-access)
-- Check for duplicate `sourcegraph-frontend` using `kubectl get ingresses -A`
-- Delete duplicate using `kubectl delete ingress sourcegraph-frontend -n default`
+1. See the ["Configure network access"](configure.md#configure-network-access)
+1. Check for duplicate `sourcegraph-frontend` using `kubectl get ingresses -A`
+1. Delete duplicate using `kubectl delete ingress sourcegraph-frontend -n default`
