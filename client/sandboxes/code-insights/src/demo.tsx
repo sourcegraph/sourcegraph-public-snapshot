@@ -8,8 +8,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { RouterLinkOrAnchor } from '@sourcegraph/web/src/components/RouterLinkOrAnchor'
-import { InsightsApiContext } from '@sourcegraph/web/src/insights/core/backend/api-provider'
-import { InsightsPage } from '@sourcegraph/web/src/insights/pages/InsightsPage'
+import { InsightsApiContext, InsightsPage } from '@sourcegraph/web/src/insights'
 
 import { MockInsightsApi } from './mock-api'
 
