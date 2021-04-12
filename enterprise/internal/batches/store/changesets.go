@@ -957,9 +957,42 @@ WHERE c.id = changesets.id
 RETURNING %s
 `
 
-func (s *Store) GetChangesetPlaceInLine(ctx context.Context, id int64) (int, error) {
-	return 0, errors.New("unimplemented")
+func (s *Store) GetChangesetPlaceInSchedulerQueue(ctx context.Context, id int64) (int, error) {
+	q := sqlf.Sprintf(
+		getChangesetPlaceInSchedulerQueueFmtstr,
+		btypes.ReconcilerStateScheduled.ToDB(),
+		id,
+	)
+
+	row := s.QueryRow(ctx, q)
+	var place int
+	if err := row.Scan(&place); err == sql.ErrNoRows {
+		return 0, ErrNoResults
+	} else if err != nil {
+		return 0, err
+	}
+
+	// PostgreSQL returns 1-indexed row numbers, but we want 0-indexed places
+	// when calculating schedules.
+	return place - 1, nil
 }
+
+const getChangesetPlaceInSchedulerQueueFmtstr = `
+-- source: enterprise/internal/batches/store/changesets.go:GetChangesetPlaceInSchedulerQueue
+SELECT
+	row_number
+FROM (
+	SELECT
+		id,
+		ROW_NUMBER() OVER (ORDER BY updated_at ASC)
+	FROM
+		changesets
+	WHERE
+		reconciler_state = %s
+	) t
+WHERE
+	id = %d
+`
 
 func archivedInBatchChange(batchChangeID string) *sqlf.Query {
 	return sqlf.Sprintf(
