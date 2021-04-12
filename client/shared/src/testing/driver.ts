@@ -32,7 +32,6 @@ import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
 import { IMutation, IQuery, IRepository } from '../graphql/schema'
 import { Settings } from '../settings/settings'
 import { isDefined } from '../util/types'
-import { REDESIGN_CLASS_NAME } from '../util/useRedesignToggle'
 
 import { getConfig } from './config'
 import { formatPuppeteerConsoleMessage } from './console'
@@ -123,30 +122,18 @@ export const percySnapshot = async (page: Page, name: string, config?: SnapshotC
     await realPercySnapshot(page, `${name} - light theme`)
 
     // Theme-light with redesign
-    await page.evaluate(
-        redesignClassName => document.documentElement.classList.add(redesignClassName),
-        REDESIGN_CLASS_NAME
-    )
+    await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
     await realPercySnapshot(page, `${name} - light theme with redesign enabled`)
-    await page.evaluate(
-        redesignClassName => document.documentElement.classList.remove(redesignClassName),
-        REDESIGN_CLASS_NAME
-    )
+    await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
 
     // Theme-dark
     await setColorScheme(page, 'dark', config)
     await realPercySnapshot(page, `${name} - Dark Theme`)
 
     // Theme-dark with redesign
-    await page.evaluate(
-        redesignClassName => document.documentElement.classList.add(redesignClassName),
-        REDESIGN_CLASS_NAME
-    )
+    await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
     await realPercySnapshot(page, `${name} - dark theme with redesign enabled`)
-    await page.evaluate(
-        redesignClassName => document.documentElement.classList.remove(redesignClassName),
-        REDESIGN_CLASS_NAME
-    )
+    await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
 
     // Reset to light theme
     await setColorScheme(page, 'light', config)
