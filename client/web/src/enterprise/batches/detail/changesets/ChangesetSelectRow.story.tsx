@@ -1,6 +1,8 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
+
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+
 import { ChangesetSelectRow } from './ChangesetSelectRow'
 
 const { add } = storiesOf('web/batches/ChangesetSelectRow', module).addDecorator(story => (

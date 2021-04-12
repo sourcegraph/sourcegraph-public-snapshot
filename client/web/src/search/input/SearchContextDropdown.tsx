@@ -1,13 +1,16 @@
-import * as H from 'history'
 import classNames from 'classnames'
+import * as H from 'history'
 import React, { useCallback, useEffect, useState } from 'react'
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { SearchContextMenu } from './SearchContextMenu'
-import { SubmitSearchParameters } from '../helpers'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
+import { SubmitSearchParameters } from '../helpers'
+
+import { SearchContextMenu } from './SearchContextMenu'
 
 export interface SearchContextDropdownProps
     extends Omit<SearchContextProps, 'showSearchContext'>,

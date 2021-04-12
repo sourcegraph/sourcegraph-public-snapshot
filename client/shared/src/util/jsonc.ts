@@ -1,4 +1,5 @@
 import { parse, ParseError, ParseErrorCode } from '@sqs/jsonc-parser/lib/main'
+
 import { asError, createAggregateError, ErrorLike } from './errors'
 
 /**

@@ -1,10 +1,12 @@
-import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
-import React from 'react'
-import { GitCommitNode } from './GitCommitNode'
+import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
-import { GitCommitFields } from '../../graphql-operations'
+import React from 'react'
+
 import { WebStory } from '../../components/WebStory'
+import { GitCommitFields } from '../../graphql-operations'
+
+import { GitCommitNode } from './GitCommitNode'
 
 const { add } = storiesOf('web/GitCommitNode', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>

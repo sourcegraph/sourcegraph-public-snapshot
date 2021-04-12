@@ -1,5 +1,6 @@
-import { TestScheduler } from 'rxjs/testing'
 import { from, defer } from 'rxjs'
+import { TestScheduler } from 'rxjs/testing'
+
 import { repeatUntil } from './repeatUntil'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))

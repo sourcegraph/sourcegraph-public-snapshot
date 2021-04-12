@@ -1,4 +1,5 @@
 import { isErrorLike } from '../util/errors'
+
 import { parseExtensionManifestOrError } from './extensionManifest'
 
 describe('parseExtensionManifestOrError', () => {

@@ -1,4 +1,5 @@
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+
 import { isMacPlatform } from '../util'
 
 export const KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE: KeyboardShortcut = {

@@ -1,16 +1,16 @@
-import React, { FunctionComponent, useMemo, useState } from 'react'
 import classNames from 'classnames'
+import React, { FunctionComponent, useMemo, useState } from 'react'
 
-import { AddUserEmailResult, AddUserEmailVariables } from '../../../graphql-operations'
+import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { requestGraphQL } from '../../../backend/graphql'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
 
-import { eventLogger } from '../../../tracking/eventLogger'
+import { requestGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
 import { LoaderButton } from '../../../components/LoaderButton'
-import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
+import { AddUserEmailResult, AddUserEmailVariables } from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 interface Props {
     user: string

@@ -1,13 +1,16 @@
-import React, { useEffect, useCallback } from 'react'
 import * as H from 'history'
+import React, { useEffect, useCallback } from 'react'
+import { Observable } from 'rxjs'
+
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
+import { GitRefType, Scalars } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { GitReferenceNode, queryGitReferences as queryGitReferencesFromBackend } from '../GitReference'
+
 import { RepositoryReleasesAreaPageProps } from './RepositoryReleasesArea'
-import { Observable } from 'rxjs'
-import { GitRefType, Scalars } from '../../graphql-operations'
 
 interface Props extends RepositoryReleasesAreaPageProps {
     history: H.History

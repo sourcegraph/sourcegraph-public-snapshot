@@ -1,10 +1,12 @@
+import classNames from 'classnames'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, scan, switchMap } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
+
 import { renderMarkdown } from '../util/markdown'
+
 import { Notification } from './notification'
-import classNames from 'classnames'
 
 export interface NotificationClassNameProps {
     notificationClassNames: Record<sourcegraph.NotificationType, string>

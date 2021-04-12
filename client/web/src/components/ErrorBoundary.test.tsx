@@ -1,5 +1,6 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
+
 import { ErrorBoundary } from './ErrorBoundary'
 
 jest.mock('mdi-react/ErrorIcon', () => 'ErrorIcon')

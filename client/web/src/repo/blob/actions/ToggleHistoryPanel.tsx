@@ -3,6 +3,8 @@ import HistoryIcon from 'mdi-react/HistoryIcon'
 import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
+
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import {
     lprToRange,
@@ -10,10 +12,10 @@ import {
     toPositionOrRangeHash,
     toViewStateHashComponent,
 } from '@sourcegraph/shared/src/util/url'
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
+
 import { eventLogger } from '../../../tracking/eventLogger'
-import { BlobPanelTabID } from '../panel/BlobPanel'
 import { RepoHeaderContext } from '../../RepoHeader'
+import { BlobPanelTabID } from '../panel/BlobPanel'
 
 /**
  * A repository header action that toggles the visibility of the history panel.

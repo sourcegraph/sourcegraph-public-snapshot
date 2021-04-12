@@ -1,9 +1,11 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Observable, of } from 'rxjs'
+
 import { WebStory } from '../../components/WebStory'
 import { ListSearchContextsResult } from '../../graphql-operations'
 import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
 const { add } = storiesOf('web/search/input/SearchContextMenu', module)

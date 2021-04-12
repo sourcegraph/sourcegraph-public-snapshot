@@ -1,12 +1,12 @@
 // This component is a fork of Lable component from @visx/annotaion package
 // Replace this component by original when https://github.com/airbnb/visx/issues/1126 will be resolved
 
-import React, { ReactElement, useContext, useMemo } from 'react'
-import classnames from 'classnames'
+import { AnnotationContext } from '@visx/annotation'
 import Group from '@visx/group/lib/Group'
 import Text, { TextProps } from '@visx/text/lib/Text'
+import classnames from 'classnames'
+import React, { ReactElement, useContext, useMemo } from 'react'
 import useMeasure, { Options as UseMeasureOptions } from 'react-use-measure'
-import { AnnotationContext } from '@visx/annotation'
 
 export interface LabelProps {
     /** Stroke color of anchor line. */

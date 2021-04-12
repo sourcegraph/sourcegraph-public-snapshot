@@ -1,6 +1,7 @@
 import { of } from 'rxjs'
 import { mergeMap } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
+
 import { throttleTimeWindow } from './throttleTimeWindow'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))

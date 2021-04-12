@@ -1,4 +1,5 @@
 import { subDays } from 'date-fns'
+
 import { ListBatchChange } from '../../../graphql-operations'
 
 export const now = new Date()

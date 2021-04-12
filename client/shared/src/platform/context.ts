@@ -1,17 +1,19 @@
 import { Endpoint } from 'comlink'
+import { isObject } from 'lodash'
 import { NextObserver, Observable, Subscribable, Subscription } from 'rxjs'
+import { InputBoxOptions } from 'sourcegraph'
+
+import { DiffPart } from '@sourcegraph/codeintellify'
+
 import { SettingsEdit } from '../api/client/services/settings'
+import { ExecutableExtension } from '../api/extension/activation'
+import { Scalars } from '../graphql-operations'
 import { GraphQLResult } from '../graphql/graphql'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryService } from '../telemetry/telemetryService'
-import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevisionSpec, ViewStateSpec } from '../util/url'
-import { DiffPart } from '@sourcegraph/codeintellify'
-import { isObject } from 'lodash'
-import { hasProperty } from '../util/types'
-import { Scalars } from '../graphql-operations'
 import { ErrorLike } from '../util/errors'
-import { ExecutableExtension } from '../api/extension/activation'
-import { InputBoxOptions } from 'sourcegraph'
+import { hasProperty } from '../util/types'
+import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevisionSpec, ViewStateSpec } from '../util/url'
 
 export interface EndpointPair {
     /** The endpoint to proxy the API of the other thread from */

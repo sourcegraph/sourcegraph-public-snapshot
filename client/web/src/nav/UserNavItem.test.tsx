@@ -1,9 +1,11 @@
+import { mount } from 'enzyme'
 import * as H from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
+
 import { ThemePreference } from '../theme'
+
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
-import { mount } from 'enzyme'
 
 describe('UserNavItem', () => {
     const USER: UserNavItemProps['authenticatedUser'] = {

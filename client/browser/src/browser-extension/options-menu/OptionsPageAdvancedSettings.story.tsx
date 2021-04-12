@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
 import { storiesOf } from '@storybook/react'
+import React, { useState } from 'react'
+
 import brandedStyles from '../../branded.scss'
 
 import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'

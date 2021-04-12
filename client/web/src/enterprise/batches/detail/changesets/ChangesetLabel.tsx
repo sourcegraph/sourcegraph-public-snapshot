@@ -1,5 +1,6 @@
-import React from 'react'
 import classNames from 'classnames'
+import React from 'react'
+
 import { ChangesetLabelFields } from '../../../../graphql-operations'
 
 interface Props {

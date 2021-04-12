@@ -348,6 +348,18 @@ func errorName(diff bool) string {
 	return "commits"
 }
 
+// orderedFuzzyRegexp interpolate a lazy 'match everything' regexp pattern
+// to achieve an ordered fuzzy regexp match.
+func orderedFuzzyRegexp(pieces []string) string {
+	if len(pieces) == 0 {
+		return ""
+	}
+	if len(pieces) == 1 {
+		return pieces[0]
+	}
+	return "(" + strings.Join(pieces, ").*?(") + ")"
+}
+
 func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *search.CommitParameters, repoName types.RepoName, rawResults []*git.LogCommitSearchResult) []*CommitSearchResultResolver {
 	if len(rawResults) == 0 {
 		return nil

@@ -1,10 +1,12 @@
 import * as H from 'history'
 import React from 'react'
 import { Subscription } from 'rxjs'
+
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import { registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+
 import { registerSearchStatsContributions } from './search/stats/contributions'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {

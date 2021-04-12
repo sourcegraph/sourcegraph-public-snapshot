@@ -1,11 +1,13 @@
-import { storiesOf } from '@storybook/react'
-import React from 'react'
-import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
-import { of } from 'rxjs'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
-import { ChangesetCountsOverTimeFields } from '../../../graphql-operations'
-import { addSeconds, isBefore } from 'date-fns'
 import { useMemo } from '@storybook/addons'
+import { storiesOf } from '@storybook/react'
+import { addSeconds, isBefore } from 'date-fns'
+import React from 'react'
+import { of } from 'rxjs'
+
+import { ChangesetCountsOverTimeFields } from '../../../graphql-operations'
+import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
+import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
 
 const { add } = storiesOf('web/batches/BurndownChart', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>

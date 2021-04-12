@@ -1,6 +1,8 @@
-const shelljs = require('shelljs')
 const path = require('path')
+
+const shelljs = require('shelljs')
 const signale = require('signale')
+
 const bundledCodeIntelExtensionsConfig = require('../bundled-code-intel-extensions.json')
 const temporarySourceDirectory = path.join(process.cwd(), 'code-intel-extensions')
 shelljs.set('-e')

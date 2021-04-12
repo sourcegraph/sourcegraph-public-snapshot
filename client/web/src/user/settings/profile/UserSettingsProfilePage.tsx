@@ -1,17 +1,20 @@
-import React, { useCallback, useEffect } from 'react'
 import H from 'history'
+import React, { useCallback, useEffect } from 'react'
+
 import { percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { refreshAuthenticatedUser } from '../../../auth'
-import { PageTitle } from '../../../components/PageTitle'
-import { eventLogger } from '../../../tracking/eventLogger'
-import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
-import { EditUserProfileForm } from './EditUserProfileForm'
-import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
-import { Timestamp } from '../../../components/time/Timestamp'
 import { PageHeader } from '../../../components/PageHeader'
+import { PageTitle } from '../../../components/PageTitle'
+import { Timestamp } from '../../../components/time/Timestamp'
+import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
+
+import { EditUserProfileForm } from './EditUserProfileForm'
 
 export const EditUserProfilePageGQLFragment = gql`
     fragment EditUserProfilePage on User {

@@ -1,6 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Observable, of } from 'rxjs'
+
 import {
     ExecutionLogEntryFields,
     LsifIndexFields,
@@ -8,6 +9,7 @@ import {
     LsifIndexStepsFields,
 } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
 import { CodeIntelIndexPage } from './CodeIntelIndexPage'
 
 const { add } = storiesOf('web/codeintel/detail/CodeIntelIndexPage', module)

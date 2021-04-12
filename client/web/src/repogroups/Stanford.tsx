@@ -1,5 +1,6 @@
-import { RepogroupMetadata } from './types'
 import { SearchPatternType } from '../graphql-operations'
+
+import { RepogroupMetadata } from './types'
 
 export const stanford: RepogroupMetadata = {
     title: 'Stanford University',

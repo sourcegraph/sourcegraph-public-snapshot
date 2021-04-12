@@ -1,19 +1,21 @@
+import classNames from 'classnames'
 import * as H from 'history'
+import { partition } from 'lodash'
+import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useEffect, useState } from 'react'
 import { Link, Redirect } from 'react-router-dom'
+
+import { AuthenticatedUser } from '../auth'
+import { ErrorAlert } from '../components/alerts'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
+import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
+
+import { SourcegraphIcon } from './icons'
+import { OrDivider } from './OrDivider'
 import { getReturnTo } from './SignInSignUpCommon'
 import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
-import { AuthenticatedUser } from '../auth'
-import { SourcegraphIcon } from './icons'
-import { partition } from 'lodash'
-import { OrDivider } from './OrDivider'
-import { ErrorAlert } from '../components/alerts'
-import classNames from 'classnames'
-import GithubIcon from 'mdi-react/GithubIcon'
-import { SourcegraphContext } from '../jscontext'
 
 interface SignInPageProps {
     location: H.Location

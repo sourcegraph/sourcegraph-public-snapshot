@@ -1,6 +1,8 @@
 import * as React from 'react'
+
 import { highlightNode } from '../util/dom'
 import { toPositionOrRangeHash } from '../util/url'
+
 import { Link } from './Link'
 
 interface Props {

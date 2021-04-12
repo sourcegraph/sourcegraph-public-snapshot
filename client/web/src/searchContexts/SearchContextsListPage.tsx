@@ -1,11 +1,13 @@
-import React, { useCallback, useState } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
+import React, { useCallback, useState } from 'react'
+
+import { AuthenticatedUser } from '../auth'
 import { Page } from '../components/Page'
 import { VersionContext } from '../schema/site.schema'
-import { AuthenticatedUser } from '../auth'
-import { convertVersionContextToSearchContext } from '../search/backend'
 import { isSearchContextSpecAvailable } from '../search'
+import { convertVersionContextToSearchContext } from '../search/backend'
+
 import { ConvertVersionContextsTab } from './ConvertVersionContextsTab'
 import { SearchContextsListTab } from './SearchContextsListTab'
 

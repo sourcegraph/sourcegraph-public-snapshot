@@ -1,10 +1,12 @@
-import React from 'react'
-import { Timestamp } from '../../../components/time/Timestamp'
-import CreationIcon from 'mdi-react/CreationIcon'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { SupersedingBatchSpecFields } from '../../../graphql-operations'
 import { parseISO } from 'date-fns'
+import CreationIcon from 'mdi-react/CreationIcon'
+import React from 'react'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
+import { Timestamp } from '../../../components/time/Timestamp'
+import { SupersedingBatchSpecFields } from '../../../graphql-operations'
 
 export interface SupersedingBatchSpecAlertProps {
     spec: SupersedingBatchSpecFields | null

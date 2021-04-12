@@ -1,4 +1,5 @@
 import { ChartAxis } from 'sourcegraph'
+
 import { Accessors } from '../types'
 
 /**

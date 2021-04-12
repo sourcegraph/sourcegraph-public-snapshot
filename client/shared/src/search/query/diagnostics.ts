@@ -1,8 +1,10 @@
 import * as Monaco from 'monaco-editor'
-import { Token } from './token'
+
+import { SearchPatternType } from '../../graphql-operations'
+
 import { toMonacoRange } from './decoratedToken'
 import { validateFilter } from './filters'
-import { SearchPatternType } from '../../graphql-operations'
+import { Token } from './token'
 
 /**
  * Returns the diagnostics for a scanned search query to be displayed in the Monaco query input.

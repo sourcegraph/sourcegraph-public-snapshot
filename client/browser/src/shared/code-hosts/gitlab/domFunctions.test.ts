@@ -1,5 +1,7 @@
 import { startCase } from 'lodash'
+
 import { testDOMFunctions } from '../shared/codeHostTestUtils'
+
 import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 
 describe('Bitbucket DOM functions', () => {

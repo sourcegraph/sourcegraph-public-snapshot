@@ -1,11 +1,13 @@
 import { combineLatest, Observable, of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
-import { requestGraphQL } from '../backend/graphql'
-import { InsightsResult, InsightFields } from '../graphql-operations'
 import { LineChartContent } from 'sourcegraph'
+
+import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { asError } from '@sourcegraph/shared/src/util/errors'
-import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+
+import { requestGraphQL } from '../backend/graphql'
+import { InsightsResult, InsightFields } from '../graphql-operations'
 
 const insightFieldsFragment = gql`
     fragment InsightFields on Insight {

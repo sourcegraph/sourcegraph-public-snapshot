@@ -2,9 +2,11 @@ import { action } from '@storybook/addon-actions'
 import { boolean, select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { ThemePreference } from '../theme'
-import { UserNavItem } from './UserNavItem'
+
 import { WebStory } from '../components/WebStory'
+import { ThemePreference } from '../theme'
+
+import { UserNavItem } from './UserNavItem'
 
 const onThemePreferenceChange = action('onThemePreferenceChange')
 

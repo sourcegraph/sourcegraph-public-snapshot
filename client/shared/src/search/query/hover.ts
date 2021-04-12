@@ -1,5 +1,5 @@
 import * as Monaco from 'monaco-editor'
-import { Token } from './token'
+
 import {
     decorate,
     toMonacoRange,
@@ -15,6 +15,7 @@ import {
     MetaSelectorKind,
 } from './decoratedToken'
 import { resolveFilter } from './filters'
+import { Token } from './token'
 
 const toRegexpHover = (token: MetaRegexp): string => {
     switch (token.kind) {

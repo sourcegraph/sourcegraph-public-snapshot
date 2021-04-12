@@ -1,9 +1,10 @@
-import React, { ReactElement } from 'react'
-import classNames from 'classnames'
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
+import classNames from 'classnames'
+import React, { ReactElement } from 'react'
 import { LineChartContent } from 'sourcegraph'
-import { Accessors } from '../types'
+
 import { DEFAULT_LINE_STROKE } from '../colors'
+import { Accessors } from '../types'
 
 export interface TooltipContentProps<Datum extends object> extends RenderTooltipParams<Datum> {
     /** Accessors map to get information from nearest points. */

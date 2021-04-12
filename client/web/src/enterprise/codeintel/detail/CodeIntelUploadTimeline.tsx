@@ -3,6 +3,7 @@ import ErrorIcon from 'mdi-react/ErrorIcon'
 import FileUploadIcon from 'mdi-react/FileUploadIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import React, { FunctionComponent } from 'react'
+
 import { Timeline } from '../../../components/Timeline'
 import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
 

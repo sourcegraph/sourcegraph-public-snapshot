@@ -1,18 +1,21 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { AuthenticatedUser } from '../../auth'
-import { EventLogResult } from '../backend'
-import { FilterType, FILTERS } from '@sourcegraph/shared/src/search/query/filters'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { LoadingPanelView } from './LoadingPanelView'
 import { Observable } from 'rxjs'
-import { PanelContainer } from './PanelContainer'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { FilterType, FILTERS } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { parseSearchURLQuery } from '..'
-import { ShowMoreButton } from './ShowMoreButton'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { parseSearchURLQuery } from '..'
+import { AuthenticatedUser } from '../../auth'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
+import { EventLogResult } from '../backend'
+
+import { LoadingPanelView } from './LoadingPanelView'
+import { PanelContainer } from './PanelContainer'
+import { ShowMoreButton } from './ShowMoreButton'
 
 interface Props extends TelemetryProps {
     className?: string

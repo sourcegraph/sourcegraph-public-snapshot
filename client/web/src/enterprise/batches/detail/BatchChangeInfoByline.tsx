@@ -1,7 +1,9 @@
 import React from 'react'
-import { BatchChangeFields } from '../../../graphql-operations'
+
 import { Link } from '@sourcegraph/shared/src/components/Link'
+
 import { Timestamp } from '../../../components/time/Timestamp'
+import { BatchChangeFields } from '../../../graphql-operations'
 
 interface Props extends Pick<BatchChangeFields, 'createdAt' | 'initialApplier' | 'lastAppliedAt' | 'lastApplier'> {}
 

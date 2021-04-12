@@ -1,9 +1,12 @@
 const path = require('path')
+
 const shelljs = require('shelljs')
+const signale = require('signale')
+
 const extensionNames = require('../bundled-code-intel-extensions.json').extensions || []
+
 const toDirectory = path.join(process.cwd(), 'build')
 const temporarySourceDirectory = path.join(process.cwd(), 'code-intel-extensions')
-const signale = require('signale')
 
 // Check if code-intel-extensions has already been fetched
 const codeIntelExtensionsDirectoryExists = shelljs.test('-d', temporarySourceDirectory)

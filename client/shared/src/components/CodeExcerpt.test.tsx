@@ -1,5 +1,17 @@
+import { cleanup, getByText, render } from '@testing-library/react'
 import * as React from 'react'
 import _VisibilitySensor from 'react-visibility-sensor'
+import { of } from 'rxjs'
+import { map } from 'rxjs/operators'
+
+import {
+    HIGHLIGHTED_FILE_LINES,
+    HIGHLIGHTED_FILE_LINES_LONG,
+    HIGHLIGHTED_FILE_LINES_SIMPLE,
+} from '../util/searchTestHelpers'
+
+import { CodeExcerpt } from './CodeExcerpt'
+
 export class MockVisibilitySensor extends React.Component<{ onChange?: (isVisible: boolean) => void }> {
     constructor(props: { onChange?: (isVisible: boolean) => void }) {
         super(props)
@@ -18,17 +30,6 @@ jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children
         <MockVisibilitySensor onChange={onChange}>{children}</MockVisibilitySensor>
     </>
 ))
-
-import { cleanup, getByText, render } from '@testing-library/react'
-
-import { CodeExcerpt } from './CodeExcerpt'
-import {
-    HIGHLIGHTED_FILE_LINES,
-    HIGHLIGHTED_FILE_LINES_LONG,
-    HIGHLIGHTED_FILE_LINES_SIMPLE,
-} from '../util/searchTestHelpers'
-import { of } from 'rxjs'
-import { map } from 'rxjs/operators'
 
 describe('CodeExcerpt', () => {
     afterAll(cleanup)

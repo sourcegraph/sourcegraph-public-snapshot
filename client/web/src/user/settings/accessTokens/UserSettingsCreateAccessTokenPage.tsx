@@ -1,23 +1,25 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { requestGraphQL } from '../../../backend/graphql'
-import { Form } from '@sourcegraph/branded/src/components/Form'
+import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
+import { CreateAccessTokenResult, CreateAccessTokenVariables, Scalars } from '../../../graphql-operations'
 import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { ErrorAlert } from '../../../components/alerts'
-import { CreateAccessTokenResult, CreateAccessTokenVariables, Scalars } from '../../../graphql-operations'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 
 function createAccessToken(
     user: Scalars['ID'],

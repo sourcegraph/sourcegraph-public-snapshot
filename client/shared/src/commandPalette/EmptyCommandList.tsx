@@ -1,6 +1,7 @@
 import React from 'react'
-import { SettingsCascadeOrError } from '../settings/settings'
+
 import { onlyDefaultExtensionsAdded } from '../extensions/extensions'
+import { SettingsCascadeOrError } from '../settings/settings'
 
 interface Props {
     settingsCascade?: SettingsCascadeOrError

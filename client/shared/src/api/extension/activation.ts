@@ -1,15 +1,17 @@
 import { Remote } from 'comlink'
 import { BehaviorSubject, combineLatest, from, Observable, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilChanged, map, tap, withLatestFrom } from 'rxjs/operators'
+
 import { ConfiguredExtension, getScriptURLFromExtensionManifest } from '../../extensions/extension'
 import { areExtensionsSame } from '../../extensions/extensions'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoizeObservable'
 import { wrapRemoteObservable } from '../client/api/common'
-import { parseContributionExpressions } from './api/contribution'
 import { MainThreadAPI } from '../contract'
 import { Contributions } from '../protocol'
 import { tryCatchPromise } from '../util'
+
+import { parseContributionExpressions } from './api/contribution'
 import { ExtensionHostState } from './extensionHostState'
 
 export function observeActiveExtensions(

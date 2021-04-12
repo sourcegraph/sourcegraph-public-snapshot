@@ -1,9 +1,10 @@
-import { CreatedChangeset } from './github'
-import { readLine, cacheFolder } from './util'
-import YAML from 'yaml'
+import commandExists from 'command-exists'
 import execa from 'execa'
 import fetch from 'node-fetch'
-import commandExists from 'command-exists'
+import YAML from 'yaml'
+
+import { CreatedChangeset } from './github'
+import { readLine, cacheFolder } from './util'
 
 // https://about.sourcegraph.com/handbook/engineering/deployments/instances#k8s-sgdev-org
 const DEFAULT_SRC_ENDPOINT = 'https://k8s.sgdev.org'
