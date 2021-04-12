@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -61,8 +62,8 @@ func newBitbucketServerSource(c *schema.BitbucketServerConnection, cf *httpcli.F
 	}, nil
 }
 
-func (s BitbucketServerSource) CurrentAuthenticator() auth.Authenticator {
-	return s.au
+func (s BitbucketServerSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return gitserverPushConfig(repo, s.au)
 }
 
 func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {

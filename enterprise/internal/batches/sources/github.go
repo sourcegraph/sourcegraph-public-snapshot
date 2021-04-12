@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -71,8 +72,8 @@ func newGithubSource(c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Au
 	}, nil
 }
 
-func (s GithubSource) CurrentAuthenticator() auth.Authenticator {
-	return s.au
+func (s GithubSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return gitserverPushConfig(repo, s.au)
 }
 
 func (s GithubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {

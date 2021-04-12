@@ -22,13 +22,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// ErrMissingCredentials is returned by BatchesSource.WithAuthenticatorForUser,
+// ErrMissingCredentials is returned by WithAuthenticatorForUser,
 // if the user that applied the last batch change/changeset spec doesn't have
 // UserCredentials for the given repository and is not a site-admin (so no
 // fallback to the global credentials is possible).
-var ErrMissingCredentials = errors.New("no credential found to authenticate BatchesSource")
+var ErrMissingCredentials = errors.New("no credential found to authenticate ChangesetSource")
 
-// ErrNoPushCredentials is returned by BatchesSource.GitserverPushConfig if the
+// ErrNoPushCredentials is returned by gitserverPushConfig if the
 // authenticator cannot be used by git to authenticate a `git push`.
 type ErrNoPushCredentials struct{ CredentialsType string }
 
@@ -36,7 +36,7 @@ func (e ErrNoPushCredentials) Error() string {
 	return "invalid authenticator provided to push commits"
 }
 
-// ErrNoSSHCredential is returned by BatchesSource.GitserverPushConfig, if the
+// ErrNoSSHCredential is returned by gitserverPushConfig, if the
 // clone URL of the repository uses the ssh:// scheme, but the authenticator
 // doesn't support SSH pushes.
 var ErrNoSSHCredential = errors.New("authenticator doesn't support SSH")
@@ -125,7 +125,7 @@ func (s *sourcer) loadBatchesSource(ctx context.Context, tx SourcerStore, extern
 	return css, nil
 }
 
-func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
+func gitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
 	extSvcType := repo.ExternalRepo.ServiceType
 	cloneURL, err := extractCloneURL(repo)
 	if err != nil {

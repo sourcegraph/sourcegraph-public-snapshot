@@ -6,6 +6,7 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -37,8 +38,9 @@ type DraftChangesetSource interface {
 
 // A ChangesetSource can load the latest state of a list of Changesets.
 type ChangesetSource interface {
-	// CurrentAuthenticator returns the currently used authenticator.
-	CurrentAuthenticator() auth.Authenticator
+	// GitserverPushConfig returns an authenticated push config used for pushing
+	// commits to the code host.
+	GitserverPushConfig(*types.Repo) (*protocol.PushConfig, error)
 	// WithAuthenticator returns a copy of the original Source configured to use
 	// the given authenticator, provided that authenticator type is supported by
 	// the code host.

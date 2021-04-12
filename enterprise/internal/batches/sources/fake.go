@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -249,8 +250,8 @@ func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *Changeset)
 	return c.SetMetadata(s.FakeMetadata)
 }
 
-func (s *FakeChangesetSource) CurrentAuthenticator() auth.Authenticator {
-	return s.CurrentInternalAuthenticator
+func (s *FakeChangesetSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return gitserverPushConfig(repo, s.CurrentInternalAuthenticator)
 }
 
 func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
