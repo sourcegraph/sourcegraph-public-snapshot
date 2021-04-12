@@ -71,6 +71,7 @@ export const initMainThreadAPI = (
         | 'sideloadedExtensionURL'
         | 'getScriptURLForExtension'
         | 'getStaticExtensions'
+        | 'telemetryService'
     >
 ): { api: MainThreadAPI; exposedToClient: ExposedToClient; subscription: Subscription } => {
     const subscription = new Subscription()
@@ -169,6 +170,7 @@ export const initMainThreadAPI = (
 
             return proxySubscribable(getEnabledExtensions(platformContext))
         },
+        logEvent: (eventName, eventProperties) => platformContext.telemetryService?.log(eventName, eventProperties),
     }
 
     return { api, exposedToClient, subscription }

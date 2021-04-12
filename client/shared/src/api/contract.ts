@@ -202,4 +202,9 @@ export interface MainThreadAPI {
         | (((bundleURLs: string[]) => Promise<(string | ErrorLike)[]>) & ProxyMarked)
 
     getEnabledExtensions: () => ProxySubscribable<(ConfiguredExtension | ExecutableExtension)[]>
+
+    /**
+     * Log an event (by sending it to the server).
+     */
+    logEvent: (eventName: string, eventProperties?: any) => void
 }
