@@ -140,24 +140,6 @@ const hasKeybindingService = (
         .addDynamicKeybinding === 'function'
 
 /**
- * HACK: this interface and the below type guard are used to add a custom command
- * to the editor. There is no public API to add a command with a specified ID and handler,
- * hence we need to use the private _commandService API.
- *
- * See upstream issue:
- * - https://github.com/Microsoft/monaco-editor/issues/900#issue-327455729
- * */
-interface MonacoEditorWithCommandService extends Monaco.editor.IStandaloneCodeEditor {
-    _commandService: {
-        addCommand: (command: { id: string; handler: () => void }) => void
-    }
-}
-
-const hasCommandService = (editor: Monaco.editor.IStandaloneCodeEditor): editor is MonacoEditorWithCommandService =>
-    hasProperty('_commandService')(editor) &&
-    typeof (editor._commandService as MonacoEditorWithCommandService['_commandService']).addCommand === 'function'
-
-/**
  * A search query input backed by the Monaco editor, allowing it to provide
  * syntax highlighting, hovers, completions and diagnostics for search queries.
  *
