@@ -1,4 +1,5 @@
 import { readFile } from 'mz/fs'
+
 import { getFilePath } from './util'
 
 const tests = [

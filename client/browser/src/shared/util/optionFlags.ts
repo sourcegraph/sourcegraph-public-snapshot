@@ -1,8 +1,10 @@
-import { observeStorageKey } from '../../browser-extension/web-extension-api/storage'
-import { map, distinctUntilChanged } from 'rxjs/operators'
 import { Observable, of } from 'rxjs'
-import { isDefaultSourcegraphUrl } from './context'
+import { map, distinctUntilChanged } from 'rxjs/operators'
+
+import { observeStorageKey } from '../../browser-extension/web-extension-api/storage'
 import { isExtension } from '../context'
+
+import { isDefaultSourcegraphUrl } from './context'
 
 const OPTION_FLAGS_SYNC_STORAGE_KEY = 'featureFlags'
 

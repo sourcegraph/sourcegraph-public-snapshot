@@ -1,6 +1,6 @@
-import React, { useCallback } from 'react'
 import classNames from 'classnames'
 import { upperFirst, lowerCase } from 'lodash'
+import React, { useCallback } from 'react'
 
 export interface ChangesetFilterProps<T extends string> {
     label: string

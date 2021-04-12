@@ -1,10 +1,12 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import classNames from 'classnames'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import FileUploadIcon from 'mdi-react/FileUploadIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { FunctionComponent } from 'react'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+
 import { LSIFIndexState, LSIFUploadState } from '../../../graphql-operations'
 
 export interface CodeIntelStateIconProps {

@@ -1,15 +1,17 @@
-import * as Monaco from 'monaco-editor'
 import { escapeRegExp, startCase } from 'lodash'
-import { Token } from './token'
-import { toMonacoRange } from './decoratedToken'
-import { Omit } from 'utility-types'
+import * as Monaco from 'monaco-editor'
 import { Observable } from 'rxjs'
-import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup, ISearchContext } from '../../graphql/schema'
-import { SearchSuggestion } from '../suggestions'
-import { isDefined } from '../../util/types'
-import { FilterType, isNegatableFilter, resolveFilter, FILTERS, escapeSpaces } from './filters'
 import { first } from 'rxjs/operators'
+import { Omit } from 'utility-types'
+
 import { SymbolKind } from '../../graphql-operations'
+import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup, ISearchContext } from '../../graphql/schema'
+import { isDefined } from '../../util/types'
+import { SearchSuggestion } from '../suggestions'
+
+import { toMonacoRange } from './decoratedToken'
+import { FilterType, isNegatableFilter, resolveFilter, FILTERS, escapeSpaces } from './filters'
+import { Token } from './token'
 
 export const repositoryCompletionItemKind = Monaco.languages.CompletionItemKind.Color
 const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Customcolor

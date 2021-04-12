@@ -2,17 +2,19 @@ import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { from, Observable, ReplaySubject, Subscription } from 'rxjs'
 import { map, mapTo, switchMap, tap } from 'rxjs/operators'
+
+import { useBuiltinPanelViews } from '@sourcegraph/branded/src/components/panel/Panel'
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import * as clientType from '@sourcegraph/extension-api-types'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { ReferenceParameters, TextDocumentPositionParameters } from '@sourcegraph/shared/src/api/protocol'
 import { Activation, ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { AbsoluteRepoFile, ModeSpec, parseHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
-import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
-import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useBuiltinPanelViews } from '@sourcegraph/branded/src/components/panel/Panel'
+import { AbsoluteRepoFile, ModeSpec, parseHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 
 interface Props extends AbsoluteRepoFile, ModeSpec, ExtensionsControllerProps, ActivationProps {
     location: H.Location

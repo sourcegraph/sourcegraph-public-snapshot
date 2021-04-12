@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React, { FunctionComponent } from 'react'
+
 import { LSIFIndexState, LSIFUploadState } from '../../../graphql-operations'
+
 import { CodeIntelStateDescription } from './CodeIntelStateDescription'
 import { CodeIntelStateIcon } from './CodeIntelStateIcon'
 

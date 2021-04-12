@@ -44,6 +44,11 @@
             margin-bottom: 0;
         }
     }
+
+    &__view-description {
+        // Place description at the bottom of view card
+        margin-top: auto;
+    }
 }
 
 .insight-description {

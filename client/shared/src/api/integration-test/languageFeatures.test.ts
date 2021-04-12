@@ -1,13 +1,16 @@
-import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { Location } from '@sourcegraph/extension-api-types'
+import { Remote } from 'comlink'
 import { asyncScheduler, Observable, of } from 'rxjs'
 import { observeOn, take, toArray, map, first } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { assertToJSON, createBarrier, integrationTestContext } from './testHelpers'
+
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { Remote } from 'comlink'
-import { FlatExtensionHostAPI } from '../contract'
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
+import { Location } from '@sourcegraph/extension-api-types'
+
 import { wrapRemoteObservable } from '../client/api/common'
+import { FlatExtensionHostAPI } from '../contract'
+
+import { assertToJSON, createBarrier, integrationTestContext } from './testHelpers'
 
 describe('LanguageFeatures (integration)', () => {
     testLocationProvider<sourcegraph.HoverProvider>({

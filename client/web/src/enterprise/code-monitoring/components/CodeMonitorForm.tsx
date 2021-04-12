@@ -1,19 +1,22 @@
 import classnames from 'classnames'
+import * as H from 'history'
+import { isEqual } from 'lodash'
 import React, { useCallback, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { AuthenticatedUser } from '../../../auth'
-import * as H from 'history'
+import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { AuthenticatedUser } from '../../../auth'
+import { CodeMonitorFields } from '../../../graphql-operations'
+import { deleteCodeMonitor as _deleteCodeMonitor } from '../backend'
+
+import { DeleteMonitorModal } from './DeleteMonitorModal'
 import { FormActionArea } from './FormActionArea'
 import { FormTriggerArea } from './FormTriggerArea'
-import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { CodeMonitorFields } from '../../../graphql-operations'
-import { isEqual } from 'lodash'
-import { DeleteMonitorModal } from './DeleteMonitorModal'
-import { deleteCodeMonitor as _deleteCodeMonitor } from '../backend'
 
 export interface CodeMonitorFormProps {
     history: H.History

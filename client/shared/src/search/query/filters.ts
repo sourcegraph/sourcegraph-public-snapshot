@@ -1,7 +1,9 @@
-import { Filter, Literal } from './token'
-import { SearchSuggestion } from '../suggestions'
 import { Omit } from 'utility-types'
+
+import { SearchSuggestion } from '../suggestions'
+
 import { selectorCompletion } from './selectFilter'
+import { Filter, Literal } from './token'
 
 export enum FilterType {
     after = 'after',

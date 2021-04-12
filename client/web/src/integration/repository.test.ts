@@ -1,6 +1,18 @@
 import assert from 'assert'
+import * as path from 'path'
+
+import type * as sourcegraph from 'sourcegraph'
+
+import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
+import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
-import { commonWebGraphQlResults } from './graphQlResults'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { encodeURIPathComponent } from '@sourcegraph/shared/src/util/url'
+
+import { DiffHunkLineType, WebGraphQlOperations } from '../graphql-operations'
+
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import {
     createRepositoryRedirectResult,
@@ -9,15 +21,7 @@ import {
     createTreeEntriesResult,
     createBlobContentResult,
 } from './graphQlResponseHelpers'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-import * as path from 'path'
-import { DiffHunkLineType, WebGraphQlOperations } from '../graphql-operations'
-import { encodeURIPathComponent } from '@sourcegraph/shared/src/util/url'
-import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
-import type * as sourcegraph from 'sourcegraph'
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { commonWebGraphQlResults } from './graphQlResults'
 
 export const getCommonRepositoryGraphQlResults = (
     repositoryName: string,

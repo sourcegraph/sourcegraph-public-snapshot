@@ -1,4 +1,5 @@
 import { basename, dirname, extname } from 'path'
+
 import { SettingsCascadeOrError, isSettingsValid } from '../../../../settings/settings'
 import { ViewerWithPartialModel } from '../../../viewerTypes'
 

@@ -1,4 +1,5 @@
 import * as React from 'react'
+
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 export const LoadingPanelView: React.FunctionComponent<{ text: string }> = ({ text }) => (

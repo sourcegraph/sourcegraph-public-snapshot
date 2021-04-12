@@ -1,10 +1,12 @@
 import Dialog from '@reach/dialog'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useCallback } from 'react'
 import { Observable, throwError } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { CodeMonitorFormProps } from './CodeMonitorForm'
 
 interface DeleteModalProps extends Pick<CodeMonitorFormProps, 'history' | 'codeMonitor'> {

@@ -1,6 +1,7 @@
+import { Observable } from 'rxjs'
+
 import { GraphQLResult, requestGraphQLCommon } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { Observable } from 'rxjs'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 /**

@@ -1,5 +1,5 @@
-import React from 'react'
 import classnames from 'classnames'
+import React from 'react'
 
 export type BadgeStatus = 'beta' | 'prototype' | 'wip' | 'new'
 

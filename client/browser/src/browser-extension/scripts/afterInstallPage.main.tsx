@@ -3,6 +3,7 @@ import '../../shared/polyfills'
 
 import React from 'react'
 import { render } from 'react-dom'
+
 import { AfterInstallPageContent } from '../after-install-page/AfterInstallPageContent'
 import { ThemeWrapper } from '../ThemeWrapper'
 

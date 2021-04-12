@@ -5,19 +5,12 @@ import { act } from 'react-dom/test-utils'
 import { BrowserRouter } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
+
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { SearchResult } from '../../../components/SearchResult'
-import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
-import * as helpers from '../../helpers'
-import { AggregateStreamingSearchResults } from '../../stream'
-import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
-import { VersionContextWarning } from '../VersionContextWarning'
-import { StreamingProgress } from './progress/StreamingProgress'
-import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 import {
     extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
@@ -25,6 +18,16 @@ import {
     REPO_MATCH_RESULT,
     RESULT,
 } from '@sourcegraph/shared/src/util/searchTestHelpers'
+
+import { SearchResult } from '../../../components/SearchResult'
+import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
+import * as helpers from '../../helpers'
+import { AggregateStreamingSearchResults } from '../../stream'
+import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
+import { VersionContextWarning } from '../VersionContextWarning'
+
+import { StreamingProgress } from './progress/StreamingProgress'
+import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 
 describe('StreamingSearchResults', () => {
     const history = createBrowserHistory()

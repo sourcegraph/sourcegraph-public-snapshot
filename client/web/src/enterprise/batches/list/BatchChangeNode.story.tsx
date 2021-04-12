@@ -1,10 +1,12 @@
-import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
-import React from 'react'
-import { BatchChangeNode } from './BatchChangeNode'
+import { storiesOf } from '@storybook/react'
 import isChromatic from 'chromatic/isChromatic'
 import { subDays } from 'date-fns'
+import React from 'react'
+
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
+import { BatchChangeNode } from './BatchChangeNode'
 import { nodes, now } from './testData'
 
 const { add } = storiesOf('web/batches/BatchChangeNode', module).addDecorator(story => (

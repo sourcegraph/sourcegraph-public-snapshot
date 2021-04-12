@@ -1,8 +1,10 @@
-import React from 'react'
 import CloseIcon from 'mdi-react/CloseIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
-import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
+import React from 'react'
+
 import { ExternalLinkFields, ExternalServiceKind } from '../../graphql-operations'
+
+import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
 
 interface Props {
     onAlertDismissed: () => void

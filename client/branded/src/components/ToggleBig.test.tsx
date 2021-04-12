@@ -1,7 +1,8 @@
-import React from 'react'
-import { ToggleBig } from './ToggleBig'
 import { mount } from 'enzyme'
+import React from 'react'
 import sinon from 'sinon'
+
+import { ToggleBig } from './ToggleBig'
 
 describe('ToggleBig', () => {
     test('value is false', () => {

@@ -1,7 +1,9 @@
-import React from 'react'
 import * as H from 'history'
+import React from 'react'
+
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+
 import { SearchContextFields } from '../graphql-operations'
 
 function getSearchContextRepositoriesDescription(searchContext: ISearchContext): string {

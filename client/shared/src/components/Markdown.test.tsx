@@ -1,7 +1,8 @@
+import { createMemoryHistory } from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
+
 import { Markdown } from './Markdown'
-import { createMemoryHistory } from 'history'
 
 describe('Markdown', () => {
     it('renders', () => {

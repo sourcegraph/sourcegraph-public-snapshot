@@ -1,4 +1,5 @@
 import * as sourcegraph from 'sourcegraph'
+
 import { WorkspaceRoot } from '@sourcegraph/extension-api-types'
 
 export class ExtensionWorkspaceRoot implements sourcegraph.WorkspaceRoot {

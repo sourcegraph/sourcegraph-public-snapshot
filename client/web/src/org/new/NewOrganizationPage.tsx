@@ -1,14 +1,16 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import React, { useCallback, useEffect, useState } from 'react'
-import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
+
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
+import { ErrorAlert } from '../../components/alerts'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createOrganization } from '../backend'
-import { ErrorAlert } from '../../components/alerts'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 interface Props {
     history: H.History

@@ -1,11 +1,20 @@
-import { HoveredToken, LOADER_DELAY, MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { Location } from '@sourcegraph/extension-api-types'
+import { Remote } from 'comlink'
 import { createMemoryHistory, MemoryHistory, createPath } from 'history'
 import { from, Observable, of, throwError, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
+import * as sourcegraph from 'sourcegraph'
+
+import { HoveredToken, LOADER_DELAY, MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { Position, Range } from '@sourcegraph/extension-api-classes'
+import { Location } from '@sourcegraph/extension-api-types'
+
 import { ActionItemAction } from '../actions/ActionItem'
+import { ExposedToClient } from '../api/client/mainthread-api'
+import { FlatExtensionHostAPI } from '../api/contract'
+import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
+import { integrationTestContext } from '../api/integration-test/testHelpers'
 import { TextDocumentPositionParameters } from '../api/protocol'
 import { PrivateRepoPublicSourcegraphComError } from '../backend/errors'
 import { SuccessGraphQLResult } from '../graphql/graphql'
@@ -21,6 +30,7 @@ import {
     toAbsoluteBlobURL,
     toPrettyBlobURL,
 } from '../util/url'
+
 import {
     getDefinitionURL,
     getHoverActionItems,
@@ -29,13 +39,6 @@ import {
     registerHoverContributions,
 } from './actions'
 import { HoverContext } from './HoverOverlay'
-import { FlatExtensionHostAPI } from '../api/contract'
-import { Remote } from 'comlink'
-import { integrationTestContext } from '../api/integration-test/testHelpers'
-import { ExposedToClient } from '../api/client/mainthread-api'
-import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
-import * as sourcegraph from 'sourcegraph'
-import { Position, Range } from '@sourcegraph/extension-api-classes'
 
 const FIXTURE_PARAMS: TextDocumentPositionParameters & URLToFileContext = {
     textDocument: { uri: 'git://r?c#f' },

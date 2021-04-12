@@ -3,6 +3,7 @@ import { catchError, map } from 'rxjs/operators'
 
 import { isPrivateRepoPublicSourcegraphComErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+
 import { resolveRepo, resolveRevision, retryWhenCloneInProgressError } from '../../../repo/backend'
 import { FileInfo, FileInfoWithRepoName, DiffOrBlobInfo } from '../codeHost'
 

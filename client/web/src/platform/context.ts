@@ -1,5 +1,7 @@
 import { concat, Observable, ReplaySubject } from 'rxjs'
 import { map, publishReplay, refCount } from 'rxjs/operators'
+
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { createExtensionHost } from '@sourcegraph/shared/src/api/extension/worker'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
@@ -16,8 +18,8 @@ import {
     RenderModeSpec,
     UIRangeSpec,
 } from '@sourcegraph/shared/src/util/url'
+
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { eventLogger } from '../tracking/eventLogger'
 
 /**

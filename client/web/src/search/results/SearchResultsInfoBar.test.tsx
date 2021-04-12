@@ -1,12 +1,15 @@
-import React from 'react'
-import renderer from 'react-test-renderer'
 import { createMemoryHistory, createLocation } from 'history'
 import { noop } from 'lodash'
+import React from 'react'
+import renderer from 'react-test-renderer'
 import { NEVER } from 'rxjs'
-import { SearchResultsInfoBar, SearchResultsInfoBarProps } from './SearchResultsInfoBar'
+
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { SearchPatternType } from '../../graphql-operations'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+
+import { SearchPatternType } from '../../graphql-operations'
+
+import { SearchResultsInfoBar, SearchResultsInfoBarProps } from './SearchResultsInfoBar'
 
 const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     extensionsController,

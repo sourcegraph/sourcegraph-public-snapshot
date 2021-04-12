@@ -1,5 +1,7 @@
 import React from 'react'
+
 import { lazyComponent } from '../util/lazyComponent'
+
 import { ExtensionsAreaRoute } from './ExtensionsArea'
 
 const ExtensionArea = lazyComponent(() => import('./extension/ExtensionArea'), 'ExtensionArea')

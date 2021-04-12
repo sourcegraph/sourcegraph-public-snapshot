@@ -1,10 +1,16 @@
 /* istanbul ignore file */
 
-import expect from 'expect'
+import * as os from 'os'
+import * as path from 'path'
+
 import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
-import * as os from 'os'
+import delay from 'delay'
+import expect from 'expect'
+import getFreePort from 'get-port'
+import { escapeRegExp } from 'lodash'
+import { readFile, appendFile, mkdir } from 'mz/fs'
 import puppeteer, {
     PageEventObj,
     Page,
@@ -15,25 +21,22 @@ import puppeteer, {
     Target,
     RevisionInfo,
 } from 'puppeteer'
-import { Key } from 'ts-key-enum'
-import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import { IMutation, IQuery, IRepository } from '../graphql/schema'
-import { readEnvironmentBoolean, retry } from './utils'
-import { formatPuppeteerConsoleMessage } from './console'
-import * as path from 'path'
-import { escapeRegExp } from 'lodash'
-import { readFile, appendFile, mkdir } from 'mz/fs'
-import { Settings } from '../settings/settings'
+import puppeteerFirefox from 'puppeteer-firefox'
 import { from, fromEvent, merge, Subscription } from 'rxjs'
 import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
-import getFreePort from 'get-port'
-import puppeteerFirefox from 'puppeteer-firefox'
+import { Key } from 'ts-key-enum'
 import webExt from 'web-ext'
-import { isDefined } from '../util/types'
-import { getConfig } from './config'
+
 import { ExternalServiceKind } from '../graphql-operations'
-import delay from 'delay'
+import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
+import { IMutation, IQuery, IRepository } from '../graphql/schema'
+import { Settings } from '../settings/settings'
+import { isDefined } from '../util/types'
+
+import { getConfig } from './config'
+import { formatPuppeteerConsoleMessage } from './console'
 import { PUPPETEER_BROWSER_REVISION } from './puppeteer-browser-revision'
+import { readEnvironmentBoolean, retry } from './utils'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.

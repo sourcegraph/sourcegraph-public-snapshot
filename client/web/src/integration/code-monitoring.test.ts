@@ -1,11 +1,15 @@
-import expect from 'expect'
 import assert from 'assert'
-import { commonWebGraphQlResults } from './graphQlResults'
+
+import expect from 'expect'
+
 import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-import { siteID, siteGQLID } from './jscontext'
+
 import { SearchResult } from '../graphql-operations'
+
+import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { commonWebGraphQlResults } from './graphQlResults'
+import { siteID, siteGQLID } from './jscontext'
 
 describe('Code monitoring', () => {
     let driver: Driver

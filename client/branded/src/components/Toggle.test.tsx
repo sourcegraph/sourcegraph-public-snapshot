@@ -1,7 +1,8 @@
-import React from 'react'
-import { Toggle } from './Toggle'
 import { mount } from 'enzyme'
+import React from 'react'
 import sinon from 'sinon'
+
+import { Toggle } from './Toggle'
 
 describe('Toggle', () => {
     test('value is false', () => {

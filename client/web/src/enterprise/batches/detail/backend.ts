@@ -1,7 +1,10 @@
-import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
+
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+
 import { diffStatFields, fileDiffFields } from '../../../backend/diff'
+import { requestGraphQL } from '../../../backend/graphql'
 import {
     BatchChangeChangesetsVariables,
     BatchChangeChangesetsResult,
@@ -27,7 +30,6 @@ import {
     DetachChangesetsVariables,
     DetachChangesetsResult,
 } from '../../../graphql-operations'
-import { requestGraphQL } from '../../../backend/graphql'
 
 const changesetsStatsFragment = gql`
     fragment ChangesetsStatsFields on ChangesetsStats {

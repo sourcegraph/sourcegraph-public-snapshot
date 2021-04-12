@@ -1,8 +1,11 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+
 import { ErrorAlert } from '../../../components/alerts'
 import { AggregateStreamingSearchResults } from '../../stream'
+
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
 
 export const StreamingSearchResultFooter: React.FunctionComponent<{ results?: AggregateStreamingSearchResults }> = ({

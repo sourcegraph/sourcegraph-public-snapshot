@@ -1,19 +1,21 @@
-import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
+import { storiesOf } from '@storybook/react'
+import { addDays, subDays } from 'date-fns'
 import React from 'react'
-import { BatchChangePreviewPage } from './BatchChangePreviewPage'
 import { of, Observable } from 'rxjs'
+
 import {
     BatchSpecApplyPreviewConnectionFields,
     BatchSpecFields,
     ChangesetApplyPreviewFields,
     ExternalServiceKind,
 } from '../../../graphql-operations'
-import { visibleChangesetApplyPreviewNodeStories } from './list/VisibleChangesetApplyPreviewNode.story'
-import { hiddenChangesetApplyPreviewStories } from './list/HiddenChangesetApplyPreviewNode.story'
-import { fetchBatchSpecById } from './backend'
-import { addDays, subDays } from 'date-fns'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
+import { fetchBatchSpecById } from './backend'
+import { BatchChangePreviewPage } from './BatchChangePreviewPage'
+import { hiddenChangesetApplyPreviewStories } from './list/HiddenChangesetApplyPreviewNode.story'
+import { visibleChangesetApplyPreviewNodeStories } from './list/VisibleChangesetApplyPreviewNode.story'
 
 const { add } = storiesOf('web/batches/preview/BatchChangePreviewPage', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)

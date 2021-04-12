@@ -4,6 +4,7 @@ import { select, Selection } from 'd3-selection'
 import { stack } from 'd3-shape'
 import { isEqual } from 'lodash'
 import * as React from 'react'
+
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 interface BarChartSeries {

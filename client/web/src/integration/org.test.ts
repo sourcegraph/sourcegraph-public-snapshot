@@ -1,13 +1,16 @@
 import assert from 'assert'
-import { commonWebGraphQlResults } from './graphQlResults'
-import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
+import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
-import { subtypeOf } from '@sourcegraph/shared/src/util/types'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
+import { subtypeOf } from '@sourcegraph/shared/src/util/types'
+
+import { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
+
+import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { commonWebGraphQlResults } from './graphQlResults'
 
 describe('Organizations', () => {
     const testOrg = subtypeOf<OrganizationResult['organization']>()({

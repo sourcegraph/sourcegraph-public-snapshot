@@ -1,7 +1,9 @@
-import { cacheFolder, readLine, getWeekNumber } from './util'
-import * as semver from 'semver'
 import { readFileSync, unlinkSync } from 'fs'
+
 import { parse as parseJSONC } from '@sqs/jsonc-parser'
+import * as semver from 'semver'
+
+import { cacheFolder, readLine, getWeekNumber } from './util'
 
 /**
  * Release configuration file format

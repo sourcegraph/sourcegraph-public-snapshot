@@ -1,10 +1,12 @@
+import classNames from 'classnames'
 import * as H from 'history'
+import { noop } from 'lodash'
 import React, { useCallback, AnchorHTMLAttributes } from 'react'
 import { Key } from 'ts-key-enum'
-import { Link } from './Link'
-import classNames from 'classnames'
-import { noop } from 'lodash'
+
 import { isDefined } from '../util/types'
+
+import { Link } from './Link'
 
 const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
     event.key === Key.Enter && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey
