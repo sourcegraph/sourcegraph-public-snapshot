@@ -110,7 +110,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     minimap: { enabled: false },
                     formatOnType: true,
                     formatOnPaste: true,
-                    autoIndent: true,
+                    autoIndent: 'none',
                     renderIndentGuides: false,
                     glyphMargin: false,
                     folding: false,
@@ -243,8 +243,14 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     // TODO: This is buggy. See
                     // https://github.com/sourcegraph/sourcegraph/issues/2756.
                     selection = monaco.Selection.fromPositions(
-                        monacoEdits[0].range.getStartPosition(),
-                        monacoEdits[monacoEdits.length - 1].range.getEndPosition()
+                        {
+                            lineNumber: monacoEdits[0].range.startLineNumber,
+                            column: monacoEdits[0].range.startColumn,
+                        },
+                        {
+                            lineNumber: monacoEdits[monacoEdits.length - 1].range.endLineNumber,
+                            column: monacoEdits[monacoEdits.length - 1].range.endColumn,
+                        }
                     )
                 }
                 editor.executeEdits(id, monacoEdits, [selection])

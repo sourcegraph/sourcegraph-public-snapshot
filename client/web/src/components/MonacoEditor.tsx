@@ -189,7 +189,7 @@ interface Props extends ThemeProps {
     onEditorCreated?: (editor: monaco.editor.IStandaloneCodeEditor) => void
 
     /** Options for the editor. */
-    options: monaco.editor.IEditorOptions
+    options: monaco.editor.IStandaloneEditorConstructionOptions
 
     /** An optional className to add to the editor. */
     className?: string

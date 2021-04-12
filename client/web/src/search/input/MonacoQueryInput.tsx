@@ -351,7 +351,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         return () => disposable.dispose()
     }, [editor, onSubmit])
 
-    const options: Monaco.editor.IEditorOptions = {
+    const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
         readOnly: false,
         lineNumbers: 'off',
         lineHeight: 16,
