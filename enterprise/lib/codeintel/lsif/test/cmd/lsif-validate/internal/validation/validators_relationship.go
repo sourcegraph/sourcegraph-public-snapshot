@@ -166,7 +166,7 @@ func ensureItemContains(ctx *ValidationContext) bool {
 		if lineContext.Element.Label == "item" {
 			return forEachInV(edge, func(inV int) bool {
 				if ownershipMap[inV].DocumentID != edge.Document {
-					ctx.AddError("vertex should be %d owned by document %d", inV, edge.Document).AddContext(lineContext, ownershipMap[inV].LineContext)
+					ctx.AddError("vertex %d should be owned by document %d", inV, edge.Document).AddContext(lineContext, ownershipMap[inV].LineContext)
 					return false
 				}
 
@@ -176,4 +176,31 @@ func ensureItemContains(ctx *ValidationContext) bool {
 
 		return true
 	})
+}
+
+// ensureUnambiguousResultSets ensures that each range and each result set have at most
+// one next edge pointing to another result set. This ensures that ranges form a chain
+// of definition results, reference results, and monikers instead of a tree.
+func ensureUnambiguousResultSets(ctx *ValidationContext) bool {
+	nextSources := map[int][]reader2.LineContext{}
+	_ = ctx.Stasher.Edges(func(lineContext reader2.LineContext, edge reader.Edge) bool {
+		if lineContext.Element.Label == "next" {
+			nextSources[edge.OutV] = append(nextSources[edge.OutV], lineContext)
+			return true
+		}
+
+		return true
+	})
+
+	valid := true
+	for outV, lineContexts := range nextSources {
+		if len(lineContexts) == 1 {
+			continue
+		}
+
+		valid = false
+		ctx.AddError("vertex %d has multiple result sets", outV).AddContext(lineContexts...)
+	}
+
+	return valid
 }
