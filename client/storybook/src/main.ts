@@ -19,8 +19,6 @@ const getCSSLoaders = (...loaders: RuleSetUseItem[]): RuleSetUse => [
         loader: 'sass-loader',
         options: {
             sassOptions: {
-                // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
-                implementation: require('sass'),
                 includePaths: [path.resolve(rootPath, 'node_modules')],
             },
         },
