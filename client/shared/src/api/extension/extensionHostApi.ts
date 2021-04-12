@@ -699,8 +699,7 @@ function callViewProvidersSequentially<W extends ContributableViewContainer>(
                     providers.map(provider => ({ id: provider.id, view: undefined }))
                 )
             )
-        ),
-        map(views => views.filter(allOf(isDefined, property('view', isNot(isExactly(undefined))))))
+        )
     )
 }
 
