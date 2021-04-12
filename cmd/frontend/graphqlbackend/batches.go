@@ -286,7 +286,7 @@ type BatchSpecResolver interface {
 	AppliesToCampaign(ctx context.Context) (BatchChangeResolver, error)
 	SupersedingCampaignSpec(context.Context) (BatchSpecResolver, error)
 	ViewerCampaignsCodeHosts(ctx context.Context, args *ListViewerCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
-	// This should be removed once we remove btypes. It's here so that in
+	// This should be removed once we remove batches. It's here so that in
 	// the NodeResolver we can have the same resolver, BatchChangeResolver, act
 	// as a Campaign and a BatchChange.
 	ActAsCampaignSpec() bool
@@ -513,7 +513,7 @@ type BatchChangeResolver interface {
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	CurrentSpec(ctx context.Context) (BatchSpecResolver, error)
 
-	// TODO(campaigns-deprecation): This should be removed once we remove btypes.
+	// TODO(campaigns-deprecation): This should be removed once we remove batches.
 	// It's here so that in the NodeResolver we can have the same resolver,
 	// BatchChangeResolver, act as a Campaign and a BatchChange.
 	ActAsCampaign() bool
