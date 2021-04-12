@@ -37,10 +37,18 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         submitSearch,
         fetchAutoDefinedSearchContexts,
         fetchSearchContexts,
+        showSearchContextHighlightBubble = false,
     } = props
 
+    const [hasSeenHighlightBubble, setHasSeenHighlightBubble] = useLocalStorage(HAS_SEEN_HIGHLIGHT_BUBBLE_KEY, false)
+    const closeHighlightBubble = useCallback(() => setHasSeenHighlightBubble(true), [setHasSeenHighlightBubble])
+
     const [isOpen, setIsOpen] = useState(false)
-    const toggleOpen = useCallback(() => setIsOpen(value => !value), [])
+    const toggleOpen = useCallback(() => {
+        setIsOpen(value => !value)
+        closeHighlightBubble()
+    }, [closeHighlightBubble])
+
     const [isDisabled, setIsDisabled] = useState(false)
 
     // Disable the dropdown if the query contains a context filter
@@ -71,9 +79,6 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         },
         [submitOnToggle, setSelectedSearchContextSpec]
     )
-
-    const [hasSeenHighlightBubble, setHasSeenHighlightBubble] = useLocalStorage(HAS_SEEN_HIGHLIGHT_BUBBLE_KEY, false)
-    const onCloseHighlightBubble = useCallback(() => setHasSeenHighlightBubble(true), [setHasSeenHighlightBubble])
 
     return (
         <>
@@ -117,7 +122,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     />
                 </DropdownMenu>
             </Dropdown>
-            {!hasSeenHighlightBubble && (
+            {showSearchContextHighlightBubble && !hasSeenHighlightBubble && (
                 <div className="search-context-dropdown__highlight-bubble">
                     <div>
                         <strong>New: Search contexts</strong>
@@ -128,7 +133,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                         <a href="https://docs.sourcegraph.com/">Learn more</a>
                     </div>
                     <div className="d-flex justify-content-end">
-                        <button type="button" className="btn btn-sm" onClick={onCloseHighlightBubble}>
+                        <button type="button" className="btn btn-sm" onClick={closeHighlightBubble}>
                             Close
                         </button>
                     </div>
