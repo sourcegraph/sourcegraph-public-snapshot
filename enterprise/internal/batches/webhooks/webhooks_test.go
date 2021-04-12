@@ -91,7 +91,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		}
 
 		s := store.NewWithClock(db, clock)
-		sourcer := sources.NewSourcer(nil)
+		sourcer := sources.NewSourcer(cf)
 
 		spec := &btypes.BatchSpec{
 			NamespaceUserID: userID,
@@ -237,12 +237,16 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		secret := "secret"
 		repoStore := database.Repos(db)
 		esStore := database.ExternalServices(db)
+		bitbucketServerToken := os.Getenv("BITBUCKET_SERVER_TOKEN")
+		if bitbucketServerToken == "" {
+			bitbucketServerToken = "test-token"
+		}
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket",
 			Config: ct.MarshalJSON(t, &schema.BitbucketServerConnection{
 				Url:   "https://bitbucket.sgdev.org",
-				Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+				Token: bitbucketServerToken,
 				Repos: []string{"SOUR/automation-testing"},
 				Webhooks: &schema.Webhooks{
 					Secret: secret,
@@ -275,7 +279,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		}
 
 		s := store.NewWithClock(db, clock)
-		sourcer := sources.NewSourcer(nil)
+		sourcer := sources.NewSourcer(cf)
 
 		spec := &btypes.BatchSpec{
 			NamespaceUserID: userID,
