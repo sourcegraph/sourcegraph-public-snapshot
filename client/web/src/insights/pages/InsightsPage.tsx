@@ -6,9 +6,9 @@ import GearIcon from 'mdi-react/GearIcon'
 import { Link } from 'react-router-dom'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
-import { PageHeader } from '../../../components/PageHeader'
-import { FeedbackBadge } from '../../../components/FeedbackBadge'
-import { Page } from '../../../components/Page'
+import { PageHeader } from '../../components/PageHeader'
+import { FeedbackBadge } from '../../components/FeedbackBadge'
+import { Page } from '../../components/Page'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { InsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../components'
 import { InsightsApiContext } from '../core/backend/api-provider';

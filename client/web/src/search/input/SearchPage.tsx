@@ -22,7 +22,7 @@ import { Link } from '../../../../shared/src/components/Link'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { VersionContextProps } from '../../../../shared/src/search/util'
 import { VersionContext } from '../../schema/site.schema'
-import { InsightsViewGrid } from '../../insights/src/components'
+import { InsightsViewGrid } from '../../insights/components'
 import { useObservable } from '../../../../shared/src/util/useObservable'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { EMPTY, from } from 'rxjs'
@@ -38,7 +38,7 @@ import { SearchPageFooter } from './SearchPageFooter'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { switchMap } from 'rxjs/operators'
 import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
-import { InsightsApiContext } from '../../insights/src/core/backend/api-provider';
+import { InsightsApiContext } from '../../insights/core/backend/api-provider';
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,

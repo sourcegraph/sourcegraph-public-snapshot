@@ -8,9 +8,9 @@ import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import { Layout as ReactGridLayout, Layouts as ReactGridLayouts, Responsive, WidthProvider } from 'react-grid-layout'
 
-import { ViewContent, ViewContentProps } from '../../../../views/ViewContent'
-import { ErrorAlert } from '../../../../components/alerts'
-import { ErrorBoundary } from '../../../../components/ErrorBoundary'
+import { ViewContent, ViewContentProps } from '../../../views/ViewContent'
+import { ErrorAlert } from '../../../components/alerts'
+import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../../core/backend/types'
 
 // TODO use a method to get width that also triggers when file explorer is closed

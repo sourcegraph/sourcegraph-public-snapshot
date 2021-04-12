@@ -1,7 +1,7 @@
 import { combineLatest, from, Observable, of } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { asError } from '@sourcegraph/shared/out/src/util/errors'
-import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { ViewProviderResult } from '@sourcegraph/shared/out/src/api/extension/extensionHostApi'
 import { createViewContent } from './utils/create-view-content';
 import { fetchBackendInsights } from './requests/fetch-backend-insights'
 import { ApiService, ViewInsightProviderResult, ViewInsightProviderSourceType } from './types';

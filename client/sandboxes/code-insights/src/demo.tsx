@@ -6,13 +6,13 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService';
 import { setLinkComponent } from '@sourcegraph/shared/src/components/Link';
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations';
+import { InsightsApiContext } from '@sourcegraph/web/src/insights/core/backend/api-provider';
+import { InsightsPage } from '@sourcegraph/web/src/insights/pages/InsightsPage';
+import { RouterLinkOrAnchor } from '@sourcegraph/web/src/components/RouterLinkOrAnchor';
 
-import { RouterLinkOrAnchor } from '../../components/RouterLinkOrAnchor';
 import { MockInsightsApi } from './mock-api'
-import { InsightsApiContext } from '../src/core/backend/api-provider';
-import { InsightsPage } from '../src/pages/InsightsPage';
 
-import '../../SourcegraphWebApp.scss';
+import '@sourcegraph/web/src/SourcegraphWebApp.scss';
 
 const history = createBrowserHistory();
 const mockAPI = new MockInsightsApi();

@@ -20,6 +20,7 @@
     "graphql-lint": "graphql-schema-linter cmd/frontend/graphqlbackend/schema.graphql",
     "build-web": "yarn workspace @sourcegraph/web run build",
     "watch-web": "yarn workspace @sourcegraph/web run watch",
+    "code-insights-demo": "yarn workspace @sourcegraph/code-insights-demo run serve",
     "generate": "gulp generate",
     "watch-generate": "gulp watchGenerate",
     "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook",
@@ -75,7 +76,8 @@
   },
   "workspaces": {
     "packages": [
-      "client/*"
+      "client/*",
+      "client/sandboxes/*"
     ]
   },
   "devDependencies": {
@@ -96,6 +98,7 @@
     "@mermaid-js/mermaid-cli": "^8.7.0",
     "@octokit/rest": "^16.36.0",
     "@percy/puppeteer": "^1.1.0",
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.4.3",
     "@pollyjs/adapter": "^5.0.0",
     "@pollyjs/core": "^5.1.0",
     "@pollyjs/persister-fs": "^5.0.0",
@@ -239,6 +242,7 @@
     "raw-loader": "^4.0.2",
     "react-docgen-typescript-webpack-plugin": "^1.1.0",
     "react-hot-loader": "^4.13.0",
+    "react-refresh": "^0.10.0",
     "react-test-renderer": "^16.14.0",
     "sass": "^1.32.4",
     "sass-loader": "^10.1.0",
@@ -265,6 +269,7 @@
     "web-ext": "^4.2.0",
     "webpack": "^4.44.2",
     "webpack-bundle-analyzer": "^3.9.0",
+    "webpack-cli": "^4.6.0",
     "webpack-dev-server": "^3.11.1",
     "worker-loader": "^3.0.8",
     "yarn-deduplicate": "^3.1.0"

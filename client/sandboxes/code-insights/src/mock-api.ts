@@ -1,5 +1,5 @@
-import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../src/core/backend/types';
-import { InsightsAPI } from '../src/core/backend/insights-api';
+import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '@sourcegraph/web/src/insights/core/backend/types';
+import { InsightsAPI } from '@sourcegraph/web/src/insights/core/backend/insights-api';
 import { Observable, of } from 'rxjs';
 
 export const MOCK_VIEWS = [

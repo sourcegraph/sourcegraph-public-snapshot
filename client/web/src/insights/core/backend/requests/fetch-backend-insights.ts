@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/out/src/graphql/graphql'
-import { InsightFields, InsightsResult } from '../../../../../graphql-operations';
-import { requestGraphQL } from '../../../../../backend/graphql';
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { InsightFields, InsightsResult } from '../../../../graphql-operations';
+import { requestGraphQL } from '../../../../backend/graphql';
 import { map } from 'rxjs/operators';
 
 const insightFieldsFragment = gql`

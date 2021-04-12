@@ -1,11 +1,9 @@
 const path = require('path');
-const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ReactRefreshPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
-const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 module.exports = {
-  entry: path.resolve(__dirname, './web-demo/demo.tsx'),
+  entry: path.resolve(__dirname, './src/demo.tsx'),
   output: {
     path: path.resolve(__dirname, 'dist'), // Note: Physical files are only output by the production build task `npm run build`.
     publicPath: '/',
@@ -26,15 +24,6 @@ module.exports = {
         use: ['babel-loader'],
       },
       {
-        test: /\.(png|jpe?g|gif)$/i,
-        use: [
-          {
-            loader: 'file-loader',
-            options: { name: 'static/media/[name].[hash:8].[ext]' }
-          },
-        ],
-      },
-      {
         test: /\.(scss)$/i,
         use: [
           'style-loader',
@@ -43,17 +32,7 @@ module.exports = {
           },
           'sass-loader'
         ],
-      },
-      {
-        test: /\.css$/i,
-        use: [
-          'style-loader',
-          {
-            loader: 'css-loader',
-          },
-          'postcss-loader'
-        ],
-      },
+      }
     ]
   },
   plugins: [
@@ -61,8 +40,7 @@ module.exports = {
       overlay: false
     }),
     new HtmlWebpackPlugin({
-      template: './web-demo/index.html'
-    }),
-    // new ForkTsCheckerWebpackPlugin(),
+      template: './src/index.html'
+    })
   ]
 };
