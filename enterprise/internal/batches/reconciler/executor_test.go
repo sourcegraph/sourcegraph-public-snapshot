@@ -655,8 +655,8 @@ func TestLoadChangesetSource(t *testing.T) {
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if fakeSource.CurrentInternalAuthenticator != nil {
-			t.Errorf("unexpected non-nil authenticator: %v", fakeSource.CurrentInternalAuthenticator)
+		if fakeSource.CurrentAuthenticator() != nil {
+			t.Errorf("unexpected non-nil authenticator: %v", fakeSource.CurrentAuthenticator())
 		}
 	})
 
@@ -679,7 +679,7 @@ func TestLoadChangesetSource(t *testing.T) {
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if diff := cmp.Diff(token, fakeSource.CurrentInternalAuthenticator); diff != "" {
+		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator()); diff != "" {
 			t.Errorf("unexpected authenticator:\n%s", diff)
 		}
 	})
@@ -704,8 +704,8 @@ func TestLoadChangesetSource(t *testing.T) {
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if fakeSource.CurrentInternalAuthenticator != nil {
-			t.Errorf("unexpected non-nil authenticator: %v", fakeSource.CurrentInternalAuthenticator)
+		if fakeSource.CurrentAuthenticator() != nil {
+			t.Errorf("unexpected non-nil authenticator: %v", fakeSource.CurrentAuthenticator())
 		}
 	})
 
@@ -738,7 +738,7 @@ func TestLoadChangesetSource(t *testing.T) {
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if diff := cmp.Diff(token, fakeSource.CurrentInternalAuthenticator); diff != "" {
+		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator()); diff != "" {
 			t.Errorf("unexpected authenticator:\n%s", diff)
 		}
 	})
@@ -764,7 +764,7 @@ func TestLoadChangesetSource(t *testing.T) {
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if diff := cmp.Diff(token, fakeSource.CurrentInternalAuthenticator); diff != "" {
+		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator()); diff != "" {
 			t.Errorf("unexpected authenticator:\n%s", diff)
 		}
 	})
@@ -789,7 +789,7 @@ func TestLoadChangesetSource(t *testing.T) {
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if diff := cmp.Diff(token, fakeSource.CurrentInternalAuthenticator); diff != "" {
+		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator()); diff != "" {
 			t.Errorf("unexpected authenticator:\n%s", diff)
 		}
 	})
