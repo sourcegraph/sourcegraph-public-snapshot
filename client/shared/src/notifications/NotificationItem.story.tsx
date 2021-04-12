@@ -1,13 +1,15 @@
-import { NotificationType } from '@sourcegraph/extension-api-classes'
 import { action } from '@storybook/addon-actions'
 import { number, select, text } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 import { NotificationType as NotificationTypeType } from 'sourcegraph'
+
+import { NotificationType } from '@sourcegraph/extension-api-classes'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+
 import { NotificationItem } from './NotificationItem'
 import notificationItemStyles from './NotificationItem.scss'
-import webStyles from '../../../web/src/SourcegraphWebApp.scss'
 
 const notificationClassNames = {
     [NotificationType.Log]: 'alert alert-secondary',

@@ -4,8 +4,9 @@ import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React from 'react'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { pluralize } from '../../../../shared/src/util/strings'
+
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 /** Search result statistics for GraphQL searches */
 export const SearchResultsStats: React.FunctionComponent<{

@@ -1,15 +1,20 @@
-import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { trimStart } from 'lodash'
+import { defer, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
-import { PlatformContext } from '../../../../../shared/src/platform/context'
+
+import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     FileSpec,
     RepoSpec,
     ResolvedRevisionSpec,
     RevisionSpec,
     toAbsoluteBlobURL,
-} from '../../../../../shared/src/util/url'
+} from '@sourcegraph/shared/src/util/url'
+
 import { fetchBlobContentLines } from '../../repo/backend'
 import { querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
@@ -17,15 +22,13 @@ import { CodeView, toCodeViewResolver } from '../shared/codeViews'
 import { NativeTooltip } from '../shared/nativeTooltips'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
 import { ViewResolver } from '../shared/views'
+
 import { markdownBodyViewResolver } from './contentViews'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
 import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
-import { defer, of } from 'rxjs'
-import { observeSystemIsLightTheme } from '../../../../../shared/src/theme'
-import { NotificationType } from '../../../../../shared/src/api/extension/extensionHostApi'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing

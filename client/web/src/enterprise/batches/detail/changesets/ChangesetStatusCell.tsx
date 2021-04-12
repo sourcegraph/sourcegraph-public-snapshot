@@ -1,14 +1,15 @@
-import React from 'react'
-import { ChangesetFields, ChangesetState } from '../../../../graphql-operations'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import SourcePullIcon from 'mdi-react/SourcePullIcon'
-import SourceMergeIcon from 'mdi-react/SourceMergeIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import AutorenewIcon from 'mdi-react/AutorenewIcon'
-import ErrorIcon from 'mdi-react/ErrorIcon'
-import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import classNames from 'classnames'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
+import AutorenewIcon from 'mdi-react/AutorenewIcon'
+import DeleteIcon from 'mdi-react/DeleteIcon'
+import ErrorIcon from 'mdi-react/ErrorIcon'
+import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
+import SourceMergeIcon from 'mdi-react/SourceMergeIcon'
+import SourcePullIcon from 'mdi-react/SourcePullIcon'
+import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import React from 'react'
+
+import { ChangesetFields, ChangesetState } from '../../../../graphql-operations'
 
 export interface ChangesetStatusCellProps {
     className?: string

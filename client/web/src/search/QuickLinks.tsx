@@ -1,6 +1,8 @@
 import LinkIcon from 'mdi-react/LinkIcon'
 import React from 'react'
-import { Link } from '../../../shared/src/components/Link'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+
 import { QuickLink } from '../schema/settings.schema'
 
 interface Props {

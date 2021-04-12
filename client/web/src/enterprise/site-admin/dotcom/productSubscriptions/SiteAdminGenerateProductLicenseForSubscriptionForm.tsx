@@ -3,15 +3,17 @@ import endOfDay from 'date-fns/endOfDay'
 import React, { useState, useCallback } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { gql } from '../../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { asError, createAggregateError, isErrorLike } from '../../../../../../shared/src/util/errors'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { mutateGraphQL } from '../../../../backend/graphql'
-import { Form } from '../../../../../../branded/src/components/Form'
-import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
 import { ErrorAlert } from '../../../../components/alerts'
-import { useEventObservable } from '../../../../../../shared/src/util/useObservable'
-import { Scalars } from '../../../../../../shared/src/graphql-operations'
+import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
 
 interface Props {
     subscriptionID: Scalars['ID']

@@ -1,7 +1,9 @@
-import { gql } from '../../../../shared/src/graphql/graphql'
+import { PrivateRepoPublicSourcegraphComError } from '@sourcegraph/shared/src/backend/errors'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+
 import { DEFAULT_SOURCEGRAPH_URL, getAssetsURL } from '../util/context'
+
 import { createPlatformContext } from './context'
-import { PrivateRepoPublicSourcegraphComError } from '../../../../shared/src/backend/errors'
 
 describe('Platform Context', () => {
     describe('requestGraphQL()', () => {

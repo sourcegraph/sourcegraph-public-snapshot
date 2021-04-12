@@ -155,19 +155,3 @@ type idType struct {
 	externalServiceID   string
 	externalServiceType string
 }
-
-type emptyBatchChangesCodeHostConnectionResolver struct{}
-
-var _ graphqlbackend.BatchChangesCodeHostConnectionResolver = &emptyBatchChangesCodeHostConnectionResolver{}
-
-func (c *emptyBatchChangesCodeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return int32(0), nil
-}
-
-func (c *emptyBatchChangesCodeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
-}
-
-func (c emptyBatchChangesCodeHostConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchChangesCodeHostResolver, error) {
-	return []graphqlbackend.BatchChangesCodeHostResolver{}, nil
-}

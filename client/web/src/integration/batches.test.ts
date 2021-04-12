@@ -1,9 +1,16 @@
 import assert from 'assert'
-import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
-import { commonWebGraphQlResults } from './graphQlResults'
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+
 import { subDays, addDays } from 'date-fns'
+
+import {
+    ChangesetSpecOperation,
+    ChangesetState,
+    ExternalServiceKind,
+    SharedGraphQlOperations,
+} from '@sourcegraph/shared/src/graphql-operations'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+
 import {
     ChangesetCheckState,
     ChangesetReviewState,
@@ -20,12 +27,9 @@ import {
     BatchChangeChangesetsVariables,
     BatchChangeChangesetsResult,
 } from '../graphql-operations'
-import {
-    ChangesetSpecOperation,
-    ChangesetState,
-    ExternalServiceKind,
-    SharedGraphQlOperations,
-} from '../../../shared/src/graphql-operations'
+
+import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
+import { commonWebGraphQlResults } from './graphQlResults'
 
 const batchChangeListNode: ListBatchChange = {
     id: 'batch123',
@@ -765,7 +769,7 @@ describe('Batches', () => {
                                     credential: isCreated
                                         ? {
                                               id: '123',
-                                              createdAt: new Date().toISOString(),
+                                              isSiteCredential: false,
                                               sshPublicKey: 'ssh-rsa randorandorandorando',
                                           }
                                         : null,
@@ -780,7 +784,7 @@ describe('Batches', () => {
                     return {
                         createBatchChangesCredential: {
                             id: '123',
-                            createdAt: new Date().toISOString(),
+                            isSiteCredential: false,
                             sshPublicKey: 'ssh-rsa randorandorandorando',
                         },
                     }

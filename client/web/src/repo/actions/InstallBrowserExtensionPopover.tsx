@@ -1,12 +1,15 @@
 import ExportIcon from 'mdi-react/ExportIcon'
 import PlusThickIcon from 'mdi-react/PlusThickIcon'
 import React, { useMemo } from 'react'
-import { Popover } from 'reactstrap'
-import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
-import { SourcegraphIcon } from '../../auth/icons'
-import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
-import { ExternalServiceKind } from '../../../../shared/src/graphql/schema'
 import FocusLock from 'react-focus-lock'
+import { Popover } from 'reactstrap'
+
+import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
+
+import { SourcegraphIcon } from '../../auth/icons'
+
+import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
 
 interface Props {
     url: string

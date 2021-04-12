@@ -9,7 +9,21 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
-## 3.25 -> 3.26
+## 3.26 -> 3.27
+
+> Warning: ⚠️ Sourcegraph 3.27 now requires **Postgres 12+**.
+
+If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12.6 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied supplied database images.
+
+## 3.26.0 -> 3.26.2
+
+To upgrade, please perform the changes in the following diff:
+
+https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/de80a4af2ef2eeb23526e3ea560f7f72e1a71a5f
+
+> NOTE: ⚠️ From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
+
+## 3.25 -> 3.26.0
 
 To upgrade, please perform the changes in the following diff:
 

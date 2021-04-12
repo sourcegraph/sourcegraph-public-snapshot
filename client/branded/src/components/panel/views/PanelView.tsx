@@ -1,15 +1,18 @@
 import * as H from 'history'
 import React from 'react'
 import { Observable } from 'rxjs'
-import { FetchFileParameters } from '../../../../../shared/src/components/CodeExcerpt'
+
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
-import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
-import { renderMarkdown } from '../../../../../shared/src/util/markdown'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+
+import { PanelViewWithComponent } from '../Panel'
+
 import { EmptyPanelView } from './EmptyPanelView'
 import { HierarchicalLocationsView } from './HierarchicalLocationsView'
-import { VersionContextProps } from '../../../../../shared/src/search/util'
-import { PanelViewWithComponent } from '../Panel'
 
 interface Props extends ExtensionsControllerProps, SettingsCascadeProps, VersionContextProps {
     panelView: PanelViewWithComponent

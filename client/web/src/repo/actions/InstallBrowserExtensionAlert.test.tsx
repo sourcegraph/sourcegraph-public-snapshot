@@ -1,8 +1,10 @@
-import React from 'react'
-import { InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
-import { ExternalServiceKind } from '../../../../shared/src/graphql/schema'
 import { mount } from 'enzyme'
 import { noop } from 'lodash'
+import React from 'react'
+
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
+
+import { InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
 
 describe('InstallBrowserExtensionAlert', () => {
     const serviceKinds = [

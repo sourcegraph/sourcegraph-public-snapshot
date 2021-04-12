@@ -1,5 +1,7 @@
 import React from 'react'
+
 import { CtaBanner } from '../components/CtaBanner'
+
 import { extensionBannerIconURL } from './icons'
 
 interface Props {

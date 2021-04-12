@@ -1,26 +1,29 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
-import { PasswordInput } from '../../../auth/SignInSignUpCommon'
-import { Form } from '../../../../../branded/src/components/Form'
-import { PageTitle } from '../../../components/PageTitle'
-import { eventLogger } from '../../../tracking/eventLogger'
-import { updatePassword, createPassword } from '../backend'
-import { ErrorAlert } from '../../../components/alerts'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { ErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+
 import { AuthenticatedUser } from '../../../auth'
+import { PasswordInput } from '../../../auth/SignInSignUpCommon'
+import { requestGraphQL } from '../../../backend/graphql'
+import { ErrorAlert } from '../../../components/alerts'
+import { PageTitle } from '../../../components/PageTitle'
 import {
     UserAreaUserFields,
     ExternalServiceKind,
     ExternalAccountFields,
     MinExternalAccountsVariables,
 } from '../../../graphql-operations'
-import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
-import { Link } from '../../../../../shared/src/components/Link'
 import { SourcegraphContext } from '../../../jscontext'
-import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
-import { requestGraphQL } from '../../../backend/graphql'
-import { ErrorLike, asError } from '../../../../../shared/src/util/errors'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { updatePassword, createPassword } from '../backend'
+
+import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
 
 // pick only the fields we need
 type MinExternalAccount = Pick<ExternalAccountFields, 'id' | 'serviceID' | 'serviceType' | 'accountData'>

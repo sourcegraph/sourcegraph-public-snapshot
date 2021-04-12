@@ -1,10 +1,13 @@
-import React from 'react'
-import { _fetchRecentSearches } from './utils'
-import { NEVER, of } from 'rxjs'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
-import { RepositoriesPanel } from './RepositoriesPanel'
 import { storiesOf } from '@storybook/react'
+import React from 'react'
+import { NEVER, of } from 'rxjs'
+
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { WebStory } from '../../components/WebStory'
+
+import { RepositoriesPanel } from './RepositoriesPanel'
+import { _fetchRecentSearches } from './utils'
 
 const { add } = storiesOf('web/search/panels/RepositoriesPanel', module)
     .addParameters({

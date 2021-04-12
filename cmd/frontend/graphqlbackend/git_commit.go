@@ -58,7 +58,7 @@ func toGitCommitResolver(repo *RepositoryResolver, db dbutil.DB, id api.CommitID
 		db:              db,
 		repoResolver:    repo,
 		includeUserInfo: true,
-		gitRepo:         repo.name,
+		gitRepo:         repo.RepoName(),
 		oid:             GitObjectID(id),
 		commit:          commit,
 	}

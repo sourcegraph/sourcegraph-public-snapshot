@@ -1,19 +1,21 @@
-import { storiesOf } from '@storybook/react'
-import React from 'react'
+import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
 import { action } from '@storybook/addon-actions'
 import { boolean } from '@storybook/addon-knobs'
+import { storiesOf } from '@storybook/react'
 import { createMemoryHistory } from 'history'
-import { HoverOverlay, HoverOverlayClassProps } from './HoverOverlay'
-import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
+import React from 'react'
 import { of } from 'rxjs'
+import { MarkupContent, Badged, AggregableBadge } from 'sourcegraph'
+
+import browserExtensionStyles from '@sourcegraph/browser/src/app.scss'
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+
 import { registerHighlightContributions } from '../highlight/contributions'
 import { PlatformContext } from '../platform/context'
+import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 
-import webStyles from '../../../web/src/SourcegraphWebApp.scss'
-import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
-import browserExtensionStyles from '../../../browser/src/app.scss'
-import { MarkupContent, Badged, AggregableBadge } from 'sourcegraph'
+import { HoverOverlay, HoverOverlayClassProps } from './HoverOverlay'
 
 registerHighlightContributions()
 

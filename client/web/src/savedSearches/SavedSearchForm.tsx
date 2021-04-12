@@ -1,11 +1,13 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Omit } from 'utility-types'
-import { Form } from '../../../branded/src/components/Form'
-import { NamespaceProps } from '../namespaces'
-import { ErrorAlert } from '../components/alerts'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+
 import { AuthenticatedUser } from '../auth'
-import { Scalars } from '../../../shared/src/graphql-operations'
+import { ErrorAlert } from '../components/alerts'
+import { NamespaceProps } from '../namespaces'
 
 export interface SavedQueryFields {
     id: Scalars['ID']

@@ -1,11 +1,14 @@
 import React, { useMemo } from 'react'
-import { useDarkMode } from 'storybook-dark-mode'
 import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
-import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
-import { ThemeProps } from '../../../shared/src/theme'
+import { useDarkMode } from 'storybook-dark-mode'
+
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
+import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
 import _webStyles from '../SourcegraphWebApp.scss'
+
 import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
-import { Tooltip } from '../../../branded/src/components/tooltip/Tooltip'
 
 export interface WebStoryProps extends MemoryRouterProps {
     children: React.FunctionComponent<

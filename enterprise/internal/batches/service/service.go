@@ -9,12 +9,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -509,39 +509,20 @@ var ErrNoNamespace = errors.New("no namespace given")
 // Since Bitbucket sends the username as a header in REST responses, we can
 // take it from there and complete the UserCredential.
 func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, externalServiceID, externalServiceType, token string) (string, error) {
-	extSvcID, err := s.store.GetExternalServiceID(ctx, store.GetExternalServiceIDOpts{
-		ExternalServiceID:   externalServiceID,
+	srcer := sources.NewSourcer(s.sourcer, s.store)
+	css, err := srcer.ForExternalService(ctx, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
+		ExternalServiceID:   externalServiceID,
 	})
 	if err != nil {
 		return "", err
 	}
-
-	externalService, err := s.store.ExternalServices().GetByID(ctx, extSvcID)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			return "", errors.New("no external service found for repo")
-		}
-
-		return "", err
-	}
-
-	sources, err := s.sourcer(externalService)
+	css, err = css.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
 	if err != nil {
 		return "", err
 	}
 
-	userSource, ok := sources[0].(repos.UserSource)
-	if !ok {
-		return "", errors.New("external service source cannot use other authenticator")
-	}
-
-	source, err := userSource.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
-	if err != nil {
-		return "", err
-	}
-
-	usernameSource, ok := source.(usernameSource)
+	usernameSource, ok := css.ChangesetSource.(usernameSource)
 	if !ok {
 		return "", errors.New("external service source doesn't implement AuthenticatedUsername")
 	}
@@ -560,3 +541,100 @@ type usernameSource interface {
 }
 
 var _ usernameSource = &repos.BitbucketServerSource{}
+
+// ValidateAuthenticator creates a ChangesetSource, configures it with the given
+// authenticator and validates it can correctly access the remote server.
+func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
+	if Mocks.ValidateAuthenticator != nil {
+		return Mocks.ValidateAuthenticator(ctx, externalServiceID, externalServiceType, a)
+	}
+
+	srcer := sources.NewSourcer(s.sourcer, s.store)
+	css, err := srcer.ForExternalService(ctx, store.GetExternalServiceIDsOpts{
+		ExternalServiceType: externalServiceType,
+		ExternalServiceID:   externalServiceID,
+	})
+	if err != nil {
+		return err
+	}
+	css, err = css.WithAuthenticator(a)
+	if err != nil {
+		return err
+	}
+
+	if err := css.ValidateAuthenticator(ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ErrChangesetsToDetachNotFound can be returned by (*Service).DetachChangesets
+// if the number of changesets returned from the database doesn't match the
+// number if IDs passed in.
+var ErrChangesetsToDetachNotFound = errors.New("some changesets that should be detached could not be found")
+
+// DetachChangesets detaches the given Changeset from the given BatchChange
+// by checking whether the actor in the context has permission to enqueue a
+// reconciler run and then enqueues it by calling ResetQueued.
+func (s *Service) DetachChangesets(ctx context.Context, batchChangeID int64, ids []int64) (err error) {
+	traceTitle := fmt.Sprintf("batchChangeID: %d, changeset: %d", batchChangeID, ids)
+	tr, ctx := trace.New(ctx, "service.DetachChangesets", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// Load the BatchChange to check for admin rights.
+	batchChange, err := s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChangeID})
+	if err != nil {
+		return err
+	}
+
+	// 🚨 SECURITY: Only the Author of the batch change can detach changesets.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, batchChange.InitialApplierID); err != nil {
+		return err
+	}
+
+	cs, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
+		IDs:           ids,
+		BatchChangeID: batchChangeID,
+		OnlyArchived:  true,
+		// We only want to detach the changesets the user has access to
+		EnforceAuthz: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(cs) != len(ids) {
+		return ErrChangesetsToDetachNotFound
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, changeset := range cs {
+		var detach bool
+		for i, assoc := range changeset.BatchChanges {
+			if assoc.BatchChangeID == batchChangeID {
+				changeset.BatchChanges[i].Detach = true
+				detach = true
+			}
+		}
+
+		if !detach {
+			continue
+		}
+
+		changeset.ResetQueued()
+
+		if err := tx.UpdateChangeset(ctx, changeset); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

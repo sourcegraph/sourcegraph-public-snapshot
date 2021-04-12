@@ -436,7 +436,6 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 				seen[repo.ID] = true
 			}
 		}
-
 	}
 }
 
@@ -470,4 +469,9 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 // BitbucketServerSource.
 func (s *BitbucketServerSource) AuthenticatedUsername(ctx context.Context) (string, error) {
 	return s.client.AuthenticatedUsername(ctx)
+}
+
+func (s *BitbucketServerSource) ValidateAuthenticator(ctx context.Context) error {
+	_, err := s.client.AuthenticatedUsername(ctx)
+	return err
 }

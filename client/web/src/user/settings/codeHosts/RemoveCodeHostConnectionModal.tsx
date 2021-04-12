@@ -1,10 +1,11 @@
-import React, { useCallback, useState } from 'react'
 import Dialog from '@reach/dialog'
+import React, { useCallback, useState } from 'react'
 
-import { Form } from '../../../../../branded/src/components/Form'
-import { LoaderButton } from '../../../components/LoaderButton'
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { deleteExternalService } from '../../../components/externalServices/backend'
-import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
+import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars, ExternalServiceKind } from '../../../graphql-operations'
 
 const getWarningMessage = (codeHostName: string, repoCount: number | undefined): string => {

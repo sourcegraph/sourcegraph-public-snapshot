@@ -1,12 +1,15 @@
-import * as H from 'history'
-import { storiesOf } from '@storybook/react'
-import React from 'react'
-import { ActivationDropdown, ActivationDropdownProps } from './ActivationDropdown'
-import { Activation } from './Activation'
-import { boolean } from '@storybook/addon-knobs'
 import { action } from '@storybook/addon-actions'
-import webMainStyles from '../../../../web/src/SourcegraphWebApp.scss'
+import { boolean } from '@storybook/addon-knobs'
+import { storiesOf } from '@storybook/react'
+import * as H from 'history'
+import React from 'react'
+
+import webMainStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+
 import { subtypeOf } from '../../util/types'
+
+import { Activation } from './Activation'
+import { ActivationDropdown, ActivationDropdownProps } from './ActivationDropdown'
 
 const { add } = storiesOf('shared/ActivationDropdown', module).addDecorator(story => (
     <>

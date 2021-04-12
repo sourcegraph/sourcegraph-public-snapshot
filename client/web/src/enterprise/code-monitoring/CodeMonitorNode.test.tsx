@@ -1,9 +1,11 @@
-import { CodeMonitorNode } from './CodeMonitoringNode'
-import * as React from 'react'
-import * as H from 'history'
-import sinon from 'sinon'
-import { AuthenticatedUser } from '../../auth'
 import { mount } from 'enzyme'
+import * as H from 'history'
+import * as React from 'react'
+import sinon from 'sinon'
+
+import { AuthenticatedUser } from '../../auth'
+
+import { CodeMonitorNode } from './CodeMonitoringNode'
 import { mockCodeMonitor } from './testing/util'
 
 describe('CreateCodeMonitorPage', () => {

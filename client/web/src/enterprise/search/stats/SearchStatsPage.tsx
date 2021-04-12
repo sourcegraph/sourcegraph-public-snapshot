@@ -1,14 +1,16 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import * as H from 'history'
 import ChartLineIcon from 'mdi-react/ChartLineIcon'
 import React, { useCallback, useState, useMemo } from 'react'
-import * as H from 'history'
-import { Form } from '../../../../../branded/src/components/Form'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { of } from 'rxjs'
+import { catchError } from 'rxjs/operators'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { querySearchResultsStats } from './backend'
 import { SearchStatsLanguages } from './SearchStatsLanguages'
-import { catchError } from 'rxjs/operators'
-import { asError, isErrorLike, ErrorLike } from '../../../../../shared/src/util/errors'
-import { of } from 'rxjs'
 
 interface Props {
     location: H.Location

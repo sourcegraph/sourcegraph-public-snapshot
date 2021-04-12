@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { ThemeProps } from '../../../shared/src/theme'
+
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 /**
  * Wrapper for the browser extension that listens to changes of the OS theme.

@@ -2,13 +2,15 @@ import { noop } from 'lodash'
 import { Observable, ReplaySubject, Subscription } from 'rxjs'
 import { take } from 'rxjs/operators'
 import * as uuid from 'uuid'
-import { PlatformContext } from '../../../../shared/src/platform/context'
-import { TelemetryService } from '../../../../shared/src/telemetry/telemetryService'
+
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { storage } from '../../browser-extension/web-extension-api/storage'
-import { isInPage } from '../context'
-import { logUserEvent, logEvent } from '../backend/userEvents'
-import { observeSourcegraphURL, getPlatformName } from '../util/context'
 import { UserEvent } from '../../graphql-operations'
+import { logUserEvent, logEvent } from '../backend/userEvents'
+import { isInPage } from '../context'
+import { observeSourcegraphURL, getPlatformName } from '../util/context'
 
 const uidKey = 'sourcegraphAnonymousUid'
 

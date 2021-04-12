@@ -1,21 +1,24 @@
+import { storiesOf } from '@storybook/react'
 import { createBrowserHistory } from 'history'
 import * as React from 'react'
 import _VisibilitySensor from 'react-visibility-sensor'
+import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { ISearchResults } from '@sourcegraph/shared/src/graphql/schema'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     MULTIPLE_SEARCH_REQUEST,
     REPO_MATCH_RESULT,
     SEARCH_REQUEST,
-} from '../../../../shared/src/util/searchTestHelpers'
-import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
-import { NEVER, of } from 'rxjs'
-import { SearchPatternType } from '../../../../shared/src/graphql-operations'
-import { storiesOf } from '@storybook/react'
+} from '@sourcegraph/shared/src/util/searchTestHelpers'
+
 import { WebStory } from '../../components/WebStory'
-import { ISearchResults } from '../../../../shared/src/graphql/schema'
+
+import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
 
 const history = createBrowserHistory()
 history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })

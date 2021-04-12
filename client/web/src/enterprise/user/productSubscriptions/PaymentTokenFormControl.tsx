@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { CardElement, ReactStripeElements } from 'react-stripe-elements'
-import { ThemeProps } from '../../../../../shared/src/theme'
+
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 interface Props extends ThemeProps {
     disabled?: boolean

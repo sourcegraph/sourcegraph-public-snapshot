@@ -1,14 +1,17 @@
-import { startCase } from 'lodash'
 import assert from 'assert'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
-import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
-import { closeInstallPageTab, testSingleFilePage } from './shared'
-import { retry } from '../../../shared/src/testing/utils'
-import { getConfig } from '../../../shared/src/testing/config'
+
+import { startCase } from 'lodash'
+import { Target, Page } from 'puppeteer'
 import { fromEvent } from 'rxjs'
 import { first, filter, timeout, mergeMap } from 'rxjs/operators'
-import { Target, Page } from 'puppeteer'
-import { isDefined } from '../../../shared/src/util/types'
+
+import { getConfig } from '@sourcegraph/shared/src/testing/config'
+import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { retry } from '@sourcegraph/shared/src/testing/utils'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
+
+import { closeInstallPageTab, testSingleFilePage } from './shared'
 
 describe('Sourcegraph browser extension on github.com', function () {
     this.slow(8000)

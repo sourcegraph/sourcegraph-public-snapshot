@@ -1,10 +1,13 @@
 import { parseISO } from 'date-fns'
 import differenceInDays from 'date-fns/differenceInDays'
+import * as H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
+
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { isSettingsValid, SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { renderMarkdown } from '../../../shared/src/util/markdown'
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { Settings } from '../schema/settings.schema'
 import { SiteFlags } from '../site'
@@ -13,9 +16,9 @@ import { DockerForMacAlert } from '../site/DockerForMacAlert'
 import { FreeUsersExceededAlert } from '../site/FreeUsersExceededAlert'
 import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
+
 import { GlobalAlert } from './GlobalAlert'
 import { Notices } from './Notices'
-import * as H from 'history'
 
 interface Props extends SettingsCascadeProps {
     history: H.History

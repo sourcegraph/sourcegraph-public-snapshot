@@ -41,7 +41,10 @@ func main() {
 	tracer.Init()
 	trace.Init(true)
 
-	go debugserver.Start()
+	// Ready immediately
+	ready := make(chan struct{})
+	close(ready)
+	go debugserver.NewServerRoutine(ready).Start()
 
 	var cacheSizeBytes int64
 	if i, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {

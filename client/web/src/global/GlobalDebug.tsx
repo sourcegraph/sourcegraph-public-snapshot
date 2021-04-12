@@ -1,8 +1,9 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { ExtensionStatusPopover } from '../../../shared/src/extensions/ExtensionStatus'
-import { PlatformContextProps } from '../../../shared/src/platform/context'
+
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { ExtensionStatusPopover } from '@sourcegraph/shared/src/extensions/ExtensionStatus'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {}
 

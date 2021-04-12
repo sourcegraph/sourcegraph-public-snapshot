@@ -1,4 +1,5 @@
 import { Context } from '../context'
+
 import { parse, parseTemplate } from './evaluator'
 
 const FIXTURE_CONTEXT: Context = {

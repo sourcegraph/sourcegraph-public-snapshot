@@ -1,25 +1,22 @@
-import React from 'react'
-import renderer from 'react-test-renderer'
 import { createMemoryHistory, createLocation } from 'history'
 import { noop } from 'lodash'
+import React from 'react'
+import renderer from 'react-test-renderer'
 import { NEVER } from 'rxjs'
-import { SearchResultsInfoBar, SearchResultsInfoBarProps } from './SearchResultsInfoBar'
-import { AuthenticatedUser } from '../../auth'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+
 import { SearchPatternType } from '../../graphql-operations'
-import { extensionsController } from '../../../../shared/src/util/searchTestHelpers'
+
+import { SearchResultsInfoBar, SearchResultsInfoBarProps } from './SearchResultsInfoBar'
 
 const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     extensionsController,
     platformContext: { forceUpdateTooltip: noop, settings: NEVER },
     history: createMemoryHistory(),
     location: createLocation('/search'),
-    authenticatedUser: {
-        id: 'userID',
-        username: 'username',
-        email: 'user@me.com',
-        siteAdmin: true,
-    } as AuthenticatedUser,
+    authenticatedUser: { id: 'userID' },
     resultsFound: true,
     allExpanded: true,
     onExpandAllResultsToggle: noop,
@@ -48,6 +45,21 @@ describe('SearchResultsInfoBar', () => {
         expect(
             renderer
                 .create(<SearchResultsInfoBar {...COMMON_PROPS} enableCodeMonitoring={true} query="foo type:diff" />)
+                .toJSON()
+        ).toMatchSnapshot()
+    })
+
+    test('code monitoring feature flag enabled, can create monitor from query, user not logged in', () => {
+        expect(
+            renderer
+                .create(
+                    <SearchResultsInfoBar
+                        {...COMMON_PROPS}
+                        enableCodeMonitoring={true}
+                        query="foo type:diff"
+                        authenticatedUser={null}
+                    />
+                )
                 .toJSON()
         ).toMatchSnapshot()
     })

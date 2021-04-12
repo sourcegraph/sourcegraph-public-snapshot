@@ -1,6 +1,7 @@
-import React from 'react'
 import { Dialog } from '@reach/dialog'
-import { splitExtensionID } from '../../../shared/src/extensions/extension'
+import React from 'react'
+
+import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 
 /**
  * A modal confirmation prompt to the user confirming whether to add an extension.

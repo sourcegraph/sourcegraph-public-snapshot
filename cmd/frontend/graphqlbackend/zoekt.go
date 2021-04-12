@@ -531,7 +531,6 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 	// extra stuff. This is a sign that we can probably restructure
 	// resolvers to avoid this.
 	baseURI := &gituri.URI{URL: url.URL{Scheme: "git", Host: repo.Name(), RawQuery: url.QueryEscape(inputRev)}}
-	lang := strings.ToLower(file.Language)
 
 	symbols := make([]*result.SymbolMatch, 0, len(file.LineMatches))
 	for _, l := range file.LineMatches {
@@ -556,9 +555,9 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 					// This Pattern is directly accessible on the unindexed code path. But on the indexed code path, we need to
 					// populate it, or we will always compute a 0 offset, which messes up API use (e.g., highlighting).
 					// It must escape `/` or `\` in the line.
-					Pattern: fmt.Sprintf("/^%s$/", escape(string(l.Line))),
+					Pattern:  fmt.Sprintf("/^%s$/", escape(string(l.Line))),
+					Language: file.Language,
 				},
-				Lang:    lang,
 				BaseURI: baseURI,
 			})
 		}

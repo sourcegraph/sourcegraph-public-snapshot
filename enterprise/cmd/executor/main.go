@@ -44,8 +44,10 @@ func main() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	// Start debug server
-	go debugserver.NewServerRoutine().Start()
+	// Ready immediately
+	ready := make(chan struct{})
+	close(ready)
+	go debugserver.NewServerRoutine(ready).Start()
 
 	routines := []goroutine.BackgroundRoutine{
 		worker.NewWorker(config.APIWorkerOptions(nil), observationContext),

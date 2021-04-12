@@ -1,5 +1,7 @@
 import { Observable, of } from 'rxjs'
-import { ISavedSearch, Namespace, IOrg, IUser } from '../../../../shared/src/graphql/schema'
+
+import { ISavedSearch, Namespace, IOrg, IUser } from '@sourcegraph/shared/src/graphql/schema'
+
 import { AuthenticatedUser } from '../../auth'
 import { EventLogResult } from '../backend'
 

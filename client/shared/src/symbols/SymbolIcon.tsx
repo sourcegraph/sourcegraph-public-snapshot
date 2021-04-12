@@ -25,6 +25,7 @@ import TimetableIcon from 'mdi-react/TimetableIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import WrenchIcon from 'mdi-react/WrenchIcon'
 import * as React from 'react'
+
 import { SymbolKind } from '../graphql-operations'
 
 /**

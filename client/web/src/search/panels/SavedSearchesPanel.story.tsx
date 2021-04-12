@@ -1,11 +1,14 @@
-import React from 'react'
-import { _fetchSavedSearches, authUser } from './utils'
-import { NEVER, of } from 'rxjs'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
-import { SavedSearchesPanel } from './SavedSearchesPanel'
-import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { storiesOf } from '@storybook/react'
+import React from 'react'
+import { NEVER, of } from 'rxjs'
+
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { WebStory } from '../../components/WebStory'
+
+import { SavedSearchesPanel } from './SavedSearchesPanel'
+import { _fetchSavedSearches, authUser } from './utils'
 
 const { add } = storiesOf('web/search/panels/SavedSearchesPanel', module).addParameters({
     design: {

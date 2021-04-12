@@ -1,13 +1,16 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router-dom'
-import * as GQL from '../../../../shared/src/graphql/schema'
+import { Observable } from 'rxjs'
+
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
+import { GitRefType } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { GitReferenceNode, queryGitReferences } from '../GitReference'
+
 import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
-import { Observable } from 'rxjs'
-import { GitRefType } from '../../graphql-operations'
 
 interface Props extends RepositoryBranchesAreaPageProps, RouteComponentProps<{}> {}
 

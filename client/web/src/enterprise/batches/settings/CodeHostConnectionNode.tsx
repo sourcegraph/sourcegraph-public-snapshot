@@ -1,16 +1,19 @@
-import React, { useCallback, useState } from 'react'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
+import InfoCircleIcon from 'mdi-react/InfoCircleIcon'
+import React, { useCallback, useState } from 'react'
+import { Subject } from 'rxjs'
+
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
+
 import { AddCredentialModal } from './AddCredentialModal'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
-import { Subject } from 'rxjs'
 import { ViewCredentialModal } from './ViewCredentialModal'
 
 export interface CodeHostConnectionNodeProps {
     node: BatchChangesCodeHostFields
-    userID: Scalars['ID']
+    userID: Scalars['ID'] | null
     updateList: Subject<void>
 }
 
@@ -43,13 +46,13 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
         updateList.next()
     }, [updateList])
 
-    const isEnabled = node.credential !== null
+    const isEnabled = node.credential !== null && (userID === null || !node.credential.isSiteCredential)
 
     return (
         <>
             <li className="list-group-item p-3 test-code-host-connection-node">
                 <div className="d-flex justify-content-between align-items-center mb-0">
-                    <h3 className="mb-0">
+                    <h3 className="text-nowrap mb-0">
                         {isEnabled && (
                             <CheckCircleOutlineIcon
                                 className="text-success icon-inline test-code-host-connection-node-enabled"
@@ -64,18 +67,28 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                         )}
                         <Icon className="icon-inline mx-2" /> {node.externalServiceURL}
                     </h3>
+                    {!isEnabled && node.credential?.isSiteCredential && (
+                        <span className="text-primary mx-3">
+                            <InfoCircleIcon className="icon-inline" /> Changesets on this code host will be created with
+                            a global token until a personal access token is added.
+                        </span>
+                    )}
                     <div className="mb-0">
                         {isEnabled && (
                             <>
                                 <button
                                     type="button"
-                                    className="btn btn-link text-danger test-code-host-connection-node-btn-remove"
+                                    className="btn btn-link text-danger text-nowrap test-code-host-connection-node-btn-remove"
                                     onClick={onClickRemove}
                                 >
                                     Remove
                                 </button>
                                 {node.requiresSSH && (
-                                    <button type="button" onClick={onClickView} className="btn btn-secondary ml-2">
+                                    <button
+                                        type="button"
+                                        onClick={onClickView}
+                                        className="btn btn-secondary text-nowrap ml-2"
+                                    >
                                         View public key
                                     </button>
                                 )}
@@ -84,7 +97,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                         {!isEnabled && (
                             <button
                                 type="button"
-                                className="btn btn-success test-code-host-connection-node-btn-add"
+                                className="btn btn-success text-nowrap test-code-host-connection-node-btn-add"
                                 onClick={onClickAdd}
                             >
                                 Add credentials

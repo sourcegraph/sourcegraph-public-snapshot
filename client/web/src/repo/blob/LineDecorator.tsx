@@ -1,15 +1,16 @@
+import isAbsoluteUrl from 'is-absolute-url'
 import React, { useLayoutEffect } from 'react'
 import ReactDOM from 'react-dom'
-import isAbsoluteUrl from 'is-absolute-url'
+import { ReplaySubject } from 'rxjs'
+
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
-} from '../../../../shared/src/api/extension/api/decorations'
-import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
-import { ThemeProps } from '../../../../shared/src/theme'
-import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-import { isDefined, property } from '../../../../shared/src/util/types'
-import { ReplaySubject } from 'rxjs'
+} from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 
 export interface LineDecoratorProps extends ThemeProps {
     /** 1-based line number */

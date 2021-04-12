@@ -1,13 +1,16 @@
+import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
-import { PageTitle } from '../../../components/PageTitle'
-import { PageHeader } from '../../../components/PageHeader'
+
+import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
+
 import { BatchChangesIcon } from '../../../batches/icons'
-import helloWorldSample from './samples/empty.batch.yaml'
+import { PageHeader } from '../../../components/PageHeader'
+import { PageTitle } from '../../../components/PageTitle'
+
 import combySample from './samples/comby.batch.yaml'
+import helloWorldSample from './samples/empty.batch.yaml'
 import goImportsSample from './samples/go-imports.batch.yaml'
 import minimalSample from './samples/minimal.batch.yaml'
-import classNames from 'classnames'
-import { CodeSnippet } from '../../../../../branded/src/components/CodeSnippet'
 
 interface SampleTabHeaderProps {
     sample: Sample

@@ -1,8 +1,10 @@
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
+
 import { BatchChangesCredentialFields, ExternalServiceKind } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
 import { ViewCredentialModal } from './ViewCredentialModal'
 
 const { add } = storiesOf('web/batches/settings/ViewCredentialModal', module)
@@ -16,7 +18,7 @@ const { add } = storiesOf('web/batches/settings/ViewCredentialModal', module)
 
 const credential: BatchChangesCredentialFields = {
     id: '123',
-    createdAt: new Date().toISOString(),
+    isSiteCredential: false,
     sshPublicKey:
         'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
 }

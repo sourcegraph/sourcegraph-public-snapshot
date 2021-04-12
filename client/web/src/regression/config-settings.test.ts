@@ -1,17 +1,20 @@
+import * as jsonc from '@sqs/jsonc-parser'
+import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import expect from 'expect'
 import { describe, before, beforeEach, afterEach, test } from 'mocha'
-import { getTestTools } from './util/init'
-import { getConfig } from '../../../shared/src/testing/config'
-import { editSiteConfig } from './util/helpers'
-import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
-import * as jsonc from '@sqs/jsonc-parser'
-import { Driver } from '../../../shared/src/testing/driver'
-import { TestResourceManager } from './util/TestResourceManager'
-import { retry } from '../../../shared/src/testing/utils'
+
+import { getConfig } from '@sourcegraph/shared/src/testing/config'
+import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { retry } from '@sourcegraph/shared/src/testing/utils'
+
 import { BuiltinAuthProvider, SiteConfiguration } from '../schema/site.schema'
+
 import { fetchSiteConfiguration } from './util/api'
 import { GraphQLClient } from './util/GraphQlClient'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+import { editSiteConfig } from './util/helpers'
+import { getTestTools } from './util/init'
+import { TestResourceManager } from './util/TestResourceManager'
 
 describe('Site config test suite', () => {
     const formattingOptions = { eol: '\n', insertSpaces: true, tabSize: 2 }

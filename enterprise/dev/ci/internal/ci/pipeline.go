@@ -37,6 +37,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Add debug flags for scripts to consume
 		"CI_DEBUG_PROFILE": strconv.FormatBool(c.profilingEnabled),
+
+		// Bump Node.js memory to prevent OOM crashes
+		"NODE_OPTIONS": "--max_old_space_size=4096",
 	}
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
@@ -146,6 +149,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 			triggerE2EandQA(c, env),  // trigger e2e late so that it can leverage candidate images
 			addDockerImages(c, true), // publish final images
+			wait,
+
+			triggerUpdaterPipeline(c),
 		}
 	}
 

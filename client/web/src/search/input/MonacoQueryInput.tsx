@@ -1,22 +1,25 @@
-import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import * as H from 'history'
-import * as Monaco from 'monaco-editor'
 import { isPlainObject } from 'lodash'
-import { MonacoEditor } from '../../components/MonacoEditor'
-import { QueryState, submitSearch } from '../helpers'
-import { getProviders } from '../../../../shared/src/search/query/providers'
+import * as Monaco from 'monaco-editor'
+import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Subscription, Observable, Unsubscribable, ReplaySubject } from 'rxjs'
-import { fetchSuggestions } from '../backend'
 import { Omit } from 'utility-types'
-import { ThemeProps } from '../../../../shared/src/theme'
+
+import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { getProviders } from '@sourcegraph/shared/src/search/query/providers'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { hasProperty } from '@sourcegraph/shared/src/util/types'
+
 import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '..'
-import { Toggles, TogglesProps } from './toggles/Toggles'
-import { hasProperty } from '../../../../shared/src/util/types'
-import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
+import { MonacoEditor } from '../../components/MonacoEditor'
+import { SearchPatternType } from '../../graphql-operations'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
-import { SearchPatternType } from '../../graphql-operations'
+import { fetchSuggestions } from '../backend'
+import { QueryState, submitSearch } from '../helpers'
+
 import { SearchContextDropdown } from './SearchContextDropdown'
+import { Toggles, TogglesProps } from './toggles/Toggles'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery'>,
@@ -35,6 +38,7 @@ export interface MonacoQueryInputProps
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
+    submitSearchOnSearchContextChange?: boolean
 
     // Whether globbing is enabled for filters.
     globbing: boolean

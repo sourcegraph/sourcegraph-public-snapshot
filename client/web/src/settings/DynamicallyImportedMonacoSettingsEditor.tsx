@@ -1,13 +1,16 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { Subscription } from 'rxjs'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
 import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
-import * as _monacoSettingsEditorModule from './MonacoSettingsEditor' // type only
 import { EditorAction } from '../site-admin/configHelpers'
-import { ThemeProps } from '../../../shared/src/theme'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
+
+import * as _monacoSettingsEditorModule from './MonacoSettingsEditor' // type only
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription

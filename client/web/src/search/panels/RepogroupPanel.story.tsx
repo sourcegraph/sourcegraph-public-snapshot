@@ -1,9 +1,12 @@
-import React from 'react'
-import { _fetchRecentSearches } from './utils'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
-import { RepogroupPanel } from './RepogroupPanel'
 import { storiesOf } from '@storybook/react'
+import React from 'react'
+
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { WebStory } from '../../components/WebStory'
+
+import { RepogroupPanel } from './RepogroupPanel'
+import { _fetchRecentSearches } from './utils'
 
 const { add } = storiesOf('web/search/panels/RepogroupPanel', module)
     .addParameters({

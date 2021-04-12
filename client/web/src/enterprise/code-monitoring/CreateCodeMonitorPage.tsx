@@ -1,12 +1,14 @@
 import * as H from 'history'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { Observable } from 'rxjs'
+
 import { AuthenticatedUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
 import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
-import { CodeMonitorForm } from './components/CodeMonitorForm'
+
 import { createCodeMonitor as _createCodeMonitor } from './backend'
+import { CodeMonitorForm } from './components/CodeMonitorForm'
 
 export interface CreateCodeMonitorPageProps {
     location: H.Location

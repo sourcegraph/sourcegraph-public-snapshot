@@ -1,8 +1,10 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
+
 import { ExternalServiceKind } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
 import { BatchChangesSettingsArea } from './BatchChangesSettingsArea'
 
 const { add } = storiesOf('web/batches/settings/BatchChangesSettingsArea', module).addDecorator(story => (
@@ -36,7 +38,12 @@ add('Overview', () => (
                                 requiresSSH: false,
                             },
                             {
-                                credential: null,
+                                credential: {
+                                    id: '123',
+                                    isSiteCredential: true,
+                                    sshPublicKey:
+                                        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                                },
                                 externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
                                 externalServiceURL: 'https://bitbucket.sgdev.org/',
                                 requiresSSH: true,
@@ -66,7 +73,7 @@ add('Config added', () => (
                             {
                                 credential: {
                                     id: '123',
-                                    createdAt: new Date().toISOString(),
+                                    isSiteCredential: false,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                 },
@@ -77,7 +84,7 @@ add('Config added', () => (
                             {
                                 credential: {
                                     id: '123',
-                                    createdAt: new Date().toISOString(),
+                                    isSiteCredential: false,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                 },
@@ -88,7 +95,7 @@ add('Config added', () => (
                             {
                                 credential: {
                                     id: '123',
-                                    createdAt: new Date().toISOString(),
+                                    isSiteCredential: false,
                                     sshPublicKey:
                                         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
                                 },

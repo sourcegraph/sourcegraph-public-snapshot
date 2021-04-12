@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -23,7 +24,8 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 		return nil, err
 	}
 
-	es, err := database.GlobalExternalServices.GetByID(ctx, id)
+	extsvcStore := database.ExternalServices(r.db)
+	es, err := extsvcStore.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +48,12 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 	var repos []string
 	if args.Repos != nil {
 		repos = *args.Repos
+		// If we know the number of repos up front we can ensure that they don't exceed
+		// their limit before hitting the code host
+		maxAllowed := conf.UserReposMaxPerUser()
+		if es.NamespaceUserID != 0 && len(repos) > maxAllowed {
+			return nil, errors.Errorf("Too many repositories, %d. Sourcegraph supports adding a maximum of %d repositories.", len(repos), maxAllowed)
+		}
 	}
 	err = ra.SetRepos(args.AllRepos, repos)
 	if err != nil {
@@ -62,12 +70,12 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 	es.NextSyncAt = time.Time{}
 	es.UpdatedAt = timeutil.Now()
 
-	err = database.GlobalExternalServices.Upsert(ctx, es)
+	err = extsvcStore.Upsert(ctx, es)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := syncExternalService(ctx, es); err != nil {
+	if err := syncExternalService(ctx, es, 5*time.Second, r.repoupdaterClient); err != nil {
 		return nil, err
 	}
 

@@ -1,8 +1,10 @@
 import React, { useCallback } from 'react'
-import { UsernameInput } from '../../../auth/SignInSignUpCommon'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { UserAvatar } from '../../UserAvatar'
+
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+
 import { USER_DISPLAY_NAME_MAX_LENGTH } from '../..'
+import { UsernameInput } from '../../../auth/SignInSignUpCommon'
+import { UserAvatar } from '../../UserAvatar'
 
 export type UserProfileFormFieldsValue = Pick<GQL.IUser, 'username' | 'displayName' | 'avatarURL'>
 

@@ -314,7 +314,6 @@ func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.C
 	opts := service.ApplyBatchChangeOpts{
 		// This is what differentiates CreateBatchChange from ApplyBatchChange
 		FailIfBatchChangeExists: true,
-		ArchiveChangesets:       conf.ArchiveBatchChangeChangesets(),
 	}
 
 	opts.BatchSpecRandID, err = unmarshalBatchSpecID(args.BatchSpec)
@@ -359,10 +358,7 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 		return nil, err
 	}
 
-	opts := service.ApplyBatchChangeOpts{
-		ArchiveChangesets: conf.ArchiveBatchChangeChangesets(),
-	}
-
+	opts := service.ApplyBatchChangeOpts{}
 	opts.BatchSpecRandID, err = unmarshalBatchSpecID(args.BatchSpec)
 	if err != nil {
 		return nil, err
@@ -881,6 +877,18 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 		return nil, err
 	}
 
+	var userID int32
+	if args.User != nil {
+		userID, err = graphqlbackend.UnmarshalUserID(*args.User)
+		if err != nil {
+			return nil, err
+		}
+
+		if userID == 0 {
+			return nil, ErrIDIsZero{}
+		}
+	}
+
 	// Need to validate externalServiceKind, otherwise this'll panic.
 	kind, valid := extsvc.ParseServiceKind(args.ExternalServiceKind)
 	if !valid {
@@ -891,54 +899,14 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 		return nil, errors.New("empty credential not allowed")
 	}
 
-	// TODO: Do we want to validate the URL, or even if such an external service exists? Or better, would the DB have a constraint?
-
-	var a auth.Authenticator
-	keypair, err := encryption.GenerateRSAKey()
-	if err != nil {
-		return nil, err
-	}
-	if kind == extsvc.KindBitbucketServer {
-		svc := service.New(r.store)
-		username, err := svc.FetchUsernameForBitbucketServerToken(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential)
-		if err != nil {
-			if bitbucketserver.IsUnauthorized(err) {
-				return nil, &ErrVerifyCredentialFailed{SourceErr: err}
-			}
-			return nil, err
-		}
-		a = &auth.BasicAuthWithSSH{
-			BasicAuth:  auth.BasicAuth{Username: username, Password: args.Credential},
-			PrivateKey: keypair.PrivateKey,
-			PublicKey:  keypair.PublicKey,
-			Passphrase: keypair.Passphrase,
-		}
-	} else {
-		a = &auth.OAuthBearerTokenWithSSH{
-			OAuthBearerToken: auth.OAuthBearerToken{Token: args.Credential},
-			PrivateKey:       keypair.PrivateKey,
-			PublicKey:        keypair.PublicKey,
-			Passphrase:       keypair.Passphrase,
-		}
+	if userID != 0 {
+		return r.createBatchChangesUserCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), userID, args.Credential)
 	}
 
-	if args.User != nil {
-		userID, err := graphqlbackend.UnmarshalUserID(*args.User)
-		if err != nil {
-			return nil, err
-		}
-
-		if userID == 0 {
-			return nil, ErrIDIsZero{}
-		}
-
-		return r.createBatchChangesUserCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), a, userID)
-	}
-
-	return r.createBatchChangesSiteCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), a)
+	return r.createBatchChangesSiteCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential)
 }
 
-func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externalServiceURL, externalServiceType string, a auth.Authenticator, userID int32) (graphqlbackend.BatchChangesCredentialResolver, error) {
+func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externalServiceURL, externalServiceType string, userID int32, credential string) (graphqlbackend.BatchChangesCredentialResolver, error) {
 	// 🚨 SECURITY: Check that the requesting user can create the credential.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		return nil, err
@@ -959,6 +927,10 @@ func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externa
 		return nil, ErrDuplicateCredential{}
 	}
 
+	a, err := r.generateAuthenticatorForCredential(ctx, externalServiceType, externalServiceURL, credential)
+	if err != nil {
+		return nil, err
+	}
 	cred, err := r.store.UserCredentials().Create(ctx, userCredentialScope, a)
 	if err != nil {
 		return nil, err
@@ -967,7 +939,7 @@ func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externa
 	return &batchChangesUserCredentialResolver{credential: cred}, nil
 }
 
-func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externalServiceURL, externalServiceType string, a auth.Authenticator) (graphqlbackend.BatchChangesCredentialResolver, error) {
+func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externalServiceURL, externalServiceType string, credential string) (graphqlbackend.BatchChangesCredentialResolver, error) {
 	// 🚨 SECURITY: Check that a site credential can only be created
 	// by a site-admin.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -986,6 +958,10 @@ func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externa
 		return nil, ErrDuplicateCredential{}
 	}
 
+	a, err := r.generateAuthenticatorForCredential(ctx, externalServiceType, externalServiceURL, credential)
+	if err != nil {
+		return nil, err
+	}
 	cred := &store.SiteCredential{
 		ExternalServiceID:   externalServiceURL,
 		ExternalServiceType: externalServiceType,
@@ -996,6 +972,45 @@ func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externa
 	}
 
 	return &batchChangesSiteCredentialResolver{credential: cred}, nil
+}
+
+func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, externalServiceType, externalServiceURL, credential string) (auth.Authenticator, error) {
+	svc := service.New(r.store)
+
+	var a auth.Authenticator
+	keypair, err := encryption.GenerateRSAKey()
+	if err != nil {
+		return nil, err
+	}
+	if externalServiceType == extsvc.TypeBitbucketServer {
+		// We need to fetch the username for the token, as just an OAuth token isn't enough for some reason..
+		username, err := svc.FetchUsernameForBitbucketServerToken(ctx, externalServiceURL, externalServiceType, credential)
+		if err != nil {
+			if bitbucketserver.IsUnauthorized(err) {
+				return nil, &ErrVerifyCredentialFailed{SourceErr: err}
+			}
+			return nil, err
+		}
+		a = &auth.BasicAuthWithSSH{
+			BasicAuth:  auth.BasicAuth{Username: username, Password: credential},
+			PrivateKey: keypair.PrivateKey,
+			PublicKey:  keypair.PublicKey,
+			Passphrase: keypair.Passphrase,
+		}
+	} else {
+		a = &auth.OAuthBearerTokenWithSSH{
+			OAuthBearerToken: auth.OAuthBearerToken{Token: credential},
+			PrivateKey:       keypair.PrivateKey,
+			PublicKey:        keypair.PublicKey,
+			Passphrase:       keypair.Passphrase,
+		}
+	}
+
+	// Validate the newly created authenticator.
+	if err := svc.ValidateAuthenticator(ctx, externalServiceURL, externalServiceType, a); err != nil {
+		return nil, &ErrVerifyCredentialFailed{SourceErr: err}
+	}
+	return a, nil
 }
 
 func (r *Resolver) DeleteBatchChangesCredential(ctx context.Context, args *graphqlbackend.DeleteBatchChangesCredentialArgs) (_ *graphqlbackend.EmptyResponse, err error) {
@@ -1052,6 +1067,48 @@ func (r *Resolver) deleteBatchChangesSiteCredential(ctx context.Context, credent
 
 	// This also fails if the credential was not found.
 	if err := r.store.DeleteSiteCredential(ctx, credentialDBID); err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.DetachChangesetsArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.DetachChangesets", fmt.Sprintf("BatchChange: %q, Changesets: %s", args.BatchChange, args.Changesets))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := batchChangesEnabled(ctx); err != nil {
+		return nil, err
+	}
+
+	batchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchChangeID == 0 {
+		return nil, ErrIDIsZero{}
+	}
+
+	var changesetIDs []int64
+	for _, raw := range args.Changesets {
+		id, err := unmarshalChangesetID(raw)
+		if err != nil {
+			return nil, err
+		}
+
+		if id == 0 {
+			return nil, ErrIDIsZero{}
+		}
+
+		changesetIDs = append(changesetIDs, id)
+	}
+
+	// 🚨 SECURITY: DetachChangeset checks whether current user is authorized.
+	svc := service.New(r.store)
+	if err = svc.DetachChangesets(ctx, batchChangeID, changesetIDs); err != nil {
 		return nil, err
 	}
 

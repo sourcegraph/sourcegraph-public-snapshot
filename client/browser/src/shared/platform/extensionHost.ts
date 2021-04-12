@@ -1,7 +1,10 @@
 import { Subscription } from 'rxjs'
 import * as uuid from 'uuid'
-import { EndpointPair, ClosableEndpointPair } from '../../../../shared/src/platform/context'
+
+import { EndpointPair, ClosableEndpointPair } from '@sourcegraph/shared/src/platform/context'
+
 import { isInPage } from '../context'
+
 import { SourcegraphIntegrationURLs } from './context'
 import { browserPortToMessagePort } from './ports'
 

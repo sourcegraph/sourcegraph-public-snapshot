@@ -1,4 +1,5 @@
 import * as sentry from '@sentry/browser'
+
 import { authenticatedUser } from './auth'
 
 if (window.context.sentryDSN) {

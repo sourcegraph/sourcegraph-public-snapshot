@@ -174,7 +174,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		// If we are over our limit for user added repos we abort the sync
 		totalAllowed := uint64(s.UserReposMaxPerSite)
 		if totalAllowed == 0 {
-			totalAllowed = uint64(ConfUserReposMaxPerSite())
+			totalAllowed = uint64(conf.UserReposMaxPerSite())
 		}
 		userAdded, err := tx.CountUserAddedRepos(ctx)
 		if err != nil {
@@ -189,7 +189,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		var sourcedRepoCount int64
 		maxAllowed := s.UserReposMaxPerUser
 		if maxAllowed == 0 {
-			maxAllowed = ConfUserReposMaxPerUser()
+			maxAllowed = conf.UserReposMaxPerUser()
 		}
 		onSourced = func(r *types.Repo) error {
 			newCount := atomic.AddInt64(&sourcedRepoCount, 1)
@@ -295,9 +295,6 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 
 	// Delete from external_service_repos only. Deletes need to happen first so that we don't end up with
 	// constraint violations later.
-	// The trigger 'trig_soft_delete_orphan_repo_by_external_service_repo' will run
-	// and remove any repos that no longer have any rows in the external_service_repos
-	// table.
 	sdiff := s.sourcesUpserts(&diff, storedServiceReposAndConflicting)
 	if err = tx.UpsertSources(ctx, nil, nil, sdiff.Deleted); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.delete-sources")
@@ -520,9 +517,6 @@ func (s *Syncer) syncRepo(ctx context.Context, store *Store, insertOnly bool, pu
 
 	// Delete from external_service_repos only. Deletes need to happen first so that we don't end up with
 	// constraint violations later.
-	// The trigger 'trig_soft_delete_orphan_repo_by_external_service_repo' will run
-	// and remove any repos that no longer have any rows in the external_service_repos
-	// table.
 	sdiff := s.sourcesUpserts(&diff, storedCopy)
 	if err = store.UpsertSources(ctx, nil, nil, sdiff.Deleted); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.syncrepo.store.delete-sources")
@@ -553,6 +547,8 @@ func (s *Syncer) syncRepo(ctx context.Context, store *Store, insertOnly bool, pu
 	return diff, nil
 }
 
+// upserts returns a slice containing modified or added repos from a Diff. Deleted
+// repos are ignored.
 func (s *Syncer) upserts(diff Diff) []*types.Repo {
 	now := s.Now()
 	upserts := make([]*types.Repo, 0, len(diff.Added)+len(diff.Modified))

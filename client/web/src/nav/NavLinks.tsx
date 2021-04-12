@@ -1,35 +1,38 @@
-import React from 'react'
 import * as H from 'history'
-import { ContributableMenu } from '../../../shared/src/api/protocol'
-import { ActivationProps } from '../../../shared/src/components/activation/Activation'
-import { ActivationDropdown } from '../../../shared/src/components/activation/ActivationDropdown'
-import { Link } from '../../../shared/src/components/Link'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { PlatformContextProps } from '../../../shared/src/platform/context'
-import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
-import { ThemeProps } from '../../../shared/src/theme'
-import { isErrorLike } from '../../../shared/src/util/errors'
+import React from 'react'
+
+import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
+import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { ActivationDropdown } from '@sourcegraph/shared/src/components/activation/ActivationDropdown'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { AuthenticatedUser } from '../auth'
-import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
+import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringNavItem } from '../code-monitoring/CodeMonitoringNavItem'
+import { LinkWithIcon } from '../components/LinkWithIcon'
+import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { InsightsNavItem } from '../insights/components/InsightsNavLink/InsightsNavLink'
 import {
     KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
     KEYBOARD_SHORTCUT_SWITCH_THEME,
 } from '../keyboardShortcuts/keyboardShortcuts'
+import { LayoutRouteProps } from '../routes'
 import { Settings } from '../schema/settings.schema'
 import { ThemePreferenceProps } from '../theme'
+import { getReactElements } from '../util/getReactElements'
+
+import { FeedbackPrompt } from './Feedback/FeedbackPrompt'
 import { MenuNavItem } from './MenuNavItem'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
-import { FeedbackPrompt } from './Feedback/FeedbackPrompt'
-import { LayoutRouteProps } from '../routes'
-import { getReactElements } from '../util/getReactElements'
-import { LinkWithIcon } from '../components/LinkWithIcon'
-import { CodeMonitoringProps } from '../code-monitoring'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -99,7 +102,7 @@ const getMinimizableNavItems = (props: Props): JSX.Element[] => {
     ])
 }
 
-export const NavLinks: React.FC<Props> = props => {
+export const NavLinks: React.FunctionComponent<Props> = props => {
     const {
         settingsCascade,
         location,

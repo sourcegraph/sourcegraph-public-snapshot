@@ -1,16 +1,17 @@
 import { from, Observable } from 'rxjs'
 import { delay, filter, map, retryWhen } from 'rxjs/operators'
+
 import {
     CloneInProgressError,
     RepoNotFoundError,
     RevisionNotFoundError,
     isCloneInProgressErrorLike,
-} from '../../../../shared/src/backend/errors'
-import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { PlatformContext } from '../../../../shared/src/platform/context'
-import { createAggregateError } from '../../../../shared/src/util/errors'
-import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
+} from '@sourcegraph/shared/src/backend/errors'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import {
     FileSpec,
     makeRepoURI,
@@ -18,7 +19,7 @@ import {
     RepoSpec,
     ResolvedRevisionSpec,
     RevisionSpec,
-} from '../../../../shared/src/util/url'
+} from '@sourcegraph/shared/src/util/url'
 
 /**
  * @returns Observable that emits if the repo exists on the instance.

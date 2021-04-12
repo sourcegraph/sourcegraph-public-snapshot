@@ -1,26 +1,29 @@
-import * as H from 'history'
 import classnames from 'classnames'
+import * as H from 'history'
+import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useMemo, useState, useEffect } from 'react'
+import { catchError, map, startWith } from 'rxjs/operators'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { AuthenticatedUser } from '../../auth'
+import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
+import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
-import { AuthenticatedUser } from '../../auth'
-import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
-import { Link } from '../../../../shared/src/components/Link'
-import PlusIcon from 'mdi-react/PlusIcon'
-import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
-import { catchError, map, startWith } from 'rxjs/operators'
-import { asError, isErrorLike } from '../../../../shared/src/util/errors'
-import { useObservable } from '../../../../shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Settings } from '../../schema/settings.schema'
-import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { eventLogger } from '../../tracking/eventLogger'
+
 import {
     fetchUserCodeMonitors as _fetchUserCodeMonitors,
     toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled,
 } from './backend'
+import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 
 export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings> {
     authenticatedUser: AuthenticatedUser

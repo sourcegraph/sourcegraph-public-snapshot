@@ -1,12 +1,15 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
+
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+
 import { PatternTypeProps, SearchContextProps } from '..'
-import { buildSearchURLQuery } from '../../../../shared/src/util/url'
-import { QueryBuilder } from './QueryBuilder'
-import { PageTitle } from '../../components/PageTitle'
-import { VersionContextProps } from '../../../../shared/src/search/util'
-import { PageHeader } from '../../components/PageHeader'
 import { Page } from '../../components/Page'
+import { PageHeader } from '../../components/PageHeader'
+import { PageTitle } from '../../components/PageTitle'
+
+import { QueryBuilder } from './QueryBuilder'
 
 interface Props
     extends Pick<PatternTypeProps, 'patternType'>,

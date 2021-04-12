@@ -434,12 +434,17 @@ func ScanPredicate(field string, buf []byte) (string, int, bool) {
 func ScanPredicateName(fieldRegistry map[string]func() Predicate, buf []byte) (string, int, bool) {
 	var predicateName string
 	var advance int
-	for i, c := range buf {
-		if !unicode.IsLetter(rune(c)) {
-			predicateName = string(buf[:i])
-			advance = i
+	for {
+		r, i := utf8.DecodeRune(buf[advance:])
+		if r == utf8.RuneError {
 			break
 		}
+
+		if !(unicode.IsLetter(r) || r == '.') {
+			predicateName = string(buf[:advance])
+			break
+		}
+		advance += i
 	}
 
 	if _, ok := fieldRegistry[predicateName]; !ok {
@@ -717,16 +722,17 @@ func (p *parser) TryParseDelimiter() (string, rune, bool) {
 }
 
 // ParseFieldValue parses a value after a field like "repo:". It returns the
-// parsed value and whether it was quoted. If the value starts with a recognized
-// quoting delimiter but does not close it, an error is returned.
-func (p *parser) ParseFieldValue(field string) (string, bool, error) {
-	delimited := func(delimiter rune) (string, bool, error) {
+// parsed value and any labels to annotate this value with. If the value starts
+// with a recognized quoting delimiter but does not close it, an error is
+// returned.
+func (p *parser) ParseFieldValue(field string) (string, labels, error) {
+	delimited := func(delimiter rune) (string, labels, error) {
 		value, advance, err := ScanDelimited(p.buf[p.pos:], true, delimiter)
 		if err != nil {
-			return "", false, err
+			return "", None, err
 		}
 		p.pos += advance
-		return value, true, nil
+		return value, Quoted, nil
 	}
 	if p.match(SQUOTE) {
 		return delimited('\'')
@@ -738,7 +744,7 @@ func (p *parser) ParseFieldValue(field string) (string, bool, error) {
 	value, advance, ok := ScanPredicate(field, p.buf[p.pos:])
 	if ok {
 		p.pos += advance
-		return value, false, nil
+		return value, IsPredicate, nil
 	}
 
 	// First try scan a field value for cases like (a b repo:foo), where a
@@ -746,14 +752,14 @@ func (p *parser) ParseFieldValue(field string) (string, bool, error) {
 	value, advance, ok = ScanBalancedPattern(p.buf[p.pos:])
 	if ok {
 		p.pos += advance
-		return value, false, nil
+		return value, None, nil
 
 	}
 
 	// The above failed, so attempt a best effort.
 	value, advance = ScanValue(p.buf[p.pos:], false)
 	p.pos += advance
-	return value, false, nil
+	return value, None, nil
 }
 
 // Try parse a delimited pattern, quoted as "...", '...', or /.../.
@@ -796,7 +802,7 @@ func newPattern(value string, negated bool, labels labels, range_ Range) Pattern
 // Note that ParsePattern may be called multiple times (a query can have
 // multiple Patterns concatenated together).
 func (p *parser) ParsePattern(label labels) Pattern {
-	if label.isSet(Regexp) {
+	if label.IsSet(Regexp) {
 		// First try parse delimited values for regexp.
 		if pattern, ok := p.TryParseDelimitedPattern(); ok {
 			return pattern
@@ -812,7 +818,7 @@ func (p *parser) ParsePattern(label labels) Pattern {
 	start := p.pos
 	var value string
 	var advance int
-	if label.isSet(Regexp) {
+	if label.IsSet(Regexp) {
 		value, advance = ScanValue(p.buf[p.pos:], isSet(p.heuristics, allowDanglingParens))
 	} else {
 		value, advance = ScanAnyPattern(p.buf[p.pos:])
@@ -837,13 +843,9 @@ func (p *parser) ParseParameter() (Parameter, bool, error) {
 	}
 
 	p.pos += advance
-	value, quoted, err := p.ParseFieldValue(field)
+	value, labels, err := p.ParseFieldValue(field)
 	if err != nil {
 		return Parameter{}, false, err
-	}
-	var labels labels
-	if quoted {
-		labels.set(Quoted)
 	}
 	return Parameter{
 		Field:      field,
@@ -902,7 +904,7 @@ loop:
 		case p.match(LPAREN) && !isSet(p.heuristics, allowDanglingParens):
 			if isSet(p.heuristics, parensAsPatterns) {
 				if value, advance, ok := ScanBalancedPattern(p.buf[p.pos:]); ok {
-					if label.isSet(Literal) {
+					if label.IsSet(Literal) {
 						label.set(HeuristicParensAsPatterns)
 					}
 					pattern := newPattern(value, false, label, newRange(p.pos, p.pos+advance))

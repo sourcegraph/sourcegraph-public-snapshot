@@ -150,9 +150,8 @@ func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 	return &sc, nil
 }
 
-func (s GitLabSource) ValidateToken(ctx context.Context) error {
-	err := s.client.ValidateToken(ctx)
-	return err
+func (s GitLabSource) ValidateAuthenticator(ctx context.Context) error {
+	return s.client.ValidateToken(ctx)
 }
 
 // ListRepos returns all GitLab repositories accessible to all connections configured

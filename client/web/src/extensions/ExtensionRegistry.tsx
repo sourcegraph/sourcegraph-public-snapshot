@@ -1,29 +1,32 @@
 import * as H from 'history'
 import React, { useEffect, useState, useCallback } from 'react'
-import { PlatformContextProps } from '../../../shared/src/platform/context'
-import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '../../../shared/src/settings/settings'
-import { PageTitle } from '../components/PageTitle'
-import { eventLogger } from '../tracking/eventLogger'
-import { ExtensionsAreaRouteContext } from './ExtensionsArea'
-import { ExtensionsList } from './ExtensionsList'
-import { ExtensionBanner } from './ExtensionBanner'
+import { Link } from 'react-router-dom'
 import { concat, of, timer } from 'rxjs'
 import { debounce, delay, map, switchMap, takeUntil, tap, distinctUntilKeyChanged } from 'rxjs/operators'
-import { ConfiguredRegistryExtension } from '../../../shared/src/extensions/extension'
-import { gql } from '../../../shared/src/graphql/graphql'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { useEventObservable } from '../../../shared/src/util/useObservable'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { ExtensionCategory } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { PageTitle } from '../components/PageTitle'
 import {
     RegistryExtensionsResult,
     RegistryExtensionFieldsForList,
     RegistryExtensionsVariables,
 } from '../graphql-operations'
+import { eventLogger } from '../tracking/eventLogger'
+
+import { ExtensionBanner } from './ExtensionBanner'
 import { configureExtensionRegistry, ConfiguredExtensionRegistry } from './extensions'
-import { ExtensionCategory } from '../../../shared/src/schema/extensionSchema'
-import { Link } from 'react-router-dom'
-import { Form } from '../../../branded/src/components/Form'
+import { ExtensionsAreaRouteContext } from './ExtensionsArea'
+import { ExtensionsList } from './ExtensionsList'
 import { ExtensionsQueryInputToolbar } from './ExtensionsQueryInputToolbar'
-import { ThemeProps } from '../../../shared/src/theme'
 
 interface Props
     extends Pick<ExtensionsAreaRouteContext, 'authenticatedUser' | 'subject'>,

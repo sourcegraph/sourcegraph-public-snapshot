@@ -20,6 +20,8 @@ The tooltips include features like:
 
 #### 🚀 Install: [**Sourcegraph for Firefox**](https://docs.sourcegraph.com/integration/browser_extension)
 
+#### 🚀 Install: [**Sourcegraph for Safari**](https://apps.apple.com/us/app/sourcegraph-for-safari/id1543262193)
+
 It works as follows:
 
 - when visiting e.g. https://github.com/..., the extension injects a content script (inject.bundle.js)
@@ -67,7 +69,7 @@ It works as follows:
 
 ## Development
 
-For each browser run:
+To build all the browser extensions for all browsers at once:
 
 ```bash
 yarn run dev
@@ -187,18 +189,17 @@ cd sourcegraph-e1547ea0e99475dd748a4e3bb1a81cee71c0f7fd
 
 ### Install dependencies and build
 
-Use `nvm` to select the Node.js version specified in `.nvmrc`
+Use `nvm` to select the Node.js version specified in `.nvmrc`.
 
 ```sh
 nvm install
 ```
 
-Install dependencies with `yarn` (install it globally with `npm i -g yarn` if needed) and build from the `browser` directory.
+Install dependencies with `yarn` (install it globally with `npm i -g yarn` if needed) and build.
 
 ```sh
 yarn
-cd client/browser
-yarn build
+yarn run build-browser-extension
 ```
 
 The build step automatically pulls in [sourcegraph/code-intel-extensions](https://github.com/sourcegraph/code-intel-extensions) as a dependency.
@@ -211,3 +212,18 @@ The output will be in `browser/build`:
 - Chrome extension:
   - Packed: `browser/build/bundles/chrome-bundle.zip`
   - Unpacked: `browser/build/chrome`
+
+## Create a zip of the browser extension source code
+
+The `yarn run create-source-zip` command will create `sourcegraph.zip`, an archive of the source that can be used to do a build of the browser extension.
+
+This will pull the source code at a given revision (by default, the `bext/release` branch on GitHub) and create a zip of the source code, which can then be used to reproduce the exact build. Some directories of the repo, which are not relevant to the browser extension, are excluded from the archive.
+
+See [scripts/create-source-zip.js](scripts/create-source-zip.js).
+
+Use this process to create a source code zip to attach to a Firefox add-on submission.
+
+```
+cd client/browser
+yarn run create-source-zip
+```

@@ -1,11 +1,13 @@
-import React, { useCallback, useState } from 'react'
-import { Form } from '../../../branded/src/components/Form'
-import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '../search'
-import { SearchButton } from '../search/input/SearchButton'
-import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { submitSearch } from '../search/helpers'
 import * as H from 'history'
-import { VersionContextProps } from '../../../shared/src/search/util'
+import React, { useCallback, useState } from 'react'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+
+import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '../search'
+import { submitSearch } from '../search/helpers'
+import { SearchButton } from '../search/input/SearchButton'
 
 interface Props
     extends SettingsCascadeProps,

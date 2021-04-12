@@ -1,16 +1,19 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import { Observable, of } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
-import { Toggle } from '../../../branded/src/components/Toggle'
-import { ToggleBig } from '../../../branded/src/components/ToggleBig'
-import { PlatformContextProps } from '../../../shared/src/platform/context'
+
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { ToggleBig } from '@sourcegraph/branded/src/components/ToggleBig'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import {
     SettingsCascadeProps,
     SettingsCascadeOrError,
     ConfiguredSubjectOrError,
-} from '../../../shared/src/settings/settings'
-import { useEventObservable } from '../../../shared/src/util/useObservable'
+} from '@sourcegraph/shared/src/settings/settings'
+import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { eventLogger } from '../tracking/eventLogger'
+
 import { isExtensionAdded } from './extension/extension'
 import { ExtensionPermissionModal } from './ExtensionPermissionModal'
 

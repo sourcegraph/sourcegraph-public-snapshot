@@ -23,6 +23,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -90,6 +91,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		}
 
 		s := store.NewWithClock(db, clock)
+		sourcer := sources.NewSourcer(repos.NewSourcer(nil), s)
 
 		spec := &batches.BatchSpec{
 			NamespaceUserID: userID,
@@ -136,7 +138,11 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		})
 		defer state.Unmock()
 
-		err = syncer.SyncChangeset(ctx, s, githubSrc, githubRepo, changeset)
+		src, err := sourcer.FromRepoSource(githubSrc)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = syncer.SyncChangeset(ctx, s, src, githubRepo, changeset)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -269,6 +275,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		}
 
 		s := store.NewWithClock(db, clock)
+		sourcer := sources.NewSourcer(repos.NewSourcer(nil), s)
 
 		spec := &batches.BatchSpec{
 			NamespaceUserID: userID,
@@ -321,14 +328,17 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			if err := s.CreateChangeset(ctx, ch); err != nil {
 				t.Fatal(err)
 			}
-
-			err = syncer.SyncChangeset(ctx, s, bitbucketSource, bitbucketRepo, ch)
+			src, err := sourcer.FromRepoSource(bitbucketSource)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = syncer.SyncChangeset(ctx, s, src, bitbucketRepo, ch)
 			if err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		hook := NewBitbucketServerWebhook(s, "testhook")
+		hook := NewBitbucketServerWebhook(s)
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/bitbucketserver/*.json")
 		if err != nil {

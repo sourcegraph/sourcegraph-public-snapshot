@@ -1,9 +1,12 @@
 import assert from 'assert'
-import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
-import { commonWebGraphQlResults } from './graphQlResults'
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
+
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+
 import { UserAreaUserFields } from '../graphql-operations'
+
+import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
+import { commonWebGraphQlResults } from './graphQlResults'
 
 describe('User profile page', () => {
     let driver: Driver

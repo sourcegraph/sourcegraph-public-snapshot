@@ -1,12 +1,15 @@
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useCallback, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
-import { UserSettingsCreateAccessTokenPage } from './UserSettingsCreateAccessTokenPage'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
+
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { HeroPage } from '../../../components/HeroPage'
-import { UserSettingsTokensPage } from './UserSettingsTokensPage'
 import { CreateAccessTokenResult } from '../../../graphql-operations'
+import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
+
+import { UserSettingsCreateAccessTokenPage } from './UserSettingsCreateAccessTokenPage'
+import { UserSettingsTokensPage } from './UserSettingsTokensPage'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 

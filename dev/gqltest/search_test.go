@@ -273,6 +273,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query: "repohasfile:README",
 			},
 			{
+				name:       "multiple repohasfile returns no results if one doesn't match",
+				query:      "repohasfile:README repohasfile:thisfiledoesnotexist_1571751",
+				zeroResult: true,
+			},
+			{
 				name:  "repo search by name, nonzero result",
 				query: "repo:go-diff$",
 			},
@@ -862,8 +867,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:            `Or distributive property on commits deduplicates and merges`,
 				query:           `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
 				exactMatchCount: 21,
-
-				skipStream: true,
+				skipStream:      true,
 			},
 		}
 		for _, test := range tests {
@@ -933,59 +937,84 @@ func testSearchClient(t *testing.T, client searchClient) {
 			counts counts
 		}{
 			{
-				`repo contains file`,
-				`repo:contains(file:go\.mod)`,
-				counts{Repo: 2},
+				name:   `repo contains file`,
+				query:  `repo:contains(file:go\.mod)`,
+				counts: counts{Repo: 2},
 			},
 			{
-				`no repo contains file`,
-				`repo:contains(file:noexist.go)`,
-				counts{},
+				name:   `no repo contains file`,
+				query:  `repo:contains(file:noexist.go)`,
+				counts: counts{},
 			},
 			{
-				`no repo contains file with pattern`,
-				`repo:contains(file:noexist.go) test`,
-				counts{},
+				name:   `no repo contains file with pattern`,
+				query:  `repo:contains(file:noexist.go) test`,
+				counts: counts{},
 			},
 			{
-				`repo contains content`,
-				`repo:contains(content:nextFileFirstLine)`,
+				name:   `repo contains content`,
+				query:  `repo:contains(content:nextFileFirstLine)`,
+				counts: counts{Repo: 1},
+			},
+			{
+				name:   `repo contains content default`,
+				query:  `repo:contains(nextFileFirstLine)`,
+				counts: counts{Repo: 1},
+			},
+			{
+				name:   `or-expression on repo:contains`,
+				query:  `repo:contains(content:does-not-exist-D2E1E74C7279) or repo:contains(content:nextFileFirstLine)`,
+				counts: counts{Repo: 1},
+			},
+			{
+				name:   `and-expression on repo:contains`,
+				query:  `repo:contains(content:does-not-exist-D2E1E74C7279) and repo:contains(content:nextFileFirstLine)`,
+				counts: counts{Repo: 0},
+			},
+			{
+				name:   `repo contains file then search common`,
+				query:  `repo:contains(file:go.mod) count:100 fmt`,
+				counts: counts{Content: 61},
+			},
+			{
+				name:   `repo contains with matching repo filter`,
+				query:  `repo:go-diff repo:contains(file:diff.proto)`,
+				counts: counts{Repo: 1},
+			},
+			{
+				name:   `repo contains with non-matching repo filter`,
+				query:  `repo:nonexist repo:contains(file:diff.proto)`,
+				counts: counts{Repo: 0},
+			},
+			{
+				name:   `commit results without repo filter`,
+				query:  `type:commit LSIF`,
+				counts: counts{Commit: 9},
+			},
+			{
+				name:   `commit results with repo filter`,
+				query:  `repo:contains(file:diff.pb.go) type:commit LSIF`,
+				counts: counts{Commit: 1},
+			},
+			{
+				name:   `predicate logic does not conflict with unrecognized patterns`,
+				query:  `repo:sg(test)`,
+				counts: counts{Repo: 6},
+			},
+			{
+				`repo has commit after`,
+				`repo:go-diff repo:contains.commit.after(10 years ago)`,
 				counts{Repo: 1},
 			},
 			{
-				`repo contains content default`,
-				`repo:contains(nextFileFirstLine)`,
-				counts{Repo: 1},
-			},
-			{
-				`or-expression on repo:contains`,
-				`repo:contains(content:does-not-exist-D2E1E74C7279) or repo:contains(content:nextFileFirstLine)`,
-				counts{Repo: 1},
-			},
-			{
-				`repo contains file then search common`,
-				`repo:contains(file:go.mod) count:100 fmt`,
-				counts{Content: 61},
-			},
-			{
-				`repo contains with matching repo filter`,
-				`repo:go-diff repo:contains(file:diff.proto)`,
-				counts{Repo: 1},
-			},
-			{
-				`repo contains with non-matching repo filter`,
-				`repo:nonexist repo:contains(file:diff.proto)`,
+				`repo has commit after no results`,
+				`repo:go-diff repo:contains.commit.after(1 second ago)`,
 				counts{Repo: 0},
 			},
 			{
-				`commit results without repo filter`,
-				`type:commit LSIF`,
-				counts{Commit: 9},
-			},
-			{
-				`commit results with repo filter`,
-				`repo:contains(file:diff.pb.go) type:commit LSIF`,
-				counts{Commit: 1},
+				`unscoped repo has commit after no results`,
+				`repo:contains.commit.after(1 second ago)`,
+				counts{Repo: 0},
 			},
 		}
 
@@ -1011,61 +1040,55 @@ func testSearchClient(t *testing.T, client searchClient) {
 			counts counts
 		}{
 			{
-				`select repo`,
-				`repo:go-diff patterntype:literal HunkNoChunksize select:repo`,
-				counts{Repo: 1},
+				name:   `select repo`,
+				query:  `repo:go-diff patterntype:literal HunkNoChunksize select:repo`,
+				counts: counts{Repo: 1},
 			},
 			{
-				`select repo, only repo`,
-				`repo:go-diff select:repo`,
-				counts{Repo: 1},
+				name:   `select repo, only repo`,
+				query:  `repo:go-diff select:repo`,
+				counts: counts{Repo: 1},
 			},
 			{
-				`select repo, only file`,
-				`file:go-diff.go select:repo`,
-				counts{Repo: 1},
+				name:   `select repo, only file`,
+				query:  `file:go-diff.go select:repo`,
+				counts: counts{Repo: 1},
 			},
 			{
-				`select file`,
-				`repo:go-diff patterntype:literal HunkNoChunksize select:file`,
-				counts{File: 1},
+				name:   `select file`,
+				query:  `repo:go-diff patterntype:literal HunkNoChunksize select:file`,
+				counts: counts{File: 1},
 			},
 			{
-				`or statement merges file`,
-				`repo:go-diff HunkNoChunksize or ParseHunksAndPrintHunks select:file`,
-				counts{File: 1},
+				name:   `or statement merges file`,
+				query:  `repo:go-diff HunkNoChunksize or ParseHunksAndPrintHunks select:file`,
+				counts: counts{File: 1},
 			},
 			{
-				`select content`,
-				`repo:go-diff patterntype:literal HunkNoChunksize select:content`,
-				counts{Content: 1},
+				name:   `select content`,
+				query:  `repo:go-diff patterntype:literal HunkNoChunksize select:content`,
+				counts: counts{Content: 1},
 			},
 			{
-				`no select`,
-				`repo:go-diff patterntype:literal HunkNoChunksize`,
-				counts{Content: 1},
+				name:   `no select`,
+				query:  `repo:go-diff patterntype:literal HunkNoChunksize`,
+				counts: counts{Content: 1},
 			},
 			{
-				`select commit, no results`,
-				`repo:go-diff patterntype:literal HunkNoChunksize select:commit`,
-				counts{},
+				name:   `select commit, no results`,
+				query:  `repo:go-diff patterntype:literal HunkNoChunksize select:commit`,
+				counts: counts{},
 			},
 			{
-				`select symbol, no results`,
-				`repo:go-diff patterntype:literal HunkNoChunksize select:symbol`,
-				counts{},
+				name:   `select symbol, no results`,
+				query:  `repo:go-diff patterntype:literal HunkNoChunksize select:symbol`,
+				counts: counts{},
 			},
 			{
-				`select symbol`,
-				`repo:go-diff patterntype:literal type:symbol HunkNoChunksize select:symbol`,
-				counts{Symbol: 1},
+				name:   `select symbol`,
+				query:  `repo:go-diff patterntype:literal type:symbol HunkNoChunksize select:symbol`,
+				counts: counts{Symbol: 1},
 			},
-			// TODO (@camdencheek): Enable this test once #17483 is fixed
-			// {
-			// 	`select commit`,
-			// 	`repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit author:felix pure-lockfile`,
-			// 	counts{Symbol: 1},
-			// },
 		}
 
 		for _, test := range tests {
@@ -1094,9 +1117,9 @@ func testSearchClient(t *testing.T, client searchClient) {
 			counts counts
 		}{
 			{
-				`no duplicate commits (#19460)`,
-				`repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit author:felix count:1000 before:"march 25 2021"`,
-				counts{Commit: 317},
+				name:   `no duplicate commits (#19460)`,
+				query:  `repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit author:felix count:1000 before:"march 25 2021"`,
+				counts: counts{Commit: 317},
 			},
 		}
 
@@ -1124,7 +1147,7 @@ func testSearchOther(t *testing.T) {
 			query           string
 			suggestionCount int
 		}{
-			{`repo:sourcegraph-typescript$ type:file file:deploy`, 11},
+			{query: `repo:sourcegraph-typescript$ type:file file:deploy`, suggestionCount: 11},
 		}
 
 		for _, test := range tests {

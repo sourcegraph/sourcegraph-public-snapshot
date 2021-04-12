@@ -3,12 +3,15 @@ import { RouteComponentProps } from 'react-router'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
-import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors'
+
+import { ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+
+import { AuthenticatedUser } from '../auth'
 import { NamespaceProps } from '../namespaces'
 import { createSavedSearch } from '../search/backend'
 import { eventLogger } from '../tracking/eventLogger'
+
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
-import { AuthenticatedUser } from '../auth'
 
 interface Props extends RouteComponentProps, NamespaceProps {
     authenticatedUser: AuthenticatedUser | null

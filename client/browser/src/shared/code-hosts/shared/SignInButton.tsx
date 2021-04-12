@@ -1,8 +1,10 @@
 import React, { useCallback } from 'react'
-import { SourcegraphIconButton } from '../../components/SourcegraphIconButton'
 import { interval, Observable } from 'rxjs'
 import { switchMap, filter, take, tap } from 'rxjs/operators'
-import { useEventObservable } from '../../../../../shared/src/util/useObservable'
+
+import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { SourcegraphIconButton } from '../../components/SourcegraphIconButton'
 import { getPlatformName } from '../../util/context'
 
 export const SignInButton: React.FunctionComponent<{

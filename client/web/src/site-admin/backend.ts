@@ -1,18 +1,20 @@
 import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import { Observable } from 'rxjs'
 import { map, tap, mapTo } from 'rxjs/operators'
-import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
+
 import {
     createInvalidGraphQLMutationResponseError,
     dataOrThrowErrors,
     isErrorGraphQLResult,
     gql,
-} from '../../../shared/src/graphql/graphql'
-import { createAggregateError } from '../../../shared/src/util/errors'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { resetAllMemoizationCaches } from '../../../shared/src/util/memoizeObservable'
+} from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { resetAllMemoizationCaches } from '@sourcegraph/shared/src/util/memoizeObservable'
+import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
+
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
-import { Settings } from '../../../shared/src/settings/settings'
 import {
     UserRepositoriesResult,
     UserRepositoriesVariables,
@@ -49,6 +51,9 @@ import {
     UserPublicRepositoriesFields,
     SetUserPublicRepositoriesResult,
     SetUserPublicRepositoriesVariables,
+    OutOfBandMigrationFields,
+    OutOfBandMigrationsResult,
+    OutOfBandMigrationsVariables,
 } from '../graphql-operations'
 
 /**
@@ -843,4 +848,40 @@ export function setUserPublicRepositories(
         `,
         { userId, repos }
     ).pipe(map(dataOrThrowErrors))
+}
+
+/**
+ * Fetches all out-of-band migrations.
+ */
+export function fetchAllOutOfBandMigrations(): Observable<OutOfBandMigrationFields[]> {
+    return requestGraphQL<OutOfBandMigrationsResult, OutOfBandMigrationsVariables>(
+        gql`
+            query OutOfBandMigrations {
+                outOfBandMigrations {
+                    ...OutOfBandMigrationFields
+                }
+            }
+
+            fragment OutOfBandMigrationFields on OutOfBandMigration {
+                id
+                team
+                component
+                description
+                introduced
+                deprecated
+                progress
+                created
+                lastUpdated
+                nonDestructive
+                applyReverse
+                errors {
+                    message
+                    created
+                }
+            }
+        `
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.outOfBandMigrations)
+    )
 }

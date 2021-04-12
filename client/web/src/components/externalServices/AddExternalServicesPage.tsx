@@ -1,13 +1,16 @@
 import * as H from 'history'
 import React from 'react'
+
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+
+import { Scalars } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
-import { ThemeProps } from '../../../../shared/src/theme'
+
+import { AddExternalServicePage } from './AddExternalServicePage'
 import { ExternalServiceCard } from './ExternalServiceCard'
 import { allExternalServices, AddExternalServiceOptions } from './externalServices'
-import { AddExternalServicePage } from './AddExternalServicePage'
-import { useLocalStorage } from '../../../../shared/src/util/useLocalStorage'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { Scalars } from '../../graphql-operations'
 
 export interface AddExternalServicesPageProps extends ThemeProps, TelemetryProps {
     history: H.History

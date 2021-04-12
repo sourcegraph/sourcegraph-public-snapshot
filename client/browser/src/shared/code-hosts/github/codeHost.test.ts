@@ -1,14 +1,17 @@
 import { existsSync, readdirSync } from 'fs'
+
 import { startCase } from 'lodash'
+import { readFile } from 'mz/fs'
+
 import { testCodeHostMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
 import { CodeView } from '../shared/codeViews'
+
 import {
     createFileActionsToolbarMount,
     createFileLineContainerToolbarMount,
     githubCodeHost,
     checkIsGitHubDotCom,
 } from './codeHost'
-import { readFile } from 'mz/fs'
 
 const testCodeHost = (fixturePath: string): void => {
     if (existsSync(fixturePath)) {

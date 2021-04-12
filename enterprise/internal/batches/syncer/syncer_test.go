@@ -1,116 +1,32 @@
 package syncer
 
 import (
-	"container/heap"
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestChangesetPriorityQueue(t *testing.T) {
+func TestSyncerRun(t *testing.T) {
 	t.Parallel()
 
-	assertOrder := func(t *testing.T, q *changesetPriorityQueue, expected []int64) {
-		t.Helper()
-		ids := make([]int64, len(q.items))
-		for i := range ids {
-			ids[i] = q.items[i].changesetID
-		}
-		if diff := cmp.Diff(expected, ids); diff != "" {
-			t.Fatal(diff)
-		}
-	}
-
-	now := time.Now()
-	q := newChangesetPriorityQueue()
-
-	items := []scheduledSync{
-		{
-			changesetID: 1,
-			nextSync:    now,
-			priority:    priorityNormal,
-		},
-		{
-			changesetID: 2,
-			nextSync:    now,
-			priority:    priorityHigh,
-		},
-		{
-			changesetID: 3,
-			nextSync:    now.Add(-1 * time.Minute),
-			priority:    priorityNormal,
-		},
-		{
-			changesetID: 4,
-			nextSync:    now.Add(-2 * time.Hour),
-			priority:    priorityNormal,
-		},
-		{
-			changesetID: 5,
-			nextSync:    now.Add(1 * time.Hour),
-			priority:    priorityNormal,
-		},
-	}
-
-	for i := range items {
-		q.Upsert(items[i])
-	}
-
-	assertOrder(t, q, []int64{2, 4, 3, 1, 5})
-
-	// Set item to high priority
-	q.Upsert(scheduledSync{
-		changesetID: 4,
-		nextSync:    now.Add(-2 * time.Hour),
-		priority:    priorityHigh,
-	})
-
-	assertOrder(t, q, []int64{4, 2, 3, 1, 5})
-
-	// Can't reduce priority of existing item
-	q.Upsert(scheduledSync{
-		changesetID: 4,
-		nextSync:    now.Add(-2 * time.Hour),
-		priority:    priorityNormal,
-	})
-
-	if q.Len() != len(items) {
-		t.Fatalf("Expected %d, got %d", q.Len(), len(items))
-	}
-
-	assertOrder(t, q, []int64{4, 2, 3, 1, 5})
-
-	for i := 0; i < len(items); i++ {
-		peeked, ok := q.Peek()
-		if !ok {
-			t.Fatalf("Queue should not be empty")
-		}
-		item := heap.Pop(q).(scheduledSync)
-		if peeked.changesetID != item.changesetID {
-			t.Fatalf("Peeked and Popped item should have the same id")
-		}
-	}
-
-	// Len() should be zero after all items popped
-	if q.Len() != 0 {
-		t.Fatalf("Expected %d, got %d", q.Len(), 0)
-	}
-}
-
-func TestSyncerRun(t *testing.T) {
 	t.Run("Sync due", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		now := time.Now()
-		store := MockSyncStore{
+		syncStore := MockSyncStore{
 			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error) {
 				return []*batches.ChangesetSyncData{
 					{
@@ -127,7 +43,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &changesetSyncer{
-			syncStore:        store,
+			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 		}
@@ -144,7 +60,7 @@ func TestSyncerRun(t *testing.T) {
 		defer cancel()
 		now := time.Now()
 		updateCalled := false
-		store := MockSyncStore{
+		syncStore := MockSyncStore{
 			getChangeset: func(context.Context, store.GetChangesetOpts) (*batches.Changeset, error) {
 				// Return ErrNoResults, which is the result you get when the changeset preconditions aren't met anymore.
 				// The sync data checks for the reconciler state and if it changed since the sync data was loaded,
@@ -170,7 +86,7 @@ func TestSyncerRun(t *testing.T) {
 			},
 		}
 		syncer := &changesetSyncer{
-			syncStore:        store,
+			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 		}
 		syncer.Run(ctx)
@@ -183,7 +99,7 @@ func TestSyncerRun(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
 		now := time.Now()
-		store := MockSyncStore{
+		syncStore := MockSyncStore{
 			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error) {
 				return []*batches.ChangesetSyncData{
 					{
@@ -201,7 +117,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &changesetSyncer{
-			syncStore:        store,
+			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 		}
@@ -214,7 +130,7 @@ func TestSyncerRun(t *testing.T) {
 	t.Run("Priority added", func(t *testing.T) {
 		// Empty schedule but then we add an item
 		ctx, cancel := context.WithCancel(context.Background())
-		store := MockSyncStore{
+		syncStore := MockSyncStore{
 			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error) {
 				return []*batches.ChangesetSyncData{}, nil
 			},
@@ -224,7 +140,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &changesetSyncer{
-			syncStore:        store,
+			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 			priorityNotify:   make(chan []int64, 1),
@@ -266,7 +182,7 @@ func TestSyncRegistry(t *testing.T) {
 		},
 	}
 
-	r := NewSyncRegistry(ctx, syncStore, nil, nil, nil)
+	r := NewSyncRegistry(ctx, syncStore, nil)
 
 	assertSyncerCount := func(want int) {
 		r.mu.Lock()
@@ -307,7 +223,6 @@ func TestSyncRegistry(t *testing.T) {
 	// with a custom sync func
 	syncer := &changesetSyncer{
 		syncStore:   syncStore,
-		reposStore:  nil,
 		codeHostURL: "https://example.com/",
 		syncFunc: func(ctx context.Context, id int64) error {
 			syncChan <- id
@@ -338,12 +253,91 @@ func TestSyncRegistry(t *testing.T) {
 	}
 }
 
+func TestLoadChangesetSource(t *testing.T) {
+	ctx := context.Background()
+	cf := httpcli.NewFactory(
+		func(cli httpcli.Doer) httpcli.Doer {
+			return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
+				// Don't actually execute the request, just dump the authorization header
+				// in the error, so we can assert on it further down.
+				return nil, errors.New(req.Header.Get("Authorization"))
+			})
+		},
+		httpcli.NewTimeoutOpt(1*time.Second),
+	)
+
+	externalService := types.ExternalService{
+		ID:          1,
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GitHub.com",
+		Config:      `{"url": "https://github.com", "token": "123", "authorization": {}}`,
+	}
+	repo := &types.Repo{
+		Name:    api.RepoName("test-repo"),
+		URI:     "test-repo",
+		Private: true,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "external-id-123",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com/",
+		},
+		Sources: map[string]*types.SourceInfo{
+			externalService.URN(): {
+				ID:       externalService.URN(),
+				CloneURL: "https://123@github.com/sourcegraph/sourcegraph",
+			},
+		},
+	}
+
+	// Store mocks.
+	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		return []*types.ExternalService{&externalService}, nil
+	}
+	t.Cleanup(func() {
+		database.Mocks.ExternalServices.List = nil
+	})
+	hasCredential := false
+	syncStore := &MockSyncStore{
+		getSiteCredential: func(ctx context.Context, opts store.GetSiteCredentialOpts) (*store.SiteCredential, error) {
+			if hasCredential {
+				return &store.SiteCredential{Credential: &auth.OAuthBearerToken{Token: "456"}}, nil
+			}
+			return nil, store.ErrNoResults
+		},
+	}
+
+	// If no site-credential exists, the token from the external service should be used.
+	src, err := loadChangesetSource(ctx, cf, syncStore, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := src.ValidateAuthenticator(ctx); err == nil {
+		t.Fatal("unexpected nil error")
+	} else if have, want := err.Error(), "Bearer 123"; have != want {
+		t.Fatalf("invalid token used, want=%q have=%q", want, have)
+	}
+
+	// If one exists, prefer that one over the external service config ones.
+	hasCredential = true
+	src, err = loadChangesetSource(ctx, cf, syncStore, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := src.ValidateAuthenticator(ctx); err == nil {
+		t.Fatal("unexpected nil error")
+	} else if have, want := err.Error(), "Bearer 456"; have != want {
+		t.Fatalf("invalid token used, want=%q have=%q", want, have)
+	}
+}
+
 type MockSyncStore struct {
 	listCodeHosts         func(context.Context, store.ListCodeHostsOpts) ([]*batches.CodeHost, error)
 	listChangesetSyncData func(context.Context, store.ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error)
 	getChangeset          func(context.Context, store.GetChangesetOpts) (*batches.Changeset, error)
 	updateChangeset       func(context.Context, *batches.Changeset) error
 	upsertChangesetEvents func(context.Context, ...*batches.ChangesetEvent) error
+	getSiteCredential     func(ctx context.Context, opts store.GetSiteCredentialOpts) (*store.SiteCredential, error)
+	getExternalServiceIDs func(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
 	transact              func(context.Context) (*store.Store, error)
 }
 
@@ -363,34 +357,42 @@ func (m MockSyncStore) UpsertChangesetEvents(ctx context.Context, cs ...*batches
 	return m.upsertChangesetEvents(ctx, cs...)
 }
 
+func (m MockSyncStore) GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*store.SiteCredential, error) {
+	return m.getSiteCredential(ctx, opts)
+}
+
+func (m MockSyncStore) GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error) {
+	return m.getExternalServiceIDs(ctx, opts)
+}
+
 func (m MockSyncStore) Transact(ctx context.Context) (*store.Store, error) {
 	return m.transact(ctx)
 }
 
 func (m MockSyncStore) Repos() *database.RepoStore {
-	return database.GlobalRepos
+	// Return a RepoStore with a nil DB, so tests will fail when a mock is missing.
+	return database.Repos(nil)
+}
+
+func (m MockSyncStore) ExternalServices() *database.ExternalServiceStore {
+	// Return a ExternalServiceStore with a nil DB, so tests will fail when a mock is missing.
+	return database.ExternalServices(nil)
+}
+
+func (m MockSyncStore) UserCredentials() *database.UserCredentialsStore {
+	// Return a UserCredentialsStore with a nil DB, so tests will fail when a mock is missing.
+	return database.UserCredentials(nil)
+}
+
+func (m MockSyncStore) DB() dbutil.DB {
+	// Return a nil DB, so tests will fail when a mock is missing.
+	return nil
 }
 
 func (m MockSyncStore) Clock() func() time.Time {
-	return time.Now
+	return timeutil.Now
 }
 
 func (m MockSyncStore) ListCodeHosts(ctx context.Context, opts store.ListCodeHostsOpts) ([]*batches.CodeHost, error) {
 	return m.listCodeHosts(ctx, opts)
-}
-
-type MockRepoStore struct {
-	get func(ctx context.Context, id api.RepoID) (*types.Repo, error)
-}
-
-func (m MockRepoStore) Get(ctx context.Context, id api.RepoID) (*types.Repo, error) {
-	return m.get(ctx, id)
-}
-
-type MockExternalServiceStore struct {
-	list func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
-}
-
-func (m MockExternalServiceStore) List(ctx context.Context, args database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-	return m.list(ctx, args)
 }

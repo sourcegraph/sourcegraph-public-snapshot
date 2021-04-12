@@ -274,269 +274,6 @@ func TestOrderedFuzzyRegexp(t *testing.T) {
 	}
 }
 
-func TestProcessSearchPattern(t *testing.T) {
-	cases := []struct {
-		Name    string
-		Pattern string
-		Opts    *getPatternInfoOptions
-		Want    string
-	}{
-		{
-			Name:    "Regexp, no content field",
-			Pattern: `search me`,
-			Opts:    &getPatternInfoOptions{},
-			Want:    "(search).*?(me)",
-		},
-		{
-			Name:    "Regexp with content field",
-			Pattern: `content:search`,
-			Opts:    &getPatternInfoOptions{},
-			Want:    "search",
-		},
-		{
-			Name:    "Regexp with quoted content field",
-			Pattern: `content:"search me"`,
-			Opts:    &getPatternInfoOptions{},
-			Want:    "search me",
-		},
-		{
-			Name:    "Regexp with content field sequences non-content pattern",
-			Pattern: `content:"search me" pattern`,
-			Opts:    &getPatternInfoOptions{},
-			Want:    "(search me).*?(pattern)",
-		},
-		{
-			Name:    "Literal with quoted content field means double quotes are not part of the pattern",
-			Pattern: `content:"content:"`,
-			Opts:    &getPatternInfoOptions{performLiteralSearch: true},
-			Want:    "content:",
-		},
-		{
-			Name:    "Literal with quoted content field containing quotes",
-			Pattern: `content:"\"content:\""`,
-			Opts:    &getPatternInfoOptions{performLiteralSearch: true},
-			Want:    "\"content:\"",
-		},
-	}
-	for _, tt := range cases {
-		t.Run(tt.Name, func(t *testing.T) {
-			q, _ := query.ParseRegexp(tt.Pattern)
-			got, _, _, _ := processSearchPattern(q, tt.Opts)
-			if got != tt.Want {
-				t.Fatalf("got %s\nwant %s", got, tt.Want)
-			}
-		})
-	}
-}
-
-func TestIsPatternNegated(t *testing.T) {
-	cases := []struct {
-		name    string
-		pattern string
-		want    bool
-	}{
-		{
-			name:    "simple negated pattern",
-			pattern: "-content:foo",
-			want:    true,
-		},
-		{
-			name:    "compound query with negated content as first term",
-			pattern: "-content:foo and bar",
-			want:    false,
-		},
-		{
-			name:    "compound query with negated content as last term",
-			pattern: "bar and -content:foo",
-			want:    false,
-		},
-		{
-			name:    "simple query with content field but without negation",
-			pattern: "content:foo",
-			want:    false,
-		},
-	}
-
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			q, err := query.ParseLiteral(tt.pattern)
-			if err != nil {
-				t.Fatalf(err.Error())
-			}
-			got := isPatternNegated(q)
-			if got != tt.want {
-				t.Fatalf("got %t\nwant %t", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestProcessSearchPatternAndOr(t *testing.T) {
-	cases := []struct {
-		name                string
-		pattern             string
-		searchType          query.SearchType
-		opts                *getPatternInfoOptions
-		wantPattern         string
-		wantIsRegExp        bool
-		wantIsStructuralPat bool
-		wantIsNegated       bool
-	}{
-		{
-			name:                "Simple content",
-			pattern:             `content:foo`,
-			searchType:          query.SearchTypeLiteral,
-			opts:                &getPatternInfoOptions{},
-			wantPattern:         "foo",
-			wantIsRegExp:        true,
-			wantIsStructuralPat: false,
-			wantIsNegated:       false,
-		},
-		{
-			name:                "Negated content",
-			pattern:             `-content:foo`,
-			searchType:          query.SearchTypeLiteral,
-			opts:                &getPatternInfoOptions{},
-			wantPattern:         "foo",
-			wantIsRegExp:        true,
-			wantIsStructuralPat: false,
-			wantIsNegated:       true,
-		},
-	}
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			q, err := query.ParseSearchType(tt.pattern, tt.searchType)
-			if err != nil {
-				t.Fatalf(err.Error())
-			}
-
-			pattern, isRegExp, isStructuralPat, isNegated := processSearchPattern(q, tt.opts)
-
-			if want := tt.wantPattern; pattern != want {
-				t.Fatalf("got %s\nwant %s", pattern, want)
-			}
-
-			if want := tt.wantIsRegExp; isRegExp != want {
-				t.Fatalf("got %t\nwant %t", isRegExp, want)
-			}
-
-			if want := tt.wantIsStructuralPat; isStructuralPat != want {
-				t.Fatalf("got %t\nwant %t", isStructuralPat, want)
-			}
-
-			if want := tt.wantIsNegated; isNegated != want {
-				t.Fatalf("got %t\nwant %t", isNegated, want)
-			}
-		})
-	}
-}
-
-func TestSearchResolver_getPatternInfo(t *testing.T) {
-	normalize := func(p *search.TextPatternInfo) {
-		if len(p.IncludePatterns) == 0 {
-			p.IncludePatterns = nil
-		}
-		if p.FileMatchLimit == 0 {
-			p.FileMatchLimit = defaultMaxSearchResults
-		}
-	}
-
-	tests := map[string]search.TextPatternInfo{
-		"p": {
-			Pattern:  "p",
-			IsRegExp: true,
-			Index:    query.Yes,
-		},
-		"p1 p2": {
-			Pattern:  "(p1).*?(p2)",
-			IsRegExp: true,
-			Index:    query.Yes,
-		},
-		"p case:yes": {
-			Pattern:                      "p",
-			IsRegExp:                     true,
-			IsCaseSensitive:              true,
-			PathPatternsAreCaseSensitive: true,
-			Index:                        query.Yes,
-		},
-		"p file:f": {
-			Pattern:         "p",
-			IsRegExp:        true,
-			IncludePatterns: []string{"f"},
-			Index:           query.Yes,
-		},
-		"p file:f1 file:f2": {
-			Pattern:         "p",
-			IsRegExp:        true,
-			IncludePatterns: []string{"f1", "f2"},
-			Index:           query.Yes,
-		},
-		"p -file:f": {
-			Pattern:        "p",
-			IsRegExp:       true,
-			ExcludePattern: "f",
-			Index:          query.Yes,
-		},
-		"p -file:f index:no": {
-			Pattern:        "p",
-			IsRegExp:       true,
-			ExcludePattern: "f",
-			Index:          query.No,
-		},
-		"p -file:f1 -file:f2": {
-			Pattern:        "p",
-			IsRegExp:       true,
-			ExcludePattern: "f1|f2",
-			Index:          query.Yes,
-		},
-		"p lang:graphql": {
-			Pattern:         "p",
-			IsRegExp:        true,
-			IncludePatterns: []string{`\.graphql$|\.gql$|\.graphqls$`},
-			Languages:       []string{"graphql"},
-			Index:           query.Yes,
-		},
-		"p lang:graphql file:f": {
-			Pattern:         "p",
-			IsRegExp:        true,
-			IncludePatterns: []string{"f", `\.graphql$|\.gql$|\.graphqls$`},
-			Languages:       []string{"graphql"},
-			Index:           query.Yes,
-		},
-		"p -lang:graphql file:f": {
-			Pattern:         "p",
-			IsRegExp:        true,
-			IncludePatterns: []string{"f"},
-			ExcludePattern:  `\.graphql$|\.gql$|\.graphqls$`,
-			Index:           query.Yes,
-		},
-		"p -lang:graphql -file:f": {
-			Pattern:        "p",
-			IsRegExp:       true,
-			ExcludePattern: `f|(\.graphql$|\.gql$|\.graphqls$)`,
-			Index:          query.Yes,
-		},
-	}
-	for queryStr, want := range tests {
-		t.Run(queryStr, func(t *testing.T) {
-			query, err := query.ParseRegexp(queryStr)
-			if err != nil {
-				t.Fatal(err)
-			}
-			sr := searchResolver{SearchInputs: &SearchInputs{Query: query}}
-			p, err := sr.getPatternInfo(nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			normalize(p)
-			normalize(&want)
-			if !reflect.DeepEqual(*p, want) {
-				t.Errorf("\ngot  %+v\nwant %+v", *p, want)
-			}
-		})
-	}
-}
-
 func TestSearchResolver_DynamicFilters(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
@@ -950,7 +687,6 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 		results             []SearchResultResolver
 		searchResultsCommon streaming.Stats
 		alert               *searchAlert
-		start               time.Time
 	}
 	tests := []struct {
 		name   string
@@ -1300,17 +1036,6 @@ func TestEvaluateAnd(t *testing.T) {
 	}
 }
 
-func TestIndexValue(t *testing.T) {
-	test := func(input string) query.YesNoOnly {
-		q, _ := query.ParseLiteral(input)
-		return indexValue(q)
-	}
-	autogold.Want("yes", query.YesNoOnly("yes")).Equal(t, test("foo index:yes"))
-	autogold.Want("no", query.YesNoOnly("no")).Equal(t, test("foo index:no"))
-	autogold.Want("only", query.YesNoOnly("only")).Equal(t, test("foo index:only"))
-	autogold.Want("default", query.YesNoOnly("yes")).Equal(t, test("foo"))
-}
-
 func TestSearchContext(t *testing.T) {
 	orig := envvar.SourcegraphDotComMode()
 	envvar.MockSourcegraphDotComMode(true)
@@ -1390,7 +1115,9 @@ func commitResult(urlKey string) *CommitSearchResultResolver {
 	return &CommitSearchResultResolver{
 		gitCommitResolver: &GitCommitResolver{
 			repoResolver: &RepositoryResolver{
-				name: api.RepoName(urlKey),
+				RepoMatch: result.RepoMatch{
+					Name: api.RepoName(urlKey),
+				},
 			},
 		},
 	}
@@ -1403,7 +1130,9 @@ func diffResult(urlKey string) *CommitSearchResultResolver {
 		},
 		gitCommitResolver: &GitCommitResolver{
 			repoResolver: &RepositoryResolver{
-				name: api.RepoName(urlKey),
+				RepoMatch: result.RepoMatch{
+					Name: api.RepoName(urlKey),
+				},
 			},
 		},
 	}

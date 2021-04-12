@@ -1,21 +1,25 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import * as H from 'history'
-import { ThemeProps } from '../../../shared/src/theme'
-import { PageTitle } from '../components/PageTitle'
 import * as Monaco from 'monaco-editor'
-import { MonacoEditor } from '../components/MonacoEditor'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { SearchResultsList, SearchResultsListProps } from './results/SearchResultsList'
-import { ErrorLike } from '../../../shared/src/util/errors'
-import { addSourcegraphSearchCodeIntelligence } from './input/MonacoQueryInput'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { BehaviorSubject, concat, NEVER, of } from 'rxjs'
-import { useObservable } from '../../../shared/src/util/useObservable'
-import { search, shouldDisplayPerformanceWarning } from './backend'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { Omit } from 'utility-types'
+
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { parseSearchURLQuery, parseSearchURLPatternType } from '.'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { MonacoEditor } from '../components/MonacoEditor'
+import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
+
+import { search, shouldDisplayPerformanceWarning } from './backend'
+import { addSourcegraphSearchCodeIntelligence } from './input/MonacoQueryInput'
+import { SearchResultsList, SearchResultsListProps } from './results/SearchResultsList'
+
+import { parseSearchURLQuery, parseSearchURLPatternType } from '.'
 
 interface SearchConsolePageProps
     extends ThemeProps,

@@ -129,6 +129,17 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
+type BatchChangeRolloutWindow struct {
+	// Days description: Day(s) the window applies to. If omitted, this rule applies to all days of the week.
+	Days []string `json:"days,omitempty"`
+	// End description: Window end time. If omitted, no time window is applied to the day(s) that match this rule.
+	End string `json:"end,omitempty"`
+	// Rate description: The rate changesets will be published at.
+	Rate interface{} `json:"rate"`
+	// Start description: Window start time. If omitted, no time window is applied to the day(s) that match this rule.
+	Start string `json:"start,omitempty"`
+}
+
 // BatchSpec description: A batch specification, which describes the batch change and what kinds of changes to make (or what existing changesets to track).
 type BatchSpec struct {
 	// ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
@@ -187,7 +198,7 @@ type BitbucketCloudConnection struct {
 type BitbucketCloudRateLimit struct {
 	// Enabled description: true if rate limiting is enabled.
 	Enabled bool `json:"enabled"`
-	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 500, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 500 requests immediately, provided that the complexity cost of each request is 1.
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
@@ -305,7 +316,7 @@ type BitbucketServerPluginWebhooks struct {
 type BitbucketServerRateLimit struct {
 	// Enabled description: true if rate limiting is enabled.
 	Enabled bool `json:"enabled"`
-	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 500, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 500 requests immediately, provided that the complexity cost of each request is 1.
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 type BitbucketServerUsernameIdentity struct {
@@ -392,12 +403,16 @@ type Dotcom struct {
 // EncryptionKey description: Config for a key
 type EncryptionKey struct {
 	Cloudkms *CloudKMSEncryptionKey
+	Mounted  *MountedEncryptionKey
 	Noop     *NoOpEncryptionKey
 }
 
 func (v EncryptionKey) MarshalJSON() ([]byte, error) {
 	if v.Cloudkms != nil {
 		return json.Marshal(v.Cloudkms)
+	}
+	if v.Mounted != nil {
+		return json.Marshal(v.Mounted)
 	}
 	if v.Noop != nil {
 		return json.Marshal(v.Noop)
@@ -414,15 +429,18 @@ func (v *EncryptionKey) UnmarshalJSON(data []byte) error {
 	switch d.DiscriminantProperty {
 	case "cloudkms":
 		return json.Unmarshal(data, &v.Cloudkms)
+	case "mounted":
+		return json.Unmarshal(data, &v.Mounted)
 	case "noop":
 		return json.Unmarshal(data, &v.Noop)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"cloudkms", "noop"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"cloudkms", "mounted", "noop"})
 }
 
 // EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
 type EncryptionKeys struct {
-	ExternalServiceKey *EncryptionKey `json:"externalServiceKey,omitempty"`
+	ExternalServiceKey     *EncryptionKey `json:"externalServiceKey,omitempty"`
+	UserExternalAccountKey *EncryptionKey `json:"userExternalAccountKey,omitempty"`
 }
 type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.
@@ -483,8 +501,6 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// AndOrQuery description: DEPRECATED: Interpret a search input query as an and/or query.
 	AndOrQuery string `json:"andOrQuery,omitempty"`
-	// ArchiveBatchChangeChangesets description: When enabled, changesets that would be detached when a new batch spec is applied will be archived instead, thereby retaining an association with the batch change.
-	ArchiveBatchChangeChangesets *bool `json:"archiveBatchChangeChangesets,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.
@@ -635,7 +651,7 @@ type GitHubConnection struct {
 type GitHubRateLimit struct {
 	// Enabled description: true if rate limiting is enabled.
 	Enabled bool `json:"enabled"`
-	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 type GitHubWebhook struct {
@@ -725,7 +741,7 @@ type GitLabProject struct {
 type GitLabRateLimit struct {
 	// Enabled description: true if rate limiting is enabled.
 	Enabled bool `json:"enabled"`
-	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 type GitLabWebhook struct {
@@ -826,6 +842,15 @@ type InsightSeries struct {
 type Log struct {
 	// Sentry description: Configuration for Sentry
 	Sentry *Sentry `json:"sentry,omitempty"`
+}
+
+// MountedEncryptionKey description: This encryption key is mounted from a given file path or an environment variable.
+type MountedEncryptionKey struct {
+	EnvVarName string `json:"envVarName,omitempty"`
+	Filepath   string `json:"filepath,omitempty"`
+	Keyname    string `json:"keyname"`
+	Type       string `json:"type"`
+	Version    string `json:"version,omitempty"`
 }
 
 // NoOpEncryptionKey description: This encryption key is a no op, leaving your data in plaintext (not recommended).
@@ -1036,12 +1061,22 @@ type PerforceConnection struct {
 	P4Port string `json:"p4.port"`
 	// P4User description: The user to be authenticated for p4 CLI (P4USER).
 	P4User string `json:"p4.user"`
+	// RateLimit description: Rate limit applied when making background API requests to Perforce.
+	RateLimit *PerforceRateLimit `json:"rateLimit,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Perforce depot. In the pattern, the variable "{depot}" is replaced with the Perforce depot's path.
 	//
 	// For example, if your Perforce depot path is "//Sourcegraph/" and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of "perforce/{depot}" would mean that the Perforce depot is available on Sourcegraph at https://src.example.com/perforce/Sourcegraph.
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this Perforce Server. If different Perforce Servers generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
+}
+
+// PerforceRateLimit description: Rate limit applied when making background API requests to Perforce.
+type PerforceRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
+	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
 // PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
@@ -1269,6 +1304,8 @@ type SettingsExperimentalFeatures struct {
 	ShowRepogroupHomepage *bool `json:"showRepogroupHomepage,omitempty"`
 	// ShowSearchContext description: Enables the search context dropdown.
 	ShowSearchContext *bool `json:"showSearchContext,omitempty"`
+	// ShowSearchContextManagement description: Enables search context management.
+	ShowSearchContextManagement *bool `json:"showSearchContextManagement,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
@@ -1307,6 +1344,8 @@ type SiteConfiguration struct {
 	BatchChangesEnabled *bool `json:"batchChanges.enabled,omitempty"`
 	// BatchChangesRestrictToAdmins description: When enabled, only site admins can create and apply batch changes.
 	BatchChangesRestrictToAdmins *bool `json:"batchChanges.restrictToAdmins,omitempty"`
+	// BatchChangesRolloutWindows description: Specifies specific windows, which can have associated rate limits, to be used when publishing changesets. All days and times are handled in UTC.
+	BatchChangesRolloutWindows *[]*BatchChangeRolloutWindow `json:"batchChanges.rolloutWindows,omitempty"`
 	// Branding description: Customize Sourcegraph homepage logo and search icon.
 	//
 	// Only available in Sourcegraph Enterprise.

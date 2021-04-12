@@ -1,13 +1,17 @@
-import React from 'react'
-import { authUser } from '../panels/utils'
 import { cleanup, render } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
+import React from 'react'
 import { of } from 'rxjs'
-import { SearchPage, SearchPageProps } from './SearchPage'
+
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+
 import { SearchPatternType } from '../../graphql-operations'
+import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
 import { ThemePreference } from '../../theme'
-import { extensionsController } from '../../../../shared/src/util/searchTestHelpers'
+import { authUser } from '../panels/utils'
+
+import { SearchPage, SearchPageProps } from './SearchPage'
 
 // Mock the Monaco input box to make this a shallow test
 jest.mock('./SearchPageInput', () => ({
@@ -47,9 +51,9 @@ describe('SearchPage', () => {
         copyQueryButton: false,
         versionContext: undefined,
         showSearchContext: false,
+        showSearchContextManagement: false,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
-        availableSearchContexts: [],
         defaultSearchContextSpec: '',
         showRepogroupHomepage: false,
         showEnterpriseHomePanels: false,
@@ -59,6 +63,8 @@ describe('SearchPage', () => {
         fetchSavedSearches: () => of([]),
         fetchRecentSearches: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
         fetchRecentFileViews: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
+        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+        fetchSearchContexts: mockFetchSearchContexts,
     }
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {

@@ -3,8 +3,10 @@ import { useCallback } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
+
 import { BatchChangesCredentialFields, ExternalServiceKind } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
 import { AddCredentialModal } from './AddCredentialModal'
 
 const { add } = storiesOf('web/batches/settings/AddCredentialModal', module)
@@ -21,7 +23,7 @@ add('Requires SSH - step 1', () => {
         (): Promise<BatchChangesCredentialFields> =>
             Promise.resolve({
                 id: '123',
-                createdAt: new Date().toISOString(),
+                isSiteCredential: false,
                 sshPublicKey:
                     'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
             }),

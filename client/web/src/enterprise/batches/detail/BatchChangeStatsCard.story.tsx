@@ -1,6 +1,8 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
+
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 
 const { add } = storiesOf('web/batches/BatchChangeStatsCard', module).addDecorator(story => (

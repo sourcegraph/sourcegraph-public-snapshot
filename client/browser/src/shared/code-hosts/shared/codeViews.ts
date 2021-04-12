@@ -1,17 +1,20 @@
-import { DiffPart, DOMFunctions as CodeIntellifyDOMFuncions, PositionAdjuster } from '@sourcegraph/codeintellify'
-import { Selection } from '@sourcegraph/extension-api-types'
 import { Observable, of, zip, OperatorFunction } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
-import { isPrivateRepoPublicSourcegraphComErrorLike } from '../../../../../shared/src/backend/errors'
-import { PlatformContext } from '../../../../../shared/src/platform/context'
-import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '../../../../../shared/src/util/url'
+
+import { DiffPart, DOMFunctions as CodeIntellifyDOMFuncions, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { Selection } from '@sourcegraph/extension-api-types'
+import { isPrivateRepoPublicSourcegraphComErrorLike } from '@sourcegraph/shared/src/backend/errors'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+
 import { ButtonProps } from '../../components/CodeViewToolbar'
 import { fetchBlobContentLines } from '../../repo/backend'
-import { CodeHost, FileInfoWithRepoName, DiffOrBlobInfo, FileInfoWithContent } from './codeHost'
-import { trackViews, ViewResolver, ViewWithSubscriptions } from './views'
 import { MutationRecordLike } from '../../util/dom'
+
+import { CodeHost, FileInfoWithRepoName, DiffOrBlobInfo, FileInfoWithContent } from './codeHost'
 import { ensureRevisionIsClonedForFileInfo } from './util/fileInfo'
+import { trackViews, ViewResolver, ViewWithSubscriptions } from './views'
 
 export interface DOMFunctions extends CodeIntellifyDOMFuncions {
     /**

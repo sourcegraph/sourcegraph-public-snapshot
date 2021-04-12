@@ -1,14 +1,17 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useCallback, useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith, tap } from 'rxjs/operators'
-import { gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, createAggregateError, isErrorLike } from '../../../../../shared/src/util/errors'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { queryGraphQL } from '../../../backend/graphql'
-import { ProductPlanPrice } from './ProductPlanPrice'
 import { ErrorAlert } from '../../../components/alerts'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+
+import { ProductPlanPrice } from './ProductPlanPrice'
 
 interface Props {
     /** The selected plan's billing ID. */

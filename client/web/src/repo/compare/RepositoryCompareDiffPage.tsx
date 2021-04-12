@@ -1,23 +1,26 @@
-import { Hoverifier } from '@sourcegraph/codeintellify'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
-import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { createAggregateError } from '../../../../shared/src/util/errors'
-import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '../../../../shared/src/util/url'
+
+import { Hoverifier } from '@sourcegraph/codeintellify'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+
+import { fileDiffFields, diffStatFields } from '../../backend/diff'
 import { queryGraphQL } from '../../backend/graphql'
 import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../components/diff/FileDiffNode'
+
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
-import { ThemeProps } from '../../../../shared/src/theme'
-import { fileDiffFields, diffStatFields } from '../../backend/diff'
-import { Scalars } from '../../../../shared/src/graphql-operations'
 
 export function queryRepositoryComparisonFileDiffs(args: {
     repo: Scalars['ID']

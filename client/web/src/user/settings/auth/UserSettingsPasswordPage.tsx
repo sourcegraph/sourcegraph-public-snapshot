@@ -1,17 +1,19 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+
+import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
-import { Form } from '../../../../../branded/src/components/Form'
+import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
+import { UserAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword } from '../backend'
-import { ErrorAlert } from '../../../components/alerts'
-import { AuthenticatedUser } from '../../../auth'
-import { UserAreaUserFields } from '../../../graphql-operations'
 
 interface Props extends RouteComponentProps<{}> {
     user: UserAreaUserFields

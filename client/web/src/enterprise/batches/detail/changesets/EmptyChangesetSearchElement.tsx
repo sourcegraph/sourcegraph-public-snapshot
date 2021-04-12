@@ -1,5 +1,5 @@
-import React from 'react'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import React from 'react'
 
 export const EmptyChangesetSearchElement: React.FunctionComponent<{}> = () => (
     <div className="text-muted mt-4 pt-4 mb-4 row">

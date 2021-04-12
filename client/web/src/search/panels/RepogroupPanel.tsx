@@ -1,10 +1,13 @@
 import classNames from 'classnames'
 import React, { useCallback } from 'react'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { AuthenticatedUser } from '../../auth'
-import { Link } from '../../../../shared/src/components/Link'
-import { PanelContainer } from './PanelContainer'
 import { repogroupList } from '../../repogroups/HomepageConfig'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+
+import { PanelContainer } from './PanelContainer'
 
 interface Props extends TelemetryProps {
     className?: string

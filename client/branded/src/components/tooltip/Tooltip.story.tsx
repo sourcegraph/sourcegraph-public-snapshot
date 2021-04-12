@@ -1,6 +1,8 @@
 import { storiesOf } from '@storybook/react'
 import React, { useCallback } from 'react'
+
 import { BrandedStory } from '../BrandedStory'
+
 import { Tooltip } from './Tooltip'
 
 const { add } = storiesOf('branded/Tooltip', module).addDecorator(story => (

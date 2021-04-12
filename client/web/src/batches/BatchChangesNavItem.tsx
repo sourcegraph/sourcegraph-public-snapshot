@@ -1,7 +1,9 @@
-import React from 'react'
-import { LinkWithIcon } from '../components/LinkWithIcon'
-import { BatchChangesIconNav } from './icons'
 import classNames from 'classnames'
+import React from 'react'
+
+import { LinkWithIcon } from '../components/LinkWithIcon'
+
+import { BatchChangesIconNav } from './icons'
 
 interface Props {
     isSourcegraphDotCom: boolean

@@ -1,8 +1,10 @@
 import React from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import renderer, { act } from 'react-test-renderer'
-import { ProductPlanFormControl } from './ProductPlanFormControl'
 import { of } from 'rxjs'
+
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+
+import { ProductPlanFormControl } from './ProductPlanFormControl'
 
 jest.mock('./ProductPlanPrice', () => ({
     ProductPlanPrice: 'ProductPlanPrice',

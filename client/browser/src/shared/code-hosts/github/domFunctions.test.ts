@@ -1,6 +1,8 @@
 import { startCase } from 'lodash'
 import { Omit } from 'utility-types'
+
 import { DOMFunctionsTest, getFixtureBody, testDOMFunctions } from '../shared/codeHostTestUtils'
+
 import { diffDomFunctions, isDomSplitDiff, singleFileDOMFunctions } from './domFunctions'
 
 type GitHubVersion = 'github.com' | 'ghe-2.14.11'

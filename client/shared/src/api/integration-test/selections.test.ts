@@ -1,6 +1,8 @@
 import { from } from 'rxjs'
 import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
+
 import { isDefined, isTaggedUnionMember } from '../../util/types'
+
 import { assertToJSON, collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Selections (integration)', () => {

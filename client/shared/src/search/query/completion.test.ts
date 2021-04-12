@@ -1,9 +1,11 @@
 import * as Monaco from 'monaco-editor'
+import { NEVER, of } from 'rxjs'
+
+import { SearchSuggestion } from '../../graphql/schema'
+
 import { getCompletionItems, repositoryCompletionItemKind } from './completion'
 import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
 import { Token } from './token'
-import { NEVER, of } from 'rxjs'
-import { SearchSuggestion } from '../../graphql/schema'
 
 const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSuccess<Token[]>).term
 

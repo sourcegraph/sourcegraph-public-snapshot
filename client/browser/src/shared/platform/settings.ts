@@ -2,17 +2,19 @@ import { applyEdits, parse as parseJSONC } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { from, fromEvent, Observable } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
-import { SettingsEdit } from '../../../../shared/src/api/client/services/settings'
-import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { PlatformContext } from '../../../../shared/src/platform/context'
+
+import { SettingsEdit } from '@sourcegraph/shared/src/api/client/services/settings'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     mergeSettings,
     SettingsCascade,
     SettingsCascadeOrError,
     SettingsSubject,
-} from '../../../../shared/src/settings/settings'
-import { isErrorLike } from '../../../../shared/src/util/errors'
+} from '@sourcegraph/shared/src/settings/settings'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { observeStorageKey, storage } from '../../browser-extension/web-extension-api/storage'
 import { isInPage } from '../context'
 

@@ -1,8 +1,13 @@
-import React from 'react'
-import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
-import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import classNames from 'classnames'
+import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
+import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
+import React from 'react'
+
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
+
+import { DiffStat } from '../../../components/diff/DiffStat'
 import { BatchChangeFields, ChangesetsStatsFields, DiffStatFields } from '../../../graphql-operations'
+
 import { BatchChangeStateBadge } from './BatchChangeStateBadge'
 import {
     ChangesetStatusUnpublished,
@@ -12,8 +17,6 @@ import {
     ChangesetStatusDraft,
     ChangesetStatusArchived,
 } from './changesets/ChangesetStatusCell'
-import { pluralize } from '../../../../../shared/src/util/strings'
-import { DiffStat } from '../../../components/diff/DiffStat'
 
 interface BatchChangeStatsCardProps {
     stats: ChangesetsStatsFields

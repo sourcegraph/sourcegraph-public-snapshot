@@ -1,5 +1,6 @@
-import React from 'react'
 import { render } from 'enzyme'
+import React from 'react'
+
 import { FileDecorator } from './FileDecorator'
 
 describe('FileDecorator', () => {

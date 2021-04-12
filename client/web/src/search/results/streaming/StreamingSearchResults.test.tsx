@@ -5,26 +5,29 @@ import { act } from 'react-dom/test-utils'
 import { BrowserRouter } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
-import { FileMatch } from '../../../../../shared/src/components/FileMatch'
-import { VirtualList } from '../../../../../shared/src/components/VirtualList'
-import { SearchPatternType } from '../../../../../shared/src/graphql-operations'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
-import { SearchResult } from '../../../components/SearchResult'
-import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
-import * as helpers from '../../helpers'
-import { AggregateStreamingSearchResults } from '../../stream'
-import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
-import { VersionContextWarning } from '../VersionContextWarning'
-import { StreamingProgress } from './progress/StreamingProgress'
-import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
+
+import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
+import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULT,
     RESULT,
-} from '../../../../../shared/src/util/searchTestHelpers'
+} from '@sourcegraph/shared/src/util/searchTestHelpers'
+
+import { SearchResult } from '../../../components/SearchResult'
+import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
+import * as helpers from '../../helpers'
+import { AggregateStreamingSearchResults } from '../../stream'
+import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
+import { VersionContextWarning } from '../VersionContextWarning'
+
+import { StreamingProgress } from './progress/StreamingProgress'
+import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 
 describe('StreamingSearchResults', () => {
     const history = createBrowserHistory()
@@ -45,7 +48,6 @@ describe('StreamingSearchResults', () => {
         caseSensitive: false,
         patternType: SearchPatternType.literal,
         versionContext: undefined,
-        selectedSearchContextSpec: 'global',
         availableVersionContexts: [],
         previousVersionContext: null,
 
@@ -95,7 +97,6 @@ describe('StreamingSearchResults', () => {
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
             versionContext: 'test',
-            searchContextSpec: 'global',
             trace: undefined,
         })
 
@@ -129,7 +130,6 @@ describe('StreamingSearchResults', () => {
             patternType: SearchPatternType.regexp,
             caseSensitive: false,
             versionContext: undefined,
-            searchContextSpec: 'global',
             trace: undefined,
         })
 
@@ -338,20 +338,39 @@ describe('StreamingSearchResults', () => {
         expect(modal.length).toBe(0)
     })
 
-    it('should start a new search with added params when onSearchAgain event in triggered', () => {
+    it('should start a new search with added params when onSearchAgain event is triggered', () => {
         const submitSearchMock = jest.spyOn(helpers, 'submitSearch').mockImplementation(() => {})
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults {...defaultProps} />
-            </BrowserRouter>
-        )
+        const tests = [
+            {
+                parsedSearchQuery: 'r:golang/oauth2 test f:travis',
+                additionalProperties: ['count:1000', 'archived:yes', 'timeout:2m'],
+                want: 'r:golang/oauth2 test f:travis count:1000 archived:yes timeout:2m',
+            },
+            {
+                parsedSearchQuery: 'r:golang/oauth2 test f:travis count:50',
+                additionalProperties: ['count:1000', 'archived:yes', 'timeout:2m'],
+                want: 'r:golang/oauth2 test f:travis count:1000 archived:yes timeout:2m',
+            },
+            {
+                parsedSearchQuery: 'r:golang/oauth2 (foo count:1) or (bar count:2)',
+                additionalProperties: ['count:1000', 'fork:yes'],
+                want: 'r:golang/oauth2 (foo count:1000) or (bar count:1000) fork:yes',
+            },
+        ]
+        for (const [index, test] of tests.entries()) {
+            const element = mount(
+                <BrowserRouter>
+                    <StreamingSearchResults {...defaultProps} parsedSearchQuery={test.parsedSearchQuery} />
+                </BrowserRouter>
+            )
 
-        const progress = element.find(StreamingProgress)
-        act(() => progress.prop('onSearchAgain')(['archived:yes', 'timeout:2m']))
-        element.update()
+            const progress = element.find(StreamingProgress)
+            act(() => progress.prop('onSearchAgain')(test.additionalProperties))
+            element.update()
 
-        expect(helpers.submitSearch).toBeCalledTimes(1)
-        const args = submitSearchMock.mock.calls[0][0]
-        expect(args.query).toBe('r:golang/oauth2 test f:travis archived:yes timeout:2m')
+            expect(helpers.submitSearch).toBeCalledTimes(index + 1)
+            const args = submitSearchMock.mock.calls[index][0]
+            expect(args.query).toBe(test.want)
+        }
     })
 })

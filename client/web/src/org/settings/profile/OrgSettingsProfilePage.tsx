@@ -1,15 +1,17 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { useCallback, useEffect, useState } from 'react'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { ORG_DISPLAY_NAME_MAX_LENGTH } from '../..'
-import { Form } from '../../../../../branded/src/components/Form'
+import { ErrorAlert } from '../../../components/alerts'
+import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
+import { Timestamp } from '../../../components/time/Timestamp'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../../area/OrgArea'
 import { updateOrganization } from '../../backend'
-import { ErrorAlert } from '../../../components/alerts'
-import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
-import { Timestamp } from '../../../components/time/Timestamp'
-import { PageHeader } from '../../../components/PageHeader'
 
 interface Props extends Pick<OrgAreaPageProps, 'org' | 'onOrganizationUpdate'> {}
 

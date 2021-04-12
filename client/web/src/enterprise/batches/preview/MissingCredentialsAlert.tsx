@@ -1,6 +1,8 @@
 import React from 'react'
-import { Link } from '../../../../../shared/src/components/Link'
-import { pluralize } from '../../../../../shared/src/util/strings'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
+
 import { AuthenticatedUser } from '../../../auth'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { ViewerBatchChangesCodeHostsFields } from '../../../graphql-operations'

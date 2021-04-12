@@ -437,8 +437,7 @@ func testStoreUpsertSources(t *testing.T, store *repos.Store) func(*testing.T) {
 
 			// delete an external service
 			svc := servicesPerKind[extsvc.KindGitHub]
-			svc.DeletedAt = now
-			if err := tx.ExternalServiceStore.Upsert(ctx, svc); err != nil {
+			if err := tx.ExternalServiceStore.Delete(ctx, svc.ID); err != nil {
 				t.Fatalf("Upsert externalServices error: %s", err)
 			}
 

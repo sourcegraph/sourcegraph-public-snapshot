@@ -1,15 +1,18 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
+import { of } from 'rxjs'
+
+import { ChangesetSpecOperation, ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
+
 import {
     VisibleChangesetSpecFields,
     ChangesetSpecType,
     Scalars,
     VisibleChangesetApplyPreviewFields,
 } from '../../../../graphql-operations'
-import { of } from 'rxjs'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
-import { ChangesetSpecOperation, ChangesetState } from '../../../../../../shared/src/graphql-operations'
+
+import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
 
 const { add } = storiesOf('web/batches/preview/VisibleChangesetApplyPreviewNode', module).addDecorator(story => (
     <div className="p-3 container web-content preview-list__grid">{story()}</div>

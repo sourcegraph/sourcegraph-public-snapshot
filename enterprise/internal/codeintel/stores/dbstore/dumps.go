@@ -73,15 +73,6 @@ func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
 	return dumps, nil
 }
 
-// scanFirstDump scans a slice of dumps from the return value of `*Store.query` and returns the first.
-func scanFirstDump(rows *sql.Rows, err error) (Dump, bool, error) {
-	dumps, err := scanDumps(rows, err)
-	if err != nil || len(dumps) == 0 {
-		return Dump{}, false, err
-	}
-	return dumps[0], true, nil
-}
-
 const visibleAtTipFragment = `EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = d.repository_id AND upload_id = d.id)`
 
 // GetDumpsByIDs returns a set of dumps by identifiers.

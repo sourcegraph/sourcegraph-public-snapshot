@@ -1,9 +1,11 @@
+import * as H from 'history'
 import React from 'react'
 import { createRenderer } from 'react-test-renderer/shallow'
-import * as H from 'history'
-import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
-import { IRepository, IGitRef } from '../../../../shared/src/graphql/schema'
 import { of } from 'rxjs'
+
+import { IRepository, IGitRef } from '@sourcegraph/shared/src/graphql/schema'
+
+import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 
 describe('RepositoryReleasesTagsPage', () => {
     const history = H.createMemoryHistory()

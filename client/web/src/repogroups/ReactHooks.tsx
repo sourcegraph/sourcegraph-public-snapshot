@@ -1,5 +1,6 @@
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+
 import { RepogroupMetadata } from './types'
-import { SearchPatternType } from '../../../shared/src/graphql-operations'
 export const reactHooks: RepogroupMetadata = {
     title: 'React Hooks',
     name: 'react-hooks',

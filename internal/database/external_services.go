@@ -380,6 +380,13 @@ func (e *ExternalServiceStore) validatePerforceConnection(ctx context.Context, i
 	for _, validate := range e.PerforceValidators {
 		err = multierror.Append(err, validate(c))
 	}
+
+	if c.Depots == nil {
+		err = multierror.Append(err, errors.New("depots must be set"))
+	}
+
+	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindPerforce, c))
+
 	return err.ErrorOrNil()
 }
 
@@ -567,8 +574,8 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 func (e *ExternalServiceStore) maybeEncryptConfig(ctx context.Context, config string) (string, string, error) {
 	// encrypt the config before writing if we have a key configured
 	var (
-		keyIdent string
-		key      = keyring.Default().ExternalServiceKey
+		keyVersion string
+		key        = keyring.Default().ExternalServiceKey
 	)
 	if e.key != nil {
 		key = e.key
@@ -579,16 +586,17 @@ func (e *ExternalServiceStore) maybeEncryptConfig(ctx context.Context, config st
 			return "", "", err
 		}
 		config = string(encrypted)
-		keyIdent, err = key.ID(ctx)
+		version, err := key.Version(ctx)
 		if err != nil {
 			return "", "", err
 		}
+		keyVersion = version.JSON()
 	}
-	return config, keyIdent, nil
+	return config, keyVersion, nil
 }
 
-func (e *ExternalServiceStore) maybeDecryptConfig(ctx context.Context, config string, keyIdent string) (string, error) {
-	if keyIdent == "" {
+func (e *ExternalServiceStore) maybeDecryptConfig(ctx context.Context, config string, keyID string) (string, error) {
+	if keyID == "" {
 		// config is not encrypted, return plaintext
 		return config, nil
 	}
@@ -607,6 +615,9 @@ func (e *ExternalServiceStore) maybeDecryptConfig(ctx context.Context, config st
 }
 
 // Upsert updates or inserts the given ExternalServices.
+//
+// NOTE: Deletion of an external service via Upsert is not allowed. Use Delete()
+// instead.
 //
 // 🚨 SECURITY: The value of `Unrestricted` field is disregarded and will always
 // be recalculated based on whether `"authorization"` is presented in `Config`.
@@ -629,6 +640,30 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	}
 	defer func() { err = tx.Done(err) }()
 
+	// Get the list services that are marked as deleted. We don't know at this point
+	// whether they are marked as deleted in the DB too.
+	var deleted []int64
+	for _, es := range svcs {
+		if es.ID != 0 && es.IsDeleted() {
+			deleted = append(deleted, es.ID)
+		}
+	}
+
+	// Fetch any services marked for deletion. list() only fetches non deleted
+	// services so if we find anything here it indicates that we are marking a
+	// service as deleted that is NOT deleted in the DB
+	if len(deleted) > 0 {
+		existing, err := tx.list(ctx, ExternalServicesListOptions{IDs: deleted})
+		if err != nil {
+			return errors.Wrap(err, "fetching services marked for deletion")
+		}
+		if len(existing) > 0 {
+			// We found services marked for deletion that are currently not deleted in the
+			// DB.
+			return errors.New("deletion via Upsert() not allowed, use Delete()")
+		}
+	}
+
 	q, err := tx.upsertExternalServicesQuery(ctx, svcs)
 	if err != nil {
 		return err
@@ -641,9 +676,8 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	i := 0
-	var possiblyOrphaned bool
 	for rows.Next() {
-		var keyIdent string
+		var keyID string
 		err = rows.Scan(
 			&svcs[i].ID,
 			&svcs[i].Kind,
@@ -657,28 +691,18 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&dbutil.NullInt32{N: &svcs[i].NamespaceUserID},
 			&svcs[i].Unrestricted,
 			&svcs[i].CloudDefault,
-			&keyIdent,
+			&keyID,
 		)
 		if err != nil {
 			return err
 		}
 
-		svcs[i].Config, err = tx.maybeDecryptConfig(ctx, svcs[i].Config, keyIdent)
+		svcs[i].Config, err = tx.maybeDecryptConfig(ctx, svcs[i].Config, keyID)
 		if err != nil {
 			return err
 		}
 
-		if !svcs[i].DeletedAt.IsZero() {
-			possiblyOrphaned = true
-		}
-
 		i++
-	}
-
-	if possiblyOrphaned {
-		// if we deleted at least one external service we must manually run the soft_delete_orphan_repo_by_external_service_repos function
-		// to cleanup orphaned repos
-		return tx.Exec(ctx, sqlf.Sprintf(`SELECT soft_delete_orphan_repo_by_external_service_repos()`))
 	}
 
 	return nil
@@ -687,7 +711,7 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 func (e *ExternalServiceStore) upsertExternalServicesQuery(ctx context.Context, svcs []*types.ExternalService) (*sqlf.Query, error) {
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
-		config, keyIdent, err := e.maybeEncryptConfig(ctx, s.Config)
+		config, keyID, err := e.maybeEncryptConfig(ctx, s.Config)
 		if err != nil {
 			return nil, err
 		}
@@ -697,7 +721,7 @@ func (e *ExternalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			s.Kind,
 			s.DisplayName,
 			config,
-			keyIdent,
+			keyID,
 			s.CreatedAt.UTC(),
 			s.UpdatedAt.UTC(),
 			nullTimeColumn(s.DeletedAt),
@@ -773,7 +797,7 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 
 	var (
 		normalized []byte
-		keyIdent   string
+		keyID      string
 	)
 	if update.Config != nil {
 		// Query to get the kind (which is immutable) so we can validate the new config.
@@ -802,7 +826,7 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			return err
 		}
 		var config string
-		config, keyIdent, err = e.maybeEncryptConfig(ctx, *update.Config)
+		config, keyID, err = e.maybeEncryptConfig(ctx, *update.Config)
 		if err != nil {
 			return err
 		}
@@ -838,7 +862,7 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 
 	if update.Config != nil {
 		unrestricted := !gjson.GetBytes(normalized, "authorization").Exists()
-		q := sqlf.Sprintf(`config = %s, encryption_key_id = %s, next_sync_at = NOW(), unrestricted = %s`, update.Config, keyIdent, unrestricted)
+		q := sqlf.Sprintf(`config = %s, encryption_key_id = %s, next_sync_at = NOW(), unrestricted = %s`, update.Config, keyID, unrestricted)
 		if err := execUpdate(ctx, tx.DB(), q); err != nil {
 			return err
 		}
@@ -879,7 +903,60 @@ func (e *ExternalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	}
 	defer func() { err = tx.Done(err) }()
 
-	res, err := tx.ExecResult(ctx, sqlf.Sprintf("UPDATE external_services SET deleted_at=now() WHERE id=%s AND deleted_at IS NULL", id))
+	// Create a temporary table where we'll store repos affected by the deletion of
+	// the external service
+	if err := tx.Exec(ctx, sqlf.Sprintf(`
+CREATE TEMPORARY TABLE IF NOT EXISTS
+    deleted_repos_temp(
+    repo_id int
+) ON COMMIT DROP`)); err != nil {
+		return errors.Wrap(err, "creating temporary table")
+	}
+
+	// Delete external service <-> repo relationships, storing the affected repos
+	if err := tx.Exec(ctx, sqlf.Sprintf(`
+	WITH deleted AS (
+	   DELETE FROM external_service_repos
+	       WHERE external_service_id = %s
+	       RETURNING repo_id
+	)
+	INSERT INTO deleted_repos_temp
+	SELECT repo_id from deleted
+`, id)); err != nil {
+		return errors.Wrap(err, "populating temporary table")
+	}
+
+	// Soft delete orphaned repos
+	if err := tx.Exec(ctx, sqlf.Sprintf(`
+	UPDATE repo
+	SET name       = soft_deleted_repository_name(name),
+	   deleted_at = TRANSACTION_TIMESTAMP()
+	WHERE deleted_at IS NULL
+	 AND EXISTS (SELECT FROM deleted_repos_temp WHERE repo.id = deleted_repos_temp.repo_id)
+	 AND NOT EXISTS (
+	       SELECT FROM external_service_repos
+	       WHERE repo_id = repo.id
+	   );
+`)); err != nil {
+		return errors.Wrap(err, "cleaning up potentially orphaned repos")
+	}
+
+	// Clear temporary table in case delete is called multiple times within the same
+	// transaction
+	if err := tx.Exec(ctx, sqlf.Sprintf(`
+    DELETE FROM deleted_repos_temp;
+`)); err != nil {
+		return errors.Wrap(err, "clearing temporary table")
+	}
+
+	// Soft delete external service
+	res, err := tx.ExecResult(ctx, sqlf.Sprintf(`
+	-- Soft delete external service
+	UPDATE external_services
+	SET deleted_at=TRANSACTION_TIMESTAMP()
+	WHERE id = %s
+	 AND deleted_at IS NULL;
+	`, id))
 	if err != nil {
 		return err
 	}
@@ -890,8 +967,7 @@ func (e *ExternalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	if nrows == 0 {
 		return externalServiceNotFoundError{id: id}
 	}
-
-	return tx.Exec(ctx, sqlf.Sprintf(`SELECT soft_delete_orphan_repo_by_external_service_repos()`))
+	return nil
 }
 
 // GetByID returns the external service for id.
@@ -915,6 +991,41 @@ func (e *ExternalServiceStore) GetByID(ctx context.Context, id int64) (*types.Ex
 		return nil, externalServiceNotFoundError{id: id}
 	}
 	return ess[0], nil
+}
+
+func (e *ExternalServiceStore) GetSyncJobs(ctx context.Context) ([]*types.ExternalServiceSyncJob, error) {
+	q := sqlf.Sprintf(`SELECT id, state, failure_message, started_at, finished_at, process_after, num_resets, external_service_id, num_failures
+FROM external_service_sync_jobs ORDER BY started_at desc
+`)
+
+	rows, err := e.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	var jobs []*types.ExternalServiceSyncJob
+	for rows.Next() {
+		var job types.ExternalServiceSyncJob
+		if err := rows.Scan(
+			&job.ID,
+			&job.State,
+			&dbutil.NullString{S: &job.FailureMessage},
+			&dbutil.NullTime{Time: &job.StartedAt},
+			&dbutil.NullTime{Time: &job.FinishedAt},
+			&dbutil.NullTime{Time: &job.ProcessAfter},
+			&job.NumResets,
+			&dbutil.NullInt64{N: &job.ExternalServiceID},
+			&job.NumFailures,
+		); err != nil {
+			return nil, errors.Wrap(err, "scanning external service job row")
+		}
+		jobs = append(jobs, &job)
+	}
+	if rows.Err() != nil {
+		return nil, errors.Wrap(err, "row scanning error")
+	}
+
+	return jobs, nil
 }
 
 // GetLastSyncError returns the error associated with the latest sync of the
@@ -1053,9 +1164,9 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 			lastSyncAt      sql.NullTime
 			nextSyncAt      sql.NullTime
 			namespaceUserID sql.NullInt32
-			keyIdent        string
+			keyID           string
 		)
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &keyIdent, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted, &h.CloudDefault); err != nil {
+		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &keyID, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted, &h.CloudDefault); err != nil {
 			return nil, err
 		}
 
@@ -1072,7 +1183,7 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 			h.NamespaceUserID = namespaceUserID.Int32
 		}
 
-		h.Config, err = e.maybeDecryptConfig(ctx, h.Config, keyIdent)
+		h.Config, err = e.maybeDecryptConfig(ctx, h.Config, keyID)
 		if err != nil {
 			return nil, err
 		}

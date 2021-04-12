@@ -3,13 +3,16 @@ import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import React, { useState, useCallback } from 'react'
-import { pluralize } from '../../../../shared/src/util/strings'
+
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
+
 import { Timestamp } from '../../components/time/Timestamp'
-import { Tooltip } from '../../../../branded/src/components/tooltip/Tooltip'
-import { eventLogger } from '../../tracking/eventLogger'
-import { GitCommitNodeByline } from './GitCommitNodeByline'
 import { GitCommitFields } from '../../graphql-operations'
-import { Link } from '../../../../shared/src/components/Link'
+import { eventLogger } from '../../tracking/eventLogger'
+
+import { GitCommitNodeByline } from './GitCommitNodeByline'
 
 export interface GitCommitNodeProps {
     node: GitCommitFields

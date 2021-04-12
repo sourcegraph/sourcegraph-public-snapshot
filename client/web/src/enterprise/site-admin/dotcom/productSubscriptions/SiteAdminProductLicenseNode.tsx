@@ -1,7 +1,9 @@
 import * as React from 'react'
-import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
-import { gql } from '../../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
+
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+
 import { CopyableText } from '../../../../components/CopyableText'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'

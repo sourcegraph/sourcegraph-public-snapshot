@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { getReactElements } from './getReactElements'
 
 describe('util/getReactElements', () => {

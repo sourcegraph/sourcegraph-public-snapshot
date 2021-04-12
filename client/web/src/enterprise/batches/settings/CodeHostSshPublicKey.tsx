@@ -1,6 +1,8 @@
 import copy from 'copy-to-clipboard'
+import { noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import React, { useCallback, useState } from 'react'
+
 import { ExternalServiceKind } from '../../../graphql-operations'
 
 const configInstructionLinks: Record<ExternalServiceKind, string> = {
@@ -48,7 +50,7 @@ export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyP
                     </button>
                 )}
             </div>
-            <textarea className="form-control text-monospace mb-3" rows={5} value={sshPublicKey} />
+            <textarea className="form-control text-monospace mb-3" rows={5} value={sshPublicKey} onChange={noop} />
             {showInstructionsLink && (
                 <p>
                     <a href={configInstructionLinks[externalServiceKind]} target="_blank" rel="noopener">

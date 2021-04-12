@@ -22,20 +22,28 @@ type GitserverClient interface {
 // Sourcegraph or on the code host — with that described in the current
 // ChangesetSpec associated with the changeset.
 type Reconciler struct {
-	GitserverClient GitserverClient
-	Sourcer         repos.Sourcer
-	Store           *store.Store
+	gitserverClient GitserverClient
+	sourcer         repos.Sourcer
+	store           *store.Store
 
 	// This is used to disable a time.Sleep for operationSleep so that the
 	// tests don't run slower.
 	noSleepBeforeSync bool
 }
 
+func New(gitClient GitserverClient, sourcer repos.Sourcer, store *store.Store) *Reconciler {
+	return &Reconciler{
+		gitserverClient: gitClient,
+		sourcer:         sourcer,
+		store:           store,
+	}
+}
+
 // HandlerFunc returns a dbworker.HandlerFunc that can be passed to a
 // workerutil.Worker to process queued changesets.
 func (r *Reconciler) HandlerFunc() dbworker.HandlerFunc {
 	return func(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
-		return r.process(ctx, r.Store.With(tx), record.(*batches.Changeset))
+		return r.process(ctx, r.store.With(tx), record.(*batches.Changeset))
 	}
 }
 
@@ -69,10 +77,10 @@ func (r *Reconciler) process(ctx context.Context, tx *store.Store, ch *batches.C
 
 	log15.Info("Reconciler processing changeset", "changeset", ch.ID, "operations", plan.Ops)
 
-	return ExecutePlan(
+	return executePlan(
 		ctx,
-		r.GitserverClient,
-		r.Sourcer,
+		r.gitserverClient,
+		r.sourcer,
 		r.noSleepBeforeSync,
 		tx,
 		plan,

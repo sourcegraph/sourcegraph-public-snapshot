@@ -13,10 +13,11 @@ import {
     take,
     toArray,
 } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { PlatformContext } from '../../../../shared/src/platform/context'
-import { isDefined } from '../../../../shared/src/util/types'
+
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 interface BaseSuggestion {
     title: string

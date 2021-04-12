@@ -1,8 +1,10 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { ConfiguredRegistryExtension } from '../../../shared/src/extensions/extension'
-import { PlatformContext } from '../../../shared/src/platform/context'
-import { ConfiguredSubjectOrError, SettingsSubject } from '../../../shared/src/settings/settings'
+
+import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { ConfiguredSubjectOrError, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+
 import { ExtensionToggle } from './ExtensionToggle'
 
 describe('ExtensionToggle', () => {

@@ -1,14 +1,25 @@
 import { escapeRegExp } from 'lodash'
-import { replaceRange } from '../../../shared/src/util/strings'
-import { discreteValueAliases, escapeSpaces } from '../../../shared/src/search/query/filters'
-import { VersionContext } from '../schema/site.schema'
-import { SearchPatternType } from '../../../shared/src/graphql-operations'
 import { Observable } from 'rxjs'
-import { ISavedSearch, ISearchContext } from '../../../shared/src/graphql/schema'
-import { EventLogResult } from './backend'
+import { map } from 'rxjs/operators'
+
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
+import { discreteValueAliases, escapeSpaces, FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { Filter } from '@sourcegraph/shared/src/search/query/token'
+import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
+import { replaceRange } from '@sourcegraph/shared/src/util/strings'
+
+import { VersionContext } from '../schema/site.schema'
+
+import {
+    EventLogResult,
+    isSearchContextAvailable,
+    fetchAutoDefinedSearchContexts,
+    fetchSearchContexts,
+} from './backend'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
-import { findFilter, FilterKind } from '../../../shared/src/search/query/validate'
-import { VersionContextProps } from '../../../shared/src/search/util'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -177,10 +188,12 @@ export interface OnboardingTourProps {
 
 export interface SearchContextProps {
     showSearchContext: boolean
-    availableSearchContexts: ISearchContext[]
+    showSearchContextManagement: boolean
     defaultSearchContextSpec: string
     selectedSearchContextSpec?: string
     setSelectedSearchContextSpec: (spec: string) => void
+    fetchAutoDefinedSearchContexts: typeof fetchAutoDefinedSearchContexts
+    fetchSearchContexts: typeof fetchSearchContexts
 }
 
 export interface ShowQueryBuilderProps {
@@ -229,14 +242,22 @@ export function resolveVersionContext(
     return versionContext
 }
 
-export function isSearchContextSpecAvailable(spec: string, availableSearchContexts: ISearchContext[]): boolean {
-    return availableSearchContexts.map(item => item.spec).includes(spec)
+export function getGlobalSearchContextFilter(query: string): { filter: Filter; spec: string } | null {
+    const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global)
+    if (!globalContextFilter) {
+        return null
+    }
+    const searchContextSpec = globalContextFilter.value?.value || ''
+    return { filter: globalContextFilter, spec: searchContextSpec }
 }
 
-export function resolveSearchContextSpec(
-    spec: string,
-    availableSearchContexts: ISearchContext[],
-    defaultSpec: string
-): string {
-    return isSearchContextSpecAvailable(spec, availableSearchContexts) ? spec : defaultSpec
-}
+export const isSearchContextSpecAvailable = memoizeObservable(
+    (spec: string) => isSearchContextAvailable(spec),
+    parameters => parameters
+)
+
+export const getAvailableSearchContextSpecOrDefault = memoizeObservable(
+    ({ spec, defaultSpec }: { spec: string; defaultSpec: string }) =>
+        isSearchContextAvailable(spec).pipe(map(isAvailable => (isAvailable ? spec : defaultSpec))),
+    ({ spec, defaultSpec }) => `${spec}:${defaultSpec}`
+)

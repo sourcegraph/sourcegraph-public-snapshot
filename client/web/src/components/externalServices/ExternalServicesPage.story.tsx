@@ -1,11 +1,14 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { ExternalServicesPage } from './ExternalServicesPage'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
-import { queryExternalServices as _queryExternalServices } from './backend'
 import { of } from 'rxjs'
+
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { ExternalServiceKind } from '../../graphql-operations'
 import { WebStory } from '../WebStory'
+
+import { queryExternalServices as _queryExternalServices } from './backend'
+import { ExternalServicesPage } from './ExternalServicesPage'
 
 const { add } = storiesOf('web/External services/ExternalServicesPage', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>

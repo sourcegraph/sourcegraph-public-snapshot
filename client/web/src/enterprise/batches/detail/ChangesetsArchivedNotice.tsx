@@ -1,9 +1,11 @@
 import * as H from 'history'
-import React, { useEffect, useState } from 'react'
-import { DismissibleAlert } from '../../../components/DismissibleAlert'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
-import { pluralize } from '../../../../../shared/src/util/strings'
-import { Link } from '../../../../../shared/src/components/Link'
+import React, { useEffect, useState } from 'react'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
+
+import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
 export interface ChangesetsArchivedNoticeProps {
     history: H.History

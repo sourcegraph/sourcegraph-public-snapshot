@@ -1,15 +1,18 @@
+import classNames from 'classnames'
+import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React from 'react'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+
 import {
     ExternalChangesetFields,
     GitBranchChangesetDescriptionFields,
     ChangesetState,
 } from '../../../../graphql-operations'
-import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
-import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
+
 import { ChangesetLabel } from './ChangesetLabel'
-import { Link } from '../../../../../../shared/src/components/Link'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
-import classNames from 'classnames'
 
 export interface ExternalChangesetInfoCellProps {
     node: ExternalChangesetFields

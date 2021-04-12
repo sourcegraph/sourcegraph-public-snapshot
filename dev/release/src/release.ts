@@ -1,5 +1,12 @@
-import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
-import { postMessage, slackURL } from './slack'
+import { readFileSync, rmdirSync, writeFileSync } from 'fs'
+import * as path from 'path'
+
+import commandExists from 'command-exists'
+import { addMinutes } from 'date-fns'
+
+import * as campaigns from './campaigns'
+import * as changelog from './changelog'
+import { Config, releaseVersions } from './config'
 import {
     getAuthenticatedGitHubClient,
     listIssues,
@@ -10,14 +17,9 @@ import {
     ensureTrackingIssues,
     releaseName,
 } from './github'
-import * as changelog from './changelog'
-import * as campaigns from './campaigns'
-import { Config, releaseVersions } from './config'
+import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
+import { postMessage, slackURL } from './slack'
 import { cacheFolder, formatDate, timezoneLink, hubSpotFeedbackFormStub } from './util'
-import { addMinutes } from 'date-fns'
-import { readFileSync, rmdirSync, writeFileSync } from 'fs'
-import * as path from 'path'
-import commandExists from 'command-exists'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -107,6 +109,7 @@ const steps: Step[] = [
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
                     attendees: [config.teamEmail],
+                    transparency: 'transparent',
                     ...calendarTime(config.releaseDate),
                 },
                 {
@@ -114,6 +117,7 @@ const steps: Step[] = [
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
                     attendees: [config.teamEmail],
+                    transparency: 'transparent',
                     ...calendarTime(config.oneWorkingDayAfterRelease),
                 },
             ]
@@ -354,6 +358,7 @@ cc @${config.captainGitHubUsername}
                             // Update references to Sourcegraph versions in docs
                             `find . -type f -name '*.md' ! -name 'CHANGELOG.md' -exec ${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' {} +`,
                             `${sed} -i -E 's/version \`${versionRegex}\`/version \`${release.version}\`/g' doc/index.md`,
+                            `${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version}"/g' doc/admin/install/kubernetes/index.md`,
                             `${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version}"/g' doc/admin/install/docker-compose/index.md`,
                             `${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version}'/g" doc/admin/install/docker-compose/aws.md`,
                             `${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version}'/g" doc/admin/install/docker-compose/digitalocean.md`,
@@ -595,6 +600,7 @@ Campaign: ${campaignURL}`,
                     title: 'TEST EVENT',
                     startDateTime: new Date(config.releaseDate).toISOString(),
                     endDateTime: addMinutes(new Date(config.releaseDate), 1).toISOString(),
+                    transparency: 'transparent',
                 },
                 googleCalendar
             )

@@ -1,14 +1,17 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import React, { useCallback } from 'react'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { ErrorLike } from '../../../../shared/src/util/errors'
-import { Form } from '../../../../branded/src/components/Form'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
-import { AddExternalServiceOptions } from './externalServices'
 import { ErrorAlert, ErrorMessage } from '../alerts'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { ThemeProps } from '../../../../shared/src/theme'
+
+import { AddExternalServiceOptions } from './externalServices'
 
 interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, ThemeProps, TelemetryProps {
     history: H.History

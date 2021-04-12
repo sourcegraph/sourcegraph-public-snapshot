@@ -1,18 +1,15 @@
 import * as H from 'history'
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import { Form } from 'reactstrap'
-import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
-import { useSearchOnboardingTour } from './SearchOnboardingTour'
-import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
-import { SearchButton } from './SearchButton'
-import { Link } from '../../../../shared/src/components/Link'
-import { QuickLinks } from '../QuickLinks'
-import { Notices } from '../../global/Notices'
-import { SettingsCascadeProps, isSettingsValid } from '../../../../shared/src/settings/settings'
-import { Settings } from '../../schema/settings.schema'
-import { ThemeProps } from '../../../../shared/src/theme'
-import { ThemePreferenceProps } from '../../theme'
-import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
+
+import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
 import {
     PatternTypeProps,
     CaseSensitivityProps,
@@ -21,14 +18,19 @@ import {
     ParsedSearchQueryProps,
     SearchContextProps,
 } from '..'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { VersionContextProps } from '../../../../shared/src/search/util'
-import { VersionContext } from '../../schema/site.schema'
-import { submitSearch, SubmitSearchParameters } from '../helpers'
-
 import { AuthenticatedUser } from '../../auth'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { Notices } from '../../global/Notices'
+import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
+import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
+import { Settings } from '../../schema/settings.schema'
+import { VersionContext } from '../../schema/site.schema'
+import { ThemePreferenceProps } from '../../theme'
+import { submitSearch, SubmitSearchParameters } from '../helpers'
+import { QuickLinks } from '../QuickLinks'
+
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
+import { SearchButton } from './SearchButton'
+import { useSearchOnboardingTour } from './SearchOnboardingTour'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -133,6 +135,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     <LazyMonacoQueryInput
                         {...props}
                         {...onboardingTourQueryInputProps}
+                        submitSearchOnSearchContextChange={false}
                         hasGlobalQueryBehavior={true}
                         queryState={userQueryState}
                         onChange={setUserQueryState}

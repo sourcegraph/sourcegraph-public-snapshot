@@ -1,3 +1,4 @@
+import * as H from 'history'
 import { isEqual } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
@@ -8,18 +9,20 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { asError } from '../../../shared/src/util/errors'
+
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { asError } from '@sourcegraph/shared/src/util/errors'
+
+import { AuthenticatedUser } from '../auth'
+import { ErrorAlert } from '../components/alerts'
 import { CopyableText } from '../components/CopyableText'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 import { setUserEmailVerified } from '../user/settings/backend'
+
 import { deleteUser, fetchAllUsers, randomizeUserPassword, setUserIsSiteAdmin, invalidateSessionsByID } from './backend'
-import { ErrorAlert } from '../components/alerts'
-import * as H from 'history'
-import { AuthenticatedUser } from '../auth'
 
 interface UserNodeProps {
     /**

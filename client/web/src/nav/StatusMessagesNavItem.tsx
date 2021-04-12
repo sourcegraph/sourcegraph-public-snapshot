@@ -1,3 +1,6 @@
+import classNames from 'classnames'
+import * as H from 'history'
+import { isEqual } from 'lodash'
 import CloudAlertIcon from 'mdi-react/CloudAlertIcon'
 import CloudCheckIcon from 'mdi-react/CloudCheckIcon'
 import CloudSyncIcon from 'mdi-react/CloudSyncIcon'
@@ -5,16 +8,15 @@ import React from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Observable, Subscription } from 'rxjs'
 import { catchError, map, repeatWhen, delay, distinctUntilChanged } from 'rxjs/operators'
-import { Link } from '../../../shared/src/components/Link'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
-import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
+
 import { requestGraphQL } from '../backend/graphql'
-import classNames from 'classnames'
 import { ErrorAlert } from '../components/alerts'
-import * as H from 'history'
-import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 import { StatusMessagesResult, StatusMessageFields } from '../graphql-operations'
-import { isEqual } from 'lodash'
 
 export function fetchAllStatusMessages(): Observable<StatusMessagesResult['statusMessages']> {
     return requestGraphQL<StatusMessagesResult>(

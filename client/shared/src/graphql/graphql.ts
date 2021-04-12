@@ -1,8 +1,10 @@
 import { Observable } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { Omit } from 'utility-types'
-import { createAggregateError } from '../util/errors'
+
 import { checkOk } from '../backend/fetch'
+import { createAggregateError } from '../util/errors'
+
 import * as GQL from './schema'
 
 /**

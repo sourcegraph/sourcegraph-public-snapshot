@@ -1,8 +1,11 @@
-import { TelemetryService } from '../../../../shared/src/telemetry/telemetryService'
 import { Observable } from 'rxjs'
-import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
-import { createAggregateError, isErrorLike, ErrorLike } from '../../../../shared/src/util/errors'
 import { map, mapTo } from 'rxjs/operators'
+
+import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { createAggregateError, isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { requestGraphQL } from '../../backend/graphql'
 import {
     UpdateExternalServiceResult,
     UpdateExternalServiceVariables,
@@ -21,7 +24,6 @@ import {
     AffiliatedRepositoriesVariables,
     AffiliatedRepositoriesResult,
 } from '../../graphql-operations'
-import { requestGraphQL } from '../../backend/graphql'
 
 export const externalServiceFragment = gql`
     fragment ExternalServiceFields on ExternalService {

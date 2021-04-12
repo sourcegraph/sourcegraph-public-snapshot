@@ -1,27 +1,30 @@
-import React, { useState, useMemo, useCallback } from 'react'
 import * as H from 'history'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import React, { useState, useMemo, useCallback } from 'react'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { BatchChangesIcon } from '../../../batches/icons'
+import { HeroPage } from '../../../components/HeroPage'
+import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
-import { BatchChangeCloseAlert } from './BatchChangeCloseAlert'
 import { BatchChangeChangesetsResult, BatchChangeFields, Scalars } from '../../../graphql-operations'
 import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesets as _queryChangesets,
     fetchBatchChangeByNamespace as _fetchBatchChangeByNamespace,
 } from '../detail/backend'
-import { ThemeProps } from '../../../../../shared/src/theme'
-import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { closeBatchChange as _closeBatchChange } from './backend'
-import { BatchChangeCloseChangesetsList } from './BatchChangeCloseChangesetsList'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { HeroPage } from '../../../components/HeroPage'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { BatchChangeInfoByline } from '../detail/BatchChangeInfoByline'
-import { ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { BatchChangesIcon } from '../../../batches/icons'
-import { PageHeader } from '../../../components/PageHeader'
+
+import { closeBatchChange as _closeBatchChange } from './backend'
+import { BatchChangeCloseAlert } from './BatchChangeCloseAlert'
+import { BatchChangeCloseChangesetsList } from './BatchChangeCloseChangesetsList'
 
 export interface BatchChangeClosePageProps
     extends ThemeProps,

@@ -1,19 +1,21 @@
-import React, { useCallback, useMemo, useState } from 'react'
-import { StatusBarItemWithKey } from '../../../../shared/src/api/extension/api/codeEditor'
-import { useObservable } from '../../../../shared/src/util/useObservable'
 import classNames from 'classnames'
-import { Observable, timer } from 'rxjs'
-import { useCarousel } from '../../components/useCarousel'
+import * as H from 'history'
 import MenuLeftIcon from 'mdi-react/MenuLeftIcon'
 import MenuRightIcon from 'mdi-react/MenuRightIcon'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { haveInitialExtensionsLoaded } from '../../../../shared/src/api/features'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { ButtonLink } from '../../../../shared/src/components/LinkOrButton'
-import { urlForClientCommandOpen } from '../../../../shared/src/actions/ActionItem'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
-import * as H from 'history'
+import { Observable, timer } from 'rxjs'
 import { filter, first, mapTo, switchMap } from 'rxjs/operators'
+
+import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
+import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
+import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
+import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { ErrorBoundary } from '../../components/ErrorBoundary'
+import { useCarousel } from '../../components/useCarousel'
 
 interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     getStatusBarItems: () => Observable<StatusBarItemWithKey[] | 'loading'>

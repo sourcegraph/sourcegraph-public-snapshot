@@ -1,13 +1,15 @@
 import { concat, Observable, ReplaySubject } from 'rxjs'
 import { map, publishReplay, refCount } from 'rxjs/operators'
-import { createExtensionHost } from '../../../shared/src/api/extension/worker'
-import { gql } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { PlatformContext } from '../../../shared/src/platform/context'
-import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
-import { gqlToCascade } from '../../../shared/src/settings/settings'
-import { createAggregateError, asError } from '../../../shared/src/util/errors'
-import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubject'
+
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
+import { createExtensionHost } from '@sourcegraph/shared/src/api/extension/worker'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
+import { gqlToCascade } from '@sourcegraph/shared/src/settings/settings'
+import { createAggregateError, asError } from '@sourcegraph/shared/src/util/errors'
+import { LocalStorageSubject } from '@sourcegraph/shared/src/util/LocalStorageSubject'
 import {
     toPrettyBlobURL,
     RepoFile,
@@ -15,9 +17,9 @@ import {
     ViewStateSpec,
     RenderModeSpec,
     UIRangeSpec,
-} from '../../../shared/src/util/url'
+} from '@sourcegraph/shared/src/util/url'
+
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
-import { Tooltip } from '../../../branded/src/components/tooltip/Tooltip'
 import { eventLogger } from '../tracking/eventLogger'
 
 /**

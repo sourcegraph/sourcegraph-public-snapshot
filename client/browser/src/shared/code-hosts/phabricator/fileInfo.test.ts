@@ -1,13 +1,16 @@
 import { readFile } from 'mz/fs'
 import { Observable, throwError, of } from 'rxjs'
-import { resolveDiffusionFileInfo, resolveRevisionFileInfo, resolveDiffFileInfo } from './fileInfo'
-import { GraphQLResponseMap, mockRequestGraphQL } from '../shared/testHelpers'
-import { QueryConduitHelper } from './backend'
-import { SuccessGraphQLResult } from '../../../../../shared/src/graphql/graphql'
-import { IMutation, IQuery } from '../../../../../shared/src/graphql/schema'
-import { resetAllMemoizationCaches } from '../../../../../shared/src/util/memoizeObservable'
-import { PlatformContext } from '../../../../../shared/src/platform/context'
+
+import { SuccessGraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
+import { IMutation, IQuery } from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { resetAllMemoizationCaches } from '@sourcegraph/shared/src/util/memoizeObservable'
+
 import { DiffOrBlobInfo } from '../shared/codeHost'
+import { GraphQLResponseMap, mockRequestGraphQL } from '../shared/testHelpers'
+
+import { QueryConduitHelper } from './backend'
+import { resolveDiffusionFileInfo, resolveRevisionFileInfo, resolveDiffFileInfo } from './fileInfo'
 
 interface ConduitResponseMap {
     [endpoint: string]: (parameters: any) => Observable<any>

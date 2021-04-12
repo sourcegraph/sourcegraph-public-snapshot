@@ -1,4 +1,3 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
@@ -6,17 +5,21 @@ import React, { useEffect, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
-import { RepoLink } from '../../../shared/src/components/RepoLink'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { refreshSiteFlags } from '../site/backend'
-import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { RepositoriesResult, SiteAdminRepositoryFields } from '../graphql-operations'
+import { refreshSiteFlags } from '../site/backend'
+
+import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields

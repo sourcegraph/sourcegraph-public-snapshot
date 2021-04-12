@@ -25,13 +25,21 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 		{name: "resolve user search context", searchContextSpec: "@user", wantSearchContextName: "user"},
 		{name: "resolve global search context", searchContextSpec: "global", wantSearchContextName: "global"},
 		{name: "resolve empty search context as global", searchContextSpec: "", wantSearchContextName: "global"},
+		{name: "resolve namespaced search context", searchContextSpec: "@user/test", wantSearchContextName: "test"},
+		{name: "resolve namespaced search context with / in name", searchContextSpec: "@user/test/version", wantSearchContextName: "test/version"},
 	}
 
 	db := new(dbtesting.MockDB)
 	database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
 		return &database.Namespace{Name: name, User: 1}, nil
 	}
-	defer func() { database.Mocks.Namespaces.GetByName = nil }()
+	database.Mocks.SearchContexts.GetSearchContext = func(ctx context.Context, opts database.GetSearchContextOptions) (*types.SearchContext, error) {
+		return &types.SearchContext{Name: opts.Name}, nil
+	}
+	defer func() {
+		database.Mocks.Namespaces.GetByName = nil
+		database.Mocks.SearchContexts.GetSearchContext = nil
+	}()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -89,7 +97,11 @@ func TestConstructingSearchContextSpecs(t *testing.T) {
 		wantSearchContextSpec string
 	}{
 		{name: "global search context", searchContext: GetGlobalSearchContext(), wantSearchContextSpec: "global"},
-		{name: "user search context", searchContext: &types.SearchContext{Name: "user", NamespaceUserID: 1}, wantSearchContextSpec: "@user"},
+		{name: "user auto-defined search context", searchContext: &types.SearchContext{Name: "user", NamespaceUserID: 1}, wantSearchContextSpec: "@user"},
+		{name: "org auto-defined search context", searchContext: &types.SearchContext{Name: "org", NamespaceOrgID: 1}, wantSearchContextSpec: "@org"},
+		{name: "user namespaced search context", searchContext: &types.SearchContext{ID: 1, Name: "context", NamespaceUserID: 1, NamespaceUserName: "user"}, wantSearchContextSpec: "@user/context"},
+		{name: "org namespaced search context", searchContext: &types.SearchContext{ID: 1, Name: "context", NamespaceOrgID: 1, NamespaceOrgName: "org"}, wantSearchContextSpec: "@org/context"},
+		{name: "instance-level search context", searchContext: &types.SearchContext{ID: 1, Name: "instance-level-context"}, wantSearchContextSpec: "instance-level-context"},
 	}
 
 	for _, tt := range tests {

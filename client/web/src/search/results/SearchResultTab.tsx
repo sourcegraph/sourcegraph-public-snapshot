@@ -1,12 +1,15 @@
-import * as React from 'react'
-import { SearchType } from './SearchResults'
-import { NavLink } from 'react-router-dom'
-import { toggleSearchType } from '../helpers'
-import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
+import * as React from 'react'
+import { NavLink } from 'react-router-dom'
+
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+
 import { PatternTypeProps, CaseSensitivityProps, ParsedSearchQueryProps, SearchContextProps } from '..'
-import { scanSearchQuery } from '../../../../shared/src/search/query/scanner'
-import { VersionContextProps } from '../../../../shared/src/search/util'
+import { toggleSearchType } from '../helpers'
+
+import { SearchType } from './SearchResults'
 
 interface Props
     extends Omit<PatternTypeProps, 'setPatternType'>,

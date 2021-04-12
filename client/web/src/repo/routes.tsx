@@ -1,11 +1,14 @@
 import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import { getModeFromPath } from '../../../shared/src/languages'
-import { isLegacyFragment, parseHash, toRepoURL } from '../../../shared/src/util/url'
+
+import { getModeFromPath } from '@sourcegraph/shared/src/languages'
+import { isLegacyFragment, parseHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
+
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
+
 import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 

@@ -1,8 +1,10 @@
-import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
+import { useMemo, useCallback } from '@storybook/addons'
+import { storiesOf } from '@storybook/react'
+import { subDays } from 'date-fns'
 import React from 'react'
-import { BatchChangeDetailsPage } from './BatchChangeDetailsPage'
 import { of } from 'rxjs'
+
 import {
     BatchChangeFields,
     ChangesetCheckState,
@@ -10,15 +12,15 @@ import {
     ChangesetSpecType,
     ChangesetState,
 } from '../../../graphql-operations'
+import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
 import {
     fetchBatchChangeByNamespace,
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
 } from './backend'
-import { subDays } from 'date-fns'
-import { useMemo, useCallback } from '@storybook/addons'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { BatchChangeDetailsPage } from './BatchChangeDetailsPage'
 
 const { add } = storiesOf('web/batches/details/BatchChangeDetailsPage', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
@@ -278,6 +280,7 @@ const stories: Record<string, { url: string; supersededBatchSpec?: boolean }> = 
     Overview: { url: '/users/alice/batch-changes/awesome-batch-change' },
     'Burndown chart': { url: '/users/alice/batch-changes/awesome-batch-change?tab=chart' },
     'Spec file': { url: '/users/alice/batch-changes/awesome-batch-change?tab=spec' },
+    Archived: { url: '/users/alice/batch-changes/awesome-batch-change?tab=archived' },
     'Superseded batch-spec': { url: '/users/alice/batch-changes/awesome-batch-change', supersededBatchSpec: true },
 }
 

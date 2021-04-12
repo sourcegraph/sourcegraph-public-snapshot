@@ -1,8 +1,10 @@
-import { ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
-import { HTTPStatusError } from '../../../../../shared/src/backend/fetch'
+import { noop } from 'lodash'
 import * as React from 'react'
 import renderer, { ReactTestRenderer } from 'react-test-renderer'
-import { noop } from 'lodash'
+
+import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
+
+import { ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
 
 describe('<ViewOnSourcegraphButton />', () => {
     describe('repository exists on the instance', () => {

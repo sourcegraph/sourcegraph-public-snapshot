@@ -1,8 +1,10 @@
 import React from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import renderer, { act } from 'react-test-renderer'
-import { NewProductSubscriptionPaymentSection } from './NewProductSubscriptionPaymentSection'
 import { of } from 'rxjs'
+
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+
+import { NewProductSubscriptionPaymentSection } from './NewProductSubscriptionPaymentSection'
 
 jest.mock('./ProductSubscriptionBeforeAfterInvoiceItem', () => ({
     ProductSubscriptionBeforeAfterInvoiceItem: 'ProductSubscriptionBeforeAfterInvoiceItem',

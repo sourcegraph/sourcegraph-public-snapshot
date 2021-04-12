@@ -1,19 +1,22 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import classNames from 'classnames'
 import AddIcon from 'mdi-react/AddIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import EmailOpenOutlineIcon from 'mdi-react/EmailOpenOutlineIcon'
 import React, { useCallback, useState } from 'react'
 import { map } from 'rxjs/operators'
-import { gql } from '../../../../../shared/src/graphql/graphql'
-import { asError, createAggregateError, isErrorLike } from '../../../../../shared/src/util/errors'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
+import { ErrorAlert } from '../../../components/alerts'
 import { CopyableText } from '../../../components/CopyableText'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
-import { Form } from '../../../../../branded/src/components/Form'
-import { eventLogger } from '../../../tracking/eventLogger'
-import { ErrorAlert } from '../../../components/alerts'
-import { AuthenticatedUser } from '../../../auth'
-import { Scalars } from '../../../../../shared/src/graphql-operations'
 import {
     InviteUserToOrganizationResult,
     InviteUserToOrganizationVariables,
@@ -21,8 +24,7 @@ import {
     AddUserToOrganizationVariables,
     InviteUserToOrganizationFields,
 } from '../../../graphql-operations'
-import classNames from 'classnames'
-import { Link } from '../../../../../shared/src/components/Link'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 const emailInvitesEnabled = window.context.emailEnabled
 

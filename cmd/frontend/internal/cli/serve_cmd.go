@@ -133,6 +133,9 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		log.Fatalf("failed to initialize profiling: %v", err)
 	}
 
+	ready := make(chan struct{})
+	go debugserver.NewServerRoutine(ready).Start()
+
 	db, err := InitDB()
 	if err != nil {
 		log.Fatalf("ERROR: %v", err)
@@ -174,9 +177,14 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, time.Second*30)
 
 	// Run a background job to handle encryption of external service configuration.
-	migrator := database.NewExternalServiceConfigMigratorWithDB(db)
-	if err := outOfBandMigrationRunner.Register(migrator.ID(), migrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-		log.Fatalf("failed to run external service encryption job encryption: %v", err)
+	extsvcMigrator := database.NewExternalServiceConfigMigratorWithDB(db)
+	if err := outOfBandMigrationRunner.Register(extsvcMigrator.ID(), extsvcMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
+		log.Fatalf("failed to run external service encryption job: %v", err)
+	}
+	// Run a background job to handle encryption of external service configuration.
+	extAccMigrator := database.NewExternalAccountsMigratorWithDB(db)
+	if err := outOfBandMigrationRunner.Register(extAccMigrator.ID(), extAccMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
+		log.Fatalf("failed to run user external account encryption job: %v", err)
 	}
 
 	// Run enterprise setup hook
@@ -229,8 +237,6 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		return err
 	}
 
-	go debugserver.Start()
-
 	siteid.Init()
 
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
@@ -282,6 +288,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		fmt.Println(" ")
 	}
 	fmt.Printf("✱ Sourcegraph is ready at: %s\n", globals.ExternalURL())
+	close(ready)
 
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 	return nil

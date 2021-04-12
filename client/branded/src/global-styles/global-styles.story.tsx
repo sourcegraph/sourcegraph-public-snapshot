@@ -3,20 +3,22 @@
 // documentation for that. Its primary purpose is to show what Bootstrap's componenents look like with our styling
 // customizations.
 
-import React, { useState } from 'react'
+import { Menu, MenuButton, MenuList, MenuLink } from '@reach/menu-button'
+import { action } from '@storybook/addon-actions'
+import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
-import { action } from '@storybook/addon-actions'
 import { flow, startCase } from 'lodash'
-import { highlightCodeSafe } from '../../../shared/src/util/markdown'
-import { Form } from '../components/Form'
 import openColor from 'open-color'
-import { Menu, MenuButton, MenuList, MenuLink } from '@reach/menu-button'
+import React, { useState } from 'react'
 import 'storybook-addon-designs'
+
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
+
 import { BrandedStory } from '../components/BrandedStory'
 import { CodeSnippet } from '../components/CodeSnippet'
-import { number } from '@storybook/addon-knobs'
-import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
+import { Form } from '../components/Form'
 
 const semanticColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'merged'] as const
 

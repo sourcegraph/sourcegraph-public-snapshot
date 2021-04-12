@@ -1,4 +1,4 @@
-import { gql } from '../../../shared/src/graphql/graphql'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 export const fileDiffHunkRangeFields = gql`
     fragment FileDiffHunkRangeFields on FileDiffHunkRange {

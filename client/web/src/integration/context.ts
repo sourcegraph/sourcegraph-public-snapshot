@@ -1,15 +1,18 @@
+import html from 'tagged-template-noop'
+
+import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import {
     createSharedIntegrationTestContext,
     IntegrationTestContext,
     IntegrationTestOptions,
-} from '../../../shared/src/testing/integration/context'
-import { createJsContext } from './jscontext'
-import { SourcegraphContext } from '../jscontext'
+} from '@sourcegraph/shared/src/testing/integration/context'
+
 import { WebGraphQlOperations } from '../graphql-operations'
-import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
-import html from 'tagged-template-noop'
-import { commonWebGraphQlResults } from './graphQlResults'
+import { SourcegraphContext } from '../jscontext'
 import { SearchEvent } from '../search/stream'
+
+import { commonWebGraphQlResults } from './graphQlResults'
+import { createJsContext } from './jscontext'
 
 export interface WebIntegrationTestContext
     extends IntegrationTestContext<

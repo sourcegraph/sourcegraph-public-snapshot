@@ -1,33 +1,34 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
-import * as H from 'history'
+import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useHistory, useLocation } from 'react-router'
 import { BehaviorSubject, from, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
-import { FetchFileParameters } from '../../../../shared/src/components/CodeExcerpt'
-import { Resizable } from '../../../../shared/src/components/Resizable'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { VersionContextProps } from '../../../../shared/src/search/util'
-import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { ThemeProps } from '../../../../shared/src/theme'
+
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { combineLatestOrDefault } from '../../../../shared/src/util/rxjs/combineLatestOrDefault'
 import { Location } from '@sourcegraph/extension-api-types'
-import { isDefined } from '../../../../shared/src/util/types'
-import { useObservable } from '../../../../shared/src/util/useObservable'
-import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
-import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
-import { haveInitialExtensionsLoaded } from '../../../../shared/src/api/features'
-import { PanelViewData } from '../../../../shared/src/api/extension/extensionHostApi'
-import { ContributableMenu } from '../../../../shared/src/api/protocol'
-import { ActionsNavItems } from '../../../../shared/src/actions/ActionsNavItems'
-import { useHistory, useLocation } from 'react-router'
-import { EmptyPanelView } from './views/EmptyPanelView'
-import CloseIcon from 'mdi-react/CloseIcon'
-import { PanelView } from './views/PanelView'
+import { ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
+import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
+import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { combineLatestOrDefault } from '@sourcegraph/shared/src/util/rxjs/combineLatestOrDefault'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { registerPanelToolbarContributions } from './views/contributions'
+import { EmptyPanelView } from './views/EmptyPanelView'
+import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
+import { PanelView } from './views/PanelView'
 
 interface Props
     extends ExtensionsControllerProps,
@@ -37,8 +38,6 @@ interface Props
         TelemetryProps,
         ThemeProps,
         VersionContextProps {
-    location: H.Location
-    history: H.History
     repoName?: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
@@ -120,7 +119,8 @@ export const Panel = React.memo<Props>(props => {
     )
 
     const [tabIndex, setTabIndex] = useState(0)
-    const { hash, pathname } = useLocation()
+    const location = useLocation()
+    const { hash, pathname } = location
     const history = useHistory()
     const handlePanelClose = useCallback(() => history.replace(pathname), [history, pathname])
     const [currentTabLabel, currentTabID] = hash.split('=')
@@ -196,18 +196,19 @@ export const Panel = React.memo<Props>(props => {
                               label: panelView.title,
                               id: panelView.id,
                               priority: panelView.priority,
-                              element: <PanelView {...props} panelView={panelView} />,
+                              element: (
+                                  <PanelView {...props} panelView={panelView} history={history} location={location} />
+                              ),
                               hasLocations: !!panelView.locationProvider,
                           })
                       )
                       .sort((a, b) => b.priority - a.priority)
                 : [],
-        [panelViews, props]
+        [history, location, panelViews, props]
     )
 
     useEffect(() => {
         const subscription = registerPanelToolbarContributions(props.extensionsController.extHostAPI)
-
         return () => subscription.unsubscribe()
     }, [props.extensionsController])
 
@@ -257,6 +258,7 @@ export const Panel = React.memo<Props>(props => {
                                 hasLocations: Boolean(activeTab.hasLocations),
                             }}
                             wrapInList={true}
+                            location={location}
                         />
                     )}
                     <button

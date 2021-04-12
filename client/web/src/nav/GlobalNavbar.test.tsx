@@ -1,11 +1,15 @@
+import { createLocation, createMemoryHistory } from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { setLinkComponent } from '../../../shared/src/components/Link'
-import { ThemePreference } from '../theme'
-import { GlobalNavbar } from './GlobalNavbar'
-import { createLocation, createMemoryHistory } from 'history'
-import { extensionsController, NOOP_SETTINGS_CASCADE } from '../../../shared/src/util/searchTestHelpers'
+
+import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
+import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
+
 import { SearchPatternType } from '../graphql-operations'
+import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../searchContexts/testHelpers'
+import { ThemePreference } from '../theme'
+
+import { GlobalNavbar } from './GlobalNavbar'
 
 jest.mock('../search/input/SearchNavbarItem', () => ({ SearchNavbarItem: 'SearchNavbarItem' }))
 jest.mock('../components/branding/BrandLogo', () => ({ BrandLogo: 'BrandLogo' }))
@@ -41,9 +45,9 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     setVersionContext: () => Promise.resolve(),
     availableVersionContexts: [],
     showSearchContext: false,
+    showSearchContextManagement: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
-    availableSearchContexts: [],
     defaultSearchContextSpec: '',
     variant: 'default',
     globbing: false,
@@ -51,6 +55,8 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     showOnboardingTour: false,
     branding: undefined,
     routes: [],
+    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+    fetchSearchContexts: mockFetchSearchContexts,
 }
 
 describe('GlobalNavbar', () => {

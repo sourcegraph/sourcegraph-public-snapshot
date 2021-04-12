@@ -1,13 +1,16 @@
-import * as H from 'history'
-import React, { useCallback, useState } from 'react'
-import { BatchSpecFields } from '../../../graphql-operations'
-import { createBatchChange, applyBatchChange } from './backend'
-import { Link } from '../../../../../shared/src/components/Link'
 import classNames from 'classnames'
-import { isErrorLike } from '../../../../../shared/src/util/errors'
-import { ErrorAlert } from '../../../components/alerts'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import * as H from 'history'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+import React, { useCallback, useState } from 'react'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { ErrorAlert } from '../../../components/alerts'
+import { BatchSpecFields } from '../../../graphql-operations'
+
+import { createBatchChange, applyBatchChange } from './backend'
 
 export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
     specID: string

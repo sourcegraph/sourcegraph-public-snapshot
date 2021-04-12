@@ -1,16 +1,37 @@
 import { mount } from 'enzyme'
-import sinon from 'sinon'
-import React from 'react'
 import * as H from 'history'
-import { SearchPatternType } from '../../graphql-operations'
+import React from 'react'
+import { act } from 'react-dom/test-utils'
 import { Dropdown, DropdownItem, DropdownToggle } from 'reactstrap'
+import { of } from 'rxjs'
+import sinon from 'sinon'
+
+import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
+
+import { SearchPatternType } from '../../graphql-operations'
+import { mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
-import { ISearchContext } from '../../../../shared/src/graphql/schema'
+
+const mockFetchAutoDefinedSearchContexts = () =>
+    of([
+        {
+            __typename: 'SearchContext',
+            id: '1',
+            spec: 'global',
+            autoDefined: true,
+            description: 'All repositories on Sourcegraph',
+            repositories: [],
+        },
+    ] as ISearchContext[])
 
 describe('SearchContextDropdown', () => {
     const defaultProps: SearchContextDropdownProps = {
         query: '',
-        availableSearchContexts: [],
+        showSearchContextManagement: false,
+        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+        fetchSearchContexts: mockFetchSearchContexts,
         defaultSearchContextSpec: '',
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
@@ -20,6 +41,18 @@ describe('SearchContextDropdown', () => {
         versionContext: undefined,
         submitSearch: () => {},
     }
+    const RealIntersectionObserver = window.IntersectionObserver
+    let clock: sinon.SinonFakeTimers
+
+    beforeAll(() => {
+        clock = sinon.useFakeTimers()
+        window.IntersectionObserver = MockIntersectionObserver
+    })
+
+    afterAll(() => {
+        clock.restore()
+        window.IntersectionObserver = RealIntersectionObserver
+    })
 
     it('should start closed', () => {
         const element = mount(<SearchContextDropdown {...defaultProps} />)
@@ -72,49 +105,37 @@ describe('SearchContextDropdown', () => {
     })
 
     it('should submit search on item click', () => {
-        const availableSearchContexts: ISearchContext[] = [
-            {
-                __typename: 'SearchContext',
-                id: '1',
-                spec: 'global',
-                autoDefined: true,
-                description: 'All repositories on Sourcegraph',
-            },
-        ]
         const submitSearch = sinon.spy()
-        const element = mount(
-            <SearchContextDropdown
-                {...defaultProps}
-                submitSearch={submitSearch}
-                availableSearchContexts={availableSearchContexts}
-                query="test"
-            />
-        )
+        const element = mount(<SearchContextDropdown {...defaultProps} submitSearch={submitSearch} query="test" />)
+
+        act(() => {
+            // Wait for debounce
+            clock.tick(50)
+        })
+        element.update()
+
         const item = element.find(DropdownItem).at(0)
         item.simulate('click')
 
         sinon.assert.calledOnce(submitSearch)
     })
 
-    it('should not submit search if query is empty', () => {
-        const availableSearchContexts: ISearchContext[] = [
-            {
-                __typename: 'SearchContext',
-                id: '1',
-                spec: 'global',
-                autoDefined: true,
-                description: 'All repositories on Sourcegraph',
-            },
-        ]
+    it('should not submit search if submitSearchOnSearchContextChange is false', () => {
         const submitSearch = sinon.spy()
         const element = mount(
             <SearchContextDropdown
                 {...defaultProps}
                 submitSearch={submitSearch}
-                availableSearchContexts={availableSearchContexts}
-                query=""
+                submitSearchOnSearchContextChange={false}
             />
         )
+
+        act(() => {
+            // Wait for debounce
+            clock.tick(50)
+        })
+        element.update()
+
         const item = element.find(DropdownItem).at(0)
         item.simulate('click')
 

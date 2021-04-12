@@ -1,10 +1,12 @@
-import React from 'react'
 import * as H from 'history'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import renderer, { act } from 'react-test-renderer'
-import { UserSubscriptionsEditProductSubscriptionPage } from './UserSubscriptionsEditProductSubscriptionPage'
-import { of } from 'rxjs'
+import React from 'react'
 import { MemoryRouter } from 'react-router'
+import renderer, { act } from 'react-test-renderer'
+import { of } from 'rxjs'
+
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+
+import { UserSubscriptionsEditProductSubscriptionPage } from './UserSubscriptionsEditProductSubscriptionPage'
 
 jest.mock('mdi-react/ArrowLeftIcon', () => 'ArrowLeftIcon')
 

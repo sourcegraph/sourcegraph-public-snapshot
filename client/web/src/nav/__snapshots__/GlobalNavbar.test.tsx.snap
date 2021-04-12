@@ -19,7 +19,6 @@ exports[`GlobalNavbar default 1`] = `
   >
     <SearchNavbarItem
       authenticatedUser={null}
-      availableSearchContexts={Array []}
       caseSensitive={false}
       copyQueryButton={false}
       defaultSearchContextSpec=""
@@ -37,6 +36,13 @@ exports[`GlobalNavbar default 1`] = `
           "unsubscribe": [Function],
         }
       }
+      fetchAutoDefinedSearchContexts={
+        Observable {
+          "_isScalar": false,
+          "_subscribe": [Function],
+        }
+      }
+      fetchSearchContexts={[Function]}
       globbing={false}
       history={
         Object {
@@ -107,6 +113,7 @@ exports[`GlobalNavbar default 1`] = `
       showBatchChanges={false}
       showOnboardingTour={false}
       showSearchContext={false}
+      showSearchContextManagement={false}
       telemetryService={Object {}}
       themePreference="light"
     />

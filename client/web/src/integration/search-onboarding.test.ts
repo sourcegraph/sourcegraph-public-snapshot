@@ -1,11 +1,15 @@
-import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
+import assert from 'assert'
+
+import expect from 'expect'
+
+import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+
+import { SearchResult } from '../graphql-operations'
+
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
-import assert from 'assert'
-import expect from 'expect'
-import { SearchResult } from '../graphql-operations'
 
 describe('Search onboarding', () => {
     let driver: Driver
@@ -49,8 +53,8 @@ describe('Search onboarding', () => {
             RepoGroups: () => ({
                 repoGroups: [],
             }),
-            SearchContexts: () => ({
-                searchContexts: [],
+            AutoDefinedSearchContexts: () => ({
+                autoDefinedSearchContexts: [],
             }),
             ViewerSettings: () => ({
                 viewerSettings: {

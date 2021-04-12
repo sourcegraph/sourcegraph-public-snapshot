@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react'
+import { RouteComponentProps } from 'react-router'
+
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
+
 import { ProductSubscriptionStatus } from './ProductSubscriptionStatus'
-import { RouteComponentProps } from 'react-router'
 
 /**
  * Displays the product subscription information from the license key in site configuration.

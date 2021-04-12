@@ -1,20 +1,22 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import { LayoutProps } from './Layout'
-import { lazyComponent } from './util/lazyComponent'
-import { isErrorLike } from '../../shared/src/util/errors'
-import { RepogroupPage } from './repogroups/RepogroupPage'
-import { python2To3Metadata } from './repogroups/Python2To3'
-import { kubernetes } from './repogroups/Kubernetes'
-import { golang } from './repogroups/Golang'
-import { reactHooks } from './repogroups/ReactHooks'
-import { android } from './repogroups/Android'
-import { stanford } from './repogroups/Stanford'
+
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
-import { cncf } from './repogroups/cncf'
+import { LayoutProps } from './Layout'
 import { ExtensionAlertProps } from './repo/RepoContainer'
+import { android } from './repogroups/Android'
+import { cncf } from './repogroups/cncf'
+import { golang } from './repogroups/Golang'
+import { kubernetes } from './repogroups/Kubernetes'
+import { python2To3Metadata } from './repogroups/Python2To3'
+import { reactHooks } from './repogroups/ReactHooks'
+import { RepogroupPage } from './repogroups/RepogroupPage'
+import { stanford } from './repogroups/Stanford'
 import { StreamingSearchResults } from './search/results/streaming/StreamingSearchResults'
 import { isMacPlatform, UserRepositoriesUpdateProps } from './util'
+import { lazyComponent } from './util/lazyComponent'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -198,6 +200,23 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/views',
         render: lazyComponent(() => import('./views/ViewsArea'), 'ViewsArea'),
+    },
+    {
+        path: '/contexts',
+        render: lazyComponent(() => import('./searchContexts/SearchContextsListPage'), 'SearchContextsListPage'),
+        exact: true,
+        condition: props =>
+            !isErrorLike(props.settingsCascade.final) &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
+    },
+    {
+        path: '/contexts/:id',
+        render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
+        condition: props =>
+            !isErrorLike(props.settingsCascade.final) &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
     },
     {
         path: '/refactor-python2-to-3',

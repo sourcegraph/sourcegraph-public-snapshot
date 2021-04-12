@@ -5,10 +5,13 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, startWith } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { ThemeProps } from '../../../shared/src/theme'
-import { AbsoluteRepo } from '../../../shared/src/util/url'
+
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
+
 import { dirname } from '../util/path'
+
 import { TreeRoot } from './TreeRoot'
 import { getDomElement, scrollIntoView } from './util'
 

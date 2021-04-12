@@ -1,5 +1,6 @@
 import pTimeout from 'p-timeout'
 import { Subject } from 'rxjs'
+
 import { isAsyncIterable, isPromiseLike, isSubscribable, observableFromAsyncIterable, tryCatchPromise } from './util'
 
 describe('tryCatchPromise', () => {

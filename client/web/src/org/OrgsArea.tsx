@@ -1,18 +1,21 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { PlatformContextProps } from '../../../shared/src/platform/context'
-import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
+
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
+import { AuthenticatedUser } from '../auth'
+import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
-import { ThemeProps } from '../../../shared/src/theme'
+import { PatternTypeProps } from '../search'
+
 import { OrgArea, OrgAreaRoute } from './area/OrgArea'
 import { OrgAreaHeaderNavItem } from './area/OrgHeader'
 import { NewOrganizationPage } from './new/NewOrganizationPage'
-import { PatternTypeProps } from '../search'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
-import { AuthenticatedUser } from '../auth'
-import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage

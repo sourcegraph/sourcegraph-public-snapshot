@@ -1,7 +1,8 @@
+import isAbsoluteUrl from 'is-absolute-url'
 import * as React from 'react'
 import { Link, LinkProps as ReactRouterLinkProps } from 'react-router-dom'
-import isAbsoluteUrl from 'is-absolute-url'
-import { LinkProps } from '../../../shared/src/components/Link'
+
+import { LinkProps } from '@sourcegraph/shared/src/components/Link'
 
 /**
  * Uses react-router-dom's <Link> for relative URLs, <a> for absolute URLs. This is useful because passing an

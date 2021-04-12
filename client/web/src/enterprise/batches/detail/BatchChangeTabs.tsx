@@ -1,23 +1,26 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import classNames from 'classnames'
 import * as H from 'history'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
-import { ThemeProps } from '../../../../../shared/src/theme'
-import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import ArchiveIcon from 'mdi-react/ArchiveIcon'
+import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
+import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
+import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
+import React, { useState, useCallback, useEffect } from 'react'
+
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
 import { BatchChangeFields } from '../../../graphql-operations'
+
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
 } from './backend'
-import classNames from 'classnames'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
-import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import { BatchSpecTab } from './BatchSpecTab'
+import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
 
 type SelectedTab = 'changesets' | 'chart' | 'spec' | 'archived'
 
@@ -53,16 +56,13 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
 }) => {
-    const archiveEnabled = window.context?.experimentalFeatures?.archiveBatchChangeChangesets ?? false
-    const [selectedTab, setSelectedTab] = useState<SelectedTab>(
-        selectedTabFromLocation(location.search, archiveEnabled)
-    )
+    const [selectedTab, setSelectedTab] = useState<SelectedTab>(selectedTabFromLocation(location.search))
     useEffect(() => {
-        const newTab = selectedTabFromLocation(location.search, archiveEnabled)
+        const newTab = selectedTabFromLocation(location.search)
         if (newTab !== selectedTab) {
             setSelectedTab(newTab)
         }
-    }, [location.search, selectedTab, archiveEnabled])
+    }, [location.search, selectedTab])
 
     const onSelectChangesets = useCallback<React.MouseEventHandler>(
         event => {
@@ -155,20 +155,18 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                             <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec
                         </a>
                     </li>
-                    {archiveEnabled && (
-                        <li className="nav-item">
-                            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                            <a
-                                href=""
-                                role="button"
-                                onClick={onSelectArchived}
-                                className={classNames('nav-link', selectedTab === 'archived' && 'active')}
-                            >
-                                <ArchiveIcon className="icon-inline text-muted mr-1" /> Archived{' '}
-                                <span className="badge badge-pill badge-secondary ml-1">{archivedCount}</span>
-                            </a>
-                        </li>
-                    )}
+                    <li className="nav-item">
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                        <a
+                            href=""
+                            role="button"
+                            onClick={onSelectArchived}
+                            className={classNames('nav-link', selectedTab === 'archived' && 'active')}
+                        >
+                            <ArchiveIcon className="icon-inline text-muted mr-1" /> Archived{' '}
+                            <span className="badge badge-pill badge-secondary ml-1">{archivedCount}</span>
+                        </a>
+                    </li>
                 </ul>
             </div>
             {selectedTab === 'chart' && (
@@ -209,13 +207,14 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                     queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                     onlyArchived={true}
+                    enableSelect={true}
                 />
             )}
         </>
     )
 }
 
-function selectedTabFromLocation(locationSearch: string, archiveEnabled: boolean): SelectedTab {
+function selectedTabFromLocation(locationSearch: string): SelectedTab {
     const urlParameters = new URLSearchParams(locationSearch)
     if (urlParameters.get('tab') === 'chart') {
         return 'chart'
@@ -224,7 +223,7 @@ function selectedTabFromLocation(locationSearch: string, archiveEnabled: boolean
         return 'spec'
     }
     if (urlParameters.get('tab') === 'archived') {
-        return archiveEnabled ? 'archived' : 'changesets'
+        return 'archived'
     }
     return 'changesets'
 }
