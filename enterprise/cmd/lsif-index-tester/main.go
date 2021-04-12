@@ -169,11 +169,9 @@ func testProject(ctx context.Context, indexer []string, project, name string) (p
 
 	log15.Debug("... \t Resource Usage:", "usage", result.usage)
 
-	output, err = validateDump(project)
-	if err != nil {
+	if err := validateDump(project); err != nil {
 		return projectResult{}, err
 	}
-
 	log15.Debug("... Validated dump.lsif")
 
 	bundle, err := readBundle(project)
@@ -226,28 +224,28 @@ func runIndexer(ctx context.Context, indexer []string, directory, name string) (
 	}, err
 }
 
-func validateDump(directory string) ([]byte, error) {
-	// TODO: Eventually this should use the package, rather than the installed module
-	//       but for now this will have to do.
-
-	indexFile := os.File(directory)
+func validateDump(directory string) error {
+	dumpFile, err := os.Open(filepath.Join(directory, "dump.lsif"))
+	if err != nil {
+		return err
+	}
 
 	ctx := validation.NewValidationContext()
 	validator := &validation.Validator{Context: ctx}
-	errs := make(chan error, 1)
 
-	go func() {
-		defer close(errs)
+	if err := validator.Validate(dumpFile); err != nil {
+		return err
+	}
 
-		if err := validator.Validate(directory); err != nil {
-			errs <- err
+	if len(ctx.Errors) > 0 {
+		msg := fmt.Sprintf("Detected %d errors", len(ctx.Errors))
+		for i, err := range ctx.Errors {
+			msg += fmt.Sprintf("%d. %s", i, err)
 		}
-	}()
+		return errors.New(msg)
+	}
 
-	cmd := exec.Command("lsif-validate", "dump.lsif")
-	cmd.Dir = directory
-
-	return cmd.CombinedOutput()
+	return nil
 }
 
 func validateTestCases(directory string, bundle *semantic.GroupedBundleDataMaps) (testSuiteResult, error) {
