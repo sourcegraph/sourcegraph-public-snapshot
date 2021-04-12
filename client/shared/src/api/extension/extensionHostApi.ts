@@ -3,11 +3,13 @@ import { castArray, groupBy, identity, isEqual } from 'lodash'
 import { combineLatest, concat, EMPTY, from, Observable, of, Subscribable } from 'rxjs'
 import {
     catchError,
+    concatMap,
     debounceTime,
     defaultIfEmpty,
     distinctUntilChanged,
     map,
     mergeMap,
+    scan,
     switchMap,
 } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
@@ -676,27 +678,30 @@ function callViewProvidersSequentially<W extends ContributableViewContainer>(
 ): Observable<ViewProviderResult[]> {
     return providers.pipe(
         debounceTime(0),
-        switchMap(providers => providerResultToObservable(sequentiallyLoading(context, providers)))
+        switchMap(providers =>
+            from(providers).pipe(
+                concatMap(({ viewProvider, id }, index) =>
+                    providerResultToObservable(viewProvider.provideView(context)).pipe(
+                        catchError((error): [ErrorLike] => {
+                            console.error('View provider errored:', error)
+                            return [asError(error)]
+                        }),
+                        map(view => ({ id, view, index }))
+                    )
+                ),
+                scan<ViewProviderResult & { index: number }, ViewProviderResult[]>(
+                    (accumulator, current) => {
+                        const { index, ...payload } = current
+                        accumulator[index] = payload
+
+                        return accumulator
+                    },
+                    providers.map(provider => ({ id: provider.id, view: undefined }))
+                )
+            )
+        ),
+        map(views => views.filter(allOf(isDefined, property('view', isNot(isExactly(undefined))))))
     )
-}
-
-async function* sequentiallyLoading<W extends ContributableViewContainer>(context: ViewContexts[W], providers: readonly RegisteredViewProvider<W>[]): AsyncIterableIterator<ViewProviderResult[]> {
-    const result: ViewProviderResult[] = [];
-    const viewProviders = providers.map(
-        provider => providerResultToObservable(provider.viewProvider.provideView(context)))
-
-    for (let index = 0; index < viewProviders.length; index++) {
-        result[index] = { id: providers[index].id, view: undefined }
-    }
-
-    for (let index = 0; index < viewProviders.length; index++) {
-        const viewProviderGenerator = observableToAsyncGenerator(viewProviders[index]);
-
-        for await (const value of viewProviderGenerator) {
-            result[index].view = value
-            yield result;
-        }
-    }
 }
 
 /**
