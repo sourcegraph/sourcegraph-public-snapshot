@@ -23,9 +23,13 @@ For users using any of the other authentication mechanisms, removing `builtin` a
 
 ## Authorization in Sourcegraph
 
-If you use GitHub, GitLab, or Bitbucket Server, you can sync access permissions directly from the code host. Information is included in the section for the code host below. 
+If you use GitHub, GitLab, or Bitbucket Server, you can sync access permissions directly from the code host:
 
-If you do not use one of those listed code hosts, you will need to control access using our explicit permissions API, discussed below.
+- [Github](#github-enterprise-or-github-cloud-authentication-and-authorization)
+- [GitLab](#gitlab-enterprise-or-gilab-cloud-authentication-and-authorization)
+- [Bitbucket Server](#bitbucket-server-authorization)
+
+If you do not use one of those listed code hosts, you will need to control access using our [explicit permissions API](#explicit-permissions-api-authorization).
 
 ## Username normalization
 
