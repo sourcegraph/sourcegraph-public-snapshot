@@ -56,8 +56,6 @@ type Sourcer interface {
 	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset) (ChangesetSource, error)
 	ForRepo(ctx context.Context, tx SourcerStore, repo *types.Repo) (ChangesetSource, error)
 	ForExternalService(ctx context.Context, tx SourcerStore, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error)
-	WithAuthenticatorForUser(ctx context.Context, tx SourcerStore, css ChangesetSource, userID int32, repo *types.Repo) (ChangesetSource, error)
-	WithSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, repo *types.Repo) (ChangesetSource, error)
 }
 
 type sourcer struct {
@@ -198,15 +196,7 @@ func ToDraftChangesetSource(css ChangesetSource) (DraftChangesetSource, error) {
 	return draftCss, nil
 }
 
-// func (s *BatchesSource) WithAuthenticatorForActor(ctx context.Context, repo *types.Repo) (*BatchesSource, error) {
-// 	act := actor.FromContext(ctx)
-// 	if !act.IsAuthenticated() {
-// 		return nil, errors.New("cannot get authenticator from actor: no user in context")
-// 	}
-// 	return s.WithAuthenticatorForUser(ctx, act.UID, repo)
-// }
-
-func (s *sourcer) WithAuthenticatorForUser(ctx context.Context, tx SourcerStore, css ChangesetSource, userID int32, repo *types.Repo) (ChangesetSource, error) {
+func WithAuthenticatorForUser(ctx context.Context, tx SourcerStore, css ChangesetSource, userID int32, repo *types.Repo) (ChangesetSource, error) {
 	cred, err := loadUserCredential(ctx, tx, userID, repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading user credential")
@@ -246,7 +236,7 @@ func (s *sourcer) WithAuthenticatorForUser(ctx context.Context, tx SourcerStore,
 // WithSiteAuthenticator uses the site credential of the code host of the passed-in repo.
 // If no credential is found, the original source is returned and uses the external service
 // config.
-func (s *sourcer) WithSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, repo *types.Repo) (ChangesetSource, error) {
+func WithSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, repo *types.Repo) (ChangesetSource, error) {
 	cred, err := loadSiteCredential(ctx, tx, repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading site credential")
@@ -310,10 +300,6 @@ func buildChangesetSource(store SourcerStore, cf *httpcli.Factory, externalServi
 	default:
 		return nil, fmt.Errorf("unsupported external service type %q", extsvc.KindToType(externalService.Kind))
 	}
-}
-
-func authenticateSource(src ChangesetSource, au auth.Authenticator) (ChangesetSource, error) {
-	return src.WithAuthenticator(au)
 }
 
 // loadUserCredential attempts to find a user credential for the given repo.

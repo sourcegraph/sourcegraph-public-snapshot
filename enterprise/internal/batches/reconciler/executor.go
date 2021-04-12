@@ -356,7 +356,7 @@ func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.So
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load owning batch change")
 		}
-		css, err = sourcer.WithAuthenticatorForUser(ctx, s, css, batchChange.LastApplierID, repo)
+		css, err = sources.WithAuthenticatorForUser(ctx, s, css, batchChange.LastApplierID, repo)
 		if err != nil {
 			switch err {
 			case sources.ErrMissingCredentials:
@@ -377,7 +377,7 @@ func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.So
 		// a site-credential, but it's ok if it doesn't exist.
 		// TODO: This code-path will fail once the site credentials are the only
 		// fallback we want to use.
-		css, err = sourcer.WithSiteAuthenticator(ctx, s, css, repo)
+		css, err = sources.WithSiteAuthenticator(ctx, s, css, repo)
 		if err != nil {
 			return nil, err
 		}

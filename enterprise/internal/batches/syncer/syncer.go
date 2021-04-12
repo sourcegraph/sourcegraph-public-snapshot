@@ -478,5 +478,5 @@ func loadChangesetSource(ctx context.Context, cf *httpcli.Factory, syncStore Syn
 	}
 	// Try to use a site credential. If none is present, this falls back to
 	// the external service config. This code path should error in the future.
-	return srcer.WithSiteAuthenticator(ctx, syncStore, source, repo)
+	return sources.WithSiteAuthenticator(ctx, syncStore, source, repo)
 }
