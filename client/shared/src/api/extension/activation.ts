@@ -2,9 +2,10 @@ import { Remote } from 'comlink'
 import { BehaviorSubject, combineLatest, from, Observable, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilChanged, map, tap, withLatestFrom } from 'rxjs/operators'
 
-import { ConfiguredExtension, getScriptURLFromExtensionManifest } from '../../extensions/extension'
-import { areExtensionsSame } from '../../extensions/extensions'
+import { ConfiguredExtension, getScriptURLFromExtensionManifest, splitExtensionID } from '../../extensions/extension'
+import { areExtensionsSame, getEnabledExtensionsForSubject } from '../../extensions/extensions'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
+import { hashCode } from '../../util/hashCode'
 import { memoizeObservable } from '../../util/memoizeObservable'
 import { wrapRemoteObservable } from '../client/api/common'
 import { MainThreadAPI } from '../contract'
@@ -49,7 +50,7 @@ export function observeActiveExtensions(
 }
 
 export function activateExtensions(
-    state: Pick<ExtensionHostState, 'activeExtensions' | 'contributions' | 'haveInitialExtensionsLoaded'>,
+    state: Pick<ExtensionHostState, 'activeExtensions' | 'contributions' | 'haveInitialExtensionsLoaded' | 'settings'>,
     mainAPI: Remote<MainThreadAPI>
 ): Subscription {
     const getScriptURLs = memoizeObservable(
@@ -134,11 +135,32 @@ export function activateExtensions(
                             }
                         }
                     }),
-                    map(({ toActivate, toDeactivate }) =>
-                        from(
+                    map(({ toActivate, toDeactivate }) => {
+                        // We could log the event after the activation promise resolves to ensure that there wasn't
+                        // an error during activation, but we want to track the maximum number of times an extension could have been useful.
+                        // Since extension activation is passive from the user's perspective, and we don't yet track extension usage events,
+                        // there's no way that we could measure how often extensions are actually useful anyways.
+                        const defaultExtensions =
+                            getEnabledExtensionsForSubject(state.settings.value, 'DefaultSettings') || {}
+
+                        return from(
                             Promise.all([
                                 toActivate.map(({ id, scriptURL }) => {
                                     console.log(`Activating Sourcegraph extension: ${id}`)
+
+                                    // We only want to log non-default extension events
+                                    if (!defaultExtensions[id]) {
+                                        // Hash extension IDs that specify host, since that means that it's a private registry extension.
+                                        const telemetryExtensionID = splitExtensionID(id).host ? hashCode(id, 20) : id
+                                        mainAPI
+                                            .logEvent('ExtensionActivation', {
+                                                extension_id: telemetryExtensionID,
+                                            })
+                                            .catch(() => {
+                                                // noop
+                                            })
+                                    }
+
                                     return activateExtension(id, scriptURL).catch(error =>
                                         console.error(`Error activating extension ${id}:`, asError(error))
                                     )
@@ -150,7 +172,7 @@ export function activateExtensions(
                                 ),
                             ])
                         )
-                    ),
+                    }),
                     map(() => ({ activated: toActivate, deactivated: toDeactivate })),
                     catchError(error => {
                         console.error('Uncaught error during extension activation', error)
