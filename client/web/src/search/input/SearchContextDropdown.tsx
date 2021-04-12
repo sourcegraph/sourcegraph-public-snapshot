@@ -19,6 +19,7 @@ export interface SearchContextDropdownProps
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         VersionContextProps {
     submitSearch: (args: SubmitSearchParameters) => void
+    submitSearchOnSearchContextChange?: boolean
     query: string
     history: H.History
 }
@@ -38,6 +39,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         fetchAutoDefinedSearchContexts,
         fetchSearchContexts,
         showSearchContextHighlightBubble = false,
+        submitSearchOnSearchContextChange = true,
     } = props
 
     const [hasSeenHighlightBubble, setHasSeenHighlightBubble] = useLocalStorage(HAS_SEEN_HIGHLIGHT_BUBBLE_KEY, false)
@@ -56,7 +58,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
 
     const submitOnToggle = useCallback(
         (selectedSearchContextSpec: string): void => {
-            if (query === '') {
+            if (!submitSearchOnSearchContextChange) {
                 return
             }
             submitSearch({
@@ -69,7 +71,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 versionContext,
             })
         },
-        [submitSearch, caseSensitive, history, query, patternType, versionContext]
+        [submitSearch, submitSearchOnSearchContextChange, caseSensitive, history, query, patternType, versionContext]
     )
 
     const selectSearchContextSpec = useCallback(
