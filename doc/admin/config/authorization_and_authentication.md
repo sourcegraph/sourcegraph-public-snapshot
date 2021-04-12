@@ -12,9 +12,7 @@ We suggest configuring both when using Sourcegraph Enterprise. If you do not con
 Sourcegraph supports username/password auth by default and SAML, OAuth, HTTP Proxy auth, and OpenID Connect if configured. Changing a username in Sourcegraph will allow the user to escalate permissions, so if you are syncing permissions, you will need to add:
 
 ```
-
 auth.enableUsernameChanges: false
-
 ```
 
 To your site config at https://sourcegraph.yourdomain.com/siteadmin/configuration ([more info](./site_config.md#view-and-edit-site-configuration)). 
@@ -57,7 +55,7 @@ Built-in username/password authentication is Sourcegraph’s default authenticat
 
 Set `allowSignup` to `false` if you want to create user accounts instead of allowing the user to create their own.
 
-More info about [builtin password authentication](../auth/index.md#builtin-password-authentication). 
+More info about [built-in password authentication](../auth/index.md#builtin-password-authentication). 
 
 ### GitHub Enterprise or GitHub Cloud authentication and authorization
 
