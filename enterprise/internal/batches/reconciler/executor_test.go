@@ -804,9 +804,9 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)
 
-	rs, extSvc := ct.CreateTestRepos(t, ctx, db, 1)
+	rs, gitHubExtSvc := ct.CreateTestRepos(t, ctx, db, 1)
 	gitHubRepo := rs[0]
-	gitHubRepoCloneURL := gitHubRepo.Sources[extSvc.URN()].CloneURL
+	gitHubRepoCloneURL := gitHubRepo.Sources[gitHubExtSvc.URN()].CloneURL
 
 	gitLabRepos, gitLabExtSvc := ct.CreateGitlabTestRepos(t, ctx, db, 1)
 	gitLabRepo := gitLabRepos[0]
@@ -820,16 +820,13 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	bbsSSHRepo := bbsSSHRepos[0]
 	bbsSSHRepoCloneURL := bbsSSHRepo.Sources[bbsSSHExtsvc.URN()].CloneURL
 
-	gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
-	fakeSource := &sources.FakeChangesetSource{Svc: extSvc}
-	sourcer := sources.NewFakeSourcer(nil, fakeSource)
-
 	plan := &Plan{}
 	plan.AddOp(btypes.ReconcilerOperationPush)
 
 	tests := []struct {
 		name           string
 		user           *types.User
+		extSvc         *types.ExternalService
 		repo           *types.Repo
 		credentials    auth.Authenticator
 		wantErr        bool
@@ -838,6 +835,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:        "github OAuthBearerToken",
 			user:        user,
+			extSvc:      gitHubExtSvc,
 			repo:        gitHubRepo,
 			credentials: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
@@ -847,13 +845,15 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:    "github no credentials",
 			user:    user,
+			extSvc:  gitHubExtSvc,
 			repo:    gitHubRepo,
 			wantErr: true,
 		},
 		{
-			name: "github site-admin and no credentials",
-			repo: gitHubRepo,
-			user: admin,
+			name:   "github site-admin and no credentials",
+			extSvc: gitHubExtSvc,
+			repo:   gitHubRepo,
+			user:   admin,
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: gitHubRepoCloneURL,
 			},
@@ -861,6 +861,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:        "gitlab OAuthBearerToken",
 			user:        user,
+			extSvc:      gitLabExtSvc,
 			repo:        gitLabRepo,
 			credentials: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
@@ -870,13 +871,15 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:    "gitlab no credentials",
 			user:    user,
+			extSvc:  gitLabExtSvc,
 			repo:    gitLabRepo,
 			wantErr: true,
 		},
 		{
-			name: "gitlab site-admin and no credentials",
-			user: admin,
-			repo: gitLabRepo,
+			name:   "gitlab site-admin and no credentials",
+			user:   admin,
+			extSvc: gitLabExtSvc,
+			repo:   gitLabRepo,
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: gitLabRepoCloneURL,
 			},
@@ -884,6 +887,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:        "bitbucketServer BasicAuth",
 			user:        user,
+			extSvc:      bbsExtSvc,
 			repo:        bbsRepo,
 			credentials: &auth.BasicAuth{Username: "fredwoard johnssen", Password: "my-secret-bbs-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
@@ -893,13 +897,15 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:    "bitbucketServer no credentials",
 			user:    user,
+			extSvc:  bbsExtSvc,
 			repo:    bbsRepo,
 			wantErr: true,
 		},
 		{
-			name: "bitbucketServer site-admin and no credentials",
-			user: admin,
-			repo: bbsRepo,
+			name:   "bitbucketServer site-admin and no credentials",
+			user:   admin,
+			extSvc: bbsExtSvc,
+			repo:   bbsRepo,
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: bbsRepoCloneURL,
 			},
@@ -907,21 +913,24 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:    "ssh clone URL no credentials",
 			user:    user,
+			extSvc:  bbsSSHExtsvc,
 			repo:    bbsSSHRepo,
 			wantErr: true,
 		},
 		{
-			name: "ssh clone URL no credentials admin",
-			user: admin,
-			repo: bbsSSHRepo,
+			name:   "ssh clone URL no credentials admin",
+			user:   admin,
+			extSvc: bbsSSHExtsvc,
+			repo:   bbsSSHRepo,
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: bbsSSHRepoCloneURL,
 			},
 		},
 		{
-			name: "ssh clone URL SSH credential",
-			user: admin,
-			repo: bbsSSHRepo,
+			name:   "ssh clone URL SSH credential",
+			user:   admin,
+			extSvc: bbsSSHExtsvc,
+			repo:   bbsSSHRepo,
 			credentials: &auth.OAuthBearerTokenWithSSH{
 				OAuthBearerToken: auth.OAuthBearerToken{Token: "test"},
 				PrivateKey:       "private key",
@@ -937,6 +946,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:        "ssh clone URL non-SSH credential",
 			user:        admin,
+			extSvc:      bbsSSHExtsvc,
 			repo:        bbsSSHRepo,
 			credentials: &auth.OAuthBearerToken{Token: "test"},
 			wantErr:     true,
@@ -970,6 +980,10 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				Published:  true,
 				CommitDiff: "testdiff",
 			})
+
+			gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
+			fakeSource := &sources.FakeChangesetSource{Svc: tt.extSvc}
+			sourcer := sources.NewFakeSourcer(nil, fakeSource)
 
 			err := executePlan(
 				context.Background(),

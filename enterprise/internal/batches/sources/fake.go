@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -31,11 +32,51 @@ func (s *fakeSourcer) ForExternalService(ctx context.Context, tx SourcerStore, o
 }
 
 func (s *fakeSourcer) WithSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, repo *types.Repo) (ChangesetSource, error) {
-	return s.source, s.err
+	cred, err := loadSiteCredential(ctx, tx, repo)
+	if err != nil {
+		return nil, errors.Wrap(err, "loading site credential")
+	}
+	if cred != nil {
+		return css.WithAuthenticator(cred)
+	}
+	return css, nil
 }
 
 func (s *fakeSourcer) WithAuthenticatorForUser(ctx context.Context, tx SourcerStore, css ChangesetSource, userID int32, repo *types.Repo) (ChangesetSource, error) {
-	return s.source, s.err
+	cred, err := loadUserCredential(ctx, tx, userID, repo)
+	if err != nil {
+		return nil, errors.Wrap(err, "loading user credential")
+	}
+	if cred != nil {
+		return css.WithAuthenticator(cred)
+	}
+
+	cred, err = loadSiteCredential(ctx, tx, repo)
+	if err != nil {
+		return nil, errors.Wrap(err, "loading site credential")
+	}
+	if cred != nil {
+		return css.WithAuthenticator(cred)
+	}
+	// For now, default to the internal authenticator of the source.
+	// This is either a site-credential or the external service token.
+
+	// If neither exist, we need to check if the user is an admin: if they are,
+	// then we can use the nil return from loadUserCredential() to fall
+	// back to the global credentials used for the code host. If
+	// not, then we need to error out.
+	// Once we tackle https://github.com/sourcegraph/sourcegraph/issues/16814,
+	// this code path should be removed.
+	user, err := database.Users(tx.DB()).GetByID(ctx, userID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load user")
+	}
+	if user.SiteAdmin {
+		return css, nil
+	}
+
+	// Otherwise, we can't authenticate the given ChangesetSource, so we need to bail out.
+	return nil, ErrMissingCredentials
 }
 
 // FakeChangesetSource is a fake implementation of the ChangesetSource
