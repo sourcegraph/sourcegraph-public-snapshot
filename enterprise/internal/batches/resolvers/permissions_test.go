@@ -738,7 +738,7 @@ func TestPermissionLevels(t *testing.T) {
 					batchChangeAuthor int32
 					wantAuthErr       bool
 
-					// If btypes.restrictToAdmins is enabled, should an error
+					// If batches.restrictToAdmins is enabled, should an error
 					// be generated?
 					wantDisabledErr bool
 				}{

@@ -14,6 +14,7 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -927,4 +928,49 @@ func paginatedPipelineIterator(pipelines []*gitlab.Pipeline, pageSize int) func(
 		}
 		return pipelines[low:high], nil
 	}
+}
+
+func TestGitLabSource_WithAuthenticator(t *testing.T) {
+	t.Run("supported", func(t *testing.T) {
+		var src ChangesetSource
+		src, err := newGitLabSource(nil, &schema.GitLabConnection{}, nil, nil)
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+		src, err = src.WithAuthenticator(&auth.OAuthBearerToken{})
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+
+		if gs, ok := src.(*GitLabSource); !ok {
+			t.Error("cannot coerce Source into GitLabSource")
+		} else if gs == nil {
+			t.Error("unexpected nil Source")
+		}
+	})
+
+	t.Run("unsupported", func(t *testing.T) {
+		for name, tc := range map[string]auth.Authenticator{
+			"nil":         nil,
+			"BasicAuth":   &auth.BasicAuth{},
+			"OAuthClient": &auth.OAuthClient{},
+		} {
+			t.Run(name, func(t *testing.T) {
+				var src ChangesetSource
+				src, err := newGitLabSource(nil, &schema.GitLabConnection{}, nil, nil)
+				if err != nil {
+					t.Errorf("unexpected non-nil error: %v", err)
+				}
+				src, err = src.WithAuthenticator(tc)
+				if err == nil {
+					t.Error("unexpected nil error")
+				} else if _, ok := err.(UnsupportedAuthenticatorError); !ok {
+					t.Errorf("unexpected error of type %T: %v", err, err)
+				}
+				if src != nil {
+					t.Errorf("expected non-nil Source: %v", src)
+				}
+			})
+		}
+	})
 }

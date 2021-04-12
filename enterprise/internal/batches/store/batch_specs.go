@@ -14,7 +14,7 @@ import (
 )
 
 // batchSpecColumns are used by the batchSpec related Store methods to insert,
-// update and query btypes.
+// update and query batch specs.
 var batchSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_specs.id"),
 	sqlf.Sprintf("batch_specs.rand_id"),

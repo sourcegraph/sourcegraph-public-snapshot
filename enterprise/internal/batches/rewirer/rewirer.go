@@ -206,7 +206,7 @@ func (r *ChangesetRewirer) closeChangeset(changeset *btypes.Changeset) {
 }
 
 // ErrRepoNotSupported is thrown by the rewirer when it encounters a mapping
-// targetting a repo on a code host that's not supported by btypes.
+// targetting a repo on a code host that's not supported by batches.
 type ErrRepoNotSupported struct {
 	ServiceType string
 	RepoName    string

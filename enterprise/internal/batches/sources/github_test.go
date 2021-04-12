@@ -11,6 +11,7 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -392,4 +393,52 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), meta)
 		})
 	}
+}
+
+func TestGithubSource_WithAuthenticator(t *testing.T) {
+	svc := &types.ExternalService{
+		Kind: extsvc.KindGitHub,
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: os.Getenv("GITHUB_TOKEN"),
+		}),
+	}
+
+	githubSrc, err := NewGithubSource(svc, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("supported", func(t *testing.T) {
+		src, err := githubSrc.WithAuthenticator(&auth.OAuthBearerToken{})
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %v", err)
+		}
+
+		if gs, ok := src.(*GithubSource); !ok {
+			t.Error("cannot coerce Source into GithubSource")
+		} else if gs == nil {
+			t.Error("unexpected nil Source")
+		}
+	})
+
+	t.Run("unsupported", func(t *testing.T) {
+		for name, tc := range map[string]auth.Authenticator{
+			"nil":         nil,
+			"BasicAuth":   &auth.BasicAuth{},
+			"OAuthClient": &auth.OAuthClient{},
+		} {
+			t.Run(name, func(t *testing.T) {
+				src, err := githubSrc.WithAuthenticator(tc)
+				if err == nil {
+					t.Error("unexpected nil error")
+				} else if _, ok := err.(UnsupportedAuthenticatorError); !ok {
+					t.Errorf("unexpected error of type %T: %v", err, err)
+				}
+				if src != nil {
+					t.Errorf("expected non-nil Source: %v", src)
+				}
+			})
+		}
+	})
 }
