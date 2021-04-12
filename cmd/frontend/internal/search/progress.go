@@ -12,11 +12,12 @@ import (
 )
 
 type progressAggregator struct {
-	Start      time.Time
-	MatchCount int
-	Stats      streaming.Stats
-	Limit      int
-	Trace      string // may be empty
+	Start        time.Time
+	MatchCount   int
+	Stats        streaming.Stats
+	Limit        int
+	DisplayLimit int
+	Trace        string // may be empty
 
 	// Dirty is true if p has changed since the last call to Current.
 	Dirty bool
@@ -60,6 +61,7 @@ func (p *progressAggregator) currentStats() api.ProgressStats {
 		LimitHit:            p.Stats.IsLimitHit,
 		SuggestedLimit:      suggestedLimit,
 		Trace:               p.Trace,
+		DisplayLimit:        p.DisplayLimit,
 	}
 }
 
