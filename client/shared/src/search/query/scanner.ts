@@ -1,6 +1,7 @@
 import { SearchPatternType } from '../../graphql-operations'
 
 import { filterTypeKeysWithAliases } from './filters'
+import { scanPredicate } from './predicates'
 import {
     Token,
     Whitespace,
@@ -16,7 +17,6 @@ import {
     CharacterRange,
     createLiteral,
 } from './token'
-import { scanPredicate } from './predicates'
 
 /**
  * A scanner produces a term, which is either a token or a list of tokens.
