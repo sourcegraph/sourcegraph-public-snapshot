@@ -28,3 +28,4 @@ docker-images/grafana/config/provisioning/dashboards/sourcegraph/
 storybook-static/
 browser/code-intel-extensions/
 monitoring/monitoring/README.md
+*.module.scss.d.ts
