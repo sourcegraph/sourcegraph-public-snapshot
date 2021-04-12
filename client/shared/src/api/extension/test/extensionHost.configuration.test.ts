@@ -1,10 +1,12 @@
-import { SettingsEdit } from '../../client/services/settings'
-import { pretendRemote } from '../../util'
-import { MainThreadAPI } from '../../contract'
-import { SettingsCascade } from '../../../settings/settings'
-import { BehaviorSubject } from 'rxjs'
-import { proxySubscribable } from '../api/common'
 import { proxy } from 'comlink'
+import { BehaviorSubject } from 'rxjs'
+
+import { SettingsCascade } from '../../../settings/settings'
+import { SettingsEdit } from '../../client/services/settings'
+import { MainThreadAPI } from '../../contract'
+import { pretendRemote } from '../../util'
+import { proxySubscribable } from '../api/common'
+
 import { initializeExtensionHostTest } from './test-helpers'
 
 const initialSettings = (value: { a: string }): SettingsCascade<{ a: string }> => ({

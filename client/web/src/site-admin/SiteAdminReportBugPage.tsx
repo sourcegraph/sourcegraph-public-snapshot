@@ -1,7 +1,13 @@
-import { RouteComponentProps } from 'react-router'
-import { fetchAllConfigAndSettings, fetchMonitoringStats } from './backend'
+import { mapValues, values } from 'lodash'
 import React, { useMemo } from 'react'
-import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
+import { RouteComponentProps } from 'react-router'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import awsCodeCommitJSON from '../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../schema/bitbucket_cloud.schema.json'
 import bitbucketServerSchemaJSON from '../../../../schema/bitbucket_server.schema.json'
@@ -14,12 +20,9 @@ import phabricatorSchemaJSON from '../../../../schema/phabricator.schema.json'
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { mapValues, values } from 'lodash'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
+
+import { fetchAllConfigAndSettings, fetchMonitoringStats } from './backend'
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are

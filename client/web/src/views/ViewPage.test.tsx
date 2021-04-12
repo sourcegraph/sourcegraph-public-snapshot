@@ -1,11 +1,13 @@
+import * as H from 'history'
+import { noop } from 'lodash'
 import React from 'react'
 import { create, act } from 'react-test-renderer'
-import { ViewPage } from './ViewPage'
-import * as H from 'history'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { noop } from 'lodash'
 import { of } from 'rxjs'
+
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+
+import { ViewPage } from './ViewPage'
 
 jest.mock('@sourcegraph/react-loading-spinner', () => ({ LoadingSpinner: 'LoadingSpinner' }))
 jest.mock('./QueryInputInViewContent', () => ({ QueryInputInViewContent: 'QueryInputInViewContent' }))

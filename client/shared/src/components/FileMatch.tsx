@@ -1,15 +1,17 @@
 import * as H from 'history'
 import React from 'react'
 import { Observable } from 'rxjs'
-import { pluralize } from '../util/strings'
+import { AggregableBadge, Badge } from 'sourcegraph'
+
 import * as GQL from '../graphql/schema'
 import { SettingsCascadeProps } from '../settings/settings'
+import { pluralize } from '../util/strings'
+
 import { FetchFileParameters } from './CodeExcerpt'
 import { EventLogger, FileMatchChildren } from './FileMatchChildren'
+import { LinkOrSpan } from './LinkOrSpan'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
-import { AggregableBadge, Badge } from 'sourcegraph'
-import { LinkOrSpan } from './LinkOrSpan'
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
 

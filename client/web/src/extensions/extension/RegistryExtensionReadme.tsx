@@ -1,11 +1,13 @@
+import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
-import * as H from 'history'
 
 const PublishNewManifestAlert: React.FunctionComponent<{
     extension: ConfiguredRegistryExtension

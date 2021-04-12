@@ -1,4 +1,5 @@
 import { isEqual } from 'lodash'
+
 import { isSettingsValid, Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 

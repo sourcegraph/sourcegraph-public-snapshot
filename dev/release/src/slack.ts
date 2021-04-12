@@ -1,4 +1,5 @@
 import got from 'got'
+
 import { readLine, cacheFolder } from './util'
 
 export async function postMessage(message: string, channel: string): Promise<void> {

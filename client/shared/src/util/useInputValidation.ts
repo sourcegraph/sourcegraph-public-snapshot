@@ -2,8 +2,9 @@ import { compact, head } from 'lodash'
 import { useMemo, useState, useCallback } from 'react'
 import { combineLatest, concat, EMPTY, Observable, of, ReplaySubject, zip } from 'rxjs'
 import { catchError, map, switchMap, tap, debounceTime } from 'rxjs/operators'
-import { useEventObservable } from './useObservable'
+
 import { asError } from './errors'
+import { useEventObservable } from './useObservable'
 
 /**
  * Configuration used by `useInputValidation`

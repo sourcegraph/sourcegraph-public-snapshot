@@ -1,8 +1,10 @@
 import { parseISO } from 'date-fns'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+
 import { requestGraphQL } from '../../../backend/graphql'
 import {
     LsifIndexesForRepoResult,

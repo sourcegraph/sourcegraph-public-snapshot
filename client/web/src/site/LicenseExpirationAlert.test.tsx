@@ -1,6 +1,7 @@
-import React from 'react'
 import { subMonths, addDays } from 'date-fns'
+import React from 'react'
 import renderer from 'react-test-renderer'
+
 import { LicenseExpirationAlert } from './LicenseExpirationAlert'
 
 describe('LicenseExpirationAlert.test.tsx', () => {

@@ -1,6 +1,8 @@
 import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject } from 'rxjs'
+
+import { BatchChangesIconFlushLeft } from '../../../batches/icons'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageHeader } from '../../../components/PageHeader'
 import {
@@ -9,7 +11,7 @@ import {
     Scalars,
     UserBatchChangesCodeHostsVariables,
 } from '../../../graphql-operations'
-import { BatchChangesIconFlushLeft } from '../../../batches/icons'
+
 import {
     queryUserBatchChangesCodeHosts as _queryUserBatchChangesCodeHosts,
     queryGlobalBatchChangesCodeHosts as _queryGlobalBatchChangesCodeHosts,

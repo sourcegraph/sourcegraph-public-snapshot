@@ -1,7 +1,8 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
-import { SiteInitPage } from './SiteInitPage'
 import { MemoryRouter, Redirect } from 'react-router'
+import renderer from 'react-test-renderer'
+
+import { SiteInitPage } from './SiteInitPage'
 
 describe('SiteInitPage', () => {
     const origContext = window.context

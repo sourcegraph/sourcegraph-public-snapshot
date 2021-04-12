@@ -1,10 +1,13 @@
-import React from 'react'
-import renderer from 'react-test-renderer'
-import { RegistryExtensionOverviewPage } from './RegistryExtensionOverviewPage'
-import { PageTitle } from '../../components/PageTitle'
 import { createMemoryHistory } from 'history'
+import React from 'react'
 import { Router } from 'react-router'
+import renderer from 'react-test-renderer'
+
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
+import { PageTitle } from '../../components/PageTitle'
+
+import { RegistryExtensionOverviewPage } from './RegistryExtensionOverviewPage'
 
 jest.mock('mdi-react/GithubIcon', () => 'GithubIcon')
 

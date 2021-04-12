@@ -1,5 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
+
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {

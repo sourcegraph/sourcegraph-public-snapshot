@@ -1,13 +1,14 @@
+import { Menu, MenuButton, MenuPopover, MenuPopoverProps } from '@reach/menu-button'
+import classNames from 'classnames'
 import * as H from 'history'
 import React from 'react'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import Confetti from 'react-dom-confetti'
 import { concat, of, Subject, Subscription } from 'rxjs'
 import { concatMap, delay, filter, map, pairwise, startWith, tap } from 'rxjs/operators'
+
 import { Activation, percentageDone } from './Activation'
 import { ActivationChecklist } from './ActivationChecklist'
-import { Menu, MenuButton, MenuPopover, MenuPopoverProps } from '@reach/menu-button'
-import classNames from 'classnames'
 
 export interface ActivationDropdownProps extends Pick<MenuPopoverProps, 'portal'> {
     history: H.History

@@ -4,12 +4,13 @@ import * as React from 'react'
 import { NavLink } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
-import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
-import { FilteredConnection } from '../components/FilteredConnection'
-import { parseBrowserRepoURL } from '../util/url'
-import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { requestGraphQL } from '../backend/graphql'
+
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
+import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+
+import { requestGraphQL } from '../backend/graphql'
+import { FilteredConnection } from '../components/FilteredConnection'
 import {
     Scalars,
     SymbolConnectionFields,
@@ -17,6 +18,7 @@ import {
     SymbolsResult,
     SymbolsVariables,
 } from '../graphql-operations'
+import { parseBrowserRepoURL } from '../util/url'
 
 function symbolIsActive(symbolLocation: string, currentLocation: H.Location): boolean {
     const current = parseBrowserRepoURL(H.createPath(currentLocation))

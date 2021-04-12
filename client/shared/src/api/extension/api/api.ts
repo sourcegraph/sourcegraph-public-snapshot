@@ -1,6 +1,7 @@
 import { ProxyMarked } from 'comlink'
-import { InitData } from '../extensionHost'
+
 import { FlatExtensionHostAPI } from '../../contract'
+import { InitData } from '../extensionHost'
 
 export type ExtensionHostAPIFactory = (initData: InitData) => ExtensionHostAPI
 

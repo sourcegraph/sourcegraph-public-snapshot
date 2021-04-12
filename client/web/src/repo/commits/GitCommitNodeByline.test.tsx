@@ -1,7 +1,9 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { GitCommitNodeByline } from './GitCommitNodeByline'
+
 import { SignatureFields } from '../../graphql-operations'
+
+import { GitCommitNodeByline } from './GitCommitNodeByline'
 
 const FIXTURE_SIGNATURE_1: SignatureFields = {
     date: '1990-01-01',

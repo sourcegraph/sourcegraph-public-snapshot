@@ -1,4 +1,8 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-noninteractive-element-interactions: warn */
+import * as React from 'react'
+import { useLocation } from 'react-router'
+import { Link } from 'react-router-dom'
+
 import {
     decorationAttachmentStyleForTheme,
     DecorationMapByLine,
@@ -7,10 +11,9 @@ import {
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isDefined, property } from '@sourcegraph/shared/src/util/types'
-import * as React from 'react'
-import { useLocation } from 'react-router'
-import { Link } from 'react-router-dom'
+
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
+
 import { DiffBoundary } from './DiffBoundary'
 
 const diffHunkTypeIndicators: Record<DiffHunkLineType, string> = {

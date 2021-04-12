@@ -1,4 +1,5 @@
 import * as React from 'react'
+
 import { CtaBanner } from '../../components/CtaBanner'
 
 interface Props {

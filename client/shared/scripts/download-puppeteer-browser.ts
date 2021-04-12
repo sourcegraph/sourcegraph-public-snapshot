@@ -1,5 +1,6 @@
 import puppeteer from 'puppeteer'
 import signale from 'signale'
+
 import { PUPPETEER_BROWSER_REVISION } from '../src/testing/puppeteer-browser-revision'
 
 async function main(): Promise<void> {

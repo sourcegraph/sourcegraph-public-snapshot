@@ -1,4 +1,5 @@
 import { Observable, of, throwError } from 'rxjs'
+
 import { SuccessGraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import { IQuery } from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'

@@ -1,8 +1,10 @@
+import cookies from 'js-cookie'
 import * as uuid from 'uuid'
+
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParameters } from './analyticsUtils'
 import { serverAdmin } from './services/serverAdminWrapper'
-import cookies from 'js-cookie'
 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'

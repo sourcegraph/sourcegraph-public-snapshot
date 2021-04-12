@@ -40,6 +40,9 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 		Token: someSecret,
 		Url:   "https://phabricator.biz",
 	}
+	gitoliteConfig := schema.GitoliteConnection{
+		Host: "https://gitolite.ninja",
+	}
 	perforceConfig := schema.PerforceConnection{
 		P4Passwd: someSecret,
 		P4User:   "admin",
@@ -98,6 +101,11 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			secretField: &phabricatorConfig.Token,
 		},
 		{
+			kind:      extsvc.KindGitolite,
+			config:    &gitoliteConfig,
+			editField: &gitoliteConfig.Host,
+		},
+		{
 			kind:        extsvc.KindPerforce,
 			config:      &perforceConfig,
 			editField:   &perforceConfig.P4User,
@@ -119,8 +127,11 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			}
 			old := string(buf)
 
+			var unredactedField string
 			// capture the field before redacting
-			unredactedField := *c.secretField
+			if c.secretField != nil {
+				unredactedField = *c.secretField
+			}
 
 			// first we redact the config as it was received from the DB, then write the redacted form to the user
 			svc := ExternalService{
@@ -135,12 +146,13 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			if err := zeroFields(c.config); err != nil {
 				t.Errorf("unexpected error: %s", err)
 			}
-
 			if err := json.Unmarshal([]byte(svc.Config), &c.config); err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}
-			if want, got := RedactedSecret, *c.secretField; want != got {
-				t.Errorf("want: %q, got: %q", want, got)
+			if c.secretField != nil {
+				if want, got := RedactedSecret, *c.secretField; want != got {
+					t.Errorf("want: %q, got: %q", want, got)
+				}
 			}
 
 			// now we simulate a user updating their config, and writing it back to the API containing redacted secrets
@@ -180,9 +192,11 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			if *c.editField != newValue {
 				t.Errorf("expected %s got %s", newValue, *c.editField)
 			}
-			// and the secret is no longer redacted
-			if want, got := unredactedField, *c.secretField; want != got {
-				t.Errorf("want: %q, got %q", want, got)
+			if c.secretField != nil {
+				// and the secret is no longer redacted
+				if want, got := unredactedField, *c.secretField; want != got {
+					t.Errorf("want: %q, got %q", want, got)
+				}
 			}
 		})
 	}

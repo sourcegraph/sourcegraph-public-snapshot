@@ -1,3 +1,9 @@
+import { isEqual } from 'lodash'
+import * as React from 'react'
+import { RouteComponentProps } from 'react-router'
+import { merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
+
 import { createHoverifier, HoveredToken, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -22,12 +28,8 @@ import {
     RevisionSpec,
     UIPositionSpec,
 } from '@sourcegraph/shared/src/util/url'
-import { isEqual } from 'lodash'
-import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
-import { merge, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
-import { getDocumentHighlights, getHover } from '../../backend/features'
+
+import { getHover, getDocumentHighlights } from '../../backend/features'
 import { requestGraphQL } from '../../backend/graphql'
 import { ErrorAlert } from '../../components/alerts'
 import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
@@ -46,6 +48,7 @@ import {
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
+
 import { DiffModeSelector } from './DiffModeSelector'
 
 const queryCommit = memoizeObservable(

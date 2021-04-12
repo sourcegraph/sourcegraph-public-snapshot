@@ -1,5 +1,5 @@
-import { visit, Visitors } from './visitor'
 import { parseSearchQuery, ParseSuccess, Node, OperatorKind } from './parser'
+import { visit, Visitors } from './visitor'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),

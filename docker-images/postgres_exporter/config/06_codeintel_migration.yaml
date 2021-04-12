@@ -1,0 +1,14 @@
+# In this file:
+#
+# | name                   | type    | description                                |
+# | ---------------------- | ------- | ------------------------------------------ |
+# | pg_sg_migration_status | GAUGE   | Whether the migration applied successfully |
+# |                        |         | This only applies to the code-intel db     |
+
+pg_sg_migration:
+  query: 'SELECT dirty::int as status FROM codeintel_schema_migrations'
+  master: true
+  metrics:
+    - status:
+        usage: GAUGE"
+        description: Whether the migration applied successfully

@@ -3,8 +3,10 @@ import { cloneDeep } from 'lodash'
 import React from 'react'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
+
 import { AuthenticatedUser } from '../../auth'
 import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
+
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
 import { mockCodeMonitor } from './testing/util'
 

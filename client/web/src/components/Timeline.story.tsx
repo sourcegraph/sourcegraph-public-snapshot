@@ -1,10 +1,11 @@
-import React from 'react'
 import { storiesOf } from '@storybook/react'
-import { WebStory } from './WebStory'
-import { Timeline } from './Timeline'
+import { parseISO } from 'date-fns'
 import CheckIcon from 'mdi-react/CheckIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
-import { parseISO } from 'date-fns'
+import React from 'react'
+
+import { Timeline } from './Timeline'
+import { WebStory } from './WebStory'
 
 const { add } = storiesOf('web/Timeline', module)
 

@@ -1,5 +1,6 @@
-import React from 'react'
 import classnames from 'classnames'
+import React from 'react'
+
 import { Badge, BadgeProps } from './Badge'
 
 interface FeedbackBadgeProps extends BadgeProps {

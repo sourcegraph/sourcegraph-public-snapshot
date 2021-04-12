@@ -1,9 +1,11 @@
 import { storiesOf } from '@storybook/react'
-import React from 'react'
-import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
 import { addHours } from 'date-fns'
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import React from 'react'
+
 import { ChangesetState } from '../../../../graphql-operations'
+import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+
+import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
 
 const { add } = storiesOf('web/batches/HiddenExternalChangesetNode', module).addDecorator(story => (
     <div className="p-3 container web-content batch-change-changesets__grid">{story()}</div>

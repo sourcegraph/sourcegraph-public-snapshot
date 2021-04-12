@@ -6,6 +6,9 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import GitIcon from 'mdi-react/GitIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
 import React from 'react'
+
+import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
+
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../../schema/bitbucket_cloud.schema.json'
 import bitbucketServerSchemaJSON from '../../../../../schema/bitbucket_server.schema.json'
@@ -15,9 +18,8 @@ import gitoliteSchemaJSON from '../../../../../schema/gitolite.schema.json'
 import otherExternalServiceSchemaJSON from '../../../../../schema/other_external_service.schema.json'
 import perforceSchemaJSON from '../../../../../schema/perforce.schema.json'
 import phabricatorSchemaJSON from '../../../../../schema/phabricator.schema.json'
-import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { EditorAction } from '../../site-admin/configHelpers'
 import { ExternalServiceKind } from '../../graphql-operations'
+import { EditorAction } from '../../site-admin/configHelpers'
 import { PerforceIcon } from '../PerforceIcon'
 
 /**

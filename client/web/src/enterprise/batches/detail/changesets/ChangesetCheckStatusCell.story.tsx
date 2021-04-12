@@ -1,9 +1,11 @@
 import { storiesOf } from '@storybook/react'
-import React from 'react'
-import { ChangesetCheckStatusCell } from './ChangesetCheckStatusCell'
-import { ChangesetCheckState } from '../../../../graphql-operations'
 import { capitalize } from 'lodash'
+import React from 'react'
+
+import { ChangesetCheckState } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+
+import { ChangesetCheckStatusCell } from './ChangesetCheckStatusCell'
 
 const { add } = storiesOf('web/batches/ChangesetCheckStatusCell', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>

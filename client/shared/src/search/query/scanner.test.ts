@@ -1,6 +1,7 @@
+import { SearchPatternType } from '../../graphql-operations'
+
 import { scanSearchQuery, scanBalancedLiteral, toPatternResult } from './scanner'
 import { PatternKind } from './token'
-import { SearchPatternType } from '../../graphql-operations'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value),
@@ -194,6 +195,20 @@ thing`
     test('do not interpret C-style comments', () => {
         expect(scanSearchQuery('// thing')).toMatchInlineSnapshot(
             '{"type":"success","term":[{"type":"pattern","range":{"start":0,"end":2},"kind":1,"value":"//"},{"type":"whitespace","range":{"start":2,"end":3}},{"type":"pattern","range":{"start":3,"end":8},"kind":1,"value":"thing"}]}'
+        )
+    })
+})
+
+describe('scanSearchQuery() with predicate', () => {
+    test('recognize predicate', () => {
+        expect(scanSearchQuery('repo:contains(file:README.md)')).toMatchInlineSnapshot(
+            '{"type":"success","term":[{"type":"filter","range":{"start":0,"end":29},"field":{"type":"literal","value":"repo","range":{"start":0,"end":4}},"value":{"type":"literal","value":"contains(file:README.md)","range":{"start":5,"end":29},"quoted":false},"negated":false}]}'
+        )
+    })
+
+    test('recognize multiple predicates over whitespace', () => {
+        expect(scanSearchQuery('repo:contains(file:README.md)\n\nrepo:contains.file(foo)')).toMatchInlineSnapshot(
+            '{"type":"success","term":[{"type":"filter","range":{"start":0,"end":29},"field":{"type":"literal","value":"repo","range":{"start":0,"end":4}},"value":{"type":"literal","value":"contains(file:README.md)","range":{"start":5,"end":29},"quoted":false},"negated":false},{"type":"whitespace","range":{"start":29,"end":31}},{"type":"filter","range":{"start":31,"end":54},"field":{"type":"literal","value":"repo","range":{"start":31,"end":35}},"value":{"type":"literal","value":"contains.file(foo)","range":{"start":36,"end":54},"quoted":false},"negated":false}]}'
         )
     })
 })

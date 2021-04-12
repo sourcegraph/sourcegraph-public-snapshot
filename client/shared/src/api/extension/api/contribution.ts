@@ -1,5 +1,7 @@
 import { mapValues } from 'lodash'
+
 import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '../../protocol'
+
 import { Context } from './context/context'
 import { Expression, parse, parseTemplate } from './context/expr/evaluator'
 

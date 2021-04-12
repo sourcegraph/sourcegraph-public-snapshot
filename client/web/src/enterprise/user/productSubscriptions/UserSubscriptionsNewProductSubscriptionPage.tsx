@@ -5,18 +5,21 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
+
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { mutateGraphQL } from '../../../backend/graphql'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
+import { UserAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { ProductSubscriptionForm } from './ProductSubscriptionForm'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { UserAreaUserFields } from '../../../graphql-operations'
 
 interface Props extends RouteComponentProps<{}>, ThemeProps {
     /**

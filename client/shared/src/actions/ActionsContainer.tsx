@@ -2,6 +2,7 @@ import * as H from 'history'
 import React, { useMemo } from 'react'
 import { from } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
+
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { ContributionOptions } from '../api/extension/extensionHostApi'
 import { ContributableMenu } from '../api/protocol'
@@ -10,6 +11,7 @@ import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { useObservable } from '../util/useObservable'
+
 import { ActionItem, ActionItemAction } from './ActionItem'
 
 export interface ActionsProps

@@ -1,24 +1,28 @@
 import { combineLatest, Observable, ReplaySubject } from 'rxjs'
 import { map, switchMap, take } from 'rxjs/operators'
+
 import { PrivateRepoPublicSourcegraphComError } from '@sourcegraph/shared/src/backend/errors'
+import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
 import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
 import { EMPTY_SETTINGS_CASCADE, gqlToCascade } from '@sourcegraph/shared/src/settings/settings'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 import { LocalStorageSubject } from '@sourcegraph/shared/src/util/LocalStorageSubject'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+
 import { ExtensionStorageSubject } from '../../browser-extension/web-extension-api/ExtensionStorageSubject'
 import { background } from '../../browser-extension/web-extension-api/runtime'
-import { isInPage } from '../context'
-import { CodeHost } from '../code-hosts/shared/codeHost'
-import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../util/context'
-import { createExtensionHost } from './extensionHost'
-import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
 import { requestGraphQlHelper } from '../backend/requestGraphQl'
-import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { CodeHost } from '../code-hosts/shared/codeHost'
+import { isInPage } from '../context'
+import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../util/context'
+
+import { createExtensionHost } from './extensionHost'
 import { getInlineExtensions, shouldUseInlineExtensions } from './inlineExtensionsService'
+import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
+
 export interface SourcegraphIntegrationURLs {
     /**
      * The URL of the configured Sourcegraph instance. Used for extensions, find-references, ...

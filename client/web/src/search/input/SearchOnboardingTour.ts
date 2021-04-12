@@ -6,13 +6,16 @@ import { isEqual } from 'lodash'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Shepherd from 'shepherd.js'
 import Tour from 'shepherd.js/src/types/tour'
+
 import { LANGUAGES } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+
 import { daysActiveCount } from '../../marketing/util'
 import { eventLogger } from '../../tracking/eventLogger'
 import { QueryState } from '../helpers'
+
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
 export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'

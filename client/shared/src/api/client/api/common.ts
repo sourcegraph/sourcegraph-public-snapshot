@@ -3,9 +3,10 @@ import { noop } from 'lodash'
 import { from, Observable, observable as symbolObservable, Subscription } from 'rxjs'
 import { mergeMap, finalize } from 'rxjs/operators'
 import { Subscribable } from 'sourcegraph'
+
+import { asError } from '../../../util/errors'
 import { ProxySubscribable } from '../../extension/api/common'
 import { isPromiseLike, syncRemoteSubscription } from '../../util'
-import { asError } from '../../../util/errors'
 
 // We subclass because rxjs checks instanceof Subscription.
 // By exposing a Subscription as the interface to release the proxy,

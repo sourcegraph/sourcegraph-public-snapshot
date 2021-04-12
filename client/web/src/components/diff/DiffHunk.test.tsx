@@ -1,11 +1,14 @@
+import { createMemoryHistory } from 'history'
+import React from 'react'
+import { Router } from 'react-router-dom'
+import renderer from 'react-test-renderer'
+
 import { Range } from '@sourcegraph/extension-api-classes'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-import React from 'react'
-import renderer from 'react-test-renderer'
-import { Router } from 'react-router-dom'
-import { createMemoryHistory } from 'history'
+
+import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
+
 import { DiffHunk } from './DiffHunk'
-import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
 
 describe('DiffHunk', () => {
     const history = createMemoryHistory()

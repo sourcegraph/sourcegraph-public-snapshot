@@ -1,16 +1,18 @@
+import { cleanup, fireEvent, getByTestId, getByText, render } from '@testing-library/react'
 import * as H from 'history'
 import FileIcon from 'mdi-react/FileIcon'
 import * as React from 'react'
-import { cleanup, fireEvent, getByTestId, getByText, render } from '@testing-library/react'
 import sinon from 'sinon'
-import { FileMatchChildren } from './FileMatchChildren'
-import { RepoFileLink } from './RepoFileLink'
-import { ResultContainer } from './ResultContainer'
+
 import {
     MULTIPLE_MATCH_RESULT,
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     NOOP_SETTINGS_CASCADE,
 } from '../util/searchTestHelpers'
+
+import { FileMatchChildren } from './FileMatchChildren'
+import { RepoFileLink } from './RepoFileLink'
+import { ResultContainer } from './ResultContainer'
 
 describe('ResultContainer', () => {
     afterAll(cleanup)

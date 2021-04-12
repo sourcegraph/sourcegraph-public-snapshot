@@ -113,6 +113,7 @@ exports[`GlobalNavbar default 1`] = `
       showBatchChanges={false}
       showOnboardingTour={false}
       showSearchContext={false}
+      showSearchContextManagement={false}
       telemetryService={Object {}}
       themePreference="light"
     />

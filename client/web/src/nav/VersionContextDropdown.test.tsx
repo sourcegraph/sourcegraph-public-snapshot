@@ -1,9 +1,11 @@
+import { mount } from 'enzyme'
 import * as H from 'history'
 import React from 'react'
-import { mount } from 'enzyme'
-import { VersionContextDropdown, VersionContextDropdownProps } from './VersionContextDropdown'
 import sinon from 'sinon'
+
 import { SearchPatternType } from '../graphql-operations'
+
+import { VersionContextDropdown, VersionContextDropdownProps } from './VersionContextDropdown'
 
 const commonProps: VersionContextDropdownProps = {
     setVersionContext: sinon.spy((_versionContext: string | undefined) => Promise.resolve()),
