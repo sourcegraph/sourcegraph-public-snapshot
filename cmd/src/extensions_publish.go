@@ -49,7 +49,7 @@ Notes:
 	var (
 		extensionIDFlag = flagSet.String("extension-id", "", `Override the extension ID in the manifest. (default: read from -manifest file)`)
 		urlFlag         = flagSet.String("url", "", `Override the URL for the bundle. (example: set to http://localhost:1234/myext.js for local dev with parcel)`)
-		gitHeadFlag     = flagSet.String("git-head", "", "Override the current git commit for the bundle. (default: uses `git rev-parse head`")
+		gitHeadFlag     = flagSet.String("git-head", "", "Override the current git commit for the bundle. (default: uses `git rev-parse head`)")
 		manifestFlag    = flagSet.String("manifest", "package.json", `The extension manifest file.`)
 		forceFlag       = flagSet.Bool("force", false, `Force publish the extension, even if there are validation problems or other warnings.`)
 		apiFlags        = api.NewFlags(flagSet)
