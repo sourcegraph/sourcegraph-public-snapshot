@@ -15,6 +15,7 @@
     - [Upgrading sourcegraph with an overlay](#upgrading-sourcegraph-with-an-overlay)
   - [Troubleshooting](#troubleshooting)
 
+
 ## Overlay basic principles
 
 An overlay specifies customizations for a base directory of Kubernetes manifests. The base has no knowledge of the overlay.
@@ -37,6 +38,7 @@ command is a directory containing a `kustomization.yaml` file.
 
 The second way to use overlays is with the `kustomize` tool. This does generate manifest files that are then applied
 in the conventional way using `kubectl apply -f`.
+
 
 ## Handling overlays
 
@@ -68,6 +70,7 @@ kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 Available overlays are the subdirectories of `overlays` (only give the name of the subdirectory, not the full path as an argument).
 
 You only need to apply one of the three overlays, each builds on the overlay listed before. So, for example, using the non-root overlay will also install Sourcegraph in a non-default namespace.
+
 
 # Git strategies with overlays
 
@@ -107,6 +110,7 @@ One benefit of generating manifest from base instead of modifying base directly 
 1. Open http://localhost:3080 in your browser and you will see a setup page. 
 
 1. 🎉 Congrats, you have Sourcegraph up and running! Now [configure your deployment](configure.md).
+
 
 ### Namespaced overlay
 
@@ -181,6 +185,7 @@ After executing the script you can apply the generated manifests from the genera
 
 ```kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 ```
+
 
 ### Migrate-to-nonroot overlay
 
@@ -275,6 +280,7 @@ minikube stop
 
 > error: error retrieving RESTMappings to prune: invalid resource networking.k8s.io/v1, Kind=Ingress, Namespaced=true: no matches for kind "Ingress" in version "networking.k8s.io/v1"
 
-1. See the ["Configure network access"](configure.md#configure-network-access)
-1. Check for duplicate `sourcegraph-frontend` using `kubectl get ingresses -A`
-1. Delete duplicate using `kubectl delete ingress sourcegraph-frontend -n default`
+- Make sure the client version of your kubectl matches the one used by the server. Run `kubectl version` to check.
+- See the ["Configure network access"](configure.md#configure-network-access)
+- Check for duplicate `sourcegraph-frontend` using `kubectl get ingresses -A`
+  - Delete duplicate using `kubectl delete ingress sourcegraph-frontend -n default`
