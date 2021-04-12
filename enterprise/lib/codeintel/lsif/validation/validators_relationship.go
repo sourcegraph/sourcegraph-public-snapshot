@@ -182,8 +182,8 @@ func ensureItemContains(ctx *ValidationContext) bool {
 // one next edge pointing to another result set. This ensures that ranges form a chain
 // of definition results, reference results, and monikers instead of a tree.
 func ensureUnambiguousResultSets(ctx *ValidationContext) bool {
-	nextSources := map[int][]reader2.LineContext{}
-	_ = ctx.Stasher.Edges(func(lineContext reader2.LineContext, edge reader.Edge) bool {
+	nextSources := map[int][]reader.LineContext{}
+	_ = ctx.Stasher.Edges(func(lineContext reader.LineContext, edge protocolReader.Edge) bool {
 		if lineContext.Element.Label == "next" {
 			nextSources[edge.OutV] = append(nextSources[edge.OutV], lineContext)
 			return true
