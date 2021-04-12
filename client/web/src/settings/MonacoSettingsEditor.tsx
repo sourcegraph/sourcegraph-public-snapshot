@@ -1,4 +1,5 @@
 import * as jsonc from '@sqs/jsonc-parser'
+import classNames from 'classnames'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
@@ -98,7 +99,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         return (
             <MonacoEditor
                 id={this.props.id}
-                className={this.props.className}
+                className={classNames('monaco-settings-editor', this.props.className)}
                 language={this.props.language || 'json'}
                 height={this.props.height || 400}
                 isLightTheme={this.props.isLightTheme}
@@ -110,7 +111,6 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     minimap: { enabled: false },
                     formatOnType: true,
                     formatOnPaste: true,
-                    autoIndent: 'none',
                     renderIndentGuides: false,
                     glyphMargin: false,
                     folding: false,
