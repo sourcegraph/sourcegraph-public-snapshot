@@ -1,11 +1,12 @@
+import * as H from 'history'
 import React, { useEffect } from 'react'
+
 import { PageTitle } from '../../../../components/PageTitle'
 import { Timestamp } from '../../../../components/time/Timestamp'
-import { eventLogger } from '../../../../tracking/eventLogger'
-import * as H from 'history'
+import { UserAreaUserFields } from '../../../../graphql-operations'
 import { ActionContainer } from '../../../../repo/settings/components/ActionContainer'
 import { scheduleUserPermissionsSync } from '../../../../site-admin/backend'
-import { UserAreaUserFields } from '../../../../graphql-operations'
+import { eventLogger } from '../../../../tracking/eventLogger'
 
 /**
  * The user settings permissions page.

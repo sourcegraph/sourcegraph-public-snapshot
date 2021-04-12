@@ -1,8 +1,10 @@
+import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
-import { number } from '@storybook/addon-knobs'
-import webStyles from '../../../../web/src/SourcegraphWebApp.scss'
+
 import { BrandedStory } from '../../../../branded/src/components/BrandedStory'
+import webStyles from '../../../../web/src/SourcegraphWebApp.scss'
+
 import { PageSelector } from './PageSelector'
 
 const { add } = storiesOf('wildcard/PageSelector', module).addDecorator(story => (

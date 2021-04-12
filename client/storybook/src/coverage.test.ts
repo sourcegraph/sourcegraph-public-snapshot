@@ -1,7 +1,9 @@
 import path from 'path'
 import { pathToFileURL } from 'url'
+
 import initStoryshots from '@storybook/addon-storyshots'
 import { puppeteerTest } from '@storybook/addon-storyshots-puppeteer'
+
 import { recordCoverage } from '@sourcegraph/shared/src/testing/coverage'
 
 // This test suite does not actually test anything.

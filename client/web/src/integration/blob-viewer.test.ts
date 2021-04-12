@@ -1,7 +1,16 @@
 import assert from 'assert'
-import { commonWebGraphQlResults } from './graphQlResults'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+
+import { Page } from 'puppeteer'
+import type * as sourcegraph from 'sourcegraph'
+
+import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+
+import { WebGraphQlOperations } from '../graphql-operations'
+import { Settings } from '../schema/settings.schema'
+
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
     createRepositoryRedirectResult,
@@ -10,12 +19,7 @@ import {
     createTreeEntriesResult,
     createBlobContentResult,
 } from './graphQlResponseHelpers'
-import { WebGraphQlOperations } from '../graphql-operations'
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { Settings } from '../schema/settings.schema'
-import type * as sourcegraph from 'sourcegraph'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-import { Page } from 'puppeteer'
+import { commonWebGraphQlResults } from './graphQlResults'
 
 describe('Blob viewer', () => {
     let driver: Driver

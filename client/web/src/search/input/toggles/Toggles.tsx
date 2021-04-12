@@ -1,21 +1,24 @@
-import React, { useCallback } from 'react'
-import * as H from 'history'
-import RegexIcon from 'mdi-react/RegexIcon'
 import classNames from 'classnames'
-import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
-import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../..'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { submitSearch } from '../../helpers'
-import { QueryInputToggle } from './QueryInputToggle'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import * as H from 'history'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
-import { CopyQueryButton } from './CopyQueryButton'
-import { SearchPatternType } from '../../../graphql-operations'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
+import RegexIcon from 'mdi-react/RegexIcon'
+import React, { useCallback } from 'react'
+
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../..'
+import { SearchPatternType } from '../../../graphql-operations'
 import { KEYBOARD_SHORTCUT_COPY_FULL_QUERY } from '../../../keyboardShortcuts/keyboardShortcuts'
 import { isMacPlatform } from '../../../util'
+import { submitSearch } from '../../helpers'
+
+import { CopyQueryButton } from './CopyQueryButton'
+import { QueryInputToggle } from './QueryInputToggle'
 
 export interface TogglesProps
     extends PatternTypeProps,

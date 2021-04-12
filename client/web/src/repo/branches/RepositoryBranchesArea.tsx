@@ -1,13 +1,15 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
+
+import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
+import { RepositoryFields } from '../../graphql-operations'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
+
 import { RepositoryBranchesAllPage } from './RepositoryBranchesAllPage'
 import { RepositoryBranchesNavbar } from './RepositoryBranchesNavbar'
 import { RepositoryBranchesOverviewPage } from './RepositoryBranchesOverviewPage'
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { RepositoryFields } from '../../graphql-operations'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage

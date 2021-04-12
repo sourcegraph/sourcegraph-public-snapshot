@@ -1,7 +1,8 @@
-import { Selection } from '@sourcegraph/extension-api-types'
 import { isEqual } from 'lodash'
 import { fromEvent, Observable } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
+
+import { Selection } from '@sourcegraph/extension-api-types'
 import { lprToSelectionsZeroIndexed, parseHash } from '@sourcegraph/shared/src/util/url'
 
 export function getSelectionsFromHash(): Selection[] {

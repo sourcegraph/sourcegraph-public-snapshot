@@ -2,9 +2,11 @@ import { pick } from 'lodash'
 import { from, of } from 'rxjs'
 import { switchMap, take, toArray, first } from 'rxjs/operators'
 import { ViewComponent, Window } from 'sourcegraph'
+
 import { wrapRemoteObservable } from '../client/api/common'
 import { NotificationType } from '../extension/extensionHostApi'
 import { TextDocumentData } from '../viewerTypes'
+
 import { assertToJSON, integrationTestContext } from './testHelpers'
 
 describe('Windows (integration)', () => {

@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
+
 import { LsifIndexFields, LsifUploadFields } from '../../../graphql-operations'
+
 import { CodeIntelStateIcon } from './CodeIntelStateIcon'
 import { CodeIntelStateLabel } from './CodeIntelStateLabel'
 

@@ -1,6 +1,7 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React from 'react'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 export const ExtensionsLoadingPanelView: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
     <div className="panel">

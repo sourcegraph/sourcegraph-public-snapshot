@@ -1,11 +1,13 @@
 /* eslint no-sync: warn */
 import fs from 'fs'
-import { omit } from 'lodash'
 import path from 'path'
+
+import { omit } from 'lodash'
 import shelljs from 'shelljs'
 import signale from 'signale'
 import utcVersion from 'utc-version'
 import { Stats } from 'webpack'
+
 import extensionInfo from '../src/browser-extension/manifest.spec.json'
 import schema from '../src/browser-extension/schema.json'
 

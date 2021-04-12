@@ -1,19 +1,20 @@
 import React, { FunctionComponent, useEffect, useState, useCallback } from 'react'
+
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { UserAreaUserFields, UserEmailsResult, UserEmailsVariables } from '../../../graphql-operations'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { siteFlags } from '../../../site/backend'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { eventLogger } from '../../../tracking/eventLogger'
-
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
-import { UserEmail } from './UserEmail'
+import { UserAreaUserFields, UserEmailsResult, UserEmailsVariables } from '../../../graphql-operations'
+import { siteFlags } from '../../../site/backend'
+import { eventLogger } from '../../../tracking/eventLogger'
+
 import { AddUserEmailForm } from './AddUserEmailForm'
 import { SetUserPrimaryEmailForm } from './SetUserPrimaryEmailForm'
+import { UserEmail } from './UserEmail'
 
 interface Props {
     user: UserAreaUserFields

@@ -1,6 +1,7 @@
-import React from 'react'
 import { render, RenderResult } from '@testing-library/react'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
+import React from 'react'
+
 import { PageHeader } from './PageHeader'
 
 describe('PageHeader', () => {

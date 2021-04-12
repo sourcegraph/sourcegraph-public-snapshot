@@ -1,5 +1,5 @@
-import { UserSettingsSidebarItems } from './UserSettingsSidebar'
 import { showAccountSecurityPage, showPasswordsPage, allowUserExternalServicePublic } from './cloud-ga'
+import { UserSettingsSidebarItems } from './UserSettingsSidebar'
 
 export const userSettingsSideBarItems: UserSettingsSidebarItems = {
     account: [

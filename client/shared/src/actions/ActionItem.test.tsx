@@ -1,10 +1,12 @@
 import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
+import { NEVER } from 'rxjs'
+
 import { createBarrier } from '../api/integration-test/testHelpers'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
+
 import { ActionItem } from './ActionItem'
-import { NEVER } from 'rxjs'
 
 jest.mock('mdi-react/OpenInNewIcon', () => 'OpenInNewIcon')
 

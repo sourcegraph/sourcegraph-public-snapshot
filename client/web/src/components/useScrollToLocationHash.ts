@@ -1,5 +1,6 @@
 import * as H from 'history'
 import { useEffect, useState } from 'react'
+
 import { tryCatch } from '@sourcegraph/shared/src/util/errors'
 
 /**

@@ -1,15 +1,17 @@
 import { storiesOf } from '@storybook/react'
+import { noop } from 'lodash'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 import { EMPTY, NEVER, of } from 'rxjs'
-import { noop } from 'lodash'
-import webStyles from '@sourcegraph/web/src/main.scss'
-import { Panel } from './Panel'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
+
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import webStyles from '@sourcegraph/web/src/main.scss'
+
+import { Panel } from './Panel'
 
 const panels: PanelViewData[] = [
     {

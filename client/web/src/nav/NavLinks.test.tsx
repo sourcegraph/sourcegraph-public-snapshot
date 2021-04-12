@@ -1,18 +1,21 @@
+import { render } from 'enzyme'
 import * as H from 'history'
 import { noop } from 'lodash'
 import React from 'react'
-import { render } from 'enzyme'
+import { MemoryRouter } from 'react-router'
+import { NEVER } from 'rxjs'
+
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+
+import { AuthenticatedUser } from '../auth'
+import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { ThemePreference } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
+
 import { NavLinks } from './NavLinks'
-import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { NEVER } from 'rxjs'
-import { MemoryRouter } from 'react-router'
-import { AuthenticatedUser } from '../auth'
-import { pretendRemote } from '@sourcegraph/shared/src/api/util'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 
 describe('NavLinks', () => {
     const NOOP_EXTENSIONS_CONTROLLER: ExtensionsControllerProps<

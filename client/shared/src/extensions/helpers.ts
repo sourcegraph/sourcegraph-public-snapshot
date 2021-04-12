@@ -1,10 +1,12 @@
 import { isEqual } from 'lodash'
 import { from, Observable, of, throwError } from 'rxjs'
 import { catchError, distinctUntilChanged, map, shareReplay, switchMap } from 'rxjs/operators'
+
 import { gql } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
 import { asError, createAggregateError } from '../util/errors'
+
 import { ConfiguredRegistryExtension, extensionIDsFromSettings, toConfiguredRegistryExtension } from './extension'
 
 /**

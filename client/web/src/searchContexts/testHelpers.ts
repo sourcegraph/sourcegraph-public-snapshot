@@ -1,4 +1,5 @@
 import { Observable, of } from 'rxjs'
+
 import { ISearchContext } from '../../../shared/src/graphql/schema'
 import { ListSearchContextsResult } from '../graphql-operations'
 

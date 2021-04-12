@@ -1,8 +1,10 @@
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+
 import { PageHeader } from '../../components/PageHeader'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { OrgAvatar } from '../OrgAvatar'
+
 import { OrgAreaPageProps } from './OrgArea'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {

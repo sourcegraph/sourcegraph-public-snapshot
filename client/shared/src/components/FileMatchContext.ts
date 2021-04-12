@@ -1,4 +1,5 @@
 import { flatMap } from 'lodash'
+
 import { MatchItem } from './FileMatch'
 
 /**

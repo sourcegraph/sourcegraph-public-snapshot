@@ -1,9 +1,12 @@
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { WebStory } from '../../components/WebStory'
-import { InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
+
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
+
+import { WebStory } from '../../components/WebStory'
+
+import { InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
 
 const onAlertDismissed = action('onAlertDismissed')
 

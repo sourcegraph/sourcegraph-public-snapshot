@@ -1,20 +1,23 @@
-import React, { useCallback, useEffect, useMemo } from 'react'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { ViewGrid, ViewGridProps } from '../repo/tree/ViewGrid'
-import { InsightsIcon } from './icon'
-import PlusIcon from 'mdi-react/PlusIcon'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import GearIcon from 'mdi-react/GearIcon'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { PageHeader } from '../components/PageHeader'
-import { FeedbackBadge } from '../components/FeedbackBadge'
-import { Page } from '../components/Page'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { getCombinedViews } from './backend'
+import PlusIcon from 'mdi-react/PlusIcon'
+import React, { useCallback, useEffect, useMemo } from 'react'
 import { from } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { FeedbackBadge } from '../components/FeedbackBadge'
+import { Page } from '../components/Page'
+import { PageHeader } from '../components/PageHeader'
+import { ViewGrid, ViewGridProps } from '../repo/tree/ViewGrid'
+
+import { getCombinedViews } from './backend'
+import { InsightsIcon } from './icon'
 
 interface InsightsPageProps extends ExtensionsControllerProps, Omit<ViewGridProps, 'views'>, TelemetryProps {}
 

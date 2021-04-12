@@ -1,5 +1,6 @@
-import { parseBrowserRepoURL, toTreeURL } from './url'
 import { RepoFile } from '@sourcegraph/shared/src/util/url'
+
+import { parseBrowserRepoURL, toTreeURL } from './url'
 
 /**
  * Asserts deep object equality using node's assert.deepEqual, except it (1) ignores differences in the

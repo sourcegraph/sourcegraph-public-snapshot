@@ -4,6 +4,7 @@ const log = require('fancy-log')
 const gulp = require('gulp')
 const createWebpackCompiler = require('webpack')
 const WebpackDevServer = require('webpack-dev-server')
+
 const {
   graphQlSchema,
   graphQlOperations,
@@ -12,6 +13,7 @@ const {
   watchGraphQlOperations,
   watchSchema,
 } = require('../shared/gulpfile')
+
 const webpackConfig = require('./webpack.config')
 
 const WEBPACK_STATS_OPTIONS = {

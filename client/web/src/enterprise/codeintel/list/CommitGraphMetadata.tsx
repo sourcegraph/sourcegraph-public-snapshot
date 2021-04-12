@@ -1,6 +1,7 @@
-import { default as React, FunctionComponent } from 'react'
-import { Timestamp } from '../../../components/time/Timestamp'
 import classNames from 'classnames'
+import { default as React, FunctionComponent } from 'react'
+
+import { Timestamp } from '../../../components/time/Timestamp'
 
 export interface CommitGraphMetadataProps {
     stale: boolean

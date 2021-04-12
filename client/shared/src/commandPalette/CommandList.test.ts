@@ -1,4 +1,5 @@
 import { ActionItemAction } from '../actions/ActionItem'
+
 import { filterAndRankItems } from './CommandList'
 
 describe('filterAndRankItems', () => {

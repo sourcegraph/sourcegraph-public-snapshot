@@ -2,6 +2,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import TagIcon from 'mdi-react/TagIcon'
 import React from 'react'
+
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 
 interface Props {

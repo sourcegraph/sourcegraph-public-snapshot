@@ -1,4 +1,5 @@
 import { replaceRange } from '../../util/strings'
+
 import { FilterType } from './filters'
 import { scanSearchQuery } from './scanner'
 import { Filter, Token } from './token'

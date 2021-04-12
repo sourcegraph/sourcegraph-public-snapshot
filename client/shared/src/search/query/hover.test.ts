@@ -1,7 +1,8 @@
+import { SearchPatternType } from '../../graphql-operations'
+
 import { getHoverResult } from './hover'
 import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
 import { Token } from './token'
-import { SearchPatternType } from '../../graphql-operations'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),

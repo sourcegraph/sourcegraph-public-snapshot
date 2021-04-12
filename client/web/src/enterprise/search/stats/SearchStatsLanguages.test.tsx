@@ -1,7 +1,8 @@
 import React from 'react'
-import renderer from 'react-test-renderer'
-import { SearchStatsLanguages, summarizeSearchResultsStatsLanguages } from './SearchStatsLanguages'
 import { MemoryRouter } from 'react-router'
+import renderer from 'react-test-renderer'
+
+import { SearchStatsLanguages, summarizeSearchResultsStatsLanguages } from './SearchStatsLanguages'
 
 describe('SearchStatsLanguages', () => {
     test('renders', () => {

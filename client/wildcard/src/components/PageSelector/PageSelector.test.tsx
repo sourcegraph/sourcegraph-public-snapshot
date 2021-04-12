@@ -1,7 +1,8 @@
-import React from 'react'
 import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react'
-import { PageSelector, PageSelectorProps } from './PageSelector'
+import React from 'react'
 import sinon from 'sinon'
+
+import { PageSelector, PageSelectorProps } from './PageSelector'
 
 jest.mock('use-resize-observer', () => ({
     __esModule: true,

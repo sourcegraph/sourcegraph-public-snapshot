@@ -1,5 +1,6 @@
-import { filterTypeKeysWithAliases } from './filters'
 import { SearchPatternType } from '../../graphql-operations'
+
+import { filterTypeKeysWithAliases } from './filters'
 import {
     Token,
     Whitespace,

@@ -1,12 +1,15 @@
-import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { Hover } from 'sourcegraph'
-import { HoverMerged } from '../../client/types/hover'
-import { pretendProxySubscribable, pretendRemote } from '../../util'
-import { MainThreadAPI } from '../../contract'
-import { SettingsCascade } from '../../../settings/settings'
-import { Observer, of } from 'rxjs'
 import { ProxyMarked, proxyMarker, Remote } from 'comlink'
+import { Observer, of } from 'rxjs'
+import { Hover } from 'sourcegraph'
+
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
+
+import { SettingsCascade } from '../../../settings/settings'
+import { HoverMerged } from '../../client/types/hover'
+import { MainThreadAPI } from '../../contract'
+import { pretendProxySubscribable, pretendRemote } from '../../util'
+
 import { initializeExtensionHostTest } from './test-helpers'
 
 describe('getHover from ExtensionHost API, it aims to have more e2e feel', () => {

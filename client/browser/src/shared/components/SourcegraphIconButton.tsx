@@ -1,4 +1,5 @@
 import * as React from 'react'
+
 import { SourcegraphIcon } from './SourcegraphIcon'
 
 export interface SourcegraphIconButtonProps

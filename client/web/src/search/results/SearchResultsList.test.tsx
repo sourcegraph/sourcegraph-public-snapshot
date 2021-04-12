@@ -1,10 +1,13 @@
+import { cleanup, getAllByTestId, getByTestId, queryByTestId, render } from '@testing-library/react'
 import { createBrowserHistory } from 'history'
 import { range } from 'lodash'
 import * as React from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { cleanup, getAllByTestId, getByTestId, queryByTestId, render } from '@testing-library/react'
 import _VisibilitySensor from 'react-visibility-sensor'
+import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
+
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -14,9 +17,8 @@ import {
     RESULT,
     SEARCH_REQUEST,
 } from '@sourcegraph/shared/src/util/searchTestHelpers'
+
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
-import { NEVER, of } from 'rxjs'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
 let VISIBILITY_CHANGED_CALLBACKS: ((isVisible: boolean) => void)[] = []
 

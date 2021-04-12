@@ -1,8 +1,10 @@
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
+
 import { PageHeader } from '../../components/PageHeader'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { UserAvatar } from '../UserAvatar'
+
 import { UserAreaRouteContext } from './UserArea'
 
 interface Props extends UserAreaRouteContext {

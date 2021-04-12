@@ -1,9 +1,9 @@
-import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
-import React from 'react'
-import { BatchChangeChangesets } from './BatchChangeChangesets'
+import { storiesOf } from '@storybook/react'
 import { addHours } from 'date-fns'
+import React from 'react'
 import { of } from 'rxjs'
+
 import {
     ChangesetFields,
     ChangesetCheckState,
@@ -11,8 +11,10 @@ import {
     ChangesetSpecType,
     ChangesetState,
 } from '../../../../graphql-operations'
-import { queryExternalChangesetWithFileDiffs } from '../backend'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { queryExternalChangesetWithFileDiffs } from '../backend'
+
+import { BatchChangeChangesets } from './BatchChangeChangesets'
 
 const { add } = storiesOf('web/batches/BatchChangeChangesets', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>

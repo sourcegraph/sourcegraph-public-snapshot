@@ -1,9 +1,10 @@
 import InformationIcon from 'mdi-react/InformationIcon'
 import KeyIcon from 'mdi-react/KeyIcon'
 import React, { useState, useCallback } from 'react'
+
 import { CopyableText } from '../../../components/CopyableText'
-import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
+import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 import { LicenseGenerationKeyWarning } from '../../productSubscription/LicenseGenerationKeyWarning'
 import { ProductCertificate } from '../../productSubscription/ProductCertificate'
 

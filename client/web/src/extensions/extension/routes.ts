@@ -1,4 +1,5 @@
 import { lazyComponent } from '../../util/lazyComponent'
+
 import { ExtensionAreaRoute } from './ExtensionArea'
 
 export const extensionAreaRoutes: readonly ExtensionAreaRoute[] = [

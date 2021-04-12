@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { catchError, delay, mergeMap, switchMap } from 'rxjs/operators'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { merge, Observable, of, Subject } from 'rxjs'
+import { catchError, delay, mergeMap, switchMap } from 'rxjs/operators'
+
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { ConvertVersionContextsTabProps } from './ConvertVersionContextsTab'
 
 export interface ConvertVersionContextNodeProps

@@ -1,5 +1,7 @@
 import * as React from 'react'
+
 import { InfoDropdown } from '../input/InfoDropdown'
+
 import { QueryBuilderState } from './QueryBuilder'
 
 /** An example demonstrating the capabilities of the search field. */
