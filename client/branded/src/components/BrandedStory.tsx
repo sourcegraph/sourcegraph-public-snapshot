@@ -13,10 +13,12 @@ export interface WebStoryProps extends MemoryRouterProps {
 }
 
 // Prepend global CSS styles to document head to keep them before CSS modules
-function prependCSSToDocumentHead(css: string): void {
-    const style = document.createElement('style')
-    style.textContent = css
-    document.head.prepend(style)
+function prependCSSToDocumentHead(css: string): HTMLStyleElement {
+    const styleTag = document.createElement('style')
+    styleTag.textContent = css
+    document.head.prepend(styleTag)
+
+    return styleTag
 }
 
 /**
@@ -31,7 +33,11 @@ export const BrandedStory: React.FunctionComponent<
     const isLightTheme = !useDarkMode()
 
     useEffect(() => {
-        prependCSSToDocumentHead(styles)
+        const styleTag = prependCSSToDocumentHead(styles)
+
+        return () => {
+            styleTag.remove()
+        }
     }, [styles])
 
     return (
