@@ -1,12 +1,15 @@
 import { storiesOf } from '@storybook/react'
-import React from 'react'
-import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
-import webStyles from '@sourcegraph/web/src/main.scss'
-import { BrandedStory } from '../../BrandedStory'
 import * as H from 'history'
-import { Location } from '@sourcegraph/extension-api-types'
+import React from 'react'
 import { of } from 'rxjs'
+
+import { Location } from '@sourcegraph/extension-api-types'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import webStyles from '@sourcegraph/web/src/main.scss'
+
+import { BrandedStory } from '../../BrandedStory'
+
+import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
 
 const { add } = storiesOf('branded/HierarchicalLocationsView', module).addDecorator(story => (
     <BrandedStory styles={webStyles}>{() => <div className="p-5">{story()}</div>}</BrandedStory>

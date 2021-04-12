@@ -1,8 +1,9 @@
-import { Driver } from './driver'
 import { writeFile, mkdir } from 'mz/fs'
+import pTimeout from 'p-timeout'
 import { Browser } from 'puppeteer'
 import * as uuid from 'uuid'
-import pTimeout from 'p-timeout'
+
+import { Driver } from './driver'
 
 declare global {
     interface FileCoverage {

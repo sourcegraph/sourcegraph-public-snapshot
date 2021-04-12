@@ -1,8 +1,10 @@
+import assert from 'assert'
+
 import expect from 'expect'
+import puppeteer from 'puppeteer'
+
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
-import puppeteer from 'puppeteer'
-import assert from 'assert'
 
 /**
  * Defines e2e tests for a single-file page of a code host.

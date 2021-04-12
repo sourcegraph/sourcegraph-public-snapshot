@@ -1,9 +1,11 @@
 import { storiesOf } from '@storybook/react'
-import React from 'react'
-import { ChangesetReviewStatusCell } from './ChangesetReviewStatusCell'
-import { ChangesetReviewState } from '../../../../graphql-operations'
 import { capitalize } from 'lodash'
+import React from 'react'
+
+import { ChangesetReviewState } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+
+import { ChangesetReviewStatusCell } from './ChangesetReviewStatusCell'
 
 const { add } = storiesOf('web/batches/ChangesetReviewStatusCell', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>

@@ -1,10 +1,13 @@
 import React from 'react'
+
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
+import { SourcegraphContext } from '../../../jscontext'
+
 import { ExternalAccount } from './ExternalAccount'
 import { ExternalAccountsByType, AuthProvidersByType } from './UserSettingsSecurityPage'
-import { SourcegraphContext } from '../../../jscontext'
 
 type AuthProvider = SourcegraphContext['authProviders'][0]
 type ServiceType = AuthProvider['serviceType']

@@ -4,11 +4,23 @@ import '../../shared/polyfills'
 import React, { useEffect, useState } from 'react'
 import { render } from 'react-dom'
 import { from, noop, Observable, combineLatest } from 'rxjs'
+import { catchError, map, mapTo } from 'rxjs/operators'
+import { Optional } from 'utility-types'
+
+import { AnchorLink, setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
-import { background } from '../web-extension-api/runtime'
-import { observeStorageKey, storage } from '../web-extension-api/storage'
-import { initSentry } from '../../shared/sentry'
+import { asError } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { fetchSite } from '../../shared/backend/server'
+import { isExtension } from '../../shared/context'
+import { initSentry } from '../../shared/sentry'
+import {
+    observeSourcegraphURL,
+    isFirefox,
+    getExtensionVersion,
+    DEFAULT_SOURCEGRAPH_URL,
+} from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
 import {
     OptionFlagKey,
@@ -19,21 +31,11 @@ import {
     optionFlagDefinitions,
 } from '../../shared/util/optionFlags'
 import { assertEnvironment } from '../environmentAssertion'
-import {
-    observeSourcegraphURL,
-    isFirefox,
-    getExtensionVersion,
-    DEFAULT_SOURCEGRAPH_URL,
-} from '../../shared/util/context'
-import { catchError, map, mapTo } from 'rxjs/operators'
-import { isExtension } from '../../shared/context'
-import { OptionsPage, URL_AUTH_ERROR, URL_FETCH_ERROR } from '../options-menu/OptionsPage'
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { AnchorLink, setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import { KnownCodeHost, knownCodeHosts } from '../knownCodeHosts'
-import { Optional } from 'utility-types'
+import { OptionsPage, URL_AUTH_ERROR, URL_FETCH_ERROR } from '../options-menu/OptionsPage'
 import { ThemeWrapper } from '../ThemeWrapper'
+import { background } from '../web-extension-api/runtime'
+import { observeStorageKey, storage } from '../web-extension-api/storage'
 
 interface TabStatus {
     host: string

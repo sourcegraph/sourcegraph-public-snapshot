@@ -1,4 +1,4 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import classNames from 'classnames'
 import * as H from 'history'
 import { uniq } from 'lodash'
 import * as React from 'react'
@@ -18,13 +18,15 @@ import {
     scan,
     share,
 } from 'rxjs/operators'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { ErrorMessage } from './alerts'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import classNames from 'classnames'
+
+import { ErrorMessage } from './alerts'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
 const hasID = (value: unknown): value is { id: Scalars['ID'] } =>

@@ -1,8 +1,3 @@
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
-import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
 import classNames from 'classnames'
 import CheckIcon from 'mdi-react/CheckIcon'
 import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
@@ -10,6 +5,13 @@ import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { Tooltip } from 'reactstrap'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
+
 import { SearchPatternType } from '../../../graphql-operations'
 
 interface TriggerAreaProps {
@@ -47,10 +49,13 @@ const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?
             {checked ? (
                 <CheckIcon className="trigger-area__checklist-checkbox icon-inline text-success" aria-hidden={true} />
             ) : (
-                <RadioboxBlankIcon className="trigger-area__checklist-checkbox icon-inline" aria-hidden={true} />
+                <RadioboxBlankIcon
+                    className="trigger-area__checklist-checkbox trigger-area__checklist-checkbox--unchecked icon-inline"
+                    aria-hidden={true}
+                />
             )}
 
-            <span className={checked ? 'trigger-area__checklist-children--faded' : ''}>{children}</span>
+            <small className={checked ? 'trigger-area__checklist-children--faded' : ''}>{children}</small>
 
             {hint && (
                 <>

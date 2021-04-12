@@ -13,6 +13,7 @@ import {
     take,
     toArray,
 } from 'rxjs/operators'
+
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'

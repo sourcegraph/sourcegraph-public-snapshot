@@ -1,6 +1,7 @@
 import React from 'react'
-import { DismissibleAlert } from '../../../components/DismissibleAlert'
+
 import { SourcegraphIcon } from '../../../auth/icons'
+import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
 export interface BatchChangesListIntroProps {
     licensed: boolean | undefined

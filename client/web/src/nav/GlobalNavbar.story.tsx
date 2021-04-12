@@ -1,17 +1,20 @@
-import React from 'react'
-import { createMemoryHistory } from 'history'
 import { storiesOf } from '@storybook/react'
-import { WebStory } from '../components/WebStory'
-import { GlobalNavbar } from './GlobalNavbar'
+import { createMemoryHistory } from 'history'
+import { SuiteFunction } from 'mocha'
+import React from 'react'
+
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemePreference } from '../theme'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+
+import { AuthenticatedUser } from '../auth'
+import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
-import { SuiteFunction } from 'mocha'
-import { AuthenticatedUser } from '../auth'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../searchContexts/testHelpers'
+import { ThemePreference } from '../theme'
+
+import { GlobalNavbar } from './GlobalNavbar'
 
 window.context = { assetsRoot: 'https://sourcegraph.com/.assets' } as SourcegraphContext & SuiteFunction
 

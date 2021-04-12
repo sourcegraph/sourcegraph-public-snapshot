@@ -1,5 +1,6 @@
-import React, { ReactElement } from 'react'
 import { ParentSize } from '@visx/responsive'
+import React, { ReactElement } from 'react'
+
 import { DEFAULT_LINE_STROKE } from './colors'
 import { LineChartContent, LineChartContentProps } from './components/LineChartContent'
 

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -34,14 +35,18 @@ import (
 // StreamHandler is an http handler which streams back search results.
 func StreamHandler(db dbutil.DB) http.Handler {
 	return &streamHandler{
-		db:                db,
-		newSearchResolver: defaultNewSearchResolver,
+		db:                  db,
+		newSearchResolver:   defaultNewSearchResolver,
+		flushTickerInternal: 100 * time.Millisecond,
+		pingTickerInterval:  5 * time.Second,
 	}
 }
 
 type streamHandler struct {
-	db                dbutil.DB
-	newSearchResolver func(context.Context, dbutil.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
+	db                  dbutil.DB
+	newSearchResolver   func(context.Context, dbutil.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
+	flushTickerInternal time.Duration
+	pingTickerInterval  time.Duration
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -89,19 +94,26 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	start := time.Now()
-	progress := progressAggregator{
-		Start: start,
-		Limit: inputs.MaxResults(),
-		Trace: traceURL,
-	}
-
 	// Display is the number of results we send down. If display is < 0 we
 	// want to send everything we find before hitting a limit. Otherwise we
 	// can only send up to limit results.
 	display := args.Display
-	if limit := inputs.MaxResults(); display < 0 || display > limit {
+	limit := inputs.MaxResults()
+	if display < 0 || display > limit {
 		display = limit
+	}
+
+	start := time.Now()
+
+	displayLimit := display
+	if display < 0 {
+		displayLimit = math.MaxInt32
+	}
+	progress := progressAggregator{
+		Start:        start,
+		Limit:        inputs.MaxResults(),
+		Trace:        traceURL,
+		DisplayLimit: displayLimit,
 	}
 
 	sendProgress := func() {
@@ -137,10 +149,10 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = matchesBuf.Append(m)
 	}
 
-	flushTicker := time.NewTicker(100 * time.Millisecond)
+	flushTicker := time.NewTicker(h.flushTickerInternal)
 	defer flushTicker.Stop()
 
-	pingTicker := time.NewTicker(5 * time.Second)
+	pingTicker := time.NewTicker(h.pingTickerInterval)
 	defer pingTicker.Stop()
 
 	first := true

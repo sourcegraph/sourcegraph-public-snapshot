@@ -1,20 +1,22 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import { LayoutProps } from './Layout'
-import { lazyComponent } from './util/lazyComponent'
+
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { RepogroupPage } from './repogroups/RepogroupPage'
-import { python2To3Metadata } from './repogroups/Python2To3'
-import { kubernetes } from './repogroups/Kubernetes'
-import { golang } from './repogroups/Golang'
-import { reactHooks } from './repogroups/ReactHooks'
-import { android } from './repogroups/Android'
-import { stanford } from './repogroups/Stanford'
+
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
-import { cncf } from './repogroups/cncf'
+import { LayoutProps } from './Layout'
 import { ExtensionAlertProps } from './repo/RepoContainer'
+import { android } from './repogroups/Android'
+import { cncf } from './repogroups/cncf'
+import { golang } from './repogroups/Golang'
+import { kubernetes } from './repogroups/Kubernetes'
+import { python2To3Metadata } from './repogroups/Python2To3'
+import { reactHooks } from './repogroups/ReactHooks'
+import { RepogroupPage } from './repogroups/RepogroupPage'
+import { stanford } from './repogroups/Stanford'
 import { StreamingSearchResults } from './search/results/streaming/StreamingSearchResults'
 import { isMacPlatform, UserRepositoriesUpdateProps } from './util'
+import { lazyComponent } from './util/lazyComponent'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')

@@ -8,7 +8,7 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 ## Requirements
 
-- [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users._
+- [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 1.users._
 - [Kubernetes](https://kubernetes.io/) v1.15
   - Verify that you have enough capacity by following our [resource allocation guidelines](scale.md)
   - Sourcegraph requires an SSD backed storage class
@@ -33,7 +33,6 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
       ```bash
       # 🚨 The master branch tracks development. 
       # Use the branch of this repository corresponding to the version of Sourcegraph you wish to deploy, e.g. git checkout 3.24
-
       git clone https://github.com/sourcegraph/deploy-sourcegraph
       cd deploy-sourcegraph
       SOURCEGRAPH_VERSION="v3.26.3"
@@ -48,13 +47,13 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 1. Deploy the desired version of Sourcegraph to your cluster:
 
-   ```bash
-   ./kubectl-apply-all.sh
-   ```
+  ```
+  ./kubectl-apply-all.sh
+  ```
 
 1. Monitor the status of the deployment:
 
-   ```bash
+   ```
    kubectl get pods -o wide -w
    ```
 
@@ -64,7 +63,7 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
    kubectl port-forward svc/sourcegraph-frontend 3080:30080
    ```
 
-1. Open http://localhost:3080 in your browser and you will see a setup page. 
+1. Open http://localhost:3080 in your browser and you will see a setup page.
 
 1. 🎉 Congrats, you have Sourcegraph up and running! Now [configure your deployment](configure.md).
 
@@ -87,7 +86,7 @@ See the [Troubleshooting docs](troubleshoot.md).
 
 ### Restarting
 
-Some updates, such as changing the `externalURL` for an instance, will require restarting the instance using `kubectl`. To restart, run `kubectl get pods` and then `kubectl rollout restart deployment/sourcegraph-frontend-0`, replacing `deployment/sourcegraph-frontend-0` with the pod name from the previous command. If updating the `externalURL` for the instance, only the frontend pods will need to be restarted.
+Some updates, such as changing the `externalURL` for an instance, will require restarting the instance using `kubectl`. To restart, run `kubectl get pods` and then `kubectl rollout restart deployment/sourcegraph-frontend-0`, replacing `deployment/sourcegraph-frontend-1.with the pod name from the previous command. If updating the `externalURL` for the instance, only the frontend pods will need to be restarted.
 
 ### Cluster-admin privileges
 

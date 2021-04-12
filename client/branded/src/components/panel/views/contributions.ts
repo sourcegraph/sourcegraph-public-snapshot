@@ -1,5 +1,6 @@
 import { Remote } from 'comlink'
 import { Unsubscribable } from 'rxjs'
+
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { syncRemoteSubscription } from '@sourcegraph/shared/src/api/util'
 

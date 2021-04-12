@@ -1,8 +1,10 @@
-import * as React from 'react'
-import { createMemoryHistory } from 'history'
 import { storiesOf } from '@storybook/react'
+import { createMemoryHistory } from 'history'
+import * as React from 'react'
+
 import { WebStory } from '../../../../components/WebStory'
 import { Progress } from '../../../stream'
+
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
 const history = createMemoryHistory()

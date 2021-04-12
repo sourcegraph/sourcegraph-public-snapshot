@@ -2,9 +2,11 @@ import WrapIcon from 'mdi-react/WrapIcon'
 import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
+
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { WrapDisabledIcon } from '@sourcegraph/shared/src/components/icons'
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
+
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderContext } from '../../RepoHeader'
 

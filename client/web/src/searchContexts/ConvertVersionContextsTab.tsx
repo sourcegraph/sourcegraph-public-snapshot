@@ -1,13 +1,16 @@
 import React, { useCallback, useMemo, useState } from 'react'
-import { convertVersionContextToSearchContext as _convertVersionContextToSearchContext } from '../search/backend'
-import { isSearchContextSpecAvailable as _isSearchContextSpecAvailable } from '../search'
-import { VersionContext } from '../schema/site.schema'
-import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
-import { ConvertVersionContextNode } from './ConvertVersionContextNode'
 import { concat, from, Observable, of, Subject } from 'rxjs'
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { catchError, delay, map, mergeMap, reduce, tap } from 'rxjs/operators'
+
+import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { VersionContext } from '../schema/site.schema'
+import { isSearchContextSpecAvailable as _isSearchContextSpecAvailable } from '../search'
+import { convertVersionContextToSearchContext as _convertVersionContextToSearchContext } from '../search/backend'
+
+import { ConvertVersionContextNode } from './ConvertVersionContextNode'
 
 export interface ConvertVersionContextsTabProps {
     availableVersionContexts: VersionContext[] | undefined

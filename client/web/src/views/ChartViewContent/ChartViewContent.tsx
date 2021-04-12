@@ -1,12 +1,14 @@
+import { ParentSize } from '@visx/responsive'
+import * as H from 'history'
 import React, { FunctionComponent, useMemo } from 'react'
 import { ChartContent } from 'sourcegraph'
-import * as H from 'history'
-import { ParentSize } from '@visx/responsive'
+
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { createProgrammaticLinkHandler } from '@sourcegraph/shared/src/util/link-click-handler/linkClickHandler'
+
+import { BarChart } from './charts/bar/BarChart'
 import { LineChart } from './charts/line/LineChart'
 import { PieChart } from './charts/pie/PieChart'
-import { BarChart } from './charts/bar/BarChart'
 import { DatumClickEvent } from './charts/types'
 
 /**

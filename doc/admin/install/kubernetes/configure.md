@@ -590,16 +590,20 @@ reclaimPolicy: Retain
 If you wish to use a different storage class for Sourcegraph, then you need to update all persistent volume claims with the name of the desired storage class. Convenience script:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
 
-# This script requires https://github.com/sourcegraph/jy and https://github.com/sourcegraph/yj
-STORAGE_CLASS_NAME=
+# This script requires https://github.com/mikefarah/yq v4 or greater
 
-find . -name "*PersistentVolumeClaim.yaml" -exec sh -c "cat {} | yj | jq '.spec.storageClassName = \"$STORAGE_CLASS_NAME\"' | jy -o {}" \;
+# Set SC to your storage class name
+SC=
 
-GS=base/gitserver/gitserver.StatefulSet.yaml
+PVC=()
+STS=()
+mapfile -t PVC < <(fd --absolute-path --extension yaml "PersistentVolumeClaim" base)
+mapfile -t STS < <(fd --absolute-path --extension yaml "StatefulSet" base)
 
-cat $GS | yj | jq  --arg STORAGE_CLASS_NAME $STORAGE_CLASS_NAME '.spec.volumeClaimTemplates = (.spec.volumeClaimTemplates | map( . * {spec:{storageClassName: $STORAGE_CLASS_NAME }}))' | jy -o $GS
+for p in "${PVC[@]}"; do yq eval -i ".spec.storageClassName|=\"$SC\"" "$p"; done
+for s in "${STS[@]}"; do yq eval -i ".spec.volumeClaimTemplates.[].spec.storageClassName|=\"$SC\"" "$s"; done
 ```
 
 ## Configure custom Redis

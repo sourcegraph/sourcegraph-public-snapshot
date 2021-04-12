@@ -1,8 +1,10 @@
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
-import { Toggle } from './Toggle'
+
 import webStyles from '@sourcegraph/web/src/main.scss'
+
+import { Toggle } from './Toggle'
 
 const onToggle = action('onToggle')
 

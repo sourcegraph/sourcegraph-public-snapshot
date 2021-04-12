@@ -1,5 +1,6 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
+
 import { HeroPage } from './HeroPage'
 
 export const ErrorNotSupportedPage: React.FunctionComponent = () => (

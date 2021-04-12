@@ -1,11 +1,14 @@
-import React, { useMemo } from 'react'
-import { PageTitle } from '../components/PageTitle'
 import * as H from 'history'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { ViewContentProps, ViewContent } from './ViewContent'
+import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { View } from 'sourcegraph'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { PageTitle } from '../components/PageTitle'
+
+import { ViewContentProps, ViewContent } from './ViewContent'
 
 interface Props extends Omit<ViewContentProps, 'viewContent' | 'containerClassName'> {
     viewID: string

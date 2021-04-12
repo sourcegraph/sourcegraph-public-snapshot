@@ -1,5 +1,7 @@
-import { Position } from '@sourcegraph/extension-api-types'
 import { DocumentSelector } from 'sourcegraph'
+
+import { Position } from '@sourcegraph/extension-api-types'
+
 import { TextDocumentIdentifier } from '../client/types/textDocument'
 
 /**

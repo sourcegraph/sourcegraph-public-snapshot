@@ -1,29 +1,32 @@
-import React, { FormEvent, useCallback, useEffect, useState } from 'react'
 import classNames from 'classnames'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import React, { FormEvent, useCallback, useEffect, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { PageTitle } from '../../../components/PageTitle'
-import { CheckboxRepositoryNode } from './RepositoryNode'
+
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
+import { PageSelector } from '@sourcegraph/wildcard'
+
+import {
+    queryExternalServices,
+    setExternalServiceRepos,
+    listAffiliatedRepositories,
+} from '../../../components/externalServices/backend'
+import { LoaderButton } from '../../../components/LoaderButton'
+import { PageTitle } from '../../../components/PageTitle'
 import {
     ExternalServiceKind,
     ExternalServicesResult,
     Maybe,
     AffiliatedRepositoriesResult,
 } from '../../../graphql-operations'
-import {
-    queryExternalServices,
-    setExternalServiceRepos,
-    listAffiliatedRepositories,
-} from '../../../components/externalServices/backend'
-import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
-import { LoaderButton } from '../../../components/LoaderButton'
-import { UserRepositoriesUpdateProps } from '../../../util'
 import { queryUserPublicRepositories, setUserPublicRepositories } from '../../../site-admin/backend'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { PageSelector } from '@sourcegraph/wildcard'
+import { UserRepositoriesUpdateProps } from '../../../util'
+
+import { CheckboxRepositoryNode } from './RepositoryNode'
 
 interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
     userID: string
@@ -695,27 +698,30 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 connected code hosts
                             </Link>
                         </p>
-                        <div className="alert alert-primary">
-                            Coming soon: search private repositories with Sourcegraph Cloud.{' '}
-                            <Link
-                                to="https://share.hsforms.com/1copeCYh-R8uVYGCpq3s4nw1n7ku"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                Get updated when this feature launches
-                            </Link>
-                        </div>
+                        {codeHosts.loaded && codeHosts.hosts.length !== 0 && (
+                            <div className="alert alert-primary">
+                                Coming soon: search private repositories with Sourcegraph Cloud.{' '}
+                                <Link
+                                    to="https://share.hsforms.com/1copeCYh-R8uVYGCpq3s4nw1n7ku"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Get updated when this feature launches
+                                </Link>
+                            </div>
+                        )}
+
                         {codeHosts.loaded && codeHosts.hosts.length === 0 && (
-                            <div className="alert alert-warning">
+                            <div className="alert alert-warning mb-2">
                                 <Link to={`${routingPrefix}/code-hosts`}>Connect with a code host</Link> to add your own
                                 repositories to Sourcegraph.
                             </div>
                         )}
                         {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
-                        {
+                        {codeHosts.loaded &&
+                            codeHosts.hosts.length !== 0 &&
                             // display radio button for 'all' or 'selected' repos
-                            modeSelect
-                        }
+                            modeSelect}
                         {
                             // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
                             selectionState.radio === 'selected' && (

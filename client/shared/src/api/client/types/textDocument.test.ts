@@ -1,5 +1,7 @@
-import { Position } from '@sourcegraph/extension-api-types'
 import { DocumentSelector, TextDocument } from 'sourcegraph'
+
+import { Position } from '@sourcegraph/extension-api-types'
+
 import { match, offsetToPosition, positionToOffset, score } from './textDocument'
 
 const FIXTURE_TEXT_DOCUMENT: Pick<TextDocument, 'uri' | 'languageId'> = { uri: 'file:///f', languageId: 'l' }

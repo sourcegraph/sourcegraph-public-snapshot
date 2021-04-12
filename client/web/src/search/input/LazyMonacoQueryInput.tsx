@@ -1,9 +1,11 @@
 import React, { Suspense } from 'react'
+
+import { lazyComponent } from '../../util/lazyComponent'
+import { submitSearch } from '../helpers'
+
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 import { SearchContextDropdown } from './SearchContextDropdown'
-import { lazyComponent } from '../../util/lazyComponent'
 import { Toggles } from './toggles/Toggles'
-import { submitSearch } from '../helpers'
 
 const MonacoQueryInput = lazyComponent(() => import('./MonacoQueryInput'), 'MonacoQueryInput')
 

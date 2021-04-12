@@ -1,6 +1,8 @@
 import Dialog from '@reach/dialog'
 import React from 'react'
+
 import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
+
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
 import { ModalHeader } from './ModalHeader'
 

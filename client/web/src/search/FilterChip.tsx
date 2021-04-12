@@ -1,5 +1,6 @@
 import { truncate } from 'lodash'
 import * as React from 'react'
+
 import { queryIndexOfScope } from './helpers'
 
 interface Props {

@@ -2,8 +2,11 @@ import classNames from 'classnames'
 import CalculatorIcon from 'mdi-react/CalculatorIcon'
 import ClipboardPulseOutlineIcon from 'mdi-react/ClipboardPulseOutlineIcon'
 import * as React from 'react'
+
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+
 import { Progress } from '../../../stream'
+
 import { StreamingProgressProps } from './StreamingProgress'
 
 const abbreviateNumber = (number: number): string => {

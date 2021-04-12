@@ -2,14 +2,16 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
+
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { requestGraphQL } from '../../../backend/graphql'
-import { Timestamp } from '../../../components/time/Timestamp'
-import { userURL } from '../../../user'
 import { ErrorAlert } from '../../../components/alerts'
+import { Timestamp } from '../../../components/time/Timestamp'
 import { DeleteExternalAccountResult, DeleteExternalAccountVariables, Scalars } from '../../../graphql-operations'
+import { userURL } from '../../../user'
 
 export const externalAccountFragment = gql`
     fragment ExternalAccountFields on ExternalAccount {
