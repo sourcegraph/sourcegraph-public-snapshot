@@ -1,5 +1,5 @@
 import { storiesOf } from '@storybook/react'
-import { boolean, select } from '@storybook/addon-knobs'
+import { boolean } from '@storybook/addon-knobs'
 import React from 'react'
 import { FileDiffHunks } from './FileDiffHunks'
 import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
@@ -55,11 +55,27 @@ const { add } = storiesOf('web/diffs/FileDiffHunks', module).addDecorator(story 
     <div className="p-3 container">{story()}</div>
 ))
 
-add('One diff hunk', () => (
+add('One diff unified hunk', () => (
     <WebStory>
         {webProps => (
             <FileDiffHunks
-                diffMode={select('diffMode', { split: 'split', unified: 'unified' }, 'unified')}
+                diffMode="unified"
+                {...webProps}
+                persistLines={boolean('persistLines', true)}
+                fileDiffAnchor="abc"
+                lineNumbers={boolean('lineNumbers', true)}
+                hunks={DEMO_HUNKS}
+                className="abcdef"
+            />
+        )}
+    </WebStory>
+))
+
+add('One diff split hunk', () => (
+    <WebStory>
+        {webProps => (
+            <FileDiffHunks
+                diffMode="split"
                 {...webProps}
                 persistLines={boolean('persistLines', true)}
                 fileDiffAnchor="abc"
