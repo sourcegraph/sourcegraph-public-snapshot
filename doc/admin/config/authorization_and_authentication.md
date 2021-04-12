@@ -25,7 +25,7 @@ For users using any of the other authentication mechanisms, removing `builtin` a
 
 If you use GitHub, GitLab, or Bitbucket Server, you can sync access permissions directly from the code host:
 
-- [Github](#github-enterprise-or-github-cloud-authentication-and-authorization)
+- [GitHub](#github-enterprise-or-github-cloud-authentication-and-authorization)
 - [GitLab](#gitlab-enterprise-or-gilab-cloud-authentication-and-authorization)
 - [Bitbucket Server](#bitbucket-server-authorization)
 
