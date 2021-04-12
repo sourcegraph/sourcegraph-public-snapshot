@@ -15,7 +15,7 @@ import { ChangesetStatusScheduled } from './ChangesetStatusScheduled'
 
 export interface ChangesetStatusCellProps {
     className?: string
-    id: string
+    id?: string
     state: ChangesetFields['state']
 }
 

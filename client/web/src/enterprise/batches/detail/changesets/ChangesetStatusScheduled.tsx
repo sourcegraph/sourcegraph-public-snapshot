@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import TimerOutlineIcon from 'mdi-react/TimerOutlineIcon'
 import classNames from 'classnames'
 import { getChangesetScheduleEstimate } from '../backend'
@@ -32,10 +32,22 @@ const estimateTooltip = (estimate: MemoisedEstimate) => {
 }
 
 export const ChangesetStatusScheduled: React.FunctionComponent<{
-    id: string
+    id?: string
     label?: JSX.Element
     className?: string
 }> = ({ id, label = <span>Scheduled</span>, className }) => {
+    // If there's no ID (for example, when previewing a batch change), then no
+    // dynamic behaviour is required, and we can just return a static icon and
+    // label.
+    if (!id) {
+        return (
+            <div className={classNames(iconClassNames, className)}>
+                <TimerOutlineIcon />
+                {label}
+            </div>
+        )
+    }
+
     // Calculating the estimate is just expensive enough that we don't want to
     // do it for every changeset. (If we did, we'd just request the field when
     // we make the initial GraphQL call to list the changesets.)

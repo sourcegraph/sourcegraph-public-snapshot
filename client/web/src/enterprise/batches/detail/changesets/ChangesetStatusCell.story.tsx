@@ -14,7 +14,7 @@ const { add } = storiesOf('web/batches/ChangesetStatusCell', module).addDecorato
 for (const state of Object.values(ChangesetState)) {
     add(capitalize(state), () => (
         <EnterpriseWebStory>
-            {() => <ChangesetStatusCell id="1" state={state} className="d-flex text-muted" />}
+            {() => <ChangesetStatusCell state={state} className="d-flex text-muted" />}
         </EnterpriseWebStory>
     ))
 }
