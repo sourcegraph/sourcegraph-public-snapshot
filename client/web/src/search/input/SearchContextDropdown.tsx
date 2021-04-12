@@ -131,8 +131,9 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     </div>
                     <div className="mt-2 mb-2">Search just the code you care about with search contexts.</div>
                     <div>
-                        {/* TODO */}
-                        <a href="https://docs.sourcegraph.com/">Learn more</a>
+                        <a href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts-experimental">
+                            Learn more
+                        </a>
                     </div>
                     <div className="d-flex justify-content-end">
                         <button type="button" className="btn btn-sm" onClick={closeHighlightBubble}>
