@@ -933,7 +933,7 @@ func paginatedPipelineIterator(pipelines []*gitlab.Pipeline, pageSize int) func(
 func TestGitLabSource_WithAuthenticator(t *testing.T) {
 	t.Run("supported", func(t *testing.T) {
 		var src ChangesetSource
-		src, err := newGitLabSource(nil, &schema.GitLabConnection{}, nil, nil)
+		src, err := newGitLabSource(&schema.GitLabConnection{}, nil, nil)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -957,7 +957,7 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				var src ChangesetSource
-				src, err := newGitLabSource(nil, &schema.GitLabConnection{}, nil, nil)
+				src, err := newGitLabSource(&schema.GitLabConnection{}, nil, nil)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}

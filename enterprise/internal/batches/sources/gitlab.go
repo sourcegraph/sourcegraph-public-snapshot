@@ -29,10 +29,10 @@ func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSo
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitLabSource(svc, &c, cf, nil)
+	return newGitLabSource(&c, cf, nil)
 }
 
-func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory, au auth.Authenticator) (*GitLabSource, error) {
+func newGitLabSource(c *schema.GitLabConnection, cf *httpcli.Factory, au auth.Authenticator) (*GitLabSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -68,10 +68,6 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 
 	provider := gitlab.NewClientProvider(baseURL, cli)
 	return &GitLabSource{
-		// svc:                 svc,
-		// config:              c,
-		// baseURL:             baseURL,
-		// provider:            provider,
 		au:     authr,
 		client: provider.GetAuthenticatorClient(authr),
 	}, nil

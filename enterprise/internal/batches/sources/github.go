@@ -29,17 +29,17 @@ func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSo
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(svc, &c, cf, nil)
+	return newGithubSource(&c, cf, nil)
 }
 
-func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Authenticator) (*GithubSource, error) {
+func newGithubSource(c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Authenticator) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
 	}
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 
-	apiURL /*githubDotCom*/, _ := github.APIRoot(baseURL)
+	apiURL, _ := github.APIRoot(baseURL)
 
 	if cf == nil {
 		cf = httpcli.NewExternalHTTPClientFactory()
@@ -60,17 +60,14 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 		return nil, err
 	}
 
+	var authr auth.Authenticator = au
 	if au == nil {
-		au = &auth.OAuthBearerToken{Token: c.Token}
+		authr = &auth.OAuthBearerToken{Token: c.Token}
 	}
 
 	return &GithubSource{
-		// svc:          svc,
-		// config:       c,
-		// baseURL:      baseURL,
-		// githubDotCom: githubDotCom,
-		au:     au,
-		client: github.NewV4Client(apiURL, au, cli),
+		au:     authr,
+		client: github.NewV4Client(apiURL, authr, cli),
 	}, nil
 }
 

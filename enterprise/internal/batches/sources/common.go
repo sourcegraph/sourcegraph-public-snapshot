@@ -37,6 +37,7 @@ type DraftChangesetSource interface {
 
 // A ChangesetSource can load the latest state of a list of Changesets.
 type ChangesetSource interface {
+	// CurrentAuthenticator returns the currently used authenticator.
 	CurrentAuthenticator() auth.Authenticator
 	// WithAuthenticator returns a copy of the original Source configured to use
 	// the given authenticator, provided that authenticator type is supported by

@@ -28,10 +28,10 @@ func NewBitbucketServerSource(svc *types.ExternalService, cf *httpcli.Factory) (
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newBitbucketServerSource(svc, &c, cf, nil)
+	return newBitbucketServerSource(&c, cf, nil)
 }
 
-func newBitbucketServerSource(svc *types.ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory, au auth.Authenticator) (*BitbucketServerSource, error) {
+func newBitbucketServerSource(c *schema.BitbucketServerConnection, cf *httpcli.Factory, au auth.Authenticator) (*BitbucketServerSource, error) {
 	if cf == nil {
 		cf = httpcli.NewExternalHTTPClientFactory()
 	}
@@ -56,8 +56,6 @@ func newBitbucketServerSource(svc *types.ExternalService, c *schema.BitbucketSer
 	}
 
 	return &BitbucketServerSource{
-		// svc:     svc,
-		// config:  c,
 		au:     client.Auth,
 		client: client,
 	}, nil
