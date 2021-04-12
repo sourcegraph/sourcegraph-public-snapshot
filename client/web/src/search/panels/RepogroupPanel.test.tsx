@@ -1,6 +1,8 @@
-import React from 'react'
 import { mount } from 'enzyme'
+import React from 'react'
+
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { RepogroupPanel } from './RepogroupPanel'
 
 describe('RepogroupPanel', () => {

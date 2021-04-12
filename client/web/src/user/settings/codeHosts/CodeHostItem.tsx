@@ -1,16 +1,17 @@
-import React, { useState, useCallback } from 'react'
-
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import React, { useState, useCallback } from 'react'
 import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap'
-import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
+
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
+import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
-import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { hints } from './modalHints'
-import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
 
 interface CodeHostItemProps {

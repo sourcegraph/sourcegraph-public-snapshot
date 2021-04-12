@@ -1,4 +1,5 @@
 import addons, { types } from '@storybook/addons'
+
 import { RedesignToggleStorybook } from './RedesignToggleStorybook'
 
 /**

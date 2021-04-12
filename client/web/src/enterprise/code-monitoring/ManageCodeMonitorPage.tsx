@@ -1,22 +1,25 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import React, { useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { startWith, catchError, tap } from 'rxjs/operators'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { AuthenticatedUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
 import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
-import { CodeMonitorForm } from './components/CodeMonitorForm'
+
 import {
     fetchCodeMonitor as _fetchCodeMonitor,
     updateCodeMonitor as _updateCodeMonitor,
     deleteCodeMonitor as _deleteCodeMonitor,
 } from './backend'
+import { CodeMonitorForm } from './components/CodeMonitorForm'
 
 export interface ManageCodeMonitorPageProps extends RouteComponentProps<{ id: Scalars['ID'] }> {
     authenticatedUser: AuthenticatedUser

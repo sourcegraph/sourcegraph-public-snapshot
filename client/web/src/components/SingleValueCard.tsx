@@ -1,4 +1,5 @@
 import * as React from 'react'
+
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 
 /**

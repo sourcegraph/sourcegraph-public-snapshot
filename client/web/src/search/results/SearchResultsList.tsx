@@ -1,22 +1,16 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import FileIcon from 'mdi-react/FileIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
+import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
-import {
-    parseSearchURLQuery,
-    PatternTypeProps,
-    CaseSensitivityProps,
-    ParsedSearchQueryProps,
-    SearchContextProps,
-} from '..'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
@@ -24,25 +18,34 @@ import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined, hasProperty } from '@sourcegraph/shared/src/util/types'
-import { SearchResult } from '../../components/SearchResult'
-import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { eventLogger } from '../../tracking/eventLogger'
-import { SearchResultsInfoBar } from './SearchResultsInfoBar'
-import { ErrorAlert } from '../../components/alerts'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { DeployType } from '../../jscontext'
+
+import {
+    parseSearchURLQuery,
+    PatternTypeProps,
+    CaseSensitivityProps,
+    ParsedSearchQueryProps,
+    SearchContextProps,
+} from '..'
 import { AuthenticatedUser } from '../../auth'
-import { SearchResultTypeTabs } from './SearchResultTypeTabs'
-import { QueryState } from '../helpers'
-import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
-import { SearchResultsStats } from './SearchResultsStats'
-import { SearchAlert } from './SearchAlert'
 import { CodeMonitoringProps } from '../../code-monitoring'
+import { ErrorAlert } from '../../components/alerts'
+import { SearchResult } from '../../components/SearchResult'
+import { DeployType } from '../../jscontext'
+import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
+import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
+import { eventLogger } from '../../tracking/eventLogger'
+import { QueryState } from '../helpers'
+
+import { SearchAlert } from './SearchAlert'
+import { SearchResultsInfoBar } from './SearchResultsInfoBar'
+import { SearchResultsStats } from './SearchResultsStats'
+import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 
 const isSearchResults = (value: unknown): value is GQL.ISearchResults =>
     typeof value === 'object' &&

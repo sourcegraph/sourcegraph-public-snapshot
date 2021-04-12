@@ -1,6 +1,7 @@
+import { Badged, Hover, MarkupContent, HoverAlert, AggregableBadge } from 'sourcegraph'
+
 import { MarkupKind, Range } from '@sourcegraph/extension-api-classes'
 import { Hover as PlainHover, Range as PlainRange } from '@sourcegraph/extension-api-types'
-import { Badged, Hover, MarkupContent, HoverAlert, AggregableBadge } from 'sourcegraph'
 
 /** A hover that is merged from multiple Hover results and normalized. */
 export interface HoverMerged {

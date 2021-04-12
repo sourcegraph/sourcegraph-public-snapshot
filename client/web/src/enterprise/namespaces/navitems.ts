@@ -1,5 +1,5 @@
-import { NamespaceAreaNavItem } from '../../namespaces/NamespaceArea'
 import { BatchChangesIconNamespaceNav } from '../../batches/icons'
+import { NamespaceAreaNavItem } from '../../namespaces/NamespaceArea'
 
 export const enterpriseNamespaceAreaHeaderNavItems: readonly NamespaceAreaNavItem[] = [
     {

@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import React, { FunctionComponent } from 'react'
+
 import { LSIFIndexState, LSIFUploadState } from '../../../graphql-operations'
 
 export interface CodeIntelStateLabelProps {

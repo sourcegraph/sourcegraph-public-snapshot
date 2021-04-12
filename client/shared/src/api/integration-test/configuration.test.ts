@@ -1,6 +1,8 @@
 import { BehaviorSubject, of } from 'rxjs'
+
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../settings/settings'
 import { SettingsEdit } from '../client/services/settings'
+
 import { assertToJSON, integrationTestContext } from './testHelpers'
 
 describe('Configuration (integration)', () => {

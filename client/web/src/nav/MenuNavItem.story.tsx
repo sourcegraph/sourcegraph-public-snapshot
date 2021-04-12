@@ -1,9 +1,11 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { WebStory } from '../components/WebStory'
+
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringNavItem } from '../code-monitoring/CodeMonitoringNavItem'
+import { WebStory } from '../components/WebStory'
 import { InsightsNavItem } from '../insights/InsightsNavLink'
+
 import { MenuNavItem } from './MenuNavItem'
 
 const { add } = storiesOf('web/nav/MenuNavItem', module)

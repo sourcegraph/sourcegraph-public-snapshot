@@ -1,7 +1,8 @@
-import { mkdir } from 'mz/fs'
 import * as path from 'path'
-import * as puppeteer from 'puppeteer'
+
 import { afterEach } from 'mocha'
+import { mkdir } from 'mz/fs'
+import * as puppeteer from 'puppeteer'
 
 /**
  * Registers an `afterEach` hook (for use with Mocha) that takes a screenshot of

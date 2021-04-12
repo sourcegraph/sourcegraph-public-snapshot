@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
 import * as H from 'history'
-import { ChangesetReviewState, ChangesetCheckState, ChangesetState } from '../../../../graphql-operations'
-import { isValidChangesetState, isValidChangesetReviewState, isValidChangesetCheckState } from '../../utils'
-import { ChangesetFilter } from '../../ChangesetFilter'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Form } from 'reactstrap'
+
+import { ChangesetReviewState, ChangesetCheckState, ChangesetState } from '../../../../graphql-operations'
+import { ChangesetFilter } from '../../ChangesetFilter'
+import { isValidChangesetState, isValidChangesetReviewState, isValidChangesetCheckState } from '../../utils'
 
 export interface ChangesetFilters {
     state: ChangesetState | null

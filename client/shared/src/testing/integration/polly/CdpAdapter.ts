@@ -1,9 +1,10 @@
-import { Polly, Request as PollyRequest } from '@pollyjs/core'
-import Puppeteer from 'puppeteer'
-import Protocol from 'devtools-protocol'
 import PollyAdapter from '@pollyjs/adapter'
-import { isErrorLike } from '../../../util/errors'
+import { Polly, Request as PollyRequest } from '@pollyjs/core'
+import Protocol from 'devtools-protocol'
+import Puppeteer from 'puppeteer'
 import { Observable, Subject } from 'rxjs'
+
+import { isErrorLike } from '../../../util/errors'
 
 function toBase64(input: string): string {
     return Buffer.from(input).toString('base64')

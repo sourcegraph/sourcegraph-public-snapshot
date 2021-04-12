@@ -1,8 +1,10 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { SiteAdminSidebar } from './SiteAdminSidebar'
+
 import { WebStory } from '../components/WebStory'
+
 import { siteAdminSidebarGroups } from './sidebaritems'
+import { SiteAdminSidebar } from './SiteAdminSidebar'
 
 const { add } = storiesOf('web/site-admin/AdminSidebar', module).addDecorator(story => (
     <div style={{ width: '192px' }}>{story()}</div>

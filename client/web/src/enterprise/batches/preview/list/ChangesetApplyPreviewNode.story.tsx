@@ -1,10 +1,12 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { ChangesetApplyPreviewNode } from './ChangesetApplyPreviewNode'
-import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
-import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
 import { of } from 'rxjs'
+
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+
+import { ChangesetApplyPreviewNode } from './ChangesetApplyPreviewNode'
+import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
+import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
 
 const { add } = storiesOf('web/batches/preview/ChangesetApplyPreviewNode', module).addDecorator(story => (
     <div className="p-3 container web-content preview-list__grid">{story()}</div>

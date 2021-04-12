@@ -1,5 +1,6 @@
 import React from 'react'
 import renderer, { act } from 'react-test-renderer'
+
 import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
 
 jest.mock('mdi-react/KeyIcon', () => 'KeyIcon')

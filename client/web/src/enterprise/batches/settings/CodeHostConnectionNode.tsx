@@ -1,13 +1,15 @@
-import React, { useCallback, useState } from 'react'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
+import InfoCircleIcon from 'mdi-react/InfoCircleIcon'
+import React, { useCallback, useState } from 'react'
+import { Subject } from 'rxjs'
+
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
+
 import { AddCredentialModal } from './AddCredentialModal'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
-import { Subject } from 'rxjs'
 import { ViewCredentialModal } from './ViewCredentialModal'
-import InfoCircleIcon from 'mdi-react/InfoCircleIcon'
 
 export interface CodeHostConnectionNodeProps {
     node: BatchChangesCodeHostFields

@@ -1,12 +1,13 @@
-import React from 'react'
 import classNames from 'classnames'
+import { omit } from 'lodash'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import React from 'react'
 import useResizeObserver from 'use-resize-observer'
-import { useDebounce } from '../../hooks/useDebounce'
-import { omit } from 'lodash'
-import { useOffsetPagination } from '../../hooks'
+
 import { createAggregateError } from '../../../../shared/src/util/errors'
+import { useOffsetPagination } from '../../hooks'
+import { useDebounce } from '../../hooks/useDebounce'
 
 interface PageButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     active?: boolean

@@ -1,8 +1,9 @@
-import React from 'react'
-import renderer from 'react-test-renderer'
-import { ProductSubscriptionForm } from './ProductSubscriptionForm'
 import { createMemoryHistory } from 'history'
+import React from 'react'
 import { Router } from 'react-router'
+import renderer from 'react-test-renderer'
+
+import { ProductSubscriptionForm } from './ProductSubscriptionForm'
 
 jest.mock('../../dotcom/billing/StripeWrapper', () => ({
     StripeWrapper: ({

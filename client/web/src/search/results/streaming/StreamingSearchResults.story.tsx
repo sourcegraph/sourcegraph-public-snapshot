@@ -3,19 +3,22 @@ import { createBrowserHistory } from 'history'
 import React from 'react'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
+
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { WebStory } from '../../../components/WebStory'
-import { AggregateStreamingSearchResults } from '../../stream'
-import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 import {
     extensionsController,
     HIGHLIGHTED_FILE_LINES_LONG,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULT,
 } from '@sourcegraph/shared/src/util/searchTestHelpers'
+
 import { AuthenticatedUser } from '../../../auth'
+import { WebStory } from '../../../components/WebStory'
+import { AggregateStreamingSearchResults } from '../../stream'
+
+import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 
 const history = createBrowserHistory()
 history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })

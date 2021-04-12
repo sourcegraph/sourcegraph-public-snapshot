@@ -1,6 +1,7 @@
+import BrainIcon from 'mdi-react/BrainIcon'
+
 import { RepoSettingsSideBarGroups } from '../../../repo/settings/RepoSettingsSidebar'
 import { repoSettingsSideBarGroups, settingsGroup } from '../../../repo/settings/sidebaritems'
-import BrainIcon from 'mdi-react/BrainIcon'
 
 const codeIntelSettingsGroup = {
     header: { label: 'Code intelligence', icon: BrainIcon },

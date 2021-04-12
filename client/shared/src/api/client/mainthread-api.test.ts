@@ -1,12 +1,14 @@
-import { initMainThreadAPI } from './mainthread-api'
-import { PlatformContext } from '../../platform/context'
 import { BehaviorSubject, EMPTY, of, Subject } from 'rxjs'
-import { pretendRemote } from '../util'
-import { SettingsEdit } from './services/settings'
+import sinon from 'sinon'
+
+import { SuccessGraphQLResult } from '../../graphql/graphql'
+import { PlatformContext } from '../../platform/context'
 import { SettingsCascade } from '../../settings/settings'
 import { FlatExtensionHostAPI } from '../contract'
-import sinon from 'sinon'
-import { SuccessGraphQLResult } from '../../graphql/graphql'
+import { pretendRemote } from '../util'
+
+import { initMainThreadAPI } from './mainthread-api'
+import { SettingsEdit } from './services/settings'
 
 describe('MainThreadAPI', () => {
     // TODO(tj): commands, notifications

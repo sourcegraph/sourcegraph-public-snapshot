@@ -1,15 +1,18 @@
 import { mount } from 'enzyme'
-import sinon from 'sinon'
-import React from 'react'
 import * as H from 'history'
-import { of } from 'rxjs'
-import { SearchPatternType } from '../../graphql-operations'
-import { Dropdown, DropdownItem, DropdownToggle } from 'reactstrap'
-import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
-import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
-import { mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+import React from 'react'
 import { act } from 'react-dom/test-utils'
+import { Dropdown, DropdownItem, DropdownToggle } from 'reactstrap'
+import { of } from 'rxjs'
+import sinon from 'sinon'
+
+import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
+
+import { SearchPatternType } from '../../graphql-operations'
+import { mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+
+import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
 
 const mockFetchAutoDefinedSearchContexts = () =>
     of([
@@ -26,6 +29,7 @@ const mockFetchAutoDefinedSearchContexts = () =>
 describe('SearchContextDropdown', () => {
     const defaultProps: SearchContextDropdownProps = {
         query: '',
+        showSearchContextManagement: false,
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
         defaultSearchContextSpec: '',

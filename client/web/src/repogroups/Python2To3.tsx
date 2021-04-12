@@ -1,5 +1,6 @@
-import { RepogroupMetadata } from './types'
 import { SearchPatternType } from '../graphql-operations'
+
+import { RepogroupMetadata } from './types'
 
 export const python2To3Metadata: RepogroupMetadata = {
     title: 'Refactor Python 2 to 3',

@@ -1,9 +1,11 @@
 import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { Observer, of } from 'rxjs'
+
 import { SettingsCascade } from '../../../settings/settings'
 import { MainThreadAPI } from '../../contract'
 import { pretendProxySubscribable, pretendRemote } from '../../util'
 import { FileDecorationsByPath } from '../extensionHostApi'
+
 import { initializeExtensionHostTest } from './test-helpers'
 
 describe('extensionHostAPI.getFileDecorations()', () => {

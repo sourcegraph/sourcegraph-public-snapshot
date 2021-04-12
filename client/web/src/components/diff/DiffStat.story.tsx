@@ -1,6 +1,8 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
+
 import { WebStory } from '../WebStory'
+
 import { DiffStat } from './DiffStat'
 
 const { add } = storiesOf('web/diffs/DiffStat', module).addDecorator(story => (

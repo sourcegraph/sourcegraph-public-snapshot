@@ -1,18 +1,20 @@
 import React, { useCallback, useState, useEffect } from 'react'
+
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isDefined, keyExistsIn } from '@sourcegraph/shared/src/util/types'
+
+import { ErrorAlert } from '../../../components/alerts'
+import { queryExternalServices } from '../../../components/externalServices/backend'
+import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
+import { PageTitle } from '../../../components/PageTitle'
+import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
+import { SourcegraphContext } from '../../../jscontext'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { UserRepositoriesUpdateProps } from '../../../util'
 
 import { CodeHostItem } from './CodeHostItem'
-import { PageTitle } from '../../../components/PageTitle'
-import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
-import { queryExternalServices } from '../../../components/externalServices/backend'
-import { ErrorAlert } from '../../../components/alerts'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { isDefined, keyExistsIn } from '@sourcegraph/shared/src/util/types'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
-import { SourcegraphContext } from '../../../jscontext'
-import { UserRepositoriesUpdateProps } from '../../../util'
 
 type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>

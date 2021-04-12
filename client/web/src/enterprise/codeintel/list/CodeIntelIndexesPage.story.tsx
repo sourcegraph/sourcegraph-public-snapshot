@@ -1,8 +1,10 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Observable, of } from 'rxjs'
+
 import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
 import { IndexConnection } from './backend'
 import { CodeIntelIndexesPage } from './CodeIntelIndexesPage'
 

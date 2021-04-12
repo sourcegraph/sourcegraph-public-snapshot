@@ -3,6 +3,7 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as React from 'react'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
+
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
@@ -11,10 +12,12 @@ import {
 import { RepoQuestionIcon } from '@sourcegraph/shared/src/components/icons'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { ErrorMessage } from '../components/alerts'
 import { HeroPage } from '../components/HeroPage'
+
 import { resolveRevision } from './backend'
 import { DirectImportRepoAlert } from './DirectImportRepoAlert'
-import { ErrorMessage } from '../components/alerts'
 
 export const RepositoryCloningInProgressPage: React.FunctionComponent<{ repoName: string; progress?: string }> = ({
     repoName,

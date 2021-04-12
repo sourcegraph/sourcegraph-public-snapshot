@@ -3,19 +3,21 @@
 // This mock makes it so that <VisibilitySensor /> simply becomes a <div> in the rendered output.
 jest.mock('react-visibility-sensor', () => 'VisibilitySensor')
 
-import { Location } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import { noop } from 'lodash'
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { concat, EMPTY, NEVER, of } from 'rxjs'
 import * as sinon from 'sinon'
+
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { Location } from '@sourcegraph/extension-api-types'
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+
 import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
-import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 
 jest.mock('mdi-react/SourceRepositoryIcon', () => 'SourceRepositoryIcon')
 

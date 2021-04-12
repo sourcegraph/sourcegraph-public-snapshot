@@ -3,15 +3,18 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, mergeMap, tap } from 'rxjs/operators'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
-import { CopyableText } from '../components/CopyableText'
+
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { asError } from '@sourcegraph/shared/src/util/errors'
+
+import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
+import { ErrorAlert } from '../components/alerts'
+import { CopyableText } from '../components/CopyableText'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+
 import { createUser } from './backend'
-import { ErrorAlert } from '../components/alerts'
-import { asError } from '@sourcegraph/shared/src/util/errors'
 
 interface State {
     errorDescription?: string

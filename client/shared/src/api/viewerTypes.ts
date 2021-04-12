@@ -1,5 +1,7 @@
-import { Selection } from '@sourcegraph/extension-api-types'
 import { TextDocument } from 'sourcegraph'
+
+import { Selection } from '@sourcegraph/extension-api-types'
+
 import { ExtensionCodeEditor } from './extension/api/codeEditor'
 import { ExtensionDirectoryViewer } from './extension/api/directoryViewer'
 

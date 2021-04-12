@@ -1,9 +1,11 @@
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import * as React from 'react'
-import { InfoDropdown } from '../input/InfoDropdown'
-import { QueryBuilderInputRow } from './QueryBuilderInputRow'
+
 import { PatternTypeProps } from '..'
 import { SearchPatternType } from '../../graphql-operations'
+import { InfoDropdown } from '../input/InfoDropdown'
+
+import { QueryBuilderInputRow } from './QueryBuilderInputRow'
 
 export interface QueryBuilderProps extends Pick<PatternTypeProps, 'patternType'> {
     /**

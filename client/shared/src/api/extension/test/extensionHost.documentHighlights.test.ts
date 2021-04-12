@@ -1,11 +1,14 @@
-import { DocumentHighlight } from 'sourcegraph'
-import { Range } from '@sourcegraph/extension-api-classes'
-import { pretendRemote } from '../../util'
-import { MainThreadAPI } from '../../contract'
-import { SettingsCascade } from '../../../settings/settings'
-import { BehaviorSubject, Observer } from 'rxjs'
 import { ProxyMarked, proxyMarker, Remote } from 'comlink'
+import { BehaviorSubject, Observer } from 'rxjs'
+import { DocumentHighlight } from 'sourcegraph'
+
+import { Range } from '@sourcegraph/extension-api-classes'
+
+import { SettingsCascade } from '../../../settings/settings'
+import { MainThreadAPI } from '../../contract'
+import { pretendRemote } from '../../util'
 import { proxySubscribable } from '../api/common'
+
 import { initializeExtensionHostTest } from './test-helpers'
 
 describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e feel', () => {

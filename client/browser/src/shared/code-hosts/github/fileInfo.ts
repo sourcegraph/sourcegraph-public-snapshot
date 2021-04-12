@@ -1,4 +1,5 @@
 import { BlobInfo, DiffInfo } from '../shared/codeHost'
+
 import { getCommitIDFromPermalink } from './scrape'
 import { getDiffFileName, getDiffResolvedRevision, getFilePath, parseURL } from './util'
 

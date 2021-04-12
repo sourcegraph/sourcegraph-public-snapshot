@@ -1,14 +1,16 @@
 import * as H from 'history'
 import * as React from 'react'
 import { Link, Redirect } from 'react-router-dom'
+
+import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
+import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
+
+import { SourcegraphIcon } from './icons'
 import { getReturnTo } from './SignInSignUpCommon'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
-import { AuthenticatedUser } from '../auth'
-import { SourcegraphIcon } from './icons'
-import { SourcegraphContext } from '../jscontext'
 
 interface SignUpPageProps {
     location: H.Location

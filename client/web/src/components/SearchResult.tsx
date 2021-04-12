@@ -1,12 +1,14 @@
 import { decode } from 'he'
+import * as H from 'history'
 import React from 'react'
+
+import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { SearchResultMatch } from './SearchResultMatch'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import * as H from 'history'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+
+import { SearchResultMatch } from './SearchResultMatch'
 
 interface Props extends ThemeProps {
     result: Omit<GQL.IGenericSearchResultInterface, '__typename'>

@@ -1,12 +1,15 @@
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
-import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 import { mount } from 'enzyme'
 import React, { ChangeEvent } from 'react'
 import { act } from 'react-dom/test-utils'
 import { DropdownItem, DropdownMenu, UncontrolledDropdown } from 'reactstrap'
 import { of } from 'rxjs'
 import sinon from 'sinon'
+
+import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
+
 import { ListSearchContextsResult, SearchContextFields } from '../../graphql-operations'
+
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
 const mockFetchAutoDefinedSearchContexts = () =>
@@ -61,6 +64,7 @@ const mockFetchSearchContexts = (first: number, query?: string, after?: string) 
 
 describe('SearchContextMenu', () => {
     const defaultProps: SearchContextMenuProps = {
+        showSearchContextManagement: false,
         defaultSearchContextSpec: 'global',
         selectedSearchContextSpec: 'global',
         selectSearchContextSpec: () => {},

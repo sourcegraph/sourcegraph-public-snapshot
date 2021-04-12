@@ -1,10 +1,11 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+
+import { UserEvent, EventSource, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+
 import { requestGraphQL } from '../../backend/graphql'
-import { eventLogger } from '../../tracking/eventLogger'
-import { UserEvent, EventSource, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import {
     LogEventResult,
     LogEventVariables,
@@ -17,6 +18,7 @@ import {
     CreatePasswordResult,
     CreatePasswordVariables,
 } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
 export function updatePassword(args: UpdatePasswordVariables): Observable<void> {
     return requestGraphQL<UpdatePasswordResult, UpdatePasswordVariables>(

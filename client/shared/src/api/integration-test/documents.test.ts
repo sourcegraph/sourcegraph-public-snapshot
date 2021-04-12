@@ -1,4 +1,5 @@
 import { TextDocument } from 'sourcegraph'
+
 import { assertToJSON, collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Documents (integration)', () => {

@@ -1,21 +1,24 @@
+import * as H from 'history'
+import CloseIcon from 'mdi-react/CloseIcon'
 import MessageDrawIcon from 'mdi-react/MessageDrawIcon'
 import TickIcon from 'mdi-react/TickIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import TextAreaAutosize from 'react-textarea-autosize'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
-import CloseIcon from 'mdi-react/CloseIcon'
-import * as H from 'history'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+
+import { ErrorAlert } from '../../components/alerts'
 import { LoaderButton } from '../../components/LoaderButton'
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useMutation, useRoutesMatch } from '../../hooks'
-import { IconRadioButtons } from '../IconRadioButtons'
-import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { ErrorAlert } from '../../components/alerts'
 import { LayoutRouteProps } from '../../routes'
+import { IconRadioButtons } from '../IconRadioButtons'
+
+import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
 
 export const HAPPINESS_FEEDBACK_OPTIONS = [
     {

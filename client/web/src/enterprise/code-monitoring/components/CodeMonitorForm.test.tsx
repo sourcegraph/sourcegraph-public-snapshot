@@ -1,9 +1,11 @@
-import React from 'react'
 import { mount } from 'enzyme'
 import { createMemoryHistory, createLocation } from 'history'
-import { CodeMonitorForm, CodeMonitorFormProps } from './CodeMonitorForm'
+import React from 'react'
 import { NEVER } from 'rxjs'
+
 import { AuthenticatedUser } from '../../../auth'
+
+import { CodeMonitorForm, CodeMonitorFormProps } from './CodeMonitorForm'
 
 const PROPS: CodeMonitorFormProps = {
     history: createMemoryHistory(),

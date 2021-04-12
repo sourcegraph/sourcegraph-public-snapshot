@@ -1,18 +1,21 @@
 import * as comlink from 'comlink'
-import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
+import { isMatch } from 'lodash'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
+
+import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
+
 import { EndpointPair } from '../../platform/context'
+import { SettingsCascade } from '../../settings/settings'
 import { ClientAPI } from '../client/api/api'
+import { registerComlinkTransferHandlers } from '../util'
+
+import { activateExtensions } from './activation'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { DocumentHighlightKind } from './api/documentHighlights'
-import { registerComlinkTransferHandlers } from '../util'
-import { SettingsCascade } from '../../settings/settings'
-import { isMatch } from 'lodash'
-import { createExtensionHostState, ExtensionHostState } from './extensionHostState'
-import { createExtensionHostAPI, NotificationType } from './extensionHostApi'
 import { createExtensionAPI } from './extensionApi'
-import { activateExtensions } from './activation'
+import { createExtensionHostAPI, NotificationType } from './extensionHostApi'
+import { createExtensionHostState, ExtensionHostState } from './extensionHostState'
 
 /**
  * Required information when initializing an extension host.

@@ -1,5 +1,6 @@
 import { from } from 'rxjs'
 import { first, map, switchMap } from 'rxjs/operators'
+
 import { SettingsEdit } from '../api/client/services/settings'
 import { Scalars } from '../graphql-operations'
 import { dataOrThrowErrors, gql } from '../graphql/graphql'

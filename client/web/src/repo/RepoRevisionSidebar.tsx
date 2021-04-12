@@ -4,13 +4,16 @@ import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import FileTreeIcon from 'mdi-react/FileTreeIcon'
 import React, { useCallback } from 'react'
 import { Button } from 'reactstrap'
+
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
-import { Tree } from '../tree/Tree'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+
+import { Tree } from '../tree/Tree'
+
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps {

@@ -1,13 +1,15 @@
 import * as H from 'history'
 import React from 'react'
 import renderer, { act, ReactTestRenderer } from 'react-test-renderer'
-import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { ActionsNavItems } from './ActionsNavItems'
-import { ContributableMenu } from '../api/protocol'
 import { of, NEVER } from 'rxjs'
-import { extensionsController } from '../util/searchTestHelpers'
-import { pretendProxySubscribable, pretendRemote } from '../api/util'
+
 import { FlatExtensionHostAPI } from '../api/contract'
+import { ContributableMenu } from '../api/protocol'
+import { pretendProxySubscribable, pretendRemote } from '../api/util'
+import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
+import { extensionsController } from '../util/searchTestHelpers'
+
+import { ActionsNavItems } from './ActionsNavItems'
 
 jest.mock('mdi-react/OpenInNewIcon', () => 'OpenInNewIcon')
 

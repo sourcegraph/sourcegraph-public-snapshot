@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ExtensionStatusPopover } from '@sourcegraph/shared/src/extensions/ExtensionStatus'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'

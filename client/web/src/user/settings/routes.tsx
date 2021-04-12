@@ -1,11 +1,13 @@
 import React from 'react'
+import { RouteComponentProps } from 'react-router'
+
+import { Scalars } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { lazyComponent } from '../../util/lazyComponent'
-import { UserSettingsAreaRoute, UserSettingsAreaRouteContext } from './UserSettingsArea'
-import { Scalars } from '../../graphql-operations'
-import { RouteComponentProps } from 'react-router'
-import type { UserAddCodeHostsPageContainerProps } from './UserAddCodeHostsPageContainer'
+
 import { showPasswordsPage, showAccountSecurityPage, allowUserExternalServicePublic } from './cloud-ga'
+import type { UserAddCodeHostsPageContainerProps } from './UserAddCodeHostsPageContainer'
+import { UserSettingsAreaRoute, UserSettingsAreaRouteContext } from './UserSettingsArea'
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
 

@@ -1,11 +1,13 @@
 import React from 'react'
 import { Redirect } from 'react-router'
-import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
-import { submitTrialRequest } from '../../marketing/backend'
-import { BrandLogo } from '../../components/branding/BrandLogo'
+
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
 import { AuthenticatedUser } from '../../auth'
+import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
+import { BrandLogo } from '../../components/branding/BrandLogo'
 import { SourcegraphContext } from '../../jscontext'
+import { submitTrialRequest } from '../../marketing/backend'
 
 const initSite = async (args: SignUpArguments): Promise<void> => {
     const pingUrl = new URL('https://sourcegraph.com/ping-from-self-hosted')
