@@ -3,6 +3,7 @@
 - [Site configuration](site_config.md)
 - [Code host configuration](../external_service/index.md) (GitHub, GitLab, and the [Nginx HTTP server](../http_https_configuration.md).)
 - [Search configuration](../search.md)
+- [Configuring Authorization and Authentication](./authorization_and_authentication.md)
 
 ## Common tasks
 
