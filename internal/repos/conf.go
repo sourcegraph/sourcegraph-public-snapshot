@@ -21,19 +21,3 @@ func ConfRepoConcurrentExternalServiceSyncers() int {
 	}
 	return v
 }
-
-func ConfUserReposMaxPerUser() int {
-	v := conf.Get().UserReposMaxPerUser
-	if v == 0 {
-		return 2000
-	}
-	return v
-}
-
-func ConfUserReposMaxPerSite() int {
-	v := conf.Get().UserReposMaxPerSite
-	if v == 0 {
-		return 200000
-	}
-	return v
-}
