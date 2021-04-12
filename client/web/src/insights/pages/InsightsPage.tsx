@@ -1,41 +1,29 @@
 import GearIcon from 'mdi-react/GearIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useCallback, useEffect, useMemo } from 'react'
-import { from } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import React, { useCallback, useEffect, useMemo, useContext } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { FeedbackBadge } from '../components/FeedbackBadge'
-import { Page } from '../components/Page'
-import { PageHeader } from '../components/PageHeader'
-import { ViewGrid, ViewGridProps } from '../repo/tree/ViewGrid'
-
-import { getCombinedViews } from './backend'
-import { InsightsIcon } from './icon'
-
-import { PageHeader } from '../../components/PageHeader'
 import { FeedbackBadge } from '../../components/FeedbackBadge'
 import { Page } from '../../components/Page'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { PageHeader } from '../../components/PageHeader'
 import { InsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../components'
-import { InsightsApiContext } from '../core/backend/api-provider';
+import { InsightsApiContext } from '../core/backend/api-provider'
 
 interface InsightsPageProps extends ExtensionsControllerProps, Omit<InsightsViewGridProps, 'views'>, TelemetryProps {}
 
 export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
-    const { getInsightCombinedViews } = useContext(InsightsApiContext);
+    const { getInsightCombinedViews } = useContext(InsightsApiContext)
 
     const views = useObservable(
-        useMemo(
-            () => getInsightCombinedViews(props.extensionsController?.extHostAPI),
-            [props.extensionsController, getInsightCombinedViews]
-        )
+        useMemo(() => getInsightCombinedViews(props.extensionsController?.extHostAPI), [
+            props.extensionsController,
+            getInsightCombinedViews,
+        ])
     )
 
     useEffect(() => {

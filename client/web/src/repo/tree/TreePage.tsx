@@ -42,7 +42,8 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
-import { getCombinedViews } from '../../insights/backend'
+import { InsightsApiContext } from '../../insights';
+import { InsightsViewGrid } from '../../insights/components';
 import { Settings } from '../../schema/settings.schema'
 import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../../search'
 import { basename } from '../../util/path'
@@ -52,7 +53,6 @@ import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { TreeEntriesSection } from './TreeEntriesSection'
-import { ViewGrid } from './ViewGrid'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -264,7 +264,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
         )
     )
 
-    const { getCombinedViews } = useContext(InsightsApiContext);
+    const { getCombinedViews } = useContext(InsightsApiContext)
     const views = useObservable(
         useMemo(
             () =>

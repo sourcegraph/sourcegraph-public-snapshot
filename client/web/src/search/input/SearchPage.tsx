@@ -15,6 +15,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import {
     PatternTypeProps,
     CaseSensitivityProps,
@@ -29,9 +30,9 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
-import { getCombinedViews } from '../../insights/backend'
-import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
+import { InsightsApiContext } from '../../insights';
 import { InsightsViewGrid } from '../../insights/components'
+import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { repogroupList, homepageLanguageList } from '../../repogroups/HomepageConfig'
 import { Settings } from '../../schema/settings.schema'
 import { VersionContext } from '../../schema/site.schema'
@@ -96,7 +97,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
         !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
         props.settingsCascade.final['insights.displayLocation.homepage'] !== false
 
-    const { getCombinedViews } = useContext(InsightsApiContext);
+    const { getCombinedViews } = useContext(InsightsApiContext)
     const views = useObservable(
         useMemo(
             () =>

@@ -17,7 +17,12 @@
       },
     ],
   },
-  "references": [{ "path": "../../web" },{ "path": "../../shared" }, { "path": "../../branded" }, { "path": "../../../schema" }],
+  "references": [
+    { "path": "../../web" },
+    { "path": "../../shared" },
+    { "path": "../../branded" },
+    { "path": "../../../schema" },
+  ],
   "include": ["**/*", ".*", "./src/**/*.json"],
   "exclude": ["../../node_modules", "./node_modules", "./out", "src/end-to-end", "src/regression", "src/integration"],
 }

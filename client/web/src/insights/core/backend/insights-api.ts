@@ -1,20 +1,22 @@
+import { Remote } from 'comlink'
 import { combineLatest, from, Observable, of } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
-import { asError } from '@sourcegraph/shared/out/src/util/errors'
-import { ViewProviderResult } from '@sourcegraph/shared/out/src/api/extension/extensionHostApi'
-import { createViewContent } from './utils/create-view-content';
+
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { asError } from '@sourcegraph/shared/src/util/errors'
+
 import { fetchBackendInsights } from './requests/fetch-backend-insights'
-import { ApiService, ViewInsightProviderResult, ViewInsightProviderSourceType } from './types';
-import { Remote } from 'comlink';
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/out/src/api/contract';
-import { wrapRemoteObservable } from '@sourcegraph/shared/out/src/api/client/api/common';
+import { ApiService, ViewInsightProviderResult, ViewInsightProviderSourceType } from './types'
+import { createViewContent } from './utils/create-view-content'
 
 /** Main API service to get data for code insights */
 export class InsightsAPI implements ApiService {
-
     /** Get combined (backend and extensions) code insights */
-    public getCombinedViews = (getExtensionsInsights: () => Observable<ViewProviderResult[]>): Observable<ViewInsightProviderResult[]> => {
-        return combineLatest([
+    public getCombinedViews = (
+        getExtensionsInsights: () => Observable<ViewProviderResult[]>
+    ): Observable<ViewInsightProviderResult[]> => combineLatest([
             getExtensionsInsights().pipe(
                 map(extensionInsights =>
                     extensionInsights.map(insight => ({ ...insight, source: ViewInsightProviderSourceType.Extension }))
@@ -45,15 +47,10 @@ export class InsightsAPI implements ApiService {
                 )
             ),
         ]).pipe(map(([extensionViews, backendInsights]) => [...backendInsights, ...extensionViews]))
-    }
 
-    public getInsightCombinedViews = (extensionApi: Promise<Remote<FlatExtensionHostAPI>>) => {
-        return this.getCombinedViews(
-            () =>
-                from(extensionApi).pipe(
-                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightsViews({})))
-                )
+    public getInsightCombinedViews = (extensionApi: Promise<Remote<FlatExtensionHostAPI>>) => this.getCombinedViews(() =>
+            from(extensionApi).pipe(
+                switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightsViews({})))
+            )
         )
-    }
 }
-

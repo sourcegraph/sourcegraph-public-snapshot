@@ -1,5 +1,6 @@
-import { InsightFields } from '../../../../graphql-operations';
-import { LineChartContent } from 'sourcegraph';
+import { LineChartContent } from 'sourcegraph'
+
+import { InsightFields } from '../../../../graphql-operations'
 
 export function createViewContent(
     insight: InsightFields

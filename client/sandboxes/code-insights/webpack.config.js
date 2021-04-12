@@ -1,20 +1,21 @@
-const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const ReactRefreshPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
+const path = require('path')
+
+const ReactRefreshPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
+const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
   entry: path.resolve(__dirname, './src/demo.tsx'),
   output: {
     path: path.resolve(__dirname, 'dist'), // Note: Physical files are only output by the production build task `npm run build`.
     publicPath: '/',
-    filename: '[name].bundle.js'
+    filename: '[name].bundle.js',
   },
   target: 'web', // necessary per https://webpack.github.io/docs/testing.html#compile-and-test
   mode: 'development',
   devtool: 'source-map',
   resolve: {
     alias: { react: require.resolve('react') },
-    extensions: ['.ts', '.tsx', '.js', '.jsx',]
+    extensions: ['.ts', '.tsx', '.js', '.jsx'],
   },
   module: {
     rules: [
@@ -30,17 +31,17 @@ module.exports = {
           {
             loader: 'css-loader',
           },
-          'sass-loader'
+          'sass-loader',
         ],
-      }
-    ]
+      },
+    ],
   },
   plugins: [
     new ReactRefreshPlugin({
-      overlay: false
+      overlay: false,
     }),
     new HtmlWebpackPlugin({
-      template: './src/index.html'
-    })
-  ]
-};
+      template: './src/index.html',
+    }),
+  ],
+}

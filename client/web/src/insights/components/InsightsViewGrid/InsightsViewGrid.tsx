@@ -9,10 +9,10 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { ErrorAlert } from '../../components/alerts'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
-import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../../insights/backend'
-import { ViewContent, ViewContentProps } from '../../views/ViewContent'
+import { ErrorAlert } from '../../../components/alerts'
+import { ErrorBoundary } from '../../../components/ErrorBoundary'
+import { ViewContent, ViewContentProps } from '../../../views/ViewContent'
+import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../../core/backend/types'
 
 // TODO use a method to get width that also triggers when file explorer is closed
 // (WidthProvider only listens to window resize events)
@@ -157,7 +157,9 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
                             ) : (
                                 <>
                                     <h3 className="insights-view-grid__view-title">{view.title}</h3>
-                                    {view.subtitle && <div className="insights-view-grid__view-subtitle">{view.subtitle}</div>}
+                                    {view.subtitle && (
+                                        <div className="insights-view-grid__view-subtitle">{view.subtitle}</div>
+                                    )}
                                     <ViewContent
                                         {...props}
                                         settingsCascade={props.settingsCascade}
