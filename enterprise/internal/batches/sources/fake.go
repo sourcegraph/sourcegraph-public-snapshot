@@ -36,7 +36,7 @@ func (s *fakeSourcer) ForExternalService(ctx context.Context, tx SourcerStore, o
 type FakeChangesetSource struct {
 	Svc *types.ExternalService
 
-	CurrentInternalAuthenticator auth.Authenticator
+	CurrentAuthenticator auth.Authenticator
 
 	CreateDraftChangesetCalled  bool
 	UndraftedChangesetsCalled   bool
@@ -251,11 +251,11 @@ func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *Changeset)
 }
 
 func (s *FakeChangesetSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
-	return gitserverPushConfig(repo, s.CurrentInternalAuthenticator)
+	return gitserverPushConfig(repo, s.CurrentAuthenticator)
 }
 
 func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
-	s.CurrentInternalAuthenticator = a
+	s.CurrentAuthenticator = a
 	return s, nil
 }
 
