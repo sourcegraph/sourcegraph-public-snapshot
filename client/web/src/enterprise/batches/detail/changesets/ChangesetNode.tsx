@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React from 'react'
+import React, { useEffect } from 'react'
 
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -21,6 +21,7 @@ export interface ChangesetNodeProps extends ThemeProps {
     location: H.Location
     enableSelect?: boolean
     onSelect?: (id: string, selected: boolean) => void
+    reportId?: (id: string) => void
     isSelected?: (id: string) => boolean
     extensionInfo?: {
         hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
@@ -31,7 +32,13 @@ export interface ChangesetNodeProps extends ThemeProps {
     expandByDefault?: boolean
 }
 
-export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({ node, ...props }) => {
+export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({ node, reportId, ...props }) => {
+    useEffect(() => {
+        if (reportId !== undefined) {
+            reportId(node.id)
+        }
+    }, [node.id, reportId])
+
     if (node.__typename === 'ExternalChangeset') {
         return (
             <>

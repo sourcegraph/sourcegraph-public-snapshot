@@ -1,3 +1,4 @@
+import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React from 'react'
 
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -18,7 +19,10 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
 }) => (
     <>
         <div className="row align-items-center no-gutters">
-            <div className="ml-2 col">Select changesets to detach them</div>
+            <div className="ml-2 col">
+                <InfoCircleOutlineIcon className="icon-inline text-muted mr-2" />
+                Select changesets to detach them
+            </div>
             <div className="w-100 d-block d-md-none" />
             <div className="m-0 col col-md-auto">
                 <div className="row no-gutters">

@@ -145,6 +145,7 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
             <FilteredConnection<
                 ChangesetFields,
                 Omit<ChangesetCloseNodeProps, 'node'>,
+                {},
                 (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets']
             >
                 className="mt-2"
