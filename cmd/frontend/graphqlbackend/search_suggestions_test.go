@@ -395,6 +395,7 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 	})
 
+	// TODO(rok): Move to backend integration tests once we support creating search contexts through API
 	t.Run("context: and repo: field", func(t *testing.T) {
 		var mu sync.Mutex
 
