@@ -39,6 +39,13 @@ const babelLoader = {
 
 const extensionHostWorker = /main\.worker\.ts$/
 
+/**
+ * Generates array of CSS loaders both for regular CSS and CSS modules.
+ * Useful to ensure that we use the same configuration for shared loaders: postcss-loader, sas-loader, etc.
+ *
+ * @param {import('webpack').RuleSetUseItem[]} loaders additional CSS loaders
+ * @returns {import('webpack').RuleSetUse} array of CSS loaders
+ */
 const getCSSLoaders = (...loaders) => [
   isDevelopment ? 'style-loader' : MiniCssExtractPlugin.loader,
   ...loaders,
