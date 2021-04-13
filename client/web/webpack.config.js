@@ -184,6 +184,7 @@ const config = {
       },
       {
         test: /\.(sass|scss)$/,
+        // CSS Modules loaders are only applied when the file is explicitly named as CSS module stylesheet using the extension `.module.scss`.
         include: /\.module\.(sass|scss)$/,
         use: getCSSLoaders(
           {
