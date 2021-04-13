@@ -1,6 +1,9 @@
 @import 'open-color/open-color.scss'; // Sass variables
 @import '~open-color/open-color.css'; // CSS variables
 
+// Set to true to enable theme-redesign
+$theme-redesign: true !default;
+
 // General reusable colors from our custom color palette
 
 // Gray (blueish) palette
@@ -44,9 +47,17 @@ $redesign-gray-10: #1d212f;
 $redesign-gray-11: #181b26;
 $redesign-gray-12: #14171f;
 $redesign-black: #0f111a;
-$redesign-logo-orange: #f96216;
-$redesign-logo-blue: #00b4f2;
-$redesign-logo-purple: #a305e1;
+$redesign-blue: #0b70db;
+$redesign-red: $oc-red-9;
+$redesign-pink: #d68cf3; // TODO: check
+$redesign-indigo: #0864c6; // TODO: check
+$redesign-cyan: #72dbe8;
+// These are unchanged, preserved here for simplicity
+$redesign-purple: $oc-violet-7;
+$redesign-orange: $oc-orange-7;
+$redesign-yellow: $oc-yellow-7;
+$redesign-green: $oc-green-7;
+$redesign-teal: $oc-teal-7;
 
 // Tell Bootstrap to use colors from OpenColor
 $blue: $oc-blue-7;
@@ -60,11 +71,28 @@ $green: $oc-green-7;
 $teal: $oc-teal-7;
 $cyan: $oc-cyan-3;
 
+@if $theme-redesign {
+    // Redesign Bootstrap colors. Uncomment to compile Bootstrap with redesign colors
+    $blue: $redesign-blue;
+    $indigo: $redesign-indigo;
+    $purple: $redesign-purple;
+    $pink: $redesign-pink;
+    $red: $redesign-red;
+    $orange: $redesign-orange;
+    $yellow: $redesign-yellow;
+    $green: $redesign-green;
+    $teal: $redesign-teal;
+    $cyan: $redesign-cyan;
+}
+
 // Logo colors
 $logo-orange: #f96216;
 $logo-blue: #00b4f2;
 $logo-purple: #b200f8;
+// Redesign logo color. Uncomment to compile Bootstrap with redesign colors
+// $logo-purple: $redesign-purple;
 
+// Globals
 $primary: $blue;
 $secondary: #2b3750;
 $success: $green;
@@ -74,24 +102,43 @@ $danger: $red;
 $secondary-light: darken($gray-01, 5%);
 $merged: $purple;
 
+// Redesign global colors. Uncomment to compile Bootstrap with redesign colors
+// $primary: $redesign-blue;
+// $secondary: #a305e1;
+// $success: $redesign-green;
+// $info: $redesign-cyan;
+// $warning: $redesign-yellow;
+// $danger: $redesign-red;
+// $secondary-light: darken($redesign-gray-01, 5%); // TODO: Confirm we still want this?
+// $merged: $redesign-purple;
+
 // Color for the <mark> element and highlighted/hovered tokens
 $mark-bg-dark: rgba(217, 72, 15, 0.5);
 $mark-bg-light: rgba(255, 192, 120, 0.5);
+// Redesign mark- global colors. Uncomment to compile Bootstrap with redesign colors
+// $mark-bg-light: rgba(255, 218, 30, 0.5);
+// $mark-bg-dark: rgba(16, 104, 2, 0.5);
 
 // Added to bg- and text- utilities because it is commonly needed in our app.
 $theme-colors: (
     'merged': $merged,
 );
-
 $theme-colors-light: (
     'secondary': $secondary-light,
 );
+// Update redesign bootstrap theme colors. Uncomment to compile Bootstrap with redesign colors
+// $theme-colors: (
+//     'merged': $redesign-merged,
+// );
+// $theme-colors-light: (
+//     'secondary': $redesign-secondary-light,
+// );
 
 $body-color: var(--body-color);
 $body-bg: var(--body-bg);
-
 $text-muted: var(--text-muted);
 
+/* CURRENT STYLES */
 :root {
     --primary: #{$primary};
     --secondary: #{$secondary-light};
@@ -104,6 +151,7 @@ $text-muted: var(--text-muted);
     --logo-orange: #{$logo-orange};
     --logo-blue: #{$logo-blue};
     --logo-purple: #{$logo-purple};
+    --code-bg: #{$gray-01};
 }
 .theme-light {
     // Affects default browser styles
@@ -173,6 +221,7 @@ $text-muted: var(--text-muted);
     --disabled-action-text-color: #{$oc-gray-9};
 }
 
+/* REDESIGN STYLES */
 :root.theme-redesign,
 // Descendant selector is required for Storybook `addRedesignVariants` helper.
 :root .theme-redesign {
@@ -193,6 +242,9 @@ $text-muted: var(--text-muted);
     --line-number-color: #{$redesign-gray-06};
     --header-icon-color: #{$redesign-gray-05};
     --reversed-text: #{$white};
+    --logo-orange: #{$logo-orange};
+    --logo-blue: #{$logo-blue};
+    --logo-purple: #{$logo-purple};
 }
 
 .theme-light.theme-redesign,
@@ -268,7 +320,7 @@ $text-muted: var(--text-muted);
     --search-keyword-color: var(--secondary-2);
     --infobar-warning-color: #f05151;
 
-    // TODO: Remove from use
+    // TODO: Remove from use, replace with the variables referenced here
     --link-hover-bg-color: var(--color-bg-2);
     --link-hover-bg-color-2: var(--color-bg-3);
     --disabled-action-bg-color: var(--color-bg-3);
