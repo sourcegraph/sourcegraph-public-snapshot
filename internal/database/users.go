@@ -1190,11 +1190,5 @@ func (u *UserStore) UserAllowedExternalServices(ctx context.Context, userID int3
 // It is added in the database package as putting it in the conf package led to
 // many cyclic imports.
 func (u *UserStore) CurrentUserAllowedExternalServices(ctx context.Context) (conf.ExternalServiceMode, error) {
-	siteMode := conf.ExternalServiceUserMode()
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		// No user, use site level value
-		return siteMode, nil
-	}
-	return u.UserAllowedExternalServices(ctx, a.UID)
+	return u.UserAllowedExternalServices(ctx, actor.FromContext(ctx).UID)
 }
