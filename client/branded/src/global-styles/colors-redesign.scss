@@ -80,18 +80,18 @@ $redesign-teal: $oc-teal-7;
 :root.theme-redesign,
 // Descendant selector is required for Storybook `addRedesignVariants` helper.
 :root .theme-redesign {
-    --primary: #0b70db;
-    --primary-hover: #0864c6;
+    --primary: #{$redesign-blue};
+    --primary-hover: #{$redesign-indigo};
     --secondary: #a305e1;
-    --secondary-2: #d68cf3;
-    --success: #{$oc-green-7};
+    --secondary-2: #{$redesign-pink};
+    --success: #{$redesign-green};
     --success-2: #afe0b8;
-    --info: #72dbe8;
-    --warning: #{$oc-yellow-7};
+    --info: #{$redesign-cyan};
+    --warning: #{$redesign-yellow};
     --warning-2: #fbd999;
-    --danger: #{$oc-red-9};
+    --danger: #{$redesign-red};
     --danger-2: #e9aaaa;
-    --merged: #{$oc-violet-7};
+    --merged: #{$redesign-purple};
     --merged-2: #c6b6f6;
     --merged-3: #6b47d6;
     --line-number-color: #{$redesign-gray-06};
@@ -109,19 +109,14 @@ $redesign-teal: $oc-teal-7;
     --info-2: #a8dbe2;
     --info-3: #0bb3ca;
     --warning-3: #e09200;
-
     --danger-3: #b52626;
     --body-color: #{$redesign-gray-08};
     --body-bg: #{$redesign-gray-01};
     --color-bg-1: #{$white};
     --color-bg-2: #{$redesign-gray-03};
     --color-bg-3: #{$redesign-gray-04};
-
-    // TODO: Check gradient and color
     --mark-bg: rgba(255, 218, 30, 0.5);
-
     --text-muted: #{$redesign-gray-07};
-
     --link-color: var(--primary);
     --link-active-color: #0c7bf0;
     --link-hover-color: #0c7bf0;
@@ -132,16 +127,15 @@ $redesign-teal: $oc-teal-7;
     --search-filter-keyword-color: var(--primary);
     --search-keyword-color: var(--secondary);
     --infobar-warning-color: #{$oc-red-8};
+    --icon-color: #{$redesign-gray-06};
+    --code-bg: #{$white};
+    --intel-bg: #{$white};
 
     // TODO: Remove from use
     --link-hover-bg-color: var(--color-bg-2);
     --link-hover-bg-color-2: var(--color-bg-3);
     --disabled-action-bg-color: var(--color-bg-3);
     --disabled-action-text-color: var(--text-muted);
-
-    --icon-color: #{$redesign-gray-06};
-    --code-bg: #{$white};
-    --intel-bg: #{$white};
 }
 
 .theme-dark.theme-redesign,
@@ -151,19 +145,14 @@ $redesign-teal: $oc-teal-7;
     --info-2: #99cdd6;
     --info-3: #005766;
     --warning-3: #9c6500;
-
     --danger-3: #801b1b;
     --body-color: #{$redesign-gray-04};
     --body-bg: #{$redesign-gray-12};
     --color-bg-1: #{$redesign-gray-11};
     --color-bg-2: #{$redesign-gray-10};
     --color-bg-3: #{$redesign-gray-08};
-
-    // TODO: Check gradient and color
     --mark-bg: rgba(16, 104, 2, 0.5);
-
     --text-muted: #{$redesign-gray-05};
-
     --link-color: #4393e7;
     --link-active-color: #489ffa;
     --link-hover-color: #489ffa;
@@ -174,14 +163,13 @@ $redesign-teal: $oc-teal-7;
     --search-filter-keyword-color: #4393e7;
     --search-keyword-color: var(--secondary-2);
     --infobar-warning-color: #f05151;
+    --icon-color: #{$redesign-gray-05};
+    --code-bg: #{$redesign-gray-10};
+    --intel-bg: #{$redesign-gray-12};
 
     // TODO: Remove from use, replace with the variables referenced here
     --link-hover-bg-color: var(--color-bg-2);
     --link-hover-bg-color-2: var(--color-bg-3);
     --disabled-action-bg-color: var(--color-bg-3);
     --disabled-action-text-color: var(--text-muted);
-
-    --icon-color: #{$redesign-gray-05};
-    --code-bg: #{$redesign-gray-10};
-    --intel-bg: #{$redesign-gray-12};
 }
