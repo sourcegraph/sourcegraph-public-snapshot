@@ -64,7 +64,7 @@ To use this approach, colocate a SCSS stylesheet with the React component and us
 Example:
 
 - `PageSelector.tsx` component would have `PageSelector.module.scss` file next to it.
-- Webpack will generate a Typescript type declaration file: `PageSelector.module.scss.d.ts` in the same folder.
+- Use `yarn watch-generate` to generate a Typescript type declaration file: `PageSelector.module.scss.d.ts` in the same folder.
 - After that, it's possible to type-safely use class names from the CSS module.
 
 ```tsx
