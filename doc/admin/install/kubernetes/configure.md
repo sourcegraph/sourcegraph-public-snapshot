@@ -273,7 +273,7 @@ spec:
 
 
 
-1. Apply setting to all using `kubectl apply -f .`
+1. Apply setting to all using `kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive`
 
 1. Run `kubectl get pods -A` to check for the namespaces and their status --it should now be up and running 🎉
 
