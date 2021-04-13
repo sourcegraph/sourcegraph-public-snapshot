@@ -1,7 +1,7 @@
 import * as H from 'history'
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { Subject } from 'rxjs'
-import { repeatWhen, delay, withLatestFrom, map, filter } from 'rxjs/operators'
+import { repeatWhen, delay, withLatestFrom, map, filter, tap } from 'rxjs/operators'
 
 import { createHoverifier } from '@sourcegraph/codeintellify'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -75,12 +75,6 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     enableSelect,
 }) => {
     const [availableChangesets, setAvailableChangesets] = useState<Set<string>>(new Set())
-    const reportId = useCallback(
-        (id: string): void => {
-            setAvailableChangesets(previous => new Set(previous).add(id))
-        },
-        [setAvailableChangesets]
-    )
 
     const [selectedChangesets, setSelectedChangesets] = useState<Set<string>>(new Set())
     const onSelect = useCallback(
@@ -98,14 +92,14 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
         [setSelectedChangesets]
     )
 
+    const changesetSelected = useCallback((id: string): boolean => selectedChangesets.has(id), [selectedChangesets])
+    const [allSelected, setAllSelected] = useState<boolean>(false)
+
     const deselectAll = useCallback((): void => setSelectedChangesets(new Set()), [setSelectedChangesets])
     const selectAll = useCallback((): void => setSelectedChangesets(availableChangesets), [
         availableChangesets,
         setSelectedChangesets,
     ])
-
-    const changesetSelected = useCallback((id: string): boolean => selectedChangesets.has(id), [selectedChangesets])
-    const [allSelected, setAllSelected] = useState<boolean>(false)
 
     const toggleSelectAll = useCallback((): void => {
         setAllSelected(previous => !previous)
@@ -131,15 +125,13 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
         setIsSubmittingSelected(true)
         try {
             await detachChangesets(batchChangeID, [...selectedChangesets])
-            for (const id of selectedChangesets) {
-                availableChangesets.delete(id)
-            }
             deselectAll()
+            setAllSelected(false)
             telemetryService.logViewEvent('BatchChangeDetailsPageDetachArchivedChangesets')
         } catch (error) {
             setIsSubmittingSelected(asError(error))
         }
-    }, [batchChangeID, availableChangesets, selectedChangesets, setIsSubmittingSelected, deselectAll, telemetryService])
+    }, [batchChangeID, selectedChangesets, setIsSubmittingSelected, deselectAll, setAllSelected, telemetryService])
 
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
@@ -151,6 +143,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     const setChangesetFiltersAndDeselectAll = useCallback(
         (filters: ChangesetFilters) => {
             deselectAll()
+            setAllSelected(false)
             setChangesetFilters(filters)
         },
         [deselectAll, setChangesetFilters]
@@ -168,7 +161,9 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                 onlyPublishedByThisBatchChange: null,
                 search: changesetFilters.search,
                 onlyArchived: !!onlyArchived,
-            }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
+            })
+                .pipe(tap(data => setAvailableChangesets(new Set(data.nodes.map(node => node.id)))))
+                .pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
         [
             batchChangeID,
             changesetFilters.state,
@@ -265,7 +260,6 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                         enableSelect,
                         onSelect,
                         isSelected: changesetSelected,
-                        reportId,
                     }}
                     queryConnection={queryChangesetsConnection}
                     hideSearch={true}
