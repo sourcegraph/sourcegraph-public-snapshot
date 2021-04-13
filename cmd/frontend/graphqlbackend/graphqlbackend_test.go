@@ -112,8 +112,8 @@ func TestMain(m *testing.M) {
 
 func TestAffiliatedRepositories(t *testing.T) {
 	resetMocks()
-	database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]struct{}, error) {
-		return map[string]struct{}{}, nil
+	database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
+		return map[string]bool{}, nil
 	}
 	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		return []*types.ExternalService{

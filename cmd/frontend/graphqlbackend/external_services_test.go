@@ -39,8 +39,8 @@ func TestAddExternalService(t *testing.T) {
 		}()
 
 		t.Run("user mode not enabled and no namespace", func(t *testing.T) {
-			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]struct{}, error) {
-				return map[string]struct{}{}, nil
+			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
+				return map[string]bool{}, nil
 			}
 			defer func() {
 				database.Mocks.Users.Tags = nil
@@ -57,8 +57,8 @@ func TestAddExternalService(t *testing.T) {
 		})
 
 		t.Run("user mode not enabled and has namespace", func(t *testing.T) {
-			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]struct{}, error) {
-				return map[string]struct{}{}, nil
+			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
+				return map[string]bool{}, nil
 			}
 			defer func() {
 				database.Mocks.Users.Tags = nil
@@ -90,8 +90,8 @@ func TestAddExternalService(t *testing.T) {
 			})
 			defer conf.Mock(nil)
 
-			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]struct{}, error) {
-				return map[string]struct{}{}, nil
+			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
+				return map[string]bool{}, nil
 			}
 			defer func() {
 				database.Mocks.Users.Tags = nil
@@ -123,8 +123,8 @@ func TestAddExternalService(t *testing.T) {
 			})
 			defer conf.Mock(nil)
 
-			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]struct{}, error) {
-				return map[string]struct{}{}, nil
+			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
+				return map[string]bool{}, nil
 			}
 			defer func() {
 				database.Mocks.Users.Tags = nil
@@ -166,9 +166,9 @@ func TestAddExternalService(t *testing.T) {
 			})
 			defer conf.Mock(nil)
 
-			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]struct{}, error) {
-				return map[string]struct{}{
-					database.TagAllowUserExternalServicePublic: {},
+			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
+				return map[string]bool{
+					database.TagAllowUserExternalServicePublic: true,
 				}, nil
 			}
 			defer func() {

@@ -1130,7 +1130,7 @@ func (u *UserStore) HasTag(ctx context.Context, userID int32, tag string) (bool,
 }
 
 // Tags returns a map with all the tags currently belonging to the user.
-func (u *UserStore) Tags(ctx context.Context, userID int32) (map[string]struct{}, error) {
+func (u *UserStore) Tags(ctx context.Context, userID int32) (map[string]bool, error) {
 	if Mocks.Users.Tags != nil {
 		return Mocks.Users.Tags(ctx, userID)
 	}
@@ -1145,9 +1145,9 @@ func (u *UserStore) Tags(ctx context.Context, userID int32) (map[string]struct{}
 		return nil, err
 	}
 
-	tagMap := make(map[string]struct{}, len(tags))
+	tagMap := make(map[string]bool, len(tags))
 	for _, t := range tags {
-		tagMap[t] = struct{}{}
+		tagMap[t] = true
 	}
 	return tagMap, nil
 }
@@ -1173,10 +1173,10 @@ func (u *UserStore) UserAllowedExternalServices(ctx context.Context, userID int3
 	}
 
 	// The user may have a tag that opts them in
-	if _, ok := tags[TagAllowUserExternalServicePrivate]; ok {
+	if tags[TagAllowUserExternalServicePrivate] {
 		return conf.ExternalServiceModeAll, nil
 	}
-	if _, ok := tags[TagAllowUserExternalServicePublic]; ok {
+	if tags[TagAllowUserExternalServicePublic] {
 		return conf.ExternalServiceModePublic, nil
 	}
 
