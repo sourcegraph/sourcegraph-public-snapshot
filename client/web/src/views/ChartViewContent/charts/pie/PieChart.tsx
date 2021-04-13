@@ -79,7 +79,7 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
 
     return (
         /* eslint-disable react/jsx-no-bind */
-        <svg className="pie-chart" width={width} height={height}>
+        <svg aria-label="Pie chart" className="pie-chart" width={width} height={height}>
             <Group top={centerY + padding.top} left={centerX + padding.left}>
                 <Pie
                     data={sortedData}
@@ -102,6 +102,7 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
                                         key={getKey(arc)}
                                         to={getLink(arc)}
                                         className="pie-chart__link"
+                                        role={getLink(arc) ? 'link' : 'graphics-dataunit'}
                                         onClick={onDatumLinkClick}
                                     >
                                         <PieArc

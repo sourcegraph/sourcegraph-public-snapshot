@@ -99,20 +99,58 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
 
     return (
         <div className="bar-chart">
-            <svg width={width} height={height}>
+            <svg aria-label="Bar chart" width={width} height={height}>
                 <Group left={DEFAULT_PADDING.left} top={DEFAULT_PADDING.top}>
-                    <GridRows scale={yScale} width={innerWidth} height={innerHeight} className="bar-chart__grid" />
+                    <Group aria-label="Chart axes">
+                        {/* eslint-disable-next-line jsx-a11y/aria-role */}
+                        <Group role="graphics-axis" aria-label="X axis" aria-orientation="horizontal">
+                            <AxisBottom
+                                top={innerHeight}
+                                scale={xScale}
+                                tickFormat={formatXLabel}
+                                axisClassName="bar-chart__axis"
+                                axisLineClassName="bar-chart__axis-line"
+                                tickClassName="bar-chart__axis-tick"
+                            />
+                        </Group>
 
-                    {data.map((datum, index) => {
-                        const barHeight = innerHeight - (yScale(yAccessor(datum)) ?? 0)
-                        const link = linkURLs?.[index]
-                        const classes = classnames('bar-chart__bar', { 'bar-chart__bar--with-link': link })
+                        {/* eslint-disable-next-line jsx-a11y/aria-role */}
+                        <Group role="graphics-axis" aria-orientation="vertical" aria-label="Y axis">
+                            <AxisLeft
+                                scale={yScale}
+                                axisClassName="bar-chart__axis"
+                                axisLineClassName="bar-chart__axis-line"
+                                tickClassName="bar-chart__axis-tick"
+                            />
 
-                        return (
-                            <Group key={`bar-${index}`}>
+                            <GridRows
+                                aria-hidden={true}
+                                scale={yScale}
+                                width={innerWidth}
+                                height={innerHeight}
+                                className="bar-chart__grid"
+                            />
+                        </Group>
+                    </Group>
+
+                    {/* eslint-disable-next-line jsx-a11y/aria-role */}
+                    <Group role="graphics-datagroup" aria-label="Bars">
+                        {data.map((datum, index) => {
+                            const barHeight = innerHeight - (yScale(yAccessor(datum)) ?? 0)
+                            const link = linkURLs?.[index]
+                            const classes = classnames('bar-chart__bar', { 'bar-chart__bar--with-link': link })
+                            const yValue = yAccessor(datum)
+                            const xValue = formatXLabel(index)
+
+                            return (
                                 <MaybeLink
+                                    key={`bar-${index}`}
                                     to={linkURLs?.[index]}
                                     onClick={onDatumLinkClick}
+                                    role={linkURLs?.[index] ? 'link' : 'graphics-dataunit'}
+                                    aria-label={`Bar # ${index + 1} of ${
+                                        data.length
+                                    }. X value is ${xValue}. Y value is ${yValue}`}
                                     className="bar-chart__bar-link"
                                 >
                                     <Bar
@@ -140,25 +178,9 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                                         }}
                                     />
                                 </MaybeLink>
-                            </Group>
-                        )
-                    })}
-
-                    <AxisBottom
-                        top={innerHeight}
-                        scale={xScale}
-                        tickFormat={formatXLabel}
-                        axisClassName="bar-chart__axis"
-                        axisLineClassName="bar-chart__axis-line"
-                        tickClassName="bar-chart__axis-tick"
-                    />
-
-                    <AxisLeft
-                        scale={yScale}
-                        axisClassName="bar-chart__axis"
-                        axisLineClassName="bar-chart__axis-line"
-                        tickClassName="bar-chart__axis-tick"
-                    />
+                            )
+                        })}
+                    </Group>
                 </Group>
             </svg>
 

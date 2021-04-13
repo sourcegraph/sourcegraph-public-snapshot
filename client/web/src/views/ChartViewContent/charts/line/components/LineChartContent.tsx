@@ -308,7 +308,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                         </Group>
 
                         <Group
-                             // eslint-disable-next-line jsx-a11y/aria-role
+                            // eslint-disable-next-line jsx-a11y/aria-role
                             role="graphics-datagroup"
                             aria-label="Series points"
                             pointerEvents="bounding-box"
