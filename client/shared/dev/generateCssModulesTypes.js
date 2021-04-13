@@ -10,7 +10,7 @@ const TSM_LOG_LEVEL = '--logLevel error'
  * Generates the TypeScript types CSS modules.
  */
 function cssModulesTypings() {
-  spawn('tsm', [TSM_LOG_LEVEL, CSS_MODULES_GLOB], {
+  return spawn('tsm', [TSM_LOG_LEVEL, CSS_MODULES_GLOB], {
     stdio: 'inherit',
     shell: true,
   })
@@ -20,7 +20,7 @@ function cssModulesTypings() {
  * Watch CSS modules and generates the TypeScript types for them.
  */
 function watchCSSModulesTypings() {
-  spawn('tsm', ['--watch', TSM_LOG_LEVEL, CSS_MODULES_GLOB], {
+  return spawn('tsm', ['--watch', TSM_LOG_LEVEL, CSS_MODULES_GLOB], {
     stdio: 'inherit',
     shell: true,
   })
