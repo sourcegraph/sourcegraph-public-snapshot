@@ -1067,9 +1067,11 @@ func validPassword(hash, password string) bool {
 }
 
 const (
-	// If the owner of an external service has this tag, the service is allowed to sync private code
+	// TagAllowUserExternalServicePrivate if set on a user, allows them to add
+	// private code through external services they own.
 	TagAllowUserExternalServicePrivate = "AllowUserExternalServicePrivate"
-	// If the owner of an external service has this tag, the service is allowed to sync public code only
+	// TagAllowUserExternalServicePublic if set on a user, allows them to add
+	// public code through external services they own.
 	TagAllowUserExternalServicePublic = "AllowUserExternalServicePublic"
 )
 
@@ -1125,4 +1127,35 @@ func (u *UserStore) HasTag(ctx context.Context, userID int32, tag string) (bool,
 		}
 	}
 	return false, nil
+}
+
+// CurrentUserAllowedExternalServices returns whether the current user is allowed
+// to add public or private code. This may override the site level value read by
+// conf.ExternalServiceUserMode.
+//
+// It is added in the database package as putting it in the conf package led to
+// many cyclic imports.
+func (u *UserStore) CurrentUserAllowedExternalServices(ctx context.Context) conf.ExternalServiceMode {
+	mode := conf.ExternalServiceUserMode()
+	if mode != conf.ExternalServiceModeDisabled {
+		return mode
+	}
+
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return conf.ExternalServiceModeDisabled
+	}
+
+	// The user may have a tag that opts them in
+	ok, _ := u.HasTag(ctx, a.UID, TagAllowUserExternalServicePrivate)
+	if ok {
+		return conf.ExternalServiceModeAll
+	}
+
+	ok, _ = u.HasTag(ctx, a.UID, TagAllowUserExternalServicePublic)
+	if ok {
+		return conf.ExternalServiceModePublic
+	}
+
+	return conf.ExternalServiceModeDisabled
 }
