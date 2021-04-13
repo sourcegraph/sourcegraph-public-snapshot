@@ -128,7 +128,7 @@ export const percySnapshot = async (page: Page, name: string, config?: SnapshotC
 
     // Theme-dark
     await setColorScheme(page, 'dark', config)
-    await realPercySnapshot(page, `${name} - Dark Theme`)
+    await realPercySnapshot(page, `${name} - dark Theme`)
 
     // Theme-dark with redesign
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
