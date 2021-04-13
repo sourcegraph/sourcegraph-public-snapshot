@@ -15,6 +15,7 @@ export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternal
     enableSelect = false,
 }) => (
     <>
+        <span className="d-none d-sm-block" />
         {enableSelect && (
             <div className="p-2">
                 <input
@@ -27,7 +28,6 @@ export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternal
                 />
             </div>
         )}
-        <span className="d-none d-sm-block" />
         <ChangesetStatusCell
             state={node.state}
             className="p-2 hidden-external-changeset-node__status text-muted d-block d-sm-flex"
