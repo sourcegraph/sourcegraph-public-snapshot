@@ -201,15 +201,6 @@ $text-muted: var(--text-muted);
 	--hl-color-other-add: var(--hl-cyan);
 
 	// Language-specific colors
-	--hl-color-css-colors: var(--hl-yellow);
-	--hl-color-css-selector: var(--hl-gray-blue);
-	--hl-color-css-tag: var(--hl-yellow);
-	--hl-color-css-class: var(--hl-yellow);
-	--hl-color-css-id: var(--hl-yellow);
-
-	--hl-color-html-equal: var(--hl-gray-blue);
-	--hl-color-html-something-equal: var(--hl-yellow);
-
 	--hl-color-ruby-special: var(--hl-orange);
 	--hl-color-ruby-constant: var(--hl-yellow);
 	--hl-color-ruby-symbol: var(--hl-cyan);
@@ -310,8 +301,9 @@ $text-muted: var(--text-muted);
 	.support.function.construct { color: var(--hl-red) }
 	.support.type.exception { color: var(--hl-orange) }
 	.support.type, .support.class { color: var(--hl-green) }
+	.support.constant.color { color: var(--hl-color-css-colors) } // color constants #ababab
 
-	// Braces
+	// Delimiters
 	.punctuation.section.braces { color: var(--hl-gray-blue) }
 	.punctuation.section.block { color: var(--hl-gray-blue) }
 
@@ -323,7 +315,7 @@ $text-muted: var(--text-muted);
 	.punctuation.section.brackets { color: var(--hl-blue) }
 
 	// Other
-	.punctuation.separator.continuation { color: var(--hl-red) }
+	.punctuation.separator.continuation { color: var(--hl-red) } // line continuation \
 	.punctuation.definition.tag { color: var(--hl-gray-2); } // tag delimiters <>
 	.invalid { background: var(--hl-color-bg-invalid) }
 
@@ -331,37 +323,30 @@ $text-muted: var(--text-muted);
 	// Language-specific highlights //
 	//////////////////////////////////
 
-	// CSS
-	.support.constant.color { color: var(--hl-color-css-colors) }
-	.invalid.deprecated.color.w3c-non-standard-color-name.scss { color: var(--hl-color-css-colors) }
-	.meta.selector.css { color: var(--hl-color-css-selector) }
-	.entity.name.tag.css { color: var(--hl-color-css-tag) }
-	.entity.name.tag.scss { color: var(--hl-color-css-tag) }
-	.source.less .keyword.control.html.elements { color: var(--hl-color-css-tag) }
-	.source.sass .keyword.control.untitled { color: var(--hl-color-css-tag) }
-	.entity.other.attribute-name.class {color: var(--hl-color-css-class)}
-	.entity.other.attribute-name.class {color: var(--hl-color-css-class)}
-	.entity.other.attribute-name.id {color: var(--hl-color-css-id)}
-	.entity.other.attribute-name.pseudo-element {color: var(--hl-color-css-pseudo)}
-	.entity.other.attribute-name.tag.pseudo-element {color: var(--hl-color-css-pseudo)}
-	.entity.other.attribute-name.pseudo-class {color: var(--hl-color-css-pseudo)}
-	.entity.other.attribute-name.tag.pseudo-class {color: var(--hl-color-css-pseudo)}
+	.source.scss {
+		.invalid.deprecated.color.w3c-non-standard-color-name { color: var(--hl-color-css-colors) }
+		.keyword.control.untitled { color: var(--hl-yellow) } // TODO what is this?
+	}
 
-	// HTML
-	.text.html.basic .meta.tag.other.html {color: var(--hl-color-html-equal)}
-	.text.html.basic .meta.tag.any.html {color: var(--hl-color-html-equal)}
-	.text.html.basic .meta.tag.block.any {color: var(--hl-color-html-equal)}
-	.text.html.basic .meta.tag.inline.any {color: var(--hl-color-html-equal)}
-	.text.html.basic .meta.tag.structure.any.html {color: var(--hl-color-html-equal)}
-	.text.html.basic .source.js.embedded.html {color: var(--hl-color-html-equal)}
-	.punctuation.separator.key-value.html {color: var(--hl-color-html-equal)}
-	.text.html.basic .entity.other.attribute-name.html {color: var(--hl-color-html-something-equal)}
-	.meta.tag.xml .entity.other.attribute-name {color: var(--hl-color-html-something-equal)}
+	.source.less {
+		.keyword.control.html.elements { color: var(--hl-yellow) }
+	}
 
-	// Ruby
-	.keyword.other.special-method.ruby { color: var(--hl-color-ruby-special) }
-	.variable.other.constant.ruby { color: var(--hl-color-ruby-constant) }
-	.constant.other.symbol.ruby { color: var(--hl-color-ruby-symbol) }
+	.source.scss, .source.css, .source.less {
+		.entity.name.tag { color: var(--hl-yellow) }
+		.entity.other {
+			&.class { color: var(--hl-yellow) }
+			&.id { color: var(--hl-yellow) }
+			&.pseudo-class { color: var(--hl-blue) }
+			&.pseudo-element { color: var(--hl-blue) } // :hover
+		}
+	}
+
+	.source.ruby {
+		.keyword.other.special-method { color: var(--hl-color-ruby-special) }
+		.variable.other.constant { color: var(--hl-color-ruby-constant) }
+		.constant.other.symbol { color: var(--hl-color-ruby-symbol) }
+	}
 
 	// PHP
 	.meta.array .support.function.construct.php { color: var(--hl-color-php-array) }
