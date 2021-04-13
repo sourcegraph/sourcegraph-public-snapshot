@@ -7,8 +7,6 @@ import (
 	"hash/crc32"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/schema"
-
 	kms "cloud.google.com/go/kms/apiv1"
 	"github.com/cockroachdb/errors"
 	"google.golang.org/api/option"
@@ -16,6 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func NewKey(ctx context.Context, config schema.CloudKMSEncryptionKey) (encryption.Key, error) {
