@@ -41,26 +41,26 @@ groups:
                 count:800
                 add\w+
 
-          - name: regex_file_scope # ~100 results
+          - name: regex_file_scope # ~2 results
             query: >
-                  patterntype:regexp
-                  repo:^github\.com/kubernetes/kubernetes$
-                  file:^cluster/gce/gci
-                  Installing
+                patterntype:regexp
+                repo:^github\.com/kubernetes/kubernetes$
+                file:^cluster/gce/gci
+                Installing
 
           # Structural search
           - name: structural_repo_scope_small # ~15 results
             query: >
-                  patterntype:structural
-                  repo:^github\.com/testdrivenio/fastapi-crud-async$
-                  file:^src/app
-                  async def :[1](...)
+                patterntype:structural
+                repo:^github\.com/testdrivenio/fastapi-crud-async$
+                file:^src/app
+                async def :[1](...)
 
           - name: structural_multi_repo_small # ~51 results
             query: >
-                  patterntype:structural
-                  repo:^github\.com/sourcegraph/
-                  strings.ToUpper(...)
+                patterntype:structural
+                repo:^github\.com/sourcegraph/
+                strings.ToUpper(...)
 
           # Literal search
           - name: literal_small # ~5 results
