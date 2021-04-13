@@ -37,7 +37,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
-- The GraphQL type GenericSearchResultInterface no longer provides a base64-encoded icon.
+- The GraphQL type GenericSearchResultInterface no longer provides a base64-encoded icon. [#19992](https://github.com/sourcegraph/sourcegraph/pull/19992)
 
 ## 3.26.3
 
