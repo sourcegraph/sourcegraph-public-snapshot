@@ -31,20 +31,20 @@ groups:
           - name: regex_repo_scope_small # ~3 results
             query: >
                 patterntype:regexp
-                repo:^github\.com/ianstormtaylor/slate$
+                repo:^github\.com/sgtest/slate$
                 getfragment
 
           - name: regex_repo_scope_large # ~600 results
             query: >
                 patterntype:regexp
-                repo:^github\.com/pichillilorenzo/flutter_inappwebview$
+                repo:^github\.com/sgtest/flutter_inappwebview$
                 count:800
                 add\w+
 
           - name: regex_file_scope # ~2 results
             query: >
                 patterntype:regexp
-                repo:^github\.com/kubernetes/kubernetes$
+                repo:^github\.com/sgtest/kubernetes$
                 file:^cluster/gce/gci
                 Installing
 
@@ -52,7 +52,7 @@ groups:
           - name: structural_repo_scope_small # ~15 results
             query: >
                 patterntype:structural
-                repo:^github\.com/testdrivenio/fastapi-crud-async$
+                repo:^github\.com/sgtest/fastapi-crud-async$
                 file:^src/app
                 async def :[1](...)
 
@@ -79,12 +79,12 @@ groups:
           - name: literal_repo_scope # ~11 results
             query: >
                 patterntype:literal
-                repo:^github\.com/ElemeFE/element$
+                repo:^github\.com/sgtest/element$
                 repeat-click
 
           - name: literal_file_scope # ~10 results
             query: >
                 patterntype:literal
-                repo:^github\.com/cockroachdb/cockroach-gen$
+                repo:^github\.com/sgtest/cockroach-gen$
                 file:^pkg/ccl/importccl/read_import_csv\.go
                 p.record
