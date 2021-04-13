@@ -86,7 +86,7 @@ See the [Troubleshooting docs](troubleshoot.md).
 
 ### Restarting
 
-Some updates, such as changing the `externalURL` for an instance, will require restarting the instance using `kubectl`. To restart, run `ut restart deployment sourcegraph-frontend`. If updating the `externalURL` for the instance, only the frontend pods will need to be restarted.
+Some updates, such as changing the `externalURL` for an instance, will require restarting the instance using `kubectl`. To restart, run `kubectl rollout restart deployment sourcegraph-frontend`. If updating the `externalURL` for the instance, only the frontend pods will need to be restarted.
 
 ### Cluster-admin privileges
 
