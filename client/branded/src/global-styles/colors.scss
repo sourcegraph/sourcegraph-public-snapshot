@@ -187,14 +187,11 @@ $text-muted: var(--text-muted);
 	--hl-cyan: #2aa198;
 	--hl-eggshell: #eee8d5;
 	--hl-deep-gray: #{$gray-19};
+	--hl-pink: #6c71c4;
 
 	--hl-bg-red: #ec9489;
 	--hl-bg-green: #deeade;
 
-	--hl-color-comment: var(--hl-gray-0);
-	--hl-color-string: var(--hl-cyan);
-	--hl-color-escape: var(--hl-red);
-	--hl-color-number: #6c71c4;
 	--hl-color-variable: var(--hl-blue);
 	--hl-color-variable-function: var(--hl-yellow);
 	--hl-color-class: var(--hl-yellow);
@@ -289,194 +286,198 @@ $text-muted: var(--text-muted);
 	--hl-color-javascript-variable: var(--hl-gray-blue);
 }
 
-.comment { color: var(--hl-color-comment); }
-.meta.documentation { color: var(--hl-color-comment); }
-.string { color: var(--hl-color-string) };
-.string.quoted.double { color: var(--hl-color-string) };
-.string.quoted.single { color: var(--hl-color-string) };
-.punctuation.definition.string { color: var(--hl-color-quotes) }
-.constant.character.escape { color: var(--hl-color-escape) };
-.constant.numeric { color: var(--hl-color-number) };
-.variable { color: var(--hl-color-variable) };
-.variable.function { color: var(--hl-color-variable-function) };
-.variable.language { color: var(--hl-color-variable-language) };
-.keyword { color: var(--hl-color-keyword) };
-.storage { color: var(--hl-color-keyword) };
-.storage.modifier { color: var(--hl-color-storage-modifier) };
-.keyword.control.class { color: var(--hl-color-class) };
-.entity.name { color: var(--hl-color-class) };
-.entity.name.class { color: var(--hl-color-class) };
-.entity.name.type.class { color: var(--hl-color-class) }; // TODO are these extra modifiers necessary? we already cover entity.name
-.entity.other.inherited-class { color: var(--hl-color-inherited-class) };
-.entity.other.attribute-name { color: var(--hl-color-attribute) };
-.entity.name.function { color: var(--hl-color-function) };
-.punctuation.definition.variable { color: var(--hl-color-variable-start) };
-.entity.name.tag { color: var(--hl-color-tag-name) };
-.support.function { color: var(--hl-color-library-function) };
-.punctuation.separator.continuation { color: var(--hl-color-continuation) };
-.storage.type { color: var(--hl-color-storage-type) };
-.support.type.exception { color: var(--hl-color-exception) };
-.keyword.other.special-method { color: var(--hl-color-exception) };
-.invalid { background: var(--hl-color-bg-invalid) };
+.code {
+	color: var(--hl-gray-blue);
 
-// Brackets
-.meta.brace.square { color: var(--hl-color-brackets) }
-.punctuation.section.brackets { color: var(--hl-color-brackets) }
+	.comment, .meta.documentation { color: var(--hl-gray-0); }
+	.string, .string.quoted.double, .string.quoted.single { color: var(--hl-cyan) };
+	.punctuation.definition.string { color: var(--hl-color-quotes) }
+	.constant.character.escape { color: var(--hl-red) };
+	.constant.numeric { color: var(--hl-pink) };
+	.variable { color: var(--hl-color-variable) };
+	.variable.function { color: var(--hl-color-variable-function) };
+	.variable.language { color: var(--hl-color-variable-language) };
+	.keyword { color: var(--hl-color-keyword) };
+	.storage { color: var(--hl-color-keyword) };
+	.storage.modifier { color: var(--hl-color-storage-modifier) };
+	.keyword.control.class { color: var(--hl-color-class) };
+	.entity.name { color: var(--hl-color-class) };
+	.entity.name.class { color: var(--hl-color-class) };
+	.entity.name.type.class { color: var(--hl-color-class) }; // TODO are these extra modifiers necessary? we already cover entity.name
+	.entity.other.inherited-class { color: var(--hl-color-inherited-class) };
+	.entity.other.attribute-name { color: var(--hl-color-attribute) };
+	.entity.name.function { color: var(--hl-color-function) };
+	.punctuation.definition.variable { color: var(--hl-color-variable-start) };
+	.entity.name.tag { color: var(--hl-color-tag-name) };
+	.support.function { color: var(--hl-color-library-function) };
+	.punctuation.separator.continuation { color: var(--hl-color-continuation) };
+	.storage.type { color: var(--hl-color-storage-type) };
+	.support.type.exception { color: var(--hl-color-exception) };
+	.keyword.other.special-method { color: var(--hl-color-exception) };
+	.invalid { background: var(--hl-color-bg-invalid) };
 
-// Braces
-.meta.brace.curly { color: var(--hl-color-braces) }
-.punctuation.section { color: var(--hl-color-braces) }
-.punctuation.section.block { color: var(--hl-color-braces) }
-.punctuation.definition.parameters { color: var(--hl-color-braces) }
-.punctuation.section.group { color: var(--hl-color-braces) }
+	// Brackets
+	.meta.brace.square { color: var(--hl-color-brackets) }
+	.punctuation.section.brackets { color: var(--hl-color-brackets) }
 
-// Parens
-.meta.brace.round { color: var(--hl-color-parens) }
+	// Braces
+	.meta.brace.curly { color: var(--hl-color-braces) }
+	.punctuation.section { color: var(--hl-color-braces) }
+	.punctuation.section.block { color: var(--hl-color-braces) }
+	.punctuation.definition.parameters { color: var(--hl-color-braces) }
+	.punctuation.section.group { color: var(--hl-color-braces) }
 
-// Tag delimiters
-.punctuation.definition.tag.html { color: var(--hl-color-tag-delimit) }
-.punctuation.definition.tag.begin { color: var(--hl-color-tag-delimit) }
-.punctuation.definition.tag.end { color: var(--hl-color-tag-delimit) }
+	// Parens
+	.meta.brace.round { color: var(--hl-color-parens) }
 
-// User constant
-.constant.character { color: var(--hl-color-user-constant) }
-.constant.other { color: var(--hl-color-user-constant) }
+	// Tag delimiters
+	.punctuation.definition.tag.html { color: var(--hl-color-tag-delimit); }
+	.punctuation.definition.tag.begin { color: var(--hl-color-tag-delimit); }
+	.punctuation.definition.tag.end { color: var(--hl-color-tag-delimit); }
 
-// Support construct
-.support.function.construct { color: var(--hl-color-support-construct) }
-.keyword.other.new { color: var(--hl-color-support-construct) }
+	// User constant
+	.constant.character { color: var(--hl-color-user-constant); }
+	.constant.other { color: var(--hl-color-user-constant); }
 
-// Builtin Constant
-.constant { color: var(--hl-color-builtin-constant) }
-.constant.language { color: var(--hl-color-builtin-constant) }
-.meta.preprocessor { color: var(--hl-color-builtin-constant) }
+	// Support construct
+	.support.function.construct { color: var(--hl-color-support-construct) }
+	.keyword.other.new { color: var(--hl-color-support-construct) }
 
-// Library class
-.support { color: var(--hl-color-library-class) }
-.support.type { color: var(--hl-color-library-class) }
-.support.class { color: var(--hl-color-library-class) } // Are these selectors necessary?
+	// Builtin Constant
+	.constant { color: var(--hl-color-builtin-constant) }
+	.constant.language { color: var(--hl-color-builtin-constant) }
+	.meta.preprocessor { color: var(--hl-color-builtin-constant) }
 
-// Imports
-.import.meta.keyword { color: var(--hl-color-import) }
-.keyword.control.import { color: var(--hl-color-import) }
-.keyword.control.import.from { color: var(--hl-color-import) }
-.keyword.other.import { color: var(--hl-color-import) }
-.keyword.control.at-rule.include { color: var(--hl-color-import) }
-.keyword.control.at-rule.import { color: var(--hl-color-import) }
+	// Library class
+	.support { color: var(--hl-color-library-class) }
+	.support.type { color: var(--hl-color-library-class) }
+	.support.class { color: var(--hl-color-library-class) } // Are these selectors necessary?
 
-// Operators
-.keyword.operator.comparison { color: var(--hl-color-op) }
-.keyword.operator.assignment { color: var(--hl-color-op) }
-.keyword.operator.arithmetic { color: var(--hl-color-op) }
+	// Imports
+	.import.meta.keyword { color: var(--hl-color-import) }
+	.keyword.control.import { color: var(--hl-color-import) }
+	.keyword.control.import.from { color: var(--hl-color-import) }
+	.keyword.other.import { color: var(--hl-color-import) }
+	.keyword.control.at-rule.include { color: var(--hl-color-import) }
+	.keyword.control.at-rule.import { color: var(--hl-color-import) }
 
-//////////////////////////////////
-// Language-specific highlights //
-//////////////////////////////////
+	// Operators
+	.keyword.operator.comparison { color: var(--hl-color-op) }
+	.keyword.operator.assignment { color: var(--hl-color-op) }
+	.keyword.operator.arithmetic { color: var(--hl-color-op) }
 
-// CSS
-.support.constant.color { color: var(--hl-color-css-colors) }
-.invalid.deprecated.color.w3c-non-standard-color-name.scss { color: var(--hl-color-css-colors) }
-.meta.selector.css { color: var(--hl-color-css-selector) }
-.entity.name.tag.css { color: var(--hl-color-css-tag) }
-.entity.name.tag.scss { color: var(--hl-color-css-tag) }
-.source.less .keyword.control.html.elements { color: var(--hl-color-css-tag) }
-.source.sass .keyword.control.untitled { color: var(--hl-color-css-tag) }
-.entity.other.attribute-name.class {color: var(--hl-color-css-class)}
-.entity.other.attribute-name.class {color: var(--hl-color-css-class)}
-.entity.other.attribute-name.id {color: var(--hl-color-css-id)}
-.entity.other.attribute-name.pseudo-element {color: var(--hl-color-css-pseudo)}
-.entity.other.attribute-name.tag.pseudo-element {color: var(--hl-color-css-pseudo)}
-.entity.other.attribute-name.pseudo-class {color: var(--hl-color-css-pseudo)}
-.entity.other.attribute-name.tag.pseudo-class {color: var(--hl-color-css-pseudo)}
+	//////////////////////////////////
+	// Language-specific highlights //
+	//////////////////////////////////
 
-// HTML
-.text.html.basic .meta.tag.other.html {color: var(--hl-color-html-equal)}
-.text.html.basic .meta.tag.any.html {color: var(--hl-color-html-equal)}
-.text.html.basic .meta.tag.block.any {color: var(--hl-color-html-equal)}
-.text.html.basic .meta.tag.inline.any {color: var(--hl-color-html-equal)}
-.text.html.basic .meta.tag.structure.any.html {color: var(--hl-color-html-equal)}
-.text.html.basic .source.js.embedded.html {color: var(--hl-color-html-equal)}
-.punctuation.separator.key-value.html {color: var(--hl-color-html-equal)}
-.text.html.basic .entity.other.attribute-name.html {color: var(--hl-color-html-something-equal)}
-.meta.tag.xml .entity.other.attribute-name {color: var(--hl-color-html-something-equal)}
+	// CSS
+	.support.constant.color { color: var(--hl-color-css-colors) }
+	.invalid.deprecated.color.w3c-non-standard-color-name.scss { color: var(--hl-color-css-colors) }
+	.meta.selector.css { color: var(--hl-color-css-selector) }
+	.entity.name.tag.css { color: var(--hl-color-css-tag) }
+	.entity.name.tag.scss { color: var(--hl-color-css-tag) }
+	.source.less .keyword.control.html.elements { color: var(--hl-color-css-tag) }
+	.source.sass .keyword.control.untitled { color: var(--hl-color-css-tag) }
+	.entity.other.attribute-name.class {color: var(--hl-color-css-class)}
+	.entity.other.attribute-name.class {color: var(--hl-color-css-class)}
+	.entity.other.attribute-name.id {color: var(--hl-color-css-id)}
+	.entity.other.attribute-name.pseudo-element {color: var(--hl-color-css-pseudo)}
+	.entity.other.attribute-name.tag.pseudo-element {color: var(--hl-color-css-pseudo)}
+	.entity.other.attribute-name.pseudo-class {color: var(--hl-color-css-pseudo)}
+	.entity.other.attribute-name.tag.pseudo-class {color: var(--hl-color-css-pseudo)}
 
-// Ruby
-.keyword.other.special-method.ruby { color: var(--hl-color-ruby-special) }
-.variable.other.constant.ruby { color: var(--hl-color-ruby-constant) }
-.constant.other.symbol.ruby { color: var(--hl-color-ruby-symbol) }
+	// HTML
+	.text.html.basic .meta.tag.other.html {color: var(--hl-color-html-equal)}
+	.text.html.basic .meta.tag.any.html {color: var(--hl-color-html-equal)}
+	.text.html.basic .meta.tag.block.any {color: var(--hl-color-html-equal)}
+	.text.html.basic .meta.tag.inline.any {color: var(--hl-color-html-equal)}
+	.text.html.basic .meta.tag.structure.any.html {color: var(--hl-color-html-equal)}
+	.text.html.basic .source.js.embedded.html {color: var(--hl-color-html-equal)}
+	.punctuation.separator.key-value.html {color: var(--hl-color-html-equal)}
+	.text.html.basic .entity.other.attribute-name.html {color: var(--hl-color-html-something-equal)}
+	.meta.tag.xml .entity.other.attribute-name {color: var(--hl-color-html-something-equal)}
 
-// PHP
-.meta.array .support.function.construct.php { color: var(--hl-color-php-array) }
+	// Ruby
+	.keyword.other.special-method.ruby { color: var(--hl-color-ruby-special) }
+	.variable.other.constant.ruby { color: var(--hl-color-ruby-constant) }
+	.constant.other.symbol.ruby { color: var(--hl-color-ruby-symbol) }
 
-// C
-.entity.name.function.preprocessor.c {color: var(--hl-color-c-preprocessor)}
-.meta.preprocessor.c.include {color: var(--hl-color-c-preprocessor)}
-.meta.preprocessor.macro.c {color: var(--hl-color-c-preprocessor)}
-.meta.preprocessor.c.include .string.quoted.other.lt-gt.include.c { color: var(--hl-color-c-include) }
-.meta.preprocessor.c.include .punctuation.definition.string.begin.c { color: var(--hl-color-c-include) }
-.meta.preprocessor.c.include .punctuation.definition.string.end.c { color: var(--hl-color-c-include) }
+	// PHP
+	.meta.array .support.function.construct.php { color: var(--hl-color-php-array) }
 
-// Other
-.other.package.exclude { color: var(--hl-color-other-removal) }
-.other.remove { color: var(--hl-color-other-removal) }
-.other.add { color: var(--hl-color-other-add) }
+	// C
+	.entity.name.function.preprocessor.c {color: var(--hl-color-c-preprocessor)}
+	.meta.preprocessor.c.include {color: var(--hl-color-c-preprocessor)}
+	.meta.preprocessor.macro.c {color: var(--hl-color-c-preprocessor)}
+	.meta.preprocessor.c.include .string.quoted.other.lt-gt.include.c { color: var(--hl-color-c-include) }
+	.meta.preprocessor.c.include .punctuation.definition.string.begin.c { color: var(--hl-color-c-include) }
+	.meta.preprocessor.c.include .punctuation.definition.string.end.c { color: var(--hl-color-c-include) }
 
-// Tex
-.punctuation.section.group.tex { color: var(--hl-color-tex-braces) }
-.punctuation.definition.arguments.begin.latex { color: var(--hl-color-tex-braces) }
-.punctuation.definition.arguments.end.latex { color: var(--hl-color-tex-braces) }
-.punctuation.definition.arguments.latex { color: var(--hl-color-tex-braces) }
-.meta.group.braces.tex { color: var(--hl-color-tex-brace-text) }
-.string.other.math.tex { color: var(--hl-color-tex-other-math) }
-.variable.parameter.function.latex { color: var(--hl-color-tex-brace-var) }
-.punctuation.definition.constant.math.tex { color: var(--hl-color-tex-math-punc) }
-.text.tex.latex .constant.other.math.tex { color: var(--hl-color-tex-math-constant) }
-.constant.other.general.math.tex { color: var(--hl-color-tex-math-constant) }
-.constant.other.general.math.tex { color: var(--hl-color-tex-math-constant) }
-.constant.character.math.tex { color: var(--hl-color-tex-math-constant) }
-.string.other.math.tex { color: var(--hl-color-tex-math-string) }
-.punctuation.definition.string.begin.tex { color: var(--hl-color-tex-dollar) }
-.punctuation.definition.string.end.tex { color: var(--hl-color-tex-dollar) }
-.keyword.control.label.latex { color: var(--hl-color-tex-label) }
-.text.tex.latex .constant.other.general.math.tex { color: var(--hl-color-tex-label) }
-.variable.parameter.definition.label.latex { color: var(--hl-color-tex-label-brace) }
-.support.function.be.latex { color: var(--hl-color-tex-funciton) }
-.support.function.section.latex { color: var(--hl-color-tex-support-function-section) }
-.support.function.general.tex { color: var(--hl-color-tex-support-function) }
-.keyword.control.ref.latex { color: var(--hl-color-tex-reference-label) }
+	// Other
+	.other.package.exclude { color: var(--hl-color-other-removal) }
+	.other.remove { color: var(--hl-color-other-removal) }
+	.other.add { color: var(--hl-color-other-add) }
 
-// Python
-.storage.type.class.python { color: var(--hl-color-python-storage) }
-.storage.type.function.python { color: var(--hl-color-python-storage) }
-.storage.modifier.global.python { color: var(--hl-color-python-storage) }
-.support.type.exception.python { color: var(--hl-color-python-support-exception) }
+	// Tex
+	.punctuation.section.group.tex { color: var(--hl-color-tex-braces) }
+	.punctuation.definition.arguments.begin.latex { color: var(--hl-color-tex-braces) }
+	.punctuation.definition.arguments.end.latex { color: var(--hl-color-tex-braces) }
+	.punctuation.definition.arguments.latex { color: var(--hl-color-tex-braces) }
+	.meta.group.braces.tex { color: var(--hl-color-tex-brace-text) }
+	.string.other.math.tex { color: var(--hl-color-tex-other-math) }
+	.variable.parameter.function.latex { color: var(--hl-color-tex-brace-var) }
+	.punctuation.definition.constant.math.tex { color: var(--hl-color-tex-math-punc) }
+	.text.tex.latex .constant.other.math.tex { color: var(--hl-color-tex-math-constant) }
+	.constant.other.general.math.tex { color: var(--hl-color-tex-math-constant) }
+	.constant.other.general.math.tex { color: var(--hl-color-tex-math-constant) }
+	.constant.character.math.tex { color: var(--hl-color-tex-math-constant) }
+	.string.other.math.tex { color: var(--hl-color-tex-math-string) }
+	.punctuation.definition.string.begin.tex { color: var(--hl-color-tex-dollar) }
+	.punctuation.definition.string.end.tex { color: var(--hl-color-tex-dollar) }
+	.keyword.control.label.latex { color: var(--hl-color-tex-label) }
+	.text.tex.latex .constant.other.general.math.tex { color: var(--hl-color-tex-label) }
+	.variable.parameter.definition.label.latex { color: var(--hl-color-tex-label-brace) }
+	.support.function.be.latex { color: var(--hl-color-tex-funciton) }
+	.support.function.section.latex { color: var(--hl-color-tex-support-function-section) }
+	.support.function.general.tex { color: var(--hl-color-tex-support-function) }
+	.keyword.control.ref.latex { color: var(--hl-color-tex-reference-label) }
 
-// Shell
-.meta.scope.for-in-loop.shell { color: var(--hl-color-shell-meta-scope) }
-.variable.other.loop.shell { color: var(--hl-color-shell-meta-scope) }
-.meta.scope.case-block.shell { color: var(--hl-color-shell-meta-block) }
-.meta.scope.case-body.shell { color: var(--hl-color-shell-meta-block) }
-.punctuation.definition.logical-expression.shell { color: var(--hl-color-shell-brackets) }
+	.python {
+		.storage.type.class { color: var(--hl-color-python-storage) }
+		.storage.type.function { color: var(--hl-color-python-storage) }
+		.storage.modifier.global { color: var(--hl-color-python-storage) }
+		.support.type.exception { color: var(--hl-color-python-support-exception) }
+	}
 
-// Perl
-.support.function.perl { color: var(--hl-perl-function)}
+	.shell {
+		.meta.scope.for-in-loop { color: var(--hl-color-shell-meta-scope) }
+		.variable.other.loop { color: var(--hl-color-shell-meta-scope) }
+		.meta.scope.case-block { color: var(--hl-color-shell-meta-block) }
+		.meta.scope.case-body { color: var(--hl-color-shell-meta-block) }
+		.punctuation.definition.logical-expression { color: var(--hl-color-shell-brackets) }
+	}
 
-// Diff
-.meta.diff { color:  var(--hl-color-diff-header)};
-.meta.diff.header { color: var(--hl-color-diff-header) };
-.meta.diff.range { color: var(--hl-color-diff-range) };
-.markup.deleted { color: var(--hl-color-diff-deleted); background: var(--hl-color-bg-diff-deleted); }
-.markup.changed { color: var(--hl-color-diff-changed); }
-.markup.inserted { color: var(--hl-color-diff-inserted); background: var(--hl-color-bg-diff-inserted); }
+	// Perl
+	.support.function.perl { color: var(--hl-perl-function)}
 
-// Markdown
-.markup.quote { color: var(--hl-color-markdown-quote); }
+	// Diff
+	.meta.diff { color:  var(--hl-color-diff-header)};
+	.meta.diff.header { color: var(--hl-color-diff-header) };
+	.meta.diff.range { color: var(--hl-color-diff-range) };
+	.markup.deleted { color: var(--hl-color-diff-deleted); background: var(--hl-color-bg-diff-deleted); }
+	.markup.changed { color: var(--hl-color-diff-changed); }
+	.markup.inserted { color: var(--hl-color-diff-inserted); background: var(--hl-color-bg-diff-inserted); }
 
-// Find in files // TODO what is this??
-.entity.name.filename.find-in-files { color: var(--hl-color-find-in-file-name); }
-.constant.numeric.line-number.find-in-files { color: var(--hl-color-find-in-file-line); }
+	// Markdown
+	.markup.quote { color: var(--hl-color-markdown-quote); }
 
-// Javascript
-.variable.other.readwrite.js { color: var(--hl-color-javascript-variable); }
-.variable.other.object.js { color: var(--hl-color-javascript-variable); }
-.variable.other.constant.js { color: var(--hl-color-javascript-variable); }
+	// Find in files // TODO what is this??
+	.entity.name.filename.find-in-files { color: var(--hl-color-find-in-file-name); }
+	.constant.numeric.line-number.find-in-files { color: var(--hl-color-find-in-file-line); }
+
+	.js {
+		.variable.other {
+			&.readwrite, &.object, &.constant { color: var(--hl-gray-blue) }
+		}
+	}
+}
