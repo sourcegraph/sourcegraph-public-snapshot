@@ -1,6 +1,5 @@
 // @ts-check
 
-const { spawn } = require('child_process')
 const path = require('path')
 
 const { generateNamespace } = require('@gql2ts/from-schema')
@@ -11,6 +10,7 @@ const { compile: compileJSONSchema } = require('json-schema-to-typescript')
 const { readFile, writeFile, mkdir } = require('mz/fs')
 const { format, resolveConfig } = require('prettier')
 
+const { cssModulesTypings, watchCSSModulesTypings } = require('./dev/generateCssModulesTypes')
 const { generateGraphQlOperations, ALL_DOCUMENTS_GLOB } = require('./dev/generateGraphQlOperations')
 
 const GRAPHQL_SCHEMA_PATH = path.join(__dirname, '../../cmd/frontend/graphqlbackend/schema.graphql')
@@ -183,26 +183,6 @@ async function schema() {
 
 function watchSchema() {
   return gulp.watch(path.join(__dirname, '../schema/*.schema.json'), schema)
-}
-
-/**
- * Generates the TypeScript types CSS modules.
- */
-function cssModulesTypings() {
-  spawn('tsm', [path.resolve(__dirname, '../*/src/**/*.module.scss')], {
-    stdio: 'inherit',
-    shell: true,
-  })
-}
-
-/**
- * Watch CSS modules and generates the TypeScript types for them.
- */
-function watchCSSModulesTypings() {
-  return spawn('tsm', ['--watch', path.resolve(__dirname, '../*/src/**/*.module.scss')], {
-    stdio: 'inherit',
-    shell: true,
-  })
 }
 
 module.exports = {
