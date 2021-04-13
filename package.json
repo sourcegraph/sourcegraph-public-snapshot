@@ -102,7 +102,7 @@
     "@pollyjs/persister-fs": "^5.0.0",
     "@slack/web-api": "^5.10.0",
     "@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper": "^1.0.0",
-    "@sourcegraph/eslint-config": "^0.23.0",
+    "@sourcegraph/eslint-config": "^0.24.0",
     "@sourcegraph/eslint-plugin-sourcegraph": "1.0.0",
     "@sourcegraph/prettierrc": "^3.0.3",
     "@sourcegraph/stylelint-config": "^1.2.0",
