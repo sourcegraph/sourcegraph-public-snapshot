@@ -1780,10 +1780,6 @@ A search result. Every type of search result, except FileMatch, must implement t
 """
 interface GenericSearchResultInterface {
     """
-    URL to an icon that is displayed with every search result.
-    """
-    icon: String!
-    """
     A markdown string that is rendered prominently.
     """
     label: Markdown!
@@ -2491,10 +2487,6 @@ A search result that is a Git commit.
 """
 type CommitSearchResult implements GenericSearchResultInterface {
     """
-    Base64 data uri to an icon.
-    """
-    icon: String!
-    """
     A markdown string that is rendered prominently.
     """
     label: Markdown!
@@ -2899,10 +2891,6 @@ type Repository implements Node & GenericSearchResultInterface {
     Whether the viewer has admin privileges on this repository.
     """
     viewerCanAdminister: Boolean!
-    """
-    Base64 data uri to an icon.
-    """
-    icon: String!
     """
     A markdown string that is rendered prominently.
     """

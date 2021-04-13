@@ -35,6 +35,10 @@ All notable changes to Sourcegraph are documented in this file.
 - New changes of a Perforce depot will now be reflected in `master` branch after the initial clone. [#19718](https://github.com/sourcegraph/sourcegraph/pull/19718)
 - Gitolite and Other type code host connection configuration can be correctly displayed. [#19976](https://github.com/sourcegraph/sourcegraph/pull/19976)
 
+### Removed
+
+- The GraphQL type GenericSearchResultInterface no longer provides a base64-encoded icon.
+
 ## 3.26.3
 
 ### Fixed
