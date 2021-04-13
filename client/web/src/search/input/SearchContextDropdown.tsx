@@ -52,7 +52,7 @@ function getHighlightTourStep(onClose: () => void): HTMLElement {
         </div>
         <div class="mt-2 mb-2">Search just the code you care about with search contexts.</div>
         <div>
-            <a href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts-experimental">
+            <a href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts-experimental" target="_blank">
                 Learn more
             </a>
         </div>
