@@ -1,7 +1,6 @@
 import React, { FormEvent, useCallback, useEffect, useState } from 'react'
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
-import * as H from 'history'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../../../components/PageTitle'
@@ -26,7 +25,7 @@ import { queryUserPublicRepositories, setUserPublicRepositories } from '../../..
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { PageSelector } from '@sourcegraph/wildcard'
-import { showAwayModal } from './showAwayModal'
+import { UserAwayConfirmationModal } from './UserAwayConfirmationModal'
 
 interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
     userID: string
@@ -377,36 +376,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
         return !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
     }, [onloadSelectedRepos, publicRepoState.enabled, publicRepoState.repos, selectionState.repos])
-
-    useEffect(() => {
-        const unblock = history.block((location: H.Location) => {
-            if (location.state === ALLOW_NAVIGATION) {
-                return unblock()
-            }
-
-            if (didRepoSelectionChange()) {
-                showAwayModal({
-                    labels: {
-                        header: 'Discard unsaved changes?',
-                        message: 'Currently synced repositories will be unchanged',
-                        button_ok_text: 'Discard',
-                    },
-                    unblockNavigation: unblock,
-                    history,
-                    location,
-                })
-
-                // prevent navigation - we're delegating to the AwayModal
-                return false
-            }
-
-            return unblock()
-        })
-
-        return () => {
-            unblock()
-        }
-    }, [didRepoSelectionChange, history])
 
     // save changes and update code hosts
     const submit = useCallback(
@@ -831,6 +800,11 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 )}
             </ul>
             {isErrorLike(otherPublicRepoError) && displayError(otherPublicRepoError)}
+            <UserAwayConfirmationModal
+                header="Discard unsaved changes?"
+                message="Currently synced repositories will be unchanged"
+                predicate={didRepoSelectionChange}
+            />
             <Form className="mt-4 d-flex" onSubmit={submit}>
                 <LoaderButton
                     loading={isLoading(fetchingRepos)}
