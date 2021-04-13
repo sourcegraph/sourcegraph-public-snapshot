@@ -1067,9 +1067,11 @@ func validPassword(hash, password string) bool {
 }
 
 const (
-	// If the owner of an external service has this tag, the service is allowed to sync private code
+	// TagAllowUserExternalServicePrivate if set on a user, allows them to add
+	// private code through external services they own.
 	TagAllowUserExternalServicePrivate = "AllowUserExternalServicePrivate"
-	// If the owner of an external service has this tag, the service is allowed to sync public code only
+	// TagAllowUserExternalServicePublic if set on a user, allows them to add
+	// public code through external services they own.
 	TagAllowUserExternalServicePublic = "AllowUserExternalServicePublic"
 )
 
@@ -1125,4 +1127,68 @@ func (u *UserStore) HasTag(ctx context.Context, userID int32, tag string) (bool,
 		}
 	}
 	return false, nil
+}
+
+// Tags returns a map with all the tags currently belonging to the user.
+func (u *UserStore) Tags(ctx context.Context, userID int32) (map[string]bool, error) {
+	if Mocks.Users.Tags != nil {
+		return Mocks.Users.Tags(ctx, userID)
+	}
+	u.ensureStore()
+
+	var tags []string
+	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, userNotFoundErr{[]interface{}{userID}}
+		}
+		return nil, err
+	}
+
+	tagMap := make(map[string]bool, len(tags))
+	for _, t := range tags {
+		tagMap[t] = true
+	}
+	return tagMap, nil
+}
+
+// UserAllowedExternalServices returns whether the supplied user is allowed
+// to add public or private code. This may override the site level value read by
+// conf.ExternalServiceUserMode.
+//
+// It is added in the database package as putting it in the conf package led to
+// many cyclic imports.
+func (u *UserStore) UserAllowedExternalServices(ctx context.Context, userID int32) (conf.ExternalServiceMode, error) {
+	u.ensureStore()
+
+	siteMode := conf.ExternalServiceUserMode()
+	// If site level already allows all code then no need to check user
+	if userID == 0 || siteMode == conf.ExternalServiceModeAll {
+		return siteMode, nil
+	}
+
+	tags, err := u.Tags(ctx, userID)
+	if err != nil {
+		return siteMode, err
+	}
+
+	// The user may have a tag that opts them in
+	if tags[TagAllowUserExternalServicePrivate] {
+		return conf.ExternalServiceModeAll, nil
+	}
+	if tags[TagAllowUserExternalServicePublic] {
+		return conf.ExternalServiceModePublic, nil
+	}
+
+	return siteMode, nil
+}
+
+// CurrentUserAllowedExternalServices returns whether the current user is allowed
+// to add public or private code. This may override the site level value read by
+// conf.ExternalServiceUserMode.
+//
+// It is added in the database package as putting it in the conf package led to
+// many cyclic imports.
+func (u *UserStore) CurrentUserAllowedExternalServices(ctx context.Context) (conf.ExternalServiceMode, error) {
+	return u.UserAllowedExternalServices(ctx, actor.FromContext(ctx).UID)
 }

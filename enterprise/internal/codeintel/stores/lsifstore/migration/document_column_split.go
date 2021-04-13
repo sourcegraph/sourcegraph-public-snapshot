@@ -23,7 +23,6 @@ func NewDocumentColumnSplitMigrator(store *lsifstore.Store, batchSize int) oobmi
 		targetVersion: 3,
 		batchSize:     batchSize,
 		fields: []fieldSpec{
-			{name: "dump_id", postgresType: "integer not null", primaryKey: true},
 			{name: "path", postgresType: "text not null", primaryKey: true},
 			{name: "data", postgresType: "bytea"},
 			{name: "ranges", postgresType: "bytea"},
@@ -37,13 +36,11 @@ func NewDocumentColumnSplitMigrator(store *lsifstore.Store, batchSize int) oobmi
 
 // MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
 // modify the record to conform to the new schema.
-func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) (updateSpec, error) {
-	var dumpID int
+func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) ([]interface{}, error) {
 	var path string
 	var rawData, ignored []byte
 
 	if err := scanner.Scan(
-		&dumpID,
 		&path,
 		&rawData,
 		&ignored, // ranges
@@ -52,42 +49,36 @@ func (m *documentColumnSplitMigrator) MigrateRowUp(scanner scanner) (updateSpec,
 		&ignored, // packages
 		&ignored, // diagnostics
 	); err != nil {
-		return updateSpec{}, err
+		return nil, err
 	}
 
 	decoded, err := m.serializer.UnmarshalLegacyDocumentData(rawData)
 	if err != nil {
-		return updateSpec{}, err
+		return nil, err
 	}
 	encoded, err := m.serializer.MarshalDocumentData(decoded)
 	if err != nil {
-		return updateSpec{}, err
+		return nil, err
 	}
 
-	return updateSpec{
-		dumpID: dumpID,
-		fieldValues: []interface{}{
-			dumpID,
-			path,
-			nil,                        // data
-			encoded.Ranges,             // ranges
-			encoded.HoverResults,       // hovers
-			encoded.Monikers,           // monikers
-			encoded.PackageInformation, // packages
-			encoded.Diagnostics,        // diagnostics
-		},
+	return []interface{}{
+		path,
+		nil,                        // data
+		encoded.Ranges,             // ranges
+		encoded.HoverResults,       // hovers
+		encoded.Monikers,           // monikers
+		encoded.PackageInformation, // packages
+		encoded.Diagnostics,        // diagnostics
 	}, nil
 }
 
 // MigrateRowDown sets num_diagnostics back to zero to undo the migration up direction.
-func (m *documentColumnSplitMigrator) MigrateRowDown(scanner scanner) (updateSpec, error) {
-	var dumpID int
+func (m *documentColumnSplitMigrator) MigrateRowDown(scanner scanner) ([]interface{}, error) {
 	var path string
 	var rawData []byte
 	var encoded lsifstore.MarshalledDocumentData
 
 	if err := scanner.Scan(
-		&dumpID,
 		&path,
 		&rawData,
 		&encoded.Ranges,
@@ -96,29 +87,25 @@ func (m *documentColumnSplitMigrator) MigrateRowDown(scanner scanner) (updateSpe
 		&encoded.PackageInformation,
 		&encoded.Diagnostics,
 	); err != nil {
-		return updateSpec{}, err
+		return nil, err
 	}
 
 	decoded, err := m.serializer.UnmarshalDocumentData(encoded)
 	if err != nil {
-		return updateSpec{}, err
+		return nil, err
 	}
 	reencoded, err := m.serializer.MarshalLegacyDocumentData(decoded)
 	if err != nil {
-		return updateSpec{}, err
+		return nil, err
 	}
 
-	return updateSpec{
-		dumpID: dumpID,
-		fieldValues: []interface{}{
-			dumpID,
-			path,
-			reencoded, // data
-			nil,       // ranges
-			nil,       // hovers
-			nil,       // monikers
-			nil,       // packages
-			nil,       // diagnostics
-		},
+	return []interface{}{
+		path,
+		reencoded, // data
+		nil,       // ranges
+		nil,       // hovers
+		nil,       // monikers
+		nil,       // packages
+		nil,       // diagnostics
 	}, nil
 }

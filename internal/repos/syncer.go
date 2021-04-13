@@ -223,14 +223,13 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		log15.Warn("Non fatal error during sync", "externalService", svc.ID, "unauthorized", unauthorized, "accountSuspended", accountSuspended)
 	}
 
-	// Unless explicitly specified with the "all" setting or the owner of the service has the "AllowUserExternalServicePrivate" tag,
-	// user added external services should only sync public code.
-	if isUserOwned && conf.ExternalServiceUserMode() != conf.ExternalServiceModeAll {
-		ok, err := database.GlobalUsers.HasTag(ctx, svc.NamespaceUserID, database.TagAllowUserExternalServicePrivate)
-		if err != nil {
-			return errors.Wrap(err, "checking user tag")
-		}
-		if !ok {
+	// Unless our site config explicitly allows private code or the user has the
+	// "AllowUserExternalServicePrivate" tag, user added external services should
+	// only sync public code.
+	if isUserOwned {
+		if mode, err := database.UsersWith(tx).UserAllowedExternalServices(ctx, svc.NamespaceUserID); err != nil {
+			return errors.Wrap(err, "checking if user can add private code")
+		} else if mode != conf.ExternalServiceModeAll {
 			sourced = sourced.Filter(func(r *types.Repo) bool { return !r.Private })
 		}
 	}

@@ -9,19 +9,25 @@ import (
 
 	kms "cloud.google.com/go/kms/apiv1"
 	"github.com/cockroachdb/errors"
+	"google.golang.org/api/option"
 	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func NewKey(ctx context.Context, keyName string) (encryption.Key, error) {
-	client, err := kms.NewKeyManagementClient(ctx)
+func NewKey(ctx context.Context, config schema.CloudKMSEncryptionKey) (encryption.Key, error) {
+	opts := []option.ClientOption{}
+	if config.CredentialsFile != "" {
+		opts = append(opts, option.WithCredentialsFile(config.CredentialsFile))
+	}
+	client, err := kms.NewKeyManagementClient(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
 	k := &Key{
-		name:   keyName,
+		name:   config.Keyname,
 		client: client,
 	}
 	_, err = k.Version(ctx)

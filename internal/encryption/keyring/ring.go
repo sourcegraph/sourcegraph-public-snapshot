@@ -105,7 +105,7 @@ func NewKey(ctx context.Context, k *schema.EncryptionKey) (encryption.Key, error
 	}
 	switch {
 	case k.Cloudkms != nil:
-		return cloudkms.NewKey(ctx, k.Cloudkms.Keyname)
+		return cloudkms.NewKey(ctx, *k.Cloudkms)
 	case k.Mounted != nil:
 		return mounted.NewKey(ctx, *k.Mounted)
 	case k.Noop != nil:
