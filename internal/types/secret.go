@@ -68,8 +68,7 @@ func (e *ExternalService) RedactConfigSecrets() error {
 		// Gitolite has no secret fields
 		newCfg, err = redactField(e.Config)
 	case *schema.OtherExternalServiceConnection:
-		// Other has no secret fields
-		newCfg, err = redactField(e.Config)
+		newCfg, err = redactField(e.Config, "url")
 	default:
 		// return an error here, it's safer to fail than to incorrectly return unsafe data.
 		err = fmt.Errorf("RedactExternalServiceConfig: kind %q not implemented", e.Kind)
