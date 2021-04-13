@@ -69,11 +69,11 @@ export interface LineChartContentProps<Datum extends object>
 
 /**
  * Type for active datum state in LineChartContent component. In order to render active state
- * for hovered point we need to track active datum to calculate position for active glyph.
+ * for hovered or focused point we need to track active datum to calculate styles for active glyph.
  */
 interface ActiveDatum<Datum extends object> extends EventHandlerParams<Datum> {
     /** Series of data of active datum */
-    line: LineChartContentProps<Datum>['series'][number]
+    line?: LineChartContentProps<Datum>['series'][number]
 }
 
 /**
@@ -113,7 +113,8 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     })
 
     // state
-    const [activeDatum, setActiveDatum] = useState<ActiveDatum<Datum> | null>(null)
+    const [hoveredDatum, setHoveredDatum] = useState<ActiveDatum<Datum> | null>(null)
+    const [focusedDatum, setFocusedDatum] = useState<ActiveDatum<Datum> | null>(null)
 
     // callbacks
     const renderTooltip = useCallback(
@@ -131,23 +132,23 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     const handlePointerMove = useCallback(
         (event: EventHandlerParams<Datum>) => {
             // If active point hasn't been change we shouldn't call setActiveDatum again
-            if (activeDatum?.index === event.index && activeDatum?.key === event.key) {
+            if (hoveredDatum?.index === event.index && hoveredDatum?.key === event.key) {
                 return
             }
 
             const line = series.find(line => line.dataKey === event.key)
 
             if (!line) {
-                setActiveDatum(null)
+                setHoveredDatum(null)
                 return
             }
 
-            setActiveDatum({
+            setHoveredDatum({
                 ...event,
                 line,
             })
         },
-        [series, activeDatum]
+        [series, hoveredDatum]
     )
 
     const handlePointerUp = useCallback(
@@ -155,7 +156,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
             info.event?.persist()
 
             // According to types from visx/xychart index can be undefined
-            const activeDatumIndex = activeDatum?.index
+            const activeDatumIndex = hoveredDatum?.index
             const line = series.find(line => line.dataKey === info.key)
 
             if (!info.event || !line || !isValidNumber(activeDatumIndex)) {
@@ -167,7 +168,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                 link: line?.linkURLs?.[activeDatumIndex],
             })
         },
-        [series, onDatumZoneClick, activeDatum]
+        [series, onDatumZoneClick, hoveredDatum]
     )
 
     const { onPointerMove = noop, onPointerOut = noop, ...otherHandlers } = usePointerEventEmitters({
@@ -206,12 +207,12 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
 
             requestAnimationFrame(() => {
                 if (!focused.current) {
-                    setActiveDatum(null)
+                    setHoveredDatum(null)
                     onPointerOut(event)
                 }
             })
         },
-        [focused, onPointerOut, setActiveDatum]
+        [focused, onPointerOut, setHoveredDatum]
     )
 
     const eventEmitters = {
@@ -220,8 +221,8 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
         ...otherHandlers,
     }
 
-    const activeDatumLink = activeDatum?.line?.linkURLs?.[activeDatum?.index]
-    const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!activeDatumLink })
+    const hoveredDatumLink = hoveredDatum?.line?.linkURLs?.[hoveredDatum?.index]
+    const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!hoveredDatumLink })
 
     return (
         <div className={rootClasses}>
@@ -308,14 +309,30 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                     // Move this arrow function in separate component when API of GlyphSeries will be fixed.
                                     /* eslint-disable-next-line react/jsx-no-bind */
                                     renderGlyph={props => {
+                                        // Pay attention that props.key here is actually index of current datum.
+                                        // Implementation problem of @visx/xychart
                                         const hovered =
-                                            activeDatum?.index === +props.key && activeDatum.key === line.dataKey
+                                            hoveredDatum?.index === +props.key && hoveredDatum.key === line.dataKey
+                                        const focused =
+                                            focusedDatum?.index === +props.key && focusedDatum.key === line.dataKey
+
+                                        const linkURL = line.linkURLs?.[+props.key]
+                                        const currentDatum = {
+                                            key: line.dataKey.toString(),
+                                            index: +props.key,
+                                            datum: props.datum,
+                                        }
 
                                         return (
                                             <MaybeLink
+                                                to={linkURL}
                                                 onPointerUp={stopPropagation}
                                                 onClick={onDatumLinkClick}
-                                                to={line.linkURLs?.[+props.key]}
+                                                /* eslint-disable-next-line react/jsx-no-bind */
+                                                onFocus={() => linkURL && setFocusedDatum(currentDatum)}
+                                                /* eslint-disable-next-line react/jsx-no-bind */
+                                                onBlur={() => linkURL && setFocusedDatum(null)}
+                                                className='line-chart__glyph-link'
                                             >
                                                 <Glyph
                                                     className={classnames('line-chart__glyph', {
@@ -324,7 +341,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                                     cx={props.x}
                                                     cy={props.y}
                                                     stroke={getLineStroke(line)}
-                                                    r={hovered ? 6 : 4}
+                                                    r={hovered || focused ? 6 : 4}
                                                 />
                                             </MaybeLink>
                                         )
