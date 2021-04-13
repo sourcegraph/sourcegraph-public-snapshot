@@ -107,10 +107,14 @@ func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 }
 
 func (r *RepositoryResolver) Select(path filter.SelectPath) SearchResultResolver {
-	switch path.Type {
-	case filter.Repository:
-		return r
+	match := r.RepoMatch.Select(path)
+
+	// Turn result type back into a resolver
+	switch v := match.(type) {
+	case *result.RepoMatch:
+		return NewRepositoryResolver(r.db, &types.Repo{Name: v.Name, ID: v.ID})
 	}
+
 	return nil
 }
 
