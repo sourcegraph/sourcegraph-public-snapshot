@@ -51,6 +51,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	if err != nil {
 		return nil, err
 	}
+
 	if args.Input.Namespace != nil {
 		if allowUserExternalServices == conf.ExternalServiceModeDisabled {
 			return nil, errors.New("allow users to add external services is not enabled")

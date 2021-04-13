@@ -227,11 +227,9 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 	// "AllowUserExternalServicePrivate" tag, user added external services should
 	// only sync public code.
 	if isUserOwned {
-		mode, err := database.UsersWith(tx).UserAllowedExternalServices(ctx, svc.NamespaceUserID)
-		if err != nil {
+		if mode, err := database.UsersWith(tx).UserAllowedExternalServices(ctx, svc.NamespaceUserID); err != nil {
 			return errors.Wrap(err, "checking if user can add private code")
-		}
-		if mode != conf.ExternalServiceModeAll {
+		} else if mode != conf.ExternalServiceModeAll {
 			sourced = sourced.Filter(func(r *types.Repo) bool { return !r.Private })
 		}
 	}
