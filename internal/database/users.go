@@ -1129,6 +1129,29 @@ func (u *UserStore) HasTag(ctx context.Context, userID int32, tag string) (bool,
 	return false, nil
 }
 
+// Tags returns a map with all the tags currently belonging to the user.
+func (u *UserStore) Tags(ctx context.Context, userID int32) (map[string]struct{}, error) {
+	if Mocks.Users.Tags != nil {
+		return Mocks.Users.Tags(ctx, userID)
+	}
+	u.ensureStore()
+
+	var tags []string
+	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, userNotFoundErr{[]interface{}{userID}}
+		}
+		return nil, err
+	}
+
+	tagMap := make(map[string]struct{}, len(tags))
+	for _, t := range tags {
+		tagMap[t] = struct{}{}
+	}
+	return tagMap, nil
+}
+
 // CurrentUserAllowedExternalServices returns whether the current user is allowed
 // to add public or private code. This may override the site level value read by
 // conf.ExternalServiceUserMode.
@@ -1136,26 +1159,28 @@ func (u *UserStore) HasTag(ctx context.Context, userID int32, tag string) (bool,
 // It is added in the database package as putting it in the conf package led to
 // many cyclic imports.
 func (u *UserStore) CurrentUserAllowedExternalServices(ctx context.Context) conf.ExternalServiceMode {
-	mode := conf.ExternalServiceUserMode()
-	if mode != conf.ExternalServiceModeDisabled {
-		return mode
-	}
+	u.ensureStore()
 
+	siteMode := conf.ExternalServiceUserMode()
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
-		return conf.ExternalServiceModeDisabled
+		// No user, use site level value
+		return siteMode
+	}
+
+	tags, err := u.Tags(ctx, a.UID)
+	if err != nil {
+		log15.Error("Getting user tags", "error", err)
+		return siteMode
 	}
 
 	// The user may have a tag that opts them in
-	ok, _ := u.HasTag(ctx, a.UID, TagAllowUserExternalServicePrivate)
-	if ok {
+	if _, ok := tags[TagAllowUserExternalServicePrivate]; ok {
 		return conf.ExternalServiceModeAll
 	}
-
-	ok, _ = u.HasTag(ctx, a.UID, TagAllowUserExternalServicePublic)
-	if ok {
+	if _, ok := tags[TagAllowUserExternalServicePublic]; ok {
 		return conf.ExternalServiceModePublic
 	}
 
-	return conf.ExternalServiceModeDisabled
+	return siteMode
 }

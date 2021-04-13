@@ -987,6 +987,7 @@ func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServ
 }
 
 func allowPrivate(ctx context.Context, userID int32) (bool, error) {
+	// TODO: Update this
 	if conf.ExternalServiceUserMode() == conf.ExternalServiceModeAll {
 		return true, nil
 	}
