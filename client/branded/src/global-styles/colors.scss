@@ -196,8 +196,6 @@ $text-muted: var(--text-muted);
 	--hl-color-variable-function: var(--hl-yellow);
 	--hl-color-class: var(--hl-yellow);
 	--hl-color-keyword: var(--hl-green);
-	--hl-color-import: var(--hl-orange);
-	--hl-color-op: var(--hl-gray-blue);
 	--hl-color-storage-modifier: var(--hl-gray-4);
 	--hl-color-inherited-class: var(--hl-blue);
 	--hl-color-attribute: var(--hl-yellow);
@@ -349,22 +347,13 @@ $text-muted: var(--text-muted);
 	.meta.preprocessor { color: var(--hl-color-builtin-constant) }
 
 	// Library class
-	.support { color: var(--hl-color-library-class) }
-	.support.type { color: var(--hl-color-library-class) }
-	.support.class { color: var(--hl-color-library-class) } // Are these selectors necessary?
+	.support.type, .support.class { color: var(--hl-green) }
 
 	// Imports
-	.import.meta.keyword { color: var(--hl-color-import) }
-	.keyword.control.import { color: var(--hl-color-import) }
-	.keyword.control.import.from { color: var(--hl-color-import) }
-	.keyword.other.import { color: var(--hl-color-import) }
-	.keyword.control.at-rule.include { color: var(--hl-color-import) }
-	.keyword.control.at-rule.import { color: var(--hl-color-import) }
+	.keyword.import, .keyword.include { color: var(--hl-orange)}
 
 	// Operators
-	.keyword.operator.comparison { color: var(--hl-color-op) }
-	.keyword.operator.assignment { color: var(--hl-color-op) }
-	.keyword.operator.arithmetic { color: var(--hl-color-op) }
+	.keyword.operator { color: var(--hl-gray-blue) }
 
 	//////////////////////////////////
 	// Language-specific highlights //
