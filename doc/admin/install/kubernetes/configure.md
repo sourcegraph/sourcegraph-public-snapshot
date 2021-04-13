@@ -239,39 +239,37 @@ spec:
 
 1. Create a yaml file (`networkPolicy.yaml` for example) in the root directory:
 
-```yaml
-kind: NetworkPolicy
-apiVersion: networking.k8s.io/v1
-metadata:
-  name: np-sourcegraph
-  namespace: ns-<EXAMPLE NAMESPACE>
-spec:
-  # For all pods with the label "deploy: sourcegraph"
-  podSelector:
-    matchLabels:
-      deploy: sourcegraph
-  policyTypes:
-  - Ingress
-  - Egress
-  # Allow all traffic inside the ns-<EXAMPLE NAMESPACE> namespace
-  ingress:
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          name: ns-sourcegraph
-          namespace: ns-<EXAMPLE NAMESPACE>
-  egress:
-  - to:
-    - namespaceSelector:
-        matchLabels:
-          name: ns-<EXAMPLE NAMESPACE>
-```
+   ```yaml
+   kind: NetworkPolicy
+   apiVersion: networking.k8s.io/v1
+   metadata:
+     name: np-sourcegraph
+     namespace: ns-<EXAMPLE NAMESPACE>
+   spec:
+     # For all pods with the label "deploy: sourcegraph"
+     podSelector:
+       matchLabels:
+         deploy: sourcegraph
+     policyTypes:
+     - Ingress
+     - Egress
+     # Allow all traffic inside the ns-<EXAMPLE NAMESPACE> namespace
+     ingress:
+     - from:
+       - namespaceSelector:
+           matchLabels:
+             name: ns-sourcegraph
+             namespace: ns-<EXAMPLE NAMESPACE>
+     egress:
+     - to:
+       - namespaceSelector:
+           matchLabels:
+             name: ns-<EXAMPLE NAMESPACE>
+   ```
 
 1. `kubectl apply -f networkPolicy.yaml` => networkpolicy.networking.k8s.io/np-sourcegraph created
 
 1. `kubectl apply -f generated-cluster/networking.k8s.io_v1beta1_ingress_sourcegraph-frontend.yaml` => ingress.networking.k8s.io/sourcegraph-frontend configured
-
-
 
 1. Apply setting to all using `kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive`
 
@@ -301,7 +299,7 @@ If you exposed your Sourcegraph instance via an ingress controller as described 
 
 - Create a [TLS secret](https://kubernetes.io/docs/concepts/configuration/secret/) that contains your TLS certificate and private key.
 
-   ```bash
+   ```
    kubectl create secret tls sourcegraph-tls --key $PATH_TO_KEY --cert $PATH_TO_CERT
    ```
 
@@ -333,7 +331,7 @@ If you exposed your Sourcegraph instance via an ingress controller as described 
 
 - Change your `externalURL` in [the site configuration](https://docs.sourcegraph.com/admin/config/site_config) to e.g. `https://sourcegraph.example.com`:
 
-  Update the ingress controller with the previous changes with the following command.
+  - Update the ingress controller with the previous changes with the following command.
 
   ```bash
   kubectl apply -f base/frontend/sourcegraph-frontend.Ingress.yaml
@@ -350,7 +348,7 @@ If you exposed your Sourcegraph instance via the altenative nginx service as des
 
 Sourcegraph will clone repositories using SSH credentials if they are mounted at `/home/sourcegraph/.ssh` in the `gitserver` deployment.
 
-- [Create a secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the base64 encoded contents of your SSH private key (_make sure it doesn't require a password_) and known_hosts file.
+[Create a secret](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables) that contains the base64 encoded contents of your SSH private key (_make sure it doesn't require a password_) and known_hosts file.
 
    ```bash
    kubectl create secret generic gitserver-ssh \
@@ -358,7 +356,7 @@ Sourcegraph will clone repositories using SSH credentials if they are mounted at
     --from-file known_hosts=${HOME}/.ssh/known_hosts
    ```
 
-   Update [create-new-cluster.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/create-new-cluster.sh) with the previous command.
+Update [create-new-cluster.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/create-new-cluster.sh) with the previous command.
 
    ```bash
    echo kubectl create secret generic gitserver-ssh \
@@ -366,7 +364,7 @@ Sourcegraph will clone repositories using SSH credentials if they are mounted at
     --from-file known_hosts=${HOME}/.ssh/known_hosts >> create-new-cluster.sh
    ```
 
-2. Mount the [secret as a volume](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod) in [gitserver.StatefulSet.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/gitserver/gitserver.StatefulSet.yaml).
+Mount the [secret as a volume](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod) in [gitserver.StatefulSet.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/gitserver/gitserver.StatefulSet.yaml).
 
    For example:
 
