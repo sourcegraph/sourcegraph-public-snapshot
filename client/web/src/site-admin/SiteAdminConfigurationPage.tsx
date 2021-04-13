@@ -1,23 +1,26 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import * as jsonc from '@sqs/jsonc-parser'
+import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
-import siteSchemaJSON from '../../../../schema/site.schema.json'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
+import siteSchemaJSON from '../../../../schema/site.schema.json'
+import { ErrorAlert } from '../components/alerts'
 import { PageTitle } from '../components/PageTitle'
+import { SiteConfiguration } from '../schema/site.schema'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
+
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
-import { ErrorAlert } from '../components/alerts'
-import * as jsonc from '@sqs/jsonc-parser'
-import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import * as H from 'history'
-import { SiteConfiguration } from '../schema/site.schema'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
     eol: '\n',

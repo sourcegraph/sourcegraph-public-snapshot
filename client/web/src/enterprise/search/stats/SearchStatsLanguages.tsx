@@ -1,9 +1,11 @@
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { PieChart, Pie, Tooltip, ResponsiveContainer, PieLabelRenderProps, Cell, TooltipFormatter } from 'recharts'
 import React, { useCallback } from 'react'
 import { Link } from 'react-router-dom'
+import { PieChart, Pie, Tooltip, ResponsiveContainer, PieLabelRenderProps, Cell, TooltipFormatter } from 'recharts'
+
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+
 import { SearchPatternType } from '../../../graphql-operations'
 
 const OTHER_LANGUAGE = 'Other'

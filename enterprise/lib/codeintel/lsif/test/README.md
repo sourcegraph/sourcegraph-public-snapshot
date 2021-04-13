@@ -46,3 +46,4 @@ This command validates the output of an LSIF indexer. The following properties a
 - Each range belongs to a unique document
 - No two ranges belonging to the same document improperly overlap
 - The inVs of each `item` edge belong to that document referred to by the edge's `document` field
+- Each range and result set has at most one result set attached to it

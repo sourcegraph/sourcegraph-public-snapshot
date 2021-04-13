@@ -1,7 +1,8 @@
 import path from 'path'
+
 import { remove } from 'lodash'
-import TerserPlugin from 'terser-webpack-plugin'
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
+import TerserPlugin from 'terser-webpack-plugin'
 import { Configuration, DefinePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
 
 const rootPath = path.resolve(__dirname, '../../../')

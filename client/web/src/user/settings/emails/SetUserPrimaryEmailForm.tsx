@@ -1,14 +1,14 @@
 import React, { useState, FunctionComponent, useCallback } from 'react'
 
-import { requestGraphQL } from '../../../backend/graphql'
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables, UserEmailsResult } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoaderButton } from '../../../components/LoaderButton'
+import { requestGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
+import { LoaderButton } from '../../../components/LoaderButton'
+import { SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables, UserEmailsResult } from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 type UserEmail = NonNullable<UserEmailsResult['node']>['emails'][number]
 

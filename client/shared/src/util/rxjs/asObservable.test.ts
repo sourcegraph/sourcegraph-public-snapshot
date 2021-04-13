@@ -1,6 +1,8 @@
-import { asObservable } from './asObservable'
 import assert from 'assert'
+
 import { of } from 'rxjs'
+
+import { asObservable } from './asObservable'
 
 describe('asObservable', () => {
     it('accepts an Observable', async () => {

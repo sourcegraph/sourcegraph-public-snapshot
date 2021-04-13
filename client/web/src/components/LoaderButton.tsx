@@ -1,5 +1,6 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React from 'react'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 interface Props extends React.DetailedHTMLProps<React.ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement> {
     loading: boolean

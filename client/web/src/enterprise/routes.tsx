@@ -1,9 +1,11 @@
 import React from 'react'
 import { Redirect } from 'react-router'
-import { LayoutRouteProps, routes } from '../routes'
-import { lazyComponent } from '../util/lazyComponent'
+
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { LayoutRouteProps, routes } from '../routes'
 import { Settings } from '../schema/settings.schema'
+import { lazyComponent } from '../util/lazyComponent'
 
 export const enterpriseRoutes: readonly LayoutRouteProps<{}>[] = [
     {

@@ -1,10 +1,11 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+
+import { FileDecorator } from './FileDecorator'
 import { TreeLayerProps } from './TreeLayer'
 import { maxEntries, treePadding } from './util'
-import { FileDecorator } from './FileDecorator'
 
 interface FileProps extends TreeLayerProps {
     className: string

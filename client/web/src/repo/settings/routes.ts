@@ -1,5 +1,6 @@
-import { RepoSettingsAreaRoute } from './RepoSettingsArea'
 import { lazyComponent } from '../../util/lazyComponent'
+
+import { RepoSettingsAreaRoute } from './RepoSettingsArea'
 
 export const repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] = [
     {

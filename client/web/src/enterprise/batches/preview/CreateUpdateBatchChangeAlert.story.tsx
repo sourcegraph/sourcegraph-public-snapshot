@@ -1,8 +1,10 @@
-import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
+import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
+
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
+import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
 
 const { add } = storiesOf('web/batches/preview/CreateUpdateBatchChangeAlert', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)

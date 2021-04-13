@@ -1,9 +1,12 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
-import classNames from 'classnames'
-import { CaseSensitivityProps, ParsedSearchQueryProps, PatternTypeProps, SearchContextProps } from '..'
-import { SearchResultTabHeader } from './SearchResultTab'
+
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+
+import { CaseSensitivityProps, ParsedSearchQueryProps, PatternTypeProps, SearchContextProps } from '..'
+
+import { SearchResultTabHeader } from './SearchResultTab'
 
 interface Props
     extends Omit<PatternTypeProps, 'setPatternType'>,

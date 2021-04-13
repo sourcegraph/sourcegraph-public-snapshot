@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+
 import {
     CloneInProgressError,
     RepoNotFoundError,
@@ -18,6 +19,7 @@ import {
     RepoSpec,
     ResolvedRevisionSpec,
 } from '@sourcegraph/shared/src/util/url'
+
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
     TreeFields,

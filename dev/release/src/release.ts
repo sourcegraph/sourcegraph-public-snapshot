@@ -1,5 +1,12 @@
-import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
-import { postMessage, slackURL } from './slack'
+import { readFileSync, rmdirSync, writeFileSync } from 'fs'
+import * as path from 'path'
+
+import commandExists from 'command-exists'
+import { addMinutes } from 'date-fns'
+
+import * as campaigns from './campaigns'
+import * as changelog from './changelog'
+import { Config, releaseVersions } from './config'
 import {
     getAuthenticatedGitHubClient,
     listIssues,
@@ -10,14 +17,9 @@ import {
     ensureTrackingIssues,
     releaseName,
 } from './github'
-import * as changelog from './changelog'
-import * as campaigns from './campaigns'
-import { Config, releaseVersions } from './config'
+import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
+import { postMessage, slackURL } from './slack'
 import { cacheFolder, formatDate, timezoneLink, hubSpotFeedbackFormStub } from './util'
-import { addMinutes } from 'date-fns'
-import { readFileSync, rmdirSync, writeFileSync } from 'fs'
-import * as path from 'path'
-import commandExists from 'command-exists'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 

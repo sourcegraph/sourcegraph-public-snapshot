@@ -1,7 +1,9 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import sinon from 'sinon'
+
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
 import { FormTriggerArea } from './FormTriggerArea'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/FormTrigerArea', module).addParameters({

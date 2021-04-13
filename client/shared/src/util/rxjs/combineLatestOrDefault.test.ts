@@ -1,5 +1,6 @@
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
+
 import { combineLatestOrDefault } from './combineLatestOrDefault'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))

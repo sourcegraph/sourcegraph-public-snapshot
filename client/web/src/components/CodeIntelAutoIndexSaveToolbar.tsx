@@ -1,7 +1,9 @@
-import { SaveToolbar, SaveToolbarProps } from './SaveToolbar'
-import * as React from 'react'
 import DollyIcon from 'mdi-react/DollyIcon'
+import * as React from 'react'
+
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+
+import { SaveToolbar, SaveToolbarProps } from './SaveToolbar'
 
 export interface AutoIndexProps {
     enqueueing: boolean

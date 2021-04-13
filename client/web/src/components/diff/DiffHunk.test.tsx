@@ -1,10 +1,13 @@
-import { Range } from '@sourcegraph/extension-api-classes'
-import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { DiffHunk } from './DiffHunk'
+
+import { Range } from '@sourcegraph/extension-api-classes'
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+
 import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
+
+import { DiffHunk } from './DiffHunk'
 
 describe('DiffHunk', () => {
     const history = H.createMemoryHistory()

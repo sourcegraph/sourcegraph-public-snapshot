@@ -5,18 +5,21 @@ import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
-import { HeroPage } from '../../components/HeroPage'
-import { fetchSettingsAreaRepository } from './backend'
-import { RepoSettingsSidebar, RepoSettingsSideBarGroups } from './RepoSettingsSidebar'
-import { RouteDescriptor } from '../../util/contributions'
-import { ErrorMessage } from '../../components/alerts'
+
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
+
 import { AuthenticatedUser } from '../../auth'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ErrorMessage } from '../../components/alerts'
+import { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import { HeroPage } from '../../components/HeroPage'
 import { RepositoryFields, SettingsAreaRepositoryFields } from '../../graphql-operations'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { RouteDescriptor } from '../../util/contributions'
+
+import { fetchSettingsAreaRepository } from './backend'
+import { RepoSettingsSidebar, RepoSettingsSideBarGroups } from './RepoSettingsSidebar'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage

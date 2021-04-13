@@ -1,4 +1,5 @@
 import React, { ReactElement } from 'react'
+
 import { REDESIGN_CLASS_NAME } from './useRedesignToggle'
 
 /**

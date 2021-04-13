@@ -1,20 +1,23 @@
 import { parseISO } from 'date-fns'
 import maxDate from 'date-fns/max'
+import * as H from 'history'
 import { isObject } from 'lodash'
 import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import * as H from 'history'
+
 import { ExtensionCategory, ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
+
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
+import { DefaultIcon } from '../icons'
+
 import { extensionIDPrefix, extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionReadme } from './RegistryExtensionReadme'
-import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
-import { DefaultIcon } from '../icons'
 
 interface Props extends Pick<ExtensionAreaRouteContext, 'extension' | 'telemetryService' | 'isLightTheme'> {
     history: H.History

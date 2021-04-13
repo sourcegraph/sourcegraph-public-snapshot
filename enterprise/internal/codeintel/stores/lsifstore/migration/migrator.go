@@ -2,7 +2,6 @@ package migration
 
 import (
 	"context"
-	"sort"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -86,30 +85,23 @@ type fieldSpec struct {
 type migrationDriver interface {
 	// MigrateRowUp determines which fields to update for the given row. The scanner will receive
 	// the values of the primary keys plus any additional non-updateOnly fields supplied via the
-	// migrator's fields option.
-	MigrateRowUp(scanner scanner) (updateSpec, error)
+	// migrator's fields option. Implementations must return the same number of values as the set
+	// of primary keys plus any additional non-selectOnly fields supplied via the migrator's fields
+	// option.
+	MigrateRowUp(scanner scanner) ([]interface{}, error)
 
 	// MigrateRowDown undoes the migration for the given row.  The scanner will receive the values
 	// of the primary keys plus any additional non-updateOnly fields supplied via the migrator's
-	// fields option.
-	MigrateRowDown(scanner scanner) (updateSpec, error)
+	// fields option. Implementations must return the same number of values as the set  of primary
+	// keys plus any additional non-selectOnly fields supplied via the migrator's fields option.
+	MigrateRowDown(scanner scanner) ([]interface{}, error)
 }
 
 // driverFunc is the type of MigrateRowUp and MigrateRowDown.
-type driverFunc func(scanner scanner) (updateSpec, error)
+type driverFunc func(scanner scanner) ([]interface{}, error)
 
 type scanner interface {
 	Scan(dest ...interface{}) error
-}
-
-type updateSpec struct {
-	// dumpID is the identifier of the associated upload record.
-	dumpID int
-
-	// fieldValues indicates the values that should be written back to the table. This must have
-	// the same number of values as the set of primary keys plus any additional non-selectOnly
-	// fields supplied via the migrator's fields option.
-	fieldValues []interface{}
 }
 
 func newMigrator(store *lsifstore.Store, driver migrationDriver, options migratorOptions) oobmigration.Migrator {
@@ -191,136 +183,142 @@ func (m *Migrator) run(ctx context.Context, sourceVersion, targetVersion int, dr
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// Perform the actual batch of migrations
-	ids, err := m.selectAndUpdate(ctx, tx, sourceVersion, targetVersion, driverFunc)
+	dumpID, ok, err := m.selectAndLockDump(ctx, tx, sourceVersion)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	rowValues, err := m.processRows(ctx, tx, dumpID, sourceVersion, driverFunc)
 	if err != nil {
 		return err
 	}
 
-	if len(ids) == 0 {
-		return nil
+	if err := m.updateBatch(ctx, tx, dumpID, targetVersion, rowValues); err != nil {
+		return err
 	}
 
-	idQueries := make([]*sqlf.Query, 0, len(ids))
-	for _, id := range ids {
-		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
-	}
+	// After selecting a dump for migration, update the schema version bounds for that
+	// dump. We do this regardless if we actually migrated any rows to catch the case
+	// where we would select a missing dump infinitely.
 
-	return tx.Exec(ctx, sqlf.Sprintf(runQuery, sqlf.Sprintf(m.options.tableName), sqlf.Sprintf(m.options.tableName), sqlf.Join(idQueries, ", ")))
-}
-
-const runQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:run
-INSERT INTO %s_schema_versions
-SELECT
-	dump_id,
-	MIN(schema_version) as min_schema_version,
-	MAX(schema_version) as max_schema_version
-FROM
-	%s
-WHERE
-	dump_id IN (%s)
-GROUP BY
-	dump_id
-ON CONFLICT (dump_id) DO UPDATE SET
-	min_schema_version = EXCLUDED.min_schema_version,
-	max_schema_version = EXCLUDED.max_schema_version
-`
-
-// selectAndUpdate selects a batch of records from the configured table with the given source
-// version, then performs an update on each matching row with the new values given from an
-// invocation of the given driver function. This method returns a deduplicated and ordered set
-// of upload identifiers denoting the complete set of uploads whose records were modified
-// by this batch of updates.
-func (m *Migrator) selectAndUpdate(ctx context.Context, tx *lsifstore.Store, sourceVersion, targetVersion int, driverFunc driverFunc) (_ []int, err error) {
-	// Note: we can't pipeline this as you can't have an open rows object and
-	// execute another unrelated query using the same database handle.
-	updateSpecs, err := m.selectAndProcess(ctx, tx, sourceVersion, driverFunc)
-	if err != nil {
-		return nil, err
-	}
-
-	idMap := map[int]struct{}{}
-	rowValues := make(chan []interface{}, len(updateSpecs))
-	for _, spec := range updateSpecs {
-		rowValues <- spec.fieldValues
-		idMap[spec.dumpID] = struct{}{}
-	}
-	close(rowValues)
-
-	temporaryTableName := "t_migration_payload"
-	temporaryTableExpression := sqlf.Sprintf(temporaryTableName)
-
-	// Create temporary table symmetric to the target table without read-only fields
-	if err := tx.Exec(ctx, sqlf.Sprintf(
-		selectAndUpdateTemporaryTableQuery,
-		temporaryTableExpression,
-		sqlf.Join(m.temporaryTableFieldSpecs, ", "),
-	)); err != nil {
-		return nil, err
-	}
-
-	// Bulk insert all the unique column values into the temporary table
-	if err := batch.InsertValues(
-		ctx,
-		tx.Handle().DB(),
-		temporaryTableName,
-		m.temporaryTableFieldNames,
-		rowValues,
-	); err != nil {
-		return nil, err
-	}
-
-	// Update the values from the temporary table in the target table. We assign a
-	// parameterized schema version here since it is the same for all rows in this
-	// operation.
-	if err := tx.Exec(ctx, sqlf.Sprintf(
-		selectAndUpdateUpdateQuery,
-		sqlf.Sprintf(m.options.tableName),
-		sqlf.Join(m.updateAssignments, ", "),
-		targetVersion,
-		temporaryTableExpression,
-		sqlf.Join(m.updateConditions, " AND "),
-	)); err != nil {
-		return nil, err
-	}
-
-	ids := make([]int, 0, len(idMap))
-	for id := range idMap {
-		ids = append(ids, id)
-	}
-	sort.Ints(ids)
-
-	return ids, nil
-}
-
-const selectAndUpdateTemporaryTableQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:selectAndUpdate
-CREATE TEMPORARY TABLE %s (%s) ON COMMIT DROP
-`
-
-const selectAndUpdateUpdateQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:selectAndUpdate
-UPDATE %s dest SET %s, schema_version = %s FROM %s src WHERE %s
-`
-
-// selectAndProcess selects a batch of records from the configured table with the given version and
-// returns the update specifications after running the given driver function on each matching row.
-// The records selected by this method are locked (via select for update) in the given transaction.
-//
-// This method will lock as many records to be processed as can fit in a batch, but all records will
-// belong to the same index (due to the query construction). Therefore the dump id for each batch is
-// going to be the same for each record.
-func (m *Migrator) selectAndProcess(ctx context.Context, tx *lsifstore.Store, version int, driverFunc driverFunc) ([]updateSpec, error) {
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
-		selectAndProcessQuery,
+		runUpdateBoundsQuery,
+		dumpID,
+		sqlf.Sprintf(m.options.tableName),
+		dumpID,
+		sqlf.Sprintf(m.options.tableName),
+		sqlf.Sprintf(m.options.tableName),
+		dumpID,
+	))
+	if err != nil {
+		return err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	if rows.Next() {
+		var rowsUpserted, rowsDeleted int
+		if err := rows.Scan(&rowsUpserted, &rowsDeleted); err != nil {
+			return err
+		}
+
+		// do nothing with these values for now
+	}
+
+	return nil
+}
+
+const runUpdateBoundsQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:run
+WITH
+	current_bounds AS (
+		-- Find the current bounds by scanning the data rows for the
+		-- dump id and tracking the min and max. Note that these values
+		-- will be null if there are no data rows.
+
+		SELECT
+			%s::integer AS dump_id,
+			MIN(schema_version) as min_schema_version,
+			MAX(schema_version) as max_schema_version
+		FROM %s
+		WHERE dump_id = %s
+	),
+	ups AS (
+		-- Upsert the current bounds into the schema versions table. If
+		-- the row already exists, we forcibly update the values as we
+		-- just calculated the most recent view of row versions.
+
+		INSERT INTO %s_schema_versions
+		SELECT dump_id, min_schema_version, max_schema_version
+		FROM current_bounds
+		WHERE
+			-- Do not insert or update if there are no data rows
+			min_schema_version IS NOT NULL AND
+			min_schema_version IS NOT NULL
+		ON CONFLICT (dump_id) DO UPDATE SET
+			min_schema_version = EXCLUDED.min_schema_version,
+			max_schema_version = EXCLUDED.max_schema_version
+		RETURNING 1
+	),
+	del AS (
+		-- If there were no data rows associated with this dump, then
+		-- there are no bounds (by definition) and we should remove the
+		-- schema version row so we don't re-select it for migration.
+
+		DELETE FROM %s_schema_versions
+		WHERE dump_id = %s AND EXISTS (
+			SELECT 1
+			FROM current_bounds
+			WHERE
+				min_schema_version IS NULL AND
+				max_schema_version IS NULL
+			)
+		RETURNING 1
+	)
+SELECT
+	(SELECT COUNT(*) FROM ups) AS num_ups,
+	(SELECT COUNT(*) FROM del) AS num_del
+`
+
+// selectAndLockDump chooses and row-locks a schema version row associated with a particular dump.
+// Having each batch of updates touch only rows associated with a single dump reduces contention
+// when multiple migrators are running. This method returns the dump identifier and a boolean flag
+// indicating that such a dump could be selected.
+func (m *Migrator) selectAndLockDump(ctx context.Context, tx *lsifstore.Store, sourceVersion int) (_ int, _ bool, err error) {
+	return basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
+		selectAndLockDumpQuery,
+		sqlf.Sprintf(m.options.tableName),
+		sourceVersion,
+		sourceVersion,
+	)))
+}
+
+const selectAndLockDumpQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:selectAndLockDump
+SELECT dump_id
+FROM %s_schema_versions
+WHERE
+	min_schema_version <= %s AND
+	max_schema_version >= %s
+ORDER BY dump_id
+LIMIT 1
+
+-- Lock the record in the schema_versions table. All concurrent migrators should then
+-- be able to process records related to a distinct dump.
+FOR UPDATE SKIP LOCKED
+`
+
+// processRows selects a batch of rows from the target table associated with the given dump identifier
+// to  update and calls the given driver func over each row. The driver func returns the set of values
+// that should be used to update that row. These values are fed into a channel usable for batch insert.
+func (m *Migrator) processRows(ctx context.Context, tx *lsifstore.Store, dumpID, version int, driverFunc driverFunc) (_ <-chan []interface{}, err error) {
+	rows, err := tx.Query(ctx, sqlf.Sprintf(
+		processRowsQuery,
 		sqlf.Join(m.selectionExpressions, ", "),
 		sqlf.Sprintf(m.options.tableName),
-		sqlf.Sprintf(m.options.tableName),
-		version,
-		version,
-		sqlf.Sprintf(m.options.tableName),
-		version,
+		dumpID,
 		version,
 		m.options.batchSize,
 	))
@@ -329,55 +327,74 @@ func (m *Migrator) selectAndProcess(ctx context.Context, tx *lsifstore.Store, ve
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	var specs []updateSpec
+	rowValues := make(chan []interface{}, m.options.batchSize)
+	defer close(rowValues)
+
 	for rows.Next() {
-		spec, err := driverFunc(rows)
+		values, err := driverFunc(rows)
 		if err != nil {
 			return nil, err
 		}
 
-		specs = append(specs, spec)
+		rowValues <- values
 	}
 
-	return specs, nil
+	return rowValues, nil
 }
 
-const selectAndProcessQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:selectAndProcess
-SELECT %s
-FROM %s t1
-WHERE
-	dump_id = (
-		-- First, we select an index that has at least one record with the target schema
-		-- version. We do this so that we can efficiently select from the target table,
-		-- which are all keyed on dump_id.
-		--
-		-- This is more efficient than scanning the entire target table looking for a matching
-		-- schema version especially when that schema version is a small subset of the table.
+const processRowsQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:processRows
+SELECT %s FROM %s WHERE dump_id = %s AND schema_version = %s LIMIT %s
+`
 
-		SELECT sv.dump_id
-		FROM %s_schema_versions sv
-		WHERE
-			-- Check if we have a schema version in range
-			sv.min_schema_version <= %s AND
-			sv.max_schema_version >= %s AND
+var temporaryTableName = "t_migration_payload"
+var temporaryTableExpression = sqlf.Sprintf(temporaryTableName)
 
-			-- Ensure we actually have a row with the target schema version. This condition may
-			-- be true numerically but may not have any rows with this particular schema version;
-			--
-			-- For example: an index with a min schema version of 3 and max schema version of 5
-			-- may have no rows with a schema version of 4. We want to skip over these indexes
-			-- before moving on to the query so we don't always pull back an empty batch unable
-			-- to migrate a legitimate index stuck behind the head of the queue.
-			EXISTS (SELECT 1 FROM %s t2 WHERE t2.dump_id = sv.dump_id AND t2.schema_version = %s)
+// updateBatch creates a temporary table symmetric to the target table but without any of the read-only
+// fields. Then, the given row values are bulk inserted into the temporary table. Finally, the rows in
+// the temporary table are used to update the target table.
+func (m *Migrator) updateBatch(ctx context.Context, tx *lsifstore.Store, dumpID, targetVersion int, rowValues <-chan []interface{}) error {
+	if err := tx.Exec(ctx, sqlf.Sprintf(
+		updateBatchTemporaryTableQuery,
+		temporaryTableExpression,
+		sqlf.Join(m.temporaryTableFieldSpecs, ", "),
+	)); err != nil {
+		return err
+	}
 
-		-- Encourage index scan of pk
-		ORDER BY dump_id
+	if err := batch.InsertValues(
+		ctx,
+		tx.Handle().DB(),
+		temporaryTableName,
+		m.temporaryTableFieldNames,
+		rowValues,
+	); err != nil {
+		return err
+	}
 
-		-- All records in a migration batch will belong to a single dump
-		LIMIT 1
-	) AND
-	schema_version = %s
-LIMIT %s
-FOR UPDATE SKIP LOCKED
+	// Note that we assign a parameterized dump identifier and schema version here since
+	// both values are the same for all rows in this operation.
+	if err := tx.Exec(ctx, sqlf.Sprintf(
+		updateBatchUpdateQuery,
+		sqlf.Sprintf(m.options.tableName),
+		sqlf.Join(m.updateAssignments, ", "),
+		targetVersion,
+		temporaryTableExpression,
+		dumpID,
+		sqlf.Join(m.updateConditions, " AND "),
+	)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const updateBatchTemporaryTableQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:updateBatch
+CREATE TEMPORARY TABLE %s (%s) ON COMMIT DROP
+`
+
+const updateBatchUpdateQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:updateBatch
+UPDATE %s dest SET %s, schema_version = %s FROM %s src WHERE dump_id = %s AND %s
 `

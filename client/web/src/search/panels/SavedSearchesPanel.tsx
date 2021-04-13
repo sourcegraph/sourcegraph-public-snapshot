@@ -2,15 +2,18 @@ import classNames from 'classnames'
 import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { AuthenticatedUser } from '../../auth'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { ISavedSearch, SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { LoadingPanelView } from './LoadingPanelView'
 import { Observable } from 'rxjs'
-import { PanelContainer } from './PanelContainer'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { ISavedSearch, SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { AuthenticatedUser } from '../../auth'
+
+import { LoadingPanelView } from './LoadingPanelView'
+import { PanelContainer } from './PanelContainer'
 
 interface Props extends TelemetryProps {
     className?: string

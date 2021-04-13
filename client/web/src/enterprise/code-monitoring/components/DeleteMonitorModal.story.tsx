@@ -1,10 +1,12 @@
-import React from 'react'
-import { DeleteMonitorModal } from './DeleteMonitorModal'
 import { storiesOf } from '@storybook/react'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
-import sinon from 'sinon'
+import React from 'react'
 import { NEVER } from 'rxjs'
+import sinon from 'sinon'
+
+import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { mockCodeMonitor } from '../testing/util'
+
+import { DeleteMonitorModal } from './DeleteMonitorModal'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/DeleteMonitorModal', module)
 

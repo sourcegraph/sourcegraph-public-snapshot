@@ -2,6 +2,7 @@ import { parseISO } from 'date-fns'
 import format from 'date-fns/format'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React from 'react'
+
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 

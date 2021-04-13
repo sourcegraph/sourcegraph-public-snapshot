@@ -3,11 +3,13 @@ import { debounce } from 'lodash'
 import MenuLeftIcon from 'mdi-react/MenuLeftIcon'
 import MenuRightIcon from 'mdi-react/MenuRightIcon'
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react'
+
 import { SearchFilters } from '@sourcegraph/shared/src/api/protocol'
+import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
+
 import { QuickLink } from '../../schema/settings.schema'
 import { FilterChip } from '../FilterChip'
 import { QuickLinks } from '../QuickLinks'
-import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 
 export interface DynamicSearchFilter {
     name?: string

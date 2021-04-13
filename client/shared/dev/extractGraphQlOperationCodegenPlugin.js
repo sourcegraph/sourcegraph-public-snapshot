@@ -1,7 +1,8 @@
 // @ts-check
 
-const { visit } = require('graphql')
 const path = require('path')
+
+const { visit } = require('graphql')
 const logger = require('gulplog')
 
 const ROOT_FOLDER = path.resolve(__dirname, '../../')

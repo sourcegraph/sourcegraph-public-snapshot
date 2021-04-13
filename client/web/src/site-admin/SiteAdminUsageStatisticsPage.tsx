@@ -1,18 +1,21 @@
 import format from 'date-fns/format'
+import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
+
+import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+
+import { ErrorAlert } from '../components/alerts'
 import { BarChart } from '../components/d3/BarChart'
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { RadioButtons } from '../components/RadioButtons'
 import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
+
 import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
-import { ErrorAlert } from '../components/alerts'
-import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
-import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
 
 interface ChartData {
     label: string

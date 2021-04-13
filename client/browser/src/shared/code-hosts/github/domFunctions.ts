@@ -1,5 +1,7 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
+
 import { DOMFunctions } from '../shared/codeViews'
+
 import { isDiffPageType, parseURL } from './util'
 
 const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {

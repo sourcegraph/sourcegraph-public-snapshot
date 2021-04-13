@@ -1,4 +1,5 @@
 import React, { Fragment, useMemo } from 'react'
+
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 
 // A read-only syntax highlighted search query

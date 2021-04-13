@@ -1,5 +1,10 @@
-import { diffStatFields } from '../../../backend/diff'
+import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
+
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+
+import { diffStatFields } from '../../../backend/diff'
+import { requestGraphQL } from '../../../backend/graphql'
 import {
     Scalars,
     CreateBatchChangeVariables,
@@ -10,9 +15,6 @@ import {
     BatchSpecByIDVariables,
     BatchSpecFields,
 } from '../../../graphql-operations'
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
-import { requestGraphQL } from '../../../backend/graphql'
 
 export const viewerBatchChangesCodeHostsFragment = gql`
     fragment ViewerBatchChangesCodeHostsFields on BatchChangesCodeHostConnection {

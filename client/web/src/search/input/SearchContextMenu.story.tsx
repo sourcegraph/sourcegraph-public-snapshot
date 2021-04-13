@@ -1,9 +1,11 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Observable, of } from 'rxjs'
+
 import { WebStory } from '../../components/WebStory'
 import { ListSearchContextsResult } from '../../graphql-operations'
 import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
 const { add } = storiesOf('web/search/input/SearchContextMenu', module)
@@ -21,6 +23,7 @@ const { add } = storiesOf('web/search/input/SearchContextMenu', module)
     ))
 
 const defaultProps: SearchContextMenuProps = {
+    showSearchContextManagement: false,
     fetchAutoDefinedSearchContexts: of([
         {
             __typename: 'SearchContext',
@@ -75,3 +78,9 @@ const emptySearchContexts = {
 add('default', () => <WebStory>{() => <SearchContextMenu {...defaultProps} />}</WebStory>, {})
 
 add('empty', () => <WebStory>{() => <SearchContextMenu {...defaultProps} {...emptySearchContexts} />}</WebStory>, {})
+
+add(
+    'with manage link',
+    () => <WebStory>{() => <SearchContextMenu {...defaultProps} showSearchContextManagement={true} />}</WebStory>,
+    {}
+)

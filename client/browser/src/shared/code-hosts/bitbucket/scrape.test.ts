@@ -1,5 +1,7 @@
 import { readFile } from 'mz/fs'
+
 import { getFixtureBody } from '../shared/codeHostTestUtils'
+
 import {
     getFileInfoFromSingleFileSourceCodeView,
     getFileInfoWithoutCommitIDsFromMultiFileDiffCodeView,

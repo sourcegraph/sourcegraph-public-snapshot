@@ -1,11 +1,14 @@
+import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
 import AddIcon from 'mdi-react/AddIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
-import ServerIcon from 'mdi-react/ServerIcon'
-import MapSearchOutlineIcon from 'mdi-react/MapSearchOutlineIcon'
-import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
 import DomainIcon from 'mdi-react/DomainIcon'
+import MapSearchOutlineIcon from 'mdi-react/MapSearchOutlineIcon'
+import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
+
+import { AuthenticatedUser } from '../../auth'
+import { Badge, BadgeStatus } from '../../components/Badge'
 import {
     SIDEBAR_BUTTON_CLASS,
     SidebarGroup,
@@ -13,19 +16,17 @@ import {
     SidebarGroupItems,
     SidebarNavItem,
 } from '../../components/Sidebar'
+import { UserAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
-import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { NavItemDescriptor } from '../../util/contributions'
-import { UserAreaRouteContext } from '../area/UserArea'
+import { OnboardingTourProps } from '../../search'
 import {
     HAS_SEEN_TOUR_KEY,
     HAS_CANCELLED_TOUR_KEY,
     HAS_COMPLETED_TOUR_KEY,
 } from '../../search/input/SearchOnboardingTour'
-import { OnboardingTourProps } from '../../search'
-import { AuthenticatedUser } from '../../auth'
-import { UserAreaUserFields } from '../../graphql-operations'
-import { Badge, BadgeStatus } from '../../components/Badge'
+import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
+import { NavItemDescriptor } from '../../util/contributions'
+import { UserAreaRouteContext } from '../area/UserArea'
 
 export interface UserSettingsSidebarItemConditionContext {
     user: UserAreaUserFields

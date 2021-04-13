@@ -1,15 +1,17 @@
+import classNames from 'classnames'
 import React, { useMemo, useRef } from 'react'
 import { combineLatest, from, ReplaySubject } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { getContributedActionItems } from '../contributions/contributions'
-import { TelemetryProps } from '../telemetry/telemetryService'
-import { ActionItem, ActionItemProps } from './ActionItem'
-import { ActionsProps } from './ActionsContainer'
-import classNames from 'classnames'
-import { useObservable } from '../util/useObservable'
+import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
+
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { Context, ContributionScope } from '../api/extension/api/context/context'
-import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
+import { getContributedActionItems } from '../contributions/contributions'
+import { TelemetryProps } from '../telemetry/telemetryService'
+import { useObservable } from '../util/useObservable'
+
+import { ActionItem, ActionItemProps } from './ActionItem'
+import { ActionsProps } from './ActionsContainer'
 
 export interface ActionNavItemsClassProps {
     /**

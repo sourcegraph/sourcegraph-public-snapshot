@@ -1,28 +1,31 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilKeyChanged, map, mapTo, tap, withLatestFrom } from 'rxjs/operators'
-import { orgURL } from '..'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { orgURL } from '..'
 import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { requestGraphQL } from '../../backend/graphql'
-import { Form } from '@sourcegraph/branded/src/components/Form'
+import { ErrorAlert } from '../../components/alerts'
 import { ModalPage } from '../../components/ModalPage'
 import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
-import { userURL } from '../../user'
-import { OrgAvatar } from '../OrgAvatar'
-import { OrgAreaPageProps } from './OrgArea'
-import { ErrorAlert } from '../../components/alerts'
-import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import {
     RespondToOrganizationInvitationResult,
     RespondToOrganizationInvitationVariables,
 } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
+import { userURL } from '../../user'
+import { OrgAvatar } from '../OrgAvatar'
+
+import { OrgAreaPageProps } from './OrgArea'
 
 interface Props extends OrgAreaPageProps {
     authenticatedUser: AuthenticatedUser

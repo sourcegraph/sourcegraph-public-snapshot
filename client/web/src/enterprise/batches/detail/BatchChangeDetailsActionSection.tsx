@@ -1,11 +1,14 @@
 import * as H from 'history'
-import React, { useCallback, useState } from 'react'
-import { Scalars } from '../../../graphql-operations'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { deleteBatchChange as _deleteBatchChange } from './backend'
-import { isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 import InformationIcon from 'mdi-react/InformationIcon'
+import React, { useCallback, useState } from 'react'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+
+import { Scalars } from '../../../graphql-operations'
+
+import { deleteBatchChange as _deleteBatchChange } from './backend'
 
 export interface BatchChangeDetailsActionSectionProps {
     batchChangeID: Scalars['ID']

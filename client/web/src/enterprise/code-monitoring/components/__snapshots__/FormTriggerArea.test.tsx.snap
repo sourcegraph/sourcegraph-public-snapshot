@@ -69,9 +69,9 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                   />
                   <Memo(RadioboxBlankIcon)
                     aria-hidden={true}
-                    className="trigger-area__checklist-checkbox icon-inline"
+                    className="trigger-area__checklist-checkbox trigger-area__checklist-checkbox--unchecked icon-inline"
                   />
-                  <span
+                  <small
                     className=""
                   >
                     Contains a 
@@ -83,7 +83,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                       type:commit
                     </code>
                      filter
-                  </span>
+                  </small>
                   <span
                     className="sr-only"
                   >
@@ -192,7 +192,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                     aria-hidden={true}
                     className="trigger-area__checklist-checkbox icon-inline text-success"
                   />
-                  <span
+                  <small
                     className="trigger-area__checklist-children--faded"
                   >
                     Contains a 
@@ -200,7 +200,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                       repo:
                     </code>
                      filter
-                  </span>
+                  </small>
                   <span
                     className="sr-only"
                   >
@@ -308,11 +308,11 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                     aria-hidden={true}
                     className="trigger-area__checklist-checkbox icon-inline text-success"
                   />
-                  <span
+                  <small
                     className="trigger-area__checklist-children--faded"
                   >
                     Is a valid search query
-                  </span>
+                  </small>
                 </label>
               </ValidQueryChecklistItem>
             </li>

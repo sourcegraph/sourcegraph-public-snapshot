@@ -1,6 +1,7 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { Modal } from 'reactstrap'
+
 import { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp'
 
 describe('KeyboardShortcutsHelp', () => {

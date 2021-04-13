@@ -1,6 +1,7 @@
-import React from 'react'
 import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
+import React from 'react'
+
 import { BatchChangeFields } from '../../../graphql-operations'
 
 interface ClosedNoticeProps {

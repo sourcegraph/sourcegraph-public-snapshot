@@ -1,6 +1,8 @@
+import React from 'react'
+
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import React from 'react'
+
 import { ErrorAlert } from '../../../../components/alerts'
 
 export interface ChangesetSelectRowProps {

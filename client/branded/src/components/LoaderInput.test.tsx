@@ -1,6 +1,7 @@
-import renderer from 'react-test-renderer'
-import { LoaderInput } from './LoaderInput'
 import React from 'react'
+import renderer from 'react-test-renderer'
+
+import { LoaderInput } from './LoaderInput'
 
 jest.mock('@sourcegraph/react-loading-spinner', () => ({ LoadingSpinner: 'LoadingSpinner' }))
 
