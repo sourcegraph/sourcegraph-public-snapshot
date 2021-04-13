@@ -112,7 +112,6 @@ func TestMain(m *testing.M) {
 
 func TestAffiliatedRepositories(t *testing.T) {
 	resetMocks()
-	database.Mocks.Users.HasTag = func(ctx context.Context, userID int32, tag string) (bool, error) { return true, nil }
 	database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]struct{}, error) {
 		return map[string]struct{}{}, nil
 	}
