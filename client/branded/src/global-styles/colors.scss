@@ -179,12 +179,216 @@ $text-muted: var(--text-muted);
 	--hl-red: #dc322f;
 	--hl-orange: #cb4b16;
 	--hl-blue: #268bd2;
-	--hl-gray-4: #586e75; // TODO order these correctly
+	--hl-gray-4: #586e75;
 	--hl-gray-0: #767676;
 	--hl-gray-1: #839496;
 	--hl-gray-5: #{$gray-19};
 	--hl-gray-2: #93a1a1;
-	--hl-gray-blue: #657b83;
+	--hl-gray-6: #657b83;
+	--hl-cyan: #2aa198;
+	--hl-eggshell: #eee8d5;
+	--hl-purple: #6c71c4;
+	--hl-pink: #d33682;
+
+	--hl-bg-red: #f5dbdd;
+	--hl-bg-green: #deeade;
+
+	.code {
+		color: var(--hl-gray-6);
+
+		// Comments
+		.comment,
+		.meta.documentation {
+			color: var(--hl-gray-0);
+		}
+
+		// String constants
+		.string { color: var(--hl-cyan) } // contents
+		.punctuation.definition.string { color: var(--hl-gray-1) } // surrounding quotes
+		.constant.character.escape { color: var(--hl-red) } // escape sequences
+
+		// Other constants
+		.constant { color: var(--hl-yellow) } // TODO this might not be specific enough. It matched punctuation.definition.constant.ruby inside constant other symbol ruby, which has an overridden style
+		.constant.language { color: var(--hl-yellow) }
+		.constant.numeric { color: var(--hl-purple) }
+		.constant.character { color: var(--hl-orange) }
+		.constant.other { color: var(--hl-orange) }
+		.meta.preprocessor { color: var(--hl-yellow) } // TODO do we need this? And should it go with the C section?
+
+		// Variables
+		.variable { color: var(--hl-blue) }
+		.variable.function { color: var(--hl-yellow) } // function calls, etc.
+		.variable.language { color: var(--hl-pink) } // reserved variables like this or self
+		.punctuation.definition.variable { color: var(--hl-green) } // punctuation in variable definitions like $ in shell
+
+		// Keywords and storage
+		.keyword.operator { color: var(--hl-gray-6) }
+		.keyword.control  {
+			color: var(--hl-green);
+			&.import,
+			&.include {
+				color: var(--hl-orange);
+			}
+			&.class { color: var(--hl-yellow) }
+		}
+		.keyword.other.new { color: var(--hl-red) }
+		.keyword.other.special-method { color: var(--hl-orange) }
+		.storage { color: var(--hl-green) }
+		.storage.modifier { color: var(--hl-gray-4) } // const, public, inline
+		.storage.type { color: var(--hl-blue) } // int, bool, char
+
+		// Entities
+		.entity.name { color: var(--hl-yellow) }
+		.entity.name.tag { color: var(--hl-blue) }
+		.entity.other.inherited-class { color: var(--hl-blue) }
+		.entity.other.attribute-name { color: var(--hl-yellow) }
+
+		// Support (builtin libraries like browser)
+		.support.function { color: var(--hl-green) }
+		.support.function.construct { color: var(--hl-red) }
+		.support.type.exception { color: var(--hl-orange) }
+		.support.type,
+		.support.class {
+			color: var(--hl-green);
+		}
+		.support.constant.color { color: var(--hl-yellow) } // color constants #ababab
+
+		// Braces
+		.punctuation.section.braces { color: var(--hl-gray-6) }
+		.punctuation.section.block { color: var(--hl-gray-6) }
+
+		// Parens
+		.punctuation.section.parens { color: var(--hl-gray-6) }
+		.punctuation.section.group { color: var(--hl-gray-6) }
+
+		// Brackets
+		.punctuation.section.brackets { color: var(--hl-blue) }
+
+		// Other
+		.punctuation.separator.continuation { color: var(--hl-red) } // line continuation \
+		.punctuation.definition.tag { color: var(--hl-gray-2); } // tag delimiters <>
+		.invalid { background: var(--hl-bg-red) }
+
+		//////////////////////////////////
+		// Language-specific highlights //
+		//////////////////////////////////
+
+		.source.scss {
+			.invalid.deprecated.color.w3c-non-standard-color-name { color: var(--hl-yellow) }
+			.keyword.control.untitled { color: var(--hl-yellow) } // TODO what is this?
+		}
+
+		.source.less {
+			.keyword.control.html.elements { color: var(--hl-yellow) }
+		}
+
+		.source.scss,
+		.source.css,
+		.source.less {
+			.entity.name.tag { color: var(--hl-yellow) }
+			.entity.other {
+				&.class { color: var(--hl-yellow) }
+				&.id { color: var(--hl-yellow) }
+				&.pseudo-class { color: var(--hl-blue) }
+				&.pseudo-element { color: var(--hl-blue) } // :hover
+			}
+		}
+
+		.source.ruby {
+			.keyword.other.special-method { color: var(--hl-orange) }
+			.variable.other.constant { color: var(--hl-yellow) }
+			.constant.other.symbol { color: var(--hl-cyan) }
+			.punctuation.definition.constant { color: var(--hl-cyan) }
+		}
+
+		.source.php {
+			.meta.array .support.function.construct { color: var(--hl-yellow) }
+		}
+
+		.source.c, 
+		.source.c\2b\2b { // escaped c++
+			.entity.name.function.preprocessor {color: var(--hl-orange)}
+			.meta.preprocessor.macro {color: var(--hl-orange)}
+			.meta.preprocessor.include .punctuation.definition.string { color: var(--hl-cyan) } // include <> and ""
+		}
+
+		.source.c\2b\2b { // escaped c++
+			.storage.modifier { color: var(--hl-green) }
+		}
+
+		.text.tex, 
+		.text.latex {
+			.punctuation.section.group { color: var(--hl-red) }
+			.punctuation.definition.arguments { color: var(--hl-red) }
+			.meta.group.braces { color: var(--hl-yellow) }
+			.variable.parameter.function { color: var(--hl-orange) }
+
+			.string.other.math { color: var(--hl-yellow) }
+			.constant.other.math { color: var(--hl-cyan) }
+			.constant.character.math { color: var(--hl-cyan) }
+			.punctuation.definition.constant.math { color: var(--hl-red) }
+			.punctuation.definition.string { color: var(--hl-red) }
+
+			.variable.parameter.definition.label { color: var(--hl-orange) }
+			.support.function.be { color: var(--hl-green) }
+			.support.function.section { color: var(--hl-orange) } // \subsection
+			.support.function.general { color: var(--hl-cyan) }
+			.storage.type.label { color: var(--hl-cyan) } // \label
+			.keyword.other.reference { color: var(--hl-cyan) } // \ref
+		}
+
+		.source.python {
+			.storage.type.class { color: var(--hl-green) }
+			.storage.type.function { color: var(--hl-green) }
+			.storage.modifier.global { color: var(--hl-green) }
+			.support.type.exception { color: var(--hl-yellow) }
+		}
+
+		.source.shell {
+			.keyword.operator.expansion { color: var(--hl-green) } // the #* in "${1#*=}"
+		}
+
+		.source.perl {
+			.support.function { color: var(--hl-blue)}
+		}
+
+		.source.diff {
+			.meta.range { color: var(--hl-blue) }
+			.entity.name.section { color: var(--hl-orange) }
+			.markup.deleted {
+				color: var(--hl-gray-5);
+				background: var(--hl-bg-red);
+			}
+			.markup.inserted {
+				color: var(--hl-gray-5);
+				background: var(--hl-bg-green);
+			}
+		}
+
+		.js {
+			.variable.other {
+				&.readwrite, 
+				&.object, 
+				&.constant { 
+					color: var(--hl-gray-6);
+				}
+			}
+		}
+	}
+}
+
+.theme-dark {
+	--hl-yellow: #b58900;
+	--hl-green: #859900;
+	--hl-red: #dc322f;
+	--hl-orange: #cb4b16;
+	--hl-blue: #268bd2;
+	--hl-gray-4: #586e75;
+	--hl-gray-0: #767676;
+	--hl-gray-1: #839496;
+	--hl-gray-5: #{$gray-19};
+	--hl-gray-2: #93a1a1;
+	--hl-gray-6: #657b83;
 	--hl-cyan: #2aa198;
 	--hl-eggshell: #eee8d5;
 	--hl-purple: #6c71c4;
@@ -194,168 +398,3 @@ $text-muted: var(--text-muted);
 	--hl-bg-green: #deeade;
 }
 
-.code {
-	color: var(--hl-gray-blue);
-
-	// Comments
-	.comment, .meta.documentation { color: var(--hl-gray-0) }
-
-	// String constants
-	.string { color: var(--hl-cyan) } // contents
-	.punctuation.definition.string { color: var(--hl-gray-1) } // surrounding quotes
-	.constant.character.escape { color: var(--hl-red) } // escape sequences
-
-	// Other constants
-	.constant { color: var(--hl-yellow) } // TODO this might not be specific enough. It matched punctuation.definition.constant.ruby inside constant other symbol ruby, which has an overridden style
-	.constant.language { color: var(--hl-yellow) }
-	.constant.numeric { color: var(--hl-purple) }
-	.constant.character { color: var(--hl-orange) }
-	.constant.other { color: var(--hl-orange) }
-	.meta.preprocessor { color: var(--hl-yellow) } // TODO do we need this? And should it go with the C section?
-
-	// Variables
-	.variable { color: var(--hl-blue) }
-	.variable.function { color: var(--hl-yellow) } // function calls, etc.
-	.variable.language { color: var(--hl-pink) } // reserved variables like this or self
-	.punctuation.definition.variable { color: var(--hl-green) } // punctuation in variable definitions like $ in shell
-
-	// Keywords and storage
-	.keyword.operator { color: var(--hl-gray-blue) }
-	.keyword.control  {
-		color: var(--hl-green);
-		&.import, &.include { color: var(--hl-orange) }
-		&.class { color: var(--hl-yellow) }
-	}
-	.keyword.other.new { color: var(--hl-red) }
-	.keyword.other.special-method { color: var(--hl-orange) }
-	.storage { color: var(--hl-green) }
-	.storage.modifier { color: var(--hl-gray-4) } // const, public, inline
-	.storage.type { color: var(--hl-blue) } // int, bool, char
-
-	// Entities
-	.entity.name { color: var(--hl-yellow) }
-	.entity.name.tag { color: var(--hl-blue) }
-	.entity.other.inherited-class { color: var(--hl-blue) }
-	.entity.other.attribute-name { color: var(--hl-yellow) }
-
-	// Support (builtin libraries like browser)
-	.support.function { color: var(--hl-green) }
-	.support.function.construct { color: var(--hl-red) }
-	.support.type.exception { color: var(--hl-orange) }
-	.support.type, .support.class { color: var(--hl-green) }
-	.support.constant.color { color: var(--hl-yellow) } // color constants #ababab
-
-	// Braces
-	.punctuation.section.braces { color: var(--hl-gray-blue) }
-	.punctuation.section.block { color: var(--hl-gray-blue) }
-
-	// Parens
-	.punctuation.section.parens { color: var(--hl-gray-blue) }
-	.punctuation.section.group { color: var(--hl-gray-blue) }
-
-	// Brackets
-	.punctuation.section.brackets { color: var(--hl-blue) }
-
-	// Other
-	.punctuation.separator.continuation { color: var(--hl-red) } // line continuation \
-	.punctuation.definition.tag { color: var(--hl-gray-2); } // tag delimiters <>
-	.invalid { background: var(--hl-bg-red) }
-
-	//////////////////////////////////
-	// Language-specific highlights //
-	//////////////////////////////////
-
-	.source.scss {
-		.invalid.deprecated.color.w3c-non-standard-color-name { color: var(--hl-yellow) }
-		.keyword.control.untitled { color: var(--hl-yellow) } // TODO what is this?
-	}
-
-	.source.less {
-		.keyword.control.html.elements { color: var(--hl-yellow) }
-	}
-
-	.source.scss, .source.css, .source.less {
-		.entity.name.tag { color: var(--hl-yellow) }
-		.entity.other {
-			&.class { color: var(--hl-yellow) }
-			&.id { color: var(--hl-yellow) }
-			&.pseudo-class { color: var(--hl-blue) }
-			&.pseudo-element { color: var(--hl-blue) } // :hover
-		}
-	}
-
-	.source.ruby {
-		.keyword.other.special-method { color: var(--hl-orange) }
-		.variable.other.constant { color: var(--hl-yellow) }
-		.constant.other.symbol { color: var(--hl-cyan) }
-		.punctuation.definition.constant { color: var(--hl-cyan) }
-	}
-
-	.source.php {
-		.meta.array .support.function.construct { color: var(--hl-yellow) }
-	}
-
-	.source.c, .source.c\2b\2b { // escaped c++
-		.entity.name.function.preprocessor {color: var(--hl-orange)}
-		.meta.preprocessor.macro {color: var(--hl-orange)}
-		.meta.preprocessor.include .punctuation.definition.string { color: var(--hl-cyan) } // include <> and ""
-	}
-
-	.source.c\2b\2b { // escaped c++
-		.storage.modifier { color: var(--hl-green) }
-	}
-
-	.text.tex, .text.latex {
-		.punctuation.section.group { color: var(--hl-red) }
-		.punctuation.definition.arguments { color: var(--hl-red) }
-		.meta.group.braces { color: var(--hl-yellow) }
-		.variable.parameter.function { color: var(--hl-orange) }
-
-		.string.other.math { color: var(--hl-yellow) }
-		.constant.other.math { color: var(--hl-cyan) }
-		.constant.character.math { color: var(--hl-cyan) }
-		.punctuation.definition.constant.math { color: var(--hl-red) }
-		.punctuation.definition.string { color: var(--hl-red) }
-
-		.variable.parameter.definition.label { color: var(--hl-orange) }
-		.support.function.be { color: var(--hl-green) }
-		.support.function.section { color: var(--hl-orange) } // \subsection
-		.support.function.general { color: var(--hl-cyan) }
-		.storage.type.label { color: var(--hl-cyan) } // \label
-		.keyword.other.reference { color: var(--hl-cyan) } // \ref
-	}
-
-	.source.python {
-		.storage.type.class { color: var(--hl-green) }
-		.storage.type.function { color: var(--hl-green) }
-		.storage.modifier.global { color: var(--hl-green) }
-		.support.type.exception { color: var(--hl-yellow) }
-	}
-
-	.source.shell {
-		.keyword.operator.expansion { color: var(--hl-green) } // the #* in "${1#*=}"
-	}
-
-	.source.perl {
-		.support.function { color: var(--hl-blue)}
-	}
-
-	.source.diff {
-		.meta.range { color: var(--hl-blue) }
-		.entity.name.section { color: var(--hl-orange) }
-		.markup.deleted {
-			color: var(--hl-gray-5);
-			background: var(--hl-bg-red);
-		}
-		.markup.inserted {
-			color: var(--hl-gray-5);
-			background: var(--hl-bg-green);
-		}
-	}
-
-	.js {
-		.variable.other {
-			&.readwrite, &.object, &.constant { color: var(--hl-gray-blue) }
-		}
-	}
-}
