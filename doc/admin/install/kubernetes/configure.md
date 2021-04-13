@@ -267,19 +267,17 @@ spec:
           name: ns-<EXAMPLE NAMESPACE>
 ```
 
-1. `k apply -f networkPolicy.yaml` => networkpolicy.networking.k8s.io/np-sourcegraph created
+1. `kubectl apply -f networkPolicy.yaml` => networkpolicy.networking.k8s.io/np-sourcegraph created
 
-1. `k apply -f generated-cluster/networking.k8s.io_v1beta1_ingress_sourcegraph-frontend.yaml` => ingress.networking.k8s.io/sourcegraph-frontend configured
+1. `kubectl apply -f generated-cluster/networking.k8s.io_v1beta1_ingress_sourcegraph-frontend.yaml` => ingress.networking.k8s.io/sourcegraph-frontend configured
 
-1. Check for duplicate `sourcegraph-frontend` using `kubectl get ingresses -A`
 
-1. Remove duplicate with `kubectl delete ingress sourcegraph-frontend -n default`
 
-1. Apply setting to all using `k apply -f .`
+1. Apply setting to all using `kubectl apply -f .`
 
 1. Run `kubectl get pods -A` to check for the namespaces and their status --it should now be up and running 🎉
 
-1. Start Sourcegraph on your local machine by temporarily making the frontend port accessible:
+1. Access Sourcegraph on your local machine by temporarily making the frontend port accessible:
 
    ```
    kubectl port-forward svc/sourcegraph-frontend 3080:30080

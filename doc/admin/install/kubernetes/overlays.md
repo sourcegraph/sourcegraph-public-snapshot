@@ -212,7 +212,7 @@ This version and `non-privileged` need to stay in sync. This version is only use
 
 To use it, execute the following command from the root directory of this repository:
 
-```./overlay-generate-cluster.sh non-privileged generated-cluster
+```./overlay-generate-cluster.sh non-privileged-create-cluster generated-cluster
 ```
 
 After executing the script you can apply the generated manifests from the generated-cluster directory:
