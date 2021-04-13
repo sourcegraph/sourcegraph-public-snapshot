@@ -223,10 +223,14 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// * If query contains only a single term (or 1 repogroup: token and a single term), treat it as a repo field here and ignore the other repo queries.
 		// * If only repo fields (except 1 term in query), show repo suggestions.
 
+		hasSingleField := len(r.Query.Fields()) == 1
+		hasTwoFields := len(r.Query.Fields()) == 2
+		hasSingleContextField := len(r.Query.Values(query.FieldContext)) == 1
+		hasSingleRepoGroupField := len(r.Query.Values(query.FieldRepoGroup)) == 1
 		var effectiveRepoFieldValues []string
-		if len(r.Query.Values(query.FieldDefault)) == 1 && (len(r.Query.Fields()) == 1 || (len(r.Query.Fields()) == 2 && len(r.Query.Values(query.FieldRepoGroup)) == 1)) {
+		if len(r.Query.Values(query.FieldDefault)) == 1 && (hasSingleField || (hasTwoFields && (hasSingleRepoGroupField || hasSingleContextField))) {
 			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.Query.Values(query.FieldDefault)[0].ToString())
-		} else if len(r.Query.Values(query.FieldRepo)) > 0 && ((len(r.Query.Values(query.FieldRepoGroup)) > 0 && len(r.Query.Fields()) == 2) || (len(r.Query.Values(query.FieldRepoGroup)) == 0 && len(r.Query.Fields()) == 1)) {
+		} else if len(r.Query.Values(query.FieldRepo)) > 0 && ((len(r.Query.Values(query.FieldRepoGroup)) > 0 && hasTwoFields) || (len(r.Query.Values(query.FieldRepoGroup)) == 0 && hasSingleField)) {
 			effectiveRepoFieldValues, _ = r.Query.Repositories()
 		}
 
@@ -240,7 +244,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		}
 		effectiveRepoFieldValues = effectiveRepoFieldValues[:i]
 
-		if len(effectiveRepoFieldValues) > 0 {
+		if len(effectiveRepoFieldValues) > 0 || hasSingleContextField {
 			resolved, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
 
 			resolvers := make([]SearchSuggestionResolver, 0, len(resolved.RepoRevs))
