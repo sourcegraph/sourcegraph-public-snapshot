@@ -34,6 +34,11 @@
         }
     }
 
+    &__bar-link:focus &__bar {
+        stroke: var(--web-content-link-color);
+        stroke-width: 3;
+    }
+
     /*
       Tooltip element from visx package is adding some inline styles by himself.
       There is no way to override them from css unless !important statement.

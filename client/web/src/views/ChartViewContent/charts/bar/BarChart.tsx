@@ -110,7 +110,7 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
 
                         return (
                             <Group key={`bar-${index}`}>
-                                <MaybeLink to={linkURLs?.[index]} onClick={onDatumLinkClick}>
+                                <MaybeLink to={linkURLs?.[index]} onClick={onDatumLinkClick} className='bar-chart__bar-link' >
                                     <Bar
                                         className={classes}
                                         x={xScale(index)}
