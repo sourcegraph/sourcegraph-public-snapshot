@@ -42,7 +42,6 @@ Or you may add an alias to your `.bashrc`:
 alias sg=$HOME/go/bin/sg
 ```
 
-
 Then, in the root of `sourcegraph/sourcegraph`, run:
 
 ```
