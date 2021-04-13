@@ -88,7 +88,7 @@ export const Line: React.FunctionComponent<Line> = ({
                     id={id || anchor}
                 >
                     {persistLines && (
-                        <Link className="diff-hunk__num--data-line" to={{ hash: anchor }}>
+                        <Link className="diff-hunk__num--line" to={{ hash: anchor }}>
                             {lineNumber}
                         </Link>
                     )}
@@ -100,8 +100,8 @@ export const Line: React.FunctionComponent<Line> = ({
                 style={lineStyle}
                 data-diff-marker={diffHunkTypeIndicators[kind]}
             >
-                <span
-                    className="diff-hunk--split__line--code"
+                <div
+                    className="diff-hunk--split__line--code d-inline-block"
                     dangerouslySetInnerHTML={{ __html: html }}
                     data-diff-marker={diffHunkTypeIndicators[kind]}
                 />

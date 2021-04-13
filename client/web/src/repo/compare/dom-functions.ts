@@ -29,6 +29,7 @@ export const diffDomFunctions: DOMFunctions = {
         if (!row) {
             throw new Error('Could not find closest row for codeCell')
         }
+
         const [baseLineNumberCell, headLineNumberCell] = row.cells
         // For unchanged lines, prefer line number in head
         if (headLineNumberCell.dataset.line) {
@@ -43,6 +44,7 @@ export const diffDomFunctions: DOMFunctions = {
     getDiffCodePart: (codeCell: HTMLElement): DiffPart => {
         const row = codeCell.parentElement as HTMLTableRowElement
         const [baseLineNumberCell, headLineNumberCell] = row.cells
+
         if (baseLineNumberCell.dataset.part && headLineNumberCell.dataset.part) {
             return null
         }

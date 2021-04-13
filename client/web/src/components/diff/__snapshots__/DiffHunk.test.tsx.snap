@@ -52,7 +52,7 @@ Array [
       id="anchor_R159"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R159"
         onClick={[Function]}
       >
@@ -97,7 +97,7 @@ Array [
       id="anchor_R160"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R160"
         onClick={[Function]}
       >
@@ -142,7 +142,7 @@ Array [
       id="anchor_R161"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R161"
         onClick={[Function]}
       >
@@ -211,7 +211,7 @@ Array [
       id="anchor_R162"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R162"
         onClick={[Function]}
       >
@@ -256,7 +256,7 @@ Array [
       id="anchor_R163"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R163"
         onClick={[Function]}
       >
@@ -301,7 +301,7 @@ Array [
       id="anchor_R164"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R164"
         onClick={[Function]}
       >
@@ -346,7 +346,7 @@ Array [
       id="anchor_R165"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R165"
         onClick={[Function]}
       >
@@ -423,7 +423,7 @@ Array [
       id="anchor_R159"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R159"
         onClick={[Function]}
       >
@@ -485,7 +485,7 @@ Array [
       id="anchor_R160"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R160"
         onClick={[Function]}
       >
@@ -530,7 +530,7 @@ Array [
       id="anchor_R161"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R161"
         onClick={[Function]}
       >
@@ -616,7 +616,7 @@ Array [
       id="anchor_R162"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R162"
         onClick={[Function]}
       >
@@ -661,7 +661,7 @@ Array [
       id="anchor_R163"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R163"
         onClick={[Function]}
       >
@@ -706,7 +706,7 @@ Array [
       id="anchor_R164"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R164"
         onClick={[Function]}
       >
@@ -751,7 +751,7 @@ Array [
       id="anchor_R165"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R165"
         onClick={[Function]}
       >
@@ -828,7 +828,7 @@ Array [
       id="anchor_R159"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R159"
         onClick={[Function]}
       >
@@ -889,7 +889,7 @@ Array [
       id="anchor_R160"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R160"
         onClick={[Function]}
       >
@@ -934,7 +934,7 @@ Array [
       id="anchor_R161"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R161"
         onClick={[Function]}
       >
@@ -1019,7 +1019,7 @@ Array [
       id="anchor_R162"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R162"
         onClick={[Function]}
       >
@@ -1064,7 +1064,7 @@ Array [
       id="anchor_R163"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R163"
         onClick={[Function]}
       >
@@ -1109,7 +1109,7 @@ Array [
       id="anchor_R164"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R164"
         onClick={[Function]}
       >
@@ -1154,7 +1154,7 @@ Array [
       id="anchor_R165"
     >
       <a
-        className="diff-hunk__num--data-line"
+        className="diff-hunk__num--line"
         href="/#anchor_R165"
         onClick={[Function]}
       >

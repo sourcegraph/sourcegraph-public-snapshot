@@ -110,7 +110,7 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                                         id={newAnchor}
                                     >
                                         {persistLines && (
-                                            <Link className="diff-hunk__num--data-line" to={{ hash: newAnchor }}>
+                                            <Link className="diff-hunk__num--line" to={{ hash: newAnchor }}>
                                                 {newLine - 1}
                                             </Link>
                                         )}
