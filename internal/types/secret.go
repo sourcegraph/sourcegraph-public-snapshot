@@ -65,11 +65,11 @@ func (e *ExternalService) RedactConfigSecrets() error {
 	case *schema.PerforceConnection:
 		newCfg, err = redactField(e.Config, "p4.passwd")
 	case *schema.GitoliteConnection:
-		// no secret fields?
-		newCfg, err = redactField(e.Config, "url")
+		// Gitolite has no secret fields
+		newCfg, err = redactField(e.Config)
 	case *schema.OtherExternalServiceConnection:
-		// no secret fields?
-		newCfg, err = redactField(e.Config, "url")
+		// Other has no secret fields
+		newCfg, err = redactField(e.Config)
 	default:
 		// return an error here, it's safer to fail than to incorrectly return unsafe data.
 		err = fmt.Errorf("RedactExternalServiceConfig: kind %q not implemented", e.Kind)
