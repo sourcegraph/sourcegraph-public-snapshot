@@ -208,147 +208,147 @@
         color: var(--hl-gray-3);
 
         // Comments
-        .comment,
-        .meta.documentation {
+        .hl-comment,
+        .hl-meta.hl-documentation {
             color: var(--hl-gray-0);
         }
 
         // String constants
-        .string {
+        .hl-string {
             color: var(--hl-cyan);
         } // contents
-        .punctuation.definition.string {
+        .hl-punctuation.hl-definition.hl-string {
             color: var(--hl-gray-1);
         } // surrounding quotes
-        .constant.character.escape {
+        .hl-constant.hl-character.hl-escape {
             color: var(--hl-red);
         } // escape sequences
 
         // Other constants
-        .constant {
+        .hl-constant {
             color: var(--hl-yellow);
         }
-        .constant.language {
+        .hl-constant.hl-language {
             color: var(--hl-yellow);
         }
-        .constant.numeric {
+        .hl-constant.hl-numeric {
             color: var(--hl-purple);
         }
-        .constant.character {
+        .hl-constant.hl-character {
             color: var(--hl-orange);
         }
-        .constant.other {
+        .hl-constant.hl-other {
             color: var(--hl-orange);
         }
-        .meta.preprocessor {
+        .hl-meta.hl-preprocessor {
             color: var(--hl-yellow);
         }
 
         // Variables
-        .variable {
+        .hl-variable {
             color: var(--hl-blue);
         }
-        .variable.function {
+        .hl-variable.hl-function {
             color: var(--hl-yellow);
         } // function calls, etc.
-        .variable.language {
+        .hl-variable.hl-language {
             color: var(--hl-pink);
         } // reserved variables like this or self
-        .punctuation.definition.variable {
+        .hl-punctuation.hl-definition.hl-variable {
             color: var(--hl-green);
         } // punctuation in variable definitions like $ in shell
 
         // Keywords and storage
-        .keyword.operator {
+        .hl-keyword.hl-operator {
             color: var(--hl-gray-3);
         }
-        .keyword.control {
+        .hl-keyword.hl-control {
             color: var(--hl-green);
-            &.import,
-            &.include {
+            &.hl-import,
+            &.hl-include {
                 color: var(--hl-orange);
             }
-            &.class {
+            &.hl-class {
                 color: var(--hl-yellow);
             }
         }
-        .keyword.other.new {
+        .hl-keyword.hl-other.hl-new {
             color: var(--hl-red);
         }
-        .keyword.other.special-method {
+        .hl-keyword.hl-other.hl-special-method {
             color: var(--hl-orange);
         }
-        .storage {
+        .hl-storage {
             color: var(--hl-green);
         }
-        .storage.modifier {
+        .hl-storage.hl-modifier {
             color: var(--hl-gray-4);
         } // const, public, inline
-        .storage.type {
+        .hl-storage.hl-type {
             color: var(--hl-blue);
         } // int, bool, char
 
         // Entities
-        .entity.name {
+        .hl-entity.hl-name {
             color: var(--hl-yellow);
         }
-        .entity.name.tag {
+        .hl-entity.hl-name.hl-tag {
             color: var(--hl-blue);
         }
-        .entity.other.inherited-class {
+        .hl-entity.hl-other.hl-inherited-class {
             color: var(--hl-blue);
         }
-        .entity.other.attribute-name {
+        .hl-entity.hl-other.hl-attribute-name {
             color: var(--hl-yellow);
         }
 
         // Support (builtin libraries like browser)
-        .support.function {
+        .hl-support.hl-function {
             color: var(--hl-green);
         }
-        .support.function.construct {
+        .hl-support.hl-function.hl-construct {
             color: var(--hl-red);
         }
-        .support.type.exception {
+        .hl-support.hl-type.hl-exception {
             color: var(--hl-orange);
         }
-        .support.type,
-        .support.class {
+        .hl-support.hl-type,
+        .hl-support.hl-class {
             color: var(--hl-green);
         }
-        .support.constant.color {
+        .hl-support.hl-constant.hl-color {
             color: var(--hl-yellow);
         } // color constants #ababab
 
         // Braces
-        .punctuation.section.braces {
+        .hl-punctuation.hl-section.hl-braces {
             color: var(--hl-gray-3);
         }
-        .punctuation.section.block {
+        .hl-punctuation.hl-section.hl-block {
             color: var(--hl-gray-3);
         }
 
         // Parens
-        .punctuation.section.parens {
+        .hl-punctuation.hl-section.hl-parens {
             color: var(--hl-gray-3);
         }
-        .punctuation.section.group {
+        .hl-punctuation.hl-section.hl-group {
             color: var(--hl-gray-3);
         }
 
         // Brackets
-        .punctuation.section.brackets {
+        .hl-punctuation.hl-section.hl-brackets {
             color: var(--hl-blue);
         }
 
         // Other
-        .punctuation.separator.continuation {
+        .hl-punctuation.hl-separator.hl-continuation {
             color: var(--hl-red);
         } // line continuation \
-        .punctuation.definition.tag {
+        .hl-punctuation.hl-definition.hl-tag {
             color: var(--hl-gray-2);
         } // tag delimiters <>
-        .invalid {
+        .hl-invalid {
             background: var(--hl-bg-red);
         }
 
@@ -356,185 +356,185 @@
         // Language-specific highlights //
         //////////////////////////////////
 
-        .source.scss {
-            .invalid.deprecated.color.w3c-non-standard-color-name {
+        .hl-source.hl-scss {
+            .hl-invalid.hl-deprecated.hl-color.hl-w3c-non-standard-color-name {
                 color: var(--hl-yellow);
             }
-            .keyword.control.untitled {
-                color: var(--hl-yellow);
-            }
-        }
-
-        .source.less {
-            .keyword.control.html.elements {
+            .hl-keyword.hl-control.hl-untitled {
                 color: var(--hl-yellow);
             }
         }
 
-        .source.scss,
-        .source.css,
-        .source.less {
-            .entity.name.tag {
+        .hl-source.hl-less {
+            .hl-keyword.hl-control.hl-html.hl-elements {
                 color: var(--hl-yellow);
             }
-            .entity.other {
-                &.class {
+        }
+
+        .hl-source.hl-scss,
+        .hl-source.hl-css,
+        .hl-source.hl-less {
+            .hl-entity.hl-name.hl-tag {
+                color: var(--hl-yellow);
+            }
+            .hl-entity.hl-other {
+                &.hl-class {
                     color: var(--hl-yellow);
                 }
-                &.id {
+                &.hl-id {
                     color: var(--hl-yellow);
                 }
-                &.pseudo-class {
+                &.hl-pseudo-class {
                     color: var(--hl-blue);
                 }
-                &.pseudo-element {
+                &.hl-pseudo-element {
                     color: var(--hl-blue);
                 } // :hover
             }
         }
 
-        .source.ruby {
-            .keyword.other.special-method {
+        .hl-source.hl-ruby {
+            .hl-keyword.hl-other.hl-special-method {
                 color: var(--hl-orange);
             }
-            .variable.other.constant {
+            .hl-variable.hl-other.hl-constant {
                 color: var(--hl-yellow);
             }
-            .constant.other.symbol {
+            .hl-constant.hl-other.hl-symbol {
                 color: var(--hl-cyan);
             }
-            .punctuation.definition.constant {
+            .hl-punctuation.hl-definition.hl-constant {
                 color: var(--hl-cyan);
             }
         }
 
-        .source.php {
-            .meta.array .support.function.construct {
+        .hl-source.hl-php {
+            .hl-meta.hl-array .hl-support.hl-function.hl-construct {
                 color: var(--hl-yellow);
             }
         }
 
-        .source.c,
-        .source.c\2b\2b {
+        .hl-source.hl-c,
+        .hl-source.hl-c\2b\2b {
             // escaped c++
-            .entity.name.function.preprocessor {
+            .hl-entity.hl-name.hl-function.hl-preprocessor {
                 color: var(--hl-orange);
             }
-            .meta.preprocessor.macro {
+            .hl-meta.hl-preprocessor.hl-macro {
                 color: var(--hl-orange);
             }
-            .meta.preprocessor.include .punctuation.definition.string {
+            .hl-meta.hl-preprocessor.hl-include .hl-punctuation.hl-definition.hl-string {
                 color: var(--hl-cyan);
             } // include <> and ""
         }
 
-        .source.c\2b\2b {
+        .hl-source.hl-c\2b\2b {
             // escaped c++
-            .storage.modifier {
+            .hl-storage.hl-modifier {
                 color: var(--hl-green);
             }
         }
 
-        .text.tex,
-        .text.latex {
-            .punctuation.section.group {
+        .hl-text.hl-tex,
+        .hl-text.hl-latex {
+            .hl-punctuation.hl-section.hl-group {
                 color: var(--hl-red);
             }
-            .punctuation.definition.arguments {
+            .hl-punctuation.hl-definition.hl-arguments {
                 color: var(--hl-red);
             }
-            .meta.group.braces {
+            .hl-meta.hl-group.hl-braces {
                 color: var(--hl-yellow);
             }
-            .variable.parameter.function {
+            .hl-variable.hl-parameter.hl-function {
                 color: var(--hl-orange);
             }
 
-            .string.other.math {
+            .hl-string.hl-other.hl-math {
                 color: var(--hl-yellow);
             }
-            .constant.other.math {
+            .hl-constant.hl-other.hl-math {
                 color: var(--hl-cyan);
             }
-            .constant.character.math {
+            .hl-constant.hl-character.hl-math {
                 color: var(--hl-cyan);
             }
-            .punctuation.definition.constant.math {
+            .hl-punctuation.hl-definition.hl-constant.hl-math {
                 color: var(--hl-red);
             }
-            .punctuation.definition.string {
+            .hl-punctuation.hl-definition.hl-string {
                 color: var(--hl-red);
             }
 
-            .variable.parameter.definition.label {
+            .hl-variable.hl-parameter.hl-definition.hl-label {
                 color: var(--hl-orange);
             }
-            .support.function.be {
+            .hl-support.hl-function.hl-be {
                 color: var(--hl-green);
             }
-            .support.function.section {
+            .hl-support.hl-function.hl-section {
                 color: var(--hl-orange);
             } // \subsection
-            .support.function.general {
+            .hl-support.hl-function.hl-general {
                 color: var(--hl-cyan);
             }
-            .storage.type.label {
+            .hl-storage.hl-type.hl-label {
                 color: var(--hl-cyan);
             } // \label
-            .keyword.other.reference {
+            .hl-keyword.hl-other.hl-reference {
                 color: var(--hl-cyan);
             } // \ref
         }
 
-        .source.python {
-            .storage.type.class {
+        .hl-source.hl-python {
+            .hl-storage.hl-type.hl-class {
                 color: var(--hl-green);
             }
-            .storage.type.function {
+            .hl-storage.hl-type.hl-function {
                 color: var(--hl-green);
             }
-            .storage.modifier.global {
+            .hl-storage.hl-modifier.hl-global {
                 color: var(--hl-green);
             }
-            .support.type.exception {
+            .hl-support.hl-type.hl-exception {
                 color: var(--hl-yellow);
             }
         }
 
-        .source.shell {
-            .keyword.operator.expansion {
+        .hl-source.hl-shell {
+            .hl-keyword.hl-operator.hl-expansion {
                 color: var(--hl-green);
             } // the #* in "${1#*=}"
         }
 
-        .source.perl {
-            .support.function {
+        .hl-source.hl-perl {
+            .hl-support.hl-function {
                 color: var(--hl-blue);
             }
         }
 
-        .source.diff {
-            .meta.range {
+        .hl-source.hl-diff {
+            .hl-meta.hl-range {
                 color: var(--hl-blue);
             }
-            .entity.name.section {
+            .hl-entity.hl-name.hl-section {
                 color: var(--hl-orange);
             }
-            .markup.deleted {
+            .hl-markup.hl-deleted {
                 color: var(--hl-gray-5);
                 background: var(--hl-bg-red);
             }
-            .markup.inserted {
+            .hl-markup.hl-inserted {
                 color: var(--hl-gray-5);
                 background: var(--hl-bg-green);
             }
         }
 
-        .js {
-            .variable.other {
-                &.readwrite,
-                &.object,
-                &.constant {
+        .hl-js {
+            .hl-variable.hl-other {
+                &.hl-readwrite,
+                &.hl-object,
+                &.hl-constant {
                     color: var(--hl-gray-3);
                 }
             }
@@ -575,158 +575,158 @@
     .code {
         color: var(--hl-gray-2);
 
-        .variable.parameter.function {
+        .hl-variable.hl-parameter.hl-function {
             color: var(--hl-gray-0);
         }
-        .punctuation.definition {
+        .hl-punctuation.hl-definition {
             color: var(--hl-gray-0);
         }
 
         // Comments
-        .comment,
-        .punctuation.definition.comment {
+        .hl-comment,
+        .hl-punctuation.hl-definition.hl-comment {
             color: var(--hl-dark-green);
         }
 
-        .keyword.operator {
+        .hl-keyword.hl-operator {
             color: var(--hl-dark-blue-1);
         }
-        .keyword {
+        .hl-keyword {
             color: var(--hl-dark-blue-3);
         }
 
-        .variable {
+        .hl-variable {
             color: var(--hl-blue);
         }
 
         // Functions
-        .entity.name.function,
-        .meta.require,
-        .support.function.any-method,
-        .variable.function {
+        .hl-entity.hl-name.hl-function,
+        .hl-meta.hl-require,
+        .hl-support.hl-function.hl-any-method,
+        .hl-variable.hl-function {
             color: var(--hl-yellow);
         }
 
         // Classes
-        .support.class,
-        .entity.name.class,
-        .meta.class {
+        .hl-support.hl-class,
+        .hl-entity.hl-name.hl-class,
+        .hl-meta.hl-class {
             color: var(--hl-blue);
         }
-        .entity.other.inherited-class {
+        .hl-entity.hl-other.hl-inherited-class {
             color: var(--hl-red);
         }
 
         // Methods
-        .keyword.other.special-method {
+        .hl-keyword.hl-other.hl-special-method {
             color: var(--hl-gray-1);
         }
 
         // Storage
-        .storage {
+        .hl-storage {
             color: var(--hl-dark-blue-1);
         }
 
         // Support
-        .support.function {
+        .hl-support.hl-function {
             color: var(--hl-yellow);
         }
 
         // Strings
-        .string,
-        .constant.other.symbol {
+        .hl-string,
+        .hl-constant.hl-other.hl-symbol {
             color: var(--hl-red);
         }
-        .string.regexp {
+        .hl-string.hl-regexp {
             color: var(--hl-gray-5);
         } // regexp literals
-        .constant.character.escape {
+        .hl-constant.hl-character.hl-escape {
             color: var(--hl-gray-5);
         } // escape sequences
 
         // Constants
-        .constant {
+        .hl-constant {
             color: var(--hl-dark-blue-1);
         }
-        .constant.numeric {
+        .hl-constant.hl-numeric {
             color: var(--hl-green-1);
         }
-        .constant.other.color {
+        .hl-constant.hl-other.hl-color {
             color: var(--hl-gray-5);
         }
 
         // Tags
-        .entity.name.tag {
+        .hl-entity.hl-name.hl-tag {
             color: var(--hl-dark-blue-1);
         }
 
         // Attributes
-        .entity.other.attribute-name {
+        .hl-entity.hl-other.hl-attribute-name {
             color: var(--hl-blue);
         }
 
         // Attribute IDs
-        .entity.other.attribute-name.id,
-        .punctuation.definition.entity {
+        .hl-entity.hl-other.hl-attribute-name.hl-id,
+        .hl-punctuation.hl-definition.hl-entity {
             color: var(--hl-gray-1);
         }
 
         // Selector
-        .meta.selector {
+        .hl-meta.hl-selector {
             color: var(--hl-purple);
         }
 
         // Headings
-        .markup.heading,
-        .punctuation.definition.heading,
-        .entity.name.section {
+        .hl-markup.hl-heading,
+        .hl-punctuation.hl-definition.hl-heading,
+        .hl-entity.hl-name.hl-section {
             color: var(--hl-gray-1);
         }
 
         // Units
-        .keyword.other.unit {
+        .hl-keyword.hl-other.hl-unit {
             color: var(--hl-orange);
         }
 
         // Code
-        .markup.raw.inline {
+        .hl-markup.hl-raw.hl-inline {
             color: var(--hl-green-2);
         }
 
         // Links
-        .string.other.link {
+        .hl-string.hl-other.hl-link {
             color: var(--hl-dark-red);
         } // link text
-        .meta.link {
+        .hl-meta.hl-link {
             color: var(--hl-orange);
         } // link URL
-        .meta.image {
+        .hl-meta.hl-image {
             color: var(--hl-orange);
         } // image URL
 
         // Lists
-        .markup.list {
+        .hl-markup.hl-list {
             color: var(--hl-dark-red);
         }
 
         // Embedded
-        .punctuation.section.embedded,
-        .variable.interpolation {
+        .hl-punctuation.hl-section.hl-embedded,
+        .hl-variable.hl-interpolation {
             color: var(--hl-brown);
         }
 
         // Diff
-        .source.diff {
+        .hl-source.hl-diff {
             color: var(--hl-gray-6);
         }
-        .meta.diff.range {
+        .hl-meta.hl-diff.hl-range {
             color: var(--hl-dark-blue-2);
         }
-        .meta.deleted.diff {
+        .hl-meta.hl-deleted.hl-diff {
             color: var(--hl-white);
             background: var(--hl-bg-dark-red);
         }
-        .meta.inserted.diff {
+        .hl-meta.hl-inserted.hl-diff {
             color: var(--hl-white);
             background: var(--hl-bg-dark-green);
         }
