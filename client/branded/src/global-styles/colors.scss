@@ -207,7 +207,6 @@ $text-muted: var(--text-muted);
 	--hl-color-support-construct: var(--hl-red);
 	--hl-color-user-constant: var(--hl-orange);
 	--hl-color-tag-name: var(--hl-blue);
-	--hl-color-tag-delimit: var(--hl-gray-2);
 	--hl-color-continuation: var(--hl-red);
 	--hl-color-storage-type: var(--hl-blue);
 	--hl-color-exception: var(--hl-orange);
@@ -215,7 +214,6 @@ $text-muted: var(--text-muted);
 	--hl-color-bg-invalid: var(--hl-bg-red);
 	--hl-color-quotes: var(--hl-gray-1);
 	--hl-color-brackets: var(--hl-blue);
-	--hl-color-parens: var(--hl-gray-blue);
 	--hl-color-braces: var(--hl-gray-blue);
 
 
@@ -326,12 +324,10 @@ $text-muted: var(--text-muted);
 	.punctuation.section.group { color: var(--hl-color-braces) }
 
 	// Parens
-	.meta.brace.round { color: var(--hl-color-parens) }
+	.meta.brace.round { color: var(--hl-gray-blue) }
 
 	// Tag delimiters
-	.punctuation.definition.tag.html { color: var(--hl-color-tag-delimit); }
-	.punctuation.definition.tag.begin { color: var(--hl-color-tag-delimit); }
-	.punctuation.definition.tag.end { color: var(--hl-color-tag-delimit); }
+	.punctuation.definition.tag { color: var(--hl-gray-2); }
 
 	// User constant
 	.constant.character { color: var(--hl-color-user-constant); }
@@ -350,7 +346,7 @@ $text-muted: var(--text-muted);
 	.support.type, .support.class { color: var(--hl-green) }
 
 	// Imports
-	.keyword.import, .keyword.include { color: var(--hl-orange)}
+	.keyword.import, .keyword.include { color: var(--hl-orange) }
 
 	// Operators
 	.keyword.operator { color: var(--hl-gray-blue) }
