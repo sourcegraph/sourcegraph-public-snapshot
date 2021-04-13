@@ -12,7 +12,7 @@ Tests use environment variables to accept credentials of different external serv
 # please post a message on #dev-chat to ask for an invite.
 export GITHUB_TOKEN=<REDACTED>
 
-# Please go to https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/5q5lnpirajegt7uifngeabrak4
+# Please go to https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/5qpjnkzmfbdwxgrv7oauke2h6a
 # and copy relevant credentials to here.
 export AWS_ACCESS_KEY_ID=<REDACTED>
 export AWS_SECRET_ACCESS_KEY=<REDACTED>
