@@ -119,8 +119,8 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                             <AxisLeft
                                 scale={yScale}
                                 axisClassName="bar-chart__axis"
-                                axisLineClassName="bar-chart__axis-line"
-                                tickClassName="bar-chart__axis-tick"
+                                axisLineClassName="bar-chart__axis-line bar-chart__axis-line--vertical"
+                                tickClassName="bar-chart__axis-tick bar-chart__axis-tick--vertical"
                             />
 
                             <GridRows
