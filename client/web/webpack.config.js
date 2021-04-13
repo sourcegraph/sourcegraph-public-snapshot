@@ -138,16 +138,7 @@ const config = {
             loader: 'babel-loader',
             options: {
               cacheDirectory: true,
-              plugins: [
-                'react-hot-loader/babel',
-                [
-                  '@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper',
-                  {
-                    modulePattern: 'web/src/.*\\.tsx$',
-                    componentNamePattern: '(Page|Area)$',
-                  },
-                ],
-              ],
+              plugins: ['react-hot-loader/babel'],
             },
           },
         ],
