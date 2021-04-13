@@ -376,8 +376,9 @@ type CloneURLToRepositoryName struct {
 
 // CloudKMSEncryptionKey description: Google Cloud KMS Encryption Key, used to encrypt data in Google Cloud environments
 type CloudKMSEncryptionKey struct {
-	Keyname string `json:"keyname"`
-	Type    string `json:"type"`
+	CredentialsFile string `json:"credentialsFile,omitempty"`
+	Keyname         string `json:"keyname"`
+	Type            string `json:"type"`
 }
 
 // CustomGitFetchMapping description: Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.
