@@ -296,6 +296,6 @@ minikube stop
 > error: error retrieving RESTMappings to prune: invalid resource networking.k8s.io/v1, Kind=Ingress, Namespaced=true: no matches for kind "Ingress" in version "networking.k8s.io/v1"
 
 - Make sure the client version of your kubectl matches the one used by the server. Run `kubectl version` to check.
-- See the ["Configure network access"](configure.md#configure-network-access)
+- See the ["Configure network access"](configure.md#security-configure-network-access)
 - Check for duplicate `sourcegraph-frontend` using `kubectl get ingresses -A`
-  - Delete duplicate using `kubectl delete ingress sourcegraph-frontend -n default`
+- Delete duplicate using `kubectl delete ingress sourcegraph-frontend -n default`
