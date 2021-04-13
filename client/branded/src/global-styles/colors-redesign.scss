@@ -1,5 +1,5 @@
 // Set to true to enable theme-redesign
-$theme-redesign: false !default;
+$theme-redesign: true !default;
 
 // Redesign colors
 $redesign-gray-01: #f9fafb;
@@ -15,10 +15,11 @@ $redesign-gray-10: #1d212f;
 $redesign-gray-11: #181b26;
 $redesign-gray-12: #14171f;
 $redesign-black: #0f111a;
+// TODO: Update these values to match new Bootstrap designs
 $redesign-blue: #0b70db;
 $redesign-red: $oc-red-9;
-$redesign-pink: #d68cf3; // TODO: check
-$redesign-indigo: #0864c6; // TODO: check
+$redesign-pink: #d68cf3;
+$redesign-indigo: #0864c6;
 $redesign-cyan: #72dbe8;
 // These are unchanged, preserved here for simplicity
 $redesign-purple: $oc-violet-7;
