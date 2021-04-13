@@ -27,7 +27,7 @@
 .theme-light.theme-redesign,
 // Descendant selector is required for Storybook `addRedesignVariants` helper.
 .theme-light .theme-redesign {
-    --input-bg: $white;
+    --input-bg: #{$white};
     --input-disabled-bg: #{$redesign-gray-04};
     --input-border-color: #{$redesign-gray-04};
     --input-color: #{$redesign-gray-09};
