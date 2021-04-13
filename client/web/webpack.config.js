@@ -191,7 +191,7 @@ const config = {
               sourceMap: isDevelopment,
               localsConvention: 'camelCase',
               modules: {
-                localIdentName: isDevelopment ? '[name]__[local]' : '[hash:base64]',
+                localIdentName: '[name]__[local]_[hash:base64:5]',
               },
             },
           }
