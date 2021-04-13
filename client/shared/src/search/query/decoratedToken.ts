@@ -11,6 +11,7 @@ import {
     Group,
     Quantifier,
 } from 'regexpp/ast'
+
 import { SearchPatternType } from '../../graphql-operations'
 
 import { Predicate, scanPredicate } from './predicates'
@@ -864,6 +865,7 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
     const decorated: DecoratedToken[] = []
     switch (path.join('.')) {
         case 'contains':
+            // eslint-disable-next-line no-case-declarations
             const tokens = scanSearchQuery(body, false, SearchPatternType.regexp)
             if (tokens.type === 'success') {
                 return tokens.term.flatMap(token => decorate(mapOffset(token, offset)))
