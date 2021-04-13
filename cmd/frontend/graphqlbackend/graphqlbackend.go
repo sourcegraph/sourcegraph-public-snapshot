@@ -987,9 +987,9 @@ func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServ
 }
 
 func allowPrivate(ctx context.Context, userID int32) (bool, error) {
-	// TODO: Update this
-	if conf.ExternalServiceUserMode() == conf.ExternalServiceModeAll {
-		return true, nil
+	mode, err := database.GlobalUsers.UserAllowedExternalServices(ctx, userID)
+	if err != nil {
+		return false, err
 	}
-	return database.GlobalUsers.HasTag(ctx, userID, database.TagAllowUserExternalServicePrivate)
+	return mode == conf.ExternalServiceModeAll, nil
 }

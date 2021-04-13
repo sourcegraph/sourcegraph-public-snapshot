@@ -1152,35 +1152,49 @@ func (u *UserStore) Tags(ctx context.Context, userID int32) (map[string]struct{}
 	return tagMap, nil
 }
 
+// UserAllowedExternalServices returns whether the supplied user is allowed
+// to add public or private code. This may override the site level value read by
+// conf.ExternalServiceUserMode.
+//
+// It is added in the database package as putting it in the conf package led to
+// many cyclic imports.
+func (u *UserStore) UserAllowedExternalServices(ctx context.Context, userID int32) (conf.ExternalServiceMode, error) {
+	u.ensureStore()
+
+	siteMode := conf.ExternalServiceUserMode()
+	// If site level already allows all code then no need to check user
+	if userID == 0 || siteMode == conf.ExternalServiceModeAll {
+		return siteMode, nil
+	}
+
+	tags, err := u.Tags(ctx, userID)
+	if err != nil {
+		return siteMode, err
+	}
+
+	// The user may have a tag that opts them in
+	if _, ok := tags[TagAllowUserExternalServicePrivate]; ok {
+		return conf.ExternalServiceModeAll, nil
+	}
+	if _, ok := tags[TagAllowUserExternalServicePublic]; ok {
+		return conf.ExternalServiceModePublic, nil
+	}
+
+	return siteMode, nil
+}
+
 // CurrentUserAllowedExternalServices returns whether the current user is allowed
 // to add public or private code. This may override the site level value read by
 // conf.ExternalServiceUserMode.
 //
 // It is added in the database package as putting it in the conf package led to
 // many cyclic imports.
-func (u *UserStore) CurrentUserAllowedExternalServices(ctx context.Context) conf.ExternalServiceMode {
-	u.ensureStore()
-
+func (u *UserStore) CurrentUserAllowedExternalServices(ctx context.Context) (conf.ExternalServiceMode, error) {
 	siteMode := conf.ExternalServiceUserMode()
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
 		// No user, use site level value
-		return siteMode
+		return siteMode, nil
 	}
-
-	tags, err := u.Tags(ctx, a.UID)
-	if err != nil {
-		log15.Error("Getting user tags", "error", err)
-		return siteMode
-	}
-
-	// The user may have a tag that opts them in
-	if _, ok := tags[TagAllowUserExternalServicePrivate]; ok {
-		return conf.ExternalServiceModeAll
-	}
-	if _, ok := tags[TagAllowUserExternalServicePublic]; ok {
-		return conf.ExternalServiceModePublic
-	}
-
-	return siteMode
+	return u.UserAllowedExternalServices(ctx, a.UID)
 }
