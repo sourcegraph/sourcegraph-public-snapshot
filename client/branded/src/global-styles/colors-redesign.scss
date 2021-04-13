@@ -131,7 +131,7 @@ $redesign-teal: $oc-teal-7;
     --code-bg: #{$white};
     --intel-bg: #{$white};
 
-    // TODO: Remove from use
+    // TODO: Remove from use, replace with the variables referenced here
     --link-hover-bg-color: var(--color-bg-2);
     --link-hover-bg-color-2: var(--color-bg-3);
     --disabled-action-bg-color: var(--color-bg-3);

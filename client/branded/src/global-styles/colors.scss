@@ -73,7 +73,6 @@ $body-color: var(--body-color);
 $body-bg: var(--body-bg);
 $text-muted: var(--text-muted);
 
-/* CURRENT STYLES */
 :root {
     --primary: #{$primary};
     --secondary: #{$secondary-light};
@@ -156,5 +155,5 @@ $text-muted: var(--text-muted);
     --disabled-action-text-color: #{$oc-gray-9};
 }
 
-// Load redesign styling
+// Load redesign styles
 @import './colors-redesign';

@@ -1,7 +1,7 @@
 // We intentionally want to style all descendants with these classes.
 // stylelint-disable selector-max-compound-selectors
 
-.web-content:not(.theme-redesign .web-content) {
+.web-content {
     .theme-dark & {
         color: var(--body-color);
 
