@@ -50,7 +50,7 @@ type SourcerStore interface {
 	UserCredentials() *database.UserCredentialsStore
 }
 
-// Sourcer exposes methods to get a BatchesSource based on a changeset, repo or
+// Sourcer exposes methods to get a ChangesetSource based on a changeset, repo or
 // external service.
 type Sourcer interface {
 	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset) (ChangesetSource, error)
@@ -69,7 +69,7 @@ func NewSourcer(cf *httpcli.Factory) Sourcer {
 	}
 }
 
-// NewFakeSourcer returns a new Sourcer to be used in Batch Changes.
+// NewFakeSourcer returns a new faked Sourcer to be used for testing Batch Changes.
 func NewFakeSourcer(err error, source ChangesetSource) Sourcer {
 	return &fakeSourcer{
 		err,
@@ -77,7 +77,7 @@ func NewFakeSourcer(err error, source ChangesetSource) Sourcer {
 	}
 }
 
-// ForChangeset returns a BatchesSource for the given changeset. The changeset.RepoID
+// ForChangeset returns a ChangesetSource for the given changeset. The changeset.RepoID
 // is used to find the matching code host.
 func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset) (ChangesetSource, error) {
 	repo, err := tx.Repos().Get(ctx, ch.RepoID)
@@ -87,13 +87,13 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 	return s.ForRepo(ctx, tx, repo)
 }
 
-// ForRepo returns a BatchesSource for the given repo.
+// ForRepo returns a ChangesetSource for the given repo.
 func (s *sourcer) ForRepo(ctx context.Context, tx SourcerStore, repo *types.Repo) (ChangesetSource, error) {
 	// Consider all available external services for this repo.
 	return s.loadBatchesSource(ctx, tx, repo.ExternalServiceIDs())
 }
 
-// ForExternalService returns a BatchesSource based on the provided external service opts.
+// ForExternalService returns a ChangesetSource based on the provided external service opts.
 func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error) {
 	extSvcIDs, err := tx.GetExternalServiceIDs(ctx, opts)
 	if err != nil {
