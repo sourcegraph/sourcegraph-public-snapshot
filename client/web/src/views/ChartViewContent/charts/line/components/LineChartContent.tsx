@@ -47,8 +47,10 @@ const getLineStroke = <Datum extends object>(
 ): string => line?.stroke ?? DEFAULT_LINE_STROKE
 
 // Date formatters
-const dateFormatter = timeFormat('%d %b')
-const formatDate = (date: Date): string => dateFormatter(date)
+// Number of month day + short name of month
+const dateTickFormatter = timeFormat('%d %b')
+// Year + full name of month + full name of week day + time (HH:MM:SS)
+const dateLabelFormatter = timeFormat('%y %B %A %X')
 
 const stopPropagation = (event: React.MouseEvent): void => event.stopPropagation()
 
@@ -246,65 +248,90 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                         margin={MARGIN}
                         onPointerMove={handlePointerMove}
                         onPointerUp={handlePointerUp}
+                        accessibilityLabel="Line chart content"
                     >
-                        <Group top={MARGIN.top} left={MARGIN.left}>
-                            <GridRows
-                                scale={yScale as GridScale}
-                                numTicks={numberOfTicksY}
-                                width={innerWidth}
-                                className="line-chart__grid-line"
-                            />
+                        <Group aria-label="Chart axes">
+                            {/* eslint-disable-next-line jsx-a11y/aria-role */}
+                            <Group role="graphics-axis" aria-orientation="horizontal" aria-label="Y axis">
+                                <Group aria-hidden={true} top={MARGIN.top} left={MARGIN.left}>
+                                    <GridRows
+                                        scale={yScale as GridScale}
+                                        numTicks={numberOfTicksY}
+                                        width={innerWidth}
+                                        className="line-chart__grid-line"
+                                    />
+                                </Group>
+
+                                <Axis
+                                    orientation="left"
+                                    numTicks={numberOfTicksY}
+                                    tickFormat={format('~s')}
+                                    axisClassName="line-chart__axis"
+                                    axisLineClassName="line-chart__axis-line line-chart__axis-line--vertical"
+                                    tickClassName="line-chart__axis-tick line-chart__axis-tick--vertical"
+                                />
+                            </Group>
+
+                            {/* eslint-disable-next-line jsx-a11y/aria-role */}
+                            <Group role="graphics-axis" aria-orientation="horizontal" aria-label="X axis">
+                                <Axis
+                                    orientation="bottom"
+                                    tickValues={xScale.ticks(numberOfTicksX)}
+                                    tickFormat={dateTickFormatter}
+                                    numTicks={numberOfTicksX}
+                                    axisClassName="line-chart__axis"
+                                    axisLineClassName="line-chart__axis-line"
+                                    tickClassName="line-chart__axis-tick"
+                                />
+                            </Group>
                         </Group>
 
-                        <Axis
-                            orientation="bottom"
-                            tickValues={xScale.ticks(numberOfTicksX)}
-                            tickFormat={formatDate}
-                            numTicks={numberOfTicksX}
-                            axisClassName="line-chart__axis"
-                            axisLineClassName="line-chart__axis-line"
-                            tickClassName="line-chart__axis-tick"
-                        />
-                        <Axis
-                            orientation="left"
-                            numTicks={numberOfTicksY}
-                            tickFormat={format('~s')}
-                            axisClassName="line-chart__axis"
-                            axisLineClassName="line-chart__axis-line line-chart__axis-line--vertical"
-                            tickClassName="line-chart__axis-tick line-chart__axis-tick--vertical"
-                        />
+                        {/* eslint-disable-next-line jsx-a11y/aria-role */}
+                        <Group role="graphics-datagroup" aria-label="chart series">
+                            {series.map((line, index) => (
+                                <LineSeries
+                                    key={line.dataKey as string}
+                                    dataKey={line.dataKey as string}
+                                    data={sortedData}
+                                    strokeWidth={2}
+                                    /* eslint-disable-next-line jsx-a11y/aria-role */
+                                    role="graphics-dataline"
+                                    aria-label={`Label ${index + 1} of ${series.length}. Name ${
+                                        line.name ?? 'unknown'
+                                    }`}
+                                    xAccessor={accessors.x}
+                                    yAccessor={accessors.y[line.dataKey]}
+                                    stroke={getLineStroke(line)}
+                                    curve={curveLinear}
+                                />
+                            ))}
+                        </Group>
 
-                        {series.map(line => (
-                            <LineSeries
-                                key={line.dataKey as string}
-                                dataKey={line.dataKey as string}
-                                data={sortedData}
-                                strokeWidth={2}
-                                xAccessor={accessors.x}
-                                yAccessor={accessors.y[line.dataKey as string]}
-                                stroke={getLineStroke(line)}
-                                curve={curveLinear}
-                            />
-                        ))}
-
-                        <Group pointerEvents="bounding-box" {...eventEmitters}>
+                        <Group
+                             // eslint-disable-next-line jsx-a11y/aria-role
+                            role="graphics-datagroup"
+                            aria-label="Series points"
+                            pointerEvents="bounding-box"
+                            {...eventEmitters}
+                        >
                             {/* Spread size of parent group element by transparent rect with width and height */}
                             <rect
                                 x={MARGIN.left}
                                 y={MARGIN.top}
                                 width={innerWidth}
                                 height={innerHeight}
+                                aria-hidden="true"
                                 fill="transparent"
                             />
 
-                            {series.map(line => (
+                            {series.map((line, index) => (
                                 <GlyphSeries
                                     key={line.dataKey as string}
                                     dataKey={line.dataKey as string}
                                     data={sortedData}
                                     enableEvents={false}
                                     xAccessor={accessors.x}
-                                    yAccessor={accessors.y[line.dataKey as string]}
+                                    yAccessor={accessors.y[line.dataKey]}
                                     // Don't have info about line in props. @visx/xychart doesn't expose this information
                                     // Move this arrow function in separate component when API of GlyphSeries will be fixed.
                                     /* eslint-disable-next-line react/jsx-no-bind */
@@ -323,6 +350,9 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                             datum: props.datum,
                                         }
 
+                                        const xAxisValue = dateLabelFormatter(new Date(accessors.x(props.datum)))
+                                        const yAxisValue = (accessors.y?.[line.dataKey](props.datum) as string) ?? ''
+
                                         return (
                                             <MaybeLink
                                                 to={linkURL}
@@ -332,7 +362,11 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                                 onFocus={() => linkURL && setFocusedDatum(currentDatum)}
                                                 /* eslint-disable-next-line react/jsx-no-bind */
                                                 onBlur={() => linkURL && setFocusedDatum(null)}
-                                                className='line-chart__glyph-link'
+                                                className="line-chart__glyph-link"
+                                                role={linkURL ? 'link' : 'graphics-dataunit'}
+                                                aria-label={`Point № ${+props.key + 1} of line ${index + 1} of ${
+                                                    series.length
+                                                }. X value ${xAxisValue}. Y value ${yAxisValue}`}
                                             >
                                                 <Glyph
                                                     className={classnames('line-chart__glyph', {
