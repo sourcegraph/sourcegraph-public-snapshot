@@ -32,7 +32,6 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                             className="btn btn-secondary text-nowrap"
                             onClick={onSubmit}
                             disabled={selected.size === 0 || isSubmitting === true}
-                            data-tooltip={`Click to detach ${selected.size} ${pluralize('changeset', selected.size)}.`}
                         >
                             {selected.size > 0
                                 ? `Detach ${selected.size} ${pluralize('changeset', selected.size)}`
