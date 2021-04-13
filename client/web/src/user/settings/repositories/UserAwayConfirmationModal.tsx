@@ -27,15 +27,12 @@ export const UserAwayConfirmationModal: React.FunctionComponent<AwayModalProps> 
     const [pendingLocation, setPendingLocation] = useState<H.Location>()
     const unblock = useRef<() => void>()
 
-    // unblock shortcut
-    const unblockNavigation = () => unblock.current && unblock.current()
-
     const closeModal = (shouldNavigate: boolean): void => {
         // close modal
         setPendingLocation(undefined)
 
         if (pendingLocation && shouldNavigate) {
-            unblockNavigation()
+            unblock.current?.()
             history.push(pendingLocation)
         }
     }
@@ -43,7 +40,7 @@ export const UserAwayConfirmationModal: React.FunctionComponent<AwayModalProps> 
     useEffect(() => {
         unblock.current = history.block((location: H.Location) => {
             if (location.state === ALLOW_NAVIGATION) {
-                return unblockNavigation()
+                return unblock.current?.()
             }
 
             if (predicate()) {
@@ -53,13 +50,13 @@ export const UserAwayConfirmationModal: React.FunctionComponent<AwayModalProps> 
                 return false
             }
 
-            return unblockNavigation()
+            return unblock.current?.()
         })
 
         return () => {
-            unblockNavigation()
+            unblock.current?.()
         }
-    }, [history, predicate, unblockNavigation])
+    }, [history, predicate])
 
     return pendingLocation ? (
         <Dialog className="modal-body modal-body--top-third p-4 rounded border" aria-labelledby={header}>
