@@ -1,5 +1,6 @@
 // @ts-check
 
+const { spawn } = require('child_process')
 const path = require('path')
 
 const { generateNamespace } = require('@gql2ts/from-schema')
@@ -184,6 +185,26 @@ function watchSchema() {
   return gulp.watch(path.join(__dirname, '../schema/*.schema.json'), schema)
 }
 
+/**
+ * Generates the TypeScript types CSS modules.
+ */
+function cssModulesTypings() {
+  spawn('tsm', [path.resolve(__dirname, '../*/src/**/*.module.scss')], {
+    stdio: 'inherit',
+    shell: true,
+  })
+}
+
+/**
+ * Watch CSS modules and generates the TypeScript types for them.
+ */
+function watchCSSModulesTypings() {
+  return spawn('tsm', ['--watch', path.resolve(__dirname, '../*/src/**/*.module.scss')], {
+    stdio: 'inherit',
+    shell: true,
+  })
+}
+
 module.exports = {
   watchSchema,
   schema,
@@ -191,4 +212,6 @@ module.exports = {
   watchGraphQlSchema,
   graphQlOperations,
   watchGraphQlOperations,
+  cssModulesTypings,
+  watchCSSModulesTypings,
 }

@@ -106,6 +106,7 @@ package-lock.json
 sourcegraph-webapp-*.tgz
 *.tsbuildinfo
 graphql-operations.ts
+*.module.scss.d.ts
 
 # Extensions
 /client/extension-api/dist

@@ -186,24 +186,16 @@ const config = {
         test: /\.(sass|scss)$/,
         // CSS Modules loaders are only applied when the file is explicitly named as CSS module stylesheet using the extension `.module.scss`.
         include: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders(
-          {
-            loader: 'css-modules-typescript-loader',
-            options: {
-              mode: process.env.CI ? 'verify' : 'emit',
+        use: getCSSLoaders({
+          loader: 'css-loader',
+          options: {
+            sourceMap: isDevelopment,
+            localsConvention: 'camelCase',
+            modules: {
+              localIdentName: '[name]__[local]_[hash:base64:5]',
             },
           },
-          {
-            loader: 'css-loader',
-            options: {
-              sourceMap: isDevelopment,
-              localsConvention: 'camelCase',
-              modules: {
-                localIdentName: '[name]__[local]_[hash:base64:5]',
-              },
-            },
-          }
-        ),
+        }),
       },
       {
         test: /\.(sass|scss)$/,

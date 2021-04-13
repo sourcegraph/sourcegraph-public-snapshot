@@ -118,25 +118,16 @@ const config = {
             test: /\.(sass|scss)$/,
             include: /\.module\.(sass|scss)$/,
             exclude: storybookDirectory,
-            use: getCSSLoaders(
-                'style-loader',
-                {
-                    loader: 'css-modules-typescript-loader',
-                    options: {
-                        mode: process.env.CI ? 'verify' : 'emit',
+            use: getCSSLoaders('style-loader', {
+                loader: 'css-loader',
+                options: {
+                    sourceMap: isDevelopment,
+                    localsConvention: 'camelCase',
+                    modules: {
+                        localIdentName: isDevelopment ? '[name]__[local]' : '[hash:base64]',
                     },
                 },
-                {
-                    loader: 'css-loader',
-                    options: {
-                        sourceMap: isDevelopment,
-                        localsConvention: 'camelCase',
-                        modules: {
-                            localIdentName: isDevelopment ? '[name]__[local]' : '[hash:base64]',
-                        },
-                    },
-                }
-            ),
+            }),
         })
 
         // Make sure Storybook style loaders are only evaluated for Storybook styles.

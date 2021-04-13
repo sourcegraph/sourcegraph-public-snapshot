@@ -91,24 +91,16 @@ export const config: webpack.Configuration = {
             {
                 test: /\.(css|sass|scss)$/,
                 include: /\.module\.(sass|scss)$/,
-                use: getCSSLoaders(
-                    {
-                        loader: 'css-modules-typescript-loader',
-                        options: {
-                            mode: process.env.CI ? 'verify' : 'emit',
+                use: getCSSLoaders({
+                    loader: 'css-loader',
+                    options: {
+                        sourceMap: false,
+                        localsConvention: 'camelCase',
+                        modules: {
+                            localIdentName: '[name]__[local]',
                         },
                     },
-                    {
-                        loader: 'css-loader',
-                        options: {
-                            sourceMap: false,
-                            localsConvention: 'camelCase',
-                            modules: {
-                                localIdentName: '[name]__[local]',
-                            },
-                        },
-                    }
-                ),
+                }),
             },
             {
                 test: extensionHostWorker,
