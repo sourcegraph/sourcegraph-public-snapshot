@@ -187,32 +187,21 @@ $text-muted: var(--text-muted);
 	--hl-cyan: #2aa198;
 	--hl-eggshell: #eee8d5;
 	--hl-deep-gray: #{$gray-19};
-	--hl-pink: #6c71c4;
+	--hl-purple: #6c71c4;
+	--hl-pink: #d33682;
 
 	--hl-bg-red: #ec9489;
 	--hl-bg-green: #deeade;
 
-	--hl-color-variable: var(--hl-blue);
-	--hl-color-variable-function: var(--hl-yellow);
-	--hl-color-class: var(--hl-yellow);
-	--hl-color-keyword: var(--hl-green);
-	--hl-color-storage-modifier: var(--hl-gray-4);
-	--hl-color-inherited-class: var(--hl-blue);
-	--hl-color-attribute: var(--hl-yellow);
-	--hl-color-library-class: var(--hl-green);
 	--hl-color-library-function: var(--hl-green);
 	--hl-color-function: var(--hl-yellow);
 	--hl-color-variable-start: var(--hl-green);
-	--hl-color-builtin-constant: var(--hl-yellow);
 	--hl-color-support-construct: var(--hl-red);
-	--hl-color-user-constant: var(--hl-orange);
-	--hl-color-tag-name: var(--hl-blue);
 	--hl-color-continuation: var(--hl-red);
 	--hl-color-storage-type: var(--hl-blue);
 	--hl-color-exception: var(--hl-orange);
 	--hl-color-special: var(--hl-orange);
 	--hl-color-bg-invalid: var(--hl-bg-red);
-	--hl-color-quotes: var(--hl-gray-1);
 	--hl-color-brackets: var(--hl-blue);
 	--hl-color-braces: var(--hl-gray-blue);
 
@@ -285,29 +274,44 @@ $text-muted: var(--text-muted);
 .code {
 	color: var(--hl-gray-blue);
 
+	// Comments
 	.comment, .meta.documentation { color: var(--hl-gray-0); }
-	.string, .string.quoted.double, .string.quoted.single { color: var(--hl-cyan) };
-	.punctuation.definition.string { color: var(--hl-color-quotes) }
-	.constant.character.escape { color: var(--hl-red) };
-	.constant.numeric { color: var(--hl-pink) };
-	.variable { color: var(--hl-color-variable) };
-	.variable.function { color: var(--hl-color-variable-function) };
-	.variable.language { color: var(--hl-color-variable-language) };
-	.keyword { color: var(--hl-color-keyword) };
-	.storage { color: var(--hl-color-keyword) };
-	.storage.modifier { color: var(--hl-color-storage-modifier) };
-	.keyword.control.class { color: var(--hl-color-class) };
-	.entity.name { color: var(--hl-color-class) };
-	.entity.name.class { color: var(--hl-color-class) };
-	.entity.name.type.class { color: var(--hl-color-class) }; // TODO are these extra modifiers necessary? we already cover entity.name
-	.entity.other.inherited-class { color: var(--hl-color-inherited-class) };
-	.entity.other.attribute-name { color: var(--hl-color-attribute) };
-	.entity.name.function { color: var(--hl-color-function) };
-	.punctuation.definition.variable { color: var(--hl-color-variable-start) };
-	.entity.name.tag { color: var(--hl-color-tag-name) };
+
+	// String constants
+	.string { color: var(--hl-cyan) }; // contents
+	.punctuation.definition.string { color: var(--hl-gray-1) } // surrounding quotes
+	.constant.character.escape { color: var(--hl-red) }; // escape sequences
+
+	// Other constants
+	.constant { color: var(--hl-yellow) }
+	.constant.language { color: var(--hl-yellow) }
+	.constant.numeric { color: var(--hl-purple) };
+	.constant.character { color: var(--hl-orange); }
+	.constant.other { color: var(--hl-orange); }
+	.meta.preprocessor { color: var(--hl-yellow) } // TODO do we need this? And should it go with the C section?
+
+	// Variables
+	.variable { color: var(--hl-blue) };
+	.variable.function { color: var(--hl-yellow) }; // function calls, etc.
+	.variable.language { color: var(--hl-pink) }; // reserved variables like this or self
+	.punctuation.definition.variable { color: var(--hl-green) }; // punctuation in variable definitions like $ in shell
+
+	// Keywords and storage
+	.keyword { color: var(--hl-green) };
+	.storage { color: var(--hl-green) };
+	.storage.modifier { color: var(--hl-gray-4) }; // const, public, inline
+	.storage.type { color: var(--hl-blue) }; // int, bool, char
+
+	.keyword.control.class { color: var(--hl-yellow) }; // TODO when is this ever used?
+
+	// Entities
+	.entity.name { color: var(--hl-yellow) };
+	.entity.name.tag { color: var(--hl-blue) };
+	.entity.other.inherited-class { color: var(--hl-blue) };
+	.entity.other.attribute-name { color: var(--hl-yellow) };
+
 	.support.function { color: var(--hl-color-library-function) };
 	.punctuation.separator.continuation { color: var(--hl-color-continuation) };
-	.storage.type { color: var(--hl-color-storage-type) };
 	.support.type.exception { color: var(--hl-color-exception) };
 	.keyword.other.special-method { color: var(--hl-color-exception) };
 	.invalid { background: var(--hl-color-bg-invalid) };
@@ -330,17 +334,12 @@ $text-muted: var(--text-muted);
 	.punctuation.definition.tag { color: var(--hl-gray-2); }
 
 	// User constant
-	.constant.character { color: var(--hl-color-user-constant); }
-	.constant.other { color: var(--hl-color-user-constant); }
 
 	// Support construct
 	.support.function.construct { color: var(--hl-color-support-construct) }
 	.keyword.other.new { color: var(--hl-color-support-construct) }
 
 	// Builtin Constant
-	.constant { color: var(--hl-color-builtin-constant) }
-	.constant.language { color: var(--hl-color-builtin-constant) }
-	.meta.preprocessor { color: var(--hl-color-builtin-constant) }
 
 	// Library class
 	.support.type, .support.class { color: var(--hl-green) }
