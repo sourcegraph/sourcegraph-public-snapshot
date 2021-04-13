@@ -10,19 +10,19 @@ the calls that your extensions makes to it.
 
 # Testing a pull request 
 
-When submitting a pull request, there are a few tests you'll need to pass before the request can be reviewd. These tests runs logical tests that we author to make sure our code runs as expected.
+When submitting a pull request, there are a few tests you'll need to pass before the request can be reviewed. These tests runs logical tests that we author to make sure our code runs as expected.
 
 ## What are the tests?
-- **Prettier** is responsible for mostly visual choices like if we have a line of code that's longer than 70 characters, it will fail. This has nothing to do with the truthiness of the code, more of a stylistic choice we make as a team to make sure we all use the same standard
-- **eslint** is similar but more so focused on the logic aspect of the code. We use eslint to avoid bad patterns which otherwise stylistically make sense but potentially buggy code
-- **Husky** ([link](https://typicode.github.io/husky/#/)) and **Semantic Pull Requests** ([link](https://github.com/zeke/semantic-pull-requests)) ensure your commit messages have enough semantic information to be able to trigger a release. For example, `feat:` tag is for new feature
-- **Mocha**, a JavaScript text framework for Node.js, is responsible for running unit tests. We use mocha directly to author our tests, so the vscode module is not available to the test environment. If your code requires the use of the VS Code API (the config file for example), one of the options is to switch from mocha to [vscode-test](https://code.visualstudio.com/api/working-with-extensions/testing-extension)
+- **Prettier** is responsible for mostly visual choices like if we have a line of code that's longer than 70 characters, it will fail. This has nothing to do with the correctness of the code, more of a stylistic choice we make as a team to make sure we all use the same standard.
+- **eslint** is similar but more so focused on the logic aspect of the code. We use eslint to avoid bad patterns which otherwise stylistically make sense but lead to potentially buggy code
+- **Husky** ([link](https://typicode.github.io/husky/#/)) and **Semantic Pull Requests** ([link](https://github.com/zeke/semantic-pull-requests)) ensure your commit messages have enough semantic information to be able to trigger a release. For example, `feat:` tag is for new features.
+- **Mocha**, a JavaScript test framework for Node.js, is responsible for running unit tests. We use mocha directly to author our tests, so the vscode module is not available to the test environment. If your code requires the use of the VS Code API (the config file for example), one of the options is to switch from mocha to [vscode-test](https://code.visualstudio.com/api/working-with-extensions/testing-extension).
 - Update README.md and manifest accordingly
 
 ## Run the following commands before submitting your Pull Request:
-1. `npm run prettier` : applies the prettier to your code
+1. `npm run prettier` : applies prettier to your code
 1. `npm run prettier-check`: checks if your code is passing the prettier checks
-1. `npm run eslint`: checks if your code submitting code is passing the eslint checks
+1. `npm run eslint`: checks if your code is passing the eslint checks
 
 
 ## After the Pull Request has been submitted:
