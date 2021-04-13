@@ -12,11 +12,7 @@ import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockInter
 import { SearchPatternType } from '../../graphql-operations'
 import { mockFetchSearchContexts } from '../../searchContexts/testHelpers'
 
-import {
-    HAS_SEEN_HIGHLIGHT_BUBBLE_KEY,
-    SearchContextDropdown,
-    SearchContextDropdownProps,
-} from './SearchContextDropdown'
+import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
 
 const mockFetchAutoDefinedSearchContexts = () =>
     of([
@@ -144,19 +140,5 @@ describe('SearchContextDropdown', () => {
         item.simulate('click')
 
         sinon.assert.notCalled(submitSearch)
-    })
-
-    it('should show highlight bubble if not seen', () => {
-        localStorage.setItem(HAS_SEEN_HIGHLIGHT_BUBBLE_KEY, '')
-        const element = mount(<SearchContextDropdown {...defaultProps} showSearchContextHighlightBubble={true} />)
-        expect(element.find('.search-context-dropdown__highlight-bubble')).toHaveLength(1)
-        localStorage.removeItem(HAS_SEEN_HIGHLIGHT_BUBBLE_KEY)
-    })
-
-    it('should not show highlight bubble if already seen', () => {
-        localStorage.setItem(HAS_SEEN_HIGHLIGHT_BUBBLE_KEY, 'true')
-        const element = mount(<SearchContextDropdown {...defaultProps} showSearchContextHighlightBubble={true} />)
-        expect(element.find('.search-context-dropdown__highlight-bubble')).toHaveLength(0)
-        localStorage.removeItem(HAS_SEEN_HIGHLIGHT_BUBBLE_KEY)
     })
 })

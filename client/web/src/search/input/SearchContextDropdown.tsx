@@ -1,7 +1,8 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
+import Shepherd from 'shepherd.js'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
@@ -12,6 +13,7 @@ import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
 import { SubmitSearchParameters } from '../helpers'
 
 import { SearchContextMenu } from './SearchContextMenu'
+import { defaultTourOptions } from './tour-options'
 
 export interface SearchContextDropdownProps
     extends Omit<SearchContextProps, 'showSearchContext'>,
@@ -24,7 +26,51 @@ export interface SearchContextDropdownProps
     history: H.History
 }
 
-export const HAS_SEEN_HIGHLIGHT_BUBBLE_KEY = 'has-seen-search-contexts-dropdown-highlight-bubble'
+const tourOptions: Shepherd.Tour.TourOptions = {
+    ...defaultTourOptions,
+    defaultStepOptions: {
+        ...defaultTourOptions.defaultStepOptions,
+        popperOptions: {
+            // Removes default behavior of autofocusing steps
+            modifiers: [
+                {
+                    name: 'focusAfterRender',
+                    enabled: false,
+                },
+                { name: 'offset', options: { offset: [2, 4] } },
+            ],
+        },
+    },
+}
+
+function getHighlightTourStep(onClose: () => void): HTMLElement {
+    const container = document.createElement('div')
+    container.className = 'search-context-dropdown__highlight-tour-step'
+    container.innerHTML = `
+        <div>
+            <strong>New: Search contexts</strong>
+        </div>
+        <div class="mt-2 mb-2">Search just the code you care about with search contexts.</div>
+        <div>
+            <a href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts-experimental">
+                Learn more
+            </a>
+        </div>
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-sm">
+                Close
+            </button>
+        </div>
+    `
+
+    const button = container.querySelector('button')
+    if (button) {
+        button.addEventListener('click', onClose)
+    }
+    return container
+}
+
+const HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY = 'has-seen-search-contexts-dropdown-highlight-tour-step'
 
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
     const {
@@ -38,18 +84,59 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         submitSearch,
         fetchAutoDefinedSearchContexts,
         fetchSearchContexts,
-        showSearchContextHighlightBubble = false,
+        showSearchContextHighlightTourStep = false,
         submitSearchOnSearchContextChange = true,
     } = props
 
-    const [hasSeenHighlightBubble, setHasSeenHighlightBubble] = useLocalStorage(HAS_SEEN_HIGHLIGHT_BUBBLE_KEY, false)
-    const closeHighlightBubble = useCallback(() => setHasSeenHighlightBubble(true), [setHasSeenHighlightBubble])
+    const [hasSeenHighlightTourStep, setHasSeenHighlightTourStep] = useLocalStorage(
+        HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY,
+        false
+    )
+
+    const tour = useMemo(() => new Shepherd.Tour(tourOptions), [])
+    useEffect(() => {
+        tour.addSteps([
+            {
+                id: 'search-contexts-start-tour',
+                text: getHighlightTourStep(() => tour.cancel()),
+                attachTo: {
+                    element: '.search-context-dropdown__button',
+                    on: 'bottom',
+                },
+            },
+        ])
+    }, [tour])
+
+    useEffect(() => {
+        if (showSearchContextHighlightTourStep && !hasSeenHighlightTourStep) {
+            tour.start()
+        }
+    }, [showSearchContextHighlightTourStep, hasSeenHighlightTourStep, tour])
+
+    useEffect(() => {
+        const onCanceled = (): void => {
+            setHasSeenHighlightTourStep(true)
+        }
+        tour.on('cancel', onCanceled)
+        return () => {
+            tour.off('cancel', onCanceled)
+        }
+    }, [tour, setHasSeenHighlightTourStep])
+
+    useEffect(
+        () => () => {
+            if (tour.isActive()) {
+                tour.cancel()
+            }
+        },
+        [tour]
+    )
 
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => {
         setIsOpen(value => !value)
-        closeHighlightBubble()
-    }, [closeHighlightBubble])
+        tour.cancel()
+    }, [tour])
 
     const [isDisabled, setIsDisabled] = useState(false)
 
@@ -124,24 +211,6 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     />
                 </DropdownMenu>
             </Dropdown>
-            {showSearchContextHighlightBubble && !hasSeenHighlightBubble && (
-                <div className="search-context-dropdown__highlight-bubble">
-                    <div>
-                        <strong>New: Search contexts</strong>
-                    </div>
-                    <div className="mt-2 mb-2">Search just the code you care about with search contexts.</div>
-                    <div>
-                        <a href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts-experimental">
-                            Learn more
-                        </a>
-                    </div>
-                    <div className="d-flex justify-content-end">
-                        <button type="button" className="btn btn-sm" onClick={closeHighlightBubble}>
-                            Close
-                        </button>
-                    </div>
-                </div>
-            )}
             <div className="search-context-dropdown__separator" />
         </>
     )

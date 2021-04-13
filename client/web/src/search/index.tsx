@@ -189,7 +189,7 @@ export interface OnboardingTourProps {
 export interface SearchContextProps {
     showSearchContext: boolean
     showSearchContextManagement: boolean
-    showSearchContextHighlightBubble?: boolean
+    showSearchContextHighlightTourStep?: boolean
     defaultSearchContextSpec: string
     selectedSearchContextSpec?: string
     setSelectedSearchContextSpec: (spec: string) => void

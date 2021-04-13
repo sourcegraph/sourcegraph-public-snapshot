@@ -141,7 +141,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         onChange={setUserQueryState}
                         onSubmit={onSubmit}
                         autoFocus={showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
-                        showSearchContextHighlightBubble={true}
+                        showSearchContextHighlightTourStep={true}
                     />
                     <SearchButton />
                 </div>

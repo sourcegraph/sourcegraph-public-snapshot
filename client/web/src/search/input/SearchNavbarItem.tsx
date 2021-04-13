@@ -71,7 +71,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 queryState={props.navbarSearchState}
                 onSubmit={onSubmit}
                 autoFocus={autoFocus}
-                showSearchContextHighlightBubble={true}
+                showSearchContextHighlightTourStep={true}
             />
             <SearchButton />
         </Form>

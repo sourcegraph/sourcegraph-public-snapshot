@@ -1,28 +1,8 @@
 .search-context-dropdown {
     position: relative;
 
-    &__highlight-bubble {
-        position: absolute;
-        top: 2.5rem;
-        left: 1rem;
-        padding: 1rem;
+    &__highlight-tour-step {
         width: 17rem;
-        border-color: var(--body-bg);
-        border-radius: 5px;
-        background-color: var(--body-bg);
-        box-shadow: rgba(100, 100, 111, 0.4) 0 0.5rem 2rem 0;
-        // One more than the .dropdown-menu class
-        z-index: 1001;
-
-        &::after {
-            content: '';
-            position: absolute;
-            bottom: 100%;
-            left: 0.75rem;
-            border-bottom: 12px solid var(--body-bg);
-            border-left: 12px solid transparent;
-            border-right: 12px solid transparent;
-        }
     }
 
     &__button {
