@@ -234,7 +234,7 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                     <div className="file-diff-hunks__container" ref={nextCodeElement}>
                         <table
                             className={classNames('file-diff-hunks__table file-diff-hunks__table', {
-                                'file-diff-hunks__table--split': diffMode === 'split',
+                                'diff-hunk--split': diffMode === 'split',
                             })}
                         >
                             {lineNumbers && (

@@ -131,10 +131,10 @@ describe('DiffSplitHunk', () => {
             fireEvent.click(diffLine.children[0].children[0])
 
             expect(diffLine.children).toHaveLength(4)
-            expect(diffLine.children[0]).toHaveClass('diff-hunk__line--active')
-            expect(diffLine.children[1]).toHaveClass('diff-hunk__line--active')
-            expect(diffLine.children[2]).toHaveClass('diff-hunk__line--active')
-            expect(diffLine.children[3]).toHaveClass('diff-hunk__line--active')
+            expect(diffLine.children[0]).toHaveClass('diff-hunk--split__line--active-num')
+            expect(diffLine.children[1]).toHaveClass('diff-hunk--split__line--active')
+            expect(diffLine.children[2]).toHaveClass('diff-hunk--split__line--active-num')
+            expect(diffLine.children[3]).toHaveClass('diff-hunk--split__line--active')
         })
 
         it('add active class when the anchor is clicked on ADDED lines', () => {
@@ -142,10 +142,10 @@ describe('DiffSplitHunk', () => {
             fireEvent.click(diffLine.children[2].children[0])
 
             expect(diffLine.children).toHaveLength(4)
-            expect(diffLine.children[0]).not.toHaveClass('diff-hunk__line--active')
-            expect(diffLine.children[1]).not.toHaveClass('diff-hunk__line--active')
-            expect(diffLine.children[2]).toHaveClass('diff-hunk__line--active')
-            expect(diffLine.children[3]).toHaveClass('diff-hunk__line--active')
+            expect(diffLine.children[0]).not.toHaveClass('diff-hunk--split__line--active-num')
+            expect(diffLine.children[1]).not.toHaveClass('diff-hunk--split__line--active')
+            expect(diffLine.children[2]).toHaveClass('diff-hunk--split__line--active-num')
+            expect(diffLine.children[3]).toHaveClass('diff-hunk--split__line--active')
         })
 
         it('add active class when the anchor is clicked on DELETED lines', () => {
@@ -153,10 +153,10 @@ describe('DiffSplitHunk', () => {
             fireEvent.click(diffLine.children[0].children[0])
 
             expect(diffLine.children).toHaveLength(4)
-            expect(diffLine.children[0]).toHaveClass('diff-hunk__line--active')
-            expect(diffLine.children[1]).toHaveClass('diff-hunk__line--active')
-            expect(diffLine.children[2]).not.toHaveClass('diff-hunk__line--active')
-            expect(diffLine.children[3]).not.toHaveClass('diff-hunk__line--active')
+            expect(diffLine.children[0]).toHaveClass('diff-hunk--split__line--active-num')
+            expect(diffLine.children[1]).toHaveClass('diff-hunk--split__line--active')
+            expect(diffLine.children[2]).not.toHaveClass('diff-hunk--split__line--active-num')
+            expect(diffLine.children[3]).not.toHaveClass('diff-hunk--split__line--active')
         })
     })
 })

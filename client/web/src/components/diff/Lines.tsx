@@ -37,17 +37,17 @@ const lineType = (kind: DiffHunkLineType): LineType => {
         case DiffHunkLineType.DELETED:
             return {
                 dataPart: 'base',
-                hunkContent: 'diff-hunk__line--deletion',
+                hunkContent: 'diff-hunk--split__line--deletion',
             }
         case DiffHunkLineType.UNCHANGED:
             return {
                 dataPart: 'base',
-                hunkContent: 'diff-hunk__line--both',
+                hunkContent: 'diff-hunk--split__line--both',
             }
         case DiffHunkLineType.ADDED:
             return {
                 dataPart: 'head',
-                hunkContent: 'diff-hunk__line--addition',
+                hunkContent: 'diff-hunk--split__line--addition',
             }
         default:
             return {
@@ -82,7 +82,7 @@ export const Line: React.FunctionComponent<Line> = ({
         <>
             {lineNumbers && (
                 <td
-                    className={`diff-hunk__num ${className}`}
+                    className={`diff-hunk__num ${hunkStyles.hunkContent}-num ${className}-num`}
                     data-line={lineNumber}
                     data-part={hunkStyles.dataPart}
                     id={id || anchor}
@@ -95,13 +95,13 @@ export const Line: React.FunctionComponent<Line> = ({
                 </td>
             )}
             <td
-                className={`diff-hunk__line diff-hunk__content ${hunkStyles.hunkContent} ${className}`}
+                className={`diff-hunk--split__line diff-hunk__content ${hunkStyles.hunkContent} ${className}`}
                 // eslint-disable-next-line react/forbid-dom-props
                 style={lineStyle}
                 data-diff-marker={diffHunkTypeIndicators[kind]}
             >
                 <span
-                    className="diff-hunk__line--code"
+                    className="diff-hunk--split__line--code"
                     dangerouslySetInnerHTML={{ __html: html }}
                     data-diff-marker={diffHunkTypeIndicators[kind]}
                 />

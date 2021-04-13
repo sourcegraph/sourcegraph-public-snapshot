@@ -197,7 +197,7 @@ add('All unified file node states overview', () => (
                         {...webProps}
                         diffMode="unified"
                         key={index}
-                        persistLines={boolean('persistLines', false)}
+                        persistLines={boolean('persistLines', true)}
                         lineNumbers={boolean('lineNumbers', true)}
                         node={node}
                         className="abcdef"
@@ -217,7 +217,7 @@ add('All split file node states overview', () => (
                         {...webProps}
                         diffMode="split"
                         key={index}
-                        persistLines={boolean('persistLines', false)}
+                        persistLines={boolean('persistLines', true)}
                         lineNumbers={boolean('lineNumbers', true)}
                         node={node}
                         className="abcdef"
