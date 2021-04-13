@@ -46,9 +46,9 @@ export const oncePageEvent = <E extends keyof PageEventObj>(page: Page, eventNam
 
 type ColorScheme = 'dark' | 'light'
 
-const ColorSchemeToMonacoEditorMapping: Record<ColorScheme, string> = {
-    dark: 'sourcegraph-dark',
-    light: 'sourcegraph-light',
+const ColorSchemeToMonacoEditorClassName: Record<ColorScheme, string> = {
+    dark: 'vs-dark',
+    light: 'vs',
 }
 
 interface SnapshotConfig {
@@ -99,10 +99,11 @@ const setColorScheme = async (page: Page, scheme: ColorScheme, config?: Snapshot
         config?.waitForCodeHighlighting ? waitForCodeHighlighting(page) : Promise.resolve(),
     ])
 
-    // Note: Monaco doesn't have a reliable way of exposing the current theme for us to check, we force set it here to avoid potential flakiness
-    await page.evaluate(
-        (editorTheme: string) => (window as any).monaco.editor.setTheme(editorTheme),
-        ColorSchemeToMonacoEditorMapping[scheme]
+    // Check Monaco editor is styled correctly
+    await page.waitForFunction(
+        expectedClassName => document.querySelector('.monaco-editor')?.classList.contains(expectedClassName),
+        { timeout: 5000 },
+        ColorSchemeToMonacoEditorClassName[scheme]
     )
 }
 
@@ -114,25 +115,25 @@ export const percySnapshot = async (page: Page, name: string, config?: SnapshotC
     const percyEnabled = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
 
     if (!percyEnabled) {
-        return Promise.resolve()
+        return
     }
 
     // Theme-light
     await setColorScheme(page, 'light', config)
-    await realPercySnapshot(page, `${name} - light theme`)
+    await realPercySnapshot(page, `${name} - 🌞 light theme`)
 
     // Theme-light with redesign
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
-    await realPercySnapshot(page, `${name} - light theme with redesign enabled`)
+    await realPercySnapshot(page, `${name} - 🌞 light theme with redesign enabled`)
     await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
 
     // Theme-dark
     await setColorScheme(page, 'dark', config)
-    await realPercySnapshot(page, `${name} - dark Theme`)
+    await realPercySnapshot(page, `${name} - 🌙 dark theme`)
 
     // Theme-dark with redesign
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
-    await realPercySnapshot(page, `${name} - dark theme with redesign enabled`)
+    await realPercySnapshot(page, `${name} - 🌙 dark theme with redesign enabled`)
     await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
 
     // Reset to light theme
