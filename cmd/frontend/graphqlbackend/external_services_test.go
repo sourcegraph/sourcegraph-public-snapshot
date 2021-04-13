@@ -39,11 +39,11 @@ func TestAddExternalService(t *testing.T) {
 		}()
 
 		t.Run("user mode not enabled and no namespace", func(t *testing.T) {
-			database.Mocks.Users.HasTag = func(ctx context.Context, userID int32, tag string) (bool, error) {
-				return false, nil
+			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
+				return map[string]bool{}, nil
 			}
 			defer func() {
-				database.Mocks.Users.HasTag = nil
+				database.Mocks.Users.Tags = nil
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -57,12 +57,13 @@ func TestAddExternalService(t *testing.T) {
 		})
 
 		t.Run("user mode not enabled and has namespace", func(t *testing.T) {
-			database.Mocks.Users.HasTag = func(ctx context.Context, userID int32, tag string) (bool, error) {
-				return false, nil
+			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
+				return map[string]bool{}, nil
 			}
 			defer func() {
-				database.Mocks.Users.HasTag = nil
+				database.Mocks.Users.Tags = nil
 			}()
+
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			userID := MarshalUserID(1)
 			result, err := newSchemaResolver(db, nil).AddExternalService(ctx, &addExternalServiceArgs{
@@ -89,11 +90,11 @@ func TestAddExternalService(t *testing.T) {
 			})
 			defer conf.Mock(nil)
 
-			database.Mocks.Users.HasTag = func(ctx context.Context, userID int32, tag string) (bool, error) {
-				return false, nil
+			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
+				return map[string]bool{}, nil
 			}
 			defer func() {
-				database.Mocks.Users.HasTag = nil
+				database.Mocks.Users.Tags = nil
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -122,12 +123,13 @@ func TestAddExternalService(t *testing.T) {
 			})
 			defer conf.Mock(nil)
 
-			database.Mocks.Users.HasTag = func(ctx context.Context, userID int32, tag string) (bool, error) {
-				return false, nil
+			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
+				return map[string]bool{}, nil
 			}
 			defer func() {
-				database.Mocks.Users.HasTag = nil
+				database.Mocks.Users.Tags = nil
 			}()
+
 			database.Mocks.ExternalServices.Create = func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
 				return nil
 			}
@@ -164,12 +166,15 @@ func TestAddExternalService(t *testing.T) {
 			})
 			defer conf.Mock(nil)
 
-			database.Mocks.Users.HasTag = func(ctx context.Context, userID int32, tag string) (bool, error) {
-				return true, nil
+			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
+				return map[string]bool{
+					database.TagAllowUserExternalServicePublic: true,
+				}, nil
 			}
 			defer func() {
-				database.Mocks.Users.HasTag = nil
+				database.Mocks.Users.Tags = nil
 			}()
+
 			database.Mocks.ExternalServices.Create = func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
 				return nil
 			}
