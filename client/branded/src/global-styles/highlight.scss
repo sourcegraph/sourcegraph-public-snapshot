@@ -177,3 +177,558 @@
         color: #fecccc;
     }
 }
+
+.theme-light {
+    // These colors are my description of them.
+    // They don't match up with other defined colors.
+    --hl-yellow: #b58900;
+    --hl-green: #859900;
+    --hl-red: #dc322f;
+    --hl-orange: #cb4b16;
+    --hl-blue: #268bd2;
+    --hl-cyan: #2aa198;
+    --hl-eggshell: #eee8d5;
+    --hl-purple: #6c71c4;
+    --hl-pink: #d33682;
+
+    // These grays are not ordered at all,
+    // they're just in the order they were defined
+    --hl-gray-0: #767676;
+    --hl-gray-1: #839496;
+    --hl-gray-2: #93a1a1;
+    --hl-gray-3: #657b83;
+    --hl-gray-4: #586e75;
+    --hl-gray-5: #2b3750;
+
+    --hl-bg-red: #f5dbdd;
+    --hl-bg-green: #deeade;
+
+    .code {
+        // TODO other general colors
+        color: var(--hl-gray-3);
+
+        // Comments
+        .comment,
+        .meta.documentation {
+            color: var(--hl-gray-0);
+        }
+
+        // String constants
+        .string {
+            color: var(--hl-cyan);
+        } // contents
+        .punctuation.definition.string {
+            color: var(--hl-gray-1);
+        } // surrounding quotes
+        .constant.character.escape {
+            color: var(--hl-red);
+        } // escape sequences
+
+        // Other constants
+        .constant {
+            color: var(--hl-yellow);
+        }
+        .constant.language {
+            color: var(--hl-yellow);
+        }
+        .constant.numeric {
+            color: var(--hl-purple);
+        }
+        .constant.character {
+            color: var(--hl-orange);
+        }
+        .constant.other {
+            color: var(--hl-orange);
+        }
+        .meta.preprocessor {
+            color: var(--hl-yellow);
+        }
+
+        // Variables
+        .variable {
+            color: var(--hl-blue);
+        }
+        .variable.function {
+            color: var(--hl-yellow);
+        } // function calls, etc.
+        .variable.language {
+            color: var(--hl-pink);
+        } // reserved variables like this or self
+        .punctuation.definition.variable {
+            color: var(--hl-green);
+        } // punctuation in variable definitions like $ in shell
+
+        // Keywords and storage
+        .keyword.operator {
+            color: var(--hl-gray-3);
+        }
+        .keyword.control {
+            color: var(--hl-green);
+            &.import,
+            &.include {
+                color: var(--hl-orange);
+            }
+            &.class {
+                color: var(--hl-yellow);
+            }
+        }
+        .keyword.other.new {
+            color: var(--hl-red);
+        }
+        .keyword.other.special-method {
+            color: var(--hl-orange);
+        }
+        .storage {
+            color: var(--hl-green);
+        }
+        .storage.modifier {
+            color: var(--hl-gray-4);
+        } // const, public, inline
+        .storage.type {
+            color: var(--hl-blue);
+        } // int, bool, char
+
+        // Entities
+        .entity.name {
+            color: var(--hl-yellow);
+        }
+        .entity.name.tag {
+            color: var(--hl-blue);
+        }
+        .entity.other.inherited-class {
+            color: var(--hl-blue);
+        }
+        .entity.other.attribute-name {
+            color: var(--hl-yellow);
+        }
+
+        // Support (builtin libraries like browser)
+        .support.function {
+            color: var(--hl-green);
+        }
+        .support.function.construct {
+            color: var(--hl-red);
+        }
+        .support.type.exception {
+            color: var(--hl-orange);
+        }
+        .support.type,
+        .support.class {
+            color: var(--hl-green);
+        }
+        .support.constant.color {
+            color: var(--hl-yellow);
+        } // color constants #ababab
+
+        // Braces
+        .punctuation.section.braces {
+            color: var(--hl-gray-3);
+        }
+        .punctuation.section.block {
+            color: var(--hl-gray-3);
+        }
+
+        // Parens
+        .punctuation.section.parens {
+            color: var(--hl-gray-3);
+        }
+        .punctuation.section.group {
+            color: var(--hl-gray-3);
+        }
+
+        // Brackets
+        .punctuation.section.brackets {
+            color: var(--hl-blue);
+        }
+
+        // Other
+        .punctuation.separator.continuation {
+            color: var(--hl-red);
+        } // line continuation \
+        .punctuation.definition.tag {
+            color: var(--hl-gray-2);
+        } // tag delimiters <>
+        .invalid {
+            background: var(--hl-bg-red);
+        }
+
+        //////////////////////////////////
+        // Language-specific highlights //
+        //////////////////////////////////
+
+        .source.scss {
+            .invalid.deprecated.color.w3c-non-standard-color-name {
+                color: var(--hl-yellow);
+            }
+            .keyword.control.untitled {
+                color: var(--hl-yellow);
+            }
+        }
+
+        .source.less {
+            .keyword.control.html.elements {
+                color: var(--hl-yellow);
+            }
+        }
+
+        .source.scss,
+        .source.css,
+        .source.less {
+            .entity.name.tag {
+                color: var(--hl-yellow);
+            }
+            .entity.other {
+                &.class {
+                    color: var(--hl-yellow);
+                }
+                &.id {
+                    color: var(--hl-yellow);
+                }
+                &.pseudo-class {
+                    color: var(--hl-blue);
+                }
+                &.pseudo-element {
+                    color: var(--hl-blue);
+                } // :hover
+            }
+        }
+
+        .source.ruby {
+            .keyword.other.special-method {
+                color: var(--hl-orange);
+            }
+            .variable.other.constant {
+                color: var(--hl-yellow);
+            }
+            .constant.other.symbol {
+                color: var(--hl-cyan);
+            }
+            .punctuation.definition.constant {
+                color: var(--hl-cyan);
+            }
+        }
+
+        .source.php {
+            .meta.array .support.function.construct {
+                color: var(--hl-yellow);
+            }
+        }
+
+        .source.c,
+        .source.c\2b\2b {
+            // escaped c++
+            .entity.name.function.preprocessor {
+                color: var(--hl-orange);
+            }
+            .meta.preprocessor.macro {
+                color: var(--hl-orange);
+            }
+            .meta.preprocessor.include .punctuation.definition.string {
+                color: var(--hl-cyan);
+            } // include <> and ""
+        }
+
+        .source.c\2b\2b {
+            // escaped c++
+            .storage.modifier {
+                color: var(--hl-green);
+            }
+        }
+
+        .text.tex,
+        .text.latex {
+            .punctuation.section.group {
+                color: var(--hl-red);
+            }
+            .punctuation.definition.arguments {
+                color: var(--hl-red);
+            }
+            .meta.group.braces {
+                color: var(--hl-yellow);
+            }
+            .variable.parameter.function {
+                color: var(--hl-orange);
+            }
+
+            .string.other.math {
+                color: var(--hl-yellow);
+            }
+            .constant.other.math {
+                color: var(--hl-cyan);
+            }
+            .constant.character.math {
+                color: var(--hl-cyan);
+            }
+            .punctuation.definition.constant.math {
+                color: var(--hl-red);
+            }
+            .punctuation.definition.string {
+                color: var(--hl-red);
+            }
+
+            .variable.parameter.definition.label {
+                color: var(--hl-orange);
+            }
+            .support.function.be {
+                color: var(--hl-green);
+            }
+            .support.function.section {
+                color: var(--hl-orange);
+            } // \subsection
+            .support.function.general {
+                color: var(--hl-cyan);
+            }
+            .storage.type.label {
+                color: var(--hl-cyan);
+            } // \label
+            .keyword.other.reference {
+                color: var(--hl-cyan);
+            } // \ref
+        }
+
+        .source.python {
+            .storage.type.class {
+                color: var(--hl-green);
+            }
+            .storage.type.function {
+                color: var(--hl-green);
+            }
+            .storage.modifier.global {
+                color: var(--hl-green);
+            }
+            .support.type.exception {
+                color: var(--hl-yellow);
+            }
+        }
+
+        .source.shell {
+            .keyword.operator.expansion {
+                color: var(--hl-green);
+            } // the #* in "${1#*=}"
+        }
+
+        .source.perl {
+            .support.function {
+                color: var(--hl-blue);
+            }
+        }
+
+        .source.diff {
+            .meta.range {
+                color: var(--hl-blue);
+            }
+            .entity.name.section {
+                color: var(--hl-orange);
+            }
+            .markup.deleted {
+                color: var(--hl-gray-5);
+                background: var(--hl-bg-red);
+            }
+            .markup.inserted {
+                color: var(--hl-gray-5);
+                background: var(--hl-bg-green);
+            }
+        }
+
+        .js {
+            .variable.other {
+                &.readwrite,
+                &.object,
+                &.constant {
+                    color: var(--hl-gray-3);
+                }
+            }
+        }
+    }
+}
+
+.theme-dark {
+    --hl-gray-0: #bdd4e3;
+    --hl-gray-1: #8fa1b3;
+    --hl-gray-2: #c0c5ce;
+    --hl-gray-4: #4f5b66;
+    --hl-gray-5: #96b5b4;
+    --hl-gray-6: #969896;
+
+    --hl-dark-green: #359448;
+    --hl-dark-blue-1: #329af0;
+    --hl-dark-blue-2: #268bd2;
+    --hl-dark-blue-3: #35a5ff;
+    --hl-dark-yellow: #ebcb8b;
+    --hl-dark-red: #bf616a;
+
+    --hl-blue: #72c3fc;
+    --hl-yellow: #fff3bf;
+    --hl-red: #ffb0af;
+    --hl-green-1: #d3f9d8;
+    --hl-green-2: #a3be8c;
+    --hl-purple: #b48ead;
+    --hl-orange: #d08770;
+    --hl-brown: #ab7967;
+    --hl-black: #2b303b;
+    --hl-white: #f2f4f8;
+
+    --hl-bg-red: #bf616a;
+    --hl-bg-dark-red: #350b10;
+    --hl-bg-dark-green: #0e2414;
+
+    .code {
+        color: var(--hl-gray-2);
+
+        .variable.parameter.function {
+            color: var(--hl-gray-0);
+        }
+        .punctuation.definition {
+            color: var(--hl-gray-0);
+        }
+
+        // Comments
+        .comment,
+        .punctuation.definition.comment {
+            color: var(--hl-dark-green);
+        }
+
+        .keyword.operator {
+            color: var(--hl-dark-blue-1);
+        }
+        .keyword {
+            color: var(--hl-dark-blue-3);
+        }
+
+        .variable {
+            color: var(--hl-blue);
+        }
+
+        // Functions
+        .entity.name.function,
+        .meta.require,
+        .support.function.any-method,
+        .variable.function {
+            color: var(--hl-yellow);
+        }
+
+        // Classes
+        .support.class,
+        .entity.name.class,
+        .meta.class {
+            color: var(--hl-blue);
+        }
+        .entity.other.inherited-class {
+            color: var(--hl-red);
+        }
+
+        // Methods
+        .keyword.other.special-method {
+            color: var(--hl-gray-1);
+        }
+
+        // Storage
+        .storage {
+            color: var(--hl-dark-blue-1);
+        }
+
+        // Support
+        .support.function {
+            color: var(--hl-yellow);
+        }
+
+        // Strings
+        .string,
+        .constant.other.symbol {
+            color: var(--hl-red);
+        }
+        .string.regexp {
+            color: var(--hl-gray-5);
+        } // regexp literals
+        .constant.character.escape {
+            color: var(--hl-gray-5);
+        } // escape sequences
+
+        // Constants
+        .constant {
+            color: var(--hl-dark-blue-1);
+        }
+        .constant.numeric {
+            color: var(--hl-green-1);
+        }
+        .constant.other.color {
+            color: var(--hl-gray-5);
+        }
+
+        // Tags
+        .entity.name.tag {
+            color: var(--hl-dark-blue-1);
+        }
+
+        // Attributes
+        .entity.other.attribute-name {
+            color: var(--hl-blue);
+        }
+
+        // Attribute IDs
+        .entity.other.attribute-name.id,
+        .punctuation.definition.entity {
+            color: var(--hl-gray-1);
+        }
+
+        // Selector
+        .meta.selector {
+            color: var(--hl-purple);
+        }
+
+        // Headings
+        .markup.heading,
+        .punctuation.definition.heading,
+        .entity.name.section {
+            color: var(--hl-gray-1);
+        }
+
+        // Units
+        .keyword.other.unit {
+            color: var(--hl-orange);
+        }
+
+        // Code
+        .markup.raw.inline {
+            color: var(--hl-green-2);
+        }
+
+        // Links
+        .string.other.link {
+            color: var(--hl-dark-red);
+        } // link text
+        .meta.link {
+            color: var(--hl-orange);
+        } // link URL
+        .meta.image {
+            color: var(--hl-orange);
+        } // image URL
+
+        // Lists
+        .markup.list {
+            color: var(--hl-dark-red);
+        }
+
+        // Embedded
+        .punctuation.section.embedded,
+        .variable.interpolation {
+            color: var(--hl-brown);
+        }
+
+        // Diff
+        .source.diff {
+            color: var(--hl-gray-6);
+        }
+        .meta.diff.range {
+            color: var(--hl-dark-blue-2);
+        }
+        .meta.deleted.diff {
+            color: var(--hl-white);
+            background: var(--hl-bg-dark-red);
+        }
+        .meta.inserted.diff {
+            color: var(--hl-white);
+            background: var(--hl-bg-dark-green);
+        }
+    }
+}
