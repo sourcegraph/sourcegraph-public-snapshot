@@ -97,7 +97,7 @@ export const config: webpack.Configuration = {
                         sourceMap: false,
                         localsConvention: 'camelCase',
                         modules: {
-                            localIdentName: '[name]__[local]',
+                            localIdentName: '[name]__[local]_[hash:base64:5]',
                         },
                     },
                 }),
