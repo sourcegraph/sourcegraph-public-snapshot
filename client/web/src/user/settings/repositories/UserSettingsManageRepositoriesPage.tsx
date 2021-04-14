@@ -823,6 +823,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             <AwayPrompt
                 header="Discard unsaved changes?"
                 message="Currently synced repositories will be unchanged"
+                button_ok_text="Discard"
                 when={didRepoSelectionChange}
             />
             <Form className="mt-4 d-flex" onSubmit={submit}>
