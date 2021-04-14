@@ -2,8 +2,10 @@ import { storiesOf } from '@storybook/react'
 import { createMemoryHistory } from 'history'
 import * as React from 'react'
 import sinon from 'sinon'
+
 import { WebStory } from '../../../../components/WebStory'
 import { Progress } from '../../../stream'
+
 import { StreamingProgress } from './StreamingProgress'
 
 const history = createMemoryHistory()

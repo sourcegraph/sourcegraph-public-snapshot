@@ -1,13 +1,15 @@
 import React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
-import { CodeMonitoringProps } from '../../../code-monitoring'
+
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
+import { CodeMonitoringProps } from '../../../code-monitoring'
 import { Page } from '../../../components/Page'
 import { lazyComponent } from '../../../util/lazyComponent'
 import { CodeMonitoringPageProps } from '../CodeMonitoringPage'

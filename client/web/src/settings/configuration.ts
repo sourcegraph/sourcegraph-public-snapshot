@@ -1,6 +1,7 @@
-import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 
 /**
  * Merges settings schemas from base settings and all configured extensions.

@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -44,7 +44,7 @@ func TestWorkerView(t *testing.T) {
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChange:     batchChange.ID,
-			ReconcilerState: batches.ReconcilerStateQueued,
+			ReconcilerState: btypes.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {
 			if err := cstore.DeleteChangeset(ctx, c.ID); err != nil {
@@ -57,7 +57,7 @@ func TestWorkerView(t *testing.T) {
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChange:     0,
-			ReconcilerState: batches.ReconcilerStateQueued,
+			ReconcilerState: btypes.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {
 			if err := cstore.DeleteChangeset(ctx, c.ID); err != nil {
@@ -75,7 +75,7 @@ func TestWorkerView(t *testing.T) {
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChange:     userBatchChange.ID,
-			ReconcilerState: batches.ReconcilerStateQueued,
+			ReconcilerState: btypes.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {
 			if err := cstore.DeleteChangeset(ctx, c.ID); err != nil {
@@ -97,7 +97,7 @@ func TestWorkerView(t *testing.T) {
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChange:     orgBatchChange.ID,
-			ReconcilerState: batches.ReconcilerStateQueued,
+			ReconcilerState: btypes.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {
 			if err := cstore.DeleteChangeset(ctx, c.ID); err != nil {
@@ -115,7 +115,7 @@ func TestWorkerView(t *testing.T) {
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 			Repo:            repo.ID,
 			BatchChange:     userBatchChange.ID,
-			ReconcilerState: batches.ReconcilerStateQueued,
+			ReconcilerState: btypes.ReconcilerStateQueued,
 		})
 		// Attach second batch change
 		c.Attach(batchChange.ID)
@@ -133,7 +133,7 @@ func TestWorkerView(t *testing.T) {
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 			Repo:            deletedRepo.ID,
 			BatchChange:     batchChange.ID,
-			ReconcilerState: batches.ReconcilerStateQueued,
+			ReconcilerState: btypes.ReconcilerStateQueued,
 		})
 		t.Cleanup(func() {
 			if err := cstore.DeleteChangeset(ctx, c.ID); err != nil {

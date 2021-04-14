@@ -1,20 +1,23 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useLayoutEffect, useRef } from 'react'
 import { Route, RouteComponentProps, Switch, useLocation } from 'react-router'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
+import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
-import { RouteDescriptor } from '../util/contributions'
-import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { AuthenticatedUser } from '../auth'
-import { PageHeader } from '../components/PageHeader'
 import { Page } from '../components/Page'
+import { PageHeader } from '../components/PageHeader'
+import { RouteDescriptor } from '../util/contributions'
+
+import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 const NotFoundPage: React.ComponentType<{}> = () => (
     <HeroPage

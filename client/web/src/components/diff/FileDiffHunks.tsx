@@ -1,21 +1,24 @@
-import { findPositionsFromEvents } from '@sourcegraph/codeintellify'
 import * as H from 'history'
 import React, { useCallback, useMemo, useState, useEffect } from 'react'
 import { combineLatest, from, NEVER, Observable, of, ReplaySubject, Subscription } from 'rxjs'
 import { filter, first, map, switchMap, tap } from 'rxjs/operators'
+import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
+
+import { findPositionsFromEvents } from '@sourcegraph/codeintellify'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { DiffHunk } from './DiffHunk'
-import { diffDomFunctions } from '../../repo/compare/dom-functions'
-import { FileDiffFields } from '../../graphql-operations'
-import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { ExtensionInfo } from './FileDiffConnection'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { StatusBar } from '../../extensions/components/StatusBar'
+import { FileDiffFields } from '../../graphql-operations'
+import { diffDomFunctions } from '../../repo/compare/dom-functions'
+
+import { DiffHunk } from './DiffHunk'
+import { ExtensionInfo } from './FileDiffConnection'
 
 export interface FileHunksProps extends ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */

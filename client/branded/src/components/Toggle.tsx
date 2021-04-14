@@ -1,5 +1,5 @@
-import * as React from 'react'
 import classnames from 'classnames'
+import * as React from 'react'
 
 interface Props {
     /** The initial value. */

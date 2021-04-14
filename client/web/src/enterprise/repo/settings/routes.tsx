@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
+
 import { RepoSettingsAreaRoute } from '../../../repo/settings/RepoSettingsArea'
 import { repoSettingsAreaRoutes } from '../../../repo/settings/routes'
 import { lazyComponent } from '../../../util/lazyComponent'
@@ -8,6 +9,7 @@ import { CodeIntelIndexPageProps } from '../../codeintel/detail/CodeIntelIndexPa
 import { CodeIntelUploadPageProps } from '../../codeintel/detail/CodeIntelUploadPage'
 import { CodeIntelIndexesPageProps } from '../../codeintel/list/CodeIntelIndexesPage'
 import { CodeIntelUploadsPageProps } from '../../codeintel/list/CodeIntelUploadsPage'
+
 import { RepoSettingsPermissionsPageProps } from './RepoSettingsPermissionsPage'
 
 const RepoSettingsPermissionsPage = lazyComponent<RepoSettingsPermissionsPageProps, 'RepoSettingsPermissionsPage'>(

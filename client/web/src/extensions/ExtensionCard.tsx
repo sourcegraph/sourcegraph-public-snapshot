@@ -1,21 +1,23 @@
-import React, { useState, useCallback, useMemo, memo } from 'react'
-import WarningIcon from 'mdi-react/WarningIcon'
 import classNames from 'classnames'
+import WarningIcon from 'mdi-react/WarningIcon'
+import React, { useState, useCallback, useMemo, memo } from 'react'
+import { Link } from 'react-router-dom'
+
 import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
+import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
+
 import { isExtensionAdded } from './extension/extension'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
-import { ExtensionToggle, OptimisticUpdateFailure } from './ExtensionToggle'
-import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
-import { Link } from 'react-router-dom'
-import { DefaultIconEnabled, DefaultIcon, SourcegraphExtensionIcon } from './icons'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
 import { ExtensionStatusBadge } from './extension/ExtensionStatusBadge'
+import { ExtensionToggle, OptimisticUpdateFailure } from './ExtensionToggle'
+import { DefaultIconEnabled, DefaultIcon, SourcegraphExtensionIcon } from './icons'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'>, ThemeProps {
     node: Pick<

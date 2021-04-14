@@ -1,14 +1,16 @@
 // @ts-check
 
+const path = require('path')
+
 const { generateNamespace } = require('@gql2ts/from-schema')
 const { DEFAULT_OPTIONS, DEFAULT_TYPE_MAP } = require('@gql2ts/language-typescript')
 const { buildSchema, introspectionFromSchema } = require('graphql')
 const gulp = require('gulp')
 const { compile: compileJSONSchema } = require('json-schema-to-typescript')
 const { readFile, writeFile, mkdir } = require('mz/fs')
-const path = require('path')
 const { format, resolveConfig } = require('prettier')
 
+const { cssModulesTypings, watchCSSModulesTypings } = require('./dev/generateCssModulesTypes')
 const { generateGraphQlOperations, ALL_DOCUMENTS_GLOB } = require('./dev/generateGraphQlOperations')
 
 const GRAPHQL_SCHEMA_PATH = path.join(__dirname, '../../cmd/frontend/graphqlbackend/schema.graphql')
@@ -190,4 +192,6 @@ module.exports = {
   watchGraphQlSchema,
   graphQlOperations,
   watchGraphQlOperations,
+  cssModulesTypings,
+  watchCSSModulesTypings,
 }

@@ -1,9 +1,9 @@
-import React from 'react'
-import { createLocation } from 'history'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { createLocation } from 'history'
+import React from 'react'
+import sinon from 'sinon'
 
 import { ConnectionNodesForTesting as ConnectionNodes } from './FilteredConnection'
-import sinon from 'sinon'
 
 function fakeConnection<N>({
     hasNextPage,

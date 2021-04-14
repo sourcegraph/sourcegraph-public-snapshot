@@ -1,13 +1,3 @@
-import {
-    ContextResolver,
-    createHoverifier,
-    findPositionsFromEvents,
-    Hoverifier,
-    HoverState,
-    MaybeLoadingResult,
-    DiffPart,
-} from '@sourcegraph/codeintellify'
-import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import * as React from 'react'
 import { render as reactDOMRender } from 'react-dom'
@@ -41,17 +31,32 @@ import {
     retryWhen,
     mapTo,
 } from 'rxjs/operators'
+import { NotificationType, HoverAlert } from 'sourcegraph'
+
+import {
+    ContextResolver,
+    createHoverifier,
+    findPositionsFromEvents,
+    Hoverifier,
+    HoverState,
+    MaybeLoadingResult,
+    DiffPart,
+} from '@sourcegraph/codeintellify'
+import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import {
     isPrivateRepoPublicSourcegraphComErrorLike,
     isRepoNotFoundErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
+import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
 } from '@sourcegraph/shared/src/commandPalette/CommandList'
-import { asObservable } from '@sourcegraph/shared/src/util/rxjs/asObservable'
 import { ApplyLinkPreviewOptions } from '@sourcegraph/shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
@@ -60,6 +65,9 @@ import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { URLToFileContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asObservable } from '@sourcegraph/shared/src/util/rxjs/asObservable'
 import { isDefined, isInstanceOf, property } from '@sourcegraph/shared/src/util/types'
 import {
     FileSpec,
@@ -72,24 +80,29 @@ import {
     toURIWithPath,
     ViewStateSpec,
 } from '@sourcegraph/shared/src/util/url'
+
+import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { observeStorageKey } from '../../../browser-extension/web-extension-api/storage'
-import { isExtension, isInPage } from '../../context'
-import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
+import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
 import { toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
+import { isExtension, isInPage } from '../../context'
+import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
 import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
+import { isFirefox, observeSourcegraphURL } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
+import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
+import { gerritCodeHost } from '../gerrit/codeHost'
 import { githubCodeHost } from '../github/codeHost'
 import { gitlabCodeHost } from '../gitlab/codeHost'
 import { phabricatorCodeHost } from '../phabricator/codeHost'
-import { gerritCodeHost } from '../gerrit/codeHost'
+
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
 import { ContentView, handleContentViews } from './contentViews'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
-import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
 import {
     createPrivateCodeHoverAlert,
     getActiveHoverAlerts,
@@ -102,19 +115,9 @@ import {
     nativeTooltipsEnabledFromSettings,
     registerNativeTooltipContributions,
 } from './nativeTooltips'
-import { delayUntilIntersecting, ViewResolver } from './views'
-import { NotificationType, HoverAlert } from 'sourcegraph'
-import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
-import { asError } from '@sourcegraph/shared/src/util/errors'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
-import { isFirefox, observeSourcegraphURL } from '../../util/context'
-import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
-import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
-import { background } from '../../../browser-extension/web-extension-api/runtime'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
+import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
+import { delayUntilIntersecting, ViewResolver } from './views'
 
 registerHighlightContributions()
 

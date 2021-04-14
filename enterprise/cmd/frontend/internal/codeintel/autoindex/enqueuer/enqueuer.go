@@ -4,9 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
-
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
@@ -85,6 +84,21 @@ func (s *IndexEnqueuer) queueIndex(ctx context.Context, repositoryID int, force 
 		return errors.Wrap(err, "gitserver.Head")
 	}
 	traceLog(log.String("commit", commit))
+
+	return s.queueIndexForCommit(ctx, repositoryID, commit, force, traceLog)
+}
+
+// sourcegraphRepositoryID is the repository id of sg/sg on Cloud
+const sourcegraphRepositoryID = 36809250
+
+func (s *IndexEnqueuer) queueIndexForCommit(ctx context.Context, repositoryID int, commit string, force bool, traceLog observation.TraceLogger) (err error) {
+	if repositoryID == sourcegraphRepositoryID {
+		// Don't auto-index sg/sg; instead, we'll enqueue index jobs for all of the current commit's
+		// root go module dependencies. This is going to simulate what we _could_ do with dependency
+		// tracking for Go, though this particular implementations SUPER sketchy.
+		log15.Info("Enqueueing dependencies of sourcegraph/sourcegraph for auto-indexing", "commit", commit)
+		return s.enqueueSourcegraphGoRootDependencies(ctx, repositoryID, commit)
+	}
 
 	if !force {
 		isQueued, err := s.dbStore.IsQueued(ctx, repositoryID, commit)

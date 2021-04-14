@@ -1,5 +1,5 @@
-import * as React from 'react'
 import * as Popper from 'popper.js'
+import * as React from 'react'
 import { Tooltip as BootstrapTooltip } from 'reactstrap'
 
 interface Props {}

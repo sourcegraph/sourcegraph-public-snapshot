@@ -1,0 +1,69 @@
+package authtest
+
+import (
+	"flag"
+	"fmt"
+	"log"
+	"os"
+	"strings"
+	"testing"
+
+	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+)
+
+var client *gqltestutil.Client
+
+var (
+	long = flag.Bool("long", false, "Enable the auth tests to run. Required flag, otherwise tests are skipped.")
+
+	baseURL  = flag.String("base-url", "http://127.0.0.1:7080", "The base URL of the Sourcegraph instance")
+	email    = flag.String("email", "authtest@sourcegraph.com", "The email of the admin user")
+	username = flag.String("username", "authtest-admin", "The username of the admin user")
+	password = flag.String("password", "supersecurepassword", "The password of the admin user")
+
+	githubToken = flag.String("github-token", os.Getenv("GITHUB_TOKEN"), "The GitHub personal access token that will be used to authenticate a GitHub external service")
+)
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+
+	if !*long {
+		fmt.Println("SKIP: skipping authtest since -long is not specified.")
+		return
+	}
+
+	*baseURL = strings.TrimSuffix(*baseURL, "/")
+
+	// Make it possible to use a different token on non-default branches
+	// so we don't break builds on the default branch.
+	mockGitHubToken := os.Getenv("MOCK_GITHUB_TOKEN")
+	if mockGitHubToken != "" {
+		*githubToken = mockGitHubToken
+	}
+
+	needsSiteInit, err := gqltestutil.NeedsSiteInit(*baseURL)
+	if err != nil {
+		log.Fatal("Failed to check if site needs init: ", err)
+	}
+
+	if needsSiteInit {
+		client, err = gqltestutil.SiteAdminInit(*baseURL, *email, *username, *password)
+		if err != nil {
+			log.Fatal("Failed to create site admin: ", err)
+		}
+		log.Println("Site admin has been created:", *username)
+	} else {
+		client, err = gqltestutil.SignIn(*baseURL, *email, *password)
+		if err != nil {
+			log.Fatal("Failed to sign in:", err)
+		}
+		log.Println("Site admin authenticated:", *username)
+	}
+
+	if !testing.Verbose() {
+		log15.Root().SetHandler(log15.DiscardHandler())
+	}
+	os.Exit(m.Run())
+}

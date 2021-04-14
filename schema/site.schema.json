@@ -1430,6 +1430,9 @@
         },
         "keyname": {
           "type": "string"
+        },
+        "credentialsFile": {
+          "type": "string"
         }
       }
     },

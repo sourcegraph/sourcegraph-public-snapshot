@@ -490,6 +490,15 @@ func TestVersionContext(t *testing.T) {
 				}
 				return repos, nil
 			}
+			database.Mocks.Repos.Count = func(context.Context, database.ReposListOptions) (int, error) { return len(tc.reposGetListNames), nil }
+			defer func() {
+				database.Mocks.Repos.ListRepoNames = nil
+				database.Mocks.Repos.Count = nil
+			}()
+			git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+				return api.CommitID("deadbeef"), nil
+			}
+			defer git.ResetMocks()
 
 			gotResult, err := resolver.resolveRepositories(context.Background(), nil)
 			if err != nil {

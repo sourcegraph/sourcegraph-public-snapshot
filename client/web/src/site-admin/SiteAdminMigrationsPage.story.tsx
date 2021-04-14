@@ -2,8 +2,10 @@ import { storiesOf } from '@storybook/react'
 import * as H from 'history'
 import React from 'react'
 import { Observable, of } from 'rxjs'
+
 import { WebStory } from '../components/WebStory'
 import { OutOfBandMigrationFields } from '../graphql-operations'
+
 import { SiteAdminMigrationsPage } from './SiteAdminMigrationsPage'
 
 const { add } = storiesOf('web/Site Admin/Migrations', module)

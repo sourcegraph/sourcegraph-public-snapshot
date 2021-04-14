@@ -1,21 +1,23 @@
-import { Location } from '@sourcegraph/extension-api-types'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as H from 'history'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
+
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { Location } from '@sourcegraph/extension-api-types'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
+
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import { groupLocations } from './locations'
-import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 
 /** The maximum number of results we'll receive from a provider before we truncate and display a banner. */
 const MAXIMUM_LOCATION_RESULTS = 500

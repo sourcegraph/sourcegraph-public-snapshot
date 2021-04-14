@@ -1,12 +1,14 @@
 import * as React from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
+
 import { queryGraphQL } from '../backend/graphql'
 import { Timestamp } from '../components/time/Timestamp'
 import { GitRefType, Scalars } from '../graphql-operations'

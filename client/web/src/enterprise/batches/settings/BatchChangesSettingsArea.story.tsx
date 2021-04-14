@@ -1,8 +1,10 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
+
 import { ExternalServiceKind } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
 import { BatchChangesSettingsArea } from './BatchChangesSettingsArea'
 
 const { add } = storiesOf('web/batches/settings/BatchChangesSettingsArea', module).addDecorator(story => (

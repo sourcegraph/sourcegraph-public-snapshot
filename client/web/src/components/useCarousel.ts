@@ -1,6 +1,7 @@
 import { isEqual } from 'lodash'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Subscription } from 'rxjs'
+
 import { observeResize } from '../util/dom'
 
 interface CarouselOptions {

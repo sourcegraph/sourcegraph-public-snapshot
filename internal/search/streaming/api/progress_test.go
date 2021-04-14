@@ -3,6 +3,7 @@ package api
 import (
 	"flag"
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -31,6 +32,7 @@ func TestSearchProgress(t *testing.T) {
 			Missing:             nil,
 			Cloning:             nil,
 			LimitHit:            false,
+			DisplayLimit:        math.MaxInt32,
 		},
 		"all": {
 			MatchCount:          1,
@@ -43,6 +45,7 @@ func TestSearchProgress(t *testing.T) {
 			Cloning:             []Namer{repo{"cloning-1"}},
 			LimitHit:            true,
 			SuggestedLimit:      1000,
+			DisplayLimit:        math.MaxInt32,
 		},
 		"traced": {
 			Trace: "abcd",
@@ -55,6 +58,30 @@ func TestSearchProgress(t *testing.T) {
 			got.DurationMs = 0 // clear out non-deterministic field
 			testutil.AssertGolden(t, "testdata/golden/"+t.Name()+".json", *updateGolden, got)
 		})
+	}
+}
+
+func TestNumber(t *testing.T) {
+	cases := map[int]string{
+		0:     "0",
+		1:     "1",
+		100:   "100",
+		999:   "999",
+		1000:  "1,000",
+		1234:  "1,234",
+		3004:  "3,004",
+		3040:  "3,040",
+		3400:  "3,400",
+		9999:  "9,999",
+		10000: "10k",
+		10400: "10k",
+		54321: "54k",
+	}
+	for n, want := range cases {
+		got := number(n)
+		if got != want {
+			t.Errorf("number(%d) got %q want %q", n, got, want)
+		}
 	}
 }
 

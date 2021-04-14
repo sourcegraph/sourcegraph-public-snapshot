@@ -11,9 +11,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -24,7 +24,7 @@ import (
 
 // SetDerivedState will update the external state fields on the Changeset based
 // on the current state of the changeset and associated events.
-func SetDerivedState(ctx context.Context, repoStore *database.RepoStore, c *batches.Changeset, es []*batches.ChangesetEvent) {
+func SetDerivedState(ctx context.Context, repoStore *database.RepoStore, c *btypes.Changeset, es []*btypes.ChangesetEvent) {
 	// Copy so that we can sort without mutating the argument
 	events := make(ChangesetEvents, len(es))
 	copy(events, es)
@@ -53,7 +53,7 @@ func SetDerivedState(ctx context.Context, repoStore *database.RepoStore, c *batc
 	// synced, and it's still complete, then we don't need to do any further
 	// work: the diffstat should still be correct, and this way we don't need to
 	// rely on gitserver having the head OID still available.
-	if c.SyncState.IsComplete && c.ExternalState != batches.ChangesetExternalStateOpen {
+	if c.SyncState.IsComplete && c.ExternalState != btypes.ChangesetExternalStateOpen {
 		return
 	}
 
@@ -95,7 +95,7 @@ func SetDerivedState(ctx context.Context, repoStore *database.RepoStore, c *batc
 // computeCheckState computes the overall check state based on the current
 // synced check state and any webhook events that have arrived after the most
 // recent sync.
-func computeCheckState(c *batches.Changeset, events ChangesetEvents) batches.ChangesetCheckState {
+func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.ChangesetCheckState {
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		return computeGitHubCheckState(c.UpdatedAt, m, events)
@@ -107,12 +107,12 @@ func computeCheckState(c *batches.Changeset, events ChangesetEvents) batches.Cha
 		return computeGitLabCheckState(c.UpdatedAt, m, events)
 	}
 
-	return batches.ChangesetCheckStateUnknown
+	return btypes.ChangesetCheckStateUnknown
 }
 
 // computeExternalState computes the external state for the changeset and its
 // associated events.
-func computeExternalState(c *batches.Changeset, history []changesetStatesAtTime) (batches.ChangesetExternalState, error) {
+func computeExternalState(c *btypes.Changeset, history []changesetStatesAtTime) (btypes.ChangesetExternalState, error) {
 	if len(history) == 0 {
 		return computeSingleChangesetExternalState(c)
 	}
@@ -125,7 +125,7 @@ func computeExternalState(c *batches.Changeset, history []changesetStatesAtTime)
 
 // computeReviewState computes the review state for the changeset and its
 // associated events. The events should be presorted.
-func computeReviewState(c *batches.Changeset, history []changesetStatesAtTime) (batches.ChangesetReviewState, error) {
+func computeReviewState(c *btypes.Changeset, history []changesetStatesAtTime) (btypes.ChangesetReviewState, error) {
 	if len(history) == 0 {
 		return computeSingleChangesetReviewState(c)
 	}
@@ -146,7 +146,7 @@ func computeReviewState(c *batches.Changeset, history []changesetStatesAtTime) (
 	return newestDataPoint.reviewState, nil
 }
 
-func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullRequest, events []*batches.ChangesetEvent) batches.ChangesetCheckState {
+func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
 	var latestCommit bitbucketserver.Commit
 	for _, c := range pr.Commits {
 		if latestCommit.CommitterTimestamp <= c.CommitterTimestamp {
@@ -154,7 +154,7 @@ func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullR
 		}
 	}
 
-	stateMap := make(map[string]batches.ChangesetCheckState)
+	stateMap := make(map[string]btypes.ChangesetCheckState)
 
 	// States from last sync
 	for _, status := range pr.CommitStatus {
@@ -176,7 +176,7 @@ func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullR
 		}
 	}
 
-	states := make([]batches.ChangesetCheckState, 0, len(stateMap))
+	states := make([]btypes.ChangesetCheckState, 0, len(stateMap))
 	for _, v := range stateMap {
 		states = append(states, v)
 	}
@@ -184,27 +184,27 @@ func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullR
 	return combineCheckStates(states)
 }
 
-func parseBitbucketBuildState(s string) batches.ChangesetCheckState {
+func parseBitbucketBuildState(s string) btypes.ChangesetCheckState {
 	switch s {
 	case "FAILED":
-		return batches.ChangesetCheckStateFailed
+		return btypes.ChangesetCheckStateFailed
 	case "INPROGRESS":
-		return batches.ChangesetCheckStatePending
+		return btypes.ChangesetCheckStatePending
 	case "SUCCESSFUL":
-		return batches.ChangesetCheckStatePassed
+		return btypes.ChangesetCheckStatePassed
 	default:
-		return batches.ChangesetCheckStateUnknown
+		return btypes.ChangesetCheckStateUnknown
 	}
 }
 
-func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, events []*batches.ChangesetEvent) batches.ChangesetCheckState {
+func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
 	// We should only consider the latest commit. This could be from a sync or a webhook that
 	// has occurred later
 	var latestCommitTime time.Time
 	var latestOID string
-	statusPerContext := make(map[string]batches.ChangesetCheckState)
-	statusPerCheckSuite := make(map[string]batches.ChangesetCheckState)
-	statusPerCheckRun := make(map[string]batches.ChangesetCheckState)
+	statusPerContext := make(map[string]btypes.ChangesetCheckState)
+	statusPerCheckSuite := make(map[string]btypes.ChangesetCheckState)
+	statusPerCheckRun := make(map[string]btypes.ChangesetCheckState)
 
 	if len(pr.Commits.Nodes) > 0 {
 		// We only request the most recent commit
@@ -274,7 +274,7 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 			statusPerContext[s.Context] = parseGithubCheckState(s.State)
 		}
 	}
-	finalStates := make([]batches.ChangesetCheckState, 0, len(statusPerContext))
+	finalStates := make([]btypes.ChangesetCheckState, 0, len(statusPerContext))
 	for k := range statusPerContext {
 		finalStates = append(finalStates, statusPerContext[k])
 	}
@@ -291,69 +291,69 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 // pending takes highest priority
 // followed by error
 // success return only if all successful
-func combineCheckStates(states []batches.ChangesetCheckState) batches.ChangesetCheckState {
+func combineCheckStates(states []btypes.ChangesetCheckState) btypes.ChangesetCheckState {
 	if len(states) == 0 {
-		return batches.ChangesetCheckStateUnknown
+		return btypes.ChangesetCheckStateUnknown
 	}
-	stateMap := make(map[batches.ChangesetCheckState]bool)
+	stateMap := make(map[btypes.ChangesetCheckState]bool)
 	for _, s := range states {
 		stateMap[s] = true
 	}
 
 	switch {
-	case stateMap[batches.ChangesetCheckStateUnknown]:
+	case stateMap[btypes.ChangesetCheckStateUnknown]:
 		// If are pending, overall is Pending
-		return batches.ChangesetCheckStateUnknown
-	case stateMap[batches.ChangesetCheckStatePending]:
+		return btypes.ChangesetCheckStateUnknown
+	case stateMap[btypes.ChangesetCheckStatePending]:
 		// If are pending, overall is Pending
-		return batches.ChangesetCheckStatePending
-	case stateMap[batches.ChangesetCheckStateFailed]:
+		return btypes.ChangesetCheckStatePending
+	case stateMap[btypes.ChangesetCheckStateFailed]:
 		// If no pending, but have errors then overall is Failed
-		return batches.ChangesetCheckStateFailed
-	case stateMap[batches.ChangesetCheckStatePassed]:
+		return btypes.ChangesetCheckStateFailed
+	case stateMap[btypes.ChangesetCheckStatePassed]:
 		// No pending or errors then overall is Passed
-		return batches.ChangesetCheckStatePassed
+		return btypes.ChangesetCheckStatePassed
 	}
 
-	return batches.ChangesetCheckStateUnknown
+	return btypes.ChangesetCheckStateUnknown
 }
 
-func parseGithubCheckState(s string) batches.ChangesetCheckState {
+func parseGithubCheckState(s string) btypes.ChangesetCheckState {
 	s = strings.ToUpper(s)
 	switch s {
 	case "ERROR", "FAILURE":
-		return batches.ChangesetCheckStateFailed
+		return btypes.ChangesetCheckStateFailed
 	case "EXPECTED", "PENDING":
-		return batches.ChangesetCheckStatePending
+		return btypes.ChangesetCheckStatePending
 	case "SUCCESS":
-		return batches.ChangesetCheckStatePassed
+		return btypes.ChangesetCheckStatePassed
 	default:
-		return batches.ChangesetCheckStateUnknown
+		return btypes.ChangesetCheckStateUnknown
 	}
 }
 
-func parseGithubCheckSuiteState(status, conclusion string) batches.ChangesetCheckState {
+func parseGithubCheckSuiteState(status, conclusion string) btypes.ChangesetCheckState {
 	status = strings.ToUpper(status)
 	conclusion = strings.ToUpper(conclusion)
 	switch status {
 	case "IN_PROGRESS", "QUEUED", "REQUESTED":
-		return batches.ChangesetCheckStatePending
+		return btypes.ChangesetCheckStatePending
 	}
 	if status != "COMPLETED" {
-		return batches.ChangesetCheckStateUnknown
+		return btypes.ChangesetCheckStateUnknown
 	}
 	switch conclusion {
 	case "SUCCESS", "NEUTRAL":
-		return batches.ChangesetCheckStatePassed
+		return btypes.ChangesetCheckStatePassed
 	case "ACTION_REQUIRED":
-		return batches.ChangesetCheckStatePending
+		return btypes.ChangesetCheckStatePending
 	case "CANCELLED", "FAILURE", "TIMED_OUT":
-		return batches.ChangesetCheckStateFailed
+		return btypes.ChangesetCheckStateFailed
 	}
-	return batches.ChangesetCheckStateUnknown
+	return btypes.ChangesetCheckStateUnknown
 }
 
-func computeGitLabCheckState(lastSynced time.Time, mr *gitlab.MergeRequest, events []*batches.ChangesetEvent) batches.ChangesetCheckState {
+func computeGitLabCheckState(lastSynced time.Time, mr *gitlab.MergeRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
 	// GitLab pipelines aren't tied to commits in the same way that GitHub
 	// checks are. We're simply looking for the most recent pipeline run that
 	// was associated with the merge request, which may live in a changeset
@@ -387,7 +387,7 @@ func computeGitLabCheckState(lastSynced time.Time, mr *gitlab.MergeRequest, even
 			if mr.HeadPipeline != nil {
 				return parseGitLabPipelineStatus(mr.HeadPipeline.Status)
 			}
-			return batches.ChangesetCheckStateUnknown
+			return btypes.ChangesetCheckStateUnknown
 		}
 
 		// Sort into descending order so that the pipeline at index 0 is the latest.
@@ -402,50 +402,50 @@ func computeGitLabCheckState(lastSynced time.Time, mr *gitlab.MergeRequest, even
 	return parseGitLabPipelineStatus(lastPipelineEvent.Status)
 }
 
-func parseGitLabPipelineStatus(status gitlab.PipelineStatus) batches.ChangesetCheckState {
+func parseGitLabPipelineStatus(status gitlab.PipelineStatus) btypes.ChangesetCheckState {
 	switch status {
 	case gitlab.PipelineStatusSuccess:
-		return batches.ChangesetCheckStatePassed
+		return btypes.ChangesetCheckStatePassed
 	case gitlab.PipelineStatusFailed, gitlab.PipelineStatusCanceled:
-		return batches.ChangesetCheckStateFailed
+		return btypes.ChangesetCheckStateFailed
 	case gitlab.PipelineStatusPending, gitlab.PipelineStatusRunning, gitlab.PipelineStatusCreated:
-		return batches.ChangesetCheckStatePending
+		return btypes.ChangesetCheckStatePending
 	default:
-		return batches.ChangesetCheckStateUnknown
+		return btypes.ChangesetCheckStateUnknown
 	}
 }
 
 // computeSingleChangesetExternalState of a Changeset based on the metadata.
 // It does NOT reflect the final calculated state, use `ExternalState` instead.
-func computeSingleChangesetExternalState(c *batches.Changeset) (s batches.ChangesetExternalState, err error) {
+func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.ChangesetExternalState, err error) {
 	if !c.ExternalDeletedAt.IsZero() {
-		return batches.ChangesetExternalStateDeleted, nil
+		return btypes.ChangesetExternalStateDeleted, nil
 	}
 
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		if m.IsDraft && m.State == string(batches.ChangesetExternalStateOpen) {
-			s = batches.ChangesetExternalStateDraft
+		if m.IsDraft && m.State == string(btypes.ChangesetExternalStateOpen) {
+			s = btypes.ChangesetExternalStateDraft
 		} else {
-			s = batches.ChangesetExternalState(m.State)
+			s = btypes.ChangesetExternalState(m.State)
 		}
 	case *bitbucketserver.PullRequest:
 		if m.State == "DECLINED" {
-			s = batches.ChangesetExternalStateClosed
+			s = btypes.ChangesetExternalStateClosed
 		} else {
-			s = batches.ChangesetExternalState(m.State)
+			s = btypes.ChangesetExternalState(m.State)
 		}
 	case *gitlab.MergeRequest:
 		switch m.State {
 		case gitlab.MergeRequestStateClosed, gitlab.MergeRequestStateLocked:
-			s = batches.ChangesetExternalStateClosed
+			s = btypes.ChangesetExternalStateClosed
 		case gitlab.MergeRequestStateMerged:
-			s = batches.ChangesetExternalStateMerged
+			s = btypes.ChangesetExternalStateMerged
 		case gitlab.MergeRequestStateOpened:
 			if m.WorkInProgress {
-				s = batches.ChangesetExternalStateDraft
+				s = btypes.ChangesetExternalStateDraft
 			} else {
-				s = batches.ChangesetExternalStateOpen
+				s = btypes.ChangesetExternalStateOpen
 			}
 		default:
 			return "", errors.Errorf("unknown GitLab merge request state: %s", m.State)
@@ -466,23 +466,23 @@ func computeSingleChangesetExternalState(c *batches.Changeset) (s batches.Change
 // will always return ChangesetReviewStatePending.
 //
 // This method should NOT be called directly. Use computeReviewState instead.
-func computeSingleChangesetReviewState(c *batches.Changeset) (s batches.ChangesetReviewState, err error) {
-	states := map[batches.ChangesetReviewState]bool{}
+func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetReviewState, err error) {
+	states := map[btypes.ChangesetReviewState]bool{}
 
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		// For GitHub we need to use `ChangesetEvents.ReviewState`.
-		return batches.ChangesetReviewStatePending, nil
+		return btypes.ChangesetReviewStatePending, nil
 
 	case *bitbucketserver.PullRequest:
 		for _, r := range m.Reviewers {
 			switch r.Status {
 			case "UNAPPROVED":
-				states[batches.ChangesetReviewStatePending] = true
+				states[btypes.ChangesetReviewStatePending] = true
 			case "NEEDS_WORK":
-				states[batches.ChangesetReviewStateChangesRequested] = true
+				states[btypes.ChangesetReviewStateChangesRequested] = true
 			case "APPROVED":
-				states[batches.ChangesetReviewStateApproved] = true
+				states[btypes.ChangesetReviewStateApproved] = true
 			}
 		}
 
@@ -499,13 +499,13 @@ func computeSingleChangesetReviewState(c *batches.Changeset) (s batches.Changese
 			if e := note.ToEvent(); e != nil {
 				switch e.(type) {
 				case *gitlab.ReviewApprovedEvent:
-					return batches.ChangesetReviewStateApproved, nil
+					return btypes.ChangesetReviewStateApproved, nil
 				case *gitlab.ReviewUnapprovedEvent:
-					return batches.ChangesetReviewStateChangesRequested, nil
+					return btypes.ChangesetReviewStateChangesRequested, nil
 				}
 			}
 		}
-		return batches.ChangesetReviewStatePending, nil
+		return btypes.ChangesetReviewStatePending, nil
 
 	default:
 		return "", errors.New("unknown changeset type")
@@ -518,25 +518,25 @@ func computeSingleChangesetReviewState(c *batches.Changeset) (s batches.Changese
 // ChangesetReviewStates. Since a pull request, for example, can have multiple
 // reviews with different states, we need a function to determine what the
 // state for the pull request is.
-func selectReviewState(states map[batches.ChangesetReviewState]bool) batches.ChangesetReviewState {
+func selectReviewState(states map[btypes.ChangesetReviewState]bool) btypes.ChangesetReviewState {
 	// If any review requested changes, that state takes precedence over all
 	// other review states, followed by explicit approval. Everything else is
 	// considered pending.
-	for _, state := range [...]batches.ChangesetReviewState{
-		batches.ChangesetReviewStateChangesRequested,
-		batches.ChangesetReviewStateApproved,
+	for _, state := range [...]btypes.ChangesetReviewState{
+		btypes.ChangesetReviewStateChangesRequested,
+		btypes.ChangesetReviewStateApproved,
 	} {
 		if states[state] {
 			return state
 		}
 	}
 
-	return batches.ChangesetReviewStatePending
+	return btypes.ChangesetReviewStatePending
 }
 
 // computeDiffStat computes the up to date diffstat for the changeset, based on
 // the values in c.SyncState.
-func computeDiffStat(ctx context.Context, c *batches.Changeset, repo api.RepoName) (*diff.Stat, error) {
+func computeDiffStat(ctx context.Context, c *btypes.Changeset, repo api.RepoName) (*diff.Stat, error) {
 	iter, err := git.Diff(ctx, git.DiffOptions{
 		Repo: repo,
 		Base: c.SyncState.BaseRefOid,
@@ -567,7 +567,7 @@ func computeDiffStat(ctx context.Context, c *batches.Changeset, repo api.RepoNam
 
 // computeSyncState computes the up to date sync state based on the changeset as
 // it currently exists on the external provider.
-func computeSyncState(ctx context.Context, c *batches.Changeset, repo api.RepoName) (*batches.ChangesetSyncState, error) {
+func computeSyncState(ctx context.Context, c *btypes.Changeset, repo api.RepoName) (*btypes.ChangesetSyncState, error) {
 	// We compute the revision by first trying to get the OID, then the Ref. //
 	// We then call out to gitserver to ensure that the one we use is available on
 	// gitserver.
@@ -581,10 +581,10 @@ func computeSyncState(ctx context.Context, c *batches.Changeset, repo api.RepoNa
 		return nil, err
 	}
 
-	return &batches.ChangesetSyncState{
+	return &btypes.ChangesetSyncState{
 		BaseRefOid: base,
 		HeadRefOid: head,
-		IsComplete: c.ExternalState != batches.ChangesetExternalStateOpen,
+		IsComplete: c.ExternalState != btypes.ChangesetExternalStateOpen,
 	}, nil
 }
 
@@ -610,7 +610,7 @@ func computeRev(ctx context.Context, repo api.RepoName, getOid, getRef func() (s
 }
 
 // changesetRepoName looks up a api.RepoName based on the RepoID within a changeset.
-func changesetRepoName(ctx context.Context, repoStore *database.RepoStore, c *batches.Changeset) (api.RepoName, error) {
+func changesetRepoName(ctx context.Context, repoStore *database.RepoStore, c *btypes.Changeset) (api.RepoName, error) {
 	// We need to use an internal actor here as the repo-updater otherwise has no access to the repo.
 	repo, err := repoStore.Get(actor.WithActor(ctx, &actor.Actor{Internal: true}), c.RepoID)
 	if err != nil {
@@ -623,17 +623,17 @@ func unixMilliToTime(ms int64) time.Time {
 	return time.Unix(0, ms*int64(time.Millisecond))
 }
 
-var ComputeLabelsRequiredEventTypes = []batches.ChangesetEventKind{
-	batches.ChangesetEventKindGitHubLabeled,
-	batches.ChangesetEventKindGitHubUnlabeled,
+var ComputeLabelsRequiredEventTypes = []btypes.ChangesetEventKind{
+	btypes.ChangesetEventKindGitHubLabeled,
+	btypes.ChangesetEventKindGitHubUnlabeled,
 }
 
 // ComputeLabels returns a sorted list of current labels based the starting set
 // of labels found in the Changeset and looking at ChangesetEvents that have
 // occurred after the Changeset.UpdatedAt.
 // The events should be presorted.
-func ComputeLabels(c *batches.Changeset, events ChangesetEvents) []batches.ChangesetLabel {
-	var current []batches.ChangesetLabel
+func ComputeLabels(c *btypes.Changeset, events ChangesetEvents) []btypes.ChangesetLabel {
+	var current []btypes.ChangesetLabel
 	var since time.Time
 	if c != nil {
 		current = c.Labels()
@@ -641,7 +641,7 @@ func ComputeLabels(c *batches.Changeset, events ChangesetEvents) []batches.Chang
 	}
 
 	// Iterate through all label events to get the current set
-	set := make(map[string]batches.ChangesetLabel)
+	set := make(map[string]btypes.ChangesetLabel)
 	for _, l := range current {
 		set[l.Name] = l
 	}
@@ -656,14 +656,14 @@ func ComputeLabels(c *batches.Changeset, events ChangesetEvents) []batches.Chang
 				continue
 			}
 
-			set[e.Label.Name] = batches.ChangesetLabel{
+			set[e.Label.Name] = btypes.ChangesetLabel{
 				Name:        e.Label.Name,
 				Color:       e.Label.Color,
 				Description: e.Label.Description,
 			}
 		}
 	}
-	labels := make([]batches.ChangesetLabel, 0, len(set))
+	labels := make([]btypes.ChangesetLabel, 0, len(set))
 	for _, label := range set {
 		labels = append(labels, label)
 	}

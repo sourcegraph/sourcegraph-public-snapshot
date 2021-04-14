@@ -1,8 +1,9 @@
 import React from 'react'
+
 import { Timestamp } from '../../components/time/Timestamp'
-import { UserAvatar } from '../../user/UserAvatar'
-import { formatPersonName, PersonLink } from '../../person/PersonLink'
 import { SignatureFields } from '../../graphql-operations'
+import { formatPersonName, PersonLink } from '../../person/PersonLink'
+import { UserAvatar } from '../../user/UserAvatar'
 
 interface Props {
     author: SignatureFields

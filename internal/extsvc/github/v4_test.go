@@ -63,6 +63,24 @@ func TestUnmarshal(t *testing.T) {
 	}
 }
 
+func TestGetAuthenticatedUserV4(t *testing.T) {
+	cli, save := newV4Client(t, "GetAuthenticatedUserV4")
+	defer save()
+
+	ctx := context.Background()
+
+	user, err := cli.GetAuthenticatedUser(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.AssertGolden(t,
+		"testdata/golden/GetAuthenticatedUserV4",
+		update("GetAuthenticatedUserV4"),
+		user,
+	)
+}
+
 func TestLoadPullRequest(t *testing.T) {
 	cli, save := newV4Client(t, "LoadPullRequest")
 	defer save()

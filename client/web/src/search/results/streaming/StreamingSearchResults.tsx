@@ -2,28 +2,18 @@ import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
+
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { AuthenticatedUser } from '../../../auth'
-import { PageTitle } from '../../../components/PageTitle'
-import { CodeMonitoringProps } from '../../../code-monitoring'
-import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
-import { QueryState, submitSearch } from '../../helpers'
-import { queryTelemetryData } from '../../queryTelemetry'
-import { SearchAlert } from '../SearchAlert'
-import { LATEST_VERSION } from '../SearchResults'
-import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
-import { SearchResultTypeTabs } from '../SearchResultTypeTabs'
-import { VersionContextWarning } from '../VersionContextWarning'
-import { StreamingProgress } from './progress/StreamingProgress'
-import { StreamingSearchResultsFilterBars } from './StreamingSearchResultsFilterBars'
+
 import {
     CaseSensitivityProps,
     PatternTypeProps,
@@ -32,8 +22,21 @@ import {
     ParsedSearchQueryProps,
     MutableVersionContextProps,
 } from '../..'
+import { AuthenticatedUser } from '../../../auth'
+import { CodeMonitoringProps } from '../../../code-monitoring'
+import { PageTitle } from '../../../components/PageTitle'
+import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
+import { QueryState, submitSearch } from '../../helpers'
+import { queryTelemetryData } from '../../queryTelemetry'
+import { SearchAlert } from '../SearchAlert'
+import { LATEST_VERSION } from '../SearchResults'
+import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
+import { SearchResultTypeTabs } from '../SearchResultTypeTabs'
+import { VersionContextWarning } from '../VersionContextWarning'
+
+import { StreamingProgress } from './progress/StreamingProgress'
+import { StreamingSearchResultsFilterBars } from './StreamingSearchResultsFilterBars'
 import { StreamingSearchResultsList } from './StreamingSearchResultsList'
-import { updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,

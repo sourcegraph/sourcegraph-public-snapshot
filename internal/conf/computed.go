@@ -360,8 +360,9 @@ const (
 	ExternalServiceModeAll      ExternalServiceMode = 2
 )
 
-// ExternalServiceUserMode returns the mode describing if users are allowed to add external services
-// for public and private repositories.
+// ExternalServiceUserMode returns the site level mode describing if users are
+// allowed to add external services for public and private repositories. It does
+// NOT take into account permissions granted to the current user.
 func ExternalServiceUserMode() ExternalServiceMode {
 	switch Get().ExternalServiceUserMode {
 	case "public":
@@ -382,4 +383,20 @@ func GitMaxCodehostRequestsPerSecond() int {
 		return -1
 	}
 	return *val
+}
+
+func UserReposMaxPerUser() int {
+	v := Get().UserReposMaxPerUser
+	if v == 0 {
+		return 2000
+	}
+	return v
+}
+
+func UserReposMaxPerSite() int {
+	v := Get().UserReposMaxPerSite
+	if v == 0 {
+		return 200000
+	}
+	return v
 }

@@ -1,18 +1,23 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
 import FolderIcon from 'mdi-react/FolderIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
 import UserIcon from 'mdi-react/UserIcon'
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
+import React, { useState, useMemo, useCallback, useEffect, useContext } from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { Observable, EMPTY, from } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
@@ -20,36 +25,33 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
+import { ErrorAlert } from '../../components/alerts'
+import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
+import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
+import { InsightsApiContext, InsightsViewGrid } from '../../insights'
+import { Settings } from '../../schema/settings.schema'
 import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../../search'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ErrorAlert } from '../../components/alerts'
-import { subYears, formatISO } from 'date-fns'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
-import { Settings } from '../../schema/settings.schema'
-import { ViewGrid } from './ViewGrid'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { TreeEntriesSection } from './TreeEntriesSection'
-import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
-import { getFileDecorations } from '../../backend/features'
-import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import SettingsIcon from 'mdi-react/SettingsIcon'
-import { getCombinedViews } from '../../insights/backend'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -260,6 +262,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
             [props.extensionsController]
         )
     )
+
+    const { getCombinedViews } = useContext(InsightsApiContext)
     const views = useObservable(
         useMemo(
             () =>
@@ -284,7 +288,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                           )
                       )
                     : EMPTY,
-            [showCodeInsights, workspaceUri, uri, props.extensionsController]
+            [getCombinedViews, showCodeInsights, workspaceUri, uri, props.extensionsController]
         )
     )
 
@@ -416,7 +420,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         )}
                     </header>
                     {views && (
-                        <ViewGrid
+                        <InsightsViewGrid
                             {...props}
                             className="tree-page__section"
                             views={views}

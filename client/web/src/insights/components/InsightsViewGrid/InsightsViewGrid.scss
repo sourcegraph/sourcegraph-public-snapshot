@@ -1,0 +1,60 @@
+@import '../../../views/ViewContent';
+@import 'react-grid-layout/css/styles';
+@import 'react-resizable/css/styles';
+
+.insights-view-grid {
+    .react-resizable-handle {
+        background: none;
+        cursor: nwse-resize;
+        width: 1rem;
+        height: 1rem;
+
+        // Visual handle
+        &::after {
+            right: 0.25rem;
+            bottom: 0.25rem;
+            width: 0.5rem;
+            height: 0.5rem;
+            border-right: 2px solid var(--card-border-color);
+            border-bottom: 2px solid var(--card-border-color);
+        }
+    }
+
+    &__item {
+        display: flex;
+        flex-direction: column;
+        padding: 0.5rem 1rem;
+        cursor: default;
+    }
+
+    &__view-title {
+        margin-bottom: 0.25rem;
+    }
+
+    &__view-subtitle {
+        margin-bottom: 1rem;
+    }
+
+    // Handle views with only a title
+    &__view-title,
+    &__view-subtitle {
+        flex-grow: 0;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    &__view-description {
+        // Place description at the bottom of view card
+        margin-top: auto;
+    }
+}
+
+.insight-description {
+    text-align: right;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    user-select: all;
+}

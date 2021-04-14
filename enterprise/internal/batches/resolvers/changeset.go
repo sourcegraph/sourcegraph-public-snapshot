@@ -19,15 +19,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type changesetResolver struct {
 	store *store.Store
 
-	changeset *batches.Changeset
+	changeset *btypes.Changeset
 
 	// When repo is nil, this resolver resolves to a `HiddenExternalChangeset` in the API.
 	repo         *types.Repo
@@ -42,18 +42,18 @@ type changesetResolver struct {
 
 	// cache the current ChangesetSpec as it's accessed by multiple methods
 	specOnce sync.Once
-	spec     *batches.ChangesetSpec
+	spec     *btypes.ChangesetSpec
 	specErr  error
 }
 
-func NewChangesetResolverWithNextSync(store *store.Store, changeset *batches.Changeset, repo *types.Repo, nextSyncAt time.Time) *changesetResolver {
+func NewChangesetResolverWithNextSync(store *store.Store, changeset *btypes.Changeset, repo *types.Repo, nextSyncAt time.Time) *changesetResolver {
 	r := NewChangesetResolver(store, changeset, repo)
 	r.attemptedPreloadNextSyncAt = true
 	r.preloadedNextSyncAt = nextSyncAt
 	return r
 }
 
-func NewChangesetResolver(store *store.Store, changeset *batches.Changeset, repo *types.Repo) *changesetResolver {
+func NewChangesetResolver(store *store.Store, changeset *btypes.Changeset, repo *types.Repo) *changesetResolver {
 	return &changesetResolver{
 		store:        store,
 		repo:         repo,
@@ -94,7 +94,7 @@ func (r *changesetResolver) repoAccessible() bool {
 	return r.repo != nil
 }
 
-func (r *changesetResolver) computeSpec(ctx context.Context) (*batches.ChangesetSpec, error) {
+func (r *changesetResolver) computeSpec(ctx context.Context) (*btypes.ChangesetSpec, error) {
 	r.specOnce.Do(func() {
 		if r.changeset.CurrentSpecID == 0 {
 			r.specErr = errors.New("Changeset has no ChangesetSpec")
@@ -272,7 +272,7 @@ func (r *changesetResolver) Body(ctx context.Context) (*string, error) {
 	return &desc.Body, nil
 }
 
-func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*batches.ChangesetSpecDescription, error) {
+func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*btypes.ChangesetSpecDescription, error) {
 	spec, err := r.computeSpec(ctx)
 	if err != nil {
 		return nil, err
@@ -285,49 +285,50 @@ func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*batc
 	return spec.Spec, nil
 }
 
-func (r *changesetResolver) PublicationState() batches.ChangesetPublicationState {
-	return r.changeset.PublicationState
+func (r *changesetResolver) PublicationState() string {
+	return string(r.changeset.PublicationState)
 }
 
-func (r *changesetResolver) ReconcilerState() batches.ReconcilerState {
-	return r.changeset.ReconcilerState
+func (r *changesetResolver) ReconcilerState() string {
+	return string(r.changeset.ReconcilerState)
 }
 
-func (r *changesetResolver) ExternalState() *batches.ChangesetExternalState {
+func (r *changesetResolver) ExternalState() *string {
 	if !r.changeset.Published() {
 		return nil
 	}
-	return &r.changeset.ExternalState
+	state := string(r.changeset.ExternalState)
+	return &state
 }
 
-func (r *changesetResolver) State() (batches.ChangesetState, error) {
+func (r *changesetResolver) State() (string, error) {
 	// Note that there's an inverse version of this function in
 	// getRewirerMappingCurrentState(): if one changes, so should the other.
 
-	if r.changeset.ReconcilerState == batches.ReconcilerStateErrored {
-		return batches.ChangesetStateRetrying, nil
+	if r.changeset.ReconcilerState == btypes.ReconcilerStateErrored {
+		return string(btypes.ChangesetStateRetrying), nil
 	}
-	if r.changeset.ReconcilerState == batches.ReconcilerStateFailed {
-		return batches.ChangesetStateFailed, nil
+	if r.changeset.ReconcilerState == btypes.ReconcilerStateFailed {
+		return string(btypes.ChangesetStateFailed), nil
 	}
-	if r.changeset.ReconcilerState != batches.ReconcilerStateCompleted {
-		return batches.ChangesetStateProcessing, nil
+	if r.changeset.ReconcilerState != btypes.ReconcilerStateCompleted {
+		return string(btypes.ChangesetStateProcessing), nil
 	}
-	if r.changeset.PublicationState == batches.ChangesetPublicationStateUnpublished {
-		return batches.ChangesetStateUnpublished, nil
+	if r.changeset.PublicationState == btypes.ChangesetPublicationStateUnpublished {
+		return string(btypes.ChangesetStateUnpublished), nil
 	}
 
 	switch r.changeset.ExternalState {
-	case batches.ChangesetExternalStateDraft:
-		return batches.ChangesetStateDraft, nil
-	case batches.ChangesetExternalStateOpen:
-		return batches.ChangesetStateOpen, nil
-	case batches.ChangesetExternalStateClosed:
-		return batches.ChangesetStateClosed, nil
-	case batches.ChangesetExternalStateMerged:
-		return batches.ChangesetStateMerged, nil
-	case batches.ChangesetExternalStateDeleted:
-		return batches.ChangesetStateDeleted, nil
+	case btypes.ChangesetExternalStateDraft:
+		return string(btypes.ChangesetStateDraft), nil
+	case btypes.ChangesetExternalStateOpen:
+		return string(btypes.ChangesetStateOpen), nil
+	case btypes.ChangesetExternalStateClosed:
+		return string(btypes.ChangesetStateClosed), nil
+	case btypes.ChangesetExternalStateMerged:
+		return string(btypes.ChangesetStateMerged), nil
+	case btypes.ChangesetExternalStateDeleted:
+		return string(btypes.ChangesetStateDeleted), nil
 	default:
 		return "", fmt.Errorf("invalid ExternalState %q for state calculation", r.changeset.ExternalState)
 	}
@@ -337,7 +338,7 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 	if !r.changeset.Published() {
 		return nil, nil
 	}
-	if r.changeset.ExternalState == batches.ChangesetExternalStateDeleted {
+	if r.changeset.ExternalState == btypes.ChangesetExternalStateDeleted {
 		return nil, nil
 	}
 	url, err := r.changeset.URL()
@@ -350,20 +351,21 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 	return externallink.NewResolver(url, r.changeset.ExternalServiceType), nil
 }
 
-func (r *changesetResolver) ReviewState(ctx context.Context) *batches.ChangesetReviewState {
+func (r *changesetResolver) ReviewState(ctx context.Context) *string {
 	if !r.changeset.Published() {
 		return nil
 	}
-	return &r.changeset.ExternalReviewState
+	state := string(r.changeset.ExternalReviewState)
+	return &state
 }
 
-func (r *changesetResolver) CheckState() *batches.ChangesetCheckState {
+func (r *changesetResolver) CheckState() *string {
 	if !r.changeset.Published() {
 		return nil
 	}
 
-	state := r.changeset.ExternalCheckState
-	if state == batches.ChangesetCheckStateUnknown {
+	state := string(r.changeset.ExternalCheckState)
+	if state == string(btypes.ChangesetCheckStateUnknown) {
 		return nil
 	}
 
@@ -510,7 +512,7 @@ func (r *changesetResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffS
 }
 
 type changesetLabelResolver struct {
-	label batches.ChangesetLabel
+	label btypes.ChangesetLabel
 }
 
 func (r *changesetLabelResolver) Text() string {

@@ -1,13 +1,15 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Accordion, AccordionItem, AccordionButton, AccordionPanel } from '@reach/accordion'
+import classNames from 'classnames'
 import * as H from 'history'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import * as React from 'react'
-import { ActivationCompletionStatus, ActivationStep } from './Activation'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import classNames from 'classnames'
+import * as React from 'react'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+
+import { ActivationCompletionStatus, ActivationStep } from './Activation'
 
 interface ActivationChecklistItemProps extends ActivationStep {
     done: boolean

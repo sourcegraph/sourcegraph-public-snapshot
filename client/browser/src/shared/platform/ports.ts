@@ -1,7 +1,7 @@
-import { isObject } from 'lodash'
-import * as uuid from 'uuid'
 import type { Message, MessageType } from 'comlink/dist/esm/protocol'
+import { isObject } from 'lodash'
 import { Subscription } from 'rxjs'
+import * as uuid from 'uuid'
 
 /** Comlink enum value of release messages. */
 const RELEASE_MESSAGE_TYPE: MessageType.RELEASE = 5

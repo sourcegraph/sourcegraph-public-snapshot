@@ -1,5 +1,6 @@
-import React from 'react'
 import { Dialog } from '@reach/dialog'
+import React from 'react'
+
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 
 /**

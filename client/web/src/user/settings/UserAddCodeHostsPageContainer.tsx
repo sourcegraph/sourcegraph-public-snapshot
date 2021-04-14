@@ -1,6 +1,8 @@
 import React from 'react'
-import { UserAddCodeHostsPageProps, UserAddCodeHostsPage } from './codeHosts/UserAddCodeHostsPage'
+
 import { codeHostExternalServices } from '../../components/externalServices/externalServices'
+
+import { UserAddCodeHostsPageProps, UserAddCodeHostsPage } from './codeHosts/UserAddCodeHostsPage'
 
 export interface UserAddCodeHostsPageContainerProps
     extends Omit<UserAddCodeHostsPageProps, 'codeHostExternalServices'> {}

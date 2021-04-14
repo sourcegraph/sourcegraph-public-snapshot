@@ -1,14 +1,6 @@
 $code-font-family: sfmono-regular, consolas, menlo, dejavu sans mono, monospace;
 $code-font-size: (12/14) + em;
 
-.theme-dark {
-    --code-bg: var(--color-bg-2);
-}
-
-.theme-light {
-    --code-bg: var(--color-bg-2);
-}
-
 code,
 .text-code {
     font-family: $code-font-family;

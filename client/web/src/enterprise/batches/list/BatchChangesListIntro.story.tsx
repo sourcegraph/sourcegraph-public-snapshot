@@ -1,7 +1,9 @@
-import { storiesOf } from '@storybook/react'
 import { radios } from '@storybook/addon-knobs'
+import { storiesOf } from '@storybook/react'
 import React from 'react'
+
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 
 const { add } = storiesOf('web/batches/BatchChangesListIntro', module).addDecorator(story => (

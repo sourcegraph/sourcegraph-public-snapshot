@@ -74,6 +74,9 @@ export const scanBalancedParens = (input: string): string | undefined => {
                 continue
             }
             result.push(current)
+        } else if (current.match(/^\s+/) && balanced <= 0) {
+            // Whitespace signals we've reached the end of this parenthesized expr.
+            break
         } else {
             result.push(current)
         }
@@ -104,11 +107,11 @@ export const scanPredicate = (field: string, value: string): Predicate | undefin
         return undefined
     }
     const rest = value.slice(name.length)
-    if (!rest.startsWith('(') || !rest.endsWith(')')) {
-        return undefined
-    }
     const parameters = scanBalancedParens(rest)
     if (!parameters) {
+        return undefined
+    }
+    if (!parameters.startsWith('(') || !parameters.endsWith(')')) {
         return undefined
     }
 

@@ -1,5 +1,6 @@
-import React, { ReactElement } from 'react'
 import { Icons, IconButton } from '@storybook/components'
+import React, { ReactElement } from 'react'
+
 import { useRedesignToggle, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 const toggleRedesignClass = (element: HTMLElement, isRedesignEnabled: boolean): void => {

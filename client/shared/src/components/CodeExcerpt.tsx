@@ -4,10 +4,11 @@ import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
+
+import * as GQL from '../graphql/schema'
 import { highlightNode } from '../util/dom'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { Repo } from '../util/url'
-import * as GQL from '../graphql/schema'
 
 export interface FetchFileParameters {
     repoName: string

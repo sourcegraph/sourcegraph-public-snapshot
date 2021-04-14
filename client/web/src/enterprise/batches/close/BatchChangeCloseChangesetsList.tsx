@@ -1,35 +1,38 @@
-import React, { useCallback, useMemo, useEffect } from 'react'
 import * as H from 'history'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import React, { useCallback, useMemo, useEffect } from 'react'
+import { Subject } from 'rxjs'
+import { repeatWhen, withLatestFrom, filter, map, delay } from 'rxjs/operators'
+
+import { createHoverifier } from '@sourcegraph/codeintellify'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
+import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { Scalars, ChangesetFields, BatchChangeChangesetsResult } from '../../../graphql-operations'
-import { Subject } from 'rxjs'
-import { FilteredConnectionQueryArguments, FilteredConnection } from '../../../components/FilteredConnection'
-import { repeatWhen, withLatestFrom, filter, map, delay } from 'rxjs/operators'
-import { createHoverifier } from '@sourcegraph/codeintellify'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined, property } from '@sourcegraph/shared/src/util/types'
-import { getHover, getDocumentHighlights } from '../../../backend/features'
-import { getLSPTextDocumentPositionParameters } from '../utils'
-import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
+import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { ChangesetCloseNodeProps, ChangesetCloseNode } from './ChangesetCloseNode'
+
+import { getHover, getDocumentHighlights } from '../../../backend/features'
+import { FilteredConnectionQueryArguments, FilteredConnection } from '../../../components/FilteredConnection'
 import { WebHoverOverlay } from '../../../components/shared'
+import { Scalars, ChangesetFields, BatchChangeChangesetsResult } from '../../../graphql-operations'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
 } from '../detail/backend'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { getLSPTextDocumentPositionParameters } from '../utils'
+
 import {
     BatchChangeCloseHeaderWillCloseChangesets,
     BatchChangeCloseHeaderWillKeepChangesets,
 } from './BatchChangeCloseHeader'
+import { ChangesetCloseNodeProps, ChangesetCloseNode } from './ChangesetCloseNode'
 import { CloseChangesetsListEmptyElement } from './CloseChangesetsListEmptyElement'
-import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     batchChangeID: Scalars['ID']
@@ -142,6 +145,7 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
             <FilteredConnection<
                 ChangesetFields,
                 Omit<ChangesetCloseNodeProps, 'node'>,
+                {},
                 (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets']
             >
                 className="mt-2"

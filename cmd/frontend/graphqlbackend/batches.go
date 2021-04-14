@@ -6,9 +6,10 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/sourcegraph/lib/batches"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 )
 
 // TODO(campaigns-deprecation)
@@ -157,11 +158,13 @@ type ChangesetSpecsConnectionArgs struct {
 }
 
 type ChangesetApplyPreviewConnectionArgs struct {
-	First        int32
-	After        *string
-	Search       *string
-	CurrentState *batches.ChangesetState
-	Action       *batches.ReconcilerOperation
+	First  int32
+	After  *string
+	Search *string
+	// CurrentState is a value of type btypes.ChangesetState.
+	CurrentState *string
+	// Action is a value of type btypes.ReconcilerOperation.
+	Action *string
 }
 
 type BatchChangeArgs struct {
@@ -302,13 +305,15 @@ type ChangesetApplyPreviewResolver interface {
 }
 
 type VisibleChangesetApplyPreviewResolver interface {
-	Operations(ctx context.Context) ([]batches.ReconcilerOperation, error)
+	// Operations returns a slice of btypes.ReconcilerOperation.
+	Operations(ctx context.Context) ([]string, error)
 	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
 	Targets() VisibleApplyPreviewTargetsResolver
 }
 
 type HiddenChangesetApplyPreviewResolver interface {
-	Operations(ctx context.Context) ([]batches.ReconcilerOperation, error)
+	// Operations returns a slice of btypes.ReconcilerOperation.
+	Operations(ctx context.Context) ([]string, error)
 	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
 	Targets() HiddenApplyPreviewTargetsResolver
 }
@@ -381,7 +386,8 @@ type ChangesetSpecConnectionResolver interface {
 
 type ChangesetSpecResolver interface {
 	ID() graphql.ID
-	Type() batches.ChangesetSpecDescriptionType
+	// Type returns a value of type btypes.ChangesetSpecDescriptionType.
+	Type() string
 	ExpiresAt() *DateTime
 
 	ToHiddenChangesetSpec() (HiddenChangesetSpecResolver, bool)
@@ -475,14 +481,20 @@ type ChangesetCountsArgs struct {
 }
 
 type ListChangesetsArgs struct {
-	First            int32
-	After            *string
-	PublicationState *batches.ChangesetPublicationState
-	ReconcilerState  *[]batches.ReconcilerState
-	ExternalState    *batches.ChangesetExternalState
-	State            *batches.ChangesetState
-	ReviewState      *batches.ChangesetReviewState
-	CheckState       *batches.ChangesetCheckState
+	First int32
+	After *string
+	// PublicationState is a value of type *btypes.ChangesetPublicationState.
+	PublicationState *string
+	// ReconcilerState is a slice of *btypes.ReconcilerState.
+	ReconcilerState *[]string
+	// ExternalState is a value of type *btypes.ChangesetExternalState.
+	ExternalState *string
+	// State is a value of type *btypes.ChangesetState.
+	State *string
+	// ReviewState is a value of type *btypes.ChangesetReviewState.
+	ReviewState *string
+	// CheckState is a value of type *btypes.ChangesetCheckState.
+	CheckState *string
 	// old
 	OnlyPublishedByThisCampaign *bool
 	//new
@@ -558,10 +570,14 @@ type ChangesetResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	NextSyncAt(ctx context.Context) (*DateTime, error)
-	PublicationState() batches.ChangesetPublicationState
-	ReconcilerState() batches.ReconcilerState
-	ExternalState() *batches.ChangesetExternalState
-	State() (batches.ChangesetState, error)
+	// PublicationState returns a value of type btypes.ChangesetPublicationState.
+	PublicationState() string
+	// ReconcilerState returns a value of type btypes.ReconcilerState.
+	ReconcilerState() string
+	// ExternalState returns a value of type *btypes.ChangesetExternalState.
+	ExternalState() *string
+	// State returns a value of type *btypes.ChangesetState.
+	State() (string, error)
 	BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
@@ -591,8 +607,10 @@ type ExternalChangesetResolver interface {
 	Body(context.Context) (*string, error)
 	Author() (*PersonResolver, error)
 	ExternalURL() (*externallink.Resolver, error)
-	ReviewState(context.Context) *batches.ChangesetReviewState
-	CheckState() *batches.ChangesetCheckState
+	// ReviewState returns a value of type *btypes.ChangesetReviewState.
+	ReviewState(context.Context) *string
+	// CheckState returns a value of type *btypes.ChangesetCheckState.
+	CheckState() *string
 	Repository(ctx context.Context) *RepositoryResolver
 
 	Events(ctx context.Context, args *ChangesetEventsConnectionArgs) (ChangesetEventsConnectionResolver, error)

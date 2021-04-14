@@ -1,8 +1,10 @@
-import React from 'react'
 import { cleanup, fireEvent, getByDisplayValue, queryByTestId, render, waitFor } from '@testing-library/react'
+import React from 'react'
 import sinon from 'sinon'
-import { QueryBuilder } from './QueryBuilder'
+
 import { SearchPatternType } from '../../graphql-operations'
+
+import { QueryBuilder } from './QueryBuilder'
 
 describe('QueryBuilder', () => {
     afterAll(cleanup)

@@ -1,31 +1,33 @@
-import React, { FormEvent, useCallback, useEffect, useState } from 'react'
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import React, { FormEvent, useCallback, useEffect, useState, useRef } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { PageTitle } from '../../../components/PageTitle'
-import { CheckboxRepositoryNode } from './RepositoryNode'
+import { Subscription } from 'rxjs'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
+import { PageSelector } from '@sourcegraph/wildcard'
+import {
+    queryExternalServices,
+    setExternalServiceRepos,
+    listAffiliatedRepositories,
+} from '../../../components/externalServices/backend'
+import { LoaderButton } from '../../../components/LoaderButton'
+import { PageTitle } from '../../../components/PageTitle'
 import {
     ExternalServiceKind,
     ExternalServicesResult,
     Maybe,
     AffiliatedRepositoriesResult,
 } from '../../../graphql-operations'
-import {
-    queryExternalServices,
-    setExternalServiceRepos,
-    listAffiliatedRepositories,
-} from '../../../components/externalServices/backend'
-import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
-import { LoaderButton } from '../../../components/LoaderButton'
-import { UserRepositoriesUpdateProps } from '../../../util'
 import { queryUserPublicRepositories, setUserPublicRepositories } from '../../../site-admin/backend'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { PageSelector } from '@sourcegraph/wildcard'
 import { AwayPrompt, ALLOW_NAVIGATION } from './AwayPrompt'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { UserRepositoriesUpdateProps } from '../../../util'
+import { CheckboxRepositoryNode } from './RepositoryNode'
 
 interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
     userID: string
@@ -149,6 +151,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [codeHostFilter, setCodeHostFilter] = useState('')
     const [filteredRepos, setFilteredRepos] = useState<Repo[]>([])
     const [fetchingRepos, setFetchingRepos] = useState<initialFetchingReposState>()
+    const externalServiceSubscription = useRef<Subscription>()
 
     // since we're making many different GraphQL requests - track affiliate and
     // manually added public repo errors separately
@@ -380,6 +383,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const submit = useCallback(
         async (event: FormEvent<HTMLFormElement>): Promise<void> => {
             event.preventDefault()
+            eventLogger.log('UserManageRepositoriesSave')
 
             let publicRepos = publicRepoState.repos.split('\n').filter((row): boolean => row !== '')
             if (!publicRepoState.enabled) {
@@ -432,7 +436,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
 
             const started = Date.now()
-            const externalServiceSubscription = queryExternalServices({
+            externalServiceSubscription.current = queryExternalServices({
                 first: null,
                 after: null,
                 namespace: userID,
@@ -476,7 +480,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     () => {},
                     error => setAffiliateRepoProblems(asError(error)),
                     () => {
-                        externalServiceSubscription.unsubscribe()
+                        externalServiceSubscription.current?.unsubscribe()
                     }
                 )
         },
@@ -491,6 +495,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             history,
             routingPrefix,
         ]
+    )
+
+    useEffect(
+        () => () => {
+            externalServiceSubscription.current?.unsubscribe()
+        },
+        []
     )
 
     const handleRadioSelect = (changeEvent: React.ChangeEvent<HTMLInputElement>): void => {
@@ -718,27 +729,30 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 connected code hosts
                             </Link>
                         </p>
-                        <div className="alert alert-primary">
-                            Coming soon: search private repositories with Sourcegraph Cloud.{' '}
-                            <Link
-                                to="https://share.hsforms.com/1copeCYh-R8uVYGCpq3s4nw1n7ku"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                Get updated when this feature launches
-                            </Link>
-                        </div>
+                        {codeHosts.loaded && codeHosts.hosts.length !== 0 && (
+                            <div className="alert alert-primary">
+                                Coming soon: search private repositories with Sourcegraph Cloud.{' '}
+                                <Link
+                                    to="https://share.hsforms.com/1copeCYh-R8uVYGCpq3s4nw1n7ku"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Get updated when this feature launches
+                                </Link>
+                            </div>
+                        )}
+
                         {codeHosts.loaded && codeHosts.hosts.length === 0 && (
-                            <div className="alert alert-warning">
+                            <div className="alert alert-warning mb-2">
                                 <Link to={`${routingPrefix}/code-hosts`}>Connect with a code host</Link> to add your own
                                 repositories to Sourcegraph.
                             </div>
                         )}
                         {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
-                        {
+                        {codeHosts.loaded &&
+                            codeHosts.hosts.length !== 0 &&
                             // display radio button for 'all' or 'selected' repos
-                            modeSelect
-                        }
+                            modeSelect}
                         {
                             // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
                             selectionState.radio === 'selected' && (

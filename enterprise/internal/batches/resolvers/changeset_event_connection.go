@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
 type changesetEventsConnectionResolver struct {
@@ -19,7 +19,7 @@ type changesetEventsConnectionResolver struct {
 
 	// cache results because they are used by multiple fields
 	once            sync.Once
-	changesetEvents []*batches.ChangesetEvent
+	changesetEvents []*btypes.ChangesetEvent
 	next            int64
 	err             error
 }
@@ -57,7 +57,7 @@ func (r *changesetEventsConnectionResolver) PageInfo(ctx context.Context) (*grap
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *changesetEventsConnectionResolver) compute(ctx context.Context) ([]*batches.ChangesetEvent, int64, error) {
+func (r *changesetEventsConnectionResolver) compute(ctx context.Context) ([]*btypes.ChangesetEvent, int64, error) {
 	r.once.Do(func() {
 		opts := store.ListChangesetEventsOpts{
 			ChangesetIDs: []int64{r.changesetResolver.changeset.ID},

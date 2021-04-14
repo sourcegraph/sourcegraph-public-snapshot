@@ -56,6 +56,7 @@ yarn-error.log
 /ui/assets/sourcebox.css
 /ui/assets/test.js
 /ui/assets/test.css
+/ui/assets/webpack.manifest.json
 /ui/assets/vs
 /ui/assets/*.html
 /ui/assets/*.map
@@ -106,6 +107,7 @@ package-lock.json
 sourcegraph-webapp-*.tgz
 *.tsbuildinfo
 graphql-operations.ts
+*.module.scss.d.ts
 
 # Extensions
 /client/extension-api/dist

@@ -1,15 +1,16 @@
 import 'message-port-polyfill'
 
+import { Remote } from 'comlink'
 import { BehaviorSubject, throwError, of, Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
+
 import { EndpointPair, PlatformContext } from '../../platform/context'
 import { createExtensionHostClientConnection } from '../client/connection'
-import { InitData, startExtensionHost } from '../extension/extensionHost'
-import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
-import { Remote } from 'comlink'
-import { TextDocumentData, ViewerData } from '../viewerTypes'
-import { WorkspaceRootWithMetadata } from '../extension/extensionHostApi'
 import { ExposedToClient } from '../client/mainthread-api'
+import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
+import { InitData, startExtensionHost } from '../extension/extensionHost'
+import { WorkspaceRootWithMetadata } from '../extension/extensionHostApi'
+import { TextDocumentData, ViewerData } from '../viewerTypes'
 
 export function assertToJSON(a: any, expected: any): void {
     const raw = JSON.stringify(a)

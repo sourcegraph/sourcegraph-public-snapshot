@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import * as React from 'react'
+
 import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
 
 const NUM_SQUARES = 5

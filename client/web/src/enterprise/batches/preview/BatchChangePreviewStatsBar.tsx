@@ -1,6 +1,8 @@
 import React from 'react'
+
 import { DiffStat } from '../../../components/diff/DiffStat'
 import { BatchSpecFields } from '../../../graphql-operations'
+
 import { ChangesetAddedIcon, ChangesetModifiedIcon, ChangesetRemovedIcon } from './icons'
 import {
     PreviewActionArchive,

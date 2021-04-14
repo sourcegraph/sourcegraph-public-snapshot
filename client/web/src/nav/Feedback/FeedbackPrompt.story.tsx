@@ -1,7 +1,9 @@
 import { storiesOf } from '@storybook/react'
-import React from 'react'
 import { createBrowserHistory } from 'history'
+import React from 'react'
+
 import { WebStory } from '../../components/WebStory'
+
 import { FeedbackPrompt } from './FeedbackPrompt'
 
 const history = createBrowserHistory()

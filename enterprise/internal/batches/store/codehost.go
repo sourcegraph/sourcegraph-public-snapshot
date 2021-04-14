@@ -5,20 +5,20 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 )
 
 type ListCodeHostsOpts struct {
 	RepoIDs []api.RepoID
 }
 
-func (s *Store) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) ([]*batches.CodeHost, error) {
+func (s *Store) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) ([]*btypes.CodeHost, error) {
 	q := listCodeHostsQuery(opts)
 
-	cs := make([]*batches.CodeHost, 0)
+	cs := make([]*btypes.CodeHost, 0)
 	err := s.query(ctx, q, func(sc scanner) error {
-		var c batches.CodeHost
+		var c btypes.CodeHost
 		if err := scanCodeHost(&c, sc); err != nil {
 			return err
 		}
@@ -56,7 +56,7 @@ func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 
 	// Only show supported hosts.
 	supportedTypes := []*sqlf.Query{}
-	for extSvcType := range batches.SupportedExternalServices {
+	for extSvcType := range btypes.SupportedExternalServices {
 		supportedTypes = append(supportedTypes, sqlf.Sprintf("%s", extSvcType))
 	}
 	preds = append(preds, sqlf.Sprintf("repo.external_service_type IN (%s)", sqlf.Join(supportedTypes, ", ")))
@@ -72,7 +72,7 @@ func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 	return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Sprintf("%s", "ssh://%"), sqlf.Join(preds, "AND"))
 }
 
-func scanCodeHost(c *batches.CodeHost, sc scanner) error {
+func scanCodeHost(c *btypes.CodeHost, sc scanner) error {
 	return sc.Scan(
 		&c.ExternalServiceType,
 		&c.ExternalServiceID,

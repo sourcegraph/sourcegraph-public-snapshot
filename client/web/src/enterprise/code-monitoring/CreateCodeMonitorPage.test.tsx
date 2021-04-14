@@ -1,13 +1,15 @@
-import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
-import * as React from 'react'
-import * as H from 'history'
-import { AuthenticatedUser } from '../../auth'
-import sinon from 'sinon'
 import { mount } from 'enzyme'
-import { NEVER, of } from 'rxjs'
-import { mockCodeMonitor } from './testing/util'
-import { CreateCodeMonitorVariables } from '../../graphql-operations'
+import * as H from 'history'
+import * as React from 'react'
 import { act } from 'react-dom/test-utils'
+import { NEVER, of } from 'rxjs'
+import sinon from 'sinon'
+
+import { AuthenticatedUser } from '../../auth'
+import { CreateCodeMonitorVariables } from '../../graphql-operations'
+
+import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
+import { mockCodeMonitor } from './testing/util'
 
 jest.mock('../../tracking/eventLogger', () => ({
     eventLogger: { logViewEvent: () => undefined },

@@ -1,4 +1,5 @@
 import { WorkspaceRoot } from 'sourcegraph'
+
 import { collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Workspace roots (integration)', () => {

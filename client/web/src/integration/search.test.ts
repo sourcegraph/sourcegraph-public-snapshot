@@ -1,5 +1,11 @@
 import expect from 'expect'
-import { commonWebGraphQlResults } from './graphQlResults'
+import { test } from 'mocha'
+import { Key } from 'ts-key-enum'
+
+import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
+import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+
 import {
     RepoGroupsResult,
     SearchResult,
@@ -7,14 +13,11 @@ import {
     WebGraphQlOperations,
     AutoDefinedSearchContextsResult,
 } from '../graphql-operations'
-import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { test } from 'mocha'
-import { createJsContext, siteGQLID, siteID } from './jscontext'
-import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '../search/stream'
-import { Key } from 'ts-key-enum'
+
+import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { commonWebGraphQlResults } from './graphQlResults'
+import { createJsContext, siteGQLID, siteID } from './jscontext'
 
 const searchResults = (): SearchResult => ({
     search: {
@@ -557,7 +560,12 @@ describe('Search', () => {
                             viewerCanAdminister: false,
                             latestSettings: {
                                 id: 0,
-                                contents: JSON.stringify({ experimentalFeatures: { showSearchContext: true } }),
+                                contents: JSON.stringify({
+                                    experimentalFeatures: {
+                                        showSearchContext: true,
+                                        showSearchContextManagement: true,
+                                    },
+                                }),
                             },
                         },
                         {
@@ -566,7 +574,12 @@ describe('Search', () => {
                             siteID,
                             latestSettings: {
                                 id: 470,
-                                contents: JSON.stringify({ experimentalFeatures: { showSearchContext: true } }),
+                                contents: JSON.stringify({
+                                    experimentalFeatures: {
+                                        showSearchContext: true,
+                                        showSearchContextManagement: true,
+                                    },
+                                }),
                             },
                             settingsURL: '/site-admin/global-settings',
                             viewerCanAdminister: true,
@@ -654,6 +667,14 @@ describe('Search', () => {
         const isSearchContextDropdownVisible = () =>
             driver.page.evaluate(
                 () => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown') !== null
+            )
+
+        const isSearchContextHighlightTourStepVisible = () =>
+            driver.page.evaluate(
+                () =>
+                    document.querySelector<HTMLDivElement>(
+                        'div[data-shepherd-step-id="search-contexts-start-tour"]'
+                    ) !== null
             )
 
         const isSearchContextDropdownDisabled = () =>
@@ -762,6 +783,21 @@ describe('Search', () => {
                 () => document.querySelectorAll('.test-converted-context').length
             )
             expect(convertedContexts).toBe(versionContexts.length)
+        })
+
+        test('highlight tour step should be visible with empty local storage', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            expect(await isSearchContextHighlightTourStepVisible()).toBeTruthy()
+        })
+
+        test('highlight tour step should not be visible if already seen', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
+            await driver.page.evaluate(() =>
+                localStorage.setItem('has-seen-search-contexts-dropdown-highlight-tour-step', 'true')
+            )
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            expect(await isSearchContextHighlightTourStepVisible()).toBeFalsy()
         })
     })
 })

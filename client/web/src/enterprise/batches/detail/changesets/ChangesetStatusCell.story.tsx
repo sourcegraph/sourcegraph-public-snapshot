@@ -1,8 +1,10 @@
 import { storiesOf } from '@storybook/react'
 import { capitalize } from 'lodash'
 import React from 'react'
+
 import { ChangesetState } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+
 import { ChangesetStatusCell } from './ChangesetStatusCell'
 
 const { add } = storiesOf('web/batches/ChangesetStatusCell', module).addDecorator(story => (

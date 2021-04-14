@@ -2,11 +2,11 @@ package resolvers
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
 type changesetsStatsResolver struct {
-	stats batches.ChangesetsStats
+	stats btypes.ChangesetsStats
 }
 
 var _ graphqlbackend.ChangesetsStatsResolver = &changesetsStatsResolver{}

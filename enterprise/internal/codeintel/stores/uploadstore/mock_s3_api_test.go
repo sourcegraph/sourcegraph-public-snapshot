@@ -6,8 +6,7 @@ import (
 	"context"
 	"sync"
 
-	s3 "github.com/aws/aws-sdk-go/service/s3"
-	s3manager "github.com/aws/aws-sdk-go/service/s3/s3manager"
+	s3 "github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 // MockS3API is a mock implementation of the s3API interface (from the
@@ -1143,7 +1142,7 @@ type MockS3Uploader struct {
 func NewMockS3Uploader() *MockS3Uploader {
 	return &MockS3Uploader{
 		UploadFunc: &S3UploaderUploadFunc{
-			defaultHook: func(context.Context, *s3manager.UploadInput) error {
+			defaultHook: func(context.Context, *s3.PutObjectInput) error {
 				return nil
 			},
 		},
@@ -1155,7 +1154,7 @@ func NewMockS3Uploader() *MockS3Uploader {
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore).
 // It is redefined here as it is unexported in the source packge.
 type surrogateMockS3Uploader interface {
-	Upload(context.Context, *s3manager.UploadInput) error
+	Upload(context.Context, *s3.PutObjectInput) error
 }
 
 // NewMockS3UploaderFrom creates a new mock of the MockS3Uploader interface.
@@ -1171,15 +1170,15 @@ func NewMockS3UploaderFrom(i surrogateMockS3Uploader) *MockS3Uploader {
 // S3UploaderUploadFunc describes the behavior when the Upload method of the
 // parent MockS3Uploader instance is invoked.
 type S3UploaderUploadFunc struct {
-	defaultHook func(context.Context, *s3manager.UploadInput) error
-	hooks       []func(context.Context, *s3manager.UploadInput) error
+	defaultHook func(context.Context, *s3.PutObjectInput) error
+	hooks       []func(context.Context, *s3.PutObjectInput) error
 	history     []S3UploaderUploadFuncCall
 	mutex       sync.Mutex
 }
 
 // Upload delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockS3Uploader) Upload(v0 context.Context, v1 *s3manager.UploadInput) error {
+func (m *MockS3Uploader) Upload(v0 context.Context, v1 *s3.PutObjectInput) error {
 	r0 := m.UploadFunc.nextHook()(v0, v1)
 	m.UploadFunc.appendCall(S3UploaderUploadFuncCall{v0, v1, r0})
 	return r0
@@ -1187,7 +1186,7 @@ func (m *MockS3Uploader) Upload(v0 context.Context, v1 *s3manager.UploadInput) e
 
 // SetDefaultHook sets function that is called when the Upload method of the
 // parent MockS3Uploader instance is invoked and the hook queue is empty.
-func (f *S3UploaderUploadFunc) SetDefaultHook(hook func(context.Context, *s3manager.UploadInput) error) {
+func (f *S3UploaderUploadFunc) SetDefaultHook(hook func(context.Context, *s3.PutObjectInput) error) {
 	f.defaultHook = hook
 }
 
@@ -1195,7 +1194,7 @@ func (f *S3UploaderUploadFunc) SetDefaultHook(hook func(context.Context, *s3mana
 // Upload method of the parent MockS3Uploader instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *S3UploaderUploadFunc) PushHook(hook func(context.Context, *s3manager.UploadInput) error) {
+func (f *S3UploaderUploadFunc) PushHook(hook func(context.Context, *s3.PutObjectInput) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1204,7 +1203,7 @@ func (f *S3UploaderUploadFunc) PushHook(hook func(context.Context, *s3manager.Up
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *S3UploaderUploadFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *s3manager.UploadInput) error {
+	f.SetDefaultHook(func(context.Context, *s3.PutObjectInput) error {
 		return r0
 	})
 }
@@ -1212,12 +1211,12 @@ func (f *S3UploaderUploadFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *S3UploaderUploadFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *s3manager.UploadInput) error {
+	f.PushHook(func(context.Context, *s3.PutObjectInput) error {
 		return r0
 	})
 }
 
-func (f *S3UploaderUploadFunc) nextHook() func(context.Context, *s3manager.UploadInput) error {
+func (f *S3UploaderUploadFunc) nextHook() func(context.Context, *s3.PutObjectInput) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1255,7 +1254,7 @@ type S3UploaderUploadFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *s3manager.UploadInput
+	Arg1 *s3.PutObjectInput
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
