@@ -1,5 +1,5 @@
-// Set to true to enable theme-redesign
-$theme-redesign: false !default;
+// Set to true to compile Bootstrap with our redesign variables
+$bootstap-use-redesign-variables: false !default;
 
 // Redesign colors
 $redesign-gray-01: #f9fafb;
@@ -28,8 +28,8 @@ $redesign-yellow: $oc-yellow-7;
 $redesign-green: $oc-green-7;
 $redesign-teal: $oc-teal-7;
 
-// If `theme-redesign` is enabled, we update our SCSS variables to match the new redesign
-@if $theme-redesign {
+// If `bootstap-use-redesign-variables` is enabled, we update our SCSS variables to match the new redesign
+@if $bootstap-use-redesign-variables {
     // Bootstrap colors
     $blue: $redesign-blue;
     $indigo: $redesign-indigo;
