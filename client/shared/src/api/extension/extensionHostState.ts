@@ -36,6 +36,7 @@ export function createExtensionHostState(
         rootChanges: new Subject<void>(),
         versionContextChanges: new Subject<string | undefined>(),
         versionContext: undefined,
+        searchContextChanges: new Subject<string | undefined>(),
         searchContext: undefined,
 
         // Most extensions never call `configuration.get()` synchronously in `activate()` to get
@@ -111,6 +112,7 @@ export interface ExtensionHostState {
     rootChanges: Subject<void>
     versionContextChanges: Subject<string | undefined>
     versionContext: string | undefined
+    searchContextChanges: Subject<string | undefined>
     searchContext: string | undefined
 
     // Search

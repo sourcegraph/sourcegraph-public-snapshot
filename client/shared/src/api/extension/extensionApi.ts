@@ -64,6 +64,7 @@ export function createExtensionAPI(state: ExtensionHostState, mainAPI: Remote<Ma
         onDidChangeRoots: state.roots.pipe(mapTo(undefined)),
         rootChanges: state.rootChanges.asObservable(),
         versionContextChanges: state.versionContextChanges.asObservable(),
+        searchContextChanges: state.searchContextChanges.asObservable(),
     }
 
     const createProgressReporter = async (
