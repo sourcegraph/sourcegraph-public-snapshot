@@ -135,9 +135,9 @@ Indexing multiple branches will add additional resource requirements to Sourcegr
 
 Search contexts help you search the code you care about on Sourcegraph. A search context represents a set of repositories on a Sourcegraph instance that will be targeted by search queries by default.
 
-Sourcegraph currently supports two search contexts: 
+Sourcegraph Cloud currently supports two search contexts: 
 
 - Your personal context, `context:@username`, which automatically includes all repositories you add to the Sourcegraph instance.
 - The global context, `context:global`, which includes all repositories on the Sourcegraph instance.
 
-Coming soon: create your own search contexts that include the repositories you choose. Want early access to custom search contexts? [Let us know](#).
+Search contexts are currently only available on Sourcegraph Cloud.
