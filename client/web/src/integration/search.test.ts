@@ -236,7 +236,7 @@ describe('Search', () => {
             await driver.findElementWithText('github.com/auth0/go-jwt-middleware', {
                 action: 'click',
                 wait: { timeout: 5000 },
-                selector: '.monaco-query-input-container .suggest-widget.visible span',
+                selector: '.monaco-query-input-container .suggest-widget.visible a.label-name',
             })
             expect(await getSearchFieldValue(driver)).toStrictEqual('repo:^github\\.com/auth0/go-jwt-middleware$ ')
 
