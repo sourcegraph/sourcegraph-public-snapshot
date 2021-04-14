@@ -1,4 +1,4 @@
-.page-selector {
+.list {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -6,20 +6,20 @@
     margin-left: 0;
     margin-right: 0;
     padding: 0;
+}
 
-    &__button {
-        min-width: 2rem;
-        padding: 0.25rem 0.5rem;
-        transition: none; // Remove transitions to improve pagination layout shifting
+.button {
+    min-width: 2rem;
+    padding: 0.25rem 0.5rem;
+    transition: none; // Remove transitions to improve pagination layout shifting
 
-        &:focus,
-        &:hover {
-            text-decoration: none;
-        }
+    &:focus,
+    &:hover {
+        text-decoration: none;
+    }
 
-        &:hover:not(:global(.btn-primary)):not(:disabled) {
-            background-color: var(--color-bg-2);
-            color: var(--link-color);
-        }
+    &:hover:not(:global(.btn-primary)):not(:disabled) {
+        background-color: var(--color-bg-2);
+        color: var(--link-color);
     }
 }

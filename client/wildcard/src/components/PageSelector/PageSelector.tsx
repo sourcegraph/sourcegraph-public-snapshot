@@ -18,7 +18,7 @@ interface PageButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 const PageButton: React.FunctionComponent<PageButtonProps> = ({ children, active, ...props }) => (
     <button
         type="button"
-        className={classNames('btn', active ? 'btn-primary' : 'btn-link', 'mx-1', styles.pageSelectorButton)}
+        className={classNames('btn', active ? 'btn-primary' : 'btn-link', 'mx-1', styles.button)}
         aria-current={active}
         {...props}
     >
@@ -79,7 +79,7 @@ export const PageSelector: React.FunctionComponent<PageSelectorProps> = props =>
 
     return (
         <nav>
-            <ul ref={ref} className={classNames(styles.pageSelector, className)}>
+            <ul ref={ref} className={classNames(styles.list, className)}>
                 {pages.map((page, index) => {
                     const key = page.type === 'page' ? page.content : `${page.type}${index}`
                     if (page.type === 'previous' || page.type === 'next') {
