@@ -12,16 +12,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/rewirer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type changesetApplyPreviewResolver struct {
 	store *store.Store
 
-	mapping              *store.RewirerMapping
+	mapping              *btypes.RewirerMapping
 	preloadedNextSync    time.Time
-	preloadedBatchChange *batches.BatchChange
+	preloadedBatchChange *btypes.BatchChange
 	batchSpecID          int64
 }
 
@@ -59,15 +59,15 @@ func (r *changesetApplyPreviewResolver) ToHiddenChangesetApplyPreview() (graphql
 type hiddenChangesetApplyPreviewResolver struct {
 	store *store.Store
 
-	mapping           *store.RewirerMapping
+	mapping           *btypes.RewirerMapping
 	preloadedNextSync time.Time
 }
 
 var _ graphqlbackend.HiddenChangesetApplyPreviewResolver = &hiddenChangesetApplyPreviewResolver{}
 
-func (r *hiddenChangesetApplyPreviewResolver) Operations(ctx context.Context) ([]batches.ReconcilerOperation, error) {
+func (r *hiddenChangesetApplyPreviewResolver) Operations(ctx context.Context) ([]string, error) {
 	// If the repo is inaccessible, no operations would be taken, since the changeset is not created/updated.
-	return []batches.ReconcilerOperation{}, nil
+	return []string{}, nil
 }
 
 func (r *hiddenChangesetApplyPreviewResolver) Delta(ctx context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
@@ -86,7 +86,7 @@ func (r *hiddenChangesetApplyPreviewResolver) Targets() graphqlbackend.HiddenApp
 type hiddenApplyPreviewTargetsResolver struct {
 	store *store.Store
 
-	mapping           *store.RewirerMapping
+	mapping           *btypes.RewirerMapping
 	preloadedNextSync time.Time
 }
 
@@ -131,9 +131,9 @@ func (r *hiddenApplyPreviewTargetsResolver) Changeset(ctx context.Context) (grap
 type visibleChangesetApplyPreviewResolver struct {
 	store *store.Store
 
-	mapping              *store.RewirerMapping
+	mapping              *btypes.RewirerMapping
 	preloadedNextSync    time.Time
-	preloadedBatchChange *batches.BatchChange
+	preloadedBatchChange *btypes.BatchChange
 	batchSpecID          int64
 
 	planOnce sync.Once
@@ -141,19 +141,23 @@ type visibleChangesetApplyPreviewResolver struct {
 	planErr  error
 
 	batchChangeOnce sync.Once
-	batchChange     *batches.BatchChange
+	batchChange     *btypes.BatchChange
 	batchChangeErr  error
 }
 
 var _ graphqlbackend.VisibleChangesetApplyPreviewResolver = &visibleChangesetApplyPreviewResolver{}
 
-func (r *visibleChangesetApplyPreviewResolver) Operations(ctx context.Context) ([]batches.ReconcilerOperation, error) {
+func (r *visibleChangesetApplyPreviewResolver) Operations(ctx context.Context) ([]string, error) {
 	plan, err := r.computePlan(ctx)
 	if err != nil {
 		return nil, err
 	}
 	ops := plan.Ops.ExecutionOrder()
-	return ops, nil
+	strOps := make([]string, 0, len(ops))
+	for _, op := range ops {
+		strOps = append(strOps, string(op))
+	}
+	return strOps, nil
 }
 
 func (r *visibleChangesetApplyPreviewResolver) Delta(ctx context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
@@ -187,8 +191,8 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 		// by the changeset and changeset spec resolvers. Otherwise, the
 		// changeset always appears as "processing".
 		var (
-			mappingChangeset     *batches.Changeset
-			mappingChangesetSpec *batches.ChangesetSpec
+			mappingChangeset     *btypes.Changeset
+			mappingChangesetSpec *btypes.ChangesetSpec
 			mappingRepo          *types.Repo
 		)
 		if r.mapping.Changeset != nil {
@@ -202,7 +206,7 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 		}
 
 		// Then, dry-run the rewirer to simulate how the changeset would look like _after_ an apply operation.
-		rewirer := rewirer.New(store.RewirerMappings{{
+		rewirer := rewirer.New(btypes.RewirerMappings{{
 			ChangesetSpecID: r.mapping.ChangesetSpecID,
 			ChangesetID:     r.mapping.ChangesetID,
 			RepoID:          r.mapping.RepoID,
@@ -231,7 +235,7 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 		// so we need to find out which specs we need to pass to the planner.
 
 		// This means that we currently won't show "attach to tracking changeset" and "detach changeset" in this preview API. Close and import non-existing work, though.
-		var previousSpec, currentSpec *batches.ChangesetSpec
+		var previousSpec, currentSpec *btypes.ChangesetSpec
 		if changeset.PreviousSpecID != 0 {
 			previousSpec, err = r.store.GetChangesetSpecByID(ctx, changeset.PreviousSpecID)
 			if err != nil {
@@ -256,7 +260,7 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 	return r.plan, r.planErr
 }
 
-func (r *visibleChangesetApplyPreviewResolver) computeBatchChange(ctx context.Context) (*batches.BatchChange, error) {
+func (r *visibleChangesetApplyPreviewResolver) computeBatchChange(ctx context.Context) (*btypes.BatchChange, error) {
 	r.batchChangeOnce.Do(func() {
 		if r.preloadedBatchChange != nil {
 			r.batchChange = r.preloadedBatchChange
@@ -277,7 +281,7 @@ func (r *visibleChangesetApplyPreviewResolver) computeBatchChange(ctx context.Co
 type visibleApplyPreviewTargetsResolver struct {
 	store *store.Store
 
-	mapping           *store.RewirerMapping
+	mapping           *btypes.RewirerMapping
 	preloadedNextSync time.Time
 }
 

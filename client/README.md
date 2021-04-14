@@ -7,6 +7,7 @@
 - **eslint-plugin-sourcegraph**: Not published package with custom ESLint rules for Sourcegraph. Isn't intended for reuse by other repositories in the Sourcegraph org.
 - **extension-api**: The Sourcegraph extension API types for the _Sourcegraph extensions_. Published as `sourcegraph`.
 - **extension-api-types**: The Sourcegraph extension API types for _client applications_ that embed Sourcegraph extensions and need to communicate with them. Published as `@sourcegraph/extension-api-types`.
+- **sandboxes**: All demos-mvp (minimum viable product) for the Sourcegraph web application.
 - **shared**: Contains common TypeScript/React/SCSS client code shared between the browser extension and the web app. Everything in this package is code-host agnostic.
 - **branded**: Contains React components and implements the visual design language we use across our web app and e.g. in the options menu of the browser extension. Over time, components from `shared` and `branded` packages should be moved into the `wildcard` package.
 - **wildcard**: Package that encapsulates storybook configuration and contains our Wildcard design system components. If we're using a component in two or more different areas (e.g. `web-app` and `browser-extension`) then it should live in the `wildcard` package. Otherwise the components should be better colocated with the code where they're actually used.

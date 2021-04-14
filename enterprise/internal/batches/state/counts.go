@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
 // timestampCount defines how many timestamps we will return for a given dateframe.
@@ -43,7 +43,7 @@ func (cc *ChangesetCounts) String() string {
 // The number of ChangesetCounts returned is always `timestampCount`. Between
 // start and end, it generates `timestampCount` datapoints with each ChangesetCounts
 // representing a point in time. `es` are expected to be pre-sorted.
-func CalcCounts(start, end time.Time, cs []*batches.Changeset, es ...*batches.ChangesetEvent) ([]*ChangesetCounts, error) {
+func CalcCounts(start, end time.Time, cs []*btypes.Changeset, es ...*btypes.ChangesetEvent) ([]*ChangesetCounts, error) {
 	ts := GenerateTimestamps(start, end)
 	counts := make([]*ChangesetCounts, len(ts))
 	for i, t := range ts {
@@ -58,7 +58,7 @@ func CalcCounts(start, end time.Time, cs []*batches.Changeset, es ...*batches.Ch
 	}
 
 	// Map Events to their Changeset
-	byChangeset := make(map[*batches.Changeset]ChangesetEvents)
+	byChangeset := make(map[*btypes.Changeset]ChangesetEvents)
 	for _, c := range cs {
 		byChangeset[c] = byChangesetID[c.ID]
 	}
@@ -81,22 +81,22 @@ func CalcCounts(start, end time.Time, cs []*batches.Changeset, es ...*batches.Ch
 
 			c.Total++
 			switch states.externalState {
-			case batches.ChangesetExternalStateDraft:
+			case btypes.ChangesetExternalStateDraft:
 				c.Draft++
-			case batches.ChangesetExternalStateOpen:
+			case btypes.ChangesetExternalStateOpen:
 				c.Open++
 				switch states.reviewState {
-				case batches.ChangesetReviewStatePending:
+				case btypes.ChangesetReviewStatePending:
 					c.OpenPending++
-				case batches.ChangesetReviewStateApproved:
+				case btypes.ChangesetReviewStateApproved:
 					c.OpenApproved++
-				case batches.ChangesetReviewStateChangesRequested:
+				case btypes.ChangesetReviewStateChangesRequested:
 					c.OpenChangesRequested++
 				}
 
-			case batches.ChangesetExternalStateMerged:
+			case btypes.ChangesetExternalStateMerged:
 				c.Merged++
-			case batches.ChangesetExternalStateClosed:
+			case btypes.ChangesetExternalStateClosed:
 				c.Closed++
 			}
 		}

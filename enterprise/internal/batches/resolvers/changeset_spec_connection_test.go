@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -30,7 +30,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 
 	cstore := store.New(db)
 
-	batchSpec := &batches.BatchSpec{
+	batchSpec := &btypes.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
@@ -51,10 +51,10 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 		rs = append(rs, r)
 	}
 
-	changesetSpecs := make([]*batches.ChangesetSpec, 0, len(rs))
+	changesetSpecs := make([]*btypes.ChangesetSpec, 0, len(rs))
 	for _, r := range rs {
 		repoID := graphqlbackend.MarshalRepositoryID(r.ID)
-		s, err := batches.NewChangesetSpecFromRaw(ct.NewRawChangesetSpecGitBranch(repoID, "d34db33f"))
+		s, err := btypes.NewChangesetSpecFromRaw(ct.NewRawChangesetSpecGitBranch(repoID, "d34db33f"))
 		if err != nil {
 			t.Fatal(err)
 		}

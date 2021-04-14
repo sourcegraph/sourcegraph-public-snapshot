@@ -346,3 +346,10 @@
     :why: Internal module
     :versions: []
     :when: 2021-03-09 19:42:12.214862934 Z
+- - :license
+  - github.com/aws/smithy-go
+  - Apache 2.0
+  - :who:
+    :why: Inference broken, LICENSE file lives at https://github.com/aws/smithy-go/blob/main/LICENSE
+    :versions: []
+    :when: 2021-04-14 12:51:19.503802000 Z

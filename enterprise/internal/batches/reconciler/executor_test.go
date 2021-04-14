@@ -14,14 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -53,14 +52,14 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
 	defer func() { internalClient = api.InternalClient }()
 
-	githubPR := buildGithubPR(clock(), batches.ChangesetExternalStateOpen)
+	githubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateOpen)
 	githubHeadRef := git.EnsureRefPrefix(githubPR.HeadRefName)
-	draftGithubPR := buildGithubPR(clock(), batches.ChangesetExternalStateDraft)
-	closedGitHubPR := buildGithubPR(clock(), batches.ChangesetExternalStateClosed)
+	draftGithubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateDraft)
+	closedGitHubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateClosed)
 
-	notFoundErr := repos.ChangesetNotFoundError{
-		Changeset: &repos.Changeset{
-			Changeset: &batches.Changeset{ExternalID: "100000"},
+	notFoundErr := sources.ChangesetNotFoundError{
+		Changeset: &sources.Changeset{
+			Changeset: &btypes.Changeset{ExternalID: "100000"},
 		},
 	}
 
@@ -98,20 +97,20 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		},
 		"import": {
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStateUnpublished,
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 				ExternalID:       githubPR.ID,
 			},
 			plan: &Plan{
-				Ops: Operations{batches.ReconcilerOperationImport},
+				Ops: Operations{btypes.ReconcilerOperationImport},
 			},
 
 			wantLoadFromCodeHost: true,
 
 			wantChangeset: ct.ChangesetAssertions{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalID:       githubPR.ID,
 				ExternalBranch:   githubHeadRef,
-				ExternalState:    batches.ChangesetExternalStateOpen,
+				ExternalState:    btypes.ChangesetExternalStateOpen,
 				Title:            githubPR.Title,
 				Body:             githubPR.Body,
 				DiffStat:         state.DiffStat,
@@ -119,11 +118,11 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		},
 		"import and not-found error": {
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStateUnpublished,
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 				ExternalID:       githubPR.ID,
 			},
 			plan: &Plan{
-				Ops: Operations{batches.ReconcilerOperationImport},
+				Ops: Operations{btypes.ReconcilerOperationImport},
 			},
 			sourcerErr: notFoundErr,
 
@@ -134,12 +133,12 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		"push and publish": {
 			hasCurrentSpec: true,
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStateUnpublished,
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
 			plan: &Plan{
 				Ops: Operations{
-					batches.ReconcilerOperationPush,
-					batches.ReconcilerOperationPublish,
+					btypes.ReconcilerOperationPush,
+					btypes.ReconcilerOperationPublish,
 				},
 			},
 
@@ -147,10 +146,10 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantGitserverCommit:  true,
 
 			wantChangeset: ct.ChangesetAssertions{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalID:       githubPR.ID,
 				ExternalBranch:   githubHeadRef,
-				ExternalState:    batches.ChangesetExternalStateOpen,
+				ExternalState:    btypes.ChangesetExternalStateOpen,
 				Title:            githubPR.Title,
 				Body:             githubPR.Body,
 				DiffStat:         state.DiffStat,
@@ -165,12 +164,12 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				// The reconciler resets the failure message before passing the
 				// changeset to the executor.
 				// We simulate that here by not setting FailureMessage.
-				PublicationState: batches.ChangesetPublicationStateUnpublished,
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
 			plan: &Plan{
 				Ops: Operations{
-					batches.ReconcilerOperationPush,
-					batches.ReconcilerOperationPublish,
+					btypes.ReconcilerOperationPush,
+					btypes.ReconcilerOperationPublish,
 				},
 			},
 
@@ -181,10 +180,10 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantGitserverCommit:  true,
 
 			wantChangeset: ct.ChangesetAssertions{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalID:       githubPR.ID,
 				ExternalBranch:   githubHeadRef,
-				ExternalState:    batches.ChangesetExternalStateOpen,
+				ExternalState:    btypes.ChangesetExternalStateOpen,
 				Title:            githubPR.Title,
 				Body:             githubPR.Body,
 				DiffStat:         state.DiffStat,
@@ -193,14 +192,14 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		"update": {
 			hasCurrentSpec: true,
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalID:       "12345",
 				ExternalBranch:   "head-ref-on-github",
 			},
 
 			plan: &Plan{
 				Ops: Operations{
-					batches.ReconcilerOperationUpdate,
+					btypes.ReconcilerOperationUpdate,
 				},
 			},
 
@@ -208,10 +207,10 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantUpdateOnCodeHost: true,
 
 			wantChangeset: ct.ChangesetAssertions{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalID:       githubPR.ID,
 				ExternalBranch:   githubHeadRef,
-				ExternalState:    batches.ChangesetExternalStateOpen,
+				ExternalState:    btypes.ChangesetExternalStateOpen,
 				DiffStat:         state.DiffStat,
 				// We update the title/body but want the title/body returned by the code host.
 				Title: githubPR.Title,
@@ -221,17 +220,17 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		"push sleep sync": {
 			hasCurrentSpec: true,
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalID:       "12345",
 				ExternalBranch:   git.EnsureRefPrefix("head-ref-on-github"),
-				ExternalState:    batches.ChangesetExternalStateOpen,
+				ExternalState:    btypes.ChangesetExternalStateOpen,
 			},
 
 			plan: &Plan{
 				Ops: Operations{
-					batches.ReconcilerOperationPush,
-					batches.ReconcilerOperationSleep,
-					batches.ReconcilerOperationSync,
+					btypes.ReconcilerOperationPush,
+					btypes.ReconcilerOperationSleep,
+					btypes.ReconcilerOperationSync,
 				},
 			},
 
@@ -239,8 +238,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantLoadFromCodeHost: true,
 
 			wantChangeset: ct.ChangesetAssertions{
-				PublicationState: batches.ChangesetPublicationStatePublished,
-				ExternalState:    batches.ChangesetExternalStateOpen,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				ExternalState:    btypes.ChangesetExternalStateOpen,
 				ExternalID:       githubPR.ID,
 				ExternalBranch:   githubHeadRef,
 				DiffStat:         state.DiffStat,
@@ -249,15 +248,15 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		"close open changeset": {
 			hasCurrentSpec: true,
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalID:       githubPR.ID,
 				ExternalBranch:   githubHeadRef,
-				ExternalState:    batches.ChangesetExternalStateOpen,
+				ExternalState:    btypes.ChangesetExternalStateOpen,
 				Closing:          true,
 			},
 			plan: &Plan{
 				Ops: Operations{
-					batches.ReconcilerOperationClose,
+					btypes.ReconcilerOperationClose,
 				},
 			},
 			// We return a closed GitHub PR here
@@ -266,12 +265,12 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantCloseOnCodeHost: true,
 
 			wantChangeset: ct.ChangesetAssertions{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 				Closing:          false,
 
 				ExternalID:     closedGitHubPR.ID,
 				ExternalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
-				ExternalState:  batches.ChangesetExternalStateClosed,
+				ExternalState:  btypes.ChangesetExternalStateClosed,
 
 				Title:    closedGitHubPR.Title,
 				Body:     closedGitHubPR.Body,
@@ -281,15 +280,15 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		"close closed changeset": {
 			hasCurrentSpec: true,
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalID:       githubPR.ID,
 				ExternalBranch:   githubHeadRef,
-				ExternalState:    batches.ChangesetExternalStateClosed,
+				ExternalState:    btypes.ChangesetExternalStateClosed,
 				Closing:          true,
 			},
 			plan: &Plan{
 				Ops: Operations{
-					batches.ReconcilerOperationClose,
+					btypes.ReconcilerOperationClose,
 				},
 			},
 
@@ -301,36 +300,36 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantCloseOnCodeHost: false,
 
 			wantChangeset: ct.ChangesetAssertions{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 				Closing:          false,
 
 				ExternalID:     closedGitHubPR.ID,
 				ExternalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
-				ExternalState:  batches.ChangesetExternalStateClosed,
+				ExternalState:  btypes.ChangesetExternalStateClosed,
 			},
 		},
 		"reopening closed changeset without updates": {
 			hasCurrentSpec: true,
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalID:       githubPR.ID,
 				ExternalBranch:   githubHeadRef,
-				ExternalState:    batches.ChangesetExternalStateClosed,
+				ExternalState:    btypes.ChangesetExternalStateClosed,
 			},
 			plan: &Plan{
 				Ops: Operations{
-					batches.ReconcilerOperationReopen,
+					btypes.ReconcilerOperationReopen,
 				},
 			},
 
 			wantReopenOnCodeHost: true,
 
 			wantChangeset: ct.ChangesetAssertions{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 
 				ExternalID:     githubPR.ID,
 				ExternalBranch: githubHeadRef,
-				ExternalState:  batches.ChangesetExternalStateOpen,
+				ExternalState:  btypes.ChangesetExternalStateOpen,
 
 				Title:    githubPR.Title,
 				Body:     githubPR.Body,
@@ -340,13 +339,13 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		"push and publishdraft": {
 			hasCurrentSpec: true,
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStateUnpublished,
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
 
 			plan: &Plan{
 				Ops: Operations{
-					batches.ReconcilerOperationPush,
-					batches.ReconcilerOperationPublishDraft,
+					btypes.ReconcilerOperationPush,
+					btypes.ReconcilerOperationPublishDraft,
 				},
 			},
 
@@ -356,11 +355,11 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantGitserverCommit:       true,
 
 			wantChangeset: ct.ChangesetAssertions{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 
 				ExternalID:     draftGithubPR.ID,
 				ExternalBranch: git.EnsureRefPrefix(draftGithubPR.HeadRefName),
-				ExternalState:  batches.ChangesetExternalStateDraft,
+				ExternalState:  btypes.ChangesetExternalStateDraft,
 
 				Title:    draftGithubPR.Title,
 				Body:     draftGithubPR.Body,
@@ -370,24 +369,24 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		"undraft": {
 			hasCurrentSpec: true,
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
-				ExternalState:    batches.ChangesetExternalStateDraft,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				ExternalState:    btypes.ChangesetExternalStateDraft,
 			},
 
 			plan: &Plan{
 				Ops: Operations{
-					batches.ReconcilerOperationUndraft,
+					btypes.ReconcilerOperationUndraft,
 				},
 			},
 
 			wantUndraftOnCodeHost: true,
 
 			wantChangeset: ct.ChangesetAssertions{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 
 				ExternalID:     githubPR.ID,
 				ExternalBranch: githubHeadRef,
-				ExternalState:  batches.ChangesetExternalStateOpen,
+				ExternalState:  btypes.ChangesetExternalStateOpen,
 
 				Title:    githubPR.Title,
 				Body:     githubPR.Body,
@@ -397,19 +396,19 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		"archive open changeset": {
 			hasCurrentSpec: false,
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalID:       githubPR.ID,
 				ExternalBranch:   githubHeadRef,
-				ExternalState:    batches.ChangesetExternalStateOpen,
+				ExternalState:    btypes.ChangesetExternalStateOpen,
 				Closing:          true,
-				BatchChanges: []batches.BatchChangeAssoc{{
+				BatchChanges: []btypes.BatchChangeAssoc{{
 					BatchChangeID: 1234, Archive: true, IsArchived: false,
 				}},
 			},
 			plan: &Plan{
 				Ops: Operations{
-					batches.ReconcilerOperationClose,
-					batches.ReconcilerOperationArchive,
+					btypes.ReconcilerOperationClose,
+					btypes.ReconcilerOperationArchive,
 				},
 			},
 			// We return a closed GitHub PR here
@@ -418,12 +417,12 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantCloseOnCodeHost: true,
 
 			wantChangeset: ct.ChangesetAssertions{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 				Closing:          false,
 
 				ExternalID:     closedGitHubPR.ID,
 				ExternalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
-				ExternalState:  batches.ChangesetExternalStateClosed,
+				ExternalState:  btypes.ChangesetExternalStateClosed,
 
 				Title:    closedGitHubPR.Title,
 				Body:     closedGitHubPR.Body,
@@ -441,7 +440,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			batchChange := ct.CreateBatchChange(t, ctx, cstore, "executor-test-batch-change", admin.ID, batchSpec.ID)
 
 			// Create the changesetSpec with associations wired up correctly.
-			var changesetSpec *batches.ChangesetSpec
+			var changesetSpec *btypes.ChangesetSpec
 			if tc.hasCurrentSpec {
 				// The attributes of the spec don't really matter, but the
 				// associations do.
@@ -460,7 +459,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 					changesetOpts.BatchChanges[i].BatchChangeID = batchChange.ID
 				}
 			} else {
-				changesetOpts.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
+				changesetOpts.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
 			}
 			changesetOpts.OwnedByBatchChange = batchChange.ID
 			if changesetSpec != nil {
@@ -476,7 +475,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 			// Setup the sourcer that's used to create a Source with which
 			// to create/update a changeset.
-			fakeSource := &ct.FakeChangesetSource{
+			fakeSource := &sources.FakeChangesetSource{
 				Svc:             extSvc,
 				Err:             tc.sourcerErr,
 				ChangesetExists: tc.alreadyExists,
@@ -492,7 +491,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				fakeSource.WantBaseRef = changesetSpec.Spec.BaseRef
 			}
 
-			sourcer := repos.NewFakeSourcer(nil, fakeSource)
+			sourcer := sources.NewFakeSourcer(nil, fakeSource)
 
 			tc.plan.Changeset = changeset
 			tc.plan.ChangesetSpec = changesetSpec
@@ -566,7 +565,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			// more detailed unit tests of decorateChangesetBody elsewhere;
 			// we're just looking for a basic marker here that _something_
 			// happened.
-			var rcs *repos.Changeset
+			var rcs *sources.Changeset
 			if tc.wantCreateOnCodeHost && fakeSource.CreateChangesetCalled {
 				rcs = fakeSource.CreatedChangesets[0]
 			} else if tc.wantUpdateOnCodeHost && fakeSource.UpdateChangesetCalled {
@@ -602,14 +601,14 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	// Create a published changeset.
 	ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:             rs[0].ID,
-		PublicationState: batches.ChangesetPublicationStatePublished,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
 		ExternalBranch:   commonHeadRef,
 		ExternalID:       "123",
 	})
 
 	// Plan only needs a push operation, since that's where we check
 	plan := &Plan{}
-	plan.AddOp(batches.ReconcilerOperationPush)
+	plan.AddOp(btypes.ReconcilerOperationPush)
 
 	// Build a changeset that would be pushed on the same HeadRef/ExternalBranch.
 	plan.ChangesetSpec = ct.BuildChangesetSpec(t, ct.TestSpecOpts{
@@ -619,7 +618,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 	plan.Changeset = ct.BuildChangeset(ct.TestChangesetOpts{Repo: rs[0].ID})
 
-	err := executePlan(ctx, nil, repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}), true, cstore, plan)
+	err := executePlan(ctx, nil, sources.NewFakeSourcer(nil, &sources.FakeChangesetSource{}), true, cstore, plan)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
@@ -648,9 +647,9 @@ func TestLoadChangesetSource(t *testing.T) {
 	userBatchChange := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-batch-change", user.ID, batchSpec.ID)
 
 	t.Run("imported changeset uses global token when no site-credential exists", func(t *testing.T) {
-		fakeSource := &ct.FakeChangesetSource{}
-		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &batches.Changeset{
+		fakeSource := &sources.FakeChangesetSource{}
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 0,
 		}, repo)
 		if err != nil {
@@ -662,7 +661,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("imported changeset uses site-credential when exists", func(t *testing.T) {
-		if err := cstore.CreateSiteCredential(ctx, &store.SiteCredential{
+		if err := cstore.CreateSiteCredential(ctx, &btypes.SiteCredential{
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
 			ExternalServiceID:   repo.ExternalRepo.ServiceID,
 			Credential:          token,
@@ -672,9 +671,9 @@ func TestLoadChangesetSource(t *testing.T) {
 		t.Cleanup(func() {
 			ct.TruncateTables(t, db, "batch_changes_site_credentials")
 		})
-		fakeSource := &ct.FakeChangesetSource{}
-		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &batches.Changeset{
+		fakeSource := &sources.FakeChangesetSource{}
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 0,
 		}, repo)
 		if err != nil {
@@ -686,9 +685,9 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("owned by missing batch change", func(t *testing.T) {
-		fakeSource := &ct.FakeChangesetSource{}
-		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &batches.Changeset{
+		fakeSource := &sources.FakeChangesetSource{}
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 1234,
 		}, repo)
 		if err == nil {
@@ -697,9 +696,9 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("owned by admin user without credential", func(t *testing.T) {
-		fakeSource := &ct.FakeChangesetSource{}
-		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &batches.Changeset{
+		fakeSource := &sources.FakeChangesetSource{}
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: adminBatchChange.ID,
 		}, repo)
 		if err != nil {
@@ -711,9 +710,9 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("owned by normal user without credential", func(t *testing.T) {
-		fakeSource := &ct.FakeChangesetSource{}
-		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &batches.Changeset{
+		fakeSource := &sources.FakeChangesetSource{}
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
 		if err == nil {
@@ -731,9 +730,9 @@ func TestLoadChangesetSource(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		fakeSource := &ct.FakeChangesetSource{}
-		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &batches.Changeset{
+		fakeSource := &sources.FakeChangesetSource{}
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: adminBatchChange.ID,
 		}, repo)
 		if err != nil {
@@ -757,9 +756,9 @@ func TestLoadChangesetSource(t *testing.T) {
 			ct.TruncateTables(t, db, "user_credentials")
 		})
 
-		fakeSource := &ct.FakeChangesetSource{}
-		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &batches.Changeset{
+		fakeSource := &sources.FakeChangesetSource{}
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
 		if err != nil {
@@ -771,7 +770,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("owned by user without credential falls back to site-credential", func(t *testing.T) {
-		if err := cstore.CreateSiteCredential(ctx, &store.SiteCredential{
+		if err := cstore.CreateSiteCredential(ctx, &btypes.SiteCredential{
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
 			ExternalServiceID:   repo.ExternalRepo.ServiceID,
 			Credential:          token,
@@ -782,9 +781,9 @@ func TestLoadChangesetSource(t *testing.T) {
 			ct.TruncateTables(t, db, "batch_changes_site_credentials")
 		})
 
-		fakeSource := &ct.FakeChangesetSource{}
-		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &batches.Changeset{
+		fakeSource := &sources.FakeChangesetSource{}
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
+		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
 		if err != nil {
@@ -805,9 +804,9 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)
 
-	rs, extSvc := ct.CreateTestRepos(t, ctx, db, 1)
+	rs, gitHubExtSvc := ct.CreateTestRepos(t, ctx, db, 1)
 	gitHubRepo := rs[0]
-	gitHubRepoCloneURL := gitHubRepo.Sources[extSvc.URN()].CloneURL
+	gitHubRepoCloneURL := gitHubRepo.Sources[gitHubExtSvc.URN()].CloneURL
 
 	gitLabRepos, gitLabExtSvc := ct.CreateGitlabTestRepos(t, ctx, db, 1)
 	gitLabRepo := gitLabRepos[0]
@@ -821,16 +820,13 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	bbsSSHRepo := bbsSSHRepos[0]
 	bbsSSHRepoCloneURL := bbsSSHRepo.Sources[bbsSSHExtsvc.URN()].CloneURL
 
-	gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
-	fakeSource := &ct.FakeChangesetSource{Svc: extSvc}
-	sourcer := repos.NewFakeSourcer(nil, fakeSource)
-
 	plan := &Plan{}
-	plan.AddOp(batches.ReconcilerOperationPush)
+	plan.AddOp(btypes.ReconcilerOperationPush)
 
 	tests := []struct {
 		name           string
 		user           *types.User
+		extSvc         *types.ExternalService
 		repo           *types.Repo
 		credentials    auth.Authenticator
 		wantErr        bool
@@ -839,6 +835,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:        "github OAuthBearerToken",
 			user:        user,
+			extSvc:      gitHubExtSvc,
 			repo:        gitHubRepo,
 			credentials: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
@@ -848,13 +845,15 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:    "github no credentials",
 			user:    user,
+			extSvc:  gitHubExtSvc,
 			repo:    gitHubRepo,
 			wantErr: true,
 		},
 		{
-			name: "github site-admin and no credentials",
-			repo: gitHubRepo,
-			user: admin,
+			name:   "github site-admin and no credentials",
+			extSvc: gitHubExtSvc,
+			repo:   gitHubRepo,
+			user:   admin,
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: gitHubRepoCloneURL,
 			},
@@ -862,6 +861,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:        "gitlab OAuthBearerToken",
 			user:        user,
+			extSvc:      gitLabExtSvc,
 			repo:        gitLabRepo,
 			credentials: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
@@ -871,13 +871,15 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:    "gitlab no credentials",
 			user:    user,
+			extSvc:  gitLabExtSvc,
 			repo:    gitLabRepo,
 			wantErr: true,
 		},
 		{
-			name: "gitlab site-admin and no credentials",
-			user: admin,
-			repo: gitLabRepo,
+			name:   "gitlab site-admin and no credentials",
+			user:   admin,
+			extSvc: gitLabExtSvc,
+			repo:   gitLabRepo,
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: gitLabRepoCloneURL,
 			},
@@ -885,6 +887,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:        "bitbucketServer BasicAuth",
 			user:        user,
+			extSvc:      bbsExtSvc,
 			repo:        bbsRepo,
 			credentials: &auth.BasicAuth{Username: "fredwoard johnssen", Password: "my-secret-bbs-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
@@ -894,13 +897,15 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:    "bitbucketServer no credentials",
 			user:    user,
+			extSvc:  bbsExtSvc,
 			repo:    bbsRepo,
 			wantErr: true,
 		},
 		{
-			name: "bitbucketServer site-admin and no credentials",
-			user: admin,
-			repo: bbsRepo,
+			name:   "bitbucketServer site-admin and no credentials",
+			user:   admin,
+			extSvc: bbsExtSvc,
+			repo:   bbsRepo,
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: bbsRepoCloneURL,
 			},
@@ -908,21 +913,24 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:    "ssh clone URL no credentials",
 			user:    user,
+			extSvc:  bbsSSHExtsvc,
 			repo:    bbsSSHRepo,
 			wantErr: true,
 		},
 		{
-			name: "ssh clone URL no credentials admin",
-			user: admin,
-			repo: bbsSSHRepo,
+			name:   "ssh clone URL no credentials admin",
+			user:   admin,
+			extSvc: bbsSSHExtsvc,
+			repo:   bbsSSHRepo,
 			wantPushConfig: &gitprotocol.PushConfig{
 				RemoteURL: bbsSSHRepoCloneURL,
 			},
 		},
 		{
-			name: "ssh clone URL SSH credential",
-			user: admin,
-			repo: bbsSSHRepo,
+			name:   "ssh clone URL SSH credential",
+			user:   admin,
+			extSvc: bbsSSHExtsvc,
+			repo:   bbsSSHRepo,
 			credentials: &auth.OAuthBearerTokenWithSSH{
 				OAuthBearerToken: auth.OAuthBearerToken{Token: "test"},
 				PrivateKey:       "private key",
@@ -938,6 +946,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 		{
 			name:        "ssh clone URL non-SSH credential",
 			user:        admin,
+			extSvc:      bbsSSHExtsvc,
 			repo:        bbsSSHRepo,
 			credentials: &auth.OAuthBearerToken{Token: "test"},
 			wantErr:     true,
@@ -962,7 +971,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			batchSpec := ct.CreateBatchSpec(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
 			batchChange := ct.CreateBatchChange(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, batchSpec.ID)
 
-			plan.Changeset = &batches.Changeset{
+			plan.Changeset = &btypes.Changeset{
 				OwnedByBatchChangeID: batchChange.ID,
 				RepoID:               tt.repo.ID,
 			}
@@ -971,6 +980,10 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				Published:  true,
 				CommitDiff: "testdiff",
 			})
+
+			gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
+			fakeSource := &sources.FakeChangesetSource{Svc: tt.extSvc}
+			sourcer := sources.NewFakeSourcer(nil, fakeSource)
 
 			err := executePlan(
 				context.Background(),
@@ -1009,15 +1022,15 @@ func TestDecorateChangesetBody(t *testing.T) {
 	defer func() { internalClient = api.InternalClient }()
 
 	fs := &FakeStore{
-		GetBatchChangeMock: func(ctx context.Context, opts store.GetBatchChangeOpts) (*batches.BatchChange, error) {
-			return &batches.BatchChange{ID: 1234, Name: "reconciler-test-batch-change"}, nil
+		GetBatchChangeMock: func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
+			return &btypes.BatchChange{ID: 1234, Name: "reconciler-test-batch-change"}, nil
 		},
 	}
 
 	cs := ct.BuildChangeset(ct.TestChangesetOpts{OwnedByBatchChange: 1234})
 
 	body := "body"
-	rcs := &repos.Changeset{Body: body, Changeset: cs}
+	rcs := &sources.Changeset{Body: body, Changeset: cs}
 	if err := decorateChangesetBody(context.Background(), fs, database.Namespaces(new(dbtesting.MockDB)), rcs); err != nil {
 		t.Errorf("unexpected non-nil error: %v", err)
 	}
@@ -1052,7 +1065,7 @@ func TestBatchChangeURL(t *testing.T) {
 		url, err := batchChangeURL(
 			ctx,
 			&database.Namespace{Name: "foo", Organization: 123},
-			&batches.BatchChange{Name: "bar"},
+			&btypes.BatchChange{Name: "bar"},
 		)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)

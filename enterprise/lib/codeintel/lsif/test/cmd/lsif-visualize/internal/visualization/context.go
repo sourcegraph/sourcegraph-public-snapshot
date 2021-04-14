@@ -1,7 +1,7 @@
 package visualization
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/test/internal/reader"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/internal/reader"
 )
 
 type VisualizationContext struct {

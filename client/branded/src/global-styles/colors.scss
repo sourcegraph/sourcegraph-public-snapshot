@@ -47,6 +47,7 @@ $logo-orange: #f96216;
 $logo-blue: #00b4f2;
 $logo-purple: #b200f8;
 
+// Globals
 $primary: $blue;
 $secondary: #2b3750;
 $success: $green;
@@ -64,14 +65,12 @@ $mark-bg-light: rgba(255, 192, 120, 0.5);
 $theme-colors: (
     'merged': $merged,
 );
-
 $theme-colors-light: (
     'secondary': $secondary-light,
 );
 
 $body-color: var(--body-color);
 $body-bg: var(--body-bg);
-
 $text-muted: var(--text-muted);
 
 :root {
@@ -86,6 +85,7 @@ $text-muted: var(--text-muted);
     --logo-orange: #{$logo-orange};
     --logo-blue: #{$logo-blue};
     --logo-purple: #{$logo-purple};
+    --code-bg: #{$gray-01};
 }
 .theme-light {
     // Affects default browser styles
@@ -154,14 +154,6 @@ $text-muted: var(--text-muted);
     --disabled-action-bg-color: #{$oc-gray-8};
     --disabled-action-text-color: #{$oc-gray-9};
 }
-.theme-light.theme-redesign,
-// Descendant selector is required for Storybook `addRedesignVariants` helper.
-.theme-light .theme-redesign {
-    --link-color: #0bdbd1;
-    --web-content-link-color: #0bdbd1;
-}
-.theme-dark.theme-redesign,
-.theme-dark .theme-redesign {
-    --link-color: #edb1ff;
-    --web-content-link-color: #edb1ff;
-}
+
+// Load redesign styles
+@import './colors-redesign';

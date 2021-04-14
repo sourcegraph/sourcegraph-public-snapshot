@@ -6,13 +6,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
 type changesetEventResolver struct {
 	store             *store.Store
 	changesetResolver *changesetResolver
-	*batches.ChangesetEvent
+	*btypes.ChangesetEvent
 }
 
 const changesetEventIDKind = "ChangesetEvent"

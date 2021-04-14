@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/codecommit"
+	codecommittypes "github.com/aws/aws-sdk-go-v2/service/codecommit/types"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -132,10 +133,8 @@ func (c *Client) getRepositoryFromAPI(ctx context.Context, arn string) (*Reposit
 		repoName = arn[i+1:]
 	}
 
-	svc := codecommit.New(c.aws)
-	req := svc.GetRepositoryRequest(&codecommit.GetRepositoryInput{RepositoryName: &repoName})
-	req.SetContext(ctx)
-	result, err := req.Send(ctx)
+	svc := codecommit.NewFromConfig(c.aws)
+	result, err := svc.GetRepository(ctx, &codecommit.GetRepositoryInput{RepositoryName: &repoName})
 	if err != nil {
 		return nil, err
 	}
@@ -154,19 +153,17 @@ func (c *Client) ListRepositories(ctx context.Context, nextToken string) (repos 
 		}
 	}()
 
-	svc := codecommit.New(c.aws)
+	svc := codecommit.NewFromConfig(c.aws)
 
 	// List repositories.
 	listInput := codecommit.ListRepositoriesInput{
-		Order:  codecommit.OrderEnumDescending,
-		SortBy: codecommit.SortByEnumLastModifiedDate,
+		Order:  codecommittypes.OrderEnumDescending,
+		SortBy: codecommittypes.SortByEnumModifiedDate,
 	}
 	if nextToken != "" {
 		listInput.NextToken = &nextToken
 	}
-	listReq := svc.ListRepositoriesRequest(&listInput)
-	listReq.SetContext(ctx)
-	listResult, err := listReq.Send(ctx)
+	listResult, err := svc.ListRepositories(ctx, &listInput)
 	if err != nil {
 		return nil, "", err
 	}
@@ -201,9 +198,7 @@ func (c *Client) ListRepositories(ctx context.Context, nextToken string) (repos 
 
 func (c *Client) getRepositories(ctx context.Context, svc *codecommit.Client, repositoryNames []string) ([]*Repository, error) {
 	getInput := codecommit.BatchGetRepositoriesInput{RepositoryNames: repositoryNames}
-	getReq := svc.BatchGetRepositoriesRequest(&getInput)
-	getReq.SetContext(ctx)
-	getResult, err := getReq.Send(ctx)
+	getResult, err := svc.BatchGetRepositories(ctx, &getInput)
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +238,7 @@ func (w *wrappedError) Unauthorized() bool {
 	return IsUnauthorized(w.err)
 }
 
-func fromRepoMetadata(m *codecommit.RepositoryMetadata) *Repository {
+func fromRepoMetadata(m *codecommittypes.RepositoryMetadata) *Repository {
 	repo := Repository{
 		ARN:          *m.Arn,
 		AccountID:    *m.AccountId,

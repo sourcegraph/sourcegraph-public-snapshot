@@ -7,8 +7,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -44,7 +44,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 			if err != nil {
 				t.Fatal(err)
 			}
-			want := []*batches.CodeHost{
+			want := []*btypes.CodeHost{
 				{
 					ExternalServiceType: extsvc.TypeBitbucketServer,
 					ExternalServiceID:   "https://bitbucketserver.com/",
@@ -69,7 +69,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 			if err != nil {
 				t.Fatal(err)
 			}
-			want := []*batches.CodeHost{
+			want := []*btypes.CodeHost{
 				{
 					ExternalServiceType: extsvc.TypeGitHub,
 					ExternalServiceID:   "https://github.com/",

@@ -9,8 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/rewirer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -45,7 +45,7 @@ func (o ApplyBatchChangeOpts) String() string {
 }
 
 // ApplyBatchChange creates the BatchChange.
-func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpts) (batchChange *batches.BatchChange, err error) {
+func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
 	tr, ctx := trace.New(ctx, "Service.ApplyBatchChange", opts.String())
 	defer func() {
 		tr.SetError(err)
@@ -124,9 +124,6 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 	if err != nil {
 		return nil, err
 	}
-	if err := mappings.Hydrate(ctx, tx); err != nil {
-		return nil, err
-	}
 
 	// And execute the mapping.
 	changesets, err := rewirer.New(mappings, batchChange.ID).Rewire()
@@ -144,13 +141,13 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 	return batchChange, nil
 }
 
-func (s *Service) ReconcileBatchChange(ctx context.Context, batchSpec *batches.BatchSpec) (batchChange *batches.BatchChange, previousSpecID int64, err error) {
+func (s *Service) ReconcileBatchChange(ctx context.Context, batchSpec *btypes.BatchSpec) (batchChange *btypes.BatchChange, previousSpecID int64, err error) {
 	batchChange, err = s.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
 	if err != nil {
 		return nil, 0, err
 	}
 	if batchChange == nil {
-		batchChange = &batches.BatchChange{}
+		batchChange = &btypes.BatchChange{}
 	} else {
 		previousSpecID = batchChange.BatchSpecID
 	}

@@ -13,8 +13,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -100,13 +100,13 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_title"),
 }
 
-func (s *Store) changesetWriteQuery(q string, includeID bool, c *batches.Changeset) (*sqlf.Query, error) {
+func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changeset) (*sqlf.Query, error) {
 	metadata, err := jsonbColumn(c.Metadata)
 	if err != nil {
 		return nil, err
 	}
 
-	assocsAsMap := make(map[int64]batches.BatchChangeAssoc, len(c.BatchChanges))
+	assocsAsMap := make(map[int64]btypes.BatchChangeAssoc, len(c.BatchChanges))
 	for _, assoc := range c.BatchChanges {
 		assocsAsMap[assoc.BatchChangeID] = assoc
 	}
@@ -169,7 +169,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *batches.Changes
 }
 
 // UpsertChangeset creates or updates the given Changeset.
-func (s *Store) UpsertChangeset(ctx context.Context, c *batches.Changeset) error {
+func (s *Store) UpsertChangeset(ctx context.Context, c *btypes.Changeset) error {
 	if c.ID == 0 {
 		return s.CreateChangeset(ctx, c)
 	}
@@ -177,7 +177,7 @@ func (s *Store) UpsertChangeset(ctx context.Context, c *batches.Changeset) error
 }
 
 // CreateChangeset creates the given Changeset.
-func (s *Store) CreateChangeset(ctx context.Context, c *batches.Changeset) error {
+func (s *Store) CreateChangeset(ctx context.Context, c *btypes.Changeset) error {
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
@@ -216,12 +216,12 @@ type CountChangesetsOpts struct {
 	BatchChangeID        int64
 	OnlyArchived         bool
 	IncludeArchived      bool
-	ExternalState        *batches.ChangesetExternalState
-	ExternalReviewState  *batches.ChangesetReviewState
-	ExternalCheckState   *batches.ChangesetCheckState
-	ReconcilerStates     []batches.ReconcilerState
+	ExternalState        *btypes.ChangesetExternalState
+	ExternalReviewState  *btypes.ChangesetReviewState
+	ExternalCheckState   *btypes.ChangesetCheckState
+	ReconcilerStates     []btypes.ReconcilerState
 	OwnedByBatchChangeID int64
-	PublicationState     *batches.ChangesetPublicationState
+	PublicationState     *btypes.ChangesetPublicationState
 	TextSearch           []search.TextSearchTerm
 	EnforceAuthz         bool
 }
@@ -305,7 +305,7 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 
 // GetChangesetByID is a convenience method if only the ID needs to be passed in. It's also used for abstraction in
 // the testing package.
-func (s *Store) GetChangesetByID(ctx context.Context, id int64) (*batches.Changeset, error) {
+func (s *Store) GetChangesetByID(ctx context.Context, id int64) (*btypes.Changeset, error) {
 	return s.GetChangeset(ctx, GetChangesetOpts{ID: id})
 }
 
@@ -316,15 +316,15 @@ type GetChangesetOpts struct {
 	ExternalID          string
 	ExternalServiceType string
 	ExternalBranch      string
-	ReconcilerState     batches.ReconcilerState
-	PublicationState    batches.ChangesetPublicationState
+	ReconcilerState     btypes.ReconcilerState
+	PublicationState    btypes.ChangesetPublicationState
 }
 
 // GetChangeset gets a changeset matching the given options.
-func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*batches.Changeset, error) {
+func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*btypes.Changeset, error) {
 	q := getChangesetQuery(&opts)
 
-	var c batches.Changeset
+	var c btypes.Changeset
 	err := s.query(ctx, q, func(sc scanner) error { return scanChangeset(&c, sc) })
 	if err != nil {
 		return nil, err
@@ -389,11 +389,11 @@ type ListChangesetSyncDataOpts struct {
 
 // ListChangesetSyncData returns sync data on all non-externally-deleted changesets
 // that are part of at least one open batch change.
-func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error) {
+func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]*btypes.ChangesetSyncData, error) {
 	q := listChangesetSyncDataQuery(opts)
-	results := make([]*batches.ChangesetSyncData, 0)
+	results := make([]*btypes.ChangesetSyncData, 0)
 	err := s.query(ctx, q, func(sc scanner) (err error) {
-		var h batches.ChangesetSyncData
+		var h btypes.ChangesetSyncData
 		if err := scanChangesetSyncData(&h, sc); err != nil {
 			return err
 		}
@@ -406,7 +406,7 @@ func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyn
 	return results, nil
 }
 
-func scanChangesetSyncData(h *batches.ChangesetSyncData, s scanner) error {
+func scanChangesetSyncData(h *btypes.ChangesetSyncData, s scanner) error {
 	return s.Scan(
 		&h.ChangesetID,
 		&h.UpdatedAt,
@@ -436,8 +436,8 @@ func listChangesetSyncDataQuery(opts ListChangesetSyncDataOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("batch_changes.closed_at IS NULL"),
 		sqlf.Sprintf("r.deleted_at IS NULL"),
-		sqlf.Sprintf("changesets.publication_state = %s", batches.ChangesetPublicationStatePublished),
-		sqlf.Sprintf("changesets.reconciler_state = %s", batches.ReconcilerStateCompleted.ToDB()),
+		sqlf.Sprintf("changesets.publication_state = %s", btypes.ChangesetPublicationStatePublished),
+		sqlf.Sprintf("changesets.reconciler_state = %s", btypes.ReconcilerStateCompleted.ToDB()),
 	}
 	if len(opts.ChangesetIDs) > 0 {
 		ids := make([]*sqlf.Query, 0, len(opts.ChangesetIDs))
@@ -467,27 +467,27 @@ type ListChangesetsOpts struct {
 	OnlyArchived         bool
 	IncludeArchived      bool
 	IDs                  []int64
-	PublicationState     *batches.ChangesetPublicationState
-	ReconcilerStates     []batches.ReconcilerState
-	ExternalState        *batches.ChangesetExternalState
-	ExternalReviewState  *batches.ChangesetReviewState
-	ExternalCheckState   *batches.ChangesetCheckState
+	PublicationState     *btypes.ChangesetPublicationState
+	ReconcilerStates     []btypes.ReconcilerState
+	ExternalState        *btypes.ChangesetExternalState
+	ExternalReviewState  *btypes.ChangesetReviewState
+	ExternalCheckState   *btypes.ChangesetCheckState
 	OwnedByBatchChangeID int64
 	TextSearch           []search.TextSearchTerm
 	EnforceAuthz         bool
 }
 
 // ListChangesets lists Changesets with the given filters.
-func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs batches.Changesets, next int64, err error) {
+func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs btypes.Changesets, next int64, err error) {
 	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "ListChangesets generating authz query conds")
 	}
 	q := listChangesetsQuery(&opts, authzConds)
 
-	cs = make([]*batches.Changeset, 0, opts.DBLimit())
+	cs = make([]*btypes.Changeset, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) (err error) {
-		var c batches.Changeset
+		var c btypes.Changeset
 		if err = scanChangeset(&c, sc); err != nil {
 			return err
 		}
@@ -591,7 +591,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 }
 
 // UpdateChangeset updates the given Changeset.
-func (s *Store) UpdateChangeset(ctx context.Context, cs *batches.Changeset) error {
+func (s *Store) UpdateChangeset(ctx context.Context, cs *btypes.Changeset) error {
 	cs.UpdatedAt = s.now()
 
 	q, err := s.changesetWriteQuery(updateChangesetQueryFmtstr, true, cs)
@@ -689,11 +689,11 @@ WHERE id IN (SELECT id FROM changeset_ids);
 func (s *Store) EnqueueChangesetsToClose(ctx context.Context, batchChangeID int64) error {
 	q := sqlf.Sprintf(
 		enqueueChangesetsToCloseFmtstr,
-		batches.ReconcilerStateQueued.ToDB(),
+		btypes.ReconcilerStateQueued.ToDB(),
 		batchChangeID,
-		batches.ChangesetPublicationStatePublished,
-		batches.ChangesetExternalStateClosed,
-		batches.ChangesetExternalStateMerged,
+		btypes.ChangesetPublicationStatePublished,
+		btypes.ChangesetExternalStateClosed,
+		btypes.ChangesetExternalStateMerged,
 	)
 	return s.Store.Exec(ctx, q)
 }
@@ -719,23 +719,23 @@ WHERE
   )
 `
 
-func ScanFirstChangeset(rows *sql.Rows, err error) (*batches.Changeset, bool, error) {
+func ScanFirstChangeset(rows *sql.Rows, err error) (*btypes.Changeset, bool, error) {
 	changesets, err := scanChangesets(rows, err)
 	if err != nil || len(changesets) == 0 {
-		return &batches.Changeset{}, false, err
+		return &btypes.Changeset{}, false, err
 	}
 	return changesets[0], true, nil
 }
 
-func scanChangesets(rows *sql.Rows, queryErr error) ([]*batches.Changeset, error) {
+func scanChangesets(rows *sql.Rows, queryErr error) ([]*btypes.Changeset, error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 
-	var cs []*batches.Changeset
+	var cs []*btypes.Changeset
 
 	return cs, scanAll(rows, func(sc scanner) (err error) {
-		var c batches.Changeset
+		var c btypes.Changeset
 		if err = scanChangeset(&c, sc); err != nil {
 			return err
 		}
@@ -749,12 +749,12 @@ func scanChangesets(rows *sql.Rows, queryErr error) ([]*batches.Changeset, error
 // It implements the sql.Scanner interface so it can be used as a scan destination,
 // similar to sql.NullString.
 type jsonBatchChangeChangesetSet struct {
-	Assocs *[]batches.BatchChangeAssoc
+	Assocs *[]btypes.BatchChangeAssoc
 }
 
 // Scan implements the Scanner interface.
 func (n *jsonBatchChangeChangesetSet) Scan(value interface{}) error {
-	m := make(map[int64]batches.BatchChangeAssoc)
+	m := make(map[int64]btypes.BatchChangeAssoc)
 
 	switch value := value.(type) {
 	case nil:
@@ -767,7 +767,7 @@ func (n *jsonBatchChangeChangesetSet) Scan(value interface{}) error {
 	}
 
 	if *n.Assocs == nil {
-		*n.Assocs = make([]batches.BatchChangeAssoc, 0, len(m))
+		*n.Assocs = make([]btypes.BatchChangeAssoc, 0, len(m))
 	} else {
 		*n.Assocs = (*n.Assocs)[:0]
 	}
@@ -788,7 +788,7 @@ func (n jsonBatchChangeChangesetSet) Value() (driver.Value, error) {
 	return *n.Assocs, nil
 }
 
-func scanChangeset(t *batches.Changeset, s scanner) error {
+func scanChangeset(t *btypes.Changeset, s scanner) error {
 	var metadata, syncState json.RawMessage
 
 	var (
@@ -836,16 +836,16 @@ func scanChangeset(t *batches.Changeset, s scanner) error {
 		return errors.Wrap(err, "scanning changeset")
 	}
 
-	t.ExternalState = batches.ChangesetExternalState(externalState)
-	t.ExternalReviewState = batches.ChangesetReviewState(externalReviewState)
-	t.ExternalCheckState = batches.ChangesetCheckState(externalCheckState)
+	t.ExternalState = btypes.ChangesetExternalState(externalState)
+	t.ExternalReviewState = btypes.ChangesetReviewState(externalReviewState)
+	t.ExternalCheckState = btypes.ChangesetCheckState(externalCheckState)
 	if failureMessage != "" {
 		t.FailureMessage = &failureMessage
 	}
 	if syncErrorMessage != "" {
 		t.SyncErrorMessage = &syncErrorMessage
 	}
-	t.ReconcilerState = batches.ReconcilerState(strings.ToUpper(reconcilerState))
+	t.ReconcilerState = btypes.ReconcilerState(strings.ToUpper(reconcilerState))
 
 	switch t.ExternalServiceType {
 	case extsvc.TypeGitHub:
@@ -870,7 +870,7 @@ func scanChangeset(t *batches.Changeset, s scanner) error {
 
 // GetChangesetsStats returns statistics on all the changesets associated to the given batch change,
 // or all changesets across the instance.
-func (s *Store) GetChangesetsStats(ctx context.Context, batchChangeID int64) (stats batches.ChangesetsStats, err error) {
+func (s *Store) GetChangesetsStats(ctx context.Context, batchChangeID int64) (stats btypes.ChangesetsStats, err error) {
 	q := getChangesetsStatsQuery(batchChangeID)
 	err = s.query(ctx, q, func(sc scanner) error {
 		if err := sc.Scan(

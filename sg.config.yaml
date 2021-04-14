@@ -34,6 +34,16 @@ env:
   GLOBAL_SETTINGS_FILE: ./dev/global-settings.json
   GLOBAL_SETTINGS_ALLOW_EDITS: true
 
+  # Point codeintel to the `frontend` database in development
+  CODEINTEL_PGPORT: $PGPORT
+  CODEINTEL_PGHOST: $PGHOST
+  CODEINTEL_PGUSER: $PGUSER
+  CODEINTEL_PGPASSWORD: $PGPASSWORD
+  CODEINTEL_PGDATABASE: $PGDATABASE
+  CODEINTEL_PGSSLMODE: $PGSSLMODE
+  CODEINTEL_PGDATASOURCE: $PGDATASOURCE
+  CODEINTEL_PG_ALLOW_SINGLE_DB: true
+
 commands:
   frontend:
     cmd: ulimit -n 10000 && .bin/frontend

@@ -1,7 +1,9 @@
 import classNames from 'classnames'
+import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { FormEvent, useCallback, useEffect, useState } from 'react'
+import React, { FormEvent, useCallback, useEffect, useState, useRef } from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Subscription } from 'rxjs'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -24,8 +26,10 @@ import {
     AffiliatedRepositoriesResult,
 } from '../../../graphql-operations'
 import { queryUserPublicRepositories, setUserPublicRepositories } from '../../../site-admin/backend'
+import { eventLogger } from '../../../tracking/eventLogger'
 import { UserRepositoriesUpdateProps } from '../../../util'
 
+import { AwayPrompt, ALLOW_NAVIGATION } from './AwayPrompt'
 import { CheckboxRepositoryNode } from './RepositoryNode'
 
 interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
@@ -143,12 +147,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [repoState, setRepoState] = useState(initialRepoState)
     const [publicRepoState, setPublicRepoState] = useState(initialPublicRepoState)
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
+    const [onloadSelectedRepos, setOnloadSelectedRepos] = useState<string[]>([])
     const [selectionState, setSelectionState] = useState(initialSelectionState)
     const [currentPage, setPage] = useState(1)
     const [query, setQuery] = useState('')
     const [codeHostFilter, setCodeHostFilter] = useState('')
     const [filteredRepos, setFilteredRepos] = useState<Repo[]>([])
     const [fetchingRepos, setFetchingRepos] = useState<initialFetchingReposState>()
+    const externalServiceSubscription = useRef<Subscription>()
 
     // since we're making many different GraphQL requests - track affiliate and
     // manually added public repo errors separately
@@ -246,8 +252,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             setPublicRepoState({ ...initialPublicRepoState, loaded: true })
         } else {
             // public repos separated by a new line
-            const publicRepos = result.map(({ name }) => name).join('\n')
-            setPublicRepoState({ repos: publicRepos, loaded: true, enabled: result.length > 0 })
+            const publicRepos = result.map(({ name }) => name)
+
+            // safe off initial selection state
+            setOnloadSelectedRepos(previousValue => [...previousValue, ...publicRepos])
+
+            setPublicRepoState({ repos: publicRepos.join('\n'), loaded: true, enabled: result.length > 0 })
         }
     }, [userID])
 
@@ -314,6 +324,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         loaded: true,
                     }))
 
+                    // safe off initial selection state
+                    setOnloadSelectedRepos(previousValue => [...previousValue, ...selectedRepos.keys()])
+
                     setSelectionState({
                         repos: selectedRepos,
                         radio: selectionState.radio,
@@ -360,10 +373,20 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         setPage(1)
     }, [repoState.repos, codeHostFilter, query])
 
+    const didRepoSelectionChange = useCallback((): boolean => {
+        const publicRepos = publicRepoState.enabled && publicRepoState.repos ? publicRepoState.repos.split('\n') : []
+        const affiliatedRepos = selectionState.repos.keys()
+
+        const currentlySelectedRepos = [...publicRepos, ...affiliatedRepos]
+
+        return !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
+    }, [onloadSelectedRepos, publicRepoState.enabled, publicRepoState.repos, selectionState.repos])
+
     // save changes and update code hosts
     const submit = useCallback(
         async (event: FormEvent<HTMLFormElement>): Promise<void> => {
             event.preventDefault()
+            eventLogger.log('UserManageRepositoriesSave')
 
             let publicRepos = publicRepoState.repos.split('\n').filter((row): boolean => row !== '')
             if (!publicRepoState.enabled) {
@@ -381,7 +404,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
 
             if (!selectionState.radio) {
-                return history.push(routingPrefix + '/repositories')
+                // location state is used here to prevent AwayPrompt from blocking
+                return history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
             }
 
             const syncTimes = new Map<string, string>()
@@ -415,7 +439,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
 
             const started = Date.now()
-            const externalServiceSubscription = queryExternalServices({
+            externalServiceSubscription.current = queryExternalServices({
                 first: null,
                 after: null,
                 namespace: userID,
@@ -441,8 +465,11 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             if (result.nodes.every(codeHost => codeHost.lastSyncAt !== syncTimes.get(codeHost.id))) {
                                 const repoCount = result.nodes.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
                                 onUserRepositoriesUpdate(repoCount)
+
                                 // push the user back to the repo list page
-                                history.push(routingPrefix + '/repositories')
+                                // location state is used here to prevent AwayPrompt from blocking
+                                history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
+
                                 // cancel the repeatUntil
                                 return true
                             }
@@ -456,7 +483,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     () => {},
                     error => setAffiliateRepoProblems(asError(error)),
                     () => {
-                        externalServiceSubscription.unsubscribe()
+                        externalServiceSubscription.current?.unsubscribe()
                     }
                 )
         },
@@ -471,6 +498,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             history,
             routingPrefix,
         ]
+    )
+
+    useEffect(
+        () => () => {
+            externalServiceSubscription.current?.unsubscribe()
+        },
+        []
     )
 
     const handleRadioSelect = (changeEvent: React.ChangeEvent<HTMLInputElement>): void => {
@@ -786,6 +820,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 )}
             </ul>
             {isErrorLike(otherPublicRepoError) && displayError(otherPublicRepoError)}
+            <AwayPrompt
+                header="Discard unsaved changes?"
+                message="Currently synced repositories will be unchanged"
+                button_ok_text="Discard"
+                when={didRepoSelectionChange}
+            />
             <Form className="mt-4 d-flex" onSubmit={submit}>
                 <LoaderButton
                     loading={isLoading(fetchingRepos)}
