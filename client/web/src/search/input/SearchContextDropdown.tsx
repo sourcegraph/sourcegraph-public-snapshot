@@ -145,9 +145,6 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
 
     const submitOnToggle = useCallback(
         (selectedSearchContextSpec: string): void => {
-            if (!submitSearchOnSearchContextChange) {
-                return
-            }
             submitSearch({
                 history,
                 query,
@@ -158,15 +155,18 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 versionContext,
             })
         },
-        [submitSearch, submitSearchOnSearchContextChange, caseSensitive, history, query, patternType, versionContext]
+        [submitSearch, caseSensitive, history, query, patternType, versionContext]
     )
 
     const selectSearchContextSpec = useCallback(
         (spec: string): void => {
-            submitOnToggle(spec)
-            setSelectedSearchContextSpec(spec)
+            if (submitSearchOnSearchContextChange) {
+                submitOnToggle(spec)
+            } else {
+                setSelectedSearchContextSpec(spec)
+            }
         },
-        [submitOnToggle, setSelectedSearchContextSpec]
+        [submitSearchOnSearchContextChange, submitOnToggle, setSelectedSearchContextSpec]
     )
 
     return (

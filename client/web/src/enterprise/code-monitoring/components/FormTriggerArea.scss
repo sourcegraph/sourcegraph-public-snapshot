@@ -46,6 +46,13 @@
             font-size: 0.65rem;
             margin-right: 0.5rem;
             color: var(--border-color);
+
+            &--unchecked {
+                // Make unchecked icon smaller so it doesn't look like a radio button.
+                // Scale instead of setting font size so that both checked and
+                // unchecked icons occupy the same space without having to do margin math.
+                transform: scale(0.55);
+            }
         }
 
         &-children {

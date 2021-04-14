@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
@@ -58,7 +59,17 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		ticker := time.NewTicker(qc.Interval)
 		defer ticker.Stop()
 
+		// Randomize start to a random time in the initial interval so our
+		// queries aren't all scheduled at the same time.
+		randomStart := time.Duration(int64(float64(qc.Interval) * rand.Float64()))
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(randomStart):
+		}
+
 		for {
+
 			m, err := c.search(ctx, qc.Query, qc.Name)
 			if err != nil {
 				log15.Error(err.Error())

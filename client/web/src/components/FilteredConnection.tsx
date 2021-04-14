@@ -148,10 +148,14 @@ interface ConnectionDisplayProps {
  *
  * @template N The node type of the GraphQL connection, such as GQL.IRepository (if the connection is GQL.IRepositoryConnection)
  * @template NP Props passed to `nodeComponent` in addition to `{ node: N }`
+ * @template HP Props passed to `headComponent` in addition to `{ nodes: N[]; totalCount?: number | null }`.
  */
-interface ConnectionPropsCommon<N, NP = {}> extends ConnectionDisplayProps {
+interface ConnectionPropsCommon<N, NP = {}, HP = {}> extends ConnectionDisplayProps {
     /** Header row to appear above all nodes. */
-    headComponent?: React.ComponentType<{ nodes: N[]; totalCount?: number | null }>
+    headComponent?: React.ComponentType<{ nodes: N[]; totalCount?: number | null } & HP>
+
+    /** Props to pass to each headComponent in addition to `{ nodes: N[]; totalCount?: number | null }`. */
+    headComponentProps?: HP
 
     /** Footer row to appear below all nodes. */
     footComponent?: React.ComponentType<{ nodes: N[] }>
@@ -191,8 +195,8 @@ interface ConnectionStateCommon {
     loading: boolean
 }
 
-interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}>
-    extends ConnectionPropsCommon<N, NP>,
+interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}, HP = {}>
+    extends ConnectionPropsCommon<N, NP, HP>,
         ConnectionStateCommon {
     /** The fetched connection data or an error (if an error occurred). */
     connection: C
@@ -202,7 +206,9 @@ interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}>
     onShowMore: () => void
 }
 
-class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureComponent<ConnectionNodesProps<C, N, NP>> {
+class ConnectionNodes<C extends Connection<N>, N, NP = {}, HP = {}> extends React.PureComponent<
+    ConnectionNodesProps<C, N, NP, HP>
+> {
     public render(): JSX.Element | null {
         const NodeComponent = this.props.nodeComponent
         const ListComponent = this.props.listComponent || 'ul'
@@ -290,6 +296,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
                             <HeadComponent
                                 nodes={this.props.connection.nodes}
                                 totalCount={this.props.connection.totalCount}
+                                {...this.props.headComponentProps!}
                             />
                         )}
                         {ListComponent === 'table' ? <tbody>{nodes}</tbody> : nodes}
@@ -385,9 +392,10 @@ interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
  * @template C The GraphQL connection type, such as GQL.IRepositoryConnection.
  * @template N The node type of the GraphQL connection, such as GQL.IRepository (if C is GQL.IRepositoryConnection)
  * @template NP Props passed to `nodeComponent` in addition to `{ node: N }`
+ * @template HP Props passed to `headComponent` in addition to `{ nodes: N[]; totalCount?: number | null }`.
  */
-interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
-    extends ConnectionPropsCommon<N, NP>,
+interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}, HP = {}>
+    extends ConnectionPropsCommon<N, NP, HP>,
         FilteredConnectionDisplayProps {
     /** Called to fetch the connection data to populate this component. */
     queryConnection: (args: FilteredConnectionQueryArguments) => Observable<C>
@@ -484,12 +492,15 @@ const QUERY_KEY = 'query'
  *
  * @template N The node type of the GraphQL connection, such as `GQL.IRepository` (if `C` is `GQL.IRepositoryConnection`)
  * @template NP Props passed to `nodeComponent` in addition to `{ node: N }`
+ * @template HP Props passed to `headComponent` in addition to `{ nodes: N[]; totalCount?: number | null }`.
  * @template C The GraphQL connection type, such as `GQL.IRepositoryConnection`.
  */
-export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection<N>> extends React.PureComponent<
-    FilteredConnectionProps<C, N, NP>,
-    FilteredConnectionState<C, N>
-> {
+export class FilteredConnection<
+    N,
+    NP = {},
+    HP = {},
+    C extends Connection<N> = Connection<N>
+> extends React.PureComponent<FilteredConnectionProps<C, N, NP, HP>, FilteredConnectionState<C, N>> {
     public static defaultProps: Partial<FilteredConnectionProps<any, any>> = {
         defaultFirst: 20,
         useURLQuery: true,
@@ -498,12 +509,12 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
     private queryInputChanges = new Subject<string>()
     private activeValuesChanges = new Subject<Map<string, FilterValue>>()
     private showMoreClicks = new Subject<void>()
-    private componentUpdates = new Subject<FilteredConnectionProps<C, N, NP>>()
+    private componentUpdates = new Subject<FilteredConnectionProps<C, N, NP, HP>>()
     private subscriptions = new Subscription()
 
     private filterRef: HTMLInputElement | null = null
 
-    constructor(props: FilteredConnectionProps<C, N, NP>) {
+    constructor(props: FilteredConnectionProps<C, N, NP, HP>) {
         super(props)
 
         const searchParameters = new URLSearchParams(this.props.location.search)
@@ -897,6 +908,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         listComponent={this.props.listComponent}
                         listClassName={this.props.listClassName}
                         headComponent={this.props.headComponent}
+                        headComponentProps={this.props.headComponentProps}
                         footComponent={this.props.footComponent}
                         showMoreClassName={this.props.showMoreClassName}
                         nodeComponent={this.props.nodeComponent}

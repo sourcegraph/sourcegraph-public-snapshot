@@ -1,6 +1,7 @@
 import { SearchPatternType } from '../../graphql-operations'
 
 import { filterTypeKeysWithAliases } from './filters'
+import { scanPredicate } from './predicates'
 import {
     Token,
     Whitespace,
@@ -277,6 +278,26 @@ export const scanBalancedLiteral: Scanner<Literal> = (input, start) => {
     }
 }
 
+/**
+ * Scan predicate syntax like repo:contains(file:README.md). Predicate scanning
+ * takes precedence over other value scanners like scanBalancedLiteral.
+ */
+export const scanPredicateValue = (input: string, start: number, field: Literal): ScanResult<Literal> => {
+    const result = scanPredicate(field.value, input.slice(start))
+    if (!result) {
+        return {
+            type: 'error',
+            expected: 'recognized predicate',
+            at: start,
+        }
+    }
+    const value = `${result.path.join('.')}${result.parameters}`
+    return {
+        type: 'success',
+        term: createLiteral(value, { start, end: start + value.length }),
+    }
+}
+
 const whitespace = scanToken(/\s+/, (_input, range) => ({
     type: 'whitespace',
     range,
@@ -312,9 +333,9 @@ const comment = scanToken(
     (input, { start, end }): Comment => ({ type: 'comment', value: input.slice(start, end), range: { start, end } })
 )
 
-const filterKeyword = scanToken(new RegExp(`-?(${filterTypeKeysWithAliases.join('|')})+(?=:)`, 'i'))
+const filterField = scanToken(new RegExp(`-?(${filterTypeKeysWithAliases.join('|')})+(?=:)`, 'i'))
 
-const filterDelimiter = character(':')
+const filterSeparator = character(':')
 
 const filterValue = oneOf<Literal>(quoted('"'), quoted("'"), scanBalancedLiteral, literal)
 
@@ -354,18 +375,23 @@ const followedBy = (scanToken: Scanner<Token>, scanNext: Scanner<Token>): Scanne
  * in a search query.
  */
 const filter: Scanner<Filter> = (input, start) => {
-    const scannedKeyword = filterKeyword(input, start)
-    if (scannedKeyword.type === 'error') {
-        return scannedKeyword
+    const scannedField = filterField(input, start)
+    if (scannedField.type === 'error') {
+        return scannedField
     }
-    const scannedDelimiter = filterDelimiter(input, scannedKeyword.term.range.end)
-    if (scannedDelimiter.type === 'error') {
-        return scannedDelimiter
+    const scannedSeparator = filterSeparator(input, scannedField.term.range.end)
+    if (scannedSeparator.type === 'error') {
+        return scannedSeparator
     }
-    const scannedValue =
-        input[scannedDelimiter.term.range.end] === undefined
-            ? undefined
-            : filterValue(input, scannedDelimiter.term.range.end)
+    let scannedValue: ScanResult<Literal> | undefined
+    if (input[scannedSeparator.term.range.end] === undefined) {
+        scannedValue = undefined
+    } else {
+        scannedValue = scanPredicateValue(input, scannedSeparator.term.range.end, scannedField.term)
+        if (scannedValue.type === 'error') {
+            scannedValue = filterValue(input, scannedSeparator.term.range.end)
+        }
+    }
     if (scannedValue && scannedValue.type === 'error') {
         return scannedValue
     }
@@ -373,10 +399,10 @@ const filter: Scanner<Filter> = (input, start) => {
         type: 'success',
         term: {
             type: 'filter',
-            range: { start, end: scannedValue ? scannedValue.term.range.end : scannedDelimiter.term.range.end },
-            field: scannedKeyword.term,
+            range: { start, end: scannedValue ? scannedValue.term.range.end : scannedSeparator.term.range.end },
+            field: scannedField.term,
             value: scannedValue?.term,
-            negated: scannedKeyword.term.value.startsWith('-'),
+            negated: scannedField.term.value.startsWith('-'),
         },
     }
 }
@@ -391,7 +417,7 @@ const createPattern = (value: string, range: CharacterRange, kind: PatternKind):
     },
 })
 
-const scanFilterOrKeyword = oneOf<Literal | Token[]>(filterKeyword, followedBy(keyword, whitespace))
+const scanFilterOrKeyword = oneOf<Literal | Token[]>(filterField, followedBy(keyword, whitespace))
 const keepScanning = (input: string, start: number): boolean => scanFilterOrKeyword(input, start).type !== 'success'
 
 /**
