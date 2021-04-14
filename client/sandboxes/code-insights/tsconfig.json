@@ -1,0 +1,28 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "baseUrl": ".",
+    "paths": {
+      "*": ["src/types/*", "../../shared/src/types/*", "*"],
+    },
+    "jsx": "react",
+    "rootDir": ".",
+    "outDir": "out",
+    "plugins": [
+      {
+        "name": "ts-graphql-plugin",
+        "schema": "../../../cmd/frontend/graphqlbackend/schema.graphql",
+        "tag": "gql",
+      },
+    ],
+  },
+  "references": [
+    { "path": "../../web" },
+    { "path": "../../shared" },
+    { "path": "../../branded" },
+    { "path": "../../../schema" },
+  ],
+  "include": ["**/*", ".*", "./src/**/*.json"],
+  "exclude": ["../../node_modules", "./node_modules", "./out", "src/end-to-end", "src/regression", "src/integration"],
+}
