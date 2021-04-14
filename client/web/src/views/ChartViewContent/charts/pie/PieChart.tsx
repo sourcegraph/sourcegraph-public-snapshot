@@ -12,6 +12,10 @@ import { distributePieArcs } from './distribute-pie-data'
 const DEFAULT_FILL_COLOR = 'var(--color-bg-3)'
 const DEFAULT_PADDING = { top: 20, right: 20, bottom: 20, left: 20 }
 
+/** Generate percent value for each part of pie chart */
+const getSubtitle = <Datum extends object>(arc: PieArcDatum<Datum>, total: number): string =>
+    `${((100 * arc.value) / total).toFixed(2)}%`
+
 export interface PieChartProps<Datum extends object> extends PieChartContent<Datum> {
     /** Chart width in px */
     width: number
@@ -97,20 +101,23 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
 
                         return (
                             <Group>
-                                {arcs.map(arc => (
+                                {arcs.map((arc, index) => (
                                     <MaybeLink
                                         key={getKey(arc)}
                                         to={getLink(arc)}
                                         className="pie-chart__link"
                                         role={getLink(arc) ? 'link' : 'graphics-dataunit'}
+                                        aria-label={`Element ${index + 1} of ${arcs.length}. Name: ${getKey(
+                                            arc
+                                        )}. Value: ${getSubtitle(arc, total)}.`}
                                         onClick={onDatumLinkClick}
                                     >
                                         <PieArc
                                             arc={arc}
                                             path={pie.path}
-                                            total={total}
                                             getColor={getFillColor}
-                                            getKey={getKey}
+                                            title={getKey(arc)}
+                                            subtitle={getSubtitle(arc, total)}
                                             getLink={getLink}
                                             onPointerMove={() => setHoveredArc(arc)}
                                         />

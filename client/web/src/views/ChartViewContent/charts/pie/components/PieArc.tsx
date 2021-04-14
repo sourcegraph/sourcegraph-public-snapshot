@@ -17,8 +17,10 @@ const TITLE_PROPS = { className: 'pie-chart__label-title' }
 const SUBTITLE_PROPS = { className: 'pie-chart__label-sub-title' }
 
 interface PieArcProps<Datum> {
-    /** Getter (accessor) to have a key (name) for current pie arc */
-    getKey: (d: PieArcDatum<Datum>) => string
+    /** Title for current pie arc */
+    title: string
+    /** Sub-title (percent value) for current pie arc*/
+    subtitle: string
     /** Getter (accessor) to have a color for current pie arc */
     getColor: (d: PieArcDatum<Datum>) => string
     /** Getter (accessor) to have a link for current pie arc */
@@ -27,8 +29,6 @@ interface PieArcProps<Datum> {
     path: ArcType<unknown, PieArcDatum<Datum>>
     /** Element of the Arc. The generic refers to the data type of an element in the input array. */
     arc: PieArcDatum<Datum>
-    /** Sum of all arc in pie chart to calculate percent for current part (arc) of chart. */
-    total: number
     /** Callback to handle pointer (mouse, touch) move over arc */
     onPointerMove?: PointerEventHandler
     /** Callback to handle pointer (mouse, touch) out over arc */
@@ -39,12 +39,10 @@ interface PieArcProps<Datum> {
  * Display particular arc and annotation for PieChart.
  * */
 export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
-    const { total, path, arc, getColor, getKey, getLink, onPointerMove, onPointerOut } = props
+    const { title, subtitle, path, arc, getColor, getLink, onPointerMove, onPointerOut } = props
 
     const pathValue = path(arc) ?? ''
-    const name = getKey(arc)
     const link = getLink(arc)
-    const labelSubtitle = `${((100 * arc.value) / total).toFixed(2)}%`
 
     // Math to put label and connection line in a middle of arc radius surface
     // Find the middle of the arc segment. Here we have polar system of coordinate.
@@ -72,7 +70,7 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
     })
 
     return (
-        <Group className={classes} onPointerMove={onPointerMove} onPointerOut={onPointerOut}>
+        <Group aria-hidden={true} className={classes} onPointerMove={onPointerMove} onPointerOut={onPointerOut}>
             <path className="pie-chart__arc-path" d={pathValue} fill={getColor(arc)} />
 
             <Annotation x={surfaceX} y={surfaceY} dx={labelX} dy={labelY}>
@@ -83,11 +81,11 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
                     backgroundPadding={LABEL_PADDING}
                     showBackground={true}
                     showAnchorLine={false}
-                    title={name}
+                    title={title}
                     subtitleDy={0}
                     titleProps={TITLE_PROPS}
                     subtitleProps={SUBTITLE_PROPS}
-                    subtitle={labelSubtitle}
+                    subtitle={subtitle}
                 />
             </Annotation>
 

@@ -28,7 +28,7 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
     return (
         <EventEmitterProvider>
             {/* eslint-disable-next-line react/forbid-dom-props */}
-            <div aria-label="Chart with legend" style={{ width, height }} className="line-chart">
+            <div aria-label="Line chart" style={{ width, height }} className="line-chart">
                 {/*
                     In case if we have a legend to render we have to have responsive container for chart
                     just to calculate right sizes for chart content = rootContainerSizes - legendSizes
@@ -37,7 +37,7 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
                     {({ width, height }) => <LineChartContent {...otherProps} width={width} height={height} />}
                 </ParentSize>
 
-                <ul aria-label="Chart legend" className="line-chart__legend">
+                <ul aria-hidden={true} className="line-chart__legend">
                     {props.series.map(line => (
                         <li key={line.dataKey.toString()} className="line-chart__legend-item">
                             <div

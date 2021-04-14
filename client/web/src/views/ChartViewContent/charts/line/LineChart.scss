@@ -24,7 +24,9 @@
         stroke-width: 1;
 
         &--vertical {
+            // Hide line axis visually and hide from voice over
             stroke-width: 0;
+            display: none;
         }
     }
 
@@ -46,7 +48,9 @@
 
         &--vertical {
             line {
+                // Hide line ticks visually and hide them from voice over
                 stroke-width: 0;
+                display: none;
             }
         }
     }

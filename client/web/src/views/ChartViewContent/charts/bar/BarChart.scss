@@ -45,7 +45,7 @@
     }
 
     &__bar-link:focus &__bar {
-        stroke: var(--web-content-link-color);
+        stroke: var(--focus-outline-color);
         stroke-width: 3;
     }
 
