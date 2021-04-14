@@ -113,6 +113,30 @@ jobs:
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
 
+  lsif-tsc-wildcard:
+    if: github.repository == 'sourcegraph/sourcegraph'
+    runs-on: ubuntu-latest
+    container: sourcegraph/lsif-node
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install build dependencies
+        run: apk --no-cache add python g++ make git
+      - name: Install dependencies
+        run: yarn --ignore-engines --ignore-scripts
+      - name: Generate
+        run: ./node_modules/.bin/gulp generate
+      - name: Generate LSIF data
+        working-directory: client/wildcard/
+        run: lsif-tsc -p .
+      - name: Upload LSIF data to .com
+        working-directory: client/wildcard/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+      - name: Upload LSIF data to dogfood
+        working-directory: client/wildcard/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        env:
+          SRC_ENDPOINT: https://k8s.sgdev.org/
+
   lsif-eslint-web:
     if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
@@ -187,6 +211,32 @@ jobs:
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
       - name: Upload LSIF data to dogfood
         working-directory: client/browser/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        env:
+          SRC_ENDPOINT: https://k8s.sgdev.org/
+
+  lsif-eslint-wildcard:
+    if: github.repository == 'sourcegraph/sourcegraph'
+    runs-on: ubuntu-latest
+    container: sourcegraph/lsif-node
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install build dependencies
+        run: apk --no-cache add python g++ make git
+      - name: Install dependencies
+        run: yarn --ignore-engines --ignore-scripts
+      - name: Generate
+        run: ./node_modules/.bin/gulp generate
+      - name: Build TypeScript
+        run: yarn run --ignore-engines build-ts
+      - name: Generate LSIF data
+        working-directory: client/wildcard/
+        run: yarn eslint -f lsif -o dump.lsif
+      - name: Upload LSIF data to .com
+        working-directory: client/wildcard/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+      - name: Upload LSIF data to dogfood
+        working-directory: client/wildcard/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
