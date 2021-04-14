@@ -3,25 +3,19 @@ import { useHistory } from 'react-router'
 import Dialog from '@reach/dialog'
 import * as H from 'history'
 
-interface AwayModalProps {
+type Fn = () => void
+interface Props {
     message: string
-    predicate: () => boolean
+    when: Fn | boolean
     header?: string
     button_ok_text?: string
     button_cancel_text?: string
 }
 
-// don't block programmatic navigation with "allow" state
-const ALLOW_NAVIGATION = 'allow'
+export const ALLOW_NAVIGATION = 'allow'
 
-export const UserAwayConfirmationModal: React.FunctionComponent<AwayModalProps> = props => {
-    const {
-        message,
-        predicate,
-        header = 'Navigate away?',
-        button_ok_text = 'OK',
-        button_cancel_text = 'Cancel',
-    } = props
+export const AwayPrompt: React.FunctionComponent<Props> = props => {
+    const { message, when, header = 'Navigate away?', button_ok_text = 'OK', button_cancel_text = 'Cancel' } = props
 
     const history = useHistory()
     const [pendingLocation, setPendingLocation] = useState<H.Location>()
@@ -43,7 +37,9 @@ export const UserAwayConfirmationModal: React.FunctionComponent<AwayModalProps> 
                 return unblock.current?.()
             }
 
-            if (predicate()) {
+            const shouldBlock = typeof when === 'boolean' ? when : when()
+
+            if (shouldBlock) {
                 setPendingLocation(location)
 
                 // prevent navigation for now - pop-up is shown
@@ -56,7 +52,7 @@ export const UserAwayConfirmationModal: React.FunctionComponent<AwayModalProps> 
         return () => {
             unblock.current?.()
         }
-    }, [history, predicate])
+    }, [history, when])
 
     return pendingLocation ? (
         <Dialog className="modal-body modal-body--top-third p-4 rounded border" aria-labelledby={header}>

@@ -25,7 +25,7 @@ import { queryUserPublicRepositories, setUserPublicRepositories } from '../../..
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { PageSelector } from '@sourcegraph/wildcard'
-import { UserAwayConfirmationModal } from './UserAwayConfirmationModal'
+import { AwayPrompt, ALLOW_NAVIGATION } from './AwayPrompt'
 
 interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
     userID: string
@@ -53,7 +53,6 @@ interface GitLabConfig {
 const PER_PAGE = 25
 const SIX_SECONDS = 6000
 const EIGHT_SECONDS = 8000
-const ALLOW_NAVIGATION = 'allow'
 
 // initial state constants
 const emptyRepos: Repo[] = []
@@ -398,6 +397,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
 
             if (!selectionState.radio) {
+                // location state is used here to prevent AwayPrompt from blocking
                 return history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
             }
 
@@ -458,8 +458,11 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             if (result.nodes.every(codeHost => codeHost.lastSyncAt !== syncTimes.get(codeHost.id))) {
                                 const repoCount = result.nodes.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
                                 onUserRepositoriesUpdate(repoCount)
+
                                 // push the user back to the repo list page
+                                // location state is used here to prevent AwayPrompt from blocking
                                 history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
+
                                 // cancel the repeatUntil
                                 return true
                             }
@@ -800,10 +803,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 )}
             </ul>
             {isErrorLike(otherPublicRepoError) && displayError(otherPublicRepoError)}
-            <UserAwayConfirmationModal
+            <AwayPrompt
                 header="Discard unsaved changes?"
                 message="Currently synced repositories will be unchanged"
-                predicate={didRepoSelectionChange}
+                when={didRepoSelectionChange}
             />
             <Form className="mt-4 d-flex" onSubmit={submit}>
                 <LoaderButton
