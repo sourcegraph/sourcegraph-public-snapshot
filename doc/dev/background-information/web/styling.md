@@ -58,7 +58,7 @@ In some cases these can be overridden by passing another class name for that ele
 
 #### CSS Modules
 
-To avoid naming conflicts, we use [CSS modules](https://github.com/css-modules/css-modules).
+[CSS modules](https://github.com/css-modules/css-modules) is the **preferred** way to avoid name conflicts in CSS classes.
 To use this approach, colocate a SCSS stylesheet with the React component and use the `.module.scss.` suffix in a file name.
 
 Example:
@@ -75,7 +75,7 @@ import styles from './PageSelector.module.scss'
 
 #### BEM convention
 
-Another approach used by older components is the [BEM convention](http://getbem.com/naming/) (Block - Element - Modifier).
+The older approach is the [BEM convention](http://getbem.com/naming/) (Block - Element - Modifier).
 The _block_ name is always the React component name, _elements_ and _modifiers_ are used as specified in BEM.
 A _block_ must not be referenced in any other React component than the one with the matching name.
 
