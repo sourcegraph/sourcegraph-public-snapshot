@@ -1,4 +1,8 @@
 .search-context-dropdown {
+    &__highlight-tour-step {
+        width: 17rem;
+    }
+
     &__button {
         color: var(--search-query-text-color);
         margin-left: 0.25rem;

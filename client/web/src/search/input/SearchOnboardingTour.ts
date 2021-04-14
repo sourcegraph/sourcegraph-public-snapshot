@@ -17,16 +17,16 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { QueryState } from '../helpers'
 
 import { MonacoQueryInputProps } from './MonacoQueryInput'
+import { defaultTourOptions } from './tour-options'
 
 export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
 export const HAS_COMPLETED_TOUR_KEY = 'has-completed-onboarding-tour'
 export const HAS_SEEN_TOUR_KEY = 'has-seen-onboarding-tour'
 
-const defaultTourOptions: Shepherd.Tour.TourOptions = {
-    useModalOverlay: false,
+const tourOptions: Shepherd.Tour.TourOptions = {
+    ...defaultTourOptions,
     defaultStepOptions: {
-        arrow: true,
-        classes: 'web-content tour-card card py-4 px-3 shadow-lg',
+        ...defaultTourOptions.defaultStepOptions,
         popperOptions: {
             // Removes default behavior of autofocusing steps
             modifiers: [
@@ -37,10 +37,9 @@ const defaultTourOptions: Shepherd.Tour.TourOptions = {
                 { name: 'offset', options: { offset: [0, 8] } },
             ],
         },
-        attachTo: { on: 'bottom' },
-        scrollTo: false,
     },
 }
+
 /**
  * generateStep creates the content for tooltips for the search tour. All steps that just contain
  * simple text should use this function to populate the step's `text` field.
@@ -226,7 +225,7 @@ const useTourWithSteps = ({
     inputLocation,
     setQueryState,
 }: Pick<UseSearchOnboardingTourOptions, 'inputLocation' | 'setQueryState'>): Tour => {
-    const tour = useMemo(() => new Shepherd.Tour(defaultTourOptions), [])
+    const tour = useMemo(() => new Shepherd.Tour(tourOptions), [])
     useEffect(() => {
         if (inputLocation === 'search-homepage') {
             tour.addSteps([
