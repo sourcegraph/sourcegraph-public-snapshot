@@ -11,7 +11,7 @@ export const numberFormatter = format('~s')
 // Number of month day + short name of month
 export const dateTickFormatter = timeFormat('%d %b')
 // Year + full name of month + full name of week day
-export const dateLabelFormatter = timeFormat('%y %B %A')
+export const dateLabelFormatter = timeFormat('%d %B %A')
 
 // Label props generators for x and y axes.
 // We need separate x and y generators because we need formatted value
