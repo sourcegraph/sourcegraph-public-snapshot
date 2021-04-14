@@ -100,27 +100,25 @@ export const Line: React.FunctionComponent<Line> = ({
                 style={lineStyle}
                 data-diff-marker={diffHunkTypeIndicators[kind]}
             >
-                <div
-                    className="diff-hunk--split__line--code d-inline-block"
-                    dangerouslySetInnerHTML={{ __html: html }}
-                    data-diff-marker={diffHunkTypeIndicators[kind]}
-                />
-                {decorations.map((decoration, index) => {
-                    const style = decorationAttachmentStyleForTheme(decoration.after, true)
-                    return (
-                        <React.Fragment key={index}>
-                            {' '}
-                            <LinkOrSpan
-                                className="d-inline-block"
-                                to={decoration.after.linkURL}
-                                data-tooltip={decoration.after.hoverMessage}
-                                style={style}
-                            >
-                                {decoration.after.contentText}
-                            </LinkOrSpan>
-                        </React.Fragment>
-                    )
-                })}
+                <div className="diff-hunk--split__line--code d-inline-block">
+                    <div dangerouslySetInnerHTML={{ __html: html }} data-diff-marker={diffHunkTypeIndicators[kind]} />
+                    {decorations.map((decoration, index) => {
+                        const style = decorationAttachmentStyleForTheme(decoration.after, true)
+                        return (
+                            <React.Fragment key={index}>
+                                {' '}
+                                <LinkOrSpan
+                                    className="d-inline-block"
+                                    to={decoration.after.linkURL}
+                                    data-tooltip={decoration.after.hoverMessage}
+                                    style={style}
+                                >
+                                    {decoration.after.contentText}
+                                </LinkOrSpan>
+                            </React.Fragment>
+                        )
+                    })}
+                </div>
             </td>
         </>
     )

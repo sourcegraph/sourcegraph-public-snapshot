@@ -40,7 +40,7 @@ $color-deletion: $oc-red-7;
         padding-left: 0.5rem;
         padding-right: 0.5rem;
         font-family: $code-font-family;
-        white-space: pre;
+        white-space: pre-wrap;
         font-size: 0.75rem;
         &::before {
             padding-right: 0.5rem;
