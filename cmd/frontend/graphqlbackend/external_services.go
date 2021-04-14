@@ -16,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -48,7 +47,11 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
 	namespaceUserID := int32(0)
 	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
-	allowUserExternalServices := searchrepos.CurrentUserAllowedExternalServices(ctx)
+	allowUserExternalServices, err := database.Users(r.db).CurrentUserAllowedExternalServices(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	if args.Input.Namespace != nil {
 		if allowUserExternalServices == conf.ExternalServiceModeDisabled {
 			return nil, errors.New("allow users to add external services is not enabled")

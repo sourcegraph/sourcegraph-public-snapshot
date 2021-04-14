@@ -549,7 +549,7 @@ Foreign-key constraints:
 Indexes:
     "external_service_sync_jobs_state_idx" btree (state)
 Foreign-key constraints:
-    "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id)
+    "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE
 
 ```
 
@@ -580,7 +580,7 @@ Foreign-key constraints:
     "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
-    TABLE "external_service_sync_jobs" CONSTRAINT "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id)
+    TABLE "external_service_sync_jobs" CONSTRAINT "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE
 
 ```
 

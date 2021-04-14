@@ -101,6 +101,7 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
             <FilteredConnection<
                 ListExternalServiceFields,
                 Omit<ExternalServiceNodeProps, 'node'>,
+                {},
                 ExternalServicesResult['externalServices']
             >
                 className="list-group list-group-flush mt-3"

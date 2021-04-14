@@ -96,6 +96,7 @@ func (s *IndexEnqueuer) queueIndexForCommit(ctx context.Context, repositoryID in
 		// Don't auto-index sg/sg; instead, we'll enqueue index jobs for all of the current commit's
 		// root go module dependencies. This is going to simulate what we _could_ do with dependency
 		// tracking for Go, though this particular implementations SUPER sketchy.
+		log15.Info("Enqueueing dependencies of sourcegraph/sourcegraph for auto-indexing", "commit", commit)
 		return s.enqueueSourcegraphGoRootDependencies(ctx, repositoryID, commit)
 	}
 

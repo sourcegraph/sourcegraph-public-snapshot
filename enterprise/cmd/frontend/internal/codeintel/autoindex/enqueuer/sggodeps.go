@@ -34,6 +34,7 @@ func (s *IndexEnqueuer) enqueueSourcegraphGoRootDependencies(ctx context.Context
 		}
 
 		traceLog := func(fields ...log.Field) {}
+		log15.Info("Queueing dependency for auto-indexing", "repositoryID", repositoryID, "commit", commit)
 		if err := s.queueIndexForCommit(ctx, repositoryID, commit, false, traceLog); err != nil {
 			return err
 		}
@@ -61,6 +62,7 @@ func (s *IndexEnqueuer) extractTargetFromGoMod(ctx context.Context, line string)
 	repo, err := database.Repos(s.dbStore.Handle().DB()).GetByName(ctx, repoName)
 	if err != nil {
 		if errcode.IsNotFound(err) {
+			log15.Warn("Unknown repository", "repoName", parts[0])
 			return 0, "", false, nil
 		}
 
@@ -69,6 +71,11 @@ func (s *IndexEnqueuer) extractTargetFromGoMod(ctx context.Context, line string)
 
 	commit, err := git.ResolveRevision(ctx, repoName, gitTagOrCommit, git.ResolveRevisionOptions{})
 	if err != nil {
+		if errcode.IsNotFound(err) {
+			log15.Warn("Unknown revision", "repoName", parts[0], "gitTagOrCommit", gitTagOrCommit)
+			return 0, "", false, nil
+		}
+
 		return 0, "", false, err
 	}
 

@@ -82,6 +82,18 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
 
     return (
         <>
+            <button
+                type="button"
+                className="btn btn-icon test-batches-expand-changeset d-none d-sm-block"
+                aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
+                onClick={toggleIsExpanded}
+            >
+                {isExpanded ? (
+                    <ChevronDownIcon className="icon-inline" aria-label="Close section" />
+                ) : (
+                    <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
+                )}
+            </button>
             {enableSelect && (
                 <div className="p-2">
                     <input
@@ -95,18 +107,6 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                     />
                 </div>
             )}
-            <button
-                type="button"
-                className="btn btn-icon test-batches-expand-changeset d-none d-sm-block"
-                aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
-                onClick={toggleIsExpanded}
-            >
-                {isExpanded ? (
-                    <ChevronDownIcon className="icon-inline" aria-label="Close section" />
-                ) : (
-                    <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
-                )}
-            </button>
             <ChangesetStatusCell
                 state={node.state}
                 className="p-2 align-self-stretch text-muted external-changeset-node__state d-block d-sm-flex"
