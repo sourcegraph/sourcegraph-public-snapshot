@@ -23,7 +23,7 @@ func CallbackHandler(config *oauth2.Config, success, failure http.Handler) http.
 }
 
 // defaultFailureHandler is copied from gologin.DefaultFailureHandler but has been
-// modified to return a 500 error instead so that we pick it up with Sentry
+// modified to return a 500 error instead so that we pick it up with Sentry.
 func defaultFailureHandler(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	err := gologin.ErrorFromContext(ctx)
