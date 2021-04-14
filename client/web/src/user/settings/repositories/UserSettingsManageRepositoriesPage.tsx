@@ -25,6 +25,7 @@ import {
     AffiliatedRepositoriesResult,
 } from '../../../graphql-operations'
 import { queryUserPublicRepositories, setUserPublicRepositories } from '../../../site-admin/backend'
+import { eventLogger } from '../../../tracking/eventLogger'
 import { UserRepositoriesUpdateProps } from '../../../util'
 
 import { CheckboxRepositoryNode } from './RepositoryNode'
@@ -366,6 +367,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const submit = useCallback(
         async (event: FormEvent<HTMLFormElement>): Promise<void> => {
             event.preventDefault()
+            eventLogger.log('UserManageRepositoriesSave')
 
             let publicRepos = publicRepoState.repos.split('\n').filter((row): boolean => row !== '')
             if (!publicRepoState.enabled) {
