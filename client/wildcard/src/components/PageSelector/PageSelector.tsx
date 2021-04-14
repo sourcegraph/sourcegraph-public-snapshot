@@ -5,9 +5,11 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React from 'react'
 import useResizeObserver from 'use-resize-observer'
 
-import { createAggregateError } from '../../../../shared/src/util/errors'
-import { useOffsetPagination } from '../../hooks'
-import { useDebounce } from '../../hooks/useDebounce'
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+
+import { useOffsetPagination, useDebounce } from '../../hooks'
+
+import styles from './PageSelector.module.scss'
 
 interface PageButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     active?: boolean
@@ -16,7 +18,7 @@ interface PageButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 const PageButton: React.FunctionComponent<PageButtonProps> = ({ children, active, ...props }) => (
     <button
         type="button"
-        className={classNames('btn', active ? 'btn-primary' : 'btn-link', 'mx-1', 'page-selector__button')}
+        className={classNames('btn', active ? 'btn-primary' : 'btn-link', 'mx-1', styles.button)}
         aria-current={active}
         {...props}
     >
@@ -77,7 +79,7 @@ export const PageSelector: React.FunctionComponent<PageSelectorProps> = props =>
 
     return (
         <nav>
-            <ul ref={ref} className={classNames('page-selector', className)}>
+            <ul ref={ref} className={classNames(styles.list, className)}>
                 {pages.map((page, index) => {
                     const key = page.type === 'page' ? page.content : `${page.type}${index}`
                     if (page.type === 'previous' || page.type === 'next') {

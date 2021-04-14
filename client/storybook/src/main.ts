@@ -3,13 +3,27 @@ import path from 'path'
 import { remove } from 'lodash'
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
-import { Configuration, DefinePlugin, ProgressPlugin } from 'webpack'
+import { Configuration, DefinePlugin, ProgressPlugin, RuleSetUseItem, RuleSetUse } from 'webpack'
 
 const rootPath = path.resolve(__dirname, '../../../')
 const monacoEditorPaths = [path.resolve(rootPath, 'node_modules', 'monaco-editor')]
 const storiesGlob = path.resolve(rootPath, 'client/**/*.story.tsx')
 
 const shouldMinify = !!process.env.MINIFY
+const isDevelopment = !shouldMinify
+
+const getCSSLoaders = (...loaders: RuleSetUseItem[]): RuleSetUse => [
+    ...loaders,
+    'postcss-loader',
+    {
+        loader: 'sass-loader',
+        options: {
+            sassOptions: {
+                includePaths: [path.resolve(rootPath, 'node_modules')],
+            },
+        },
+    },
+]
 
 const config = {
     stories: [storiesGlob],
@@ -106,23 +120,25 @@ const config = {
         // gets to storybook's style rules.
         config.module.rules.unshift({
             test: /\.(sass|scss)$/,
-            use: [
-                'to-string-loader',
-                'css-loader',
-                {
-                    loader: 'postcss-loader',
-                },
-                {
-                    loader: 'sass-loader',
-                    options: {
-                        sassOptions: {
-                            includePaths: [path.resolve(rootPath, 'node_modules')],
-                        },
+            // Make sure Storybook styles get handled by the Storybook config
+            exclude: [/\.module\.(sass|scss)$/, storybookDirectory],
+            use: getCSSLoaders('to-string-loader', 'css-loader'),
+        })
+
+        config.module?.rules.unshift({
+            test: /\.(sass|scss)$/,
+            include: /\.module\.(sass|scss)$/,
+            exclude: storybookDirectory,
+            use: getCSSLoaders('style-loader', {
+                loader: 'css-loader',
+                options: {
+                    sourceMap: isDevelopment,
+                    localsConvention: 'camelCase',
+                    modules: {
+                        localIdentName: '[name]__[local]_[hash:base64:5]',
                     },
                 },
-            ],
-            // Make sure Storybook styles get handled by the Storybook config
-            exclude: storybookDirectory,
+            }),
         })
 
         // Make sure Storybook style loaders are only evaluated for Storybook styles.

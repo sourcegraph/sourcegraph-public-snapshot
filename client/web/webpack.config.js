@@ -14,7 +14,9 @@ const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 logger.info('Using mode', mode)
 
-const devtool = mode === 'production' ? 'source-map' : 'cheap-module-eval-source-map'
+const isDevelopment = mode === 'development'
+const isProduction = mode === 'production'
+const devtool = isProduction ? 'source-map' : 'cheap-module-eval-source-map'
 
 const shouldAnalyze = process.env.WEBPACK_ANALYZER === '1'
 if (shouldAnalyze) {
@@ -38,12 +40,35 @@ const babelLoader = {
 
 const extensionHostWorker = /main\.worker\.ts$/
 
+/**
+ * Generates array of CSS loaders both for regular CSS and CSS modules.
+ * Useful to ensure that we use the same configuration for shared loaders: postcss-loader, sass-loader, etc.
+ *
+ * @param {import('webpack').RuleSetUseItem[]} loaders additional CSS loaders
+ * @returns {import('webpack').RuleSetUse} array of CSS loaders
+ */
+const getCSSLoaders = (...loaders) => [
+  // Use style-loader for local development as it is significantly faster.
+  isDevelopment ? 'style-loader' : MiniCssExtractPlugin.loader,
+  ...loaders,
+  'postcss-loader',
+  {
+    loader: 'sass-loader',
+    options: {
+      sassOptions: {
+        implementation: require('sass'),
+        includePaths: [nodeModulesPath],
+      },
+    },
+  },
+]
+
 /** @type {import('webpack').Configuration} */
 const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
   mode,
   optimization: {
-    minimize: mode === 'production',
+    minimize: isProduction,
     minimizer: [
       new TerserPlugin({
         sourceMap: true,
@@ -58,7 +83,7 @@ const config = {
     ],
     namedModules: false,
 
-    ...(mode === 'development'
+    ...(isDevelopment
       ? {
           removeAvailableModules: false,
           removeEmptyChunks: false,
@@ -145,7 +170,7 @@ const config = {
         include: path.join(__dirname, 'src'),
         exclude: extensionHostWorker,
         use: [
-          ...(mode === 'production' ? ['thread-loader'] : []),
+          ...(isProduction ? ['thread-loader'] : []),
           {
             loader: 'babel-loader',
             options: {
@@ -167,25 +192,27 @@ const config = {
       {
         test: /\.[jt]sx?$/,
         exclude: [path.join(__dirname, 'src'), extensionHostWorker],
-        use: [...(mode === 'production' ? ['thread-loader'] : []), babelLoader],
+        use: [...(isProduction ? ['thread-loader'] : []), babelLoader],
       },
       {
         test: /\.(sass|scss)$/,
-        use: [
-          // Use style-loader for local development as it is significantly faster.
-          mode === 'production' ? MiniCssExtractPlugin.loader : 'style-loader',
-          'css-loader',
-          'postcss-loader',
-          {
-            loader: 'sass-loader',
-            options: {
-              sassOptions: {
-                implementation: require('sass'),
-                includePaths: [nodeModulesPath],
-              },
+        // CSS Modules loaders are only applied when the file is explicitly named as CSS module stylesheet using the extension `.module.scss`.
+        include: /\.module\.(sass|scss)$/,
+        use: getCSSLoaders({
+          loader: 'css-loader',
+          options: {
+            sourceMap: isDevelopment,
+            localsConvention: 'camelCase',
+            modules: {
+              localIdentName: '[name]__[local]_[hash:base64:5]',
             },
           },
-        ],
+        }),
+      },
+      {
+        test: /\.(sass|scss)$/,
+        exclude: /\.module\.(sass|scss)$/,
+        use: getCSSLoaders('css-loader'),
       },
       {
         // CSS rule for monaco-editor and other external plain CSS (skip SASS and PostCSS for build perf)
