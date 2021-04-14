@@ -1,6 +1,7 @@
-import html from 'tagged-template-noop'
-import path from 'path'
 import fs from 'fs'
+import path from 'path'
+
+import html from 'tagged-template-noop'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import {
