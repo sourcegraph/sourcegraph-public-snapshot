@@ -51,10 +51,7 @@
         .view-lines {
             border: none;
         }
-        .monaco-editor-background {
-            width: 100% !important;
-            overflow: visible !important;
-        }
+
         .monaco-editor-hover-content {
             padding: 0.25rem;
             .status-bar {
@@ -89,11 +86,6 @@
                 opacity: 0.75;
             }
 
-            // Don't shrink label when hovering since the "Read more" icon is always shown
-            &.can-expand-details > .details-label {
-                width: auto;
-            }
-
             // Restore old look of "Read more" icon
             > .readMore {
                 position: static;
@@ -107,6 +99,11 @@
                     content: '\ea74'; // Info icon
                     font-size: 1rem;
                 }
+            }
+
+            // Don't shrink label when hovering since the "Read more" icon is always shown
+            &.can-expand-details > .details-label {
+                width: auto;
             }
         }
     }
