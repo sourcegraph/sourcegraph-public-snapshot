@@ -87,17 +87,14 @@ func main() {
 			}
 
 			for _, info := range r.Sources {
+				// build the clone url using the external service config instead of using
+				// the source CloneURL field
 				svc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
 				if err != nil {
 					return "", err
 				}
 
-				cloneURL, err := types.RepoCloneURL(svc.Kind, svc.Config, r)
-				if err != nil {
-					return "", err
-				}
-
-				return cloneURL, nil
+				return types.RepoCloneURL(svc.Kind, svc.Config, r)
 			}
 			return "", fmt.Errorf("no sources for %q", repo)
 		},
