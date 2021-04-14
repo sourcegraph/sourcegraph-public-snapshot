@@ -1,7 +1,7 @@
 import assert from 'assert'
 
 import { ExtensionsResult } from '@sourcegraph/shared/src/graphql-operations'
-import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
@@ -9,6 +9,7 @@ import { RegistryExtensionFieldsForList } from '../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
+import { percySnapshotWithVariants } from './utils'
 
 const typescriptRawManifest = JSON.stringify({
     activationEvents: ['*'],
@@ -206,7 +207,7 @@ describe('Extension Registry', () => {
         //  wait for initial set of extensions
         await driver.page.waitForSelector('[data-test="extension-toggle-sqs/word-count"]')
 
-        await percySnapshot(driver.page, 'Extension registry page')
+        await percySnapshotWithVariants(driver.page, 'Extension registry page')
     })
 
     describe('filtering by category', () => {

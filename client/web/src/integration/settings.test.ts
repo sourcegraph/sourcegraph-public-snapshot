@@ -1,12 +1,13 @@
 import assert from 'assert'
 
-import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { settingsID, testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
+import { percySnapshotWithVariants } from './utils'
 
 describe('Settings', () => {
     let driver: Driver
@@ -97,7 +98,7 @@ describe('Settings', () => {
                 'Expected save button to be disabled'
             )
 
-            await percySnapshot(driver.page, 'Settings page')
+            await percySnapshotWithVariants(driver.page, 'Settings page')
 
             // Replace with new settings
             const newSettings = '{ /* These are new settings */}'

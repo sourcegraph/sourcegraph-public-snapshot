@@ -7,7 +7,7 @@ import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionM
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { encodeURIPathComponent } from '@sourcegraph/shared/src/util/url'
 
@@ -22,6 +22,7 @@ import {
     createBlobContentResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
+import { percySnapshotWithVariants } from './utils'
 
 export const getCommonRepositoryGraphQlResults = (
     repositoryName: string,
@@ -386,7 +387,7 @@ describe('Repository', () => {
 
             // Assert that the directory listing displays properly
             await driver.page.waitForSelector('.test-tree-entries')
-            await percySnapshot(driver.page, 'Repository index page')
+            await percySnapshotWithVariants(driver.page, 'Repository index page')
 
             const numberOfFileEntries = await driver.page.evaluate(
                 () => document.querySelectorAll<HTMLButtonElement>('.test-tree-entry-file')?.length

@@ -1,9 +1,10 @@
-import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
+import { percySnapshotWithVariants } from './utils'
 
 describe('Code insights page', () => {
     let driver: Driver
@@ -118,6 +119,6 @@ describe('Code insights page', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
         await driver.page.waitForSelector('[data-testid="view-grid__view-title"]')
 
-        await percySnapshot(driver.page, 'Code insights page')
+        await percySnapshotWithVariants(driver.page, 'Code insights page')
     })
 })

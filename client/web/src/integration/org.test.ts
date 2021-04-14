@@ -1,7 +1,7 @@
 import assert from 'assert'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
@@ -11,6 +11,7 @@ import { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
+import { percySnapshotWithVariants } from './utils'
 
 describe('Organizations', () => {
     const testOrg = subtypeOf<OrganizationResult['organization']>()({
@@ -85,7 +86,7 @@ describe('Organizations', () => {
 
             await driver.page.waitForSelector('.test-create-org-button')
 
-            await percySnapshot(driver.page, 'Site admin org page')
+            await percySnapshotWithVariants(driver.page, 'Site admin org page')
 
             await driver.page.click('.test-create-org-button')
 

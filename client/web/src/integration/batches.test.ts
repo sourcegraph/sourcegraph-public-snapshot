@@ -8,7 +8,7 @@ import {
     ExternalServiceKind,
     SharedGraphQlOperations,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
@@ -30,6 +30,7 @@ import {
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
+import { percySnapshotWithVariants } from './utils'
 
 const batchChangeListNode: ListBatchChange = {
     id: 'batch123',
@@ -404,7 +405,7 @@ describe('Batches', () => {
                 testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-batch-change'
             )
 
-            await percySnapshot(driver.page, 'Batch Changes List')
+            await percySnapshotWithVariants(driver.page, 'Batch Changes List')
         })
 
         it('lists user batch changes', async () => {

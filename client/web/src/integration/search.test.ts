@@ -3,7 +3,7 @@ import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
-import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
@@ -18,6 +18,7 @@ import { SearchEvent } from '../search/stream'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createJsContext, siteGQLID, siteID } from './jscontext'
+import { percySnapshotWithVariants } from './utils'
 
 const searchResults = (): SearchResult => ({
     search: {
@@ -124,7 +125,7 @@ describe('Search', () => {
         })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
         await driver.page.waitForSelector('#monaco-query-input')
-        await percySnapshot(driver.page, 'Search results page')
+        await percySnapshotWithVariants(driver.page, 'Search results page')
     })
 
     describe('Search filters', () => {
@@ -505,7 +506,7 @@ describe('Search', () => {
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
 
-            await percySnapshot(driver.page, 'Streaming diff search syntax highlighting', {
+            await percySnapshotWithVariants(driver.page, 'Streaming diff search syntax highlighting', {
                 waitForCodeHighlighting: true,
             })
         })
@@ -556,7 +557,7 @@ describe('Search', () => {
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
 
-            await percySnapshot(driver.page, 'Streaming commit search syntax highlighting', {
+            await percySnapshotWithVariants(driver.page, 'Streaming commit search syntax highlighting', {
                 waitForCodeHighlighting: true,
             })
         })

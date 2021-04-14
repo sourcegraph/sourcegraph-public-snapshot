@@ -5,7 +5,7 @@ import type * as sourcegraph from 'sourcegraph'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { WebGraphQlOperations } from '../graphql-operations'
@@ -20,6 +20,7 @@ import {
     createBlobContentResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
+import { percySnapshotWithVariants } from './utils'
 
 describe('Blob viewer', () => {
     let driver: Driver
@@ -950,7 +951,7 @@ describe('Blob viewer', () => {
             await driver.page.waitForSelector('.test-tooltip-find-references', { visible: true })
             await driver.page.click('.test-tooltip-find-references')
 
-            await percySnapshot(driver.page, 'Blob Reference Panel', { waitForCodeHighlighting: true })
+            await percySnapshotWithVariants(driver.page, 'Blob Reference Panel', { waitForCodeHighlighting: true })
 
             // Click on the first reference
             await driver.page.waitForSelector('.test-file-match-children-item')

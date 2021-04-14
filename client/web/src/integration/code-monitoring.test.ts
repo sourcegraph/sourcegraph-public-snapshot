@@ -2,7 +2,7 @@ import assert from 'assert'
 
 import expect from 'expect'
 
-import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { SearchResult } from '../graphql-operations'
@@ -10,6 +10,7 @@ import { SearchResult } from '../graphql-operations'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
+import { percySnapshotWithVariants } from './utils'
 
 describe('Code monitoring', () => {
     let driver: Driver
@@ -97,7 +98,7 @@ describe('Code monitoring', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring/new')
             await driver.page.waitForSelector('.test-name-input')
 
-            await percySnapshot(driver.page, 'Code monitoring - Form')
+            await percySnapshotWithVariants(driver.page, 'Code monitoring - Form')
 
             await driver.page.type('.test-name-input', 'test monitor')
 
