@@ -116,7 +116,12 @@ const config = {
       ],
     }),
     new webpack.IgnorePlugin(/\.flow$/, /.*/),
-    new WebpackManifestPlugin({ writeToFileEmit: true, fileName: 'webpack.manifest.json' }),
+    new WebpackManifestPlugin({
+      writeToFileEmit: true,
+      fileName: 'webpack.manifest.json',
+      // Only output files that are required to run the application
+      filter: ({ isInitial }) => isInitial,
+    }),
     ...(shouldAnalyze ? [new BundleAnalyzerPlugin()] : []),
   ],
   resolve: {
