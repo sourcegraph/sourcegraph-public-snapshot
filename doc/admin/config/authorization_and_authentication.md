@@ -83,7 +83,7 @@ To configure SAML auth with GitLab permissions, you will need to first [configur
 
 For example, if the GitLab API returns:
 
-```
+```json
 "identities": [
    {"provider": "saml", "extern_uid": "email@domain.com"}
 ]
