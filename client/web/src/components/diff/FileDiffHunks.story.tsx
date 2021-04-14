@@ -1,9 +1,11 @@
-import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
+import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { FileDiffHunks } from './FileDiffHunks'
+
 import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
 import { WebStory } from '../WebStory'
+
+import { FileDiffHunks } from './FileDiffHunks'
 
 export const DEMO_HUNKS: FileDiffHunkFields[] = [
     {

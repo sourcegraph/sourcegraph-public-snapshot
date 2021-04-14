@@ -397,7 +397,12 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		opt.CursorValue = ""
 		opt.CursorDirection = "next"
 	}
-	if args.OrderBy != nil {
+	if args.OrderBy == nil {
+		opt.OrderBy = database.RepoListOrderBy{{
+			Field:      "name",
+			Descending: false,
+		}}
+	} else {
 		opt.OrderBy = database.RepoListOrderBy{{
 			Field:      toDBRepoListColumn(*args.OrderBy),
 			Descending: args.Descending,

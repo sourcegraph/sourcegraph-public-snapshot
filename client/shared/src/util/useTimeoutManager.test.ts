@@ -1,5 +1,6 @@
 import { renderHook } from '@testing-library/react-hooks'
 import * as sinon from 'sinon'
+
 import { useTimeoutManager } from './useTimeoutManager'
 
 describe('useTimeoutManager()', () => {

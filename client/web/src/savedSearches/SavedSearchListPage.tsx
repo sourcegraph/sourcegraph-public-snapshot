@@ -7,13 +7,15 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { NamespaceProps } from '../namespaces'
-import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
-import { PatternTypeProps } from '../search'
+
 import { ErrorAlert } from '../components/alerts'
+import { NamespaceProps } from '../namespaces'
+import { PatternTypeProps } from '../search'
+import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface NodeProps extends RouteComponentProps, Omit<PatternTypeProps, 'setPatternType'> {

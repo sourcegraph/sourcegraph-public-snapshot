@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
 type ListCodeHostsOpts struct {
@@ -81,27 +80,36 @@ func scanCodeHost(c *batches.CodeHost, sc scanner) error {
 	)
 }
 
-type GetExternalServiceIDOpts struct {
+type GetExternalServiceIDsOpts struct {
 	ExternalServiceType string
 	ExternalServiceID   string
 }
 
-func (s *Store) GetExternalServiceID(ctx context.Context, opts GetExternalServiceIDOpts) (int64, error) {
-	q := getExternalServiceIDQuery(opts)
+func (s *Store) GetExternalServiceIDs(ctx context.Context, opts GetExternalServiceIDsOpts) (ids []int64, err error) {
+	q := getExternalServiceIDsQuery(opts)
 
-	// Returns the first external service to match.
-	id, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
+	err = s.query(ctx, q, func(sc scanner) error {
+		var id int64
+		sc.Scan(&id)
+		if err := sc.Scan(&id); err != nil {
+			return err
+		}
+		ids = append(ids, id)
+		return nil
+	})
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	if !ok {
-		return 0, ErrNoResults
+
+	if len(ids) == 0 {
+		return ids, ErrNoResults
 	}
-	return int64(id), nil
+
+	return ids, nil
 }
 
-const getExternalServiceIDQueryFmtstr = `
--- source: enterprise/internal/batches/store/codehost.go:GetExternalServiceID
+const getExternalServiceIDsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/codehost.go:GetExternalServiceIDs
 SELECT
 	external_services.id
 FROM external_services
@@ -109,15 +117,14 @@ JOIN external_service_repos esr ON esr.external_service_id = external_services.i
 JOIN repo ON esr.repo_id = repo.id
 WHERE %s
 ORDER BY external_services.id ASC
-LIMIT 1
 `
 
-func getExternalServiceIDQuery(opts GetExternalServiceIDOpts) *sqlf.Query {
+func getExternalServiceIDsQuery(opts GetExternalServiceIDsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.external_service_type = %s", opts.ExternalServiceType),
 		sqlf.Sprintf("repo.external_service_id = %s", opts.ExternalServiceID),
 		sqlf.Sprintf("external_services.deleted_at IS NULL"),
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
-	return sqlf.Sprintf(getExternalServiceIDQueryFmtstr, sqlf.Join(preds, "AND"))
+	return sqlf.Sprintf(getExternalServiceIDsQueryFmtstr, sqlf.Join(preds, "AND"))
 }

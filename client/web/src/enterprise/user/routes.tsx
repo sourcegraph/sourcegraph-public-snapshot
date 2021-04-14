@@ -1,10 +1,11 @@
 import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
+
 import { userAreaRoutes } from '../../user/area/routes'
 import { UserAreaRoute, UserAreaRouteContext } from '../../user/area/UserArea'
-import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
 import { lazyComponent } from '../../util/lazyComponent'
 import { NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
+import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
 
 const NamespaceBatchChangesArea = lazyComponent<NamespaceBatchChangesAreaProps, 'NamespaceBatchChangesArea'>(
     () => import('../batches/global/GlobalBatchChangesArea'),

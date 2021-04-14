@@ -1,23 +1,26 @@
+import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
+
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { AuthenticatedUser } from '../../../auth'
 import { queryGraphQL } from '../../../backend/graphql'
+import { ErrorAlert } from '../../../components/alerts'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
+import { OrgAreaOrganizationFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { userURL } from '../../../user'
-import { removeUserFromOrganization } from '../../backend'
-import { InviteForm } from './InviteForm'
 import { OrgAreaPageProps } from '../../area/OrgArea'
-import { ErrorAlert } from '../../../components/alerts'
-import * as H from 'history'
-import { AuthenticatedUser } from '../../../auth'
-import { OrgAreaOrganizationFields } from '../../../graphql-operations'
+import { removeUserFromOrganization } from '../../backend'
+
+import { InviteForm } from './InviteForm'
 
 interface UserNodeProps {
     /** The user to display in this list item. */

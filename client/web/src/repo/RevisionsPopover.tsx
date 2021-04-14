@@ -4,6 +4,7 @@ import React, { useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
+
 import { CircleChevronLeftIcon } from '@sourcegraph/shared/src/components/icons'
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
@@ -11,10 +12,12 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../components/FilteredConnection'
 import { eventLogger } from '../tracking/eventLogger'
 import { replaceRevisionInURL } from '../util/url'
+
 import { GitReferenceNode, queryGitReferences } from './GitReference'
 
 const fetchRepositoryCommits = memoizeObservable(

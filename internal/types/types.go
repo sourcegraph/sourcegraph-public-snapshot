@@ -422,7 +422,7 @@ type GitserverRepo struct {
 	CloneStatus CloneStatus
 	// The last external service used to sync or clone this repo
 	LastExternalService int64
-	// The last error that occured or empty if the last action was successful
+	// The last error that occurred or empty if the last action was successful
 	LastError string
 	UpdatedAt time.Time
 }
@@ -441,6 +441,19 @@ type ExternalService struct {
 	NamespaceUserID int32
 	Unrestricted    bool // Whether access to repositories belong to this external service is unrestricted.
 	CloudDefault    bool // Whether this external service is our default public service on Cloud
+}
+
+// ExternalServiceSyncJob represents an sync job for an external service
+type ExternalServiceSyncJob struct {
+	ID                int64
+	State             string
+	FailureMessage    string
+	StartedAt         time.Time
+	FinishedAt        time.Time
+	ProcessAfter      time.Time
+	NumResets         int
+	ExternalServiceID int64
+	NumFailures       int
 }
 
 // URN returns a unique resource identifier of this external service,
@@ -1500,6 +1513,13 @@ type SearchContext struct {
 	Public          bool
 	NamespaceUserID int32 // if non-zero, the owner is this user. NamespaceUserID/NamespaceOrgID are mutually exclusive.
 	NamespaceOrgID  int32 // if non-zero, the owner is this organization. NamespaceUserID/NamespaceOrgID are mutually exclusive.
+
+	// We cache namespace names to avoid separate database lookups when constructing the search context spec
+
+	// NamespaceUserName is the name of the user if NamespaceUserID is present.
+	NamespaceUserName string
+	// NamespaceUserName is the name of the org if NamespaceOrgID is present.
+	NamespaceOrgName string
 }
 
 // SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions

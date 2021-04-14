@@ -25,6 +25,7 @@ Components that need to run in different environments (any UI shared between our
 A component may accept multiple class names for different elements of the component.
 An example of this is `<HoverOverlay/>`: see how [the different props it accepts](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4047521a92904054e782d341001d08d61945c86f/-/blob/shared/src/hover/HoverOverlay.tsx#L27-39) for its child components' class names (such as buttons) are passed in the [webapp](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4047521a92904054e782d341001d08d61945c86f/-/blob/web/src/components/shared.tsx#L35-44) and in [code host integrations](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4047521a92904054e782d341001d08d61945c86f/-/blob/browser/src/shared/code-hosts/shared/codeHost.tsx#L443:1).
 They are defined for each code host referencing CSS class names **that the code host defines in its own styles**:
+
 - for [GitHub](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b5af21f76dbb96ceece9f0908f56b3a7145ec4f7/-/blob/client/browser/src/shared/code-hosts/github/codeHost.ts#L353-361) using the class names from GitHub's [Primer design system](https://styleguide.github.com/primer/buttons/)
 - for [Gitlab](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b5af21f76dbb96ceece9f0908f56b3a7145ec4f7/-/blob/client/browser/src/shared/code-hosts/gitlab/codeHost.ts#L203-211) using class names from Gitlab's [Pajamas design system](https://design.gitlab.com/components/button)
 - for [Bitbucket](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b5af21f76dbb96ceece9f0908f56b3a7145ec4f7/-/blob/client/browser/src/shared/code-hosts/bitbucket/codeHost.tsx#L235-242) using the class names from [Atlassian UI](https://aui.atlassian.com/aui/7.10/docs/buttons.html)
@@ -55,7 +56,26 @@ A component may need styles that are common to all environments, like internal l
 We write those styles in SCSS stylesheets that are imported into the host environment.
 In some cases these can be overridden by passing another class name for that element.
 
-To avoid naming conflicts we structure these files using the [BEM convention](http://getbem.com/naming/) (Block - Element - Modifier).
+#### CSS Modules
+
+[CSS modules](https://github.com/css-modules/css-modules) is the **preferred** way to avoid name conflicts in CSS classes.
+To use this approach, colocate a SCSS stylesheet with the React component and use the `.module.scss.` suffix in a file name.
+
+Example:
+
+- `PageSelector.tsx` component would have a `PageSelector.module.scss` file next to it.
+- Use `yarn watch-generate` to generate a Typescript type declaration file: `PageSelector.module.scss.d.ts` in the same folder.
+- After that, it's possible to type-safely use class names from the CSS module.
+
+```tsx
+import styles from './PageSelector.module.scss'
+
+<button className={styles.pageSelectorButton} />
+```
+
+#### BEM convention
+
+The older approach is the [BEM convention](http://getbem.com/naming/) (Block - Element - Modifier).
 The _block_ name is always the React component name, _elements_ and _modifiers_ are used as specified in BEM.
 A _block_ must not be referenced in any other React component than the one with the matching name.
 
@@ -63,7 +83,7 @@ Example:
 
 ```scss
 .some-component {
-    // .. styles ...
+    // ... styles ...
 
     &__element {
         // ... styles ...

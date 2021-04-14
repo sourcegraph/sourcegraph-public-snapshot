@@ -3,7 +3,9 @@ import LinkIcon from 'mdi-react/LinkIcon'
 import * as React from 'react'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
+
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
+
 import { replaceRevisionInURL } from '../../util/url'
 import { RepoHeaderContext } from '../RepoHeader'
 

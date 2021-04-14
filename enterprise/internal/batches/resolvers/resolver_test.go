@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/batch-change-utils/overridable"
 
@@ -31,6 +32,8 @@ import (
 )
 
 func TestNullIDResilience(t *testing.T) {
+	mockRSAKeygen(t)
+
 	db := dbtesting.GetDB(t)
 	sr := New(store.New(db))
 
@@ -827,6 +830,8 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		t.Skip()
 	}
 
+	mockRSAKeygen(t)
+
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 
@@ -842,6 +847,14 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	var validationErr error
+	service.Mocks.ValidateAuthenticator = func(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
+		return validationErr
+	}
+	t.Cleanup(func() {
+		service.Mocks.Reset()
+	})
+
 	t.Run("User credential", func(t *testing.T) {
 		input := map[string]interface{}{
 			"user":                graphqlbackend.MarshalUserID(userID),
@@ -855,6 +868,22 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		}
 		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
+		t.Run("validation fails", func(t *testing.T) {
+			// Throw correct error when credential failed validation
+			validationErr = errors.New("fake validation failed")
+			t.Cleanup(func() {
+				validationErr = nil
+			})
+			errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
+
+			if len(errs) != 1 {
+				t.Fatalf("expected single errors, but got none")
+			}
+			if have, want := errs[0].Extensions["code"], "ErrVerifyCredentialFailed"; have != want {
+				t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+			}
+		})
+
 		// First time it should work, because no credential exists
 		apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCredential)
 
@@ -863,12 +892,12 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		}
 
 		// Second time it should fail
-		errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
 
-		if len(errors) != 1 {
+		if len(errs) != 1 {
 			t.Fatalf("expected single errors, but got none")
 		}
-		if have, want := errors[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
+		if have, want := errs[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
 			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
 		}
 	})
@@ -884,6 +913,22 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 			CreateBatchChangesCredential apitest.BatchChangesCredential
 		}
 		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+		t.Run("validation fails", func(t *testing.T) {
+			// Throw correct error when credential failed validation
+			validationErr = errors.New("fake validation failed")
+			t.Cleanup(func() {
+				validationErr = nil
+			})
+			errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
+
+			if len(errs) != 1 {
+				t.Fatalf("expected single errors, but got none")
+			}
+			if have, want := errs[0].Extensions["code"], "ErrVerifyCredentialFailed"; have != want {
+				t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+			}
+		})
 
 		// First time it should work, because no site credential exists
 		apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCredential)
@@ -914,6 +959,8 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	mockRSAKeygen(t)
 
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)

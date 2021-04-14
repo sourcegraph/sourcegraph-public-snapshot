@@ -1,9 +1,11 @@
-import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
-import React from 'react'
-import { BatchChangeCloseAlert } from './BatchChangeCloseAlert'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { useState } from '@storybook/addons'
+import { storiesOf } from '@storybook/react'
+import React from 'react'
+
+import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
+import { BatchChangeCloseAlert } from './BatchChangeCloseAlert'
 
 const { add } = storiesOf('web/batches/close/BatchChangeCloseAlert', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)

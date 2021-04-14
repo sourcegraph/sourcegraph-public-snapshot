@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import React from 'react'
+
 import { Link } from '@sourcegraph/shared/src/components/Link'
 
 export const SearchPageFooter: React.FunctionComponent<{ className?: string }> = ({ className }) => (

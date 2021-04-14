@@ -2,11 +2,12 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 
 import { renderHook, act } from '@testing-library/react-hooks'
-import { useObservable, useEventObservable } from './useObservable'
-import { Observable, Subscriber } from 'rxjs'
-import * as sinon from 'sinon'
-import { map } from 'rxjs/operators'
 import { useMemo, useCallback } from 'react'
+import { Observable, Subscriber } from 'rxjs'
+import { map } from 'rxjs/operators'
+import * as sinon from 'sinon'
+
+import { useObservable, useEventObservable } from './useObservable'
 
 describe('useObservable()', () => {
     it('should return the latest value of the given Observable', () => {

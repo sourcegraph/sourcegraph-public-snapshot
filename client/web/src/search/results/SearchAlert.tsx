@@ -1,7 +1,9 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+
 import { SearchPatternType } from '../../graphql-operations'
 import { AggregateStreamingSearchResults } from '../stream'
 

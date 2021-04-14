@@ -1,10 +1,12 @@
-import renderer from 'react-test-renderer'
-import React from 'react'
-import { of } from 'rxjs'
-import { noop } from 'lodash'
-import { PlainQueryInput } from './LazyMonacoQueryInput'
 import { createMemoryHistory } from 'history'
+import { noop } from 'lodash'
+import React from 'react'
+import renderer from 'react-test-renderer'
+import { of } from 'rxjs'
+
 import { SearchPatternType } from '../../graphql-operations'
+
+import { PlainQueryInput } from './LazyMonacoQueryInput'
 
 describe('PlainQueryInput', () => {
     const history = createMemoryHistory()
@@ -28,6 +30,7 @@ describe('PlainQueryInput', () => {
                         settingsCascade={{ subjects: [], final: {} }}
                         copyQueryButton={false}
                         showSearchContext={false}
+                        showSearchContextManagement={false}
                         selectedSearchContextSpec=""
                         setSelectedSearchContextSpec={noop}
                         defaultSearchContextSpec=""
@@ -70,6 +73,7 @@ describe('PlainQueryInput', () => {
                         settingsCascade={{ subjects: [], final: {} }}
                         copyQueryButton={false}
                         showSearchContext={false}
+                        showSearchContextManagement={false}
                         selectedSearchContextSpec=""
                         setSelectedSearchContextSpec={noop}
                         defaultSearchContextSpec=""

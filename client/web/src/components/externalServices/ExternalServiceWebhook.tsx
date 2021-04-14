@@ -1,6 +1,7 @@
 import React from 'react'
-import { CopyableText } from '../CopyableText'
+
 import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
+import { CopyableText } from '../CopyableText'
 
 interface Props {
     externalService: Pick<ExternalServiceFields, 'kind' | 'webhookURL'>

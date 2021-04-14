@@ -4,6 +4,7 @@ import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React from 'react'
+
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 

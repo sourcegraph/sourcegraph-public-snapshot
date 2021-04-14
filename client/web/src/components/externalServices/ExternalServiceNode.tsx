@@ -1,13 +1,16 @@
 import * as H from 'history'
-import React, { useCallback, useState } from 'react'
-import { deleteExternalService } from './backend'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { refreshSiteFlags } from '../../site/backend'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import { ErrorAlert } from '../alerts'
+import SettingsIcon from 'mdi-react/SettingsIcon'
+import React, { useCallback, useState } from 'react'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { ListExternalServiceFields } from '../../graphql-operations'
+import { refreshSiteFlags } from '../../site/backend'
+import { ErrorAlert } from '../alerts'
+
+import { deleteExternalService } from './backend'
 
 export interface ExternalServiceNodeProps {
     node: ListExternalServiceFields

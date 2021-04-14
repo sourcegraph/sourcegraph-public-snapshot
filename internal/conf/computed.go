@@ -293,12 +293,12 @@ func SearchSymbolsParallelism() int {
 }
 
 func BitbucketServerPluginPerm() bool {
-	val := Get().ExperimentalFeatures.BitbucketServerFastPerm
+	val := ExperimentalFeatures().BitbucketServerFastPerm
 	return val == "enabled"
 }
 
 func EventLoggingEnabled() bool {
-	val := Get().ExperimentalFeatures.EventLogging
+	val := ExperimentalFeatures().EventLogging
 	if val == "" {
 		return true
 	}
@@ -306,7 +306,7 @@ func EventLoggingEnabled() bool {
 }
 
 func StructuralSearchEnabled() bool {
-	val := Get().ExperimentalFeatures.StructuralSearch
+	val := ExperimentalFeatures().StructuralSearch
 	if val == "" {
 		return true
 	}
@@ -314,11 +314,11 @@ func StructuralSearchEnabled() bool {
 }
 
 func AndOrQueryEnabled() bool {
-	e := Get().ExperimentalFeatures
-	if e == nil || e.AndOrQuery == "" {
+	val := ExperimentalFeatures().AndOrQuery
+	if val == "" {
 		return true
 	}
-	return e.AndOrQuery == "enabled"
+	return val == "enabled"
 }
 
 func ExperimentalFeatures() schema.ExperimentalFeatures {
@@ -360,8 +360,9 @@ const (
 	ExternalServiceModeAll      ExternalServiceMode = 2
 )
 
-// ExternalServiceUserMode returns the mode describing if users are allowed to add external services
-// for public and private repositories.
+// ExternalServiceUserMode returns the site level mode describing if users are
+// allowed to add external services for public and private repositories. It does
+// NOT take into account permissions granted to the current user.
 func ExternalServiceUserMode() ExternalServiceMode {
 	switch Get().ExternalServiceUserMode {
 	case "public":
@@ -382,4 +383,20 @@ func GitMaxCodehostRequestsPerSecond() int {
 		return -1
 	}
 	return *val
+}
+
+func UserReposMaxPerUser() int {
+	v := Get().UserReposMaxPerUser
+	if v == 0 {
+		return 2000
+	}
+	return v
+}
+
+func UserReposMaxPerSite() int {
+	v := Get().UserReposMaxPerSite
+	if v == 0 {
+		return 200000
+	}
+	return v
 }

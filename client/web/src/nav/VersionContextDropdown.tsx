@@ -1,5 +1,3 @@
-import * as H from 'history'
-import React, { useCallback } from 'react'
 import {
     ListboxOption,
     ListboxInput,
@@ -9,15 +7,19 @@ import {
     ListboxGroupLabel,
 } from '@reach/listbox'
 import classNames from 'classnames'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
-import FlagVariantIcon from 'mdi-react/FlagVariantIcon'
+import * as H from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
+import FlagVariantIcon from 'mdi-react/FlagVariantIcon'
+import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
+import React, { useCallback } from 'react'
+
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+
 import { VersionContext } from '../schema/site.schema'
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../search'
 import { submitSearch } from '../search/helpers'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 const HAS_DISMISSED_INFO_KEY = 'sg-has-dismissed-version-context-info'
 

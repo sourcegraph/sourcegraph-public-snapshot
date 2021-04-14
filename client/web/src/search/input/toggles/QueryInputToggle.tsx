@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useRef, useMemo } from 'react'
+import classNames from 'classnames'
 import * as H from 'history'
+import React, { useCallback, useEffect, useRef, useMemo } from 'react'
 import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { PatternTypeProps, CaseSensitivityProps } from '../..'
-import classNames from 'classnames'
 import { Key } from 'ts-key-enum'
+
+import { PatternTypeProps, CaseSensitivityProps } from '../..'
 
 export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
     history: H.History

@@ -1,6 +1,8 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
+
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+
 import { ChangesetSelectRow } from './ChangesetSelectRow'
 
 const { add } = storiesOf('web/batches/ChangesetSelectRow', module).addDecorator(story => (
@@ -8,7 +10,6 @@ const { add } = storiesOf('web/batches/ChangesetSelectRow', module).addDecorator
 ))
 
 const onSubmit = (): void => {}
-const deselectAll = (): void => {}
 
 add('all states', () => (
     <EnterpriseWebStory>
@@ -17,7 +18,6 @@ add('all states', () => (
                 <ChangesetSelectRow
                     {...props}
                     onSubmit={onSubmit}
-                    deselectAll={deselectAll}
                     selected={new Set(['id-1', 'id-2'])}
                     isSubmitting={false}
                 />
@@ -25,7 +25,6 @@ add('all states', () => (
                 <ChangesetSelectRow
                     {...props}
                     onSubmit={onSubmit}
-                    deselectAll={deselectAll}
                     selected={new Set(['id-1', 'id-2'])}
                     isSubmitting={true}
                 />
@@ -33,7 +32,6 @@ add('all states', () => (
                 <ChangesetSelectRow
                     {...props}
                     onSubmit={onSubmit}
-                    deselectAll={deselectAll}
                     selected={new Set(['id-1', 'id-2'])}
                     isSubmitting={new Error('something went wrong with the backend :(')}
                 />

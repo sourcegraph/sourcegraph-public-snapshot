@@ -1,4 +1,5 @@
 import { range } from 'lodash'
+
 import { MatchItem } from './FileMatch'
 import { calculateMatchGroups, mergeContext } from './FileMatchContext'
 

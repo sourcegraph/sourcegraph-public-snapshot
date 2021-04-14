@@ -1,7 +1,9 @@
 import { storiesOf } from '@storybook/react'
-import { ExtensionBanner } from './ExtensionBanner'
 import React from 'react'
+
 import { WebStory } from '../components/WebStory'
+
+import { ExtensionBanner } from './ExtensionBanner'
 
 const { add } = storiesOf('web/Extensions', module).addDecorator(story => <div className="p-4">{story()}</div>)
 

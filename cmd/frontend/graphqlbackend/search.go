@@ -447,10 +447,15 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		return nil, nil
 	}
 
-	p, err := r.getPatternInfo(&getPatternInfoOptions{forceFileSearch: true})
+	q, err := query.ToBasicQuery(r.Query)
 	if err != nil {
 		return nil, err
 	}
+	if !query.IsPatternAtom(q) {
+		// Not an atomic pattern, can't guarantee it will behave well.
+		return nil, nil
+	}
+	p := search.ToTextPatternInfo(q, search.Batch, query.PatternToFile)
 
 	args := search.TextParameters{
 		PatternInfo:     p,

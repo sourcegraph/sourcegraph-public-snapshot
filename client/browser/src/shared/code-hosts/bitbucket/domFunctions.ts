@@ -1,4 +1,5 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
+
 import { DOMFunctions } from '../shared/codeViews'
 
 const getSingleFileLineElementFromLineNumber = (codeView: HTMLElement, line: number): HTMLElement => {

@@ -1,8 +1,10 @@
 import { storiesOf } from '@storybook/react'
-import React from 'react'
-import { BatchSpecInfoByline } from './BatchSpecInfoByline'
 import { subDays } from 'date-fns'
+import React from 'react'
+
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
+import { BatchSpecInfoByline } from './BatchSpecInfoByline'
 
 const { add } = storiesOf('web/batches/preview/BatchSpecInfoByline', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>

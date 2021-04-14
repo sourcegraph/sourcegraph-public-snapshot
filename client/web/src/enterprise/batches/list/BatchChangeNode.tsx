@@ -1,9 +1,11 @@
-import React from 'react'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import classNames from 'classnames'
 import * as H from 'history'
+import React from 'react'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+
 import { Timestamp } from '../../../components/time/Timestamp'
 import { ListBatchChange } from '../../../graphql-operations'
 import {

@@ -87,6 +87,7 @@ body,
 @import './search/SearchConsolePage';
 @import './repogroups/RepogroupPage';
 @import './search/queryBuilder/index';
+@import './searchContexts/index';
 @import './search/results/SearchResults';
 @import './settings/SettingsFile';
 @import './site-admin/init/SiteInitPage';
@@ -120,6 +121,7 @@ body,
 @import './user/UserAvatar';
 @import './user/area/UserArea';
 @import './org/OrgsArea';
+@import 'insights/pages/InsightsPage';
 @import './components/Badge';
 @import './components/Collapsible';
 @import './components/DismissibleAlert';
@@ -138,7 +140,6 @@ body,
 @import '../../branded/src/components/LoaderInput';
 
 @import '../../shared/src/index';
-@import '../../wildcard/src/index';
 
 :root {
     // Skip Reach UI styles. See https://reacttraining.com/reach-ui/styling/.

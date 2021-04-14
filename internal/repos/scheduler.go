@@ -12,6 +12,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
@@ -354,11 +356,12 @@ func (s *updateScheduler) UpdateOnce(id api.RepoID, name api.RepoName) {
 }
 
 // DebugDump returns the state of the update scheduler for debugging.
-func (s *updateScheduler) DebugDump() interface{} {
+func (s *updateScheduler) DebugDump(ctx context.Context, db dbutil.DB) interface{} {
 	data := struct {
 		Name        string
 		UpdateQueue []*repoUpdate
 		Schedule    []*scheduledRepoUpdate
+		SyncJobs    []*types.ExternalServiceSyncJob
 	}{
 		Name: "repos",
 	}
@@ -399,6 +402,12 @@ func (s *updateScheduler) DebugDump() interface{} {
 		// won't change concurrently after we release the lock.
 		update := heap.Pop(&updateQueue).(*repoUpdate)
 		data.UpdateQueue = append(data.UpdateQueue, update)
+	}
+
+	var err error
+	data.SyncJobs, err = database.ExternalServices(db).GetSyncJobs(ctx)
+	if err != nil {
+		log15.Warn("Getting external service sync jobs foe debug page", "error", err)
 	}
 
 	return &data

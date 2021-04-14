@@ -1,6 +1,9 @@
-import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { take, toArray } from 'rxjs/operators'
+
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
+
 import { wrapRemoteObservable } from '../client/api/common'
+
 import { integrationTestContext } from './testHelpers'
 
 describe('content (integration)', () => {

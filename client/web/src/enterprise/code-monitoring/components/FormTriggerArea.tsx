@@ -1,12 +1,18 @@
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import classNames from 'classnames'
-import React, { useState, useCallback, useMemo } from 'react'
+import CheckIcon from 'mdi-react/CheckIcon'
+import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
+import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
+import { Tooltip } from 'reactstrap'
+
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
-import { SearchPatternType } from '../../../graphql-operations'
+import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { resolveFilter, validateFilter, FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
+
+import { SearchPatternType } from '../../../graphql-operations'
 
 interface TriggerAreaProps {
     query: string
@@ -17,6 +23,67 @@ interface TriggerAreaProps {
 }
 
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
+
+const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?: string; className?: string }> = ({
+    checked,
+    children,
+    hint,
+    className,
+}) => {
+    const tooltipTarget = useRef<HTMLElement | null>(null)
+    const [tooltipOpen, setTooltipOpen] = useState(false)
+    const toggleTooltip = useCallback(() => setTooltipOpen(isOpen => !isOpen), [])
+    const showTooltip = useCallback(() => setTooltipOpen(true), [])
+    const hideTooltip = useCallback(() => setTooltipOpen(false), [])
+
+    return (
+        <label
+            className={classNames('d-flex align-items-center mb-1 text-muted', className)}
+            onMouseOver={showTooltip}
+            onMouseOut={hideTooltip}
+            onFocus={showTooltip}
+            onBlur={hideTooltip}
+        >
+            <input className="sr-only" type="checkbox" disabled={true} checked={checked} />
+
+            {checked ? (
+                <CheckIcon className="trigger-area__checklist-checkbox icon-inline text-success" aria-hidden={true} />
+            ) : (
+                <RadioboxBlankIcon
+                    className="trigger-area__checklist-checkbox trigger-area__checklist-checkbox--unchecked icon-inline"
+                    aria-hidden={true}
+                />
+            )}
+
+            <small className={checked ? 'trigger-area__checklist-children--faded' : ''}>{children}</small>
+
+            {hint && (
+                <>
+                    <span className="sr-only"> {hint}</span>
+
+                    <span ref={tooltipTarget} className="d-flex">
+                        <HelpCircleIcon
+                            className={classNames('trigger-area__checklist-hint', 'icon-inline', {
+                                'trigger-area__checklist-hint--faded': checked,
+                            })}
+                            aria-hidden={true}
+                        />
+                    </span>
+
+                    <Tooltip
+                        target={tooltipTarget}
+                        toggle={toggleTooltip}
+                        isOpen={tooltipOpen}
+                        placement="bottom"
+                        innerClassName="trigger-area__checklist-tooltip"
+                    >
+                        {hint}
+                    </Tooltip>
+                </>
+            )}
+        </label>
+    )
+}
 
 export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     query,
@@ -31,6 +98,11 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
         setShowQueryForm(show => !show)
     }, [])
 
+    const [isValidQuery, setIsValidQuery] = useState(false)
+    const [hasTypeDiffOrCommitFilter, setHasTypeDiffOrCommitFilter] = useState(false)
+    const [hasRepoFilter, setHasRepoFilter] = useState(false)
+    const [hasPatternTypeFilter, setHasPatternTypeFilter] = useState(false)
+
     const [queryState, nextQueryFieldChange, queryInputReference, overrideState] = useInputValidation(
         useMemo(
             () => ({
@@ -38,32 +110,57 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                 synchronousValidators: [
                     (value: string) => {
                         const tokens = scanSearchQuery(value)
+
+                        const isValidQuery = !!value && tokens.type === 'success'
+                        setIsValidQuery(isValidQuery)
+
+                        let hasTypeDiffOrCommitFilter = false
+                        let hasRepoFilter = false
+                        let hasPatternTypeFilter = false
+
                         if (tokens.type === 'success') {
                             const filters = tokens.term.filter(token => token.type === 'filter')
-                            const hasTypeDiffOrCommitFilter = filters.some(
+                            hasTypeDiffOrCommitFilter = filters.some(
                                 filter =>
                                     filter.type === 'filter' &&
                                     resolveFilter(filter.field.value)?.type === FilterType.type &&
                                     filter.value &&
                                     isDiffOrCommit(filter.value.value)
                             )
-                            if (!hasTypeDiffOrCommitFilter) {
-                                return 'Code monitors require queries to specify either `type:commit` or `type:diff`.'
-                            }
-                            const hasPattern = tokens.term.some(term => term.type === 'pattern')
-                            const hasPatternTypeFilter = filters.some(
+
+                            hasRepoFilter = filters.some(
+                                filter =>
+                                    filter.type === 'filter' &&
+                                    resolveFilter(filter.field.value)?.type === FilterType.repo &&
+                                    filter.value
+                            )
+
+                            hasPatternTypeFilter = filters.some(
                                 filter =>
                                     filter.type === 'filter' &&
                                     resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
                                     filter.value &&
                                     validateFilter(filter.field.value, filter.value)
                             )
-                            if (!hasPatternTypeFilter && hasPattern) {
-                                return 'Code monitors require queries to specify a `patternType:` of literal or regexp.'
-                            }
-                            return undefined
                         }
-                        return 'Failed to parse query'
+
+                        setHasTypeDiffOrCommitFilter(hasTypeDiffOrCommitFilter)
+                        setHasRepoFilter(hasRepoFilter)
+                        setHasPatternTypeFilter(hasPatternTypeFilter)
+
+                        if (!isValidQuery) {
+                            return 'Failed to parse query'
+                        }
+
+                        if (!hasTypeDiffOrCommitFilter) {
+                            return 'Code monitors require queries to specify either `type:commit` or `type:diff`.'
+                        }
+
+                        if (!hasRepoFilter) {
+                            return 'Code monitors require queries to specify a `repo:` filter.'
+                        }
+
+                        return undefined
                     },
                 ],
             }),
@@ -76,9 +173,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
             event.preventDefault()
             setShowQueryForm(false)
             setTriggerCompleted(true)
-            onQueryChange(queryState.value)
+            onQueryChange(`${queryState.value}${hasPatternTypeFilter ? '' : ' patternType:literal'}`)
         },
-        [setTriggerCompleted, setShowQueryForm, onQueryChange, queryState]
+        [setTriggerCompleted, setShowQueryForm, onQueryChange, queryState, hasPatternTypeFilter]
     )
 
     const cancelForm: React.FormEventHandler = useCallback(
@@ -106,30 +203,42 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 <input
                                     type="text"
                                     className={classNames(
-                                        'trigger-area__query-input-field form-control my-2 test-trigger-input',
-                                        deriveInputClassName(queryState)
+                                        'trigger-area__query-input-field form-control mt-2 mb-3 test-trigger-input text-monospace',
+                                        `test-${deriveInputClassName(queryState)}`
                                     )}
                                     onChange={nextQueryFieldChange}
                                     value={queryState.value}
-                                    required={true}
                                     autoFocus={true}
                                     ref={queryInputReference}
                                     spellCheck={false}
                                     data-testid="trigger-query-edit"
                                 />
-                                {queryState.kind === 'INVALID' && (
-                                    <small className="trigger-area__query-input-error-message invalid-feedback test-trigger-error">
-                                        {queryState.reason}
-                                    </small>
-                                )}
-                                {(queryState.kind === 'NOT_VALIDATED' ||
-                                    queryState.kind === 'VALID' ||
-                                    queryState.kind === 'LOADING') && (
-                                    <small className="text-muted mt-1">
-                                        Code monitors only support <code className="bg-code">type:diff</code> and{' '}
-                                        <code className="bg-code">type:commit</code> search queries.
-                                    </small>
-                                )}
+
+                                <ul className="trigger-area__checklist">
+                                    <li>
+                                        <ValidQueryChecklistItem
+                                            className="test-type-checkbox"
+                                            checked={hasTypeDiffOrCommitFilter}
+                                            hint="type:diff targets code present in new commits, while type:commit targets commit messages"
+                                        >
+                                            Contains a <code>type:diff</code> or <code>type:commit</code> filter
+                                        </ValidQueryChecklistItem>
+                                    </li>
+                                    <li>
+                                        <ValidQueryChecklistItem
+                                            className="test-repo-checkbox"
+                                            checked={hasRepoFilter}
+                                            hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
+                                        >
+                                            Contains a <code>repo:</code> filter
+                                        </ValidQueryChecklistItem>
+                                    </li>
+                                    <li>
+                                        <ValidQueryChecklistItem checked={isValidQuery} className="test-valid-checkbox">
+                                            Is a valid search query
+                                        </ValidQueryChecklistItem>
+                                    </li>
+                                </ul>
                             </div>
                             <div className="trigger-area__query-input-preview-link p-2 my-2">
                                 <Link

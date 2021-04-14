@@ -1,17 +1,20 @@
+import { cleanup, getAllByTestId, getByTestId, render, waitFor } from '@testing-library/react'
 import { createBrowserHistory } from 'history'
 import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { cleanup, getAllByTestId, getByTestId, render, waitFor } from '@testing-library/react'
 import { noop, NEVER } from 'rxjs'
 import sinon from 'sinon'
+
 import {
     extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     NOOP_SETTINGS_CASCADE,
     OBSERVABLE_SEARCH_REQUEST,
 } from '@sourcegraph/shared/src/util/searchTestHelpers'
-import { SearchResults, SearchResultsProps } from './SearchResults'
+
 import { SearchPatternType } from '../../graphql-operations'
+
+import { SearchResults, SearchResultsProps } from './SearchResults'
 
 describe('SearchResults', () => {
     afterAll(cleanup)

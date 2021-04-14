@@ -3,6 +3,7 @@ package api
 import (
 	"flag"
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -31,6 +32,7 @@ func TestSearchProgress(t *testing.T) {
 			Missing:             nil,
 			Cloning:             nil,
 			LimitHit:            false,
+			DisplayLimit:        math.MaxInt32,
 		},
 		"all": {
 			MatchCount:          1,
@@ -43,6 +45,7 @@ func TestSearchProgress(t *testing.T) {
 			Cloning:             []Namer{repo{"cloning-1"}},
 			LimitHit:            true,
 			SuggestedLimit:      1000,
+			DisplayLimit:        math.MaxInt32,
 		},
 		"traced": {
 			Trace: "abcd",

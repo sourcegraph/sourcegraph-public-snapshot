@@ -1,18 +1,20 @@
-import React, { useState, useCallback, useMemo } from 'react'
 import * as H from 'history'
-import { ExternalChangesetFileDiffsFields, GitRefSpecFields, Scalars } from '../../../../graphql-operations'
-import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
-import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../backend'
+import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+import React, { useState, useCallback, useMemo } from 'react'
+import { map, tap } from 'rxjs/operators'
+
+import { Hoverifier } from '@sourcegraph/codeintellify'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
-import { map, tap } from 'rxjs/operators'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Hoverifier } from '@sourcegraph/codeintellify'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
+import { ExternalChangesetFileDiffsFields, GitRefSpecFields, Scalars } from '../../../../graphql-operations'
+import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../backend'
 
 export interface ChangesetFileDiffProps extends ThemeProps {
     changesetID: Scalars['ID']

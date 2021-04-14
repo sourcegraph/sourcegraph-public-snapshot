@@ -1,9 +1,11 @@
 import * as H from 'history'
 import EyeIcon from 'mdi-react/EyeIcon'
 import * as React from 'react'
+
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { RenderMode } from '@sourcegraph/shared/src/util/url'
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
+
 import { RepoHeaderContext } from '../../RepoHeader'
 
 interface Props extends RepoHeaderContext {

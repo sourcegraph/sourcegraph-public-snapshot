@@ -1,4 +1,5 @@
 import LockIcon from 'mdi-react/LockIcon'
+
 import { ExtensionAreaHeaderNavItem } from '../../../extensions/extension/ExtensionAreaHeader'
 import { extensionAreaHeaderNavItems } from '../../../extensions/extension/extensionAreaHeaderNavItems'
 

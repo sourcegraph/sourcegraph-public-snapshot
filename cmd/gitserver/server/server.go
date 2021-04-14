@@ -258,8 +258,17 @@ func (s *Server) Handler() http.Handler {
 		if maxRequestsPerSecond := conf.GitMaxCodehostRequestsPerSecond(); maxRequestsPerSecond == -1 {
 			// As a special case, -1 means no limiting
 			s.rpsLimiter.SetLimit(rate.Inf)
+			s.rpsLimiter.SetBurst(10)
+		} else if maxRequestsPerSecond == 0 {
+			// A limiter with zero limit but a non-zero burst is not rejecting all events
+			// because the bucket is initially full with N tokens and refilled N tokens
+			// every second, where N is the burst size. See
+			// https://github.com/golang/go/issues/18763 for details.
+			s.rpsLimiter.SetLimit(0)
+			s.rpsLimiter.SetBurst(0)
 		} else {
 			s.rpsLimiter.SetLimit(rate.Limit(maxRequestsPerSecond))
+			s.rpsLimiter.SetBurst(10)
 		}
 	}
 	conf.Watch(func() {
@@ -1575,6 +1584,9 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 			s.repoUpdateLocksMu.Unlock()
 
 			err = s.doBackgroundRepoUpdate(repo)
+			if err != nil {
+				log15.Error("performing background repo update", "error", err)
+			}
 			ctx, cancel := s.serverContext()
 			defer cancel()
 			s.setLastErrorNonFatal(ctx, repo, err)
@@ -1623,22 +1635,16 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 		return errors.Wrap(err, "get VCS syncer")
 	}
 
-	cmd, configRemoteOpts, err := syncer.FetchCommand(ctx, remoteURL)
-	if err != nil {
-		return errors.Wrap(err, "get fetch command")
-	}
-
-	dir.Set(cmd)
-
 	// drop temporary pack files after a fetch. this function won't
 	// return until this fetch has completed or definitely-failed,
 	// either way they can't still be in use. we don't care exactly
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
-	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
-		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
-		return errors.Wrap(err, "failed to update")
+	err = syncer.Fetch(ctx, remoteURL, dir)
+	if err != nil {
+		log15.Error("Failed to fetch", "repo", repo, "error", err)
+		return errors.Wrap(err, "failed to fetch")
 	}
 
 	removeBadRefs(ctx, dir)

@@ -182,7 +182,9 @@ func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions, 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
 func reposToAdd(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos []*search.RepositoryRevisions) ([]*search.RepositoryRevisions, error) {
-	matchingIDs := make(map[api.RepoID]bool)
+	// matchCounts will contain the count of repohasfile patterns that matched.
+	// For negations, we will explicitly set this to -1 if it matches.
+	matchCounts := make(map[api.RepoID]int)
 	if len(args.PatternInfo.FilePatternsReposMustInclude) > 0 {
 		for _, pattern := range args.PatternInfo.FilePatternsReposMustInclude {
 			// The high FileMatchLimit here is to make sure we get all the repo matches we can. Setting it to
@@ -202,14 +204,22 @@ func reposToAdd(ctx context.Context, db dbutil.DB, args *search.TextParameters, 
 			if err != nil {
 				return nil, err
 			}
+
+			// deduplicate repo results
+			matchedIDs := make(map[api.RepoID]struct{})
 			for _, m := range matches {
-				matchingIDs[m.Repo.ID] = true
+				matchedIDs[m.Repo.ID] = struct{}{}
+			}
+
+			// increment the count for all seen repos
+			for id := range matchedIDs {
+				matchCounts[id] += 1
 			}
 		}
 	} else {
 		// Default to including all the repos, then excluding some of them below.
 		for _, r := range repos {
-			matchingIDs[r.Repo.ID] = true
+			matchCounts[r.Repo.ID] = 0
 		}
 	}
 
@@ -231,14 +241,14 @@ func reposToAdd(ctx context.Context, db dbutil.DB, args *search.TextParameters, 
 				return nil, err
 			}
 			for _, m := range matches {
-				matchingIDs[m.Repo.ID] = false
+				matchCounts[m.Repo.ID] = -1
 			}
 		}
 	}
 
 	var rsta []*search.RepositoryRevisions
 	for _, r := range repos {
-		if matchingIDs[r.Repo.ID] {
+		if count, ok := matchCounts[r.Repo.ID]; ok && count == len(args.PatternInfo.FilePatternsReposMustInclude) {
 			rsta = append(rsta, r)
 		}
 	}

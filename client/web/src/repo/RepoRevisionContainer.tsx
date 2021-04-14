@@ -1,9 +1,11 @@
+import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { UncontrolledPopover } from 'reactstrap'
+
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
@@ -13,11 +15,22 @@ import {
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { HeroPage } from '../components/HeroPage'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+
+import { AuthenticatedUser } from '../auth'
+import { ErrorMessage } from '../components/alerts'
+import { BreadcrumbSetters } from '../components/Breadcrumbs'
+import { HeroPage } from '../components/HeroPage'
+import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
+import { RepositoryFields } from '../graphql-operations'
+import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../search'
 import { RouteDescriptor } from '../util/contributions'
+
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { ResolvedRevision } from './backend'
@@ -26,18 +39,8 @@ import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
-import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../search'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
-import { ErrorMessage } from '../components/alerts'
-import * as H from 'history'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
-import { BreadcrumbSetters } from '../components/Breadcrumbs'
-import { AuthenticatedUser } from '../auth'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { RepositoryFields } from '../graphql-operations'
-import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 
 /** Props passed to sub-routes of {@link RepoRevisionContainer}. */
 export interface RepoRevisionContainerContext

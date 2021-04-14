@@ -1215,6 +1215,48 @@ A 0 value indicates that no migration is in progress.
 
 <br />
 
+### Postgres: Object size and bloat
+
+#### postgres: pg_table_size
+
+This panel indicates table size.
+
+Total size of this table
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### postgres: pg_table_bloat_ratio
+
+This panel indicates table bloat ratio.
+
+Estimated bloat ratio of this table (high bloat = high overhead)
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### postgres: pg_index_size
+
+This panel indicates index size.
+
+Total size of this index
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### postgres: pg_index_bloat_ratio
+
+This panel indicates index bloat ratio.
+
+Estimated bloat ratio of this index (high bloat = high overhead)
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
 ### Postgres: Provisioning indicators (not available on server)
 
 #### postgres: provisioning_container_cpu_usage_long_term

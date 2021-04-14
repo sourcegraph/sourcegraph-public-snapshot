@@ -40,5 +40,19 @@ func (s *Store) Hover(ctx context.Context, bundleID int, path string, line, char
 
 const hoverDocumentQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/hover.go:Hover
-SELECT dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path = %s LIMIT 1
+SELECT
+	dump_id,
+	path,
+	data,
+	ranges,
+	hovers,
+	NULL AS monikers,
+	NULL AS packages,
+	NULL AS diagnostics
+FROM
+	lsif_data_documents
+WHERE
+	dump_id = %s AND
+	path = %s
+LIMIT 1
 `

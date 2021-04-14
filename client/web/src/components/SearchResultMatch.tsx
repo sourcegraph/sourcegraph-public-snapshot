@@ -1,4 +1,4 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import * as H from 'history'
 import { isEqual, range } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
@@ -6,13 +6,15 @@ import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
 import sanitizeHtml from 'sanitize-html'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { highlightNode } from '@sourcegraph/shared/src/util/dom'
-import { highlightCode } from '../search/backend'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import * as H from 'history'
+import { highlightNode } from '@sourcegraph/shared/src/util/dom'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+
+import { highlightCode } from '../search/backend'
 
 interface SearchResultMatchProps extends ThemeProps {
     item: GQL.ISearchResultMatch

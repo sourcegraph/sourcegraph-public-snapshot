@@ -120,7 +120,7 @@ func makePayload(size int) string {
 func testInsert(t testing.TB, expectedValues [][]interface{}) {
 	ctx := context.Background()
 
-	inserter := NewBatchInserter(ctx, dbconn.Global, "batch_inserter_test", "col1", "col2", "col3", "col4", "col5")
+	inserter := NewInserter(ctx, dbconn.Global, "batch_inserter_test", "col1", "col2", "col3", "col4", "col5")
 	for _, values := range expectedValues {
 		if err := inserter.Insert(ctx, values...); err != nil {
 			t.Fatalf("unexpected error inserting values: %s", err)

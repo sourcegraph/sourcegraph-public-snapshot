@@ -3,6 +3,7 @@ package dbstore
 import (
 	"context"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
@@ -21,12 +22,59 @@ func (s *Store) UpdatePackages(ctx context.Context, dumpID int, packages []seman
 		return nil
 	}
 
-	inserter := batch.NewBatchInserter(ctx, s.Store.Handle().DB(), "lsif_packages", "dump_id", "scheme", "name", "version")
-	for _, p := range packages {
-		if err := inserter.Insert(ctx, dumpID, p.Scheme, p.Name, p.Version); err != nil {
-			return err
-		}
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Create temporary table symmetric to lsif_packages without the dump id
+	if err := tx.Exec(ctx, sqlf.Sprintf(updatePackagesTemporaryTableQuery)); err != nil {
+		return err
 	}
 
-	return inserter.Flush(ctx)
+	// Bulk insert all the unique column values into the temporary table
+	if err := batch.InsertValues(
+		ctx,
+		tx.Handle().DB(),
+		"t_lsif_packages",
+		[]string{"scheme", "name", "version"},
+		loadPackagesChannel(packages),
+	); err != nil {
+		return err
+	}
+
+	// Insert the values from the temporary table into the target table. We select a
+	// parameterized dump id here since it is the same for all rows in this operation.
+	return tx.Exec(ctx, sqlf.Sprintf(updatePackagesInsertQuery, dumpID))
+}
+
+const updatePackagesTemporaryTableQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/packages.go:UpdatePackages
+CREATE TEMPORARY TABLE t_lsif_packages (
+	scheme text NOT NULL,
+	name text NOT NULL,
+	version text NOT NULL
+) ON COMMIT DROP
+`
+
+const updatePackagesInsertQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/packages.go:UpdatePackages
+INSERT INTO lsif_packages (dump_id, scheme, name, version)
+SELECT %s, source.scheme, source.name, source.version
+FROM t_lsif_packages source
+`
+
+func loadPackagesChannel(packages []semantic.Package) <-chan []interface{} {
+	ch := make(chan []interface{}, len(packages))
+
+	go func() {
+		defer close(ch)
+
+		for _, p := range packages {
+			ch <- []interface{}{p.Scheme, p.Name, p.Version}
+		}
+	}()
+
+	return ch
 }

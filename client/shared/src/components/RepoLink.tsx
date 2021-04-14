@@ -1,6 +1,7 @@
 import * as React from 'react'
-import { displayRepoName, splitPath } from './RepoFileLink'
+
 import { Link } from './Link'
+import { displayRepoName, splitPath } from './RepoFileLink'
 
 interface Props {
     repoName: string

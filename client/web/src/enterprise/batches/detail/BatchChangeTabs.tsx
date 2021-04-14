@@ -1,23 +1,26 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import classNames from 'classnames'
 import * as H from 'history'
+import ArchiveIcon from 'mdi-react/ArchiveIcon'
+import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
+import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
+import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
+import React, { useState, useCallback, useEffect } from 'react'
+
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
 import { BatchChangeFields } from '../../../graphql-operations'
+
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
 } from './backend'
-import classNames from 'classnames'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
-import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import { BatchSpecTab } from './BatchSpecTab'
+import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
 
 type SelectedTab = 'changesets' | 'chart' | 'spec' | 'archived'
 

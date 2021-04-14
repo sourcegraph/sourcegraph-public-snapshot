@@ -49,6 +49,16 @@ func LowercaseFieldNames(nodes []Node) []Node {
 	})
 }
 
+// SubstituteCountAll replaces count:all with count:999999.
+func SubstituteCountAll(nodes []Node) []Node {
+	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
+		if field == FieldCount && strings.ToLower(value) == "all" {
+			return Parameter{Field: field, Value: "999999", Negated: negated, Annotation: annotation}
+		}
+		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+	})
+}
+
 var ErrBadGlobPattern = errors.New("syntax error in glob pattern")
 
 // translateCharacterClass translates character classes like [a-zA-Z].
@@ -465,6 +475,8 @@ func substituteOrForRegexp(nodes []Node) []Node {
 	return newNode
 }
 
+// fuzzyRegexp interpolates patterns with .*? regular expressions and
+// concatenates them. Invariant: len(patterns) > 0.
 func fuzzyRegexp(patterns []Pattern) Pattern {
 	if len(patterns) == 1 {
 		return patterns[0]
@@ -483,6 +495,8 @@ func fuzzyRegexp(patterns []Pattern) Pattern {
 	}
 }
 
+// fuzzyRegexp interpolates patterns with spaces and concatenates them.
+// Invariant: len(patterns) > 0.
 func space(patterns []Pattern) Pattern {
 	if len(patterns) == 1 {
 		return patterns[0]
@@ -491,8 +505,12 @@ func space(patterns []Pattern) Pattern {
 	for _, p := range patterns {
 		values = append(values, p.Value)
 	}
+
 	return Pattern{
-		Value: strings.Join(values, " "),
+		// Preserve labels based on first pattern. Required to
+		// distinguish quoted, literal, structural pattern labels.
+		Annotation: patterns[0].Annotation,
+		Value:      strings.Join(values, " "),
 	}
 }
 
@@ -742,10 +760,26 @@ func identity(nodes []Node) ([]Node, error) {
 }
 
 // Converts a parse tree to a basic query by attempting to obtain a valid partition.
-func ToBasicQuery(nodes []Node) (*Basic, error) {
+func ToBasicQuery(nodes []Node) (Basic, error) {
 	parameters, pattern, err := PartitionSearchPattern(nodes)
 	if err != nil {
-		return nil, err
+		return Basic{}, err
 	}
-	return &Basic{Parameters: parameters, Pattern: pattern}, nil
+	return Basic{Parameters: parameters, Pattern: pattern}, nil
+}
+
+// Identity is the identity transformer for basic queries.
+func Identity(b Basic) Basic {
+	return b
+}
+
+// PatternToFile transforms a search query such that `file:` is prefixed to the
+// pattern. This transformation is used for generating suggestions. Succeeds
+// only when the pattern expression is an atom.
+func PatternToFile(b Basic) Basic {
+	if p, ok := b.Pattern.(Pattern); ok && !p.Negated {
+		b.Parameters = append(b.Parameters, Parameter{Field: "file", Value: p.Value})
+		return b
+	}
+	return b
 }

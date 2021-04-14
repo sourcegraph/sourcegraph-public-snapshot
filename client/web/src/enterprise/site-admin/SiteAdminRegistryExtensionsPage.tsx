@@ -1,13 +1,17 @@
+import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
+
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { queryGraphQL } from '../../backend/graphql'
+import { ErrorAlert } from '../../components/alerts'
 import { FilteredConnection, FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -15,8 +19,6 @@ import { registryExtensionFragment } from '../../extensions/extension/ExtensionA
 import { eventLogger } from '../../tracking/eventLogger'
 import { deleteRegistryExtensionWithConfirmation } from '../extensions/registry/backend'
 import { RegistryExtensionSourceBadge } from '../extensions/registry/RegistryExtensionSourceBadge'
-import { ErrorAlert } from '../../components/alerts'
-import * as H from 'history'
 
 interface RegistryExtensionNodeSiteAdminProps {
     node: GQL.IRegistryExtension

@@ -97,6 +97,9 @@ type UserSource interface {
 	// the given authenticator, provided that authenticator type is supported by
 	// the code host.
 	WithAuthenticator(auth.Authenticator) (Source, error)
+	// ValidateAuthenticator validates the currently set authenticator is usable.
+	// Returns an error, when validating the Authenticator yielded an error.
+	ValidateAuthenticator(ctx context.Context) error
 }
 
 // A DraftChangesetSource can create draft changesets and undraft them.

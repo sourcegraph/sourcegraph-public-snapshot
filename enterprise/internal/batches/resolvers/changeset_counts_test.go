@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
@@ -118,6 +119,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	defer mockState.Unmock()
 
 	cstore := store.New(db)
+	sourcer := sources.NewSourcer(repos.NewSourcer(nil), cstore)
 
 	spec := &batches.BatchSpec{
 		NamespaceUserID: userID,
@@ -164,7 +166,11 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := syncer.SyncChangeset(ctx, cstore, githubSrc, githubRepo, c); err != nil {
+		src, err := sourcer.FromRepoSource(githubSrc)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := syncer.SyncChangeset(ctx, cstore, src, githubRepo, c); err != nil {
 			t.Fatal(err)
 		}
 	}

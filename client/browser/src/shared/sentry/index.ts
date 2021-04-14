@@ -1,6 +1,7 @@
 /* eslint rxjs/no-ignored-subscription: warn */
 import * as Sentry from '@sentry/browser'
 import { once } from 'lodash'
+
 import { isInPage } from '../context'
 import { DEFAULT_SOURCEGRAPH_URL, getExtensionVersion, observeSourcegraphURL } from '../util/context'
 import { observeOptionFlag } from '../util/optionFlags'

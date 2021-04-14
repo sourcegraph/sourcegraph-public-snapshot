@@ -1,11 +1,14 @@
 import * as H from 'history'
 import React from 'react'
+
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
 import { ChangesetApplyPreviewFields } from '../../../../graphql-operations'
+import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
+
+import { queryChangesetSpecFileDiffs } from './backend'
 import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNode'
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { queryChangesetSpecFileDiffs } from './backend'
-import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 
 export interface ChangesetApplyPreviewNodeProps extends ThemeProps {
     node: ChangesetApplyPreviewFields

@@ -1,4 +1,5 @@
 import React, { FunctionComponent } from 'react'
+
 import { LsifIndexFields } from '../../../graphql-operations'
 import { CodeIntelUploadOrIndexCommit } from '../shared/CodeIntelUploadOrIndexCommit'
 import { CodeIntelUploadOrIndexRepository } from '../shared/CodeIntelUploadOrIndexerRepository'

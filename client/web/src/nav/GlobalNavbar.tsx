@@ -1,11 +1,26 @@
 import * as H from 'history'
 import React, { useEffect, useMemo } from 'react'
 import { of } from 'rxjs'
+import { startWith } from 'rxjs/operators'
+
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { AuthenticatedUser } from '../auth'
+import { CodeMonitoringProps } from '../code-monitoring'
+import { BrandLogo } from '../components/branding/BrandLogo'
+import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
+import { LayoutRouteProps } from '../routes'
+import { VersionContext } from '../schema/site.schema'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
@@ -16,25 +31,14 @@ import {
     isSearchContextSpecAvailable,
     getGlobalSearchContextFilter,
 } from '../search'
-import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { showDotComMarketing } from '../util/features'
-import { NavLinks } from './NavLinks'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ThemePreferenceProps } from '../theme'
-import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from '../search/helpers'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { VersionContextDropdown } from './VersionContextDropdown'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { VersionContext } from '../schema/site.schema'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { BrandLogo } from '../components/branding/BrandLogo'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
+import { ThemePreferenceProps } from '../theme'
+import { showDotComMarketing } from '../util/features'
+
+import { NavLinks } from './NavLinks'
 import { ExtensionAlertAnimationProps } from './UserNavItem'
-import { LayoutRouteProps } from '../routes'
-import { CodeMonitoringProps } from '../code-monitoring'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { VersionContextDropdown } from './VersionContextDropdown'
 
 interface Props
     extends SettingsCascadeProps,
@@ -119,7 +123,14 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     const globalSearchContextSpec = useMemo(() => getGlobalSearchContextFilter(query), [query])
     const isSearchContextAvailable = useObservable(
         useMemo(
-            () => (globalSearchContextSpec ? isSearchContextSpecAvailable(globalSearchContextSpec.spec) : of(false)),
+            () =>
+                globalSearchContextSpec
+                    ? // While we wait for the result of the `isSearchContextSpecAvailable` call, we assume the context is available
+                      // to prevent flashing and moving content in the query bar. This optimizes for the most common use case where
+                      // user selects a search context from the dropdown.
+                      // See https://github.com/sourcegraph/sourcegraph/issues/19918 for more info.
+                      isSearchContextSpecAvailable(globalSearchContextSpec.spec).pipe(startWith(true))
+                    : of(false),
             [globalSearchContextSpec]
         )
     )

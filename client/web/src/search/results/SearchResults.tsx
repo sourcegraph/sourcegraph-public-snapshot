@@ -1,8 +1,24 @@
+import { Remote } from 'comlink'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { concat, from, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
+
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { Contributions, Evaluated } from '@sourcegraph/shared/src/api/protocol'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+
 import {
     parseSearchURLQuery,
     parseSearchURLPatternType,
@@ -14,32 +30,19 @@ import {
     ParsedSearchQueryProps,
     SearchContextProps,
 } from '..'
-import { Contributions, Evaluated } from '@sourcegraph/shared/src/api/protocol'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+import { AuthenticatedUser } from '../../auth'
+import { CodeMonitoringProps } from '../../code-monitoring'
 import { PageTitle } from '../../components/PageTitle'
+import { DeployType } from '../../jscontext'
 import { Settings } from '../../schema/settings.schema'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { eventLogger, EventLogger } from '../../tracking/eventLogger'
+import { shouldDisplayPerformanceWarning } from '../backend'
 import { isSearchResults, submitSearch, toggleSearchFilter, getSearchTypeFromQuery, QueryState } from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
+
 import { DynamicSearchFilter, SearchResultsFilterBars } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Remote } from 'comlink'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { DeployType } from '../../jscontext'
-import { AuthenticatedUser } from '../../auth'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { shouldDisplayPerformanceWarning } from '../backend'
 import { VersionContextWarning } from './VersionContextWarning'
-import { CodeMonitoringProps } from '../../code-monitoring'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,

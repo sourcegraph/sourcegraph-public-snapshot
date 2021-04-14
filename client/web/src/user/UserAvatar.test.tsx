@@ -1,5 +1,6 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
+
 import { UserAvatar } from './UserAvatar'
 
 describe('UserAvatar', () => {

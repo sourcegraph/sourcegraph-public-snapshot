@@ -1,6 +1,7 @@
-import React from 'react'
-import { MenuNavItem } from './MenuNavItem'
 import { mount } from 'enzyme'
+import React from 'react'
+
+import { MenuNavItem } from './MenuNavItem'
 
 describe('MenuNavItem', () => {
     test('add menu children', () => {

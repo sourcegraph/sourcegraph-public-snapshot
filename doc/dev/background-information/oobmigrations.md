@@ -44,6 +44,8 @@ If a migration is non-destructive (it only adds data), then it is safe to downgr
 
 It is not valid for a user to downgrade beyond the version in which a non-0% migration was introduced. Site-admin must wait for these migrations to completely revert before a downgrade. Otherwise, the instance will have data i a format that is not yet readable by the old version.
 
+In order to run the 'down' side of a migration, set the `apply_reverse` field to the migration row in the `out_of_band_migrations` table via psql or the graphql API.
+
 #### Backwards compatibility
 
 Because this happens in the background over time, the application must able to read both the new and old data formats until the migration has been deprecated. Advice for this is highly dependent on the type of data migration, but there are a few general options:
@@ -292,4 +294,4 @@ On or after the deprecation version of a migration, we can begin clean-up. This 
 - unregistering the migrator instance
 - removing the migrator code
 - cleaning up any backwards-compatible read routines to support only the new format
-- dropping old unused columns that
+- dropping columns that are no longer used by the new minimum supported format
