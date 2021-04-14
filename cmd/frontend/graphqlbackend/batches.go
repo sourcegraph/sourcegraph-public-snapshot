@@ -158,11 +158,13 @@ type ChangesetSpecsConnectionArgs struct {
 }
 
 type ChangesetApplyPreviewConnectionArgs struct {
-	First        int32
-	After        *string
-	Search       *string
+	First  int32
+	After  *string
+	Search *string
+	// CurrentState is a value of type btypes.ChangesetState.
 	CurrentState *string
-	Action       *string
+	// Action is a value of type btypes.ReconcilerOperation.
+	Action *string
 }
 
 type BatchChangeArgs struct {
@@ -303,12 +305,14 @@ type ChangesetApplyPreviewResolver interface {
 }
 
 type VisibleChangesetApplyPreviewResolver interface {
+	// Operations returns a slice of btypes.ReconcilerOperation.
 	Operations(ctx context.Context) ([]string, error)
 	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
 	Targets() VisibleApplyPreviewTargetsResolver
 }
 
 type HiddenChangesetApplyPreviewResolver interface {
+	// Operations returns a slice of btypes.ReconcilerOperation.
 	Operations(ctx context.Context) ([]string, error)
 	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
 	Targets() HiddenApplyPreviewTargetsResolver
@@ -382,6 +386,7 @@ type ChangesetSpecConnectionResolver interface {
 
 type ChangesetSpecResolver interface {
 	ID() graphql.ID
+	// Type returns a value of type btypes.ChangesetSpecDescriptionType.
 	Type() string
 	ExpiresAt() *DateTime
 
@@ -476,14 +481,20 @@ type ChangesetCountsArgs struct {
 }
 
 type ListChangesetsArgs struct {
-	First            int32
-	After            *string
+	First int32
+	After *string
+	// PublicationState is a value of type *btypes.ChangesetPublicationState.
 	PublicationState *string
-	ReconcilerState  *[]string
-	ExternalState    *string
-	State            *string
-	ReviewState      *string
-	CheckState       *string
+	// ReconcilerState is a slice of *btypes.ReconcilerState.
+	ReconcilerState *[]string
+	// ExternalState is a value of type *btypes.ChangesetExternalState.
+	ExternalState *string
+	// State is a value of type *btypes.ChangesetState.
+	State *string
+	// ReviewState is a value of type *btypes.ChangesetReviewState.
+	ReviewState *string
+	// CheckState is a value of type *btypes.ChangesetCheckState.
+	CheckState *string
 	// old
 	OnlyPublishedByThisCampaign *bool
 	//new
@@ -559,9 +570,13 @@ type ChangesetResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	NextSyncAt(ctx context.Context) (*DateTime, error)
+	// PublicationState returns a value of type btypes.ChangesetPublicationState.
 	PublicationState() string
+	// ReconcilerState returns a value of type btypes.ReconcilerState.
 	ReconcilerState() string
+	// ExternalState returns a value of type *btypes.ChangesetExternalState.
 	ExternalState() *string
+	// State returns a value of type *btypes.ChangesetState.
 	State() (string, error)
 	BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 
@@ -592,7 +607,9 @@ type ExternalChangesetResolver interface {
 	Body(context.Context) (*string, error)
 	Author() (*PersonResolver, error)
 	ExternalURL() (*externallink.Resolver, error)
+	// ReviewState returns a value of type *btypes.ChangesetReviewState.
 	ReviewState(context.Context) *string
+	// CheckState returns a value of type *btypes.ChangesetCheckState.
 	CheckState() *string
 	Repository(ctx context.Context) *RepositoryResolver
 
