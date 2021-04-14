@@ -12,7 +12,10 @@ import {
     Quantifier,
 } from 'regexpp/ast'
 
+import { SearchPatternType } from '../../graphql-operations'
+
 import { Predicate, scanPredicate } from './predicates'
+import { scanSearchQuery } from './scanner'
 import { Token, Pattern, Literal, PatternKind, CharacterRange, createLiteral } from './token'
 
 /* eslint-disable unicorn/better-regex */
@@ -831,6 +834,61 @@ const decorateSelector = (token: Literal): DecoratedToken[] => {
     return [{ type: 'metaSelector', range: token.range, value: token.value, kind }]
 }
 
+/**
+ * Adds offset to the range of a given token and returns that token.
+ * Note that the offset change is side-effecting.
+ */
+const mapOffset = (token: Token, offset: number): Token => {
+    switch (token.type) {
+        case 'filter':
+            token.range = { start: token.range.start + offset, end: token.range.end + offset }
+            token.field.range = token.range = {
+                start: token.field.range.start + offset,
+                end: token.field.range.end + offset,
+            }
+            if (token.value) {
+                token.value.range = token.range = {
+                    start: token.value.range.start + offset,
+                    end: token.value.range.end + offset,
+                }
+            }
+        default:
+            token.range = { start: token.range.start + offset, end: token.range.end + offset }
+    }
+    return token
+}
+
+/**
+ * Decorates the body part of predicate syntax `name(body)`.
+ */
+const decoratePredicateBody = (path: string[], body: string, offset: number): DecoratedToken[] => {
+    const decorated: DecoratedToken[] = []
+    switch (path.join('.')) {
+        case 'contains':
+            // eslint-disable-next-line no-case-declarations
+            const tokens = scanSearchQuery(body, false, SearchPatternType.regexp)
+            if (tokens.type === 'success') {
+                return tokens.term.flatMap(token => decorate(mapOffset(token, offset)))
+            }
+            break
+        case 'contains.file':
+        case 'contains.content':
+            return mapRegexpMetaSucceed({
+                type: 'pattern',
+                range: { start: offset, end: body.length },
+                value: body,
+                kind: PatternKind.Regexp,
+            })
+    }
+    decorated.push({
+        type: 'literal',
+        value: body,
+        range: { start: offset, end: offset + body.length },
+        quoted: false,
+    })
+    return decorated
+}
+
 const decoratePredicate = (predicate: Predicate, range: CharacterRange): DecoratedToken[] => {
     let offset = range.start
     const decorated: DecoratedToken[] = []
@@ -850,20 +908,15 @@ const decoratePredicate = (predicate: Predicate, range: CharacterRange): Decorat
     }
     decorated.pop() // Pop trailling '.'
     offset = offset - 1 // Backtrack offset
-    const parametersBody = predicate.parameters.slice(1, -1)
+    const body = predicate.parameters.slice(1, -1)
     decorated.push({
         type: 'metaPredicate',
         kind: MetaPredicateKind.Parenthesis,
         range: { start: offset, end: offset + 1 },
     })
     offset = offset + 1
-    decorated.push({
-        type: 'literal',
-        value: parametersBody,
-        range: { start: offset, end: offset + parametersBody.length },
-        quoted: false,
-    })
-    offset = offset + parametersBody.length
+    decorated.push(...decoratePredicateBody(predicate.path, body, offset))
+    offset = offset + body.length
     decorated.push({
         type: 'metaPredicate',
         kind: MetaPredicateKind.Parenthesis,

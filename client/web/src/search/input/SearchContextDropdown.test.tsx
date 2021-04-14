@@ -120,9 +120,22 @@ describe('SearchContextDropdown', () => {
         sinon.assert.calledOnce(submitSearch)
     })
 
-    it('should not submit search if query is empty', () => {
+    it('should not submit search if submitSearchOnSearchContextChange is false', () => {
         const submitSearch = sinon.spy()
-        const element = mount(<SearchContextDropdown {...defaultProps} submitSearch={submitSearch} query="" />)
+        const element = mount(
+            <SearchContextDropdown
+                {...defaultProps}
+                submitSearch={submitSearch}
+                submitSearchOnSearchContextChange={false}
+            />
+        )
+
+        act(() => {
+            // Wait for debounce
+            clock.tick(50)
+        })
+        element.update()
+
         const item = element.find(DropdownItem).at(0)
         item.simulate('click')
 

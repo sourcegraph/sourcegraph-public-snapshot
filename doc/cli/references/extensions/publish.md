@@ -9,7 +9,7 @@
 | `-extension-id` | Override the extension ID in the manifest. (default: read from -manifest file) |  |
 | `-force` | Force publish the extension, even if there are validation problems or other warnings. | `false` |
 | `-get-curl` | Print the curl command for executing this query and exit (WARNING: includes printing your access token!) | `false` |
-| `-git-head` | Override the current git commit for the bundle. (default: uses `git rev-parse head` |  |
+| `-git-head` | Override the current git commit for the bundle. (default: uses `git rev-parse head`) |  |
 | `-insecure-skip-verify` | Skip validation of TLS certificates against trusted chains | `false` |
 | `-manifest` | The extension manifest file. | `package.json` |
 | `-trace` | Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing | `false` |
@@ -29,7 +29,7 @@ Usage of 'src extensions publish':
   -get-curl
     	Print the curl command for executing this query and exit (WARNING: includes printing your access token!)
   -git-head git rev-parse head
-    	Override the current git commit for the bundle. (default: uses git rev-parse head
+    	Override the current git commit for the bundle. (default: uses git rev-parse head)
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -manifest string

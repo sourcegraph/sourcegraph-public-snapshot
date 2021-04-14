@@ -35,4 +35,5 @@ var relationshipValidators = []RelationshipValidator{
 	ensureRangeOwnership,
 	ensureDisjointRanges,
 	ensureItemContains,
+	ensureUnambiguousResultSets,
 }

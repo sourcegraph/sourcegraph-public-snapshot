@@ -135,6 +135,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     <LazyMonacoQueryInput
                         {...props}
                         {...onboardingTourQueryInputProps}
+                        submitSearchOnSearchContextChange={false}
                         hasGlobalQueryBehavior={true}
                         queryState={userQueryState}
                         onChange={setUserQueryState}

@@ -3,7 +3,7 @@ import path from 'path'
 import { remove } from 'lodash'
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
-import { Configuration, DefinePlugin, ProgressPlugin, RuleSetUseItem, RuleSetUse, RuleSetRule } from 'webpack'
+import { Configuration, DefinePlugin, ProgressPlugin, RuleSetUseItem, RuleSetUse } from 'webpack'
 
 const rootPath = path.resolve(__dirname, '../../../')
 const monacoEditorPaths = [path.resolve(rootPath, 'node_modules', 'monaco-editor')]
@@ -37,12 +37,25 @@ const config = {
         './redesign-toggle-toolbar/register.ts',
     ],
 
-    webpackFinal: (config: Configuration) => {
-        // Include sourcemaps
-        config.mode = shouldMinify ? 'production' : 'development'
-        config.devtool = shouldMinify ? 'source-map' : 'cheap-module-eval-source-map'
+    typescript: {
+        check: false,
+        reactDocgen: false,
+    },
 
-        config.plugins?.push(
+    webpackFinal: (config: Configuration) => {
+        config.mode = shouldMinify ? 'production' : 'development'
+
+        // Check the default config is in an expected shape.
+        if (!config.module) {
+            throw new Error(
+                'The format of the default storybook webpack config changed, please check if the config in ./src/main.ts is still valid'
+            )
+        }
+
+        if (!config.plugins) {
+            config.plugins = []
+        }
+        config.plugins.push(
             new DefinePlugin({
                 NODE_ENV: JSON.stringify(config.mode),
                 'process.env.NODE_ENV': JSON.stringify(config.mode),
@@ -68,14 +81,13 @@ const config = {
             }
         }
 
-        // We don't use Storybook's default Babel config for our repo, it doesn't include everything we need.
-        config.module?.rules.splice(0, 1)
-
         if (process.env.CI) {
-            remove(config.plugins || [], plugin => plugin instanceof ProgressPlugin)
+            remove(config.plugins, plugin => plugin instanceof ProgressPlugin)
         }
 
-        config.module?.rules.push({
+        // We don't use Storybook's default Babel config for our repo, it doesn't include everything we need.
+        config.module.rules.splice(0, 1)
+        config.module.rules.unshift({
             test: /\.tsx?$/,
             loader: require.resolve('babel-loader'),
             options: {
@@ -83,7 +95,7 @@ const config = {
             },
         })
 
-        config.plugins?.push(
+        config.plugins.push(
             new MonacoWebpackPlugin({
                 languages: ['json'],
                 features: [
@@ -103,11 +115,10 @@ const config = {
         )
 
         const storybookDirectory = path.resolve(rootPath, 'node_modules/@storybook')
-        config.resolve?.modules?.push('src')
 
         // Put our style rules at the beginning so they're processed by the time it
         // gets to storybook's style rules.
-        config.module?.rules.unshift({
+        config.module.rules.unshift({
             test: /\.(sass|scss)$/,
             // Make sure Storybook styles get handled by the Storybook config
             exclude: [/\.module\.(sass|scss)$/, storybookDirectory],
@@ -131,10 +142,13 @@ const config = {
         })
 
         // Make sure Storybook style loaders are only evaluated for Storybook styles.
-        const cssRule = config.module?.rules.find(rule => rule.test?.toString() === /\.css$/.toString()) as RuleSetRule
+        const cssRule = config.module.rules.find(rule => rule.test?.toString() === /\.css$/.toString())
+        if (!cssRule) {
+            throw new Error('Cannot find original CSS rule')
+        }
         cssRule.include = storybookDirectory
 
-        config.module?.rules.unshift({
+        config.module.rules.push({
             // CSS rule for external plain CSS (skip SASS and PostCSS for build perf)
             test: /\.css$/,
             // Make sure Storybook styles get handled by the Storybook config
@@ -142,7 +156,7 @@ const config = {
             use: ['to-string-loader', 'css-loader'],
         })
 
-        config.module?.rules.unshift({
+        config.module.rules.push({
             // CSS rule for monaco-editor, it expects styles to be loaded with `style-loader`.
             test: /\.css$/,
             include: monacoEditorPaths,
@@ -151,7 +165,7 @@ const config = {
             use: ['style-loader', 'css-loader'],
         })
 
-        config.module?.rules.unshift({
+        config.module.rules.push({
             test: /\.ya?ml$/,
             use: ['raw-loader'],
         })

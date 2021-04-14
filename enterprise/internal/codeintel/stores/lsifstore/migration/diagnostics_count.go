@@ -22,7 +22,6 @@ func NewDiagnosticsCountMigrator(store *lsifstore.Store, batchSize int) oobmigra
 		targetVersion: 2,
 		batchSize:     batchSize,
 		fields: []fieldSpec{
-			{name: "dump_id", postgresType: "integer not null", primaryKey: true},
 			{name: "path", postgresType: "text not null", primaryKey: true},
 			{name: "data", postgresType: "bytea", readOnly: true},
 			{name: "num_diagnostics", postgresType: "integer not null", updateOnly: true},
@@ -32,38 +31,30 @@ func NewDiagnosticsCountMigrator(store *lsifstore.Store, batchSize int) oobmigra
 
 // MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
 // modify the record to conform to the new schema.
-func (m *diagnosticsCountMigrator) MigrateRowUp(scanner scanner) (updateSpec, error) {
-	var dumpID int
+func (m *diagnosticsCountMigrator) MigrateRowUp(scanner scanner) ([]interface{}, error) {
 	var path string
 	var rawData []byte
 
-	if err := scanner.Scan(&dumpID, &path, &rawData); err != nil {
-		return updateSpec{}, err
+	if err := scanner.Scan(&path, &rawData); err != nil {
+		return nil, err
 	}
 
 	data, err := m.serializer.UnmarshalLegacyDocumentData(rawData)
 	if err != nil {
-		return updateSpec{}, err
+		return nil, err
 	}
 
-	return updateSpec{
-		dumpID:      dumpID,
-		fieldValues: []interface{}{dumpID, path, len(data.Diagnostics)},
-	}, nil
+	return []interface{}{path, len(data.Diagnostics)}, nil
 }
 
 // MigrateRowDown sets num_diagnostics back to zero to undo the migration up direction.
-func (m *diagnosticsCountMigrator) MigrateRowDown(scanner scanner) (updateSpec, error) {
-	var dumpID int
+func (m *diagnosticsCountMigrator) MigrateRowDown(scanner scanner) ([]interface{}, error) {
 	var path string
 	var rawData []byte
 
-	if err := scanner.Scan(&dumpID, &path, &rawData); err != nil {
-		return updateSpec{}, err
+	if err := scanner.Scan(&path, &rawData); err != nil {
+		return nil, err
 	}
 
-	return updateSpec{
-		dumpID:      dumpID,
-		fieldValues: []interface{}{dumpID, path, 0},
-	}, nil
+	return []interface{}{path, 0}, nil
 }

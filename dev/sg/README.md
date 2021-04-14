@@ -24,6 +24,24 @@ go install github.com/sourcegraph/sourcegraph/dev/sg@latest
 
 Make sure that `$HOME/go/bin` is in your `$PATH`. (If you use `$GOPATH` then `$GOPATH/bin` needs to be in the `$PATH`)
 
+**Note for Linux users:** A command called [sg](https://www.man7.org/linux/man-pages/man1/sg.1.html) is already available at `/usr/bin/sg`. To use the Sourcegraph `sg` CLI, you need to make sure that its location comes first in `PATH`. For example, by prepending `$GOPATH/bin`:
+
+```
+export PATH=$GOPATH/bin:$PATH
+```
+
+Instead of the more conventional:
+
+```
+export PATH=$PATH:$GOPATH/bin
+```
+
+Or you may add an alias to your `.bashrc`:
+
+```
+alias sg=$HOME/go/bin/sg
+```
+
 Then, in the root of `sourcegraph/sourcegraph`, run:
 
 ```
