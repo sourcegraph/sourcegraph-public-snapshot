@@ -158,9 +158,11 @@ export const NavLinks: React.FunctionComponent<Props> = props => {
                     </li>
                 ))}
             {/* show status messages if authenticated user is admin or opted-in with a user tag  */}
-            {(authenticatedUser?.siteAdmin || authenticatedUser?.tags?.includes('AllowUserExternalServicePublic')) && (
+            {(window.context.externalServicesUserModeEnabled ||
+                authenticatedUser?.siteAdmin ||
+                authenticatedUser?.tags?.includes('AllowUserExternalServicePublic')) && (
                 <li className="nav-item">
-                    <StatusMessagesNavItem isSiteAdmin={authenticatedUser.siteAdmin} history={history} />
+                    <StatusMessagesNavItem isSiteAdmin={authenticatedUser?.siteAdmin || false} history={history} />
                 </li>
             )}
             {!minimalNavLinks && (
