@@ -1,3 +1,6 @@
+import fs from 'fs'
+import path from 'path'
+
 import html from 'tagged-template-noop'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
@@ -32,6 +35,15 @@ export interface WebIntegrationTestContext
     overrideSearchStreamEvents: (overrides: SearchEvent[]) => void
 }
 
+const rootDirectory = path.resolve(__dirname, '..', '..', '..', '..')
+const manifestFile = path.resolve(rootDirectory, 'ui/assets/webpack.manifest.json')
+
+const getAppBundle = (): string => {
+    // eslint-disable-next-line no-sync
+    const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf-8')) as Record<string, string>
+    return manifest['app.js']
+}
+
 /**
  * Creates the intergation test context for integration tests testing the web app.
  * This should be called in a `beforeEach()` hook and assigned to a variable `testContext` in the test scope.
@@ -63,7 +75,7 @@ export const createWebIntegrationTestContext = async ({
                         <script>
                             window.context = ${JSON.stringify(jsContext)}
                         </script>
-                        <script src="/.assets/scripts/app.bundle.js"></script>
+                        <script src=${getAppBundle()}></script>
                     </body>
                 </html>
             `)

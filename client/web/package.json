@@ -22,18 +22,9 @@
     "lint": "yarn run eslint && gulp unusedExports && yarn run stylelint",
     "eslint": "eslint --cache '**/*.[tj]s?(x)'",
     "stylelint": "stylelint 'src/**/*.scss' --quiet",
-    "bundlesize": "GITHUB_TOKEN= bundlesize",
     "browserslist": "browserslist",
     "analyze-bundle": "NODE_ENV=production ENTERPRISE=1 WEBPACK_ANALYZER=1 yarn build"
   },
-  "bundlesize": [
-    {
-      "path": "../../ui/assets/styles/app.bundle.css"
-    },
-    {
-      "path": "../../ui/assets/scripts/app.bundle.js"
-    }
-  ],
   "jest": {
     "testURL": "http://localhost:3080"
   }
