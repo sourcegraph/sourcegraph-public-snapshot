@@ -28,6 +28,7 @@ import { queryUserPublicRepositories, setUserPublicRepositories } from '../../..
 import { UserRepositoriesUpdateProps } from '../../../util'
 
 import { CheckboxRepositoryNode } from './RepositoryNode'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
     userID: string
@@ -366,6 +367,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const submit = useCallback(
         async (event: FormEvent<HTMLFormElement>): Promise<void> => {
             event.preventDefault()
+            eventLogger.log('UserManageRepositoriesSave')
 
             let publicRepos = publicRepoState.repos.split('\n').filter((row): boolean => row !== '')
             if (!publicRepoState.enabled) {
