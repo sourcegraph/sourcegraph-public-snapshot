@@ -7,6 +7,7 @@ If you're deploying a new Enterprise instance, this page covers our most frequen
 ### General
 - [Resource estimator](../admin/install/index.md)
 - [SAML config](../admin/auth/saml/index.md)
+- [Configuring authorization and authentication](../admin/config/authorization_and_authentication.md) - We recommend starting here for access and permissions configuration before moving on to the more specific pages on these topics.
 - [Built-in password authentication](../admin/auth/index.md#builtin-password-authentication)
 - [GitHub authentication](../admin/auth/index.md#github)
 - [GitLab authentication](../admin/auth/index.md#gitlab)

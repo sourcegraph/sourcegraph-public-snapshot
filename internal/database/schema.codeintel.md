@@ -56,6 +56,7 @@ Associates (document, range) pairs with the import monikers attached to the rang
  max_schema_version | integer |           |          | 
 Indexes:
     "lsif_data_definitions_schema_versions_pkey" PRIMARY KEY, btree (dump_id)
+    "lsif_data_definitions_schema_versions_dump_id_schema_version_bo" btree (dump_id, min_schema_version, max_schema_version)
 
 ```
 
@@ -120,6 +121,7 @@ Stores reference, hover text, moniker, and diagnostic data about a particular te
  max_schema_version | integer |           |          | 
 Indexes:
     "lsif_data_documents_schema_versions_pkey" PRIMARY KEY, btree (dump_id)
+    "lsif_data_documents_schema_versions_dump_id_schema_version_boun" btree (dump_id, min_schema_version, max_schema_version)
 
 ```
 
@@ -189,6 +191,7 @@ Associates (document, range) pairs with the export monikers attached to the rang
  max_schema_version | integer |           |          | 
 Indexes:
     "lsif_data_references_schema_versions_pkey" PRIMARY KEY, btree (dump_id)
+    "lsif_data_references_schema_versions_dump_id_schema_version_bou" btree (dump_id, min_schema_version, max_schema_version)
 
 ```
 
