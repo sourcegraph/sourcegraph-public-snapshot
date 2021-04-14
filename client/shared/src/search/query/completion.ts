@@ -14,7 +14,7 @@ import { FilterType, isNegatableFilter, resolveFilter, FILTERS, escapeSpaces } f
 import { Filter, Token } from './token'
 
 export const repositoryCompletionItemKind = Monaco.languages.CompletionItemKind.Color
-const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Customcolor
+const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Issue
 
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
