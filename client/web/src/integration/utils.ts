@@ -93,7 +93,7 @@ export const percySnapshotWithVariants = async (
 
     // Theme-light
     await setColorScheme(page, 'light', config?.waitForCodeHighlighting)
-    await percySnapshot(page, name)
+    await percySnapshot(page, `${name} - light theme`)
 
     // Theme-light with redesign
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
