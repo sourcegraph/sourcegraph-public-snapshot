@@ -14,7 +14,7 @@ import { PageHeader } from '../../components/PageHeader'
 import { InsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../components'
 import { InsightsApiContext } from '../core/backend/api-provider'
 
-interface InsightsPageProps extends ExtensionsControllerProps, Omit<InsightsViewGridProps, 'views'>, TelemetryProps {}
+export interface InsightsPageProps extends ExtensionsControllerProps, Omit<InsightsViewGridProps, 'views'>, TelemetryProps {}
 
 export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
     const { getInsightCombinedViews } = useContext(InsightsApiContext)
