@@ -2,8 +2,8 @@ import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 
-import { BrandedStory } from '../../../../branded/src/components/BrandedStory'
-import webStyles from '../../../../web/src/SourcegraphWebApp.scss'
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { PageSelector } from './PageSelector'
 
