@@ -59,8 +59,9 @@ Instead of publishing all changesets at the same time, you can also publish some
 changesetTemplate:
   # ...
   published:
-    - github.com/sourcegraph/sourcegraph: true
-    - github.com/sourcegraph/src-cli: false
+    - github.com/sourcegraph/src-cli: true
+    - github.com/sourcegraph/*: true
+    - github.com/sourcegraph-private/*: false
 ```
 
 See [`changesetTemplate.published`](../references/batch_spec_yaml_reference.md#changesettemplate-published) in the batch spec reference for more details.
