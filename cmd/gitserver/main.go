@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -84,8 +85,19 @@ func main() {
 			if err != nil {
 				return "", err
 			}
+
 			for _, info := range r.Sources {
-				return info.CloneURL, nil
+				svc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
+				if err != nil {
+					return "", err
+				}
+
+				cloneURL, err := types.RepoCloneURL(svc.Kind, svc.Config, r)
+				if err != nil {
+					return "", err
+				}
+
+				return cloneURL, nil
 			}
 			return "", fmt.Errorf("no sources for %q", repo)
 		},
