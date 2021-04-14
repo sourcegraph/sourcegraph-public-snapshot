@@ -48,6 +48,7 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = ({
 }) => {
     // Track user intent to interact with extension-contributed views
     const viewContentReference = useRef<HTMLDivElement>(null)
+
     useEffect(() => {
         let viewContentElement = viewContentReference.current
 
@@ -70,7 +71,7 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = ({
         }
 
         // If containerClassName is specified, the element with this class is the element
-        // that embodies the view in the eyes of the user. e.g. ViewGrid
+        // that embodies the view in the eyes of the user. e.g. InsightsViewGrid
         if (containerClassName) {
             viewContentElement = viewContentElement?.closest(`.${containerClassName}`) as HTMLDivElement
         }

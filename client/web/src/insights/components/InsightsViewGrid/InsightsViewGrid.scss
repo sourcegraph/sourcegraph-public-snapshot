@@ -1,8 +1,8 @@
-@import '../../views/ViewContent';
+@import '../../../views/ViewContent';
 @import 'react-grid-layout/css/styles';
 @import 'react-resizable/css/styles';
 
-.view-grid {
+.insights-view-grid {
     .react-resizable-handle {
         background: none;
         cursor: nwse-resize;
