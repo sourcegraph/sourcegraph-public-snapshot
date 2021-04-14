@@ -9,13 +9,11 @@ We suggest configuring both when using Sourcegraph Enterprise. If you do not con
 
 ## Authentication in Sourcegraph
 
-Sourcegraph supports username/password auth by default and SAML, OAuth, HTTP Proxy auth, and OpenID Connect if configured. Changing a username in Sourcegraph will allow the user to escalate permissions, so if you are syncing permissions, you will need to add:
+Sourcegraph supports username/password auth by default and SAML, OAuth, HTTP Proxy auth, and OpenID Connect if configured. Changing a username in Sourcegraph will allow the user to escalate permissions, so if you are syncing permissions, you will need to add the following to your site config at https://sourcegraph.yourdomain.com/siteadmin/configuration ([Learn more about viewing and editing your site configuration.](./site_config.md#view-and-edit-site-configuration))
 
 ```
 auth.enableUsernameChanges: false
 ```
-
-To your site config at https://sourcegraph.yourdomain.com/siteadmin/configuration ([more info](./site_config.md#view-and-edit-site-configuration)). 
 
 For users using any of the other authentication mechanisms, removing `builtin` as an authentication mechanism is best practice. (Customers in a managed instance environment will need to leave `builtin` enabled for Sourcegraph employee access. Consult with your Customer Engineer for more info.)
 
@@ -55,7 +53,7 @@ Built-in username/password authentication is Sourcegraph’s default authenticat
 
 Set `allowSignup` to `false` if you want to create user accounts instead of allowing the user to create their own.
 
-More info about [built-in password authentication](../auth/index.md#builtin-password-authentication). 
+Learn more about [built-in password authentication](../auth/index.md#builtin-password-authentication). 
 
 ### GitHub Enterprise or GitHub Cloud authentication and authorization
 
@@ -81,7 +79,9 @@ In this way, access to Sourcegraph will still be managed by your identity provid
 
 Alternatively, you can configure SAML authentication in Sourcegraph, and use GitLab permissions syncing in the background to control access permissions. To implement this method, you will need to make sure that GitLab is able to return a value in `identities.provider` for the `GET /users` endpoint ([GitLab documentation](https://docs.gitlab.com/ee/api/users.html#for-admins)) that your identity provider is able to pass as the `nameID` in the SAML response. If that isn’t possible, you will need to use the first option. 
 
-To configure SAML auth with GitLab permissions, you will need to first [configure permissions from GitLab](../repo/permissions.md#administrator-sudo-level-access-token). Then, [configure SAML authentication](../auth/saml/index.md). The `nameID` passed by the identity provider will need to match the value of `identities.provider`. For example, if the GitLab API returns:
+To configure SAML auth with GitLab permissions, you will need to first [configure permissions from GitLab](../repo/permissions.md#administrator-sudo-level-access-token). Then, [configure SAML authentication](../auth/saml/index.md). The `nameID` passed by the identity provider will need to match the value of `identities.provider`. 
+
+For example, if the GitLab API returns:
 
 ```
 "identities": [
@@ -89,7 +89,7 @@ To configure SAML auth with GitLab permissions, you will need to first [configur
 ]
 ```
 
-You will need to configure permission in Sourcegraph as:
+Then you will need to configure permission in Sourcegraph as:
 
 ```
 {
