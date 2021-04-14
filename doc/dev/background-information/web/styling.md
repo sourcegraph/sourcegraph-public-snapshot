@@ -75,7 +75,7 @@ import styles from './PageSelector.module.scss'
 
 #### BEM convention
 
-Another approach used by older components is [BEM convention](http://getbem.com/naming/) (Block - Element - Modifier).
+Another approach used by older components is the [BEM convention](http://getbem.com/naming/) (Block - Element - Modifier).
 The _block_ name is always the React component name, _elements_ and _modifiers_ are used as specified in BEM.
 A _block_ must not be referenced in any other React component than the one with the matching name.
 
