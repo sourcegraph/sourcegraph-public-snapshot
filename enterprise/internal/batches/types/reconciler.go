@@ -1,4 +1,4 @@
-package batches
+package types
 
 // ReconcilerOperation is an enum to distinguish between different reconciler operations.
 type ReconcilerOperation string
@@ -17,3 +17,24 @@ const (
 	ReconcilerOperationDetach       ReconcilerOperation = "DETACH"
 	ReconcilerOperationArchive      ReconcilerOperation = "ARCHIVE"
 )
+
+// Valid returns true if the given ReconcilerOperation is valid.
+func (r ReconcilerOperation) Valid() bool {
+	switch r {
+	case ReconcilerOperationPush,
+		ReconcilerOperationUpdate,
+		ReconcilerOperationUndraft,
+		ReconcilerOperationPublish,
+		ReconcilerOperationPublishDraft,
+		ReconcilerOperationSync,
+		ReconcilerOperationImport,
+		ReconcilerOperationClose,
+		ReconcilerOperationReopen,
+		ReconcilerOperationSleep,
+		ReconcilerOperationDetach,
+		ReconcilerOperationArchive:
+		return true
+	default:
+		return false
+	}
+}

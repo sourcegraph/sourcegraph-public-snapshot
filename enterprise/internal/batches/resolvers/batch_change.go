@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -22,7 +22,7 @@ var _ graphqlbackend.BatchChangeResolver = &batchChangeResolver{}
 type batchChangeResolver struct {
 	store *store.Store
 
-	batchChange *batches.BatchChange
+	batchChange *btypes.BatchChange
 
 	// Cache the namespace on the resolver, since it's accessed more than once.
 	namespaceOnce sync.Once
@@ -180,7 +180,7 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 	ctx context.Context,
 	args *graphqlbackend.ChangesetCountsArgs,
 ) ([]graphqlbackend.ChangesetCountsResolver, error) {
-	publishedState := batches.ChangesetPublicationStatePublished
+	publishedState := btypes.ChangesetPublicationStatePublished
 	opts := store.ListChangesetsOpts{
 		BatchChangeID:   r.batchChange.ID,
 		IncludeArchived: args.IncludeArchived,
@@ -192,7 +192,7 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 		return nil, err
 	}
 
-	var es []*batches.ChangesetEvent
+	var es []*btypes.ChangesetEvent
 	changesetIDs := cs.IDs()
 	if len(changesetIDs) > 0 {
 		eventsOpts := store.ListChangesetEventsOpts{ChangesetIDs: changesetIDs, Kinds: state.RequiredEventTypesForHistory}

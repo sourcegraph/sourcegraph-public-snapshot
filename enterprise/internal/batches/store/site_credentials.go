@@ -2,25 +2,15 @@ package store
 
 import (
 	"context"
-	"time"
 
 	"github.com/keegancsmith/sqlf"
 
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
-type SiteCredential struct {
-	ID                  int64
-	ExternalServiceType string
-	ExternalServiceID   string
-	Credential          auth.Authenticator
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
-}
-
-func (s *Store) CreateSiteCredential(ctx context.Context, c *SiteCredential) error {
+func (s *Store) CreateSiteCredential(ctx context.Context, c *btypes.SiteCredential) error {
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
@@ -45,7 +35,7 @@ RETURNING
 	%s
 `
 
-func createSiteCredentialQuery(c *SiteCredential) *sqlf.Query {
+func createSiteCredentialQuery(c *btypes.SiteCredential) *sqlf.Query {
 	return sqlf.Sprintf(
 		createSiteCredentialQueryFmtstr,
 		c.ExternalServiceType,
@@ -93,10 +83,10 @@ type GetSiteCredentialOpts struct {
 	ExternalServiceID   string
 }
 
-func (s *Store) GetSiteCredential(ctx context.Context, opts GetSiteCredentialOpts) (*SiteCredential, error) {
+func (s *Store) GetSiteCredential(ctx context.Context, opts GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
 	q := getSiteCredentialQuery(opts)
 
-	var cred SiteCredential
+	var cred btypes.SiteCredential
 	err := s.query(ctx, q, func(sc scanner) error { return scanSiteCredential(&cred, sc) })
 	if err != nil {
 		return nil, err
@@ -141,12 +131,12 @@ type ListSiteCredentialsOpts struct {
 	LimitOpts
 }
 
-func (s *Store) ListSiteCredentials(ctx context.Context, opts ListSiteCredentialsOpts) (cs []*SiteCredential, next int64, err error) {
+func (s *Store) ListSiteCredentials(ctx context.Context, opts ListSiteCredentialsOpts) (cs []*btypes.SiteCredential, next int64, err error) {
 	q := listSiteCredentialsQuery(opts)
 
-	cs = make([]*SiteCredential, 0, opts.DBLimit())
+	cs = make([]*btypes.SiteCredential, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) (err error) {
-		var c SiteCredential
+		var c btypes.SiteCredential
 		if err := scanSiteCredential(&c, sc); err != nil {
 			return err
 		}
@@ -186,7 +176,7 @@ var siteCredentialColumns = []*sqlf.Query{
 	sqlf.Sprintf("updated_at"),
 }
 
-func scanSiteCredential(c *SiteCredential, sc scanner) error {
+func scanSiteCredential(c *btypes.SiteCredential, sc scanner) error {
 	return sc.Scan(
 		&c.ID,
 		&c.ExternalServiceType,

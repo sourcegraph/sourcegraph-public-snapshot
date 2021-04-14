@@ -1,4 +1,4 @@
-package testing
+package sources
 
 import (
 	"context"
@@ -6,13 +6,32 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// FakeChangesetSource is a fake implementation of the repos.ChangesetSource
+type fakeSourcer struct {
+	err    error
+	source ChangesetSource
+}
+
+func (s *fakeSourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset) (ChangesetSource, error) {
+	return s.source, s.err
+}
+
+func (s *fakeSourcer) ForRepo(ctx context.Context, tx SourcerStore, repo *types.Repo) (ChangesetSource, error) {
+	return s.source, s.err
+}
+
+func (s *fakeSourcer) ForExternalService(ctx context.Context, tx SourcerStore, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error) {
+	return s.source, s.err
+}
+
+// FakeChangesetSource is a fake implementation of the ChangesetSource
 // interface to be used in tests.
 type FakeChangesetSource struct {
 	Svc *types.ExternalService
@@ -51,34 +70,33 @@ type FakeChangesetSource struct {
 	Err error
 
 	// ClosedChangesets contains the changesets that were passed to CloseChangeset
-	ClosedChangesets []*repos.Changeset
+	ClosedChangesets []*Changeset
 
 	// CreatedChangesets contains the changesets that were passed to
 	// CreateChangeset
-	CreatedChangesets []*repos.Changeset
+	CreatedChangesets []*Changeset
 
 	// LoadedChangesets contains the changesets that were passed to LoadChangeset
-	LoadedChangesets []*repos.Changeset
+	LoadedChangesets []*Changeset
 
 	// UpdateChangesets contains the changesets that were passed to
 	// UpdateChangeset
-	UpdatedChangesets []*repos.Changeset
+	UpdatedChangesets []*Changeset
 
 	// ReopenedChangesets contains the changesets that were passed to ReopenedChangeset
-	ReopenedChangesets []*repos.Changeset
+	ReopenedChangesets []*Changeset
 
 	// UndraftedChangesets contains the changesets that were passed to UndraftChangeset
-	UndraftedChangesets []*repos.Changeset
+	UndraftedChangesets []*Changeset
 
 	// Username is the username returned by AuthenticatedUsername
 	Username string
 }
 
-var _ repos.ChangesetSource = &FakeChangesetSource{}
-var _ repos.DraftChangesetSource = &FakeChangesetSource{}
-var _ repos.UserSource = &FakeChangesetSource{}
+var _ ChangesetSource = &FakeChangesetSource{}
+var _ DraftChangesetSource = &FakeChangesetSource{}
 
-func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
+func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
 	s.CreateDraftChangesetCalled = true
 
 	if s.Err != nil {
@@ -105,7 +123,7 @@ func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *repos
 	return s.ChangesetExists, s.Err
 }
 
-func (s *FakeChangesetSource) UndraftChangeset(ctx context.Context, c *repos.Changeset) error {
+func (s *FakeChangesetSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
 	s.UndraftedChangesetsCalled = true
 
 	if s.Err != nil {
@@ -121,7 +139,7 @@ func (s *FakeChangesetSource) UndraftChangeset(ctx context.Context, c *repos.Cha
 	return c.SetMetadata(s.FakeMetadata)
 }
 
-func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
+func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
 	s.CreateChangesetCalled = true
 
 	if s.Err != nil {
@@ -148,7 +166,7 @@ func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Chan
 	return s.ChangesetExists, s.Err
 }
 
-func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *repos.Changeset) error {
+func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 	s.UpdateChangesetCalled = true
 
 	if s.Err != nil {
@@ -179,7 +197,7 @@ func (s *FakeChangesetSource) ExternalServices() types.ExternalServices {
 
 	return types.ExternalServices{s.Svc}
 }
-func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *repos.Changeset) error {
+func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *Changeset) error {
 	s.LoadChangesetCalled = true
 
 	if s.Err != nil {
@@ -198,9 +216,9 @@ func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *repos.Change
 	return nil
 }
 
-var NoReposErr = errors.New("no repository set on repos.Changeset")
+var NoReposErr = errors.New("no repository set on Changeset")
 
-func (s *FakeChangesetSource) CloseChangeset(ctx context.Context, c *repos.Changeset) error {
+func (s *FakeChangesetSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	s.CloseChangesetCalled = true
 
 	if s.Err != nil {
@@ -216,7 +234,7 @@ func (s *FakeChangesetSource) CloseChangeset(ctx context.Context, c *repos.Chang
 	return c.SetMetadata(s.FakeMetadata)
 }
 
-func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *repos.Changeset) error {
+func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
 	s.ReopenChangesetCalled = true
 
 	if s.Err != nil {
@@ -232,7 +250,11 @@ func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *repos.Chan
 	return c.SetMetadata(s.FakeMetadata)
 }
 
-func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (repos.Source, error) {
+func (s *FakeChangesetSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return gitserverPushConfig(repo, s.CurrentAuthenticator)
+}
+
+func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
 	s.CurrentAuthenticator = a
 	return s, nil
 }
@@ -248,20 +270,4 @@ func (s *FakeChangesetSource) ValidateAuthenticator(context.Context) error {
 func (s *FakeChangesetSource) AuthenticatedUsername(ctx context.Context) (string, error) {
 	s.AuthenticatedUsernameCalled = true
 	return s.Username, nil
-}
-
-// FakeGitserverClient is a test implementation of the GitserverClient
-// interface required by ExecChangesetJob.
-type FakeGitserverClient struct {
-	Response    string
-	ResponseErr error
-
-	CreateCommitFromPatchCalled bool
-	CreateCommitFromPatchReq    *protocol.CreateCommitFromPatchRequest
-}
-
-func (f *FakeGitserverClient) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
-	f.CreateCommitFromPatchCalled = true
-	f.CreateCommitFromPatchReq = &req
-	return f.Response, f.ResponseErr
 }

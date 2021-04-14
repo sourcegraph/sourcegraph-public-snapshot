@@ -27,7 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -91,9 +91,9 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		}
 
 		s := store.NewWithClock(db, clock)
-		sourcer := sources.NewSourcer(repos.NewSourcer(nil), s)
+		sourcer := sources.NewSourcer(cf)
 
-		spec := &batches.BatchSpec{
+		spec := &btypes.BatchSpec{
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
@@ -101,7 +101,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		batchChange := &batches.BatchChange{
+		batchChange := &btypes.BatchChange{
 			Name:             "Test batch changes",
 			Description:      "Testing THE WEBHOOKS",
 			InitialApplierID: userID,
@@ -117,11 +117,11 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		}
 
 		// NOTE: Your sample payload should apply to a PR with the number matching below
-		changeset := &batches.Changeset{
+		changeset := &btypes.Changeset{
 			RepoID:              githubRepo.ID,
 			ExternalID:          "10156",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
+			BatchChanges:        []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
 		}
 
 		err = s.CreateChangeset(ctx, changeset)
@@ -138,7 +138,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		})
 		defer state.Unmock()
 
-		src, err := sourcer.FromRepoSource(githubSrc)
+		src, err := sourcer.ForRepo(ctx, s, githubRepo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -208,8 +208,8 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				}
 
 				opts := []cmp.Option{
-					cmpopts.IgnoreFields(batches.ChangesetEvent{}, "CreatedAt"),
-					cmpopts.IgnoreFields(batches.ChangesetEvent{}, "UpdatedAt"),
+					cmpopts.IgnoreFields(btypes.ChangesetEvent{}, "CreatedAt"),
+					cmpopts.IgnoreFields(btypes.ChangesetEvent{}, "UpdatedAt"),
 				}
 				if diff := cmp.Diff(tc.ChangesetEvents, have, opts...); diff != "" {
 					t.Error(diff)
@@ -237,12 +237,16 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		secret := "secret"
 		repoStore := database.Repos(db)
 		esStore := database.ExternalServices(db)
+		bitbucketServerToken := os.Getenv("BITBUCKET_SERVER_TOKEN")
+		if bitbucketServerToken == "" {
+			bitbucketServerToken = "test-token"
+		}
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindBitbucketServer,
 			DisplayName: "Bitbucket",
 			Config: ct.MarshalJSON(t, &schema.BitbucketServerConnection{
 				Url:   "https://bitbucket.sgdev.org",
-				Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+				Token: bitbucketServerToken,
 				Repos: []string{"SOUR/automation-testing"},
 				Webhooks: &schema.Webhooks{
 					Secret: secret,
@@ -275,9 +279,9 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		}
 
 		s := store.NewWithClock(db, clock)
-		sourcer := sources.NewSourcer(repos.NewSourcer(nil), s)
+		sourcer := sources.NewSourcer(cf)
 
-		spec := &batches.BatchSpec{
+		spec := &btypes.BatchSpec{
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
@@ -285,7 +289,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		batchChange := &batches.BatchChange{
+		batchChange := &btypes.BatchChange{
 			Name:             "Test batch change",
 			Description:      "Testing THE WEBHOOKS",
 			InitialApplierID: userID,
@@ -300,18 +304,18 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		changesets := []*batches.Changeset{
+		changesets := []*btypes.Changeset{
 			{
 				RepoID:              bitbucketRepo.ID,
 				ExternalID:          "69",
 				ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
-				BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
+				BatchChanges:        []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
 			},
 			{
 				RepoID:              bitbucketRepo.ID,
 				ExternalID:          "19",
 				ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
-				BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
+				BatchChanges:        []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
 			},
 		}
 
@@ -328,7 +332,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			if err := s.CreateChangeset(ctx, ch); err != nil {
 				t.Fatal(err)
 			}
-			src, err := sourcer.FromRepoSource(bitbucketSource)
+			src, err := sourcer.ForRepo(ctx, s, bitbucketRepo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -394,8 +398,8 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				}
 
 				opts := []cmp.Option{
-					cmpopts.IgnoreFields(batches.ChangesetEvent{}, "CreatedAt"),
-					cmpopts.IgnoreFields(batches.ChangesetEvent{}, "UpdatedAt"),
+					cmpopts.IgnoreFields(btypes.ChangesetEvent{}, "CreatedAt"),
+					cmpopts.IgnoreFields(btypes.ChangesetEvent{}, "UpdatedAt"),
 				}
 				if diff := cmp.Diff(tc.ChangesetEvents, have, opts...); diff != "" {
 					t.Error(diff)
@@ -434,7 +438,7 @@ type webhookTestCase struct {
 		PayloadType string          `json:"payload_type"`
 		Data        json.RawMessage `json:"data"`
 	} `json:"payloads"`
-	ChangesetEvents []*batches.ChangesetEvent `json:"changeset_events"`
+	ChangesetEvents []*btypes.ChangesetEvent `json:"changeset_events"`
 }
 
 func loadWebhookTestCase(t testing.TB, path string) webhookTestCase {
@@ -450,7 +454,7 @@ func loadWebhookTestCase(t testing.TB, path string) webhookTestCase {
 		t.Fatal(err)
 	}
 	for i, ev := range tc.ChangesetEvents {
-		meta, err := batches.NewChangesetEventMetadata(ev.Kind)
+		meta, err := btypes.NewChangesetEventMetadata(ev.Kind)
 		if err != nil {
 			t.Fatal(err)
 		}

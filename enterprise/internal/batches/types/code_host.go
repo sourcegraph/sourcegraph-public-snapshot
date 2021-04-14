@@ -1,4 +1,4 @@
-package batches
+package types
 
 import "github.com/sourcegraph/sourcegraph/internal/extsvc"
 
