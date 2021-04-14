@@ -22,9 +22,22 @@ func CallbackHandler(config *oauth2.Config, success, failure http.Handler) http.
 	return oauth2Login.CallbackHandler(config, success, failure)
 }
 
+// defaultFailureHandler is copied from gologin.DefaultFailureHandler but has been
+// modified to return a 500 error instead so that we pick it up with Sentry
+func defaultFailureHandler(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+	err := gologin.ErrorFromContext(ctx)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// should be unreachable, ErrorFromContext always returns some non-nil error
+	http.Error(w, "", http.StatusInternalServerError)
+}
+
 func gitlabHandler(config *oauth2.Config, success, failure http.Handler) http.Handler {
 	if failure == nil {
-		failure = gologin.DefaultFailureHandler
+		failure = http.HandlerFunc(defaultFailureHandler)
 	}
 	fn := func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
