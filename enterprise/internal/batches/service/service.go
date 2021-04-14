@@ -9,12 +9,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -509,39 +509,20 @@ var ErrNoNamespace = errors.New("no namespace given")
 // Since Bitbucket sends the username as a header in REST responses, we can
 // take it from there and complete the UserCredential.
 func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, externalServiceID, externalServiceType, token string) (string, error) {
-	extSvcID, err := s.store.GetExternalServiceID(ctx, store.GetExternalServiceIDOpts{
-		ExternalServiceID:   externalServiceID,
+	srcer := sources.NewSourcer(s.sourcer, s.store)
+	css, err := srcer.ForExternalService(ctx, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
+		ExternalServiceID:   externalServiceID,
 	})
 	if err != nil {
 		return "", err
 	}
-
-	externalService, err := s.store.ExternalServices().GetByID(ctx, extSvcID)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			return "", errors.New("no external service found for repo")
-		}
-
-		return "", err
-	}
-
-	sources, err := s.sourcer(externalService)
+	css, err = css.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
 	if err != nil {
 		return "", err
 	}
 
-	userSource, ok := sources[0].(repos.UserSource)
-	if !ok {
-		return "", errors.New("external service source cannot use other authenticator")
-	}
-
-	source, err := userSource.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
-	if err != nil {
-		return "", err
-	}
-
-	usernameSource, ok := source.(usernameSource)
+	usernameSource, ok := css.ChangesetSource.(usernameSource)
 	if !ok {
 		return "", errors.New("external service source doesn't implement AuthenticatedUsername")
 	}
@@ -560,6 +541,32 @@ type usernameSource interface {
 }
 
 var _ usernameSource = &repos.BitbucketServerSource{}
+
+// ValidateAuthenticator creates a ChangesetSource, configures it with the given
+// authenticator and validates it can correctly access the remote server.
+func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
+	if Mocks.ValidateAuthenticator != nil {
+		return Mocks.ValidateAuthenticator(ctx, externalServiceID, externalServiceType, a)
+	}
+
+	srcer := sources.NewSourcer(s.sourcer, s.store)
+	css, err := srcer.ForExternalService(ctx, store.GetExternalServiceIDsOpts{
+		ExternalServiceType: externalServiceType,
+		ExternalServiceID:   externalServiceID,
+	})
+	if err != nil {
+		return err
+	}
+	css, err = css.WithAuthenticator(a)
+	if err != nil {
+		return err
+	}
+
+	if err := css.ValidateAuthenticator(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 // ErrChangesetsToDetachNotFound can be returned by (*Service).DetachChangesets
 // if the number of changesets returned from the database doesn't match the

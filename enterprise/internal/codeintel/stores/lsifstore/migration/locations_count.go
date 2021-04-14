@@ -18,49 +18,44 @@ func NewLocationsCountMigrator(store *lsifstore.Store, tableName string, batchSi
 	}
 
 	return newMigrator(store, driver, migratorOptions{
-		tableName:       tableName,
-		selectionFields: []string{"scheme", "identifier", "data"},
-		targetVersion:   2,
-		batchSize:       batchSize,
+		tableName:     tableName,
+		targetVersion: 2,
+		batchSize:     batchSize,
+		fields: []fieldSpec{
+			{name: "scheme", postgresType: "text not null", primaryKey: true},
+			{name: "identifier", postgresType: "text not null", primaryKey: true},
+			{name: "data", postgresType: "bytea", readOnly: true},
+			{name: "num_locations", postgresType: "integer not null", updateOnly: true},
+		},
 	})
 }
 
 // MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
 // modify the record to conform to the new schema.
-func (m *locationsCountMigrator) MigrateRowUp(scanner scanner) (updateSpec, error) {
-	var dumpID int
+func (m *locationsCountMigrator) MigrateRowUp(scanner scanner) ([]interface{}, error) {
 	var scheme, identifier string
 	var rawData []byte
 
-	if err := scanner.Scan(&dumpID, &scheme, &identifier, &rawData); err != nil {
-		return updateSpec{}, err
+	if err := scanner.Scan(&scheme, &identifier, &rawData); err != nil {
+		return nil, err
 	}
 
 	data, err := m.serializer.UnmarshalLocations(rawData)
 	if err != nil {
-		return updateSpec{}, err
+		return nil, err
 	}
 
-	return updateSpec{
-		DumpID:      dumpID,
-		Conditions:  map[string]interface{}{"scheme": scheme, "identifier": identifier},
-		Assignments: map[string]interface{}{"num_locations": len(data)},
-	}, nil
+	return []interface{}{scheme, identifier, len(data)}, nil
 }
 
 // MigrateRowDown sets num_locations back to zero to undo the migration up direction.
-func (m *locationsCountMigrator) MigrateRowDown(scanner scanner) (updateSpec, error) {
-	var dumpID int
+func (m *locationsCountMigrator) MigrateRowDown(scanner scanner) ([]interface{}, error) {
 	var scheme, identifier string
 	var rawData []byte
 
-	if err := scanner.Scan(&dumpID, &scheme, &identifier, &rawData); err != nil {
-		return updateSpec{}, err
+	if err := scanner.Scan(&scheme, &identifier, &rawData); err != nil {
+		return nil, err
 	}
 
-	return updateSpec{
-		DumpID:      dumpID,
-		Conditions:  map[string]interface{}{"scheme": scheme, "identifier": identifier},
-		Assignments: map[string]interface{}{"num_locations": 0},
-	}, nil
+	return []interface{}{scheme, identifier, 0}, nil
 }

@@ -1,5 +1,5 @@
-import React from 'react'
 import classnames from 'classnames'
+import React from 'react'
 
 export type BadgeStatus = 'beta' | 'prototype' | 'wip' | 'new'
 
@@ -16,7 +16,7 @@ export interface BadgeProps {
     className?: string
 }
 
-export const Badge: React.FC<BadgeProps> = props => {
+export const Badge: React.FunctionComponent<BadgeProps> = props => {
     const { className, status, tooltip } = props
 
     return (

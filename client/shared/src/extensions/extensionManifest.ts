@@ -1,4 +1,5 @@
 import { isPlainObject } from 'lodash'
+
 import { ExtensionManifest as ExtensionManifestSchema } from '../schema/extensionSchema'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { parseJSONCOrError } from '../util/jsonc'

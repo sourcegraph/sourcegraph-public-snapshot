@@ -244,6 +244,8 @@ func runMigrationFunction(ctx context.Context, store storeIface, migration *Migr
 	}
 
 	if migrationErr := migrationFunc(ctx); migrationErr != nil {
+		log15.Error("Failed to perform migration", "migrationID", migration.ID, "error", migrationErr)
+
 		// Migration resulted in an error. All we'll do here is add this error to the migration's error
 		// message list. Unless _that_ write to the database fails, we'll continue along the happy path
 		// in order to update the migration, which could have made additional progress before failing.

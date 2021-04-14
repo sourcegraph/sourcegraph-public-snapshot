@@ -4,7 +4,9 @@ import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { NEVER } from 'rxjs'
 import sinon from 'sinon'
+
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+
 import { SearchPatternType } from './graphql-operations'
 import { Layout, LayoutProps } from './Layout'
 

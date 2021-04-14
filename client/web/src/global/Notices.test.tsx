@@ -1,7 +1,8 @@
+import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
+
 import { Notices } from './Notices'
-import * as H from 'history'
 
 describe('Notices', () => {
     test('shows notices for location', () =>

@@ -1,11 +1,22 @@
-import { DiffPart } from '@sourcegraph/codeintellify'
-import { Range } from '@sourcegraph/extension-api-classes'
+import { nextTick } from 'process'
+import { promisify } from 'util'
+
+import { Remote } from 'comlink'
 import { uniqueId, noop, isEmpty, pick } from 'lodash'
 import renderer from 'react-test-renderer'
 import { BehaviorSubject, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
 import { filter, take, first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
+import * as sourcegraph from 'sourcegraph'
+
+import { DiffPart } from '@sourcegraph/codeintellify'
+import { Range } from '@sourcegraph/extension-api-classes'
+import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
+import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { integrationTestContext } from '@sourcegraph/shared/src/api/integration-test/testHelpers'
 import { PrivateRepoPublicSourcegraphComError } from '@sourcegraph/shared/src/backend/errors'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
@@ -13,9 +24,13 @@ import { SuccessGraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import { IQuery } from '@sourcegraph/shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { resetAllMemoizationCaches } from '@sourcegraph/shared/src/util/memoizeObservable'
+import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 import { subtypeOf, allOf, check, isTaggedUnionMember } from '@sourcegraph/shared/src/util/types'
+import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+
 import { DEFAULT_SOURCEGRAPH_URL } from '../../util/context'
 import { MutationRecordLike } from '../../util/dom'
+
 import {
     CodeIntelligenceProps,
     createGlobalDebugMount,
@@ -27,17 +42,6 @@ import {
 } from './codeHost'
 import { toCodeViewResolver } from './codeViews'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './testHelpers'
-import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { Remote } from 'comlink'
-import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
-import * as sourcegraph from 'sourcegraph'
-import { promisify } from 'util'
-import { nextTick } from 'process'
-import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 const RENDER = sinon.spy()
 

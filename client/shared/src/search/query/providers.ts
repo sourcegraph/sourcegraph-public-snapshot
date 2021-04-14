@@ -1,13 +1,15 @@
 import * as Monaco from 'monaco-editor'
 import { Observable, fromEventPattern, of } from 'rxjs'
-import { scanSearchQuery } from './scanner'
 import { map, first, takeUntil, publishReplay, refCount, switchMap, debounceTime, share } from 'rxjs/operators'
+
+import { SearchPatternType } from '../../graphql-operations'
+import { SearchSuggestion } from '../suggestions'
+
+import { getCompletionItems } from './completion'
 import { getMonacoTokens } from './decoratedToken'
 import { getDiagnostics } from './diagnostics'
-import { getCompletionItems } from './completion'
 import { getHoverResult } from './hover'
-import { SearchSuggestion } from '../suggestions'
-import { SearchPatternType } from '../../graphql-operations'
+import { scanSearchQuery } from './scanner'
 
 interface SearchFieldProviders {
     tokens: Monaco.languages.TokensProvider

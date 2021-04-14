@@ -1,4 +1,5 @@
 import { lazyComponent } from '../util/lazyComponent'
+
 import { NamespaceAreaRoute } from './NamespaceArea'
 
 export const namespaceAreaRoutes: readonly NamespaceAreaRoute[] = [

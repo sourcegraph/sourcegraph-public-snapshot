@@ -1,6 +1,8 @@
 import * as React from 'react'
-import { Link } from './Link'
+
 import { appendSubtreeQueryParameter } from '../util/url'
+
+import { Link } from './Link'
 
 /**
  * Returns the friendly display form of the repository name (e.g., removing "github.com/").

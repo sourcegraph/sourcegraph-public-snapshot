@@ -1,6 +1,7 @@
-import React from 'react'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import classNames from 'classnames'
+import React from 'react'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 /** Takes loading prop, input component as child */
 

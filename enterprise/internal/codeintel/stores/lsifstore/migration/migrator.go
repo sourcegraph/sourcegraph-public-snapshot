@@ -2,12 +2,12 @@ package migration
 
 import (
 	"context"
-	"sort"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
@@ -41,62 +41,102 @@ import (
 // table. When checking progress, we can efficiently do a full-table on the much smaller
 // aggregate table.
 type Migrator struct {
-	store   *lsifstore.Store
-	driver  migrationDriver
-	options migratorOptions
+	store                    *lsifstore.Store
+	driver                   migrationDriver
+	options                  migratorOptions
+	selectionExpressions     []*sqlf.Query // expressions used in select query
+	temporaryTableFieldNames []string      // names of fields inserted into temporary table
+	temporaryTableFieldSpecs []*sqlf.Query // names of fields inserted into temporary table
+	updateConditions         []*sqlf.Query // expressions used for the update statement
+	updateAssignments        []*sqlf.Query // expressions used to assign to the target table
 }
 
 type migratorOptions struct {
 	// tableName is the name of the table undergoing migration.
 	tableName string
 
-	// selectionFields is a list of fields that should be scanned and made available to
-	// the migration driver.
-	selectionFields []string
-
 	// targetVersion is the value of the row's schema version after an up migration.
 	targetVersion int
 
 	// batchSize limits the number of rows that will be scanned on each call to Up/Down.
 	batchSize int
+
+	// fields is an ordered set of fields used to construct temporary tables and update queries.
+	fields []fieldSpec
+}
+
+type fieldSpec struct {
+	// name is the name of the column.
+	name string
+
+	// postgresType is the type (with modifiers) of the column.
+	postgresType string
+
+	// primaryKey indicates that the field is part of a composite primary key.
+	primaryKey bool
+
+	// readOnly indicates that the field should be skipped on updates.
+	readOnly bool
+
+	// updateOnly indicates that the field should be skipped on selects.
+	updateOnly bool
 }
 
 type migrationDriver interface {
-	// MigrateRowUp determines which fields to update for the given row.
-	MigrateRowUp(scanner scanner) (updateSpec, error)
+	// MigrateRowUp determines which fields to update for the given row. The scanner will receive
+	// the values of the primary keys plus any additional non-updateOnly fields supplied via the
+	// migrator's fields option. Implementations must return the same number of values as the set
+	// of primary keys plus any additional non-selectOnly fields supplied via the migrator's fields
+	// option.
+	MigrateRowUp(scanner scanner) ([]interface{}, error)
 
-	// MigrateRowDown undoes the migration for the given row.
-	MigrateRowDown(scanner scanner) (updateSpec, error)
+	// MigrateRowDown undoes the migration for the given row.  The scanner will receive the values
+	// of the primary keys plus any additional non-updateOnly fields supplied via the migrator's
+	// fields option. Implementations must return the same number of values as the set  of primary
+	// keys plus any additional non-selectOnly fields supplied via the migrator's fields option.
+	MigrateRowDown(scanner scanner) ([]interface{}, error)
 }
 
 // driverFunc is the type of MigrateRowUp and MigrateRowDown.
-type driverFunc func(scanner scanner) (updateSpec, error)
+type driverFunc func(scanner scanner) ([]interface{}, error)
 
 type scanner interface {
 	Scan(dest ...interface{}) error
 }
 
-type updateSpec struct {
-	// DumpID is the identifier of the associated upload record.
-	DumpID int
-
-	// Conditions is a map from field names to values or SQL expressions. This map should
-	// include the expected value of each primary key field of the current row, as well as
-	// any additional field/value mappings that are expected to exist for this row. If not
-	// supplied, the dump identifier will be implicitly added to this map prior to update.
-	Conditions map[string]interface{}
-
-	// Assignments is a map from field names to values or SQL expressions. This map should
-	// include a value for each field that should be updated. If not supplied, the target
-	// schema version will be implicitly added to this map prior to update.
-	Assignments map[string]interface{}
-}
-
 func newMigrator(store *lsifstore.Store, driver migrationDriver, options migratorOptions) oobmigration.Migrator {
+	selectionExpressions := make([]*sqlf.Query, 0, len(options.fields))
+	temporaryTableFieldNames := make([]string, 0, len(options.fields))
+	temporaryTableFieldSpecs := make([]*sqlf.Query, 0, len(options.fields))
+	updateConditions := make([]*sqlf.Query, 0, len(options.fields))
+	updateAssignments := make([]*sqlf.Query, 0, len(options.fields))
+
+	for _, field := range options.fields {
+		if field.primaryKey {
+			updateConditions = append(updateConditions, sqlf.Sprintf("dest."+field.name+" = src."+field.name))
+		}
+		if !field.updateOnly {
+			selectionExpressions = append(selectionExpressions, sqlf.Sprintf(field.name))
+		}
+		if !field.readOnly {
+			temporaryTableFieldNames = append(temporaryTableFieldNames, field.name)
+			temporaryTableFieldSpecs = append(temporaryTableFieldSpecs, sqlf.Sprintf(field.name+" "+field.postgresType))
+
+			if !field.primaryKey {
+				updateAssignments = append(updateAssignments, sqlf.Sprintf(field.name+" = src."+field.name))
+			}
+		}
+	}
+
 	return &Migrator{
-		store:   store,
-		driver:  driver,
-		options: options,
+		store:                    store,
+		driver:                   driver,
+		options:                  options,
+		selectionExpressions:     selectionExpressions,
+		temporaryTableFieldNames: temporaryTableFieldNames,
+		temporaryTableFieldSpecs: temporaryTableFieldSpecs,
+		updateConditions:         updateConditions,
+		updateAssignments:        updateAssignments,
 	}
 }
 
@@ -143,93 +183,142 @@ func (m *Migrator) run(ctx context.Context, sourceVersion, targetVersion int, dr
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// Perform the actual batch of migrations
-	ids, err := m.selectAndUpdate(ctx, tx, sourceVersion, targetVersion, driverFunc)
+	dumpID, ok, err := m.selectAndLockDump(ctx, tx, sourceVersion)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	rowValues, err := m.processRows(ctx, tx, dumpID, sourceVersion, driverFunc)
 	if err != nil {
 		return err
 	}
 
-	if len(ids) == 0 {
-		return nil
+	if err := m.updateBatch(ctx, tx, dumpID, targetVersion, rowValues); err != nil {
+		return err
 	}
 
-	idQueries := make([]*sqlf.Query, 0, len(ids))
-	for _, id := range ids {
-		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
-	}
-
-	return tx.Exec(ctx, sqlf.Sprintf(runQuery, sqlf.Sprintf(m.options.tableName), sqlf.Sprintf(m.options.tableName), sqlf.Join(idQueries, ", ")))
-}
-
-const runQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:run
-INSERT INTO %s_schema_versions
-SELECT
-	dump_id,
-	MIN(schema_version) as min_schema_version,
-	MAX(schema_version) as max_schema_version
-FROM
-	%s
-WHERE
-	dump_id IN (%s)
-GROUP BY
-	dump_id
-ON CONFLICT (dump_id) DO UPDATE SET
-	min_schema_version = EXCLUDED.min_schema_version,
-	max_schema_version = EXCLUDED.max_schema_version
-`
-
-// selectAndUpdate selects a batch of records from the configured table with the given source
-// version, then performs an update on each matching row with the new values given from an
-// invocation of the given driver function. This method returns a deduplicated and ordered set
-// of upload identifiers denoting the complete set of uploads whose records were modified
-// by this batch of updates.
-func (m *Migrator) selectAndUpdate(ctx context.Context, tx *lsifstore.Store, sourceVersion, targetVersion int, driverFunc driverFunc) ([]int, error) {
-	// Note: we can't pipeline this as you can't have an open rows object and
-	// execute another unrelated query using the same database handle.
-	updateSpecs, err := m.selectAndProcess(ctx, tx, sourceVersion, driverFunc)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, spec := range updateSpecs {
-		defaultConditions := map[string]interface{}{"dump_id": spec.DumpID}
-		defaultAssignments := map[string]interface{}{"schema_version": targetVersion}
-
-		if err := tx.Exec(ctx, sqlf.Sprintf(
-			selectAndUpdateQuery,
-			sqlf.Sprintf(m.options.tableName),
-			sqlf.Join(formatFieldValuePairs(fillInDefaults(spec.Assignments, defaultAssignments)), ", "),  // SET k1 = v1, k2 = v2
-			sqlf.Join(formatFieldValuePairs(fillInDefaults(spec.Conditions, defaultConditions)), " AND "), // WHERE k1 = v1 AND k2 = v2
-		)); err != nil {
-			return nil, err
-		}
-	}
-
-	return dumpIDsFromUpdateSpecs(updateSpecs), nil
-}
-
-const selectAndUpdateQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:selectAndUpdate
-UPDATE %s SET %s WHERE %s
-`
-
-// selectAndProcess selects a batch of records from the configured table with the given version and
-// returns the update specifications after running the given driver function on each matching row.
-// The records selected by this method are locked (via select for update) in the given transaction.
-func (m *Migrator) selectAndProcess(ctx context.Context, tx *lsifstore.Store, version int, driverFunc driverFunc) ([]updateSpec, error) {
-	fieldQueries := make([]*sqlf.Query, 0, len(m.options.selectionFields))
-	for _, field := range m.options.selectionFields {
-		fieldQueries = append(fieldQueries, sqlf.Sprintf(field))
-	}
+	// After selecting a dump for migration, update the schema version bounds for that
+	// dump. We do this regardless if we actually migrated any rows to catch the case
+	// where we would select a missing dump infinitely.
 
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
-		selectAndProcessQuery,
+		runUpdateBoundsQuery,
+		dumpID,
 		sqlf.Sprintf(m.options.tableName),
-		version,
-		version,
-		sqlf.Join(fieldQueries, ", "),
+		dumpID,
 		sqlf.Sprintf(m.options.tableName),
+		sqlf.Sprintf(m.options.tableName),
+		dumpID,
+	))
+	if err != nil {
+		return err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	if rows.Next() {
+		var rowsUpserted, rowsDeleted int
+		if err := rows.Scan(&rowsUpserted, &rowsDeleted); err != nil {
+			return err
+		}
+
+		// do nothing with these values for now
+	}
+
+	return nil
+}
+
+const runUpdateBoundsQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:run
+WITH
+	current_bounds AS (
+		-- Find the current bounds by scanning the data rows for the
+		-- dump id and tracking the min and max. Note that these values
+		-- will be null if there are no data rows.
+
+		SELECT
+			%s::integer AS dump_id,
+			MIN(schema_version) as min_schema_version,
+			MAX(schema_version) as max_schema_version
+		FROM %s
+		WHERE dump_id = %s
+	),
+	ups AS (
+		-- Upsert the current bounds into the schema versions table. If
+		-- the row already exists, we forcibly update the values as we
+		-- just calculated the most recent view of row versions.
+
+		INSERT INTO %s_schema_versions
+		SELECT dump_id, min_schema_version, max_schema_version
+		FROM current_bounds
+		WHERE
+			-- Do not insert or update if there are no data rows
+			min_schema_version IS NOT NULL AND
+			min_schema_version IS NOT NULL
+		ON CONFLICT (dump_id) DO UPDATE SET
+			min_schema_version = EXCLUDED.min_schema_version,
+			max_schema_version = EXCLUDED.max_schema_version
+		RETURNING 1
+	),
+	del AS (
+		-- If there were no data rows associated with this dump, then
+		-- there are no bounds (by definition) and we should remove the
+		-- schema version row so we don't re-select it for migration.
+
+		DELETE FROM %s_schema_versions
+		WHERE dump_id = %s AND EXISTS (
+			SELECT 1
+			FROM current_bounds
+			WHERE
+				min_schema_version IS NULL AND
+				max_schema_version IS NULL
+			)
+		RETURNING 1
+	)
+SELECT
+	(SELECT COUNT(*) FROM ups) AS num_ups,
+	(SELECT COUNT(*) FROM del) AS num_del
+`
+
+// selectAndLockDump chooses and row-locks a schema version row associated with a particular dump.
+// Having each batch of updates touch only rows associated with a single dump reduces contention
+// when multiple migrators are running. This method returns the dump identifier and a boolean flag
+// indicating that such a dump could be selected.
+func (m *Migrator) selectAndLockDump(ctx context.Context, tx *lsifstore.Store, sourceVersion int) (_ int, _ bool, err error) {
+	return basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
+		selectAndLockDumpQuery,
+		sqlf.Sprintf(m.options.tableName),
+		sourceVersion,
+		sourceVersion,
+	)))
+}
+
+const selectAndLockDumpQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:selectAndLockDump
+SELECT dump_id
+FROM %s_schema_versions
+WHERE
+	min_schema_version <= %s AND
+	max_schema_version >= %s
+ORDER BY dump_id
+LIMIT 1
+
+-- Lock the record in the schema_versions table. All concurrent migrators should then
+-- be able to process records related to a distinct dump.
+FOR UPDATE SKIP LOCKED
+`
+
+// processRows selects a batch of rows from the target table associated with the given dump identifier
+// to  update and calls the given driver func over each row. The driver func returns the set of values
+// that should be used to update that row. These values are fed into a channel usable for batch insert.
+func (m *Migrator) processRows(ctx context.Context, tx *lsifstore.Store, dumpID, version int, driverFunc driverFunc) (_ <-chan []interface{}, err error) {
+	rows, err := tx.Query(ctx, sqlf.Sprintf(
+		processRowsQuery,
+		sqlf.Join(m.selectionExpressions, ", "),
+		sqlf.Sprintf(m.options.tableName),
+		dumpID,
 		version,
 		m.options.batchSize,
 	))
@@ -238,80 +327,74 @@ func (m *Migrator) selectAndProcess(ctx context.Context, tx *lsifstore.Store, ve
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	updateSpecs := make([]updateSpec, 0, m.options.batchSize)
+	rowValues := make(chan []interface{}, m.options.batchSize)
+	defer close(rowValues)
+
 	for rows.Next() {
-		spec, err := driverFunc(rows)
+		values, err := driverFunc(rows)
 		if err != nil {
 			return nil, err
 		}
 
-		updateSpecs = append(updateSpecs, spec)
+		rowValues <- values
 	}
 
-	return updateSpecs, nil
+	return rowValues, nil
 }
 
-const selectAndProcessQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:selectAndProcess
-WITH candidates AS (
-	SELECT dump_id
-	FROM %s_schema_versions
-	WHERE
-		min_schema_version <= %s AND
-		max_schema_version >= %s
-)
-SELECT dump_id, %s
-FROM %s
-WHERE
-	dump_id IN (SELECT dump_id FROM candidates) AND
-	schema_version = %s
-ORDER BY dump_id
-LIMIT %s
-FOR UPDATE SKIP LOCKED
+const processRowsQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:processRows
+SELECT %s FROM %s WHERE dump_id = %s AND schema_version = %s LIMIT %s
 `
 
-// fillInDefaults assigns each (k, v) pair in the given defaults map into the target map m
-// if the key does not already exist. This method returns the target map m.
-func fillInDefaults(m, defaults map[string]interface{}) map[string]interface{} {
-	for k, v := range defaults {
-		if _, ok := m[k]; !ok {
-			m[k] = v
-		}
+var temporaryTableName = "t_migration_payload"
+var temporaryTableExpression = sqlf.Sprintf(temporaryTableName)
+
+// updateBatch creates a temporary table symmetric to the target table but without any of the read-only
+// fields. Then, the given row values are bulk inserted into the temporary table. Finally, the rows in
+// the temporary table are used to update the target table.
+func (m *Migrator) updateBatch(ctx context.Context, tx *lsifstore.Store, dumpID, targetVersion int, rowValues <-chan []interface{}) error {
+	if err := tx.Exec(ctx, sqlf.Sprintf(
+		updateBatchTemporaryTableQuery,
+		temporaryTableExpression,
+		sqlf.Join(m.temporaryTableFieldSpecs, ", "),
+	)); err != nil {
+		return err
 	}
 
-	return m
+	if err := batch.InsertValues(
+		ctx,
+		tx.Handle().DB(),
+		temporaryTableName,
+		m.temporaryTableFieldNames,
+		rowValues,
+	); err != nil {
+		return err
+	}
+
+	// Note that we assign a parameterized dump identifier and schema version here since
+	// both values are the same for all rows in this operation.
+	if err := tx.Exec(ctx, sqlf.Sprintf(
+		updateBatchUpdateQuery,
+		sqlf.Sprintf(m.options.tableName),
+		sqlf.Join(m.updateAssignments, ", "),
+		targetVersion,
+		temporaryTableExpression,
+		dumpID,
+		sqlf.Join(m.updateConditions, " AND "),
+	)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// formatFieldValuePairs returns a slice of sqlf.Query values whose values are `{k} = {v}`
-// for each (k, v) in the given map. The output slice is ordered by field name.
-func formatFieldValuePairs(union map[string]interface{}) []*sqlf.Query {
-	keys := make([]string, 0, len(union))
-	for k := range union {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
+const updateBatchTemporaryTableQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:updateBatch
+CREATE TEMPORARY TABLE %s (%s) ON COMMIT DROP
+`
 
-	queries := make([]*sqlf.Query, 0, len(union))
-	for _, k := range keys {
-		queries = append(queries, sqlf.Sprintf("%s = %s", sqlf.Sprintf(k), union[k]))
-	}
-
-	return queries
-}
-
-// dumpIDsFromUpdateSpecs returns the identifiers of the uploads referenced in the given slice
-// of update spec values.
-func dumpIDsFromUpdateSpecs(updateSpecs []updateSpec) []int {
-	idMap := map[int]struct{}{}
-	for _, spec := range updateSpecs {
-		idMap[spec.DumpID] = struct{}{}
-	}
-
-	ids := make([]int, 0, len(idMap))
-	for id := range idMap {
-		ids = append(ids, id)
-	}
-	sort.Ints(ids)
-
-	return ids
-}
+const updateBatchUpdateQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/migration/migrator.go:updateBatch
+UPDATE %s dest SET %s, schema_version = %s FROM %s src WHERE dump_id = %s AND %s
+`

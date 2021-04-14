@@ -19,7 +19,7 @@ This will make upgrades far easier and is a good practice not just for Sourcegra
    When you upgrade Sourcegraph, you will merge upstream into this branch.
 
    ```bash
-   SOURCEGRAPH_VERSION="3.24"
+   SOURCEGRAPH_VERSION="3.26.3"
    git checkout $SOURCEGRAPH_VERSION -b release
    ```
 
@@ -28,10 +28,13 @@ This will make upgrades far easier and is a good practice not just for Sourcegra
 - Commit customizations to your release branch:
 
    - Commit manual modifications to Kubernetes YAML files.
+   - _Warning_: Modifications to files inside the `base` increases the odds of encountering git merge conflicts when upgrading. Consider using [overlays](overlays.md) instead.
    - Commit commands that should be run on every update (e.g. `kubectl apply`) to [kubectl-apply-all.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/kubectl-apply-all.sh).
    - Commit commands that generally only need to be run once per cluster to (e.g. `kubectl create secret`, `kubectl expose`) to [create-new-cluster.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/create-new-cluster.sh).
 
 - When you upgrade, merge the corresponding upstream release tag into your release branch. E.g., `git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph` to add the upstream remote and `git checkout release && git merge v3.15.0` to merge the upstream release tag into your release branch.
+
+- _See also [git strategies when using overlays](overlays.md#git-strategies-with-overlays)_
 
 ## Dependencies
 
@@ -53,6 +56,11 @@ you need the [kustomize](https://kustomize.io/) tool installed.
 - [Configure SSDs to boost performance](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ssd/README.md).
 - [Increase memory or CPU limits](#increase-memory-or-cpu-limits)
 
+### Security
+
+- [Using NetworkPolicy](#using-networkpolicy)
+- [Using NetworkPolicy with Namespaced Overlay](#using-networkpolicy-with-namespaced-overlay)
+
 ### Less common configuration
 
 - [Configure gitserver replica count](#configure-gitserver-replica-count)
@@ -65,17 +73,16 @@ you need the [kustomize](https://kustomize.io/) tool installed.
 - [Install without RBAC](#install-without-rbac)
 - [Use non-default namespace](#use-non-default-namespace)
 - [Pulling images locally](#pulling-images-locally)
-- [Using NetworkPolicy](#using-networkpolicy)
 
 ### Working with overlays
 
-- [Overlay basic principles](#overlay-basic-principles)
-- [Handling overlays in this repository](#handling-overlays-in-this-repository)
+- [Overlay basic principles](overlays.md#overlay-basic-principles)
+- [Handling overlays in this repository](overlays.md#handling-overlays)
 - [namespaced overlay](#namespaced-overlay)
-- [non-root overlay](#non-root-overlay)
-- [non-privileged overlay](#non-privileged-overlay)
+- [non-root overlay](overlays.md#non-root-overlay)
+- [non-privileged overlay](overlays.md#non-privileged-overlay)
 
-## Configure network access
+## Security - Configure network access
 
 You need to make the main web server accessible over the network to external users.
 
@@ -172,6 +179,113 @@ Add a network rule that allows ingress traffic to port 30080 (HTTP) on at least 
 - [AWS Security Group rules](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_SecurityGroups.html).
 
 Sourcegraph should now be accessible at `$EXTERNAL_ADDR:30080`, where `$EXTERNAL_ADDR` is the address of _any_ node in the cluster.
+
+### Using NetworkPolicy
+
+Network policy is a Kubernetes resource that defines how pods are allowed to communicate with each other and with
+other network endpoints. If the cluster administration requires an associated NetworkPolicy when doing an installation,
+then we recommend running Sourcegraph in a namespace (as described below in the [namespaced overlay](#namespaced-overlay)).
+You can then use the `namespaceSelector` to allow traffic between the Sourcegraph pods.
+When you create the namespace you need to give it a label so it can be used in a `matchLabels` clause.
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns-sourcegraph
+  labels:
+    name: ns-sourcegraph
+```
+
+If the namespace already exists you can still label it like so
+
+```shell script
+kubectl label namespace ns-sourcegraph name=ns-sourcegraph
+```
+
+> Note: You will need to augment this example NetworkPolicy to allow traffic to external services
+> you plan to use (like github.com) and ingress traffic from
+> the outside to the frontend for the users of the Sourcegraph installation.
+> Check out this [collection](https://github.com/ahmetb/kubernetes-network-policy-recipes) of NetworkPolicies to get started.
+
+```yaml
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: np-sourcegraph
+  namespace: ns-sourcegraph
+spec:
+  # For all pods with the label "deploy: sourcegraph"
+  podSelector:
+    matchLabels:
+      deploy: sourcegraph
+  policyTypes:
+  - Ingress
+  - Egress
+  # Allow all traffic inside the ns-sourcegraph namespace
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ns-sourcegraph
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: ns-sourcegraph
+```
+
+### Using NetworkPolicy with Namespaced Overlay
+
+1. Create a yaml file (`networkPolicy.yaml` for example) in the root directory:
+
+```yaml
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: np-sourcegraph
+  namespace: ns-<EXAMPLE NAMESPACE>
+spec:
+  # For all pods with the label "deploy: sourcegraph"
+  podSelector:
+    matchLabels:
+      deploy: sourcegraph
+  policyTypes:
+  - Ingress
+  - Egress
+  # Allow all traffic inside the ns-<EXAMPLE NAMESPACE> namespace
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ns-sourcegraph
+          namespace: ns-<EXAMPLE NAMESPACE>
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: ns-<EXAMPLE NAMESPACE>
+```
+
+1. `kubectl apply -f networkPolicy.yaml` => networkpolicy.networking.k8s.io/np-sourcegraph created
+
+1. `kubectl apply -f generated-cluster/networking.k8s.io_v1beta1_ingress_sourcegraph-frontend.yaml` => ingress.networking.k8s.io/sourcegraph-frontend configured
+
+
+
+1. Apply setting to all using `kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive`
+
+1. Run `kubectl get pods -A` to check for the namespaces and their status --it should now be up and running 🎉
+
+1. Access Sourcegraph on your local machine by temporarily making the frontend port accessible:
+
+   ```
+   kubectl port-forward svc/sourcegraph-frontend 3080:30080
+   ```
+
+1. Open http://localhost:3080 in your browser and you will see a setup page. 
+
+1. 🎉 Congrats, you have Sourcegraph up and running! Now [configure your deployment](configure.md).
 
 ## Update site configuration
 
@@ -474,16 +588,20 @@ reclaimPolicy: Retain
 If you wish to use a different storage class for Sourcegraph, then you need to update all persistent volume claims with the name of the desired storage class. Convenience script:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
 
-# This script requires https://github.com/sourcegraph/jy and https://github.com/sourcegraph/yj
-STORAGE_CLASS_NAME=
+# This script requires https://github.com/mikefarah/yq v4 or greater
 
-find . -name "*PersistentVolumeClaim.yaml" -exec sh -c "cat {} | yj | jq '.spec.storageClassName = \"$STORAGE_CLASS_NAME\"' | jy -o {}" \;
+# Set SC to your storage class name
+SC=
 
-GS=base/gitserver/gitserver.StatefulSet.yaml
+PVC=()
+STS=()
+mapfile -t PVC < <(fd --absolute-path --extension yaml "PersistentVolumeClaim" base)
+mapfile -t STS < <(fd --absolute-path --extension yaml "StatefulSet" base)
 
-cat $GS | yj | jq  --arg STORAGE_CLASS_NAME $STORAGE_CLASS_NAME '.spec.volumeClaimTemplates = (.spec.volumeClaimTemplates | map( . * {spec:{storageClassName: $STORAGE_CLASS_NAME }}))' | jy -o $GS
+for p in "${PVC[@]}"; do yq eval -i ".spec.storageClassName|=\"$SC\"" "$p"; done
+for s in "${STS[@]}"; do yq eval -i ".spec.volumeClaimTemplates.[].spec.storageClassName|=\"$SC\"" "$s"; done
 ```
 
 ## Configure custom Redis
@@ -518,9 +636,13 @@ Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https:/
 
 - Once you have a license key, add it to your [site configuration](https://docs.sourcegraph.com/admin/config/site_config).
 
-## Use non-default namespace
+## Overlays
 
-Modifying the base manifests to use a non-default namespace can be done using the [namespaced](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/namespaced) overlay. Read the [section](#overlay-basic-principles) below about overlays.
+An overlay specifies customizations for a base directory of Kubernetes manifests. It enables us to change parameters (number of replicas, namespace, etc) for Kubernetes components without affecting the base directory. Read the [Overlays docs](overlays.md) for more information about using overlays with Sourcegraph.
+
+### Use non-default namespace
+
+Modifying the base manifests to use a non-default namespace can be done using the [namespaced overlay](overlays.md#use-non-default-namespace).
 
 ## Pulling images locally
 
@@ -532,142 +654,3 @@ for all images under `base/`:
 ```bash
 for IMAGE in $(grep --include '*.yaml' -FR 'image:' base | awk '{ print $(NF) }'); do docker pull "$IMAGE"; done;
 ```
-
-## Using NetworkPolicy
-
-Network policy is a Kubernetes resource that defines how pods are allowed to communicate with each other and with
-other network endpoints. If the cluster administration requires an associated NetworkPolicy when doing an installation,
-then we recommend running Sourcegraph in a namespace (as described below in the [namespaced overlay](#namespaced-overlay)).
-You can then use the `namespaceSelector` to allow traffic between the Sourcegraph pods.
-When you create the namespace you need to give it a label so it can be used in a `matchLabels` clause.
-
-```yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: ns-sourcegraph
-  labels:
-    name: ns-sourcegraph
-```
-
-If the namespace already exists you can still label it like so
-
-```shell script
-kubectl label namespace ns-sourcegraph name=ns-sourcegraph
-```
-
-> Note: You will need to augment this example NetworkPolicy to allow traffic to external services
-> you plan to use (like github.com) and ingress traffic from
-> the outside to the frontend for the users of the Sourcegraph installation.
-> Check out this [collection](https://github.com/ahmetb/kubernetes-network-policy-recipes) of NetworkPolicies to get started.
-
-```yaml
-kind: NetworkPolicy
-apiVersion: networking.k8s.io/v1
-metadata:
-  name: np-sourcegraph
-  namespace: ns-sourcegraph
-spec:
-  # For all pods with the label "deploy: sourcegraph"
-  podSelector:
-    matchLabels:
-      deploy: sourcegraph
-  policyTypes:
-  - Ingress
-  - Egress
-  # Allow all traffic inside the ns-sourcegraph namespace
-  ingress:
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          name: ns-sourcegraph
-  egress:
-  - to:
-    - namespaceSelector:
-        matchLabels:
-          name: ns-sourcegraph
-```
-
-## Overlays
-
-### Overlay basic principles
-
-An overlay specifies customizations for a base directory of Kubernetes manifests. The base has no knowledge of the overlay.
-Overlays can be used for example to change the number of replicas, change a namespace, add a label etc. Overlays can refer to
-other overlays that eventually refer to the base forming a directed acyclic graph with the base as the root.
-
-An overlay is defined in a `kustomization.yaml` file (the name of the file is fixed and there can be only one kustomization
- file in one directory). To avoid complications with reference cycles an overlay can only reference resources inside the
- directory subtree of the directory it resides in (symlinks are not allowed either).
-
-For more details about overlays please consult the `kustomize` [documentation](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/).
-
-Using overlays and applying them to the cluster
-can be done in two ways: by using `kubectl` or with the `kustomize` tool.
-
-Starting with `kubectl` client version 1.14 `kubectl` can handle `kustomization.yaml` files directly.
-When using `kubectl` there is no intermediate step that generates actual manifest files. Instead the combined resources from the
-overlays and the base are directly sent to the cluster. This is done with the `kubectl apply -k` command. The argument to the
-command is a directory containing a `kustomization.yaml` file.
-
-The second way to use overlays is with the `kustomize` tool. This does generate manifest files that are then applied
-in the conventional way using `kubectl apply -f`.
-
-### Handling overlays in this repository
-
-The overlays provided in this repository rely on the `kustomize` tool and the `overlay-generate-cluster.sh` script in the
-root directory of this repository to generate the manifests. There are two reasons why it was set up like this:
-
-- It avoids having to put a `kustomization.yaml` file in the `base` directory and forcing users that don't use overlays
-to deal with it (unfortunately `kubectl apply -f` doesn't work if a `kustomization.yaml` file is in the directory).
-- It generates manifests instead of applying them directly. This provides opportunity to additionally validate the files
-and also allows using `kubectl apply -f` with `--prune` flag turned on (`apply -k` with `--prune` does not work correctly).
-
-To generate the manifests run the `overlay-generate-cluster.sh` with two arguments: the name of the overlay and a
-path to an output directory where the generated manifests will be. Example (assuming you are in the root directory of this
-repository):
-
-```shell script
-./overlay-generate-cluster.sh non-root generated-cluster
-```
-
-After executing the script you can apply the generated manifests from the `generated-cluster` directory:
-
-```shell script
-kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
-```
-
-Available overlays are the subdirectories of `overlays` (only give the name of the subdirectory, not the full path as an argument).
-
-You only need to apply one of the three overlays; each builds on the overlay listed before. So, for example, using the non-root overlay will also install Sourcegraph in a non-default namespace.
-
-### Namespaced overlay
-
-This overlay adds a namespace declaration to all the manifests. You can change the namespace by editing
- [namespaced kustomization.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/namespaced/kustomization.yaml).
-
-To use it, execute this from the root directory of this repository:
-
-```shell script
-./overlay-generate-cluster.sh namespaced generated-cluster
-```
-
-### Non-root overlay
-
-The manifests in the `base` directory specify user `root` for all containers. This overlay changes the specification to be
-a non-root user.
-
-If you are starting a fresh installation use the overlay `non-root-create-cluster`. After creation you can use the overlay
-`non-root`.
-
-If you already are running a Sourcegraph instance using user `root` and want to convert to running with non-root user then
-you need to apply a migration step that will change the permissions of all persistent volumes so that the volumes can be
-used by the non-root user. This migration is provided as overlay `migrate-to-nonroot`. After the migration you can use
-overlay `non-root`.
-
-### Non-privileged overlay
-
-This overlays goes one step further than the `non-root` overlay by also removing cluster roles and cluster role bindings.
-
-If you are starting a fresh installation use the overlay `non-privileged-create-cluster`. After creation you can use the overlay
-`non-privileged`.

@@ -394,4 +394,55 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 		}
 	})
+
+	// TODO(rok): Move to backend integration tests once we support creating search contexts through API
+	t.Run("context: and repo: field", func(t *testing.T) {
+		var mu sync.Mutex
+
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
+		contextUserID := int32(1)
+		calledReposListRepoNames := false
+		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]*types.RepoName, error) {
+			mu.Lock()
+			defer mu.Unlock()
+			calledReposListRepoNames = true
+
+			// Validate that the following options are invariant
+			// when calling the DB through Repos.List, no matter how
+			// many times it is called for a single Search(...) operation.
+			assertEqual(t, op.LimitOffset, limitOffset)
+			assertEqual(t, op.IncludePatterns, []string{"foo"})
+			assertEqual(t, op.UserID, contextUserID)
+
+			return []*types.RepoName{{Name: "foo-repo"}}, nil
+		}
+		database.Mocks.Repos.Count = mockCount
+		database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
+			assertEqual(t, name, "ctx")
+			return &database.Namespace{Name: name, User: contextUserID}, nil
+		}
+		defer func() {
+			database.Mocks.Repos.ListRepoNames = nil
+			database.Mocks.Repos.Count = nil
+			database.Mocks.Namespaces.GetByName = nil
+		}()
+
+		// Mock to bypass language suggestions.
+		mockShowLangSuggestions = func() ([]SearchSuggestionResolver, error) { return nil, nil }
+		defer func() { mockShowLangSuggestions = nil }()
+
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error) {
+			return []*FileMatchResolver{}, &streaming.Stats{}, nil
+		}
+		defer func() { mockSearchFilesInRepos = nil }()
+
+		for _, v := range searchVersions {
+			testSuggestions(t, "context:@ctx repo:foo", v, []string{"repo:foo-repo"})
+			if !calledReposListRepoNames {
+				t.Error("!calledReposListRepoNames")
+			}
+		}
+	})
 }

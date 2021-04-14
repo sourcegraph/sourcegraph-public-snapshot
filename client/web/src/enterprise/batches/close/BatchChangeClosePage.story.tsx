@@ -1,14 +1,10 @@
-import React from 'react'
-import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
-import { BatchChangeClosePage } from './BatchChangeClosePage'
-import {
-    queryChangesets as _queryChangesets,
-    queryExternalChangesetWithFileDiffs,
-    fetchBatchChangeByNamespace,
-} from '../detail/backend'
-import { of } from 'rxjs'
+import { useMemo, useCallback } from '@storybook/addons'
+import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
+import React from 'react'
+import { of } from 'rxjs'
+
 import {
     ChangesetCheckState,
     ChangesetReviewState,
@@ -16,8 +12,14 @@ import {
     ChangesetState,
     BatchChangeFields,
 } from '../../../graphql-operations'
-import { useMemo, useCallback } from '@storybook/addons'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import {
+    queryChangesets as _queryChangesets,
+    queryExternalChangesetWithFileDiffs,
+    fetchBatchChangeByNamespace,
+} from '../detail/backend'
+
+import { BatchChangeClosePage } from './BatchChangeClosePage'
 
 const { add } = storiesOf('web/batches/close/BatchChangeClosePage', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)

@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
+
 import { HiddenExternalChangesetFields } from '../../../../graphql-operations'
+
 import { ChangesetLastSynced } from './ChangesetLastSynced'
 
 export interface HiddenExternalChangesetInfoCellProps {

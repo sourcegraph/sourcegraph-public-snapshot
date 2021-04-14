@@ -1,13 +1,15 @@
-import { Position } from '@sourcegraph/extension-api-types'
 import { concat, from, of, Subscription, Unsubscribable } from 'rxjs'
 import { first, switchMap } from 'rxjs/operators'
+import * as sourcegraph from 'sourcegraph'
+
+import { Position } from '@sourcegraph/extension-api-types'
+
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { CommandEntry } from '../api/client/mainthread-api'
 import { KeyPath, SettingsEdit, updateSettings } from '../api/client/services/settings'
 import { ActionContributionClientCommandUpdateConfiguration, Evaluated } from '../api/protocol'
 import { PlatformContext } from '../platform/context'
 import { extensionsController } from '../util/searchTestHelpers'
-import * as sourcegraph from 'sourcegraph'
 
 /**
  * Registers the builtin client commands that are required for Sourcegraph extensions. See

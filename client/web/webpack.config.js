@@ -1,12 +1,13 @@
 // @ts-check
 
+const path = require('path')
+
+const logger = require('gulplog')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin')
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin')
-const path = require('path')
 const TerserPlugin = require('terser-webpack-plugin')
 const webpack = require('webpack')
-const logger = require('gulplog')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 

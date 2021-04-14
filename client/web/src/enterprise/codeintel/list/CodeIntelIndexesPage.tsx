@@ -1,6 +1,8 @@
 import React, { FunctionComponent, useCallback, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
+
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -9,6 +11,7 @@ import {
 import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
+
 import { fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
 import { CodeIntelIndexNode, CodeIntelIndexNodeProps } from './CodeIntelIndexNode'
 

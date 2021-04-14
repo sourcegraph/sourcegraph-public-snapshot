@@ -1,5 +1,4 @@
 /* eslint jsx-a11y/no-noninteractive-tabindex: warn*/
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import * as React from 'react'
 import { EMPTY, merge, of, Subject, Subscription } from 'rxjs'
@@ -14,18 +13,22 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
+
+import { getFileDecorations } from '../backend/features'
+import { ErrorAlert } from '../components/alerts'
+import { TreeFields } from '../graphql-operations'
 import { fetchTreeEntries } from '../repo/backend'
+
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeNode } from './Tree'
 import { hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
-import { ErrorAlert } from '../components/alerts'
-import { TreeFields } from '../graphql-operations'
-import { getFileDecorations } from '../backend/features'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 const maxEntries = 2500
 

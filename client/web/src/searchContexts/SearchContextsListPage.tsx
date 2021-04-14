@@ -1,49 +1,70 @@
-import React, { useCallback } from 'react'
+import classNames from 'classnames'
 import * as H from 'history'
-import { Link } from '../../../shared/src/components/Link'
-import { FilteredConnection } from '../components/FilteredConnection'
+import React, { useCallback, useState } from 'react'
+
+import { AuthenticatedUser } from '../auth'
 import { Page } from '../components/Page'
-import { ListSearchContextsResult, ListSearchContextsVariables, SearchContextFields } from '../graphql-operations'
-import { fetchAutoDefinedSearchContexts, fetchSearchContexts } from '../search/backend'
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { VersionContext } from '../schema/site.schema'
+import { isSearchContextSpecAvailable } from '../search'
+import { convertVersionContextToSearchContext } from '../search/backend'
 
-function getSearchContextRepositoriesDescription(searchContext: ISearchContext): string {
-    const numberRepos = searchContext.repositories.length
-    return searchContext.autoDefined ? 'Auto-defined' : `${numberRepos} repositor${numberRepos === 1 ? 'y' : 'ies'}`
-}
-
-export interface SearchContextNodeProps {
-    node: SearchContextFields
-    location: H.Location
-    history: H.History
-}
-
-export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> = ({
-    node,
-    location,
-}: SearchContextNodeProps) => (
-    <div className="search-context-node card mb-1 p-3">
-        {node.autoDefined ? <div>{node.spec}</div> : <Link to={`${location.pathname}/${node.id}`}>{node.spec}</Link>}
-        <div>
-            {getSearchContextRepositoriesDescription(node as ISearchContext)} &middot; {node.description}
-        </div>
-    </div>
-)
+import { ConvertVersionContextsTab } from './ConvertVersionContextsTab'
+import { SearchContextsListTab } from './SearchContextsListTab'
 
 export interface SearchContextsListPageProps {
     location: H.Location
     history: H.History
+    authenticatedUser: AuthenticatedUser | null
+    availableVersionContexts: VersionContext[] | undefined
+}
+
+type SelectedTab = 'list' | 'convert-version-contexts'
+
+function getSelectedTabFromLocation(locationSearch: string): SelectedTab {
+    const urlParameters = new URLSearchParams(locationSearch)
+    switch (urlParameters.get('tab')) {
+        case 'list':
+            return 'list'
+        case 'convert-version-contexts':
+            return 'convert-version-contexts'
+    }
+    return 'list'
+}
+
+function setSelectedLocationTab(location: H.Location, history: H.History, selectedTab: SelectedTab): void {
+    const urlParameters = new URLSearchParams(location.search)
+    urlParameters.set('tab', selectedTab)
+    if (location.search !== urlParameters.toString()) {
+        history.replace({ ...location, search: urlParameters.toString() })
+    }
 }
 
 export const SearchContextsListPage: React.FunctionComponent<SearchContextsListPageProps> = props => {
-    const queryConnection = useCallback(
-        (args: Partial<ListSearchContextsVariables>) =>
-            fetchSearchContexts(args.first ?? 1, args.query ?? undefined, args.after ?? undefined),
-        []
+    const [selectedTab, setSelectedTab] = useState<SelectedTab>(getSelectedTabFromLocation(props.location.search))
+
+    const setTab = useCallback(
+        (tab: SelectedTab) => {
+            setSelectedTab(tab)
+            setSelectedLocationTab(props.location, props.history, tab)
+        },
+        [props.location, props.history]
     )
 
-    const autoDefinedSearchContexts = useObservable(fetchAutoDefinedSearchContexts)
+    const onSelectSearchContextsList = useCallback<React.MouseEventHandler>(
+        event => {
+            event.preventDefault()
+            setTab('list')
+        },
+        [setTab]
+    )
+
+    const onSelectConvertVersionContexts = useCallback<React.MouseEventHandler>(
+        event => {
+            event.preventDefault()
+            setTab('convert-version-contexts')
+        },
+        [setTab]
+    )
 
     return (
         <div className="w-100">
@@ -52,40 +73,45 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                     <div className="search-contexts-list-page__title mb-3">
                         <h2>Search contexts</h2>
                     </div>
-
-                    <div className="mb-3">
-                        <h3>Auto-defined</h3>
-                        {autoDefinedSearchContexts?.map(context => (
-                            <SearchContextNode
-                                key={context.id}
-                                node={context}
-                                location={props.location}
-                                history={props.history}
-                            />
-                        ))}
+                    <div className="border-bottom mb-4">
+                        <div className="nav nav-tabs border-bottom-0">
+                            <div className="nav-item">
+                                {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                                <a
+                                    href=""
+                                    role="button"
+                                    onClick={onSelectSearchContextsList}
+                                    className={classNames('nav-link', selectedTab === 'list' && 'active')}
+                                >
+                                    Search contexts
+                                </a>
+                            </div>
+                            {props.authenticatedUser?.siteAdmin && (
+                                <div className="nav-item test-convert-version-contexts-tab">
+                                    {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                                    <a
+                                        href=""
+                                        role="button"
+                                        onClick={onSelectConvertVersionContexts}
+                                        className={classNames(
+                                            'nav-link',
+                                            selectedTab === 'convert-version-contexts' && 'active'
+                                        )}
+                                    >
+                                        Convert version contexts
+                                    </a>
+                                </div>
+                            )}
+                        </div>
                     </div>
-
-                    <h3>User-defined</h3>
-                    <FilteredConnection<
-                        SearchContextFields,
-                        Omit<SearchContextNodeProps, 'node'>,
-                        ListSearchContextsResult['searchContexts']
-                    >
-                        history={props.history}
-                        location={props.location}
-                        defaultFirst={10}
-                        queryConnection={queryConnection}
-                        hideSearch={false}
-                        nodeComponent={SearchContextNode}
-                        nodeComponentProps={{
-                            location: props.location,
-                            history: props.history,
-                        }}
-                        noun="search context"
-                        pluralNoun="search contexts"
-                        noSummaryIfAllNodesVisible={true}
-                        cursorPaging={true}
-                    />
+                    {selectedTab === 'list' && <SearchContextsListTab {...props} />}
+                    {selectedTab === 'convert-version-contexts' && (
+                        <ConvertVersionContextsTab
+                            {...props}
+                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                            convertVersionContextToSearchContext={convertVersionContextToSearchContext}
+                        />
+                    )}
                 </div>
             </Page>
         </div>

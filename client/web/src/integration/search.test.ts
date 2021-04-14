@@ -1,5 +1,11 @@
 import expect from 'expect'
-import { commonWebGraphQlResults } from './graphQlResults'
+import { test } from 'mocha'
+import { Key } from 'ts-key-enum'
+
+import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
+import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+
 import {
     RepoGroupsResult,
     SearchResult,
@@ -7,14 +13,11 @@ import {
     WebGraphQlOperations,
     AutoDefinedSearchContextsResult,
 } from '../graphql-operations'
-import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { test } from 'mocha'
-import { siteGQLID, siteID } from './jscontext'
-import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '../search/stream'
-import { Key } from 'ts-key-enum'
+
+import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { commonWebGraphQlResults } from './graphQlResults'
+import { createJsContext, siteGQLID, siteID } from './jscontext'
 
 const searchResults = (): SearchResult => ({
     search: {
@@ -84,6 +87,9 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     }),
     AutoDefinedSearchContexts: (): AutoDefinedSearchContextsResult => ({
         autoDefinedSearchContexts: [],
+    }),
+    ConvertVersionContextToSearchContext: ({ name }) => ({
+        convertVersionContextToSearchContext: { id: `id${name}`, spec: name },
     }),
 }
 
@@ -554,7 +560,12 @@ describe('Search', () => {
                             viewerCanAdminister: false,
                             latestSettings: {
                                 id: 0,
-                                contents: JSON.stringify({ experimentalFeatures: { showSearchContext: true } }),
+                                contents: JSON.stringify({
+                                    experimentalFeatures: {
+                                        showSearchContext: true,
+                                        showSearchContextManagement: true,
+                                    },
+                                }),
                             },
                         },
                         {
@@ -563,7 +574,12 @@ describe('Search', () => {
                             siteID,
                             latestSettings: {
                                 id: 470,
-                                contents: JSON.stringify({ experimentalFeatures: { showSearchContext: true } }),
+                                contents: JSON.stringify({
+                                    experimentalFeatures: {
+                                        showSearchContext: true,
+                                        showSearchContextManagement: true,
+                                    },
+                                }),
                             },
                             settingsURL: '/site-admin/global-settings',
                             viewerCanAdminister: true,
@@ -617,9 +633,28 @@ describe('Search', () => {
                 },
             }),
         }
+        const versionContexts = [
+            {
+                name: 'version-context-1',
+                description: 'v1',
+                revisions: [],
+            },
+            {
+                name: 'version-context-2',
+                description: 'v2',
+                revisions: [],
+            },
+        ]
 
         beforeEach(() => {
             testContext.overrideGraphQL(testContextForSearchContexts)
+            const context = createJsContext({ sourcegraphBaseUrl: driver.sourcegraphBaseUrl })
+            testContext.overrideJsContext({
+                ...context,
+                experimentalFeatures: {
+                    versionContexts,
+                },
+            })
         })
 
         afterEach(async () => {
@@ -645,10 +680,10 @@ describe('Search', () => {
                     isSearchContextAvailable: true,
                 }),
             })
-            await testContext.waitForGraphQLRequest(async () => {
-                await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
-                await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-            }, 'IsSearchContextAvailable')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp', {
+                waitUntil: 'networkidle2',
+            })
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
         })
 
@@ -659,13 +694,12 @@ describe('Search', () => {
         })
 
         test('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
-            await testContext.waitForGraphQLRequest(async () => {
-                await driver.page.goto(
-                    driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp'
-                )
-                await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-                await driver.page.waitForSelector('#monaco-query-input')
-            }, 'IsSearchContextAvailable')
+            await driver.page.goto(
+                driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp',
+                { waitUntil: 'networkidle2' }
+            )
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            await driver.page.waitForSelector('#monaco-query-input')
             expect(await getSearchFieldValue(driver)).toStrictEqual('context:@unavailableCtx test')
             expect(await isSearchContextDropdownDisabled()).toBeTruthy()
         })
@@ -686,6 +720,61 @@ describe('Search', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await driver.page.waitForSelector('#monaco-query-input')
             expect(await isSearchContextDropdownVisible()).toBeFalsy()
+        })
+
+        test('Convert version context', async () => {
+            testContext.overrideGraphQL({
+                ...testContextForSearchContexts,
+                IsSearchContextAvailable: () => ({
+                    isSearchContextAvailable: false,
+                }),
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts?tab=convert-version-contexts')
+
+            await driver.page.waitForSelector('.test-convert-version-context-btn')
+            await driver.page.click('.test-convert-version-context-btn')
+
+            await driver.page.waitForSelector('.convert-version-context-node .alert-success')
+
+            const successText = await driver.page.evaluate(
+                () => document.querySelector('.convert-version-context-node .alert-success')?.textContent
+            )
+            expect(successText).toBe('Version context successfully converted.')
+        })
+
+        test('Convert all version contexts', async () => {
+            testContext.overrideGraphQL({
+                ...testContextForSearchContexts,
+                IsSearchContextAvailable: () => ({
+                    isSearchContextAvailable: false,
+                }),
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts?tab=convert-version-contexts')
+
+            await driver.page.waitForSelector('.test-convert-all-search-contexts-btn')
+            await driver.page.click('.test-convert-all-search-contexts-btn')
+
+            testContext.overrideGraphQL({
+                ...testContextForSearchContexts,
+                IsSearchContextAvailable: () => ({
+                    isSearchContextAvailable: true,
+                }),
+            })
+
+            // Check that a success message appears with the correct number of converted contexts
+            await driver.page.waitForSelector('.test-convert-all-search-contexts-success')
+            const successText = await driver.page.evaluate(
+                () => document.querySelector('.test-convert-all-search-contexts-success')?.textContent
+            )
+            expect(successText).toBe(`Sucessfully converted ${versionContexts.length} version contexts.`)
+
+            // Check that individual context nodes have 'Converted' text
+            const convertedContexts = await driver.page.evaluate(
+                () => document.querySelectorAll('.test-converted-context').length
+            )
+            expect(convertedContexts).toBe(versionContexts.length)
         })
     })
 })

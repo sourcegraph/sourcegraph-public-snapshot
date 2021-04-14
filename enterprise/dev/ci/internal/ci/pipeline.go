@@ -28,6 +28,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"VERSION":                          c.version,
 		// Add debug flags for scripts to consume
 		"CI_DEBUG_PROFILE": strconv.FormatBool(c.profilingEnabled),
+
+		// Bump Node.js memory to prevent OOM crashes
+		"NODE_OPTIONS": "--max_old_space_size=4096",
 	}
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.

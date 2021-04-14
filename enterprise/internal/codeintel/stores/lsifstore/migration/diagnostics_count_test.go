@@ -22,7 +22,7 @@ func TestDiagnosticsCountMigrator(t *testing.T) {
 	}
 	dbtesting.SetupGlobalTestDB(t)
 	store := lsifstore.NewStore(dbconn.Global, &observation.TestContext)
-	migrator := NewDiagnosticsCountMigrator(store, 1000)
+	migrator := NewDiagnosticsCountMigrator(store, 250)
 	serializer := lsifstore.NewSerializer()
 
 	assertProgress := func(expectedProgress float64) {
@@ -43,7 +43,7 @@ func TestDiagnosticsCountMigrator(t *testing.T) {
 		}
 	}
 
-	n := 2000
+	n := 500
 	expectedCounts := make([]int, 0, n)
 	diagnostics := make([]semantic.DiagnosticData, 0, n)
 
@@ -51,7 +51,7 @@ func TestDiagnosticsCountMigrator(t *testing.T) {
 		expectedCounts = append(expectedCounts, i+1)
 		diagnostics = append(diagnostics, semantic.DiagnosticData{Code: fmt.Sprintf("c%d", i)})
 
-		data, err := serializer.MarshalDocumentData(semantic.DocumentData{
+		data, err := serializer.MarshalLegacyDocumentData(semantic.DocumentData{
 			Diagnostics: diagnostics,
 		})
 		if err != nil {

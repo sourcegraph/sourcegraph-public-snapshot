@@ -1,12 +1,13 @@
-import React, { useState, useCallback } from 'react'
 import Dialog from '@reach/dialog'
 import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
+import React, { useState, useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoaderButton } from '../../../components/LoaderButton'
-import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { addExternalService } from '../../../components/externalServices/backend'
+import { defaultExternalServices } from '../../../components/externalServices/externalServices'
+import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 

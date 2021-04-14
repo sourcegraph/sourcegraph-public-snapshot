@@ -1,19 +1,22 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
+import TwitterIcon from 'mdi-react/TwitterIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Subscription } from 'rxjs'
 import { catchError } from 'rxjs/operators'
-import { FeedbackText } from '../components/FeedbackText'
+
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
+import { AuthenticatedUser } from '../auth'
+import { FeedbackText } from '../components/FeedbackText'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+
 import { submitSurvey } from './backend'
 import { SurveyCTA } from './SurveyToast'
-import { Subscription } from 'rxjs'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import TwitterIcon from 'mdi-react/TwitterIcon'
-import { AuthenticatedUser } from '../auth'
 
 interface SurveyFormProps {
     location: H.Location

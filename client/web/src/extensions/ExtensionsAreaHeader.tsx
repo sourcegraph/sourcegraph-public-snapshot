@@ -1,9 +1,11 @@
+import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
-import { ActionButtonDescriptor } from '../util/contributions'
-import { ExtensionsAreaRouteContext } from './ExtensionsArea'
+
 import { PageHeader } from '../components/PageHeader'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
+import { ActionButtonDescriptor } from '../util/contributions'
+
+import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 
 export interface ExtensionsAreaHeaderProps extends ExtensionsAreaRouteContext, RouteComponentProps<{}> {
     isPrimaryHeader: boolean

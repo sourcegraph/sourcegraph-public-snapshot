@@ -56,7 +56,7 @@ Create a batch change by specifying a search query to get a list of repositories
    Run through the <b>quickstart guide</b> and create a batch change in less than 10 minutes.
   </a>
 
-  <a href="https://www.youtube.com/watch?v=EfKwKFzOs3E" class="btn" alt="Watch the Batch Changes demo video">
+  <a href="https://www.youtube.com/watch?v=eOmiyXIWTCw" class="btn" alt="Watch the Batch Changes demo video">
    <span>Demo video</span>
    </br>
    Watch the Batch Changes demo video to see what it's capable of.
@@ -90,6 +90,7 @@ Create a batch change by specifying a search query to get a list of repositories
 - <span class="badge badge-experimental">Experimental</span> [Creating multiple changesets in large repositories](how-tos/creating_multiple_changesets_in_large_repositories.md)
 - [Handling errored changesets](how-tos/handling_errored_changesets.md)
 - [Creating changesets per project in monorepos](how-tos/creating_changesets_per_project_in_monorepos.md)
+- [Opting out of batch changes](how-tos/opting_out_of_batch_changes.md)
 
 ## Tutorials
 

@@ -1,10 +1,11 @@
-@import './ChartViewContent';
+@import './ChartViewContent/ChartViewContent';
 
 .view-content {
-    margin-top: 0.75rem;
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
+
+    position: relative;
 
     // Allow view contents to scroll vertically
     overflow-y: auto;
@@ -15,5 +16,14 @@
         flex: 1 1 auto;
         // Prevent overflow of misbehaving extensions
         overflow-x: hidden;
+    }
+
+    &__chart {
+        // Fix for right chart size calculation in Safari browser
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
     }
 }

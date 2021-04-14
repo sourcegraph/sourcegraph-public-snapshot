@@ -3,7 +3,9 @@ import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionM
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
+
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
+
 import { ConfiguredExtensionCache } from './ExtensionRegistry'
 import { applyCategoryFilter, applyExtensionsEnablement, configureExtensionRegistry } from './extensions'
 

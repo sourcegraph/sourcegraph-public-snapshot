@@ -47,7 +47,8 @@ func Postgres() *monitoring.Container {
 				},
 			},
 			{
-				Title: "Database and collector status", Hidden: true,
+				Title:  "Database and collector status",
+				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						monitoring.Observable{
@@ -110,6 +111,52 @@ func Postgres() *monitoring.Container {
 						//	PossibleSolutions: "Cache hit ratio should be at least 99%, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose) " +
 						//		"to add additional indexes",
 						//	PanelOptions: monitoring.PanelOptions().Unit(monitoring.Percentage)},
+					},
+				},
+			},
+			{
+				Title:  "Object size and bloat",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						monitoring.Observable{
+							Name:           "pg_table_size",
+							Description:    "table size",
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Query:          `max by (relname)(pg_table_bloat_size)`,
+							Panel:          monitoring.Panel().LegendFormat("{{relname}}").Unit(monitoring.Bytes),
+							NoAlert:        true,
+							Interpretation: "Total size of this table",
+						},
+						monitoring.Observable{
+							Name:           "pg_table_bloat_ratio",
+							Description:    "table bloat ratio",
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Query:          `max by (relname)(pg_table_bloat_ratio) * 100`,
+							Panel:          monitoring.Panel().LegendFormat("{{relname}}").Unit(monitoring.Percentage),
+							NoAlert:        true,
+							Interpretation: "Estimated bloat ratio of this table (high bloat = high overhead)",
+						},
+					},
+					{
+						monitoring.Observable{
+							Name:           "pg_index_size",
+							Description:    "index size",
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Query:          `max by (relname)(pg_index_bloat_size)`,
+							Panel:          monitoring.Panel().LegendFormat("{{relname}}").Unit(monitoring.Bytes),
+							NoAlert:        true,
+							Interpretation: "Total size of this index",
+						},
+						monitoring.Observable{
+							Name:           "pg_index_bloat_ratio",
+							Description:    "index bloat ratio",
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Query:          `max by (relname)(pg_index_bloat_ratio) * 100`,
+							Panel:          monitoring.Panel().LegendFormat("{{relname}}").Unit(monitoring.Percentage),
+							NoAlert:        true,
+							Interpretation: "Estimated bloat ratio of this index (high bloat = high overhead)",
+						},
 					},
 				},
 			},

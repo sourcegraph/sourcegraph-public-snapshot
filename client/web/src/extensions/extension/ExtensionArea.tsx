@@ -1,10 +1,11 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import {
     ConfiguredRegistryExtension,
     splitExtensionID,
@@ -14,18 +15,20 @@ import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createAggregateError, ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+
+import { AuthenticatedUser } from '../../auth'
 import { queryGraphQL } from '../../backend/graphql'
+import { ErrorMessage } from '../../components/alerts'
+import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { RouteDescriptor } from '../../util/contributions'
 import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
+
 import { ExtensionAreaHeader, ExtensionAreaHeaderNavItem } from './ExtensionAreaHeader'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ErrorMessage } from '../../components/alerts'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { AuthenticatedUser } from '../../auth'
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {

@@ -1,13 +1,16 @@
+import classNames from 'classnames'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
+
 import { IFileDiffConnection } from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+
 import { queryRepositoryComparisonFileDiffs } from '../backend/diffs'
 import { OpenDiffInSourcegraphProps } from '../repo'
 import { getPlatformName } from '../util/context'
+
 import { SourcegraphIconButton, SourcegraphIconButtonProps } from './SourcegraphIconButton'
-import classNames from 'classnames'
 
 interface Props extends SourcegraphIconButtonProps, PlatformContextProps<'requestGraphQL'> {
     openProps: OpenDiffInSourcegraphProps

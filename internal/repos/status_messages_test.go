@@ -70,13 +70,14 @@ func TestStatusMessages(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name            string
-		stored          types.Repos
-		gitserverCloned []string
-		sourcerErr      error
-		listRepoErr     error
-		res             []StatusMessage
-		user            *types.User
+		name             string
+		stored           types.Repos
+		gitserverCloned  []string
+		gitserverFailure map[string]bool
+		sourcerErr       error
+		listRepoErr      error
+		res              []StatusMessage
+		user             *types.User
 		// maps repoName to external service
 		repoOwner map[api.RepoName]*types.ExternalService
 		cloud     bool
@@ -157,6 +158,42 @@ func TestStatusMessages(t *testing.T) {
 				{
 					Cloning: &CloningProgress{
 						Message: "2 repositories not yet cloned",
+					},
+				},
+			},
+		},
+		{
+			name:             "one repo failed to sync",
+			stored:           []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			user:             admin,
+			gitserverCloned:  []string{"foobar", "barfoo"},
+			gitserverFailure: map[string]bool{"foobar": true},
+			repoOwner: map[api.RepoName]*types.ExternalService{
+				"foobar": siteLevelService,
+				"barfoo": siteLevelService,
+			},
+			res: []StatusMessage{
+				{
+					SyncError: &SyncError{
+						Message: "1 repository could not be synced",
+					},
+				},
+			},
+		},
+		{
+			name:             "two repos failed to sync",
+			stored:           []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			user:             admin,
+			gitserverCloned:  []string{"foobar", "barfoo"},
+			gitserverFailure: map[string]bool{"foobar": true, "barfoo": true},
+			repoOwner: map[api.RepoName]*types.ExternalService{
+				"foobar": siteLevelService,
+				"barfoo": siteLevelService,
+			},
+			res: []StatusMessage{
+				{
+					SyncError: &SyncError{
+						Message: "2 repositories could not be synced",
 					},
 				},
 			},
@@ -245,10 +282,15 @@ func TestStatusMessages(t *testing.T) {
 				if id == 0 {
 					continue
 				}
+				lastError := ""
+				if tc.gitserverFailure != nil && tc.gitserverFailure[toClone] {
+					lastError = "Oops"
+				}
 				if err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
 					RepoID:      id,
 					ShardID:     "test",
 					CloneStatus: types.CloneStatusCloned,
+					LastError:   lastError,
 				}); err != nil {
 					t.Fatal(err)
 				}

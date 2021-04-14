@@ -1,10 +1,11 @@
 import * as H from 'history'
 import FileIcon from 'mdi-react/FileIcon'
+import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Observable } from 'rxjs'
+
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
@@ -13,9 +14,11 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
 import { SearchResult } from '../../../components/SearchResult'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AggregateStreamingSearchResults } from '../../stream'
+
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 
 const initialItemsToShow = 15

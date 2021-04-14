@@ -1,5 +1,10 @@
-import { diffStatFields, fileDiffFields } from '../../../../backend/diff'
+import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
+
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+
+import { diffStatFields, fileDiffFields } from '../../../../backend/diff'
+import { requestGraphQL } from '../../../../backend/graphql'
 import {
     ChangesetSpecFileDiffsVariables,
     ChangesetSpecFileDiffsResult,
@@ -8,9 +13,6 @@ import {
     BatchSpecApplyPreviewVariables,
     ChangesetSpecFileDiffConnectionFields,
 } from '../../../../graphql-operations'
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
-import { requestGraphQL } from '../../../../backend/graphql'
 import { personLinkFieldsFragment } from '../../../../person/PersonLink'
 
 const changesetSpecFieldsFragment = gql`

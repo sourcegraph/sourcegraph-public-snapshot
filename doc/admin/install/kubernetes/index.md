@@ -8,75 +8,72 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 ## Requirements
 
-- [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users._
+- [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 1.users._
 - [Kubernetes](https://kubernetes.io/) v1.15
   - Verify that you have enough capacity by following our [resource allocation guidelines](scale.md)
   - Sourcegraph requires an SSD backed storage class
   - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.15 or later
+- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.15 or later (run `kubectl version` for version info)
+  - [Configure cluster access](https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/) for `kubectl`
 
 > WARNING: You need to create a [fork of our deployment reference.](configure.md#fork-this-repository)
 
 ## Steps
 
-- Make sure you have configured `kubectl` to [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/).
+1. After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/) with `kubectl`.
 
-   - If you are using GCP, you'll need to give your user the ability to create roles in Kubernetes [(see GCP's documentation)](https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#prerequisites_for_using_role-based_access_control):
+      ```bash
+      # Google Cloud Platform (GCP) users are required to give their user the ability to create roles in Kubernetes [(see GCP's documentation)](https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#prerequisites_for_using_role-based_access_control):
+      kubectl create clusterrolebinding cluster-admin-binding \
+        --clusterrole cluster-admin --user $(gcloud config get-value account)
+      ```
 
-       ```bash
-       kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $(gcloud config get-value account)
-       ```
+1. Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository and check out the version tag you wish to deploy:
 
-- Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository and check out the version tag you wish to deploy.
+      ```bash
+      # 🚨 The master branch tracks development. 
+      # Use the branch of this repository corresponding to the version of Sourcegraph you wish to deploy, e.g. git checkout 3.24
+      git clone https://github.com/sourcegraph/deploy-sourcegraph
+      cd deploy-sourcegraph
+      SOURCEGRAPH_VERSION="v3.26.3"
+      git checkout $SOURCEGRAPH_VERSION
+      ```
 
-   ```bash
-   # 🚨 The master branch tracks development. Use the branch of this repository corresponding to the version of Sourcegraph you wish to deploy, e.g. git checkout 3.24
+1. Configure the `sourcegraph` storage class for the cluster by following ["Configure a storage class"](./configure.md#configure-a-storage-class).
 
-   git clone https://github.com/sourcegraph/deploy-sourcegraph
-   cd deploy-sourcegraph
-   SOURCEGRAPH_VERSION="v3.24.1"
-   git checkout $SOURCEGRAPH_VERSION
+1. (OPTIONAL) By default `sourcegraph` will be deployed in the `default` kubernetes namespace. If you wish to deploy `sourcegraph` in a non-default namespace, it is highly recommended you use the provided overlays to ensure updates are made in all manifests correctly. See the ["Overlays docs"](./overlays.md) for full instructions on how to use overlays with Sourcegraph and learn more about ["Use non-default namespace"](./overlays.md#use-non-default-namespace).
+
+1. (OPTIONAL) If you want to add a large number of repositories to your instance, you should [configure the number of gitserver replicas](configure.md#configure-gitserver-replica-count) and [the number of indexed-search replicas](configure.md#configure-indexed-search-replica-count) _before_ you continue with the next step. (See ["Tuning replica counts for horizontal scalability"](scale.md#tuning-replica-counts-for-horizontal-scalability) for guidelines.)
+
+1. Deploy the desired version of Sourcegraph to your cluster:
+
+  ```
+  ./kubectl-apply-all.sh
+  ```
+
+1. Monitor the status of the deployment:
+
+   ```
+   kubectl get pods -o wide -w
    ```
 
-- Configure the `sourcegraph` storage class for the cluster by reading through ["Configure a storage class"](./configure.md#configure-a-storage-class).
-
-- By default `sourcegraph` will be deployed in the `default` kubernetes namespace. If you wish to deploy `sourcegraph` in a non-default namespace, it is highly recommended you use the provided overlays to ensure updates are made in all manifests correctly. Read through ["Use non-default namespace"](./configure.md#use-non-default-namespace) for full instructions on how to configure this.
-
-- If you want to add a large number of repositories to your instance, you should [configure the number of gitserver replicas](configure.md#configure-gitserver-replica-count) and [the number of indexed-search replicas](configure.md#configure-indexed-search-replica-count) _before_ you continue with the next step. (See ["Tuning replica counts for horizontal scalability"](scale.md#tuning-replica-counts-for-horizontal-scalability) for guidelines.)
-
-- Deploy the desired version of Sourcegraph to your cluster:
-
-   ```bash
-   ./kubectl-apply-all.sh
-   ```
-
-- Monitor the status of the deployment.
-
-   ```bash
-   watch kubectl get pods -o wide
-   ```
-
-- Once the deployment completes, verify Sourcegraph is running by temporarily making the frontend port accessible:
-
-   kubectl 1.9.x:
-
-   ```bash
-   kubectl port-forward $(kubectl get pod -l app=sourcegraph-frontend -o template --template="{{(index .items 0).metadata.name}}") 3080
-   ```
-
-   kubectl 1.10.0 or later:
+1. After deployement is completed, verify Sourcegraph is running by temporarily making the frontend port accessible:
 
    ```
    kubectl port-forward svc/sourcegraph-frontend 3080:30080
    ```
 
-   Open http://localhost:3080 in your browser and you will see a setup page. Congrats, you have Sourcegraph up and running!
+1. Open http://localhost:3080 in your browser and you will see a setup page.
 
-- Now [configure your deployment](configure.md).
+1. 🎉 Congrats, you have Sourcegraph up and running! Now [configure your deployment](configure.md).
 
 ### Configuration
 
-See the [configuration docs](configure.md).
+See the [Configuration docs](configure.md).
+
+### Configuration
+
+See the [Overlays docs](overlays.md).
 
 ### Troubleshooting
 
@@ -84,13 +81,12 @@ See the [Troubleshooting docs](troubleshoot.md).
 
 ### Updating
 
-See the [Upgrading Howto](update.md) on how to upgrade.
-See the [Upgrading docs](../../updates/kubernetes.md) for details on what changed in a version and if manual migration steps
-are necessary.
+- See the [Updating Sourcegraph docs](update.md) on how to upgrade.<br/>
+- See the [Updating a Kubernetes Sourcegraph instance docs](../../updates/kubernetes.md) for details on changes in each version to determine if manual migration steps are necessary.
 
 ### Restarting
 
-Some updates, such as changing the `externalURL` for an instance, will require restarting the instance using `kubectl`. To restart, run `kubectl get pods` and then `kubectl rollout restart deployment/sourcegraph-frontend-0`, replacing `deployment/sourcegraph-frontend-0` with the pod name from the previous command. If updating the `externalURL` for the instance, only the frontend pods will need to be restarted.
+Some updates, such as changing the `externalURL` for an instance, will require restarting the instance using `kubectl`. To restart, run `kubectl rollout restart deployment sourcegraph-frontend`. If updating the `externalURL` for the instance, only the frontend pods will need to be restarted.
 
 ### Cluster-admin privileges
 
@@ -113,7 +109,7 @@ manifests that cannot be installed otherwise.
    ./kubectl-apply-all.sh -l sourcegraph-resource-requires=no-cluster-admin
    ```
 
-We also provide an [overlay](configure.md#non-privileged-overlay) that generates a version of the manifests that does not
+We also provide an [overlay](overlays.md#non-privileged-overlay) that generates a version of the manifests that does not
 require cluster-admin privileges.
 
 ## Cloud installation guides

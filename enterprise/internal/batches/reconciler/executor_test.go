@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -18,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -498,7 +498,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			tc.plan.ChangesetSpec = changesetSpec
 
 			// Execute the plan
-			err := ExecutePlan(
+			err := executePlan(
 				ctx,
 				gitClient,
 				sourcer,
@@ -619,7 +619,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 	plan.Changeset = ct.BuildChangeset(ct.TestChangesetOpts{Repo: rs[0].ID})
 
-	err := ExecutePlan(ctx, nil, repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}), true, cstore, plan)
+	err := executePlan(ctx, nil, repos.NewFakeSourcer(nil, &ct.FakeChangesetSource{}), true, cstore, plan)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
@@ -630,7 +630,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 }
 
-func TestLoadAuthenticator(t *testing.T) {
+func TestLoadChangesetSource(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	db := dbtesting.GetDB(t)
 	token := &auth.OAuthBearerToken{Token: "abcdef"}
@@ -648,14 +648,16 @@ func TestLoadAuthenticator(t *testing.T) {
 	userBatchChange := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-batch-change", user.ID, batchSpec.ID)
 
 	t.Run("imported changeset uses global token when no site-credential exists", func(t *testing.T) {
-		a, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+		fakeSource := &ct.FakeChangesetSource{}
+		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
+		_, err := loadChangesetSource(ctx, cstore, sourcer, &batches.Changeset{
 			OwnedByBatchChangeID: 0,
 		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if a != nil {
-			t.Errorf("unexpected non-nil authenticator: %v", a)
+		if fakeSource.CurrentAuthenticator != nil {
+			t.Errorf("unexpected non-nil authenticator: %v", fakeSource.CurrentAuthenticator)
 		}
 	})
 
@@ -670,20 +672,23 @@ func TestLoadAuthenticator(t *testing.T) {
 		t.Cleanup(func() {
 			ct.TruncateTables(t, db, "batch_changes_site_credentials")
 		})
-
-		a, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+		fakeSource := &ct.FakeChangesetSource{}
+		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
+		_, err := loadChangesetSource(ctx, cstore, sourcer, &batches.Changeset{
 			OwnedByBatchChangeID: 0,
 		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if diff := cmp.Diff(token, a); diff != "" {
+		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator); diff != "" {
 			t.Errorf("unexpected authenticator:\n%s", diff)
 		}
 	})
 
 	t.Run("owned by missing batch change", func(t *testing.T) {
-		_, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+		fakeSource := &ct.FakeChangesetSource{}
+		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
+		_, err := loadChangesetSource(ctx, cstore, sourcer, &batches.Changeset{
 			OwnedByBatchChangeID: 1234,
 		}, repo)
 		if err == nil {
@@ -692,19 +697,23 @@ func TestLoadAuthenticator(t *testing.T) {
 	})
 
 	t.Run("owned by admin user without credential", func(t *testing.T) {
-		a, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+		fakeSource := &ct.FakeChangesetSource{}
+		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
+		_, err := loadChangesetSource(ctx, cstore, sourcer, &batches.Changeset{
 			OwnedByBatchChangeID: adminBatchChange.ID,
 		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if a != nil {
-			t.Errorf("unexpected non-nil authenticator: %v", a)
+		if fakeSource.CurrentAuthenticator != nil {
+			t.Errorf("unexpected non-nil authenticator: %v", fakeSource.CurrentAuthenticator)
 		}
 	})
 
 	t.Run("owned by normal user without credential", func(t *testing.T) {
-		_, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+		fakeSource := &ct.FakeChangesetSource{}
+		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
+		_, err := loadChangesetSource(ctx, cstore, sourcer, &batches.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
 		if err == nil {
@@ -722,13 +731,15 @@ func TestLoadAuthenticator(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		a, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+		fakeSource := &ct.FakeChangesetSource{}
+		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
+		_, err := loadChangesetSource(ctx, cstore, sourcer, &batches.Changeset{
 			OwnedByBatchChangeID: adminBatchChange.ID,
 		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if diff := cmp.Diff(token, a); diff != "" {
+		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator); diff != "" {
 			t.Errorf("unexpected authenticator:\n%s", diff)
 		}
 	})
@@ -746,13 +757,15 @@ func TestLoadAuthenticator(t *testing.T) {
 			ct.TruncateTables(t, db, "user_credentials")
 		})
 
-		a, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+		fakeSource := &ct.FakeChangesetSource{}
+		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
+		_, err := loadChangesetSource(ctx, cstore, sourcer, &batches.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if diff := cmp.Diff(token, a); diff != "" {
+		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator); diff != "" {
 			t.Errorf("unexpected authenticator:\n%s", diff)
 		}
 	})
@@ -769,13 +782,15 @@ func TestLoadAuthenticator(t *testing.T) {
 			ct.TruncateTables(t, db, "batch_changes_site_credentials")
 		})
 
-		a, err := loadAuthenticator(ctx, cstore, &batches.Changeset{
+		fakeSource := &ct.FakeChangesetSource{}
+		sourcer := sources.NewSourcer(repos.NewFakeSourcer(nil, fakeSource), cstore)
+		_, err := loadChangesetSource(ctx, cstore, sourcer, &batches.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if diff := cmp.Diff(token, a); diff != "" {
+		if diff := cmp.Diff(token, fakeSource.CurrentAuthenticator); diff != "" {
 			t.Errorf("unexpected authenticator:\n%s", diff)
 		}
 	})
@@ -957,7 +972,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				CommitDiff: "testdiff",
 			})
 
-			err := ExecutePlan(
+			err := executePlan(
 				context.Background(),
 				gitClient,
 				sourcer,
@@ -1083,217 +1098,4 @@ type mockInternalClient struct {
 
 func (c *mockInternalClient) ExternalURL(ctx context.Context) (string, error) {
 	return c.externalURL, c.err
-}
-
-func TestBuildPushConfig(t *testing.T) {
-	oauthHTTPSAuthenticator := auth.OAuthBearerToken{Token: "bearer-test"}
-	oauthSSHAuthenticator := auth.OAuthBearerTokenWithSSH{
-		OAuthBearerToken: oauthHTTPSAuthenticator,
-		PrivateKey:       "private-key",
-		Passphrase:       "passphrase",
-		PublicKey:        "public-key",
-	}
-	basicHTTPSAuthenticator := auth.BasicAuth{Username: "basic", Password: "pw"}
-	basicSSHAuthenticator := auth.BasicAuthWithSSH{
-		BasicAuth:  basicHTTPSAuthenticator,
-		PrivateKey: "private-key",
-		Passphrase: "passphrase",
-		PublicKey:  "public-key",
-	}
-	tcs := []struct {
-		name                string
-		externalServiceType string
-		cloneURL            string
-		authenticator       auth.Authenticator
-		wantPushConfig      *gitprotocol.PushConfig
-		wantErr             error
-	}{
-		// Without authenticator:
-		{
-			name:                "GitHub HTTPS no token",
-			externalServiceType: extsvc.TypeGitHub,
-			cloneURL:            "https://github.com/sourcegraph/sourcegraph",
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://github.com/sourcegraph/sourcegraph",
-			},
-		},
-		{
-			name:                "GitHub HTTPS token",
-			externalServiceType: extsvc.TypeGitHub,
-			cloneURL:            "https://token@github.com/sourcegraph/sourcegraph",
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://token@github.com/sourcegraph/sourcegraph",
-			},
-		},
-		{
-			name:                "GitHub SSH",
-			externalServiceType: extsvc.TypeGitHub,
-			cloneURL:            "git@github.com:sourcegraph/sourcegraph.git",
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "git@github.com:sourcegraph/sourcegraph.git",
-			},
-		},
-		{
-			name:                "GitLab HTTPS no token",
-			externalServiceType: extsvc.TypeGitLab,
-			cloneURL:            "https://gitlab.com/sourcegraph/sourcegraph",
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://gitlab.com/sourcegraph/sourcegraph",
-			},
-		},
-		{
-			name:                "GitLab HTTPS token",
-			externalServiceType: extsvc.TypeGitLab,
-			cloneURL:            "https://git:token@gitlab.com/sourcegraph/sourcegraph",
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://git:token@gitlab.com/sourcegraph/sourcegraph",
-			},
-		},
-		{
-			name:                "GitLab SSH",
-			externalServiceType: extsvc.TypeGitLab,
-			cloneURL:            "git@gitlab.com:sourcegraph/sourcegraph.git",
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "git@gitlab.com:sourcegraph/sourcegraph.git",
-			},
-		},
-		{
-			name:                "Bitbucket server HTTPS no token",
-			externalServiceType: extsvc.TypeBitbucketServer,
-			cloneURL:            "https://bitbucket.sgdev.org/sourcegraph/sourcegraph",
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://bitbucket.sgdev.org/sourcegraph/sourcegraph",
-			},
-		},
-		{
-			name:                "Bitbucket server HTTPS token",
-			externalServiceType: extsvc.TypeBitbucketServer,
-			cloneURL:            "https://token@bitbucket.sgdev.org/sourcegraph/sourcegraph",
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://token@bitbucket.sgdev.org/sourcegraph/sourcegraph",
-			},
-		},
-		{
-			name:                "Bitbucket server SSH",
-			externalServiceType: extsvc.TypeBitbucketServer,
-			cloneURL:            "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph",
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph",
-			},
-		},
-		// With authenticator:
-		{
-			name:                "GitHub HTTPS no token with authenticator",
-			externalServiceType: extsvc.TypeGitHub,
-			cloneURL:            "https://github.com/sourcegraph/sourcegraph",
-			authenticator:       &oauthHTTPSAuthenticator,
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://bearer-test@github.com/sourcegraph/sourcegraph",
-			},
-		},
-		{
-			name:                "GitHub HTTPS token with authenticator",
-			externalServiceType: extsvc.TypeGitHub,
-			cloneURL:            "https://token@github.com/sourcegraph/sourcegraph",
-			authenticator:       &oauthHTTPSAuthenticator,
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://bearer-test@github.com/sourcegraph/sourcegraph",
-			},
-		},
-		{
-			name:                "GitHub SSH with authenticator",
-			externalServiceType: extsvc.TypeGitHub,
-			cloneURL:            "git@github.com:sourcegraph/sourcegraph.git",
-			authenticator:       &oauthSSHAuthenticator,
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL:  "git@github.com:sourcegraph/sourcegraph.git",
-				PrivateKey: "private-key",
-				Passphrase: "passphrase",
-			},
-		},
-		{
-			name:                "GitLab HTTPS no token with authenticator",
-			externalServiceType: extsvc.TypeGitLab,
-			cloneURL:            "https://gitlab.com/sourcegraph/sourcegraph",
-			authenticator:       &oauthHTTPSAuthenticator,
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://git:bearer-test@gitlab.com/sourcegraph/sourcegraph",
-			},
-		},
-		{
-			name:                "GitLab HTTPS token with authenticator",
-			externalServiceType: extsvc.TypeGitLab,
-			cloneURL:            "https://git:token@gitlab.com/sourcegraph/sourcegraph",
-			authenticator:       &oauthHTTPSAuthenticator,
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://git:bearer-test@gitlab.com/sourcegraph/sourcegraph",
-			},
-		},
-		{
-			name:                "GitLab SSH with authenticator",
-			externalServiceType: extsvc.TypeGitLab,
-			cloneURL:            "git@gitlab.com:sourcegraph/sourcegraph.git",
-			authenticator:       &oauthSSHAuthenticator,
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL:  "git@gitlab.com:sourcegraph/sourcegraph.git",
-				PrivateKey: "private-key",
-				Passphrase: "passphrase",
-			},
-		},
-		{
-			name:                "Bitbucket server HTTPS no token with authenticator",
-			externalServiceType: extsvc.TypeBitbucketServer,
-			cloneURL:            "https://bitbucket.sgdev.org/sourcegraph/sourcegraph",
-			authenticator:       &basicHTTPSAuthenticator,
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://basic:pw@bitbucket.sgdev.org/sourcegraph/sourcegraph",
-			},
-		},
-		{
-			name:                "Bitbucket server HTTPS token with authenticator",
-			externalServiceType: extsvc.TypeBitbucketServer,
-			cloneURL:            "https://token@bitbucket.sgdev.org/sourcegraph/sourcegraph",
-			authenticator:       &basicHTTPSAuthenticator,
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://basic:pw@bitbucket.sgdev.org/sourcegraph/sourcegraph",
-			},
-		},
-		{
-			name:                "Bitbucket server SSH with authenticator",
-			externalServiceType: extsvc.TypeBitbucketServer,
-			cloneURL:            "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph",
-			authenticator:       &basicSSHAuthenticator,
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL:  "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph",
-				PrivateKey: "private-key",
-				Passphrase: "passphrase",
-			},
-		},
-		// Errors
-		{
-			name:                "Bitbucket server SSH no keypair",
-			externalServiceType: extsvc.TypeBitbucketServer,
-			cloneURL:            "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph",
-			authenticator:       &basicHTTPSAuthenticator,
-			wantErr:             ErrNoSSHCredential{},
-		},
-		{
-			name:                "Invalid credential type",
-			externalServiceType: extsvc.TypeGitHub,
-			cloneURL:            "https://github.com/sourcegraph/sourcegraph",
-			authenticator:       &auth.OAuthClient{},
-			wantErr:             ErrNoPushCredentials{credentialsType: "*auth.OAuthClient"},
-		},
-	}
-	for _, tt := range tcs {
-		t.Run(tt.name, func(t *testing.T) {
-			havePushConfig, haveErr := buildPushConfig(tt.externalServiceType, tt.cloneURL, tt.authenticator)
-			if haveErr != tt.wantErr {
-				t.Fatalf("invalid error returned, want=%v have=%v", tt.wantErr, haveErr)
-			}
-			if diff := cmp.Diff(havePushConfig, tt.wantPushConfig); diff != "" {
-				t.Fatalf("invalid push config returned: %s", diff)
-			}
-		})
-	}
 }

@@ -1,9 +1,11 @@
-import React from 'react'
-import { TextDocumentDecoration, ThemableDecorationStyle } from 'sourcegraph'
-import { Position, Range } from '@sourcegraph/extension-api-classes'
-import { LineDecorator, LineDecoratorProps } from './LineDecorator'
 import { mount } from 'enzyme'
+import React from 'react'
 import { ReplaySubject } from 'rxjs'
+import { TextDocumentDecoration, ThemableDecorationStyle } from 'sourcegraph'
+
+import { Position, Range } from '@sourcegraph/extension-api-classes'
+
+import { LineDecorator, LineDecoratorProps } from './LineDecorator'
 
 describe('LineDecorator', () => {
     function createCodeElement() {

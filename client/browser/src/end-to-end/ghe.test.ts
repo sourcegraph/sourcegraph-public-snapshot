@@ -1,8 +1,9 @@
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { testSingleFilePage } from './shared'
-import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { getConfig } from '@sourcegraph/shared/src/testing/config'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+
+import { testSingleFilePage } from './shared'
 
 const GHE_BASE_URL = process.env.GHE_BASE_URL || 'https://ghe.sgdev.org'
 const GHE_USERNAME = process.env.GHE_USERNAME

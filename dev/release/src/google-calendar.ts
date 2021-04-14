@@ -1,10 +1,11 @@
+import { addMinutes } from 'date-fns'
+import { Credentials } from 'google-auth-library'
 import { google, calendar_v3 } from 'googleapis'
 import { OAuth2Client } from 'googleapis-common'
-import open from 'open'
-import { Credentials } from 'google-auth-library'
-import { readLine, cacheFolder } from './util'
 import { readFile, writeFile } from 'mz/fs'
-import { addMinutes } from 'date-fns'
+import open from 'open'
+
+import { readLine, cacheFolder } from './util'
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 const TOKEN_PATH = `${cacheFolder}/google-calendar-token.json`
@@ -53,6 +54,7 @@ export interface EventOptions {
     endDateTime?: string
     description?: string
     title: string
+    transparency: string
 }
 
 export async function ensureEvent(
@@ -65,6 +67,7 @@ export async function ensureEvent(
         endDateTime,
         description = '',
         title,
+        transparency,
     }: EventOptions,
     auth: OAuth2Client
 ): Promise<void> {
@@ -85,6 +88,7 @@ export async function ensureEvent(
             end: { date: endDate, dateTime: endDateTime },
             description,
             summary: title,
+            transparency,
         },
     })
 }

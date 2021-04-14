@@ -2,9 +2,11 @@ import '../../polyfills'
 
 import { fromEvent } from 'rxjs'
 import { take } from 'rxjs/operators'
+
 import { isEndpointPair } from '../../platform/context'
-import { startExtensionHost } from './extensionHost'
 import { hasProperty } from '../../util/types'
+
+import { startExtensionHost } from './extensionHost'
 
 interface InitMessage {
     endpoints: {

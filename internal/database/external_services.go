@@ -380,6 +380,13 @@ func (e *ExternalServiceStore) validatePerforceConnection(ctx context.Context, i
 	for _, validate := range e.PerforceValidators {
 		err = multierror.Append(err, validate(c))
 	}
+
+	if c.Depots == nil {
+		err = multierror.Append(err, errors.New("depots must be set"))
+	}
+
+	err = multierror.Append(err, e.validateDuplicateRateLimits(ctx, id, extsvc.KindPerforce, c))
+
 	return err.ErrorOrNil()
 }
 
@@ -984,6 +991,41 @@ func (e *ExternalServiceStore) GetByID(ctx context.Context, id int64) (*types.Ex
 		return nil, externalServiceNotFoundError{id: id}
 	}
 	return ess[0], nil
+}
+
+func (e *ExternalServiceStore) GetSyncJobs(ctx context.Context) ([]*types.ExternalServiceSyncJob, error) {
+	q := sqlf.Sprintf(`SELECT id, state, failure_message, started_at, finished_at, process_after, num_resets, external_service_id, num_failures
+FROM external_service_sync_jobs ORDER BY started_at desc
+`)
+
+	rows, err := e.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	var jobs []*types.ExternalServiceSyncJob
+	for rows.Next() {
+		var job types.ExternalServiceSyncJob
+		if err := rows.Scan(
+			&job.ID,
+			&job.State,
+			&dbutil.NullString{S: &job.FailureMessage},
+			&dbutil.NullTime{Time: &job.StartedAt},
+			&dbutil.NullTime{Time: &job.FinishedAt},
+			&dbutil.NullTime{Time: &job.ProcessAfter},
+			&job.NumResets,
+			&dbutil.NullInt64{N: &job.ExternalServiceID},
+			&job.NumFailures,
+		); err != nil {
+			return nil, errors.Wrap(err, "scanning external service job row")
+		}
+		jobs = append(jobs, &job)
+	}
+	if rows.Err() != nil {
+		return nil, errors.Wrap(err, "row scanning error")
+	}
+
+	return jobs, nil
 }
 
 // GetLastSyncError returns the error associated with the latest sync of the

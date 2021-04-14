@@ -1,5 +1,6 @@
 import * as H from 'history'
 import { Subscription, Unsubscribable } from 'rxjs'
+
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { syncRemoteSubscription } from '@sourcegraph/shared/src/api/util'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'

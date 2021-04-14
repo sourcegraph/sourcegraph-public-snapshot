@@ -484,6 +484,35 @@ func TestRepos_List_fork(t *testing.T) {
 	}
 }
 
+func TestRepos_List_FailedSync(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtesting.GetDB(t)
+	ctx := actor.WithInternalActor(context.Background())
+
+	created := mustCreate(ctx, t, db, &types.Repo{Name: "repo1"}, types.CloneStatusCloned)
+	assertCount := func(t *testing.T, opts ReposListOptions, want int) {
+		t.Helper()
+		count, err := Repos(db).Count(ctx, opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if count != want {
+			t.Fatalf("Expected %d repos, got %d", want, count)
+		}
+	}
+	assertCount(t, ReposListOptions{}, 1)
+	assertCount(t, ReposListOptions{FailedFetch: true}, 0)
+
+	repo := created[0]
+	if err := GitserverRepos(db).SetLastError(ctx, repo.ID, "Oops", "test"); err != nil {
+		t.Fatal(err)
+	}
+	assertCount(t, ReposListOptions{}, 1)
+}
+
 func TestRepos_List_cloned(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1812,7 +1841,7 @@ func TestRepos_ListRepoNames_externalRepoPrefixes(t *testing.T) {
 	svc := &types.ExternalService{
 		Kind:        extsvc.KindPerforce,
 		DisplayName: "Perforce - Test",
-		Config:      `{"p4.port": "ssl:111.222.333.444:1666", "p4.user": "admin", "p4.passwd": "pa$$word", "repositoryPathPattern": "perforce/{depot}"}`,
+		Config:      `{"p4.port": "ssl:111.222.333.444:1666", "p4.user": "admin", "p4.passwd": "pa$$word", "depots": [], "repositoryPathPattern": "perforce/{depot}"}`,
 	}
 	if err := ExternalServices(db).Create(ctx, confGet, svc); err != nil {
 		t.Fatal(err)

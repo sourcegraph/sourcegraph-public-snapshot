@@ -1,3 +1,5 @@
+import { SearchPatternType } from '../graphql-operations'
+
 import {
     buildSearchURLQuery,
     lprToSelectionsZeroIndexed,
@@ -12,7 +14,6 @@ import {
     RepoFile,
     encodeURIPathComponent,
 } from './url'
-import { SearchPatternType } from '../graphql-operations'
 
 /**
  * Asserts deep object equality using node's assert.deepEqual, except it (1) ignores differences in the

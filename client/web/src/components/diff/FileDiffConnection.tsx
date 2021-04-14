@@ -1,21 +1,24 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
+import { EMPTY, from, combineLatest, ReplaySubject, BehaviorSubject, Observable } from 'rxjs'
+import { concatMap, distinctUntilChanged, filter, map, mapTo, switchMap } from 'rxjs/operators'
+import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 import { Omit } from 'utility-types'
+
+import { Hoverifier } from '@sourcegraph/codeintellify'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { TextDocumentData, ViewerData, ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
+import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Connection, FilteredConnection } from '../FilteredConnection'
-import { FileDiffNodeProps } from './FileDiffNode'
-import { FileDiffFields, Scalars } from '../../graphql-operations'
-import { TextDocumentData, ViewerData, ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { EMPTY, from, combineLatest, ReplaySubject, BehaviorSubject, Observable } from 'rxjs'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { concatMap, distinctUntilChanged, filter, map, mapTo, switchMap } from 'rxjs/operators'
-import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec, toURIWithPath } from '@sourcegraph/shared/src/util/url'
-import { Hoverifier } from '@sourcegraph/codeintellify'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { isDefined, property } from '@sourcegraph/shared/src/util/types'
-import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
+import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec, toURIWithPath } from '@sourcegraph/shared/src/util/url'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { FileDiffFields, Scalars } from '../../graphql-operations'
+import { Connection, FilteredConnection } from '../FilteredConnection'
+
+import { FileDiffNodeProps } from './FileDiffNode'
 
 class FilteredFileDiffConnection extends FilteredConnection<FileDiffFields, NodeComponentProps> {}
 

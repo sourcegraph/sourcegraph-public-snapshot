@@ -1,6 +1,7 @@
 import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
+
 import { ActivationChecklist } from './ActivationChecklist'
 
 jest.mock('mdi-react/CheckboxBlankCircleIcon', () => 'CheckboxBlankCircleIcon')

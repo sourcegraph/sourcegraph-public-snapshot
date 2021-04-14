@@ -1,13 +1,16 @@
-import * as H from 'history'
 import classNames from 'classnames'
+import * as H from 'history'
 import React, { useCallback, useEffect, useState } from 'react'
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { SearchContextMenu } from './SearchContextMenu'
-import { SubmitSearchParameters } from '../helpers'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
+import { SubmitSearchParameters } from '../helpers'
+
+import { SearchContextMenu } from './SearchContextMenu'
 
 export interface SearchContextDropdownProps
     extends Omit<SearchContextProps, 'showSearchContext'>,
@@ -15,6 +18,7 @@ export interface SearchContextDropdownProps
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         VersionContextProps {
     submitSearch: (args: SubmitSearchParameters) => void
+    submitSearchOnSearchContextChange?: boolean
     query: string
     history: H.History
 }
@@ -31,6 +35,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         submitSearch,
         fetchAutoDefinedSearchContexts,
         fetchSearchContexts,
+        submitSearchOnSearchContextChange = true,
     } = props
 
     const [isOpen, setIsOpen] = useState(false)
@@ -42,9 +47,6 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
 
     const submitOnToggle = useCallback(
         (selectedSearchContextSpec: string): void => {
-            if (query === '') {
-                return
-            }
             submitSearch({
                 history,
                 query,
@@ -60,10 +62,13 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
 
     const selectSearchContextSpec = useCallback(
         (spec: string): void => {
-            submitOnToggle(spec)
-            setSelectedSearchContextSpec(spec)
+            if (submitSearchOnSearchContextChange) {
+                submitOnToggle(spec)
+            } else {
+                setSelectedSearchContextSpec(spec)
+            }
         },
-        [submitOnToggle, setSelectedSearchContextSpec]
+        [submitSearchOnSearchContextChange, submitOnToggle, setSelectedSearchContextSpec]
     )
 
     return (

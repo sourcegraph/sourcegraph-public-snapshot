@@ -1,5 +1,6 @@
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../../settings/settings'
 import { CodeEditorWithPartialModel } from '../../../viewerTypes'
+
 import { computeContext } from './context'
 
 describe('computeContext', () => {

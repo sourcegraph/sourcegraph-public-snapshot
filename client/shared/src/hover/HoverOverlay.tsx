@@ -1,5 +1,3 @@
-import { HoverOverlayProps as GenericHoverOverlayProps } from '@sourcegraph/codeintellify'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import classNames from 'classnames'
 import { isEqual, upperFirst } from 'lodash'
 import { MdiReactIconComponentType } from 'mdi-react'
@@ -10,6 +8,10 @@ import InformationIcon from 'mdi-react/InfoCircleOutlineIcon'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { HoverAlert } from 'sourcegraph'
+
+import { HoverOverlayProps as GenericHoverOverlayProps } from '@sourcegraph/codeintellify'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+
 import { ActionItem, ActionItemAction, ActionItemComponentProps } from '../actions/ActionItem'
 import { HoverMerged } from '../api/client/types/hover'
 import { LinkOrSpan } from '../components/LinkOrSpan'
@@ -20,6 +22,7 @@ import { asError, isErrorLike } from '../util/errors'
 import { renderMarkdown } from '../util/markdown'
 import { sanitizeClass } from '../util/strings'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '../util/url'
+
 import { toNativeEvent } from './helpers'
 
 const LOADING = 'loading' as const

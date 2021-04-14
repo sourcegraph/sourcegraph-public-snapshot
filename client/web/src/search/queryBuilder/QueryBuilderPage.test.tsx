@@ -1,7 +1,9 @@
 import React from 'react'
 import { createRenderer } from 'react-test-renderer/shallow'
-import { QueryBuilderPage } from './QueryBuilderPage'
+
 import { SearchPatternType } from '../../graphql-operations'
+
+import { QueryBuilderPage } from './QueryBuilderPage'
 
 describe('QueryBuilderPage', () => {
     test('simple', () =>

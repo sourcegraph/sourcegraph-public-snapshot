@@ -1,22 +1,24 @@
 import * as H from 'history'
 import React, { useCallback, useMemo } from 'react'
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
+import { from } from 'rxjs'
+import { switchMap } from 'rxjs/operators'
+
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Settings } from '../../../schema/settings.schema'
-import { QueryState, submitSearch, toggleSearchFilter } from '../../helpers'
-import { AggregateStreamingSearchResults, Filter } from '../../stream'
-import { DynamicSearchFilter, SearchResultsFilterBars } from '../SearchResultsFilterBars'
 import {
     isSettingsValid,
     SettingsCascadeOrError,
     SettingsCascadeProps,
 } from '@sourcegraph/shared/src/settings/settings'
-import { from } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
+import { Settings } from '../../../schema/settings.schema'
+import { QueryState, submitSearch, toggleSearchFilter } from '../../helpers'
+import { AggregateStreamingSearchResults, Filter } from '../../stream'
+import { DynamicSearchFilter, SearchResultsFilterBars } from '../SearchResultsFilterBars'
 
 interface Props
     extends SettingsCascadeProps,
