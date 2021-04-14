@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react'
-import { useHistory } from 'react-router'
 import Dialog from '@reach/dialog'
 import * as H from 'history'
+import React, { useEffect, useState, useRef } from 'react'
+import { useHistory } from 'react-router'
 
 type Fn = () => void
 interface Props {

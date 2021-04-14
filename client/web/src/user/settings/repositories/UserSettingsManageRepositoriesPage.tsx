@@ -1,14 +1,17 @@
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { FormEvent, useCallback, useEffect, useState, useRef } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
+
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { PageSelector } from '@sourcegraph/wildcard'
+
 import {
     queryExternalServices,
     setExternalServiceRepos,
@@ -23,10 +26,10 @@ import {
     AffiliatedRepositoriesResult,
 } from '../../../graphql-operations'
 import { queryUserPublicRepositories, setUserPublicRepositories } from '../../../site-admin/backend'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { AwayPrompt, ALLOW_NAVIGATION } from './AwayPrompt'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserRepositoriesUpdateProps } from '../../../util'
+
+import { AwayPrompt, ALLOW_NAVIGATION } from './AwayPrompt'
 import { CheckboxRepositoryNode } from './RepositoryNode'
 
 interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
