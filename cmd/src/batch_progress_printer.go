@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/src-cli/internal/batches"
+	"github.com/sourcegraph/src-cli/internal/batches/executor"
 	"github.com/sourcegraph/src-cli/internal/output"
 	"golang.org/x/sync/semaphore"
 )
@@ -22,7 +22,7 @@ func newBatchProgressPrinter(out *output.Output, verbose bool, numParallelism in
 		numParallelism: numParallelism,
 
 		completedTasks: map[string]bool{},
-		runningTasks:   map[string]*batches.TaskStatus{},
+		runningTasks:   map[string]*executor.TaskStatus{},
 
 		repoStatusBar: map[string]int{},
 		statusBarRepo: map[int]string{},
@@ -46,13 +46,13 @@ type batchProgressPrinter struct {
 	numParallelism int
 
 	completedTasks map[string]bool
-	runningTasks   map[string]*batches.TaskStatus
+	runningTasks   map[string]*executor.TaskStatus
 
 	repoStatusBar map[string]int
 	statusBarRepo map[int]string
 }
 
-func (p *batchProgressPrinter) initProgressBar(statuses []*batches.TaskStatus) int {
+func (p *batchProgressPrinter) initProgressBar(statuses []*executor.TaskStatus) int {
 	numStatusBars := p.numParallelism
 	if len(statuses) < numStatusBars {
 		numStatusBars = len(statuses)
@@ -93,7 +93,7 @@ func (p *batchProgressPrinter) updateProgressBar(completed, errored, total int) 
 	p.progress.SetLabelAndRecalc(0, label)
 }
 
-func (p *batchProgressPrinter) PrintStatuses(statuses []*batches.TaskStatus) {
+func (p *batchProgressPrinter) PrintStatuses(statuses []*executor.TaskStatus) {
 	if len(statuses) == 0 {
 		return
 	}
@@ -109,8 +109,8 @@ func (p *batchProgressPrinter) PrintStatuses(statuses []*batches.TaskStatus) {
 		p.numStatusBars = p.initProgressBar(statuses)
 	}
 
-	newlyCompleted := []*batches.TaskStatus{}
-	currentlyRunning := []*batches.TaskStatus{}
+	newlyCompleted := []*executor.TaskStatus{}
+	currentlyRunning := []*executor.TaskStatus{}
 	errored := 0
 
 	for _, ts := range statuses {
@@ -145,7 +145,7 @@ func (p *batchProgressPrinter) PrintStatuses(statuses []*batches.TaskStatus) {
 
 	p.updateProgressBar(len(p.completedTasks), errored, len(statuses))
 
-	newlyStarted := map[string]*batches.TaskStatus{}
+	newlyStarted := map[string]*executor.TaskStatus{}
 	statusBarIndex := 0
 	for _, ts := range currentlyRunning {
 		if _, ok := p.runningTasks[ts.DisplayName()]; ok {
@@ -252,7 +252,7 @@ type statusTexter interface {
 	StatusText() string
 }
 
-func taskStatusBarText(ts *batches.TaskStatus) (string, error) {
+func taskStatusBarText(ts *executor.TaskStatus) (string, error) {
 	var statusText string
 
 	if ts.IsCompleted() {

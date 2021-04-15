@@ -1,4 +1,4 @@
-package batches
+package workspace
 
 import (
 	"archive/zip"
@@ -13,16 +13,18 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/src-cli/internal/batches"
+	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
 
 type dockerBindWorkspaceCreator struct {
-	dir string
+	Dir string
 }
 
-var _ WorkspaceCreator = &dockerBindWorkspaceCreator{}
+var _ Creator = &dockerBindWorkspaceCreator{}
 
-func (wc *dockerBindWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, steps []Step, archive RepoZip) (Workspace, error) {
+func (wc *dockerBindWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, steps []batches.Step, archive batches.RepoZip) (Workspace, error) {
 	w, err := wc.unzipToWorkspace(ctx, repo, archive.Path())
 	if err != nil {
 		return nil, errors.Wrap(err, "unzipping the repository")
@@ -53,7 +55,7 @@ func (*dockerBindWorkspaceCreator) prepareGitRepo(ctx context.Context, w *docker
 
 func (wc *dockerBindWorkspaceCreator) unzipToWorkspace(ctx context.Context, repo *graphql.Repository, zip string) (*dockerBindWorkspace, error) {
 	prefix := "workspace-" + repo.Slug()
-	workspace, err := unzipToTempDir(ctx, zip, wc.dir, prefix)
+	workspace, err := unzipToTempDir(ctx, zip, wc.Dir, prefix)
 	if err != nil {
 		return nil, errors.Wrap(err, "unzipping the ZIP archive")
 	}
@@ -118,7 +120,7 @@ func (w *dockerBindWorkspace) DockerRunOpts(ctx context.Context, target string) 
 
 func (w *dockerBindWorkspace) WorkDir() *string { return &w.dir }
 
-func (w *dockerBindWorkspace) Changes(ctx context.Context) (*StepChanges, error) {
+func (w *dockerBindWorkspace) Changes(ctx context.Context) (*git.Changes, error) {
 	if _, err := runGitCmd(ctx, w.dir, "add", "--all"); err != nil {
 		return nil, errors.Wrap(err, "git add failed")
 	}
@@ -128,7 +130,7 @@ func (w *dockerBindWorkspace) Changes(ctx context.Context) (*StepChanges, error)
 		return nil, errors.Wrap(err, "git status failed")
 	}
 
-	changes, err := parseGitStatus(statusOut)
+	changes, err := git.ParseGitStatus(statusOut)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing git status output")
 	}

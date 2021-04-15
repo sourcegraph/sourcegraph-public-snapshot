@@ -19,7 +19,9 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
+	"github.com/sourcegraph/src-cli/internal/batches/executor"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
+	"github.com/sourcegraph/src-cli/internal/batches/service"
 	"github.com/sourcegraph/src-cli/internal/output"
 )
 
@@ -189,7 +191,7 @@ func batchOpenFileFlag(flag *string) (io.ReadCloser, error) {
 // batchExecute performs all the steps required to upload the campaign spec
 // to Sourcegraph, including execution as needed. The return values are the
 // spec ID, spec URL, and error.
-func batchExecute(ctx context.Context, out *output.Output, svc *batches.Service, flags *batchApplyFlags) (graphql.BatchSpecID, string, error) {
+func batchExecute(ctx context.Context, out *output.Output, svc *service.Service, flags *batchApplyFlags) (graphql.BatchSpecID, string, error) {
 	if err := checkExecutable("git", "version"); err != nil {
 		return "", "", err
 	}
@@ -275,13 +277,12 @@ func batchExecute(ctx context.Context, out *output.Output, svc *batches.Service,
 		task.Archive = fetcher.Checkout(task.Repository, task.ArchivePathToFetch())
 	}
 
-	opts := batches.ExecutorOpts{
-		Cache:       svc.NewExecutionCache(flags.cacheDir),
+	opts := executor.Opts{
+		TempDir:     flags.tempDir,
 		Creator:     workspaceCreator,
 		ClearCache:  flags.clearCache,
 		KeepLogs:    flags.keepLogs,
 		Timeout:     flags.timeout,
-		TempDir:     flags.tempDir,
 		Parallelism: flags.parallelism,
 	}
 
@@ -354,7 +355,7 @@ func batchExecute(ctx context.Context, out *output.Output, svc *batches.Service,
 // batchParseSpec parses and validates the given batch spec. If the spec has
 // validation errors, the errors are output in a human readable form and an
 // exitCodeError is returned.
-func batchParseSpec(out *output.Output, svc *batches.Service, input io.ReadCloser) (*batches.BatchSpec, string, error) {
+func batchParseSpec(out *output.Output, svc *service.Service, input io.ReadCloser) (*batches.BatchSpec, string, error) {
 	spec, raw, err := svc.ParseBatchSpec(input)
 	if err != nil {
 		if merr, ok := err.(*multierror.Error); ok {
@@ -400,7 +401,7 @@ func printExecutionError(out *output.Output, err error) {
 		}
 
 		for _, e := range errs {
-			if taskErr, ok := e.(batches.TaskExecutionErr); ok {
+			if taskErr, ok := e.(executor.TaskExecutionErr); ok {
 				block.Write(formatTaskExecutionErr(taskErr))
 			} else {
 				if err == context.Canceled {
@@ -455,7 +456,7 @@ func flattenErrs(err error) (result []error) {
 	return result
 }
 
-func formatTaskExecutionErr(err batches.TaskExecutionErr) string {
+func formatTaskExecutionErr(err executor.TaskExecutionErr) string {
 	if ee, ok := errors.Cause(err).(*exec.ExitError); ok && ee.String() == "signal: killed" {
 		return fmt.Sprintf(
 			"%s%s%s: killed by interrupt signal",

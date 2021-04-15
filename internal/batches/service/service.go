@@ -1,4 +1,4 @@
-package batches
+package service
 
 import (
 	"context"
@@ -17,20 +17,23 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
+	"github.com/sourcegraph/src-cli/internal/batches/executor"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
+	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 )
 
 type Service struct {
 	allowUnsupported bool
 	allowIgnored     bool
 	client           api.Client
-	features         featureFlags
+	features         batches.FeatureFlags
 	imageCache       *docker.ImageCache
 	workspace        string
 }
 
-type ServiceOpts struct {
+type Opts struct {
 	AllowUnsupported bool
 	AllowIgnored     bool
 	Client           api.Client
@@ -41,7 +44,7 @@ var (
 	ErrMalformedOnQueryOrRepository = errors.New("malformed 'on' field; missing either a repository name or a query")
 )
 
-func NewService(opts *ServiceOpts) *Service {
+func New(opts *Opts) *Service {
 	return &Service{
 		allowUnsupported: opts.AllowUnsupported,
 		allowIgnored:     opts.AllowIgnored,
@@ -84,20 +87,20 @@ func (svc *Service) DetermineFeatureFlags(ctx context.Context) error {
 		return errors.Wrap(err, "failed to query Sourcegraph version to check for available features")
 	}
 
-	return svc.features.setFromVersion(version)
+	return svc.features.SetFromVersion(version)
 }
 
 // TODO(campaigns-deprecation): this shim can be removed in Sourcegraph 4.0.
 func (svc *Service) newOperations() graphql.Operations {
 	return graphql.NewOperations(
 		svc.client,
-		svc.features.batchChanges,
-		svc.features.useGzipCompression,
+		svc.features.BatchChanges,
+		svc.features.UseGzipCompression,
 	)
 }
 
 func (svc *Service) newRequest(query string, vars map[string]interface{}) api.Request {
-	if svc.features.useGzipCompression {
+	if svc.features.UseGzipCompression {
 		return svc.client.NewGzippedRequest(query, vars)
 	}
 	return svc.client.NewRequest(query, vars)
@@ -129,7 +132,7 @@ mutation CreateChangesetSpec($spec: String!) {
 }
 `
 
-func (svc *Service) CreateChangesetSpec(ctx context.Context, spec *ChangesetSpec) (graphql.ChangesetSpecID, error) {
+func (svc *Service) CreateChangesetSpec(ctx context.Context, spec *batches.ChangesetSpec) (graphql.ChangesetSpecID, error) {
 	raw, err := json.Marshal(spec)
 	if err != nil {
 		return "", errors.Wrap(err, "marshalling changeset spec JSON")
@@ -149,37 +152,18 @@ func (svc *Service) CreateChangesetSpec(ctx context.Context, spec *ChangesetSpec
 	return graphql.ChangesetSpecID(result.CreateChangesetSpec.ID), nil
 }
 
-func (svc *Service) NewExecutionCache(dir string) ExecutionCache {
-	if dir == "" {
-		return &ExecutionNoOpCache{}
-	}
-
-	return &ExecutionDiskCache{dir}
+// TODO(mrnugget): This can be removed
+func (svc *Service) NewRepoFetcher(dir string, cleanArchives bool) batches.RepoFetcher {
+	return batches.NewRepoFetcher(
+		svc.client,
+		dir,
+		cleanArchives,
+	)
 }
 
-func (svc *Service) NewRepoFetcher(dir string, cleanArchives bool) RepoFetcher {
-	return &repoFetcher{
-		client:     svc.client,
-		dir:        dir,
-		deleteZips: cleanArchives,
-	}
-}
-
-func (svc *Service) NewWorkspaceCreator(ctx context.Context, cacheDir, tempDir string, steps []Step) WorkspaceCreator {
-	if svc.workspaceCreatorType(ctx, steps) == workspaceCreatorVolume {
-		return &dockerVolumeWorkspaceCreator{tempDir: tempDir}
-	}
-	return &dockerBindWorkspaceCreator{dir: cacheDir}
-}
-
-func (svc *Service) workspaceCreatorType(ctx context.Context, steps []Step) workspaceCreatorType {
-	if svc.workspace == "volume" {
-		return workspaceCreatorVolume
-	} else if svc.workspace == "bind" {
-		return workspaceCreatorBind
-	}
-
-	return bestWorkspaceCreator(ctx, steps)
+// TODO(mrnugget): This can be removed
+func (svc *Service) NewWorkspaceCreator(ctx context.Context, cacheDir, tempDir string, steps []batches.Step) workspace.Creator {
+	return workspace.NewCreator(ctx, svc.workspace, cacheDir, tempDir, steps)
 }
 
 // SetDockerImages updates the steps within the batch spec to include the exact
@@ -188,15 +172,15 @@ func (svc *Service) workspaceCreatorType(ctx context.Context, steps []Step) work
 //
 // Progress information is reported back to the given progress function: perc
 // will be a value between 0.0 and 1.0, inclusive.
-func (svc *Service) SetDockerImages(ctx context.Context, spec *BatchSpec, progress func(perc float64)) error {
+func (svc *Service) SetDockerImages(ctx context.Context, spec *batches.BatchSpec, progress func(perc float64)) error {
 	total := len(spec.Steps) + 1
 	progress(0)
 
 	// TODO: this _really_ should be parallelised, since the image cache takes
 	// care to only pull the same image once.
 	for i := range spec.Steps {
-		spec.Steps[i].image = svc.imageCache.Get(spec.Steps[i].Container)
-		if err := spec.Steps[i].image.Ensure(ctx); err != nil {
+		spec.Steps[i].SetImage(svc.imageCache.Get(spec.Steps[i].Container))
+		if err := spec.Steps[i].EnsureImage(ctx); err != nil {
 			return errors.Wrapf(err, "pulling image %q", spec.Steps[i].Container)
 		}
 		progress(float64(i) / float64(total))
@@ -204,24 +188,26 @@ func (svc *Service) SetDockerImages(ctx context.Context, spec *BatchSpec, progre
 
 	// We also need to ensure we have our own utility images available, if
 	// necessary.
-	if svc.workspaceCreatorType(ctx, spec.Steps) == workspaceCreatorVolume {
-		if err := svc.imageCache.Get(dockerVolumeWorkspaceImage).Ensure(ctx); err != nil {
-			return errors.Wrapf(err, "pulling image %q", dockerVolumeWorkspaceImage)
-		}
+
+	// TODO(mrnugget): figure out how to check for this, but load it always now
+	// if svc.workspaceCreatorType(ctx, spec.Steps) == workspaceCreatorVolume {
+	if err := svc.imageCache.Get(workspace.DockerVolumeWorkspaceImage).Ensure(ctx); err != nil {
+		return errors.Wrapf(err, "pulling image %q", workspace.DockerVolumeWorkspaceImage)
 	}
+	// }
 
 	progress(1)
 	return nil
 }
 
-func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository, spec *BatchSpec) ([]*Task, error) {
-	workspaceConfigs := []WorkspaceConfiguration{}
+func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository, spec *batches.BatchSpec) ([]*executor.Task, error) {
+	workspaceConfigs := []batches.WorkspaceConfiguration{}
 	for _, conf := range spec.Workspaces {
 		g, err := glob.Compile(conf.In)
 		if err != nil {
 			return nil, err
 		}
-		conf.glob = g
+		conf.SetGlob(g)
 		workspaceConfigs = append(workspaceConfigs, conf)
 	}
 
@@ -236,7 +222,7 @@ func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository,
 		matched := false
 
 		for i, conf := range workspaceConfigs {
-			if !conf.glob.Match(repo.Name) {
+			if !conf.Matches(repo.Name) {
 				continue
 			}
 
@@ -257,9 +243,9 @@ func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository,
 		}
 	}
 
-	var tasks []*Task
+	var tasks []*executor.Task
 
-	attr := &BatchChangeAttributes{Name: spec.Name, Description: spec.Description}
+	attr := &executor.BatchChangeAttributes{Name: spec.Name, Description: spec.Description}
 
 	for configIndex, repos := range reposByWorkspaceConfig {
 		workspaceConfig := workspaceConfigs[configIndex]
@@ -280,7 +266,7 @@ func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository,
 					}
 				}
 
-				tasks = append(tasks, &Task{
+				tasks = append(tasks, &executor.Task{
 					Repository:            repo,
 					Path:                  d,
 					Steps:                 spec.Steps,
@@ -294,7 +280,7 @@ func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository,
 	}
 
 	for r := range rootWorkspace {
-		tasks = append(tasks, &Task{
+		tasks = append(tasks, &executor.Task{
 			Repository:            r,
 			Path:                  "",
 			Steps:                 spec.Steps,
@@ -307,8 +293,8 @@ func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository,
 	return tasks, nil
 }
 
-func (svc *Service) ExecuteBatchSpec(ctx context.Context, opts ExecutorOpts, tasks []*Task, spec *BatchSpec, progress func([]*TaskStatus), skipErrors bool) ([]*ChangesetSpec, []string, error) {
-	x := newExecutor(opts, svc.client, svc.features)
+func (svc *Service) ExecuteBatchSpec(ctx context.Context, opts executor.Opts, tasks []*executor.Task, spec *batches.BatchSpec, progress func([]*executor.TaskStatus), skipErrors bool) ([]*batches.ChangesetSpec, []string, error) {
+	x := executor.New(opts, svc.client, svc.features)
 	for _, t := range tasks {
 		x.AddTask(t)
 	}
@@ -380,9 +366,9 @@ func (svc *Service) ExecuteBatchSpec(ctx context.Context, opts ExecutorOpts, tas
 				return nil, nil, errors.Errorf("cannot convert value of type %T into a valid external ID: expected string or int", id)
 			}
 
-			specs = append(specs, &ChangesetSpec{
+			specs = append(specs, &batches.ChangesetSpec{
 				BaseRepository:    repo.ID,
-				ExternalChangeset: &ExternalChangeset{sid},
+				ExternalChangeset: &batches.ExternalChangeset{ExternalID: sid},
 			})
 		}
 	}
@@ -390,13 +376,13 @@ func (svc *Service) ExecuteBatchSpec(ctx context.Context, opts ExecutorOpts, tas
 	return specs, x.LogFiles(), errs.ErrorOrNil()
 }
 
-func (svc *Service) ValidateChangesetSpecs(repos []*graphql.Repository, specs []*ChangesetSpec) error {
+func (svc *Service) ValidateChangesetSpecs(repos []*graphql.Repository, specs []*batches.ChangesetSpec) error {
 	repoByID := make(map[string]*graphql.Repository, len(repos))
 	for _, repo := range repos {
 		repoByID[repo.ID] = repo
 	}
 
-	byRepoAndBranch := make(map[string]map[string][]*ChangesetSpec)
+	byRepoAndBranch := make(map[string]map[string][]*batches.ChangesetSpec)
 	for _, spec := range specs {
 		// We don't need to validate imported changesets, as they can
 		// never have a critical branch name overlap.
@@ -404,7 +390,7 @@ func (svc *Service) ValidateChangesetSpecs(repos []*graphql.Repository, specs []
 			continue
 		}
 		if _, ok := byRepoAndBranch[spec.HeadRepository]; !ok {
-			byRepoAndBranch[spec.HeadRepository] = make(map[string][]*ChangesetSpec)
+			byRepoAndBranch[spec.HeadRepository] = make(map[string][]*batches.ChangesetSpec)
 		}
 
 		byRepoAndBranch[spec.HeadRepository][spec.HeadRef] = append(byRepoAndBranch[spec.HeadRepository][spec.HeadRef], spec)
@@ -454,13 +440,13 @@ func (e *duplicateBranchesErr) Error() string {
 	return out.String()
 }
 
-func (svc *Service) ParseBatchSpec(in io.Reader) (*BatchSpec, string, error) {
+func (svc *Service) ParseBatchSpec(in io.Reader) (*batches.BatchSpec, string, error) {
 	data, err := ioutil.ReadAll(in)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "reading batch spec")
 	}
 
-	spec, err := ParseBatchSpec(data, svc.features)
+	spec, err := batches.ParseBatchSpec(data, svc.features)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "parsing batch spec")
 	}
@@ -529,10 +515,10 @@ func (svc *Service) ResolveNamespace(ctx context.Context, namespace string) (str
 	return "", fmt.Errorf("failed to resolve namespace %q: no user or organization found", namespace)
 }
 
-func (svc *Service) ResolveRepositories(ctx context.Context, spec *BatchSpec) ([]*graphql.Repository, error) {
+func (svc *Service) ResolveRepositories(ctx context.Context, spec *batches.BatchSpec) ([]*graphql.Repository, error) {
 	seen := map[string]*graphql.Repository{}
-	unsupported := UnsupportedRepoSet{}
-	ignored := IgnoredRepoSet{}
+	unsupported := batches.UnsupportedRepoSet{}
+	ignored := batches.IgnoredRepoSet{}
 
 	// TODO: this could be trivially parallelised in the future.
 	for _, on := range spec.On {
@@ -561,13 +547,13 @@ func (svc *Service) ResolveRepositories(ctx context.Context, spec *BatchSpec) ([
 				case "github", "gitlab", "bitbucketserver":
 				default:
 					if !svc.allowUnsupported {
-						unsupported.appendRepo(repo)
+						unsupported.Append(repo)
 					}
 				}
 
 				if !svc.allowIgnored {
 					if locations, ok := repoBatchIgnores[repo]; ok && len(locations) > 0 {
-						ignored.appendRepo(repo)
+						ignored.Append(repo)
 					}
 				}
 			} else {
@@ -581,23 +567,23 @@ func (svc *Service) ResolveRepositories(ctx context.Context, spec *BatchSpec) ([
 
 	final := make([]*graphql.Repository, 0, len(seen))
 	for _, repo := range seen {
-		if !unsupported.includes(repo) && !ignored.includes(repo) {
+		if !unsupported.Includes(repo) && !ignored.Includes(repo) {
 			final = append(final, repo)
 		}
 	}
 
-	if unsupported.hasUnsupported() {
+	if unsupported.HasUnsupported() {
 		return final, unsupported
 	}
 
-	if ignored.hasIgnored() {
+	if ignored.HasIgnored() {
 		return final, ignored
 	}
 
 	return final, nil
 }
 
-func (svc *Service) ResolveRepositoriesOn(ctx context.Context, on *OnQueryOrRepository) ([]*graphql.Repository, error) {
+func (svc *Service) ResolveRepositoriesOn(ctx context.Context, on *batches.OnQueryOrRepository) ([]*graphql.Repository, error) {
 	if on.RepositoriesMatchingQuery != "" {
 		return svc.resolveRepositorySearch(ctx, on.RepositoriesMatchingQuery)
 	} else if on.Repository != "" && on.Branch != "" {

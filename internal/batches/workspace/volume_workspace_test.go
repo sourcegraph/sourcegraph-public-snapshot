@@ -1,4 +1,4 @@
-package batches
+package workspace
 
 import (
 	"bytes"
@@ -12,8 +12,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
+	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
+	"github.com/sourcegraph/src-cli/internal/batches/mock"
 	"github.com/sourcegraph/src-cli/internal/exec/expect"
 )
 
@@ -55,10 +58,16 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 		DefaultBranch: &graphql.Branch{Name: "main"},
 	}
 
+	stepWithImage := func(image docker.Image) batches.Step {
+		s := batches.Step{}
+		s.SetImage(image)
+		return s
+	}
+
 	for name, tc := range map[string]struct {
 		archive      *fakeRepoArchive
 		expectations []*expect.Expectation
-		steps        []Step
+		steps        []batches.Step
 		wantErr      bool
 	}{
 		"no steps": {
@@ -72,7 +81,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"docker", "run", "--rm", "--init", "--workdir", "/work",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "-c", "touch /work/*; chown -R 0:0 /work",
 				),
 				expect.NewGlob(
@@ -82,7 +91,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"--mount", "type=bind,source=*,target=/tmp/zip,ro",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "-c", "unzip /tmp/zip; rm /work/*",
 				),
 				expect.NewGlob(
@@ -91,11 +100,11 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"--mount", "type=bind,source=*,target=/run.sh,ro",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "/run.sh",
 				),
 			},
-			steps: []Step{},
+			steps: []batches.Step{},
 		},
 		"one root:root step": {
 			expectations: []*expect.Expectation{
@@ -108,7 +117,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"docker", "run", "--rm", "--init", "--workdir", "/work",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "-c", "touch /work/*; chown -R 0:0 /work",
 				),
 				expect.NewGlob(
@@ -118,7 +127,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"--mount", "type=bind,source=*,target=/tmp/zip,ro",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "-c", "unzip /tmp/zip; rm /work/*",
 				),
 				expect.NewGlob(
@@ -127,12 +136,12 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"--mount", "type=bind,source=*,target=/run.sh,ro",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "/run.sh",
 				),
 			},
-			steps: []Step{
-				{image: &mockImage{uidGid: docker.Root}},
+			steps: []batches.Step{
+				stepWithImage(&mock.Image{UidGid: docker.Root}),
 			},
 		},
 		"one user:user step": {
@@ -146,7 +155,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"docker", "run", "--rm", "--init", "--workdir", "/work",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "-c", "touch /work/*; chown -R 1:2 /work",
 				),
 				expect.NewGlob(
@@ -156,7 +165,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"--mount", "type=bind,source=*,target=/tmp/zip,ro",
 					"--user", "1:2",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "-c", "unzip /tmp/zip; rm /work/*",
 				),
 				expect.NewGlob(
@@ -165,12 +174,12 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"--mount", "type=bind,source=*,target=/run.sh,ro",
 					"--user", "1:2",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "/run.sh",
 				),
 			},
-			steps: []Step{
-				{image: &mockImage{uidGid: docker.UIDGID{UID: 1, GID: 2}}},
+			steps: []batches.Step{
+				stepWithImage(&mock.Image{UidGid: docker.UIDGID{UID: 1, GID: 2}}),
 			},
 		},
 		"docker volume create failure": {
@@ -180,8 +189,8 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"docker", "volume", "create",
 				),
 			},
-			steps: []Step{
-				{image: &mockImage{uidGid: docker.Root}},
+			steps: []batches.Step{
+				stepWithImage(&mock.Image{UidGid: docker.Root}),
 			},
 			wantErr: true,
 		},
@@ -196,12 +205,12 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"docker", "run", "--rm", "--init", "--workdir", "/work",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "-c", "touch /work/*; chown -R 0:0 /work",
 				),
 			},
-			steps: []Step{
-				{image: &mockImage{uidGid: docker.Root}},
+			steps: []batches.Step{
+				stepWithImage(&mock.Image{UidGid: docker.Root}),
 			},
 			wantErr: true,
 		},
@@ -216,7 +225,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"docker", "run", "--rm", "--init", "--workdir", "/work",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "-c", "touch /work/*; chown -R 0:0 /work",
 				),
 				expect.NewGlob(
@@ -226,7 +235,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"--mount", "type=bind,source=*,target=/tmp/zip,ro",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "-c", "unzip /tmp/zip; rm /work/*",
 				),
 				expect.NewGlob(
@@ -235,12 +244,12 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"--mount", "type=bind,source=*,target=/run.sh,ro",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "/run.sh",
 				),
 			},
-			steps: []Step{
-				{image: &mockImage{uidGid: docker.Root}},
+			steps: []batches.Step{
+				stepWithImage(&mock.Image{UidGid: docker.Root}),
 			},
 			wantErr: true,
 		},
@@ -255,7 +264,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"docker", "run", "--rm", "--init", "--workdir", "/work",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "-c", "touch /work/*; chown -R 0:0 /work",
 				),
 				expect.NewGlob(
@@ -265,12 +274,12 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"--mount", "type=bind,source=*,target=/tmp/zip,ro",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "-c", "unzip /tmp/zip; rm /work/*",
 				),
 			},
-			steps: []Step{
-				{image: &mockImage{uidGid: docker.Root}},
+			steps: []batches.Step{
+				stepWithImage(&mock.Image{UidGid: docker.Root}),
 			},
 			wantErr: true,
 		},
@@ -286,7 +295,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"docker", "run", "--rm", "--init", "--workdir", "/work",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "-c", "touch /work/*; chown -R 0:0 /work",
 				),
 				expect.NewGlob(
@@ -296,7 +305,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"--mount", "type=bind,source=*,target=/tmp/zip,ro",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "-c", "unzip /tmp/zip; rm /work/*",
 				),
 				expect.NewGlob(
@@ -307,7 +316,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"--mount", "type=volume,source="+volumeID+",target=/work",
 					"--mount", "type=bind,source="+archiveWithAdditionalFiles.mockAdditionalFilePaths[".gitignore"]+",target=/tmp/.gitignore,ro",
 					"--mount", "type=bind,source="+archiveWithAdditionalFiles.mockAdditionalFilePaths["another-file"]+",target=/tmp/another-file,ro",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "-c", "cp /tmp/.gitignore /work/.gitignore && cp /tmp/another-file /work/another-file;",
 				),
 				expect.NewGlob(
@@ -316,12 +325,12 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"--mount", "type=bind,source=*,target=/run.sh,ro",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "/run.sh",
 				),
 			},
-			steps: []Step{
-				{image: &mockImage{uidGid: docker.Root}},
+			steps: []batches.Step{
+				stepWithImage(&mock.Image{UidGid: docker.Root}),
 			},
 		},
 	} {
@@ -419,11 +428,11 @@ func TestVolumeWorkspace_Changes(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		for name, tc := range map[string]struct {
 			stdout string
-			want   *StepChanges
+			want   *git.Changes
 		}{
 			"empty": {
 				stdout: "",
-				want:   &StepChanges{},
+				want:   &git.Changes{},
 			},
 			"valid": {
 				stdout: `
@@ -431,7 +440,7 @@ M  go.mod
 M  internal/campaigns/volume_workspace.go
 M  internal/campaigns/volume_workspace_test.go				
 				`,
-				want: &StepChanges{Modified: []string{
+				want: &git.Changes{Modified: []string{
 					"go.mod",
 					"internal/campaigns/volume_workspace.go",
 					"internal/campaigns/volume_workspace_test.go",
@@ -447,7 +456,7 @@ M  internal/campaigns/volume_workspace_test.go
 						"--mount", "type=bind,source=*,target=/run.sh,ro",
 						"--user", "0:0",
 						"--mount", "type=volume,source="+volumeID+",target=/work",
-						dockerVolumeWorkspaceImage,
+						DockerVolumeWorkspaceImage,
 						"sh", "/run.sh",
 					),
 				)
@@ -479,7 +488,7 @@ M  internal/campaigns/volume_workspace_test.go
 						"--mount", "type=bind,source=*,target=/run.sh,ro",
 						"--user", "0:0",
 						"--mount", "type=volume,source="+volumeID+",target=/work",
-						dockerVolumeWorkspaceImage,
+						DockerVolumeWorkspaceImage,
 						"sh", "/run.sh",
 					),
 				)
@@ -525,7 +534,7 @@ index 06471f4..5f9d3fa 100644
 						"--mount", "type=bind,source=*,target=/run.sh,ro",
 						"--user", "0:0",
 						"--mount", "type=volume,source="+volumeID+",target=/work",
-						dockerVolumeWorkspaceImage,
+						DockerVolumeWorkspaceImage,
 						"sh", "/run.sh",
 					),
 				)
@@ -552,7 +561,7 @@ index 06471f4..5f9d3fa 100644
 				"--mount", "type=bind,source=*,target=/run.sh,ro",
 				"--user", "0:0",
 				"--mount", "type=volume,source="+volumeID+",target=/work",
-				dockerVolumeWorkspaceImage,
+				DockerVolumeWorkspaceImage,
 				"sh", "/run.sh",
 			),
 		)
@@ -581,7 +590,7 @@ func TestVolumeWorkspace_runScript(t *testing.T) {
 					"--mount", "type=bind,source=*,target=/run.sh,ro",
 					"--user", "0:0",
 					"--mount", "type=volume,source="+volumeID+",target=/work",
-					dockerVolumeWorkspaceImage,
+					DockerVolumeWorkspaceImage,
 					"sh", "/run.sh",
 				)
 				if err := glob(name, arg...); err != nil {
@@ -609,26 +618,4 @@ func TestVolumeWorkspace_runScript(t *testing.T) {
 	if _, err := w.runScript(ctx, "/work", script); err != nil {
 		t.Fatal(err)
 	}
-}
-
-type mockImage struct {
-	digest    string
-	digestErr error
-	ensureErr error
-	uidGid    docker.UIDGID
-	uidGidErr error
-}
-
-var _ docker.Image = &mockImage{}
-
-func (image *mockImage) Digest(ctx context.Context) (string, error) {
-	return image.digest, image.digestErr
-}
-
-func (image *mockImage) Ensure(ctx context.Context) error {
-	return image.ensureErr
-}
-
-func (image *mockImage) UIDGID(ctx context.Context) (docker.UIDGID, error) {
-	return image.uidGid, image.uidGidErr
 }

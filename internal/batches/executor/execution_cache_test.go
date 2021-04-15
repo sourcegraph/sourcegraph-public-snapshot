@@ -1,4 +1,4 @@
-package batches
+package executor
 
 import (
 	"context"
@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/src-cli/internal/batches"
+	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"gopkg.in/yaml.v3"
 )
@@ -18,7 +20,7 @@ const testExecutionCacheKeyEnv = "TEST_EXECUTION_CACHE_KEY_ENV"
 func TestExecutionCacheKey(t *testing.T) {
 	// Let's set up an array of steps that we can test with. One step will
 	// depend on an environment variable outside the spec.
-	var steps []Step
+	var steps []batches.Step
 	if err := yaml.Unmarshal([]byte(`
 - run: foo
   env:
@@ -119,21 +121,21 @@ func TestExecutionDiskCache(t *testing.T) {
 
 	cacheKey1 := ExecutionCacheKey{Task: &Task{
 		Repository: &graphql.Repository{Name: "src-cli"},
-		Steps: []Step{
+		Steps: []batches.Step{
 			{Run: "echo 'Hello World'", Container: "alpine:3"},
 		},
 	}}
 
 	cacheKey2 := ExecutionCacheKey{Task: &Task{
 		Repository: &graphql.Repository{Name: "documentation"},
-		Steps: []Step{
+		Steps: []batches.Step{
 			{Run: "echo 'Hello World'", Container: "alpine:3"},
 		},
 	}}
 
 	value := executionResult{
 		Diff: testDiff,
-		ChangedFiles: &StepChanges{
+		ChangedFiles: &git.Changes{
 			Added: []string{"README.md"},
 		},
 		Outputs: map[string]interface{}{},
@@ -218,8 +220,8 @@ func writeV1CacheFile(t *testing.T, c ExecutionDiskCache, k ExecutionCacheKey, d
 	path = filepath.Join(c.Dir, hashedKey+".json")
 
 	// v1 contained a fully serialized ChangesetSpec
-	spec := ChangesetSpec{CreatedChangeset: &CreatedChangeset{
-		Commits: []GitCommitDescription{
+	spec := batches.ChangesetSpec{CreatedChangeset: &batches.CreatedChangeset{
+		Commits: []batches.GitCommitDescription{
 			{Diff: testDiff},
 		},
 	}}

@@ -1,4 +1,4 @@
-package batches
+package workspace
 
 import (
 	"archive/zip"
@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
 
@@ -83,7 +84,7 @@ func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 		testTempDir := workspaceTmpDir(t)
 
 		archive := &fakeRepoArchive{mockPath: archivePath}
-		creator := &dockerBindWorkspaceCreator{dir: testTempDir}
+		creator := &dockerBindWorkspaceCreator{Dir: testTempDir}
 		workspace, err := creator.Create(context.Background(), repo, nil, archive)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
@@ -113,7 +114,7 @@ func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 
 		badArchive := &fakeRepoArchive{mockPath: badZipFile}
 
-		creator := &dockerBindWorkspaceCreator{dir: testTempDir}
+		creator := &dockerBindWorkspaceCreator{Dir: testTempDir}
 		if _, err := creator.Create(context.Background(), repo, nil, badArchive); err == nil {
 			t.Error("unexpected nil error")
 		}
@@ -127,7 +128,7 @@ func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 			mockAdditionalFilePaths: additionalFilePaths,
 		}
 
-		creator := &dockerBindWorkspaceCreator{dir: testTempDir}
+		creator := &dockerBindWorkspaceCreator{Dir: testTempDir}
 		workspace, err := creator.Create(context.Background(), repo, nil, archive)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
@@ -316,22 +317,7 @@ func readWorkspaceFiles(workspace Workspace) (map[string]string, error) {
 	return files, err
 }
 
-func dirContains(dir, filename string) (bool, error) {
-	files, err := ioutil.ReadDir(dir)
-	if err != nil {
-		return false, err
-	}
-
-	for _, f := range files {
-		if f.Name() == filename {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-var _ RepoZip = &fakeRepoArchive{}
+var _ batches.RepoZip = &fakeRepoArchive{}
 
 type fakeRepoArchive struct {
 	mockPath                string

@@ -5,29 +5,29 @@ import (
 	"github.com/sourcegraph/src-cli/internal/api"
 )
 
-// featureFlags represent features that are only available on certain
+// FeatureFlags represent features that are only available on certain
 // Sourcegraph versions and we therefore have to detect at runtime.
-type featureFlags struct {
-	allowArrayEnvironments   bool
-	includeAutoAuthorDetails bool
-	useGzipCompression       bool
-	allowtransformChanges    bool
-	allowWorkspaces          bool
-	batchChanges             bool
+type FeatureFlags struct {
+	AllowArrayEnvironments   bool
+	IncludeAutoAuthorDetails bool
+	UseGzipCompression       bool
+	AllowTransformChanges    bool
+	AllowWorkspaces          bool
+	BatchChanges             bool
 }
 
-func (ff *featureFlags) setFromVersion(version string) error {
+func (ff *FeatureFlags) SetFromVersion(version string) error {
 	for _, feature := range []struct {
 		flag       *bool
 		constraint string
 		minDate    string
 	}{
-		{&ff.allowArrayEnvironments, ">= 3.23.0", "2020-11-24"},
-		{&ff.includeAutoAuthorDetails, ">= 3.20.0", "2020-09-10"},
-		{&ff.useGzipCompression, ">= 3.21.0", "2020-10-12"},
-		{&ff.allowtransformChanges, ">= 3.23.0", "2020-12-11"},
-		{&ff.allowWorkspaces, ">= 3.25.0", "2021-01-29"},
-		{&ff.batchChanges, ">= 3.26.0", "2021-03-07"},
+		{&ff.AllowArrayEnvironments, ">= 3.23.0", "2020-11-24"},
+		{&ff.IncludeAutoAuthorDetails, ">= 3.20.0", "2020-09-10"},
+		{&ff.UseGzipCompression, ">= 3.21.0", "2020-10-12"},
+		{&ff.AllowTransformChanges, ">= 3.23.0", "2020-12-11"},
+		{&ff.AllowWorkspaces, ">= 3.25.0", "2021-01-29"},
+		{&ff.BatchChanges, ">= 3.26.0", "2021-03-07"},
 	} {
 		value, err := api.CheckSourcegraphVersion(version, feature.constraint, feature.minDate)
 		if err != nil {

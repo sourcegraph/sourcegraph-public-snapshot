@@ -26,6 +26,10 @@ type RepoFetcher interface {
 	Checkout(repo *graphql.Repository, path string) RepoZip
 }
 
+func NewRepoFetcher(client api.Client, dir string, deleteZips bool) RepoFetcher {
+	return &repoFetcher{client: client, dir: dir, deleteZips: deleteZips}
+}
+
 // repoFetcher is the concrete implementation of the RepoFetcher interface used
 // outside of tests.
 type repoFetcher struct {
@@ -335,4 +339,15 @@ func repositoryRawFileEndpoint(repo *graphql.Repository, pathInRepo string) stri
 		p = path.Join(p, pathInRepo)
 	}
 	return p
+}
+
+func fileExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }

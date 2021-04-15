@@ -1,4 +1,4 @@
-package batches
+package executor
 
 import (
 	"context"
@@ -65,6 +65,14 @@ type ExecutionCache interface {
 	Get(ctx context.Context, key ExecutionCacheKey) (result executionResult, found bool, err error)
 	Set(ctx context.Context, key ExecutionCacheKey, result executionResult) error
 	Clear(ctx context.Context, key ExecutionCacheKey) error
+}
+
+func NewCache(dir string) ExecutionCache {
+	if dir == "" {
+		return &ExecutionNoOpCache{}
+	}
+
+	return &ExecutionDiskCache{dir}
 }
 
 type ExecutionDiskCache struct {

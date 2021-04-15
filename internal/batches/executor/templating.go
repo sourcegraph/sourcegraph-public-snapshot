@@ -1,13 +1,13 @@
-package batches
+package executor
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
 
@@ -40,6 +40,7 @@ func renderStepMap(m map[string]string, stepCtx *StepContext) (map[string]string
 	return rendered, nil
 }
 
+// TODO(mrnugget): This is bad and should be (a) removed or (b) moved to batches package
 type BatchChangeAttributes struct {
 	Name        string
 	Description string
@@ -134,20 +135,12 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 // StepResult represents the result of a previously executed step.
 type StepResult struct {
 	// files are the changes made to files by the step.
-	files *StepChanges
+	files *git.Changes
 
 	// Stdout is the output produced by the step on standard out.
 	Stdout *bytes.Buffer
 	// Stderr is the output produced by the step on standard error.
 	Stderr *bytes.Buffer
-}
-
-// StepChanges are the changes made to files by a previous step in a repository.
-type StepChanges struct {
-	Modified []string `json:"modified"`
-	Added    []string `json:"added"`
-	Deleted  []string `json:"deleted"`
-	Renamed  []string `json:"renamed"`
 }
 
 // ModifiedFiles returns the files modified by a step.
@@ -184,7 +177,7 @@ func (r StepResult) RenamedFiles() []string {
 
 type StepsContext struct {
 	// Changes that have been made by executing all steps.
-	Changes *StepChanges
+	Changes *git.Changes
 	// Path is the relative-to-root directory in which the steps have been
 	// executed. Default is "". No leading "/".
 	Path string
@@ -267,36 +260,4 @@ func renderChangesetTemplateField(name, tmpl string, tmplCtx *ChangesetTemplateC
 	}
 
 	return strings.TrimSpace(out.String()), nil
-}
-
-func parseGitStatus(out []byte) (StepChanges, error) {
-	result := StepChanges{}
-
-	stripped := strings.TrimSpace(string(out))
-	if stripped == "" {
-		return result, nil
-	}
-
-	for _, line := range strings.Split(stripped, "\n") {
-		if len(line) < 4 {
-			return result, fmt.Errorf("git status line has unrecognized format: %q", line)
-		}
-
-		file := line[3:]
-
-		switch line[0] {
-		case 'M':
-			result.Modified = append(result.Modified, file)
-		case 'A':
-			result.Added = append(result.Added, file)
-		case 'D':
-			result.Deleted = append(result.Deleted, file)
-		case 'R':
-			files := strings.Split(file, " -> ")
-			newFile := files[len(files)-1]
-			result.Renamed = append(result.Renamed, newFile)
-		}
-	}
-
-	return result, nil
 }

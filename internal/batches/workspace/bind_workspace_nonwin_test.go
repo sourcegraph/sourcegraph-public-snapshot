@@ -1,6 +1,6 @@
 // +build !windows
 
-package batches
+package workspace
 
 import (
 	"os"

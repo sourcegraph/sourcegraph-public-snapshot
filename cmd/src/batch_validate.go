@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/sourcegraph/src-cli/internal/batches"
+	"github.com/sourcegraph/src-cli/internal/batches/service"
 	"github.com/sourcegraph/src-cli/internal/output"
 )
 
@@ -41,7 +41,7 @@ Examples:
 		}
 		defer specFile.Close()
 
-		svc := batches.NewService(&batches.ServiceOpts{})
+		svc := service.New(&service.Opts{})
 
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
 		if _, _, err := batchParseSpec(out, svc, specFile); err != nil {

@@ -6,7 +6,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/sourcegraph/src-cli/internal/batches"
+	"github.com/sourcegraph/src-cli/internal/batches/service"
 	"github.com/sourcegraph/src-cli/internal/output"
 )
 
@@ -30,7 +30,7 @@ Examples:
 	flagSet := flag.NewFlagSet("apply", flag.ExitOnError)
 	flags := newBatchApplyFlags(flagSet, batchDefaultCacheDir(), batchDefaultTempDirPrefix())
 
-	doApply := func(ctx context.Context, out *output.Output, svc *batches.Service, flags *batchApplyFlags) error {
+	doApply := func(ctx context.Context, out *output.Output, svc *service.Service, flags *batchApplyFlags) error {
 		id, _, err := batchExecute(ctx, out, svc, flags)
 		if err != nil {
 			return err
@@ -67,7 +67,7 @@ Examples:
 		ctx, cancel := contextCancelOnInterrupt(context.Background())
 		defer cancel()
 
-		svc := batches.NewService(&batches.ServiceOpts{
+		svc := service.New(&service.Opts{
 			AllowUnsupported: flags.allowUnsupported,
 			AllowIgnored:     flags.allowIgnored,
 			Client:           cfg.apiClient(flags.api, flagSet.Output()),

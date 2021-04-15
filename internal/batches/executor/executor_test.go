@@ -1,14 +1,11 @@
-package batches
+package executor
 
 import (
-	"archive/zip"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
-	"mime"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -23,7 +20,11 @@ import (
 	"github.com/sourcegraph/batch-change-utils/overridable"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/src-cli/internal/batches"
+	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
+	"github.com/sourcegraph/src-cli/internal/batches/mock"
+	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 )
 
 func TestExecutor_Integration(t *testing.T) {
@@ -49,7 +50,7 @@ func TestExecutor_Integration(t *testing.T) {
 	}
 
 	changesetTemplateBranch := "my-branch"
-	defaultTemplate := &ChangesetTemplate{Branch: changesetTemplateBranch}
+	defaultTemplate := &batches.ChangesetTemplate{Branch: changesetTemplateBranch}
 	defaultBatchChangeAttributes := &BatchChangeAttributes{
 		Name:        "integration-test-batch-change",
 		Description: "this is an integration test",
@@ -61,13 +62,13 @@ func TestExecutor_Integration(t *testing.T) {
 	tests := []struct {
 		name string
 
-		archives        []mockRepoArchive
-		additionalFiles []mockRepoAdditionalFiles
+		archives        []mock.RepoArchive
+		additionalFiles []mock.MockRepoAdditionalFiles
 
 		// We define the steps only once per test case so there's less duplication
-		steps []Step
+		steps []batches.Step
 		// Same goes for transformChanges
-		transform *TransformChanges
+		transform *batches.TransformChanges
 
 		tasks []*Task
 
@@ -84,18 +85,18 @@ func TestExecutor_Integration(t *testing.T) {
 	}{
 		{
 			name: "success",
-			archives: []mockRepoArchive{
-				{repo: srcCLIRepo, files: map[string]string{
+			archives: []mock.RepoArchive{
+				{Repo: srcCLIRepo, Files: map[string]string{
 					"README.md": "# Welcome to the README\n",
 					"main.go":   "package main\n\nfunc main() {\n\tfmt.Println(     \"Hello World\")\n}\n",
 				}},
-				{repo: sourcegraphRepo, files: map[string]string{
+				{Repo: sourcegraphRepo, Files: map[string]string{
 					"README.md": "# Sourcegraph README\n",
 				}},
 			},
-			steps: []Step{
-				{Run: `echo -e "foobar\n" >> README.md`, Container: "alpine:13"},
-				{Run: `[[ -f "main.go" ]] && go fmt main.go || exit 0`, Container: "doesntmatter:13"},
+			steps: []batches.Step{
+				{Run: `echo -e "foobar\n" >> README.md`},
+				{Run: `[[ -f "main.go" ]] && go fmt main.go || exit 0`},
 			},
 			tasks: []*Task{
 				{Repository: srcCLIRepo},
@@ -112,16 +113,16 @@ func TestExecutor_Integration(t *testing.T) {
 		},
 		{
 			name: "timeout",
-			archives: []mockRepoArchive{
-				{repo: srcCLIRepo, files: map[string]string{"README.md": "line 1"}},
+			archives: []mock.RepoArchive{
+				{Repo: srcCLIRepo, Files: map[string]string{"README.md": "line 1"}},
 			},
-			steps: []Step{
+			steps: []batches.Step{
 				// This needs to be a loop, because when a process goes to sleep
 				// it's not interruptible, meaning that while it will receive SIGKILL
 				// it won't exit until it had its full night of sleep.
 				// So.
 				// Instead we take short powernaps.
-				{Run: `while true; do echo "zZzzZ" && sleep 0.05; done`, Container: "alpine:13"},
+				{Run: `while true; do echo "zZzzZ" && sleep 0.05; done`},
 			},
 			tasks: []*Task{
 				{Repository: srcCLIRepo},
@@ -131,16 +132,16 @@ func TestExecutor_Integration(t *testing.T) {
 		},
 		{
 			name: "templated",
-			archives: []mockRepoArchive{
-				{repo: srcCLIRepo, files: map[string]string{
+			archives: []mock.RepoArchive{
+				{Repo: srcCLIRepo, Files: map[string]string{
 					"README.md": "# Welcome to the README\n",
 					"main.go":   "package main\n\nfunc main() {\n\tfmt.Println(     \"Hello World\")\n}\n",
 				}},
 			},
-			steps: []Step{
-				{Run: `go fmt main.go`, Container: "doesntmatter:13"},
-				{Run: `touch modified-${{ join previous_step.modified_files " " }}.md`, Container: "alpine:13"},
-				{Run: `touch added-${{ join previous_step.added_files " " }}`, Container: "alpine:13"},
+			steps: []batches.Step{
+				{Run: `go fmt main.go`},
+				{Run: `touch modified-${{ join previous_step.modified_files " " }}.md`},
+				{Run: `touch added-${{ join previous_step.added_files " " }}`},
 			},
 
 			tasks: []*Task{
@@ -154,14 +155,14 @@ func TestExecutor_Integration(t *testing.T) {
 		},
 		{
 			name: "empty",
-			archives: []mockRepoArchive{
-				{repo: srcCLIRepo, files: map[string]string{
+			archives: []mock.RepoArchive{
+				{Repo: srcCLIRepo, Files: map[string]string{
 					"README.md": "# Welcome to the README\n",
 					"main.go":   "package main\n\nfunc main() {\n\tfmt.Println(     \"Hello World\")\n}\n",
 				}},
 			},
-			steps: []Step{
-				{Run: `true`, Container: "doesntmatter:13"},
+			steps: []batches.Step{
+				{Run: "true"},
 			},
 
 			tasks: []*Task{
@@ -172,14 +173,14 @@ func TestExecutor_Integration(t *testing.T) {
 		},
 		{
 			name: "transform group",
-			archives: []mockRepoArchive{
-				{repo: srcCLIRepo, files: map[string]string{
+			archives: []mock.RepoArchive{
+				{Repo: srcCLIRepo, Files: map[string]string{
 					"README.md":  "# Welcome to the README\n",
 					"a/a.go":     "package a",
 					"a/b/b.go":   "package b",
 					"a/b/c/c.go": "package c",
 				}},
-				{repo: sourcegraphRepo, files: map[string]string{
+				{Repo: sourcegraphRepo, Files: map[string]string{
 					"README.md":  "# Welcome to the README\n",
 					"a/a.go":     "package a",
 					"a/b/b.go":   "package b",
@@ -191,13 +192,13 @@ func TestExecutor_Integration(t *testing.T) {
 				{Repository: srcCLIRepo},
 				{Repository: sourcegraphRepo},
 			},
-			steps: []Step{
-				{Run: `echo 'var a = 1' >> a/a.go`, Container: "doesntmatter:13"},
-				{Run: `echo 'var b = 2' >> a/b/b.go`, Container: "doesntmatter:13"},
-				{Run: `echo 'var c = 3' >> a/b/c/c.go`, Container: "doesntmatter:13"},
+			steps: []batches.Step{
+				{Run: `echo 'var a = 1' >> a/a.go`},
+				{Run: `echo 'var b = 2' >> a/b/b.go`},
+				{Run: `echo 'var c = 3' >> a/b/c/c.go`},
 			},
-			transform: &TransformChanges{
-				Group: []Group{
+			transform: &batches.TransformChanges{
+				Group: []batches.Group{
 					{Directory: "a/b/c", Branch: "in-directory-c"},
 					{Directory: "a/b", Branch: "in-directory-b", Repository: sourcegraphRepo.Name},
 				},
@@ -226,18 +227,17 @@ func TestExecutor_Integration(t *testing.T) {
 		},
 		{
 			name: "templated changesetTemplate",
-			archives: []mockRepoArchive{
-				{repo: srcCLIRepo, files: map[string]string{
+			archives: []mock.RepoArchive{
+				{Repo: srcCLIRepo, Files: map[string]string{
 					"README.md": "# Welcome to the README\n",
 					"main.go":   "package main\n\nfunc main() {\n\tfmt.Println(     \"Hello World\")\n}\n",
 				}},
 			},
-			steps: []Step{
+			steps: []batches.Step{
 				{
-					Run:       `go fmt main.go`,
-					Container: "doesntmatter:13",
-					Outputs: Outputs{
-						"myOutputName1": Output{
+					Run: `go fmt main.go`,
+					Outputs: batches.Outputs{
+						"myOutputName1": batches.Output{
 							Value: "${{ index step.modified_files 0 }}",
 						},
 					},
@@ -245,15 +245,15 @@ func TestExecutor_Integration(t *testing.T) {
 				{
 					Run:       `echo -n "Hello World!"`,
 					Container: "alpine:13",
-					Outputs: Outputs{
-						"myOutputName2": Output{
+					Outputs: batches.Outputs{
+						"myOutputName2": batches.Output{
 							Value:  `thisStepStdout: "${{ step.stdout }}"`,
 							Format: "yaml",
 						},
-						"myOutputName3": Output{
+						"myOutputName3": batches.Output{
 							Value: "cool-suffix",
 						},
-						"myOutputName4": Output{
+						"myOutputName4": batches.Output{
 							Value: "${{ batch_change.name }}",
 						},
 					},
@@ -262,7 +262,7 @@ func TestExecutor_Integration(t *testing.T) {
 			tasks: []*Task{
 				{
 					Repository: srcCLIRepo,
-					Template: &ChangesetTemplate{
+					Template: &batches.ChangesetTemplate{
 						Title: "myOutputName1=${{ outputs.myOutputName1}}",
 						Body: `myOutputName1=${{ outputs.myOutputName1}},myOutputName2=${{ outputs.myOutputName2.thisStepStdout }}
 modified_files=${{ steps.modified_files }}
@@ -275,9 +275,9 @@ batch_change_description=${{ batch_change.description }}
 output4=${{ outputs.myOutputName4 }}
 `,
 						Branch: "templated-branch-${{ outputs.myOutputName3 }}",
-						Commit: ExpandedGitCommitDescription{
+						Commit: batches.ExpandedGitCommitDescription{
 							Message: "myOutputName1=${{ outputs.myOutputName1}},myOutputName2=${{ outputs.myOutputName2.thisStepStdout }}",
-							Author: &GitCommitAuthor{
+							Author: &batches.GitCommitAuthor{
 								Name:  "myOutputName1=${{ outputs.myOutputName1}}",
 								Email: "myOutputName1=${{ outputs.myOutputName1}}",
 							},
@@ -308,74 +308,61 @@ output4=integration-test-batch-change`,
 
 		{
 			name: "workspaces",
-			archives: []mockRepoArchive{
-				{repo: srcCLIRepo, path: "", files: map[string]string{
+			archives: []mock.RepoArchive{
+				{Repo: srcCLIRepo, Path: "", Files: map[string]string{
 					".gitignore":      "node_modules",
 					"message.txt":     "root-dir",
 					"a/message.txt":   "a-dir",
 					"a/.gitignore":    "node_modules-in-a",
 					"a/b/message.txt": "b-dir",
 				}},
-				{repo: srcCLIRepo, path: "a", files: map[string]string{
+				{Repo: srcCLIRepo, Path: "a", Files: map[string]string{
 					"a/message.txt":   "a-dir",
 					"a/.gitignore":    "node_modules-in-a",
 					"a/b/message.txt": "b-dir",
 				}},
-				{repo: srcCLIRepo, path: "a/b", files: map[string]string{
+				{Repo: srcCLIRepo, Path: "a/b", Files: map[string]string{
 					"a/b/message.txt": "b-dir",
 				}},
 			},
-			additionalFiles: []mockRepoAdditionalFiles{
-				{repo: srcCLIRepo, additionalFiles: map[string]string{
+			additionalFiles: []mock.MockRepoAdditionalFiles{
+				{Repo: srcCLIRepo, AdditionalFiles: map[string]string{
 					".gitignore":   "node_modules",
 					"a/.gitignore": "node_modules-in-a",
 				}},
 			},
-			steps: []Step{
+			steps: []batches.Step{
 				{
-					Run:       "cat message.txt && echo 'Hello' > hello.txt",
-					Container: "doesntmatter:13",
-					Outputs: Outputs{
-						"message": Output{
+					Run: "cat message.txt && echo 'Hello' > hello.txt",
+					Outputs: batches.Outputs{
+						"message": batches.Output{
 							Value: "${{ step.stdout }}",
 						},
 					},
 				},
-				{
-					Run:       `if [[ -f ".gitignore" ]]; then echo "yes" >> gitignore-exists; fi`,
-					Container: "doesntmatter:13",
-				},
-				{
-					Run:       `if [[ $(basename $(pwd)) == "a" && -f "../.gitignore" ]]; then echo "yes" >> gitignore-exists; fi`,
-					Container: "doesntmatter:13",
-				},
+				{Run: `if [[ -f ".gitignore" ]]; then echo "yes" >> gitignore-exists; fi`},
+				{Run: `if [[ $(basename $(pwd)) == "a" && -f "../.gitignore" ]]; then echo "yes" >> gitignore-exists; fi`},
 				// In `a/b` we want the `.gitignore` file in the root folder and in `a` to be fetched:
-				{
-					Run:       `if [[ $(basename $(pwd)) == "b" && -f "../../.gitignore" ]]; then echo "yes" >> gitignore-exists; fi`,
-					Container: "doesntmatter:13",
-				},
-				{
-					Run:       `if [[ $(basename $(pwd)) == "b" && -f "../.gitignore" ]]; then echo "yes" >> gitignore-exists-in-a; fi`,
-					Container: "doesntmatter:13",
-				},
+				{Run: `if [[ $(basename $(pwd)) == "b" && -f "../../.gitignore" ]]; then echo "yes" >> gitignore-exists; fi`},
+				{Run: `if [[ $(basename $(pwd)) == "b" && -f "../.gitignore" ]]; then echo "yes" >> gitignore-exists-in-a; fi`},
 			},
 			tasks: []*Task{
 				{
 					Repository: srcCLIRepo,
 					Path:       "",
-					Template:   &ChangesetTemplate{Branch: "workspace-${{ outputs.message }}"},
+					Template:   &batches.ChangesetTemplate{Branch: "workspace-${{ outputs.message }}"},
 				},
 
 				{
 					Repository: srcCLIRepo,
 					Path:       "a",
-					Template:   &ChangesetTemplate{Branch: "workspace-${{ outputs.message }}"},
+					Template:   &batches.ChangesetTemplate{Branch: "workspace-${{ outputs.message }}"},
 				},
 
 				{
 					Repository: srcCLIRepo,
 					Path:       "a/b",
-					Template:   &ChangesetTemplate{Branch: "workspace-${{ outputs.message }}"},
+					Template:   &batches.ChangesetTemplate{Branch: "workspace-${{ outputs.message }}"},
 				},
 			},
 
@@ -391,7 +378,7 @@ output4=integration-test-batch-change`,
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			mux := newZipArchivesMux(t, nil, tc.archives...)
+			mux := mock.NewZipArchivesMux(t, nil, tc.archives...)
 
 			middle := func(next http.Handler) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -399,7 +386,7 @@ output4=integration-test-batch-change`,
 				})
 			}
 			for _, additionalFiles := range tc.additionalFiles {
-				handleAdditionalFiles(mux, additionalFiles, middle)
+				mock.HandleAdditionalFiles(mux, additionalFiles, middle)
 			}
 			ts := httptest.NewServer(mux)
 			defer ts.Close()
@@ -414,9 +401,8 @@ output4=integration-test-batch-change`,
 			defer os.Remove(testTempDir)
 
 			cache := newInMemoryExecutionCache()
-			creator := &dockerBindWorkspaceCreator{dir: testTempDir}
-			opts := ExecutorOpts{
-				Cache:       cache,
+			creator := workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, []batches.Step{})
+			opts := Opts{
 				Creator:     creator,
 				TempDir:     testTempDir,
 				Parallelism: runtime.GOMAXPROCS(0),
@@ -427,20 +413,18 @@ output4=integration-test-batch-change`,
 				opts.Timeout = 30 * time.Second
 			}
 
-			repoFetcher := &repoFetcher{
-				client: client,
-				dir:    testTempDir,
-			}
+			repoFetcher := batches.NewRepoFetcher(client, testTempDir, false)
 			// execute contains the actual logic running the tasks on an
 			// executor. We'll run this multiple times to cover both the cache
 			// and non-cache code paths.
 			execute := func(t *testing.T) {
-				executor := newExecutor(opts, client, featuresAllEnabled())
+				executor := New(opts, client, featuresAllEnabled())
+				executor.cache = cache
 
 				for i := range tc.steps {
-					tc.steps[i].image = &mockImage{
-						digest: tc.steps[i].Container,
-					}
+					tc.steps[i].SetImage(&mock.Image{
+						RawDigest: tc.steps[i].Container,
+					})
 				}
 				for _, task := range tc.tasks {
 					if task.Template == nil {
@@ -592,25 +576,25 @@ func TestValidateGroups(t *testing.T) {
 
 	tests := []struct {
 		defaultBranch string
-		groups        []Group
+		groups        []batches.Group
 		wantErr       string
 	}{
 		{
-			groups: []Group{
+			groups: []batches.Group{
 				{Directory: "a", Branch: "my-batch-change-a"},
 				{Directory: "b", Branch: "my-batch-change-b"},
 			},
 			wantErr: "",
 		},
 		{
-			groups: []Group{
+			groups: []batches.Group{
 				{Directory: "a", Branch: "my-batch-change-SAME"},
 				{Directory: "b", Branch: "my-batch-change-SAME"},
 			},
 			wantErr: "transformChanges would lead to multiple changesets in repository github.com/sourcegraph/src-cli to have the same branch \"my-batch-change-SAME\"",
 		},
 		{
-			groups: []Group{
+			groups: []batches.Group{
 				{Directory: "a", Branch: "my-batch-change-SAME"},
 				{Directory: "b", Branch: defaultBranch},
 			},
@@ -663,12 +647,12 @@ index 0000000..1bd79fb
 	tests := []struct {
 		diff          string
 		defaultBranch string
-		groups        []Group
+		groups        []batches.Group
 		want          map[string]string
 	}{
 		{
 			diff: allDiffs,
-			groups: []Group{
+			groups: []batches.Group{
 				{Directory: "1/2/3", Branch: "everything-in-3"},
 			},
 			want: map[string]string{
@@ -678,7 +662,7 @@ index 0000000..1bd79fb
 		},
 		{
 			diff: allDiffs,
-			groups: []Group{
+			groups: []batches.Group{
 				{Directory: "1/2", Branch: "everything-in-2-and-3"},
 			},
 			want: map[string]string{
@@ -688,7 +672,7 @@ index 0000000..1bd79fb
 		},
 		{
 			diff: allDiffs,
-			groups: []Group{
+			groups: []batches.Group{
 				{Directory: "1", Branch: "everything-in-1-and-2-and-3"},
 			},
 			want: map[string]string{
@@ -698,7 +682,7 @@ index 0000000..1bd79fb
 		},
 		{
 			diff: allDiffs,
-			groups: []Group{
+			groups: []batches.Group{
 				// Each diff is matched against each directory, last match wins
 				{Directory: "1", Branch: "only-in-1"},
 				{Directory: "1/2", Branch: "only-in-2"},
@@ -713,7 +697,7 @@ index 0000000..1bd79fb
 		},
 		{
 			diff: allDiffs,
-			groups: []Group{
+			groups: []batches.Group{
 				// Last one wins here, because it matches every diff
 				{Directory: "1/2/3", Branch: "only-in-3"},
 				{Directory: "1/2", Branch: "only-in-2"},
@@ -726,7 +710,7 @@ index 0000000..1bd79fb
 		},
 		{
 			diff: allDiffs,
-			groups: []Group{
+			groups: []batches.Group{
 				{Directory: "", Branch: "everything"},
 			},
 			want: map[string]string{
@@ -747,30 +731,22 @@ index 0000000..1bd79fb
 }
 
 func TestCreateChangesetSpecs(t *testing.T) {
-	allFeatures := featureFlags{
-		allowArrayEnvironments:   true,
-		includeAutoAuthorDetails: true,
-		useGzipCompression:       true,
-		allowtransformChanges:    true,
-		allowWorkspaces:          true,
-	}
-
 	srcCLI := &graphql.Repository{
 		ID:            "src-cli",
 		Name:          "github.com/sourcegraph/src-cli",
 		DefaultBranch: &graphql.Branch{Name: "main", Target: graphql.Target{OID: "d34db33f"}},
 	}
 
-	defaultChangesetSpec := &ChangesetSpec{
+	defaultChangesetSpec := &batches.ChangesetSpec{
 		BaseRepository: srcCLI.ID,
-		CreatedChangeset: &CreatedChangeset{
+		CreatedChangeset: &batches.CreatedChangeset{
 			BaseRef:        srcCLI.DefaultBranch.Name,
 			BaseRev:        srcCLI.DefaultBranch.Target.OID,
 			HeadRepository: srcCLI.ID,
 			HeadRef:        "refs/heads/my-branch",
 			Title:          "The title",
 			Body:           "The body",
-			Commits: []GitCommitDescription{
+			Commits: []batches.GitCommitDescription{
 				{
 					Message:     "git commit message",
 					Diff:        "cool diff",
@@ -782,7 +758,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 		},
 	}
 
-	specWith := func(s *ChangesetSpec, f func(s *ChangesetSpec)) *ChangesetSpec {
+	specWith := func(s *batches.ChangesetSpec, f func(s *batches.ChangesetSpec)) *batches.ChangesetSpec {
 		f(s)
 		return s
 	}
@@ -792,11 +768,11 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			Name:        "the name",
 			Description: "The description",
 		},
-		Template: &ChangesetTemplate{
+		Template: &batches.ChangesetTemplate{
 			Title:  "The title",
 			Body:   "The body",
 			Branch: "my-branch",
-			Commit: ExpandedGitCommitDescription{
+			Commit: batches.ExpandedGitCommitDescription{
 				Message: "git commit message",
 			},
 			Published: parsePublishedFieldString(t, "false"),
@@ -811,7 +787,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 
 	defaultResult := executionResult{
 		Diff: "cool diff",
-		ChangedFiles: &StepChanges{
+		ChangedFiles: &git.Changes{
 			Modified: []string{"README.md"},
 		},
 		Outputs: map[string]interface{}{},
@@ -822,14 +798,14 @@ func TestCreateChangesetSpecs(t *testing.T) {
 		task   *Task
 		result executionResult
 
-		want    []*ChangesetSpec
+		want    []*batches.ChangesetSpec
 		wantErr string
 	}{
 		{
 			name:   "success",
 			task:   defaultTask,
 			result: defaultResult,
-			want: []*ChangesetSpec{
+			want: []*batches.ChangesetSpec{
 				defaultChangesetSpec,
 			},
 			wantErr: "",
@@ -841,8 +817,8 @@ func TestCreateChangesetSpecs(t *testing.T) {
 				task.Template.Published = parsePublishedFieldString(t, published)
 			}),
 			result: defaultResult,
-			want: []*ChangesetSpec{
-				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
+			want: []*batches.ChangesetSpec{
+				specWith(defaultChangesetSpec, func(s *batches.ChangesetSpec) {
 					s.Published = true
 				}),
 			},
@@ -855,8 +831,8 @@ func TestCreateChangesetSpecs(t *testing.T) {
 				task.Template.Published = parsePublishedFieldString(t, published)
 			}),
 			result: defaultResult,
-			want: []*ChangesetSpec{
-				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
+			want: []*batches.ChangesetSpec{
+				specWith(defaultChangesetSpec, func(s *batches.ChangesetSpec) {
 					s.Published = false
 				}),
 			},
@@ -866,7 +842,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			have, err := createChangesetSpecs(tt.task, tt.result, allFeatures)
+			have, err := createChangesetSpecs(tt.task, tt.result, featuresAllEnabled())
 			if err != nil {
 				if tt.wantErr != "" {
 					if err.Error() != tt.wantErr {
@@ -903,79 +879,6 @@ func addToPath(t *testing.T, relPath string) {
 		t.Fatal(err)
 	}
 	os.Setenv("PATH", fmt.Sprintf("%s%c%s", dummyDockerPath, os.PathListSeparator, os.Getenv("PATH")))
-}
-
-type mockRepoArchive struct {
-	repo  *graphql.Repository
-	path  string
-	files map[string]string
-}
-
-func newZipArchivesMux(t *testing.T, callback http.HandlerFunc, archives ...mockRepoArchive) *http.ServeMux {
-	mux := http.NewServeMux()
-
-	for _, archive := range archives {
-		files := archive.files
-		path := fmt.Sprintf("/%s@%s/-/raw", archive.repo.Name, archive.repo.BaseRef())
-		if archive.path != "" {
-			path = path + "/" + archive.path
-		}
-
-		downloadName := filepath.Base(archive.repo.Name)
-		mediaType := mime.FormatMediaType("Attachment", map[string]string{
-			"filename": downloadName,
-		})
-
-		mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("X-Content-Type-Options", "nosniff")
-			w.Header().Set("Content-Type", "application/zip")
-			w.Header().Set("Content-Disposition", mediaType)
-
-			zipWriter := zip.NewWriter(w)
-			for name, body := range files {
-				f, err := zipWriter.Create(name)
-				if err != nil {
-					log.Fatal(err)
-				}
-				if _, err := f.Write([]byte(body)); err != nil {
-					t.Errorf("failed to write body for %s to zip: %s", name, err)
-				}
-
-				if callback != nil {
-					callback(w, r)
-				}
-			}
-			if err := zipWriter.Close(); err != nil {
-				t.Fatalf("closing zipWriter failed: %s", err)
-			}
-		})
-	}
-
-	return mux
-}
-
-type middleware func(http.Handler) http.Handler
-
-type mockRepoAdditionalFiles struct {
-	repo            *graphql.Repository
-	additionalFiles map[string]string
-}
-
-func handleAdditionalFiles(mux *http.ServeMux, files mockRepoAdditionalFiles, middle middleware) {
-	for name, content := range files.additionalFiles {
-		path := fmt.Sprintf("/%s@%s/-/raw/%s", files.repo.Name, files.repo.BaseRef(), name)
-		handler := func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "text/plain")
-
-			w.Write([]byte(content))
-		}
-
-		if middle != nil {
-			mux.Handle(path, middle(http.HandlerFunc(handler)))
-		} else {
-			mux.HandleFunc(path, handler)
-		}
-	}
 }
 
 // inMemoryExecutionCache provides an in-memory cache for testing purposes.
@@ -1036,4 +939,14 @@ func (c *inMemoryExecutionCache) Clear(ctx context.Context, key ExecutionCacheKe
 
 	delete(c.cache, k)
 	return nil
+}
+
+func featuresAllEnabled() batches.FeatureFlags {
+	return batches.FeatureFlags{
+		AllowArrayEnvironments:   true,
+		IncludeAutoAuthorDetails: true,
+		UseGzipCompression:       true,
+		AllowTransformChanges:    true,
+		AllowWorkspaces:          true,
+	}
 }

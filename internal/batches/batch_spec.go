@@ -1,6 +1,7 @@
 package batches
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -72,6 +73,14 @@ type WorkspaceConfiguration struct {
 	glob glob.Glob
 }
 
+func (wc *WorkspaceConfiguration) SetGlob(g glob.Glob) {
+	wc.glob = g
+}
+
+func (wc *WorkspaceConfiguration) Matches(repoName string) bool {
+	return wc.glob.Match(repoName)
+}
+
 type OnQueryOrRepository struct {
 	RepositoriesMatchingQuery string `json:"repositoriesMatchingQuery,omitempty" yaml:"repositoriesMatchingQuery"`
 	Repository                string `json:"repository,omitempty" yaml:"repository"`
@@ -86,6 +95,27 @@ type Step struct {
 	Outputs   Outputs           `json:"outputs,omitempty" yaml:"outputs,omitempty"`
 
 	image docker.Image
+}
+
+func (s *Step) SetImage(image docker.Image) {
+	s.image = image
+}
+
+// TODO(mrnugget): All of these wrappers are not good
+func (s Step) ImageDigest(ctx context.Context) (string, error) {
+	return s.image.Digest(ctx)
+}
+
+func (s Step) DockerImage() docker.Image {
+	return s.image
+}
+
+func (s Step) EnsureImage(ctx context.Context) error {
+	return s.image.Ensure(ctx)
+}
+
+func (s Step) ImageUIDGID(ctx context.Context) (docker.UIDGID, error) {
+	return s.image.UIDGID(ctx)
 }
 
 type Outputs map[string]Output
@@ -105,7 +135,7 @@ type Group struct {
 	Repository string `json:"repository,omitempty" yaml:"repository"`
 }
 
-func ParseBatchSpec(data []byte, features featureFlags) (*BatchSpec, error) {
+func ParseBatchSpec(data []byte, features FeatureFlags) (*BatchSpec, error) {
 	var spec BatchSpec
 	if err := yaml.UnmarshalValidate(schema.BatchSpecJSON, data, &spec); err != nil {
 		if multiErr, ok := err.(*multierror.Error); ok {
@@ -128,7 +158,7 @@ func ParseBatchSpec(data []byte, features featureFlags) (*BatchSpec, error) {
 
 	var errs *multierror.Error
 
-	if !features.allowArrayEnvironments {
+	if !features.AllowArrayEnvironments {
 		for i, step := range spec.Steps {
 			if !step.Env.IsStatic() {
 				errs = multierror.Append(errs, errors.Errorf("step %d includes one or more dynamic environment variables, which are unsupported in this Sourcegraph version", i+1))
@@ -140,11 +170,11 @@ func ParseBatchSpec(data []byte, features featureFlags) (*BatchSpec, error) {
 		errs = multierror.Append(errs, errors.New("batch spec includes steps but no changesetTemplate"))
 	}
 
-	if spec.TransformChanges != nil && !features.allowtransformChanges {
+	if spec.TransformChanges != nil && !features.AllowTransformChanges {
 		errs = multierror.Append(errs, errors.New("batch spec includes transformChanges, which is not supported in this Sourcegraph version"))
 	}
 
-	if len(spec.Workspaces) != 0 && !features.allowtransformChanges {
+	if len(spec.Workspaces) != 0 && !features.AllowTransformChanges {
 		errs = multierror.Append(errs, errors.New("batch spec includes workspaces, which is not supported in this Sourcegraph version"))
 	}
 

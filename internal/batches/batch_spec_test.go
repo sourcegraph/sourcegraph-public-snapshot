@@ -21,7 +21,7 @@ changesetTemplate:
   published: false
 `
 
-		_, err := ParseBatchSpec([]byte(spec), featureFlags{})
+		_, err := ParseBatchSpec([]byte(spec), FeatureFlags{})
 		if err != nil {
 			t.Fatalf("parsing valid spec returned error: %s", err)
 		}
@@ -38,7 +38,7 @@ steps:
     container: alpine:3
 `
 
-		_, err := ParseBatchSpec([]byte(spec), featureFlags{})
+		_, err := ParseBatchSpec([]byte(spec), FeatureFlags{})
 		if err == nil {
 			t.Fatal("no error returned")
 		}
@@ -71,7 +71,7 @@ changesetTemplate:
   published: false
 `
 
-		_, err := ParseBatchSpec([]byte(spec), featureFlags{})
+		_, err := ParseBatchSpec([]byte(spec), FeatureFlags{})
 		if err == nil {
 			t.Fatal("no error returned")
 		}

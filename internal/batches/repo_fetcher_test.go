@@ -17,6 +17,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
+	"github.com/sourcegraph/src-cli/internal/batches/mock"
 )
 
 func TestRepoFetcher_Fetch(t *testing.T) {
@@ -36,9 +37,9 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 		DefaultBranch: &graphql.Branch{Name: "main", Target: graphql.Target{OID: "d34db33f"}},
 	}
 
-	archive := mockRepoArchive{
-		repo: repo,
-		files: map[string]string{
+	archive := mock.RepoArchive{
+		Repo: repo,
+		Files: map[string]string{
 			"README.md": "# Welcome to the README\n",
 		},
 	}
@@ -49,7 +50,7 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 			requestsReceived++
 		}
 
-		ts := httptest.NewServer(newZipArchivesMux(t, callback, archive))
+		ts := httptest.NewServer(mock.NewZipArchivesMux(t, callback, archive))
 		defer ts.Close()
 
 		var clientBuffer bytes.Buffer
@@ -94,7 +95,7 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 	})
 
 	t.Run("delete on close", func(t *testing.T) {
-		ts := httptest.NewServer(newZipArchivesMux(t, nil, archive))
+		ts := httptest.NewServer(mock.NewZipArchivesMux(t, nil, archive))
 		defer ts.Close()
 
 		var clientBuffer bytes.Buffer
@@ -158,7 +159,7 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 			cancel()
 		}()
 
-		ts := httptest.NewServer(newZipArchivesMux(t, callback, archive))
+		ts := httptest.NewServer(mock.NewZipArchivesMux(t, callback, archive))
 		defer ts.Close()
 
 		var clientBuffer bytes.Buffer
@@ -196,9 +197,9 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 			Branch: graphql.Branch{Name: "other-branch", Target: graphql.Target{OID: otherBranchOID}},
 		}
 
-		archive := mockRepoArchive{repo: repo, files: map[string]string{}}
+		archive := mock.RepoArchive{Repo: repo, Files: map[string]string{}}
 
-		ts := httptest.NewServer(newZipArchivesMux(t, nil, archive))
+		ts := httptest.NewServer(mock.NewZipArchivesMux(t, nil, archive))
 		defer ts.Close()
 
 		var clientBuffer bytes.Buffer
@@ -227,9 +228,9 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 	})
 
 	t.Run("path in repository", func(t *testing.T) {
-		additionalFiles := mockRepoAdditionalFiles{
-			repo: repo,
-			additionalFiles: map[string]string{
+		additionalFiles := mock.MockRepoAdditionalFiles{
+			Repo: repo,
+			AdditionalFiles: map[string]string{
 				".gitignore":     "node_modules",
 				".gitattributes": "* -text",
 				"a/.gitignore":   "node_modules-in-a",
@@ -237,10 +238,10 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 		}
 
 		path := "a/b"
-		archive := mockRepoArchive{
-			repo: repo,
-			path: path,
-			files: map[string]string{
+		archive := mock.RepoArchive{
+			Repo: repo,
+			Path: path,
+			Files: map[string]string{
 				"a/b/1.txt": "this is 1",
 				"a/b/2.txt": "this is 1",
 			},
@@ -262,8 +263,8 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 			})
 		}
 
-		mux := newZipArchivesMux(t, callback, archive)
-		handleAdditionalFiles(mux, additionalFiles, middle)
+		mux := mock.NewZipArchivesMux(t, callback, archive)
+		mock.HandleAdditionalFiles(mux, additionalFiles, middle)
 
 		ts := httptest.NewServer(mux)
 		defer ts.Close()
@@ -301,4 +302,21 @@ func TestRepoFetcher_Fetch(t *testing.T) {
 			t.Fatalf("temp dir doesnt contain zip file")
 		}
 	})
+}
+
+func sortStrings(a, b string) bool { return a < b }
+
+func dirContains(dir, filename string) (bool, error) {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return false, err
+	}
+
+	for _, f := range files {
+		if f.Name() == filename {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

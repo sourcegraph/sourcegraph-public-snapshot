@@ -1,18 +1,20 @@
-package batches
+package workspace
 
 import (
 	"context"
 	"runtime"
 
+	"github.com/sourcegraph/src-cli/internal/batches"
+	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
 
-// WorkspaceCreator implementations are used to create workspaces, which manage
+// Creator implementations are used to create workspaces, which manage
 // per-changeset persistent storage when executing batch change steps and are
 // responsible for ultimately generating a diff.
-type WorkspaceCreator interface {
+type Creator interface {
 	// Create creates a new workspace for the given repository and archive file.
-	Create(ctx context.Context, repo *graphql.Repository, steps []Step, archive RepoZip) (Workspace, error)
+	Create(ctx context.Context, repo *graphql.Repository, steps []batches.Step, archive batches.RepoZip) (Workspace, error)
 }
 
 // Workspace implementations manage per-changeset storage when executing batch
@@ -35,23 +37,39 @@ type Workspace interface {
 
 	// Changes is called after each step is executed, and should return the
 	// cumulative file changes that have occurred since Prepare was called.
-	Changes(ctx context.Context) (*StepChanges, error)
+	Changes(ctx context.Context) (*git.Changes, error)
 
 	// Diff should return the total diff for the workspace. This may be called
 	// multiple times in the life of a workspace.
 	Diff(ctx context.Context) ([]byte, error)
 }
 
-type workspaceCreatorType int
+type CreatorType int
 
 const (
-	workspaceCreatorBind workspaceCreatorType = iota
-	workspaceCreatorVolume
+	CreatorBind CreatorType = iota
+	CreatorVolume
 )
 
-// bestWorkspaceCreator determines the correct workspace creator to use based on
-// the environment and batch change to be executed.
-func bestWorkspaceCreator(ctx context.Context, steps []Step) workspaceCreatorType {
+func NewCreator(ctx context.Context, preference, cacheDir, tempDir string, steps []batches.Step) Creator {
+	var workspaceType CreatorType
+	if preference == "volume" {
+		workspaceType = CreatorVolume
+	} else if preference == "bind" {
+		workspaceType = CreatorBind
+	} else {
+		workspaceType = BestCreatorType(ctx, steps)
+	}
+
+	if workspaceType == CreatorVolume {
+		return &dockerVolumeWorkspaceCreator{tempDir: tempDir}
+	}
+	return &dockerBindWorkspaceCreator{Dir: cacheDir}
+}
+
+// BestCreatorType determines the correct workspace creator type to use based
+// on the environment and batch change to be executed.
+func BestCreatorType(ctx context.Context, steps []batches.Step) CreatorType {
 	// The basic theory here is that we have two options: bind and volume. Bind
 	// is battle tested and always safe, but can be slow on non-Linux platforms
 	// because bind mounts are slow. Volume is faster on those platforms, but
@@ -63,13 +81,13 @@ func bestWorkspaceCreator(ctx context.Context, steps []Step) workspaceCreatorTyp
 	// For the time being, we're only going to consider volume mode on Intel
 	// macOS.
 	if runtime.GOOS != "darwin" || runtime.GOARCH != "amd64" {
-		return workspaceCreatorBind
+		return CreatorBind
 	}
 
-	return detectBestWorkspaceCreator(ctx, steps)
+	return detectBestCreatorType(ctx, steps)
 }
 
-func detectBestWorkspaceCreator(ctx context.Context, steps []Step) workspaceCreatorType {
+func detectBestCreatorType(ctx context.Context, steps []batches.Step) CreatorType {
 	// OK, so we're interested in volume mode, but we need to take its
 	// shortcomings around mixed user environments into account.
 	//
@@ -89,20 +107,20 @@ func detectBestWorkspaceCreator(ctx context.Context, steps []Step) workspaceCrea
 	var uid *int
 
 	for _, step := range steps {
-		ug, err := step.image.UIDGID(ctx)
+		ug, err := step.ImageUIDGID(ctx)
 		if err != nil {
 			// An error here likely indicates that `id` isn't available on the
 			// path. That's OK: let's not make any assumptions at this point
 			// about the image, and we'll default to the always safe option.
-			return workspaceCreatorBind
+			return CreatorBind
 		}
 
 		if uid == nil {
 			uid = &ug.UID
 		} else if *uid != ug.UID {
-			return workspaceCreatorBind
+			return CreatorBind
 		}
 	}
 
-	return workspaceCreatorVolume
+	return CreatorVolume
 }

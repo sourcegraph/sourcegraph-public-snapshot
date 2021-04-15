@@ -1,4 +1,4 @@
-package batches
+package workspace
 
 import (
 	"bytes"
@@ -13,7 +13,9 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
+	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/exec"
 	"github.com/sourcegraph/src-cli/internal/version"
@@ -21,9 +23,9 @@ import (
 
 type dockerVolumeWorkspaceCreator struct{ tempDir string }
 
-var _ WorkspaceCreator = &dockerVolumeWorkspaceCreator{}
+var _ Creator = &dockerVolumeWorkspaceCreator{}
 
-func (wc *dockerVolumeWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, steps []Step, archive RepoZip) (Workspace, error) {
+func (wc *dockerVolumeWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, steps []batches.Step, archive batches.RepoZip) (Workspace, error) {
 	volume, err := wc.createVolume(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating Docker volume")
@@ -33,7 +35,7 @@ func (wc *dockerVolumeWorkspaceCreator) Create(ctx context.Context, repo *graphq
 	ug := docker.UIDGID{}
 	if len(steps) > 0 {
 		var err error
-		if ug, err = steps[0].image.UIDGID(ctx); err != nil {
+		if ug, err = steps[0].ImageUIDGID(ctx); err != nil {
 			return nil, errors.Wrap(err, "getting container UID and GID")
 		}
 	}
@@ -121,7 +123,7 @@ func (wc *dockerVolumeWorkspaceCreator) unzipRepoIntoVolume(ctx context.Context,
 	}, w.dockerRunOptsWithUser(docker.Root, "/work")...)
 	opts = append(
 		opts,
-		dockerVolumeWorkspaceImage,
+		DockerVolumeWorkspaceImage,
 		"sh", "-c",
 		fmt.Sprintf("touch /work/%s; chown -R %s /work", dummy, w.uidGid.String()),
 	)
@@ -140,7 +142,7 @@ func (wc *dockerVolumeWorkspaceCreator) unzipRepoIntoVolume(ctx context.Context,
 	}, w.dockerRunOptsWithUser(w.uidGid, "/work")...)
 	opts = append(
 		opts,
-		dockerVolumeWorkspaceImage,
+		DockerVolumeWorkspaceImage,
 		"sh", "-c",
 		fmt.Sprintf("unzip /tmp/zip; rm /work/%s", dummy),
 	)
@@ -183,7 +185,7 @@ func (wc *dockerVolumeWorkspaceCreator) copyFilesIntoVolumes(ctx context.Context
 
 	opts = append(
 		opts,
-		dockerVolumeWorkspaceImage,
+		DockerVolumeWorkspaceImage,
 		"sh", "-c",
 		strings.Join(copyCmds, " && ")+";",
 	)
@@ -217,7 +219,7 @@ func (w *dockerVolumeWorkspace) DockerRunOpts(ctx context.Context, target string
 
 func (w *dockerVolumeWorkspace) WorkDir() *string { return nil }
 
-func (w *dockerVolumeWorkspace) Changes(ctx context.Context) (*StepChanges, error) {
+func (w *dockerVolumeWorkspace) Changes(ctx context.Context) (*git.Changes, error) {
 	script := `#!/bin/sh
 
 set -e
@@ -232,7 +234,7 @@ exec git status --porcelain
 		return nil, errors.Wrap(err, "running git status")
 	}
 
-	changes, err := parseGitStatus(out)
+	changes, err := git.ParseGitStatus(out)
 	if err != nil {
 		return nil, errors.Wrapf(err, "parsing git status output:\n\n%s", string(out))
 	}
@@ -259,10 +261,10 @@ exec git diff --cached --no-prefix --binary
 	return out, nil
 }
 
-// dockerVolumeWorkspaceImage is the Docker image we'll run our unzip and git
+// DockerVolumeWorkspaceImage is the Docker image we'll run our unzip and git
 // commands in. This needs to match the name defined in
 // .github/workflows/docker.yml.
-var dockerVolumeWorkspaceImage = "sourcegraph/src-batch-change-volume-workspace"
+var DockerVolumeWorkspaceImage = "sourcegraph/src-batch-change-volume-workspace"
 
 func init() {
 	dockerTag := version.BuildTag
@@ -270,7 +272,7 @@ func init() {
 		dockerTag = "latest"
 	}
 
-	dockerVolumeWorkspaceImage = dockerVolumeWorkspaceImage + ":" + dockerTag
+	DockerVolumeWorkspaceImage = DockerVolumeWorkspaceImage + ":" + dockerTag
 }
 
 // runScript is a utility function to mount the given shell script into a Docker
@@ -305,7 +307,7 @@ func (w *dockerVolumeWorkspace) runScript(ctx context.Context, target, script st
 		"--workdir", target,
 		"--mount", "type=bind,source=" + name + ",target=/run.sh,ro",
 	}, common...)
-	opts = append(opts, dockerVolumeWorkspaceImage, "sh", "/run.sh")
+	opts = append(opts, DockerVolumeWorkspaceImage, "sh", "/run.sh")
 
 	out, err := exec.CommandContext(ctx, "docker", opts...).CombinedOutput()
 	if err != nil {

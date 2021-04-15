@@ -1,4 +1,4 @@
-package batches
+package service
 
 import (
 	"bytes"
@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/src-cli/internal/api"
+	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
 
@@ -144,8 +145,8 @@ func TestResolveRepositories_Unsupported(t *testing.T) {
 	client, done := mockGraphQLClient(testResolveRepositoriesUnsupported)
 	defer done()
 
-	spec := &BatchSpec{
-		On: []OnQueryOrRepository{
+	spec := &batches.BatchSpec{
+		On: []batches.OnQueryOrRepository{
 			{RepositoriesMatchingQuery: "testquery"},
 		},
 	}
@@ -166,7 +167,7 @@ func TestResolveRepositories_Unsupported(t *testing.T) {
 		svc := &Service{client: client, allowUnsupported: false, allowIgnored: true}
 
 		repos, err := svc.ResolveRepositories(context.Background(), spec)
-		repoSet, ok := err.(UnsupportedRepoSet)
+		repoSet, ok := err.(batches.UnsupportedRepoSet)
 		if !ok {
 			t.Fatalf("err is not UnsupportedRepoSet")
 		}
@@ -224,8 +225,8 @@ const testResolveRepositoriesUnsupported = `{
 `
 
 func TestResolveRepositories_Ignored(t *testing.T) {
-	spec := &BatchSpec{
-		On: []OnQueryOrRepository{
+	spec := &batches.BatchSpec{
+		On: []batches.OnQueryOrRepository{
 			{RepositoriesMatchingQuery: "testquery"},
 		},
 	}
@@ -252,7 +253,7 @@ func TestResolveRepositories_Ignored(t *testing.T) {
 		svc := &Service{client: client, allowIgnored: false}
 
 		repos, err := svc.ResolveRepositories(context.Background(), spec)
-		ignored, ok := err.(IgnoredRepoSet)
+		ignored, ok := err.(batches.IgnoredRepoSet)
 		if !ok {
 			t.Fatalf("err is not IgnoredRepoSet: %s", err)
 		}
@@ -420,7 +421,7 @@ func TestService_BuildTasks(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		spec  *BatchSpec
+		spec  *batches.BatchSpec
 		repos []*graphql.Repository
 
 		searchResults filesInRepos
@@ -431,7 +432,7 @@ func TestService_BuildTasks(t *testing.T) {
 		wantTasks map[string][]wantTask
 	}{
 		"no workspace configuration": {
-			spec:          &BatchSpec{},
+			spec:          &batches.BatchSpec{},
 			repos:         repos,
 			searchResults: filesInRepos{},
 			wantNumTasks:  len(repos),
@@ -443,8 +444,8 @@ func TestService_BuildTasks(t *testing.T) {
 		},
 
 		"workspace configuration matching no repos": {
-			spec: &BatchSpec{
-				Workspaces: []WorkspaceConfiguration{
+			spec: &batches.BatchSpec{
+				Workspaces: []batches.WorkspaceConfiguration{
 					{In: "this-does-not-match", RootAtLocationOf: "package.json"},
 				},
 			},
@@ -459,8 +460,8 @@ func TestService_BuildTasks(t *testing.T) {
 		},
 
 		"workspace configuration matching 2 repos with no results": {
-			spec: &BatchSpec{
-				Workspaces: []WorkspaceConfiguration{
+			spec: &batches.BatchSpec{
+				Workspaces: []batches.WorkspaceConfiguration{
 					{In: "*automation-testing", RootAtLocationOf: "package.json"},
 				},
 			},
@@ -476,8 +477,8 @@ func TestService_BuildTasks(t *testing.T) {
 		},
 
 		"workspace configuration matching 2 repos with 3 results each": {
-			spec: &BatchSpec{
-				Workspaces: []WorkspaceConfiguration{
+			spec: &batches.BatchSpec{
+				Workspaces: []batches.WorkspaceConfiguration{
 					{In: "*automation-testing", RootAtLocationOf: "package.json"},
 				},
 			},
@@ -503,8 +504,8 @@ func TestService_BuildTasks(t *testing.T) {
 		},
 
 		"workspace configuration matches repo with OnlyFetchWorkspace": {
-			spec: &BatchSpec{
-				Workspaces: []WorkspaceConfiguration{
+			spec: &batches.BatchSpec{
+				Workspaces: []batches.WorkspaceConfiguration{
 					{
 						OnlyFetchWorkspace: true,
 						In:                 "*automation-testing",
@@ -620,23 +621,23 @@ func TestService_ValidateChangesetSpecs(t *testing.T) {
 
 	tests := map[string]struct {
 		repos []*graphql.Repository
-		specs []*ChangesetSpec
+		specs []*batches.ChangesetSpec
 
 		wantErrInclude string
 	}{
 		"no errors": {
 			repos: []*graphql.Repository{repo1, repo2},
-			specs: []*ChangesetSpec{
-				{CreatedChangeset: &CreatedChangeset{
+			specs: []*batches.ChangesetSpec{
+				{CreatedChangeset: &batches.CreatedChangeset{
 					HeadRepository: repo1.ID, HeadRef: "refs/heads/branch-1"},
 				},
-				{CreatedChangeset: &CreatedChangeset{
+				{CreatedChangeset: &batches.CreatedChangeset{
 					HeadRepository: repo1.ID, HeadRef: "refs/heads/branch-2"},
 				},
-				{CreatedChangeset: &CreatedChangeset{
+				{CreatedChangeset: &batches.CreatedChangeset{
 					HeadRepository: repo2.ID, HeadRef: "refs/heads/branch-1"},
 				},
-				{CreatedChangeset: &CreatedChangeset{
+				{CreatedChangeset: &batches.CreatedChangeset{
 					HeadRepository: repo2.ID, HeadRef: "refs/heads/branch-2"},
 				},
 			},
@@ -644,8 +645,8 @@ func TestService_ValidateChangesetSpecs(t *testing.T) {
 
 		"imported changeset": {
 			repos: []*graphql.Repository{repo1},
-			specs: []*ChangesetSpec{
-				{ExternalChangeset: &ExternalChangeset{
+			specs: []*batches.ChangesetSpec{
+				{ExternalChangeset: &batches.ExternalChangeset{
 					ExternalID: "123",
 				}},
 			},
@@ -654,17 +655,17 @@ func TestService_ValidateChangesetSpecs(t *testing.T) {
 
 		"duplicate branches": {
 			repos: []*graphql.Repository{repo1, repo2},
-			specs: []*ChangesetSpec{
-				{CreatedChangeset: &CreatedChangeset{
+			specs: []*batches.ChangesetSpec{
+				{CreatedChangeset: &batches.CreatedChangeset{
 					HeadRepository: repo1.ID, HeadRef: "refs/heads/branch-1"},
 				},
-				{CreatedChangeset: &CreatedChangeset{
+				{CreatedChangeset: &batches.CreatedChangeset{
 					HeadRepository: repo1.ID, HeadRef: "refs/heads/branch-2"},
 				},
-				{CreatedChangeset: &CreatedChangeset{
+				{CreatedChangeset: &batches.CreatedChangeset{
 					HeadRepository: repo2.ID, HeadRef: "refs/heads/branch-1"},
 				},
-				{CreatedChangeset: &CreatedChangeset{
+				{CreatedChangeset: &batches.CreatedChangeset{
 					HeadRepository: repo2.ID, HeadRef: "refs/heads/branch-1"},
 				},
 			},

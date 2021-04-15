@@ -1,38 +1,14 @@
-package batches
+package executor
 
 import (
 	"bytes"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"gopkg.in/yaml.v3"
 )
-
-func TestParseGitStatus(t *testing.T) {
-	const input = `M  README.md
-M  another_file.go
-A  new_file.txt
-A  barfoo/new_file.txt
-D  to_be_deleted.txt
-R  README.md -> README.markdown
-`
-	parsed, err := parseGitStatus([]byte(input))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := StepChanges{
-		Modified: []string{"README.md", "another_file.go"},
-		Added:    []string{"new_file.txt", "barfoo/new_file.txt"},
-		Deleted:  []string{"to_be_deleted.txt"},
-		Renamed:  []string{"README.markdown"},
-	}
-
-	if !cmp.Equal(want, parsed) {
-		t.Fatalf("wrong output:\n%s", cmp.Diff(want, parsed))
-	}
-}
 
 const rawYaml = `dist: release
 env:
@@ -60,7 +36,7 @@ func TestRenderStepTemplate(t *testing.T) {
 			Description: "This batch change is just an experiment",
 		},
 		PreviousStep: StepResult{
-			files: &StepChanges{
+			files: &git.Changes{
 				Modified: []string{"go.mod"},
 				Added:    []string{"main.go.swp"},
 				Deleted:  []string{".DS_Store"},
@@ -74,7 +50,7 @@ func TestRenderStepTemplate(t *testing.T) {
 			"project":  parsedYaml,
 		},
 		Step: StepResult{
-			files: &StepChanges{
+			files: &git.Changes{
 				Modified: []string{"step-go.mod"},
 				Added:    []string{"step-main.go.swp"},
 				Deleted:  []string{"step-.DS_Store"},
@@ -199,7 +175,7 @@ ${{ step.stderr}}
 func TestRenderStepMap(t *testing.T) {
 	stepCtx := &StepContext{
 		PreviousStep: StepResult{
-			files: &StepChanges{
+			files: &git.Changes{
 				Modified: []string{"go.mod"},
 				Added:    []string{"main.go.swp"},
 				Deleted:  []string{".DS_Store"},
@@ -266,7 +242,7 @@ func TestRenderChangesetTemplateField(t *testing.T) {
 			},
 		},
 		Steps: StepsContext{
-			Changes: &StepChanges{
+			Changes: &git.Changes{
 				Modified: []string{"modified-file.txt"},
 				Added:    []string{"added-file.txt"},
 				Deleted:  []string{"deleted-file.txt"},
