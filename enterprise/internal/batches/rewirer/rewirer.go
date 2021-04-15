@@ -3,6 +3,7 @@ package rewirer
 import (
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -103,7 +104,7 @@ func (r *ChangesetRewirer) createChangesetForSpec(repo *types.Repo, spec *btypes
 	newChangeset.SetDiffStat(&diffStat)
 
 	// Set up the initial queue state of the changeset.
-	newChangeset.ResetQueued()
+	newChangeset.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
 
 	return newChangeset
 }
@@ -120,7 +121,7 @@ func (r *ChangesetRewirer) updateChangesetToNewSpec(c *btypes.Changeset, spec *b
 	// We need to enqueue it for the changeset reconciler, so the
 	// reconciler wakes up, compares old and new spec and, if
 	// necessary, updates the changesets accordingly.
-	c.ResetQueued()
+	c.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
 }
 
 func (r *ChangesetRewirer) createTrackingChangeset(repo *types.Repo, externalID string) *btypes.Changeset {
@@ -148,7 +149,7 @@ func (r *ChangesetRewirer) attachTrackingChangeset(changeset *btypes.Changeset) 
 
 	// If it's errored and not created by another batch change, we re-enqueue it.
 	if changeset.OwnedByBatchChangeID == 0 && (changeset.ReconcilerState == btypes.ReconcilerStateErrored || changeset.ReconcilerState == btypes.ReconcilerStateFailed) {
-		changeset.ResetQueued()
+		changeset.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
 	}
 }
 
@@ -203,7 +204,7 @@ func (r *ChangesetRewirer) closeChangeset(changeset *btypes.Changeset) {
 	}
 
 	if reset {
-		changeset.ResetQueued()
+		changeset.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
 	}
 }
 

@@ -7,14 +7,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
 
-	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestChangeset_Clone(t *testing.T) {
@@ -573,48 +570,29 @@ func TestChangesetMetadata(t *testing.T) {
 	}
 }
 
-func TestChangeset_ResetQueued(t *testing.T) {
-	// Set up configurations.
-	var (
-		noWindows = &conf.Unified{}
-		windows   = &conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				BatchChangesRolloutWindows: &[]*schema.BatchChangeRolloutWindow{
-					{Rate: "10/min"},
-				},
-			},
-		}
-	)
-
+func TestChangeset_ResetReconcilerState(t *testing.T) {
 	for name, tc := range map[string]struct {
 		changeset *Changeset
-		config    *conf.Unified
-		want      ReconcilerState
+		state     ReconcilerState
 	}{
 		"created changeset; has rollout windows": {
 			changeset: &Changeset{CurrentSpecID: 1},
-			config:    windows,
-			want:      ReconcilerStateScheduled,
+			state:     ReconcilerStateScheduled,
 		},
 		"created changeset; no rollout windows": {
 			changeset: &Changeset{CurrentSpecID: 1},
-			config:    noWindows,
-			want:      ReconcilerStateQueued,
+			state:     ReconcilerStateQueued,
 		},
 		"tracking changeset; has rollout windows": {
 			changeset: &Changeset{CurrentSpecID: 0},
-			config:    windows,
-			want:      ReconcilerStateQueued,
+			state:     ReconcilerStateQueued,
 		},
 		"tracking changeset; no rollout windows": {
 			changeset: &Changeset{CurrentSpecID: 0},
-			config:    noWindows,
-			want:      ReconcilerStateQueued,
+			state:     ReconcilerStateQueued,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			bt.MockConfig(t, tc.config)
-
 			// Set up a funky changeset state so we verify that the fields that
 			// should be overwritten are.
 			msg := "an appropriate error"
@@ -623,9 +601,9 @@ func TestChangeset_ResetQueued(t *testing.T) {
 			tc.changeset.FailureMessage = &msg
 			tc.changeset.SyncErrorMessage = &msg
 
-			tc.changeset.ResetQueued()
-			if have := tc.changeset.ReconcilerState; have != tc.want {
-				t.Errorf("unexpected reconciler state: have=%v want=%v", have, tc.want)
+			tc.changeset.ResetReconcilerState(tc.state)
+			if have := tc.changeset.ReconcilerState; have != tc.state {
+				t.Errorf("unexpected reconciler state: have=%v want=%v", have, tc.state)
 			}
 			if have := tc.changeset.NumResets; have != 0 {
 				t.Errorf("unexpected number of resets: have=%d want=0", have)
