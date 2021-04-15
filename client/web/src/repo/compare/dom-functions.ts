@@ -28,13 +28,23 @@ export const diffDomFunctions: DOMFunctions = {
     },
 
     getDiffCodePart: (codeElement: HTMLElement): DiffPart => {
-        const tableCell = codeElement.closest('td')!
+        const tableCell = codeElement.closest('td') as HTMLTableCellElement
+        const tableRow = codeElement.parentElement as HTMLTableRowElement
+        const isSplitMode = tableRow.cells.length === 4
 
-        if (tableCell.dataset.part !== 'base') {
+        if (tableRow.classList.contains('diff-hunk__line--addition')) {
             return 'head'
         }
 
-        return 'base'
+        if (tableRow.classList.contains('diff-hunk__line--deletion')) {
+            return 'base'
+        }
+
+        if (isSplitMode) {
+            return tableCell.nextElementSibling ? 'base' : 'head'
+        }
+
+        return 'head'
     },
 
     getCodeElementFromLineNumber: (
