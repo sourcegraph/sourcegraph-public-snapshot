@@ -25,10 +25,10 @@ interface Line {
     lineStyle: ThemableDecorationStyle
     decorations: (TextDocumentDecoration & Record<'after', DecorationAttachmentRenderOptions>)[]
     className: string
+    dataPart: 'head' | 'base'
 }
 
 interface LineType {
-    dataPart: string
     hunkContent: string
 }
 
@@ -36,22 +36,18 @@ const lineType = (kind: DiffHunkLineType): LineType => {
     switch (kind) {
         case DiffHunkLineType.DELETED:
             return {
-                dataPart: 'base',
                 hunkContent: 'diff-hunk--split__line--deletion',
             }
         case DiffHunkLineType.UNCHANGED:
             return {
-                dataPart: 'base',
                 hunkContent: 'diff-hunk--split__line--both',
             }
         case DiffHunkLineType.ADDED:
             return {
-                dataPart: 'head',
                 hunkContent: 'diff-hunk--split__line--addition',
             }
         default:
             return {
-                dataPart: 'base',
                 hunkContent: '',
             }
     }
@@ -75,6 +71,7 @@ export const Line: React.FunctionComponent<Line> = ({
     lineStyle,
     decorations,
     className,
+    dataPart,
 }) => {
     const hunkStyles = lineType(kind)
 
@@ -84,7 +81,7 @@ export const Line: React.FunctionComponent<Line> = ({
                 <td
                     className={`diff-hunk__num ${hunkStyles.hunkContent}-num ${className}-num`}
                     data-line={lineNumber}
-                    data-part={hunkStyles.dataPart}
+                    data-part={dataPart}
                     id={id || anchor}
                 >
                     {persistLines && (

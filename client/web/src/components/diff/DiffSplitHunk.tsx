@@ -141,12 +141,14 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
                                 key={`L${current.anchor}`}
                                 id={`L${current.anchor}`}
                                 lineNumber={current.oldLine}
+                                dataPart="base"
                             />
                             <Line
                                 {...lineProps}
                                 key={`R${current.anchor}`}
                                 id={`R${current.anchor}`}
                                 lineNumber={current.newLine}
+                                dataPart="head"
                             />
                         </tr>
                     )
@@ -157,7 +159,12 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
                         index = index + 1
                         elements.push(
                             <tr {...rowProps}>
-                                <Line {...lineProps} key={current.anchor} lineNumber={current.oldLine} />
+                                <Line
+                                    {...lineProps}
+                                    key={current.anchor}
+                                    lineNumber={current.oldLine}
+                                    dataPart="base"
+                                />
                                 <Line
                                     {...lineProps}
                                     key={next.anchor}
@@ -168,6 +175,7 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
                                     className={
                                         location.hash === `#${next.anchor}` ? 'diff-hunk--split__line--active' : ''
                                     }
+                                    dataPart="head"
                                 />
                             </tr>
                         )
@@ -181,6 +189,7 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
                                     lineNumber={
                                         current.kind === DiffHunkLineType.DELETED ? current.oldLine : lineNumber
                                     }
+                                    dataPart="base"
                                 />
                                 <EmptyLine />
                             </tr>
@@ -191,7 +200,7 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
                     elements.push(
                         <tr {...rowProps}>
                             <EmptyLine />
-                            <Line {...lineProps} key={current.anchor} lineNumber={lineNumber} />
+                            <Line {...lineProps} key={current.anchor} lineNumber={lineNumber} dataPart="head" />
                         </tr>
                     )
                 }
