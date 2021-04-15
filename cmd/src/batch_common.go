@@ -278,12 +278,13 @@ func batchExecute(ctx context.Context, out *output.Output, svc *service.Service,
 	}
 
 	opts := executor.Opts{
-		TempDir:     flags.tempDir,
-		Creator:     workspaceCreator,
+		CacheDir:    flags.cacheDir,
 		ClearCache:  flags.clearCache,
-		KeepLogs:    flags.keepLogs,
-		Timeout:     flags.timeout,
+		Creator:     workspaceCreator,
 		Parallelism: flags.parallelism,
+		Timeout:     flags.timeout,
+		KeepLogs:    flags.keepLogs,
+		TempDir:     flags.tempDir,
 	}
 
 	p := newBatchProgressPrinter(out, *verbose, flags.parallelism)
