@@ -1389,6 +1389,15 @@ type Query {
         Query to filter the search contexts by spec.
         """
         query: String
+        """
+        Limit search context results to a particular namespace (user or org). If not provided, results will be limited to instance-level contexts.
+        Search contexts are limited to those available to the current user. Mutually exclusive with the 'includeAll' parameter.
+        """
+        namespace: ID
+        """
+        Include all search contexts that are available to the current user. Mutually exclusive with the 'namespace' parameter.
+        """
+        includeAll: Boolean!
     ): SearchContextConnection!
     """
     (experimental) Determines whether the search context is within the set of search contexts available to the current user.

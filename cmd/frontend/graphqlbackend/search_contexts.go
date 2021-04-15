@@ -37,9 +37,11 @@ func (r *searchContextRepositoryRevisionsResolver) Revisions(ctx context.Context
 }
 
 type listSearchContextsArgs struct {
-	First int32
-	After *string
-	Query *string
+	First      int32
+	After      *string
+	Query      *string
+	Namespace  *graphql.ID
+	IncludeAll bool
 }
 
 type searchContextConnection struct {
@@ -134,16 +136,19 @@ func (r *schemaResolver) AutoDefinedSearchContexts(ctx context.Context) ([]*sear
 	return searchContextsToResolvers(searchContexts, r.db), nil
 }
 
-// TODO: Create a separate 'UsersSearchContexts' function that returns instance-level search contexts,
-// search contexts owned by the user, and search contexts owned by users organizations (to populate the dropdown).
 func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchContextsArgs) (*searchContextConnection, error) {
+	if args.IncludeAll && args.Namespace != nil {
+		return nil, errors.New("parameters IncludeAll and Namespace are mutually exclusive")
+	}
+
 	// Request one extra to determine if there are more pages
 	newArgs := *args
 	newArgs.First += 1
 
+	// TODO(rok): Parse the query into namespace and search context name components
 	var searchContextName string
-	if args.Query != nil {
-		searchContextName = *args.Query
+	if newArgs.Query != nil {
+		searchContextName = *newArgs.Query
 	}
 
 	afterCursor, err := unmarshalSearchContextCursor(newArgs.After)
@@ -151,8 +156,15 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 		return nil, err
 	}
 
+	opts := database.ListSearchContextsOptions{Name: searchContextName, IncludeAll: newArgs.IncludeAll}
+	if newArgs.Namespace != nil {
+		err := UnmarshalNamespaceID(*newArgs.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	searchContextsStore := database.SearchContexts(r.db)
-	opts := database.ListSearchContextsOptions{Name: searchContextName, IncludeAll: true}
 	pageOpts := database.ListSearchContextsPageOptions{First: newArgs.First, AfterID: afterCursor}
 	searchContexts, err := searchContextsStore.ListSearchContexts(ctx, pageOpts, opts)
 	if err != nil {

@@ -2,6 +2,8 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Observable, of } from 'rxjs'
 
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+
 import { WebStory } from '../../components/WebStory'
 import { ListSearchContextsResult } from '../../graphql-operations'
 import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
@@ -42,11 +44,19 @@ const defaultProps: SearchContextMenuProps = {
             repositories: [],
         },
     ]),
-    fetchSearchContexts: (
-        first: number,
-        query?: string,
+    fetchSearchContexts: ({
+        first,
+        includeAll,
+        namespace,
+        query,
+        after,
+    }: {
+        first: number
+        query?: string
+        namespace?: Scalars['ID']
+        includeAll?: boolean
         after?: string
-    ): Observable<ListSearchContextsResult['searchContexts']> =>
+    }): Observable<ListSearchContextsResult['searchContexts']> =>
         of({
             nodes: [
                 {

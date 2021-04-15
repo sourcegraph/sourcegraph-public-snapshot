@@ -193,7 +193,15 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                 // Do not debounce the initial load
                 debounce(({ cursor, query }) => (!cursor && query === '' ? timer(0) : timer(300))),
                 switchMap(({ cursor, query }) =>
-                    combineLatest([of(cursor), fetchSearchContexts(searchContextsPerPageToLoad, query, cursor)])
+                    combineLatest([
+                        of(cursor),
+                        fetchSearchContexts({
+                            first: searchContextsPerPageToLoad,
+                            query,
+                            includeAll: true,
+                            after: cursor,
+                        }),
+                    ])
                 ),
                 tap(([, searchContextsResult]) => setLastPageInfo(searchContextsResult.pageInfo)),
                 catchError(error => [asError(error)])

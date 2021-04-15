@@ -356,7 +356,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         )
 
         this.subscriptions.add(
-            fetchSearchContexts(1).subscribe(({ totalCount }) =>
+            fetchSearchContexts({ first: 1, includeAll: true }).subscribe(({ totalCount }) =>
                 this.setState({ hasUserDefinedContexts: totalCount > 0 })
             )
         )

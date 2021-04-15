@@ -285,15 +285,35 @@ export const fetchAutoDefinedSearchContexts = defer(() =>
     refCount()
 )
 
-export function fetchSearchContexts(
-    first: number,
-    query?: string,
+export function fetchSearchContexts({
+    first,
+    includeAll,
+    namespace,
+    query,
+    after,
+}: {
+    first: number
+    query?: string
+    namespace?: Scalars['ID']
+    includeAll?: boolean
     after?: string
-): Observable<ListSearchContextsResult['searchContexts']> {
+}): Observable<ListSearchContextsResult['searchContexts']> {
     return requestGraphQL<ListSearchContextsResult, ListSearchContextsVariables>(
         gql`
-            query ListSearchContexts($first: Int!, $after: String, $query: String) {
-                searchContexts(first: $first, after: $after, query: $query) {
+            query ListSearchContexts(
+                $first: Int!
+                $after: String
+                $query: String
+                $namespace: ID
+                $includeAll: Boolean!
+            ) {
+                searchContexts(
+                    first: $first
+                    after: $after
+                    query: $query
+                    namespace: $namespace
+                    includeAll: $includeAll
+                ) {
                     nodes {
                         ...SearchContextFields
                     }
@@ -306,7 +326,13 @@ export function fetchSearchContexts(
             }
             ${searchContextFragment}
         `,
-        { first, after: after ?? null, query: query ?? null }
+        {
+            first,
+            after: after ?? null,
+            query: query ?? null,
+            namespace: namespace ?? null,
+            includeAll: includeAll ?? false,
+        }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.searchContexts)

@@ -3,7 +3,10 @@ package graphqlbackend
 import (
 	"context"
 	"reflect"
+	"strings"
 	"testing"
+
+	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -44,5 +47,20 @@ func TestAutoDefinedSearchContexts(t *testing.T) {
 		if len(repositories) != 0 {
 			t.Fatal("auto-defined search contexts should not return repositories")
 		}
+	}
+}
+
+func TestSearchContextsMutuallyExclusiveParameters(t *testing.T) {
+	db := new(dbtesting.MockDB)
+	ctx := context.Background()
+	graphqlNamespaceID := graphql.ID("namespaceID")
+	args := &listSearchContextsArgs{Namespace: &graphqlNamespaceID, IncludeAll: true}
+	wantErr := "parameters IncludeAll and Namespace are mutually exclusive"
+
+	_, err := (&schemaResolver{db: db}).SearchContexts(ctx, args)
+	if err == nil {
+		t.Fatal("expected an error, got nil")
+	} else if !strings.Contains(err.Error(), wantErr) {
+		t.Fatalf("wanted error containing %s, got %s", wantErr, err)
 	}
 }

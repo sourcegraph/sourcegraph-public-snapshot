@@ -19,7 +19,12 @@ export interface SearchContextsListTabProps {
 export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTabProps> = props => {
     const queryConnection = useCallback(
         (args: Partial<ListSearchContextsVariables>) =>
-            fetchSearchContexts(args.first ?? 1, args.query ?? undefined, args.after ?? undefined),
+            fetchSearchContexts({
+                first: args.first ?? 1,
+                query: args.query ?? undefined,
+                includeAll: true,
+                after: args.after ?? undefined,
+            }),
         []
     )
 
