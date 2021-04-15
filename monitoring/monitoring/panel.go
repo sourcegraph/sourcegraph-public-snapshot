@@ -101,8 +101,8 @@ func (p ObservablePanel) Interval(ms int) ObservablePanel {
 //
 // Shared customizations are exported by `PanelOptions`, or you can write your option -
 // see `ObservablePanelOption` documentation for more details.
-func (p ObservablePanel) With(op ObservablePanelOption) ObservablePanel {
-	p.options = append(p.options, op)
+func (p ObservablePanel) With(op ...ObservablePanelOption) ObservablePanel {
+	p.options = append(p.options, op...)
 	return p
 }
 
