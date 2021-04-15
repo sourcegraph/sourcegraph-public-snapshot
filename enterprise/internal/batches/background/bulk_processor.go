@@ -11,9 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // unknownJobTypeErr is returned when a ChangesetJob record is of an unknown type
@@ -30,21 +27,6 @@ func (e unknownJobTypeErr) NonRetryable() bool {
 	return true
 }
 
-type bulkProcessorWorker struct {
-	store   *store.Store
-	sourcer sources.Sourcer
-}
-
-func (b *bulkProcessorWorker) HandlerFunc() dbworker.HandlerFunc {
-	return func(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
-		processor := &bulkProcessor{
-			sourcer: b.sourcer,
-			store:   b.store.With(tx),
-		}
-		return processor.process(ctx, record.(*btypes.ChangesetJob))
-	}
-}
-
 type bulkProcessor struct {
 	store   *store.Store
 	sourcer sources.Sourcer
@@ -54,17 +36,20 @@ type bulkProcessor struct {
 	ch   *btypes.Changeset
 }
 
-func (b *bulkProcessor) process(ctx context.Context, job *btypes.ChangesetJob) error {
-	// Load all required dependencies.
-	var err error
+func (b *bulkProcessor) process(ctx context.Context, job *btypes.ChangesetJob) (err error) {
+	// Load changeset.
 	b.ch, err = b.store.GetChangeset(ctx, store.GetChangesetOpts{ID: job.ChangesetID})
 	if err != nil {
 		return errors.Wrap(err, "loading changeset")
 	}
+
+	// Load repo.
 	b.repo, err = b.store.Repos().Get(ctx, b.ch.RepoID)
 	if err != nil {
 		return errors.Wrap(err, "loading repo")
 	}
+
+	// Construct changeset source.
 	b.css, err = b.sourcer.ForRepo(ctx, b.store, b.repo)
 	if err != nil {
 		return errors.Wrap(err, "loading ChangesetSource")

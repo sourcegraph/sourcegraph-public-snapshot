@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -81,4 +82,21 @@ func createBulkJobDBWorkerStore(s *store.Store) dbworkerstore.Store {
 // generic workerutil.Record.
 func scanFirstChangesetJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	return store.ScanFirstChangesetJob(rows, err)
+}
+
+// bulkProcessorWorker is a wrapper for the workerutil handlerfunc to create a
+// bulkProcessor with a source and store.
+type bulkProcessorWorker struct {
+	store   *store.Store
+	sourcer sources.Sourcer
+}
+
+func (b *bulkProcessorWorker) HandlerFunc() dbworker.HandlerFunc {
+	return func(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
+		processor := &bulkProcessor{
+			sourcer: b.sourcer,
+			store:   b.store.With(tx),
+		}
+		return processor.process(ctx, record.(*btypes.ChangesetJob))
+	}
 }
