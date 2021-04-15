@@ -253,6 +253,61 @@ func TestGithubSource_ReopenChangeset(t *testing.T) {
 	}
 }
 
+func TestGithubSource_CreateComment(t *testing.T) {
+	testCases := []struct {
+		name string
+		cs   *Changeset
+		err  string
+	}{
+		{
+			name: "success",
+			cs: &Changeset{
+				Changeset: &btypes.Changeset{
+					Metadata: &github.PullRequest{
+						ID: "MDExOlB1bGxSZXF1ZXN0MzQ5NTIzMzE0",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "GithubSource_CreateComment_" + strings.ReplaceAll(tc.name, " ", "_")
+
+		t.Run(tc.name, func(t *testing.T) {
+			cf, save := newClientFactory(t, tc.name)
+			defer save(t)
+
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			svc := &types.ExternalService{
+				Kind: extsvc.KindGitHub,
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url:   "https://github.com",
+					Token: os.Getenv("GITHUB_TOKEN"),
+				}),
+			}
+
+			githubSrc, err := NewGithubSource(svc, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ctx := context.Background()
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			err = githubSrc.CreateComment(ctx, tc.cs, "test-comment")
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+		})
+	}
+}
+
 func TestGithubSource_UpdateChangeset(t *testing.T) {
 	testCases := []struct {
 		name string
