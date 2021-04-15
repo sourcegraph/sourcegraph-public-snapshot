@@ -721,7 +721,6 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 		states = map[btypes.ChangesetState]*ct.TestChangesetOpts{
 			btypes.ChangesetStateRetrying:    {ReconcilerState: btypes.ReconcilerStateErrored},
 			btypes.ChangesetStateFailed:      {ReconcilerState: btypes.ReconcilerStateFailed},
-			btypes.ChangesetStateProcessing:  {ReconcilerState: btypes.ReconcilerStateCompleted},
 			btypes.ChangesetStateScheduled:   {ReconcilerState: btypes.ReconcilerStateScheduled},
 			btypes.ChangesetStateUnpublished: {PublicationState: btypes.ChangesetPublicationStateUnpublished},
 			btypes.ChangesetStateDraft:       {ExternalState: btypes.ChangesetExternalStateDraft},

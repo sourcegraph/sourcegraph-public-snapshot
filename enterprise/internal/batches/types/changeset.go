@@ -9,8 +9,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/scheduler/config"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"

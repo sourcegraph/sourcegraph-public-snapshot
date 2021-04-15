@@ -5,7 +5,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/scheduler/window"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/window"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 

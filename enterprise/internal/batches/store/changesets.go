@@ -916,14 +916,14 @@ WHERE
 	%s
 `
 
-func (s *Store) GetNextScheduledChangeset(ctx context.Context) (*batches.Changeset, error) {
+func (s *Store) GetNextScheduledChangeset(ctx context.Context) (*btypes.Changeset, error) {
 	q := sqlf.Sprintf(
 		getNextScheduledChangesetFmtstr,
 		sqlf.Join(ChangesetColumns, ","),
-		batches.ReconcilerStateScheduled.ToDB(),
+		btypes.ReconcilerStateScheduled.ToDB(),
 	)
 
-	var c batches.Changeset
+	var c btypes.Changeset
 	err := s.query(ctx, q, func(sc scanner) error {
 		return scanChangeset(&c, sc)
 	})

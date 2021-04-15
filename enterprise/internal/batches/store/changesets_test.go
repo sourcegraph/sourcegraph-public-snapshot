@@ -1934,10 +1934,10 @@ func testStoreGetNextScheduledChangeset(t *testing.T, ctx context.Context, s *St
 
 	// Let's define a quick and dirty helper to create changesets with a
 	// specific state and update time, since those are the key fields.
-	createChangeset := func(title string, lastUpdated time.Time, state batches.ReconcilerState) *batches.Changeset {
+	createChangeset := func(title string, lastUpdated time.Time, state btypes.ReconcilerState) *btypes.Changeset {
 		// First, we need to create a changeset spec.
-		spec := &batches.ChangesetSpec{
-			Spec: &batches.ChangesetSpecDescription{
+		spec := &btypes.ChangesetSpec{
+			Spec: &btypes.ChangesetSpecDescription{
 				Title: "fake spec",
 			},
 		}
@@ -1946,14 +1946,14 @@ func testStoreGetNextScheduledChangeset(t *testing.T, ctx context.Context, s *St
 		}
 
 		// Now we can use that to create a changeset.
-		cs := &batches.Changeset{
+		cs := &btypes.Changeset{
 			RepoID:              repo.ID,
 			CreatedAt:           clock.Now(),
 			UpdatedAt:           lastUpdated,
 			Metadata:            &github.PullRequest{Title: title},
 			ExternalServiceType: extsvc.TypeGitHub,
 			CurrentSpecID:       spec.ID,
-			PublicationState:    batches.ChangesetPublicationStateUnpublished,
+			PublicationState:    btypes.ChangesetPublicationStateUnpublished,
 			ReconcilerState:     state,
 		}
 
@@ -1966,9 +1966,9 @@ func testStoreGetNextScheduledChangeset(t *testing.T, ctx context.Context, s *St
 	// Let's define two changesets that are scheduled out of their "natural"
 	// order, and one changeset that is already queued.
 	var (
-		second = createChangeset("after", time.Now().Add(1*time.Minute), batches.ReconcilerStateScheduled)
-		first  = createChangeset("next", time.Now(), batches.ReconcilerStateScheduled)
-		_      = createChangeset("queued", time.Now().Add(1*time.Minute), batches.ReconcilerStateQueued)
+		second = createChangeset("after", time.Now().Add(1*time.Minute), btypes.ReconcilerStateScheduled)
+		first  = createChangeset("next", time.Now(), btypes.ReconcilerStateScheduled)
+		_      = createChangeset("queued", time.Now().Add(1*time.Minute), btypes.ReconcilerStateQueued)
 	)
 
 	// By definition, the first changeset should be next, since it has the
@@ -1984,7 +1984,7 @@ func testStoreGetNextScheduledChangeset(t *testing.T, ctx context.Context, s *St
 	}
 
 	// Now if we enqueue first, second should be the next scheduled changeset.
-	first.ReconcilerState = batches.ReconcilerStateQueued
+	first.ReconcilerState = btypes.ReconcilerStateQueued
 	if err := s.UpsertChangeset(ctx, first); err != nil {
 		t.Fatal(err)
 	}
@@ -2001,7 +2001,7 @@ func testStoreGetNextScheduledChangeset(t *testing.T, ctx context.Context, s *St
 
 	// Finally, the same again: we'll mark second as queued, and then we
 	// shouldn't get any changesets.
-	second.ReconcilerState = batches.ReconcilerStateQueued
+	second.ReconcilerState = btypes.ReconcilerStateQueued
 	if err := s.UpsertChangeset(ctx, second); err != nil {
 		t.Fatal(err)
 	}

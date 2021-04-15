@@ -7,8 +7,8 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
-	"github.com/sourcegraph/sourcegraph/internal/batches/scheduler/config"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
@@ -110,7 +110,7 @@ func (s *Scheduler) enqueueChangeset() error {
 	}
 
 	// We have a changeset to enqueue, so let's move it into the right state.
-	cs.ReconcilerState = batches.ReconcilerStateQueued
+	cs.ReconcilerState = btypes.ReconcilerStateQueued
 	if err := s.store.UpsertChangeset(s.ctx, cs); err != nil {
 		log15.Warn("error updating the next scheduled changeset", "err", err, "changeset", cs)
 	}
