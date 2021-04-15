@@ -2,6 +2,7 @@ package backend
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -32,10 +34,11 @@ func TestGetIndexOptions(t *testing.T) {
 	}
 
 	type caseT struct {
-		name string
-		conf schema.SiteConfiguration
-		repo string
-		want zoektIndexOptions
+		name              string
+		conf              schema.SiteConfiguration
+		searchContextRevs []string
+		repo              string
+		want              zoektIndexOptions
 	}
 
 	cases := []caseT{{
@@ -153,6 +156,20 @@ func TestGetIndexOptions(t *testing.T) {
 				{Name: "c", Version: "!c"},
 			},
 		},
+	}, {
+		name:              "with search context revisions",
+		conf:              schema.SiteConfiguration{},
+		repo:              "repo",
+		searchContextRevs: []string{"rev1", "rev2"},
+		want: zoektIndexOptions{
+			RepoID:  1,
+			Symbols: true,
+			Branches: []zoekt.RepositoryBranch{
+				{Name: "HEAD", Version: "!HEAD"},
+				{Name: "rev1", Version: "!rev1"},
+				{Name: "rev2", Version: "!rev2"},
+			},
+		},
 	}}
 
 	{
@@ -195,9 +212,15 @@ func TestGetIndexOptions(t *testing.T) {
 			},
 		}, nil
 	}
+
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			b := GetIndexOptions(&tc.conf, getRepoIndexOptions, tc.repo)
+			database.Mocks.SearchContexts.GetAllRevisionsForRepo = func(context.Context, int32) ([]string, error) {
+				return tc.searchContextRevs, nil
+			}
+			defer func() { database.Mocks.SearchContexts.GetAllRevisionsForRepo = nil }()
+
+			b := GetIndexOptions(context.Background(), &tc.conf, getRepoIndexOptions, tc.repo)
 
 			var got zoektIndexOptions
 			if err := json.Unmarshal(b, &got); err != nil {
@@ -267,6 +290,11 @@ func TestGetIndexOptions_getVersion(t *testing.T) {
 		},
 	}}
 
+	database.Mocks.SearchContexts.GetAllRevisionsForRepo = func(context.Context, int32) ([]string, error) {
+		return nil, nil
+	}
+	defer func() { database.Mocks.SearchContexts.GetAllRevisionsForRepo = nil }()
+
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			getRepoIndexOptions := func(repo string) (*RepoIndexOptions, error) {
@@ -275,7 +303,7 @@ func TestGetIndexOptions_getVersion(t *testing.T) {
 				}, nil
 			}
 
-			b := GetIndexOptions(&conf, getRepoIndexOptions, "repo")
+			b := GetIndexOptions(context.Background(), &conf, getRepoIndexOptions, "repo")
 
 			var got zoektIndexOptions
 			if err := json.Unmarshal(b, &got); err != nil {
@@ -327,7 +355,12 @@ func TestGetIndexOptions_batch(t *testing.T) {
 		}, nil
 	}
 
-	b := GetIndexOptions(&schema.SiteConfiguration{}, getRepoIndexOptions, repos...)
+	database.Mocks.SearchContexts.GetAllRevisionsForRepo = func(context.Context, int32) ([]string, error) {
+		return nil, nil
+	}
+	defer func() { database.Mocks.SearchContexts.GetAllRevisionsForRepo = nil }()
+
+	b := GetIndexOptions(context.Background(), &schema.SiteConfiguration{}, getRepoIndexOptions, repos...)
 	dec := json.NewDecoder(bytes.NewReader(b))
 	got := make([]zoektIndexOptions, len(repos))
 	for i := range repos {

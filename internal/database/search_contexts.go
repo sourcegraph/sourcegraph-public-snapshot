@@ -8,6 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -331,4 +332,48 @@ func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Co
 
 	sort.Slice(out, func(i, j int) bool { return out[i].Repo.ID < out[j].Repo.ID })
 	return out, nil
+}
+
+var getAllRevisionsForRepoFmtStr = `
+SELECT DISTINCT scr.revision
+FROM search_context_repos scr
+JOIN (
+  SELECT id
+  FROM search_contexts
+  WHERE deleted_at IS NULL
+) sc
+ON sc.id = scr.search_context_id
+WHERE scr.repo_id = %d
+ORDER BY scr.revision;
+`
+
+// GetAllRevisionsForRepo returns the list of revisions that are used in search contexts for a given repo ID.
+func (s *SearchContextsStore) GetAllRevisionsForRepo(ctx context.Context, repoID int32) ([]string, error) {
+	if Mocks.SearchContexts.GetAllRevisionsForRepo != nil {
+		return Mocks.SearchContexts.GetAllRevisionsForRepo(ctx, repoID)
+	}
+
+	if a := actor.FromContext(ctx); a == nil || !a.Internal {
+		return nil, errors.New("GetAllRevisionsForRepo can only be accessed by an internal actor")
+	}
+
+	rows, err := s.Query(ctx, sqlf.Sprintf(
+		getAllRevisionsForRepoFmtStr,
+		repoID,
+	))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	revs := make([]string, 0)
+	for rows.Next() {
+		var rev string
+		if err = rows.Scan(&rev); err != nil {
+			return nil, err
+		}
+		revs = append(revs, rev)
+	}
+
+	return revs, nil
 }

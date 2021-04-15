@@ -195,7 +195,7 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, r.Form["repo"]...)
+	b := searchbackend.GetIndexOptions(ctx, &siteConfig, getRepoIndexOptions, r.Form["repo"]...)
 	_, _ = w.Write(b)
 	return nil
 }
