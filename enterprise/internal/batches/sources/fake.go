@@ -47,6 +47,7 @@ type FakeChangesetSource struct {
 	LoadChangesetCalled         bool
 	CloseChangesetCalled        bool
 	ReopenChangesetCalled       bool
+	CreateCommentCalled         bool
 	AuthenticatedUsernameCalled bool
 	ValidateAuthenticatorCalled bool
 
@@ -248,6 +249,11 @@ func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *Changeset)
 	s.ReopenedChangesets = append(s.ReopenedChangesets, c)
 
 	return c.SetMetadata(s.FakeMetadata)
+}
+
+func (s *FakeChangesetSource) CreateComment(ctx context.Context, c *Changeset, body string) error {
+	s.CreateCommentCalled = true
+	return s.Err
 }
 
 func (s *FakeChangesetSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {

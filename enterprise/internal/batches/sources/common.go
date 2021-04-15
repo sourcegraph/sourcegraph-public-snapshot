@@ -65,6 +65,8 @@ type ChangesetSource interface {
 	// ReopenChangeset will reopen the Changeset on the source, if it's closed.
 	// If not, it's a noop.
 	ReopenChangeset(context.Context, *Changeset) error
+	// CreateComment posts a comment on the Changeset.
+	CreateComment(context.Context, *Changeset, string) error
 }
 
 // A Changeset of an existing Repo.

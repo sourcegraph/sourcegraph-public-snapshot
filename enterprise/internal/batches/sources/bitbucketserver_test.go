@@ -426,6 +426,68 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 	}
 }
 
+func TestBitbucketServerSource_CreateComment(t *testing.T) {
+	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
+	if instanceURL == "" {
+		// The test fixtures and golden files were generated with
+		// this config pointed to bitbucket.sgdev.org
+		instanceURL = "https://bitbucket.sgdev.org"
+	}
+
+	pr := &bitbucketserver.PullRequest{ID: 59, Version: 4}
+	pr.ToRef.Repository.Slug = "automation-testing"
+	pr.ToRef.Repository.Project.Key = "SOUR"
+
+	testCases := []struct {
+		name string
+		cs   *Changeset
+		err  string
+	}{
+		{
+			name: "success",
+			cs:   &Changeset{Changeset: &btypes.Changeset{Metadata: pr}},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "BitbucketServerSource_CreateComment_" + strings.ReplaceAll(tc.name, " ", "_")
+
+		t.Run(tc.name, func(t *testing.T) {
+			cf, save := newClientFactory(t, tc.name)
+			defer save(t)
+
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			svc := &types.ExternalService{
+				Kind: extsvc.KindBitbucketServer,
+				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+					Url:   instanceURL,
+					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+				}),
+			}
+
+			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ctx := context.Background()
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", instanceURL)
+
+			err = bbsSrc.CreateComment(ctx, tc.cs, "test-comment")
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+		})
+	}
+}
+
 func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 	svc := &types.ExternalService{
 		Kind: extsvc.KindBitbucketServer,
