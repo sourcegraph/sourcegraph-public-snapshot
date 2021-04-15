@@ -539,6 +539,7 @@ type BatchChangesConnectionResolver interface {
 type ChangesetsStatsResolver interface {
 	Retrying() int32
 	Failed() int32
+	Scheduled() int32
 	Processing() int32
 	Unpublished() int32
 	Draft() int32

@@ -9134,6 +9134,10 @@ type ChangesetsStats {
     """
     failed: Int!
     """
+    The count of changesets in the scheduled state.
+    """
+    scheduled: Int!
+    """
     The count of changesets that are currently processing or enqueued to be.
     """
     processing: Int!

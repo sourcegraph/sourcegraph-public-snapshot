@@ -823,6 +823,7 @@ func WithExternalID(id string) func(*Changeset) bool {
 type ChangesetsStats struct {
 	Retrying    int32
 	Failed      int32
+	Scheduled   int32
 	Processing  int32
 	Unpublished int32
 	Draft       int32
