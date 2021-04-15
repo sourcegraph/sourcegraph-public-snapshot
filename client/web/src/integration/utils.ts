@@ -76,6 +76,16 @@ export interface PercySnapshotConfig {
     waitForCodeHighlighting: boolean
 }
 
+const waitUntil = (time: number): Promise<void> => new Promise((resolve, reject) => setTimeout(reject, time))
+
+const percySnapshotWithWait: typeof percySnapshot = async (page, name) => {
+    try {
+        await Promise.race([percySnapshot(page, name), waitUntil(5000)])
+    } catch {
+        console.error('Percy snapshot took longer than 5 seconds')
+    }
+}
+
 /**
  * Takes a Percy snapshot in 4 variants:
  * dark/dark-redesign/light/light-redesign
@@ -91,26 +101,22 @@ export const percySnapshotWithVariants = async (
         return
     }
 
-    if (percyEnabled) {
-        return
-    }
-
     // Theme-light
     await setColorScheme(page, 'light', config?.waitForCodeHighlighting)
-    await percySnapshot(page, `${name} - light theme`)
+    await percySnapshotWithWait(page, `${name} - light theme`)
 
     // Theme-light with redesign
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
-    await percySnapshot(page, `${name} - light theme with redesign enabled`)
+    await percySnapshotWithWait(page, `${name} - light theme with redesign enabled`)
     await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
 
     // Theme-dark
     await setColorScheme(page, 'dark', config?.waitForCodeHighlighting)
-    await percySnapshot(page, `${name} - dark theme`)
+    await percySnapshotWithWait(page, `${name} - dark theme`)
 
     // Theme-dark with redesign
     await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
-    await percySnapshot(page, `${name} - dark theme with redesign enabled`)
+    await percySnapshotWithWait(page, `${name} - dark theme with redesign enabled`)
     await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
 
     // Reset to light theme
