@@ -3,13 +3,11 @@ import { castArray, groupBy, identity, isEqual } from 'lodash'
 import { combineLatest, concat, EMPTY, from, Observable, of, Subscribable } from 'rxjs'
 import {
     catchError,
-    concatMap,
     debounceTime,
     defaultIfEmpty,
     distinctUntilChanged,
     map,
     mergeMap,
-    scan,
     switchMap,
 } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
@@ -45,6 +43,7 @@ import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
 import { updateContext } from './extensionHost'
 import { ExtensionHostState } from './extensionHostState'
 import { addWithRollback } from './util'
+import { callViewProvidersInParallel } from './api/callProviderInParallel';
 
 export function createExtensionHostAPI(state: ExtensionHostState): FlatExtensionHostAPI {
     const getTextDocument = (uri: string): ExtensionDocument => {
@@ -423,7 +422,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
             ),
 
         getInsightsViews: context =>
-            proxySubscribable(callViewProvidersSequentially(context, state.insightsPageViewProviders)),
+            proxySubscribable(callViewProvidersInParallel(context, state.insightsPageViewProviders)),
         getHomepageViews: context => proxySubscribable(callViewProviders(context, state.homepageViewProviders)),
         getGlobalPageViews: context => proxySubscribable(callViewProviders(context, state.globalPageViewProviders)),
         getDirectoryViews: context =>
@@ -664,42 +663,6 @@ function callViewProviders<W extends ContributableViewContainer>(
             ])
         ),
         map(views => views.filter(allOf(isDefined, property('view', isNot(isExactly(null))))))
-    )
-}
-
-/**
- * Call all extensions to get view provider results sequentially one by one
- * When first provider out of three will be resolved we get [data, null, null]
- * When second provider out of three will be resolved we get [data, data, null]...
- */
-function callViewProvidersSequentially<W extends ContributableViewContainer>(
-    context: ViewContexts[W],
-    providers: Observable<readonly RegisteredViewProvider<W>[]>
-): Observable<ViewProviderResult[]> {
-    return providers.pipe(
-        debounceTime(0),
-        switchMap(providers =>
-            from(providers).pipe(
-                concatMap(({ viewProvider, id }, index) =>
-                    providerResultToObservable(viewProvider.provideView(context)).pipe(
-                        catchError((error): [ErrorLike] => {
-                            console.error('View provider errored:', error)
-                            return [asError(error)]
-                        }),
-                        map(view => ({ id, view, index }))
-                    )
-                ),
-                scan<ViewProviderResult & { index: number }, ViewProviderResult[]>(
-                    (accumulator, current) => {
-                        const { index, ...payload } = current
-                        accumulator[index] = payload
-
-                        return accumulator
-                    },
-                    providers.map(provider => ({ id: provider.id, view: undefined }))
-                )
-            )
-        )
     )
 }
 
