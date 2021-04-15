@@ -133,7 +133,6 @@ describe('Search', () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
             })
-            await new Promise(resolve => setTimeout(resolve, 60_000))
             const dynamicFilters = ['archived:yes', 'repo:^github\\.com/Algorilla/manta-ray$']
             const origQuery = 'foo'
             for (const filter of dynamicFilters) {
