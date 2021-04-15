@@ -746,7 +746,7 @@ func (c *Changeset) Labels() []ChangesetLabel {
 // changeset's ReconcilerState to queued or scheduled, depending on the site
 // configuration.
 func (c *Changeset) ResetQueued() {
-	if c.CurrentSpecID != 0 && config.Active().HasRolloutWindows() {
+	if c.CurrentSpecID != 0 && config.ActiveWindow().HasRolloutWindows() {
 		c.ReconcilerState = ReconcilerStateScheduled
 	} else {
 		c.ReconcilerState = ReconcilerStateQueued

@@ -40,7 +40,7 @@ func (s *Scheduler) Start() {
 	cfg := config.Subscribe()
 
 	for {
-		schedule := config.Active().Schedule()
+		schedule := config.ActiveWindow().Schedule()
 		taker := newTaker(schedule)
 		validity := time.NewTimer(time.Until(schedule.ValidUntil()))
 

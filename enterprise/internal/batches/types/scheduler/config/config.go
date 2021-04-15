@@ -19,9 +19,9 @@ var (
 	mu     sync.Mutex
 )
 
-// Active returns the window configuration in effect at the present time. This
-// is not a live object, and may become outdated if held for long periods.
-func Active() *window.Configuration {
+// ActiveWindow returns the window configuration in effect at the present time.
+// This is not a live object, and may become outdated if held for long periods.
+func ActiveWindow() *window.Configuration {
 	return ensureConfig().Active()
 }
 
