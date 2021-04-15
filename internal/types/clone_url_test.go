@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -20,37 +18,14 @@ func TestAWSCodeCloneURLs(t *testing.T) {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
-	awsSource := ExternalService{
-		Kind:   extsvc.KindAWSCodeCommit,
-		Config: `{}`,
-	}
-
-	repo := &Repo{
-		Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
-		Description: "The stripe-go lib",
-		Archived:    false,
-		Fork:        false,
-		CreatedAt:   now,
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-			ServiceType: extsvc.TypeAWSCodeCommit,
-			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
-		},
-		Sources: map[string]*SourceInfo{
-			awsSource.URN(): {
-				ID:       awsSource.URN(),
-				CloneURL: "git@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
-			},
-		},
-		Metadata: &awscodecommit.Repository{
-			ARN:          "arn:aws:codecommit:us-west-1:999999999999:stripe-go",
-			AccountID:    "999999999999",
-			ID:           "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-			Name:         "stripe-go",
-			Description:  "The stripe-go lib",
-			HTTPCloneURL: "https://git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
-			LastModified: &now,
-		},
+	repo := &awscodecommit.Repository{
+		ARN:          "arn:aws:codecommit:us-west-1:999999999999:stripe-go",
+		AccountID:    "999999999999",
+		ID:           "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+		Name:         "stripe-go",
+		Description:  "The stripe-go lib",
+		HTTPCloneURL: "https://git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
+		LastModified: &now,
 	}
 
 	cfg := schema.AWSCodeCommitConnection{
@@ -68,23 +43,12 @@ func TestAWSCodeCloneURLs(t *testing.T) {
 }
 
 func TestBitbucketServerCloneURLs(t *testing.T) {
-	metadata := bitbucketserver.Repo{
+	repo := &bitbucketserver.Repo{
 		ID:   1,
 		Slug: "bar",
 		Project: &bitbucketserver.Project{
 			Key: "foo",
 		},
-	}
-
-	repo := &Repo{
-		Name: "bitbucketserver.mycorp.com/foo/bar",
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "1",
-			ServiceType: "bitbucketServer",
-			ServiceID:   "http://bitbucketserver.mycorp.com",
-		},
-		Sources:  map[string]*SourceInfo{},
-		Metadata: &metadata,
 	}
 
 	cfg := schema.BitbucketServerConnection{
@@ -94,7 +58,7 @@ func TestBitbucketServerCloneURLs(t *testing.T) {
 	}
 
 	t.Run("ssh", func(t *testing.T) {
-		metadata.Links.Clone = []struct {
+		repo.Links.Clone = []struct {
 			Href string "json:\"href\""
 			Name string "json:\"name\""
 		}{
@@ -114,7 +78,7 @@ func TestBitbucketServerCloneURLs(t *testing.T) {
 
 	t.Run("http", func(t *testing.T) {
 		// Second test: http
-		metadata.Links.Clone = []struct {
+		repo.Links.Clone = []struct {
 			Href string "json:\"href\""
 			Name string "json:\"name\""
 		}{
@@ -141,21 +105,16 @@ func TestBitbucketServerCloneURLs(t *testing.T) {
 }
 
 func TestBitbucketCloudCloneURLs(t *testing.T) {
-	metadata := bitbucketcloud.Repo{
+	repo := &bitbucketcloud.Repo{
 		FullName: "sg/sourcegraph",
 	}
 
-	metadata.Links.Clone = []struct {
+	repo.Links.Clone = []struct {
 		Href string "json:\"href\""
 		Name string "json:\"name\""
 	}{
 		{Name: "https", Href: "https://asdine@bitbucket.org/sg/sourcegraph.git"},
 		{Name: "ssh", Href: "git@bitbucket.org/sg/sourcegraph.git"},
-	}
-
-	repo := &Repo{
-		Name:     "bitbucket.org/foo/bar",
-		Metadata: &metadata,
 	}
 
 	cfg := schema.BitbucketCloudConnection{
@@ -186,9 +145,8 @@ func TestBitbucketCloudCloneURLs(t *testing.T) {
 }
 
 func TestGithubCloneURLs(t *testing.T) {
-	repo := MakeGithubRepo()
-	metadata := repo.Metadata.(*github.Repository)
-	metadata.NameWithOwner = "foo/bar"
+	var repo github.Repository
+	repo.NameWithOwner = "foo/bar"
 
 	tests := []struct {
 		InstanceUrl string
@@ -210,9 +168,9 @@ func TestGithubCloneURLs(t *testing.T) {
 				GitURLType: test.GitURLType,
 			}
 
-			metadata.URL = test.RepoURL
+			repo.URL = test.RepoURL
 
-			got, err := githubCloneURL(repo, &cfg)
+			got, err := githubCloneURL(&repo, &cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -224,14 +182,12 @@ func TestGithubCloneURLs(t *testing.T) {
 }
 
 func TestGitlabCloneURLs(t *testing.T) {
-	repo := &Repo{
-		Metadata: &gitlab.Project{
-			ProjectCommon: gitlab.ProjectCommon{
-				ID:                1,
-				PathWithNamespace: "foo/bar",
-				SSHURLToRepo:      "git@gitlab.com:gitlab-org/gitaly.git",
-				HTTPURLToRepo:     "https://gitlab.com/gitlab-org/gitaly.git",
-			},
+	repo := &gitlab.Project{
+		ProjectCommon: gitlab.ProjectCommon{
+			ID:                1,
+			PathWithNamespace: "foo/bar",
+			SSHURLToRepo:      "git@gitlab.com:gitlab-org/gitaly.git",
+			HTTPURLToRepo:     "https://gitlab.com/gitlab-org/gitaly.git",
 		},
 	}
 
@@ -267,13 +223,11 @@ func TestPerforceCloneURL(t *testing.T) {
 		P4Passwd: "pa$$word",
 	}
 
-	repo := Repo{
-		Metadata: map[string]interface{}{
-			"depot": "//Sourcegraph",
-		},
+	repo := map[string]interface{}{
+		"depot": "//Sourcegraph",
 	}
 
-	got := perforceCloneURL(&repo, &cfg)
+	got := perforceCloneURL(repo, &cfg)
 	want := "perforce://admin:pa$$word@ssl:111.222.333.444:1666//Sourcegraph"
 	if got != want {
 		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
