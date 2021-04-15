@@ -1424,9 +1424,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- 							    - Look at the breakdown by query to determine if a specific query type is being affected
-								- Check for high CPU usage on zoekt-webserver
-								- Check Honeycomb for unusual activity
+- Look at the breakdown by query to determine if a specific query type is being affected
+- Check for high CPU usage on zoekt-webserver
+- Check Honeycomb for unusual activity
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1451,9 +1451,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- 							    - Look at the breakdown by query to determine if a specific query type is being affected
-								- Check for high CPU usage on zoekt-webserver
-								- Check Honeycomb for unusual activity
+- Look at the breakdown by query to determine if a specific query type is being affected
+- Check for high CPU usage on zoekt-webserver
+- Check Honeycomb for unusual activity
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1478,9 +1478,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- 							    - Look at the breakdown by query to determine if a specific query type is being affected
-								- Check for high CPU usage on zoekt-webserver
-								- Check Honeycomb for unusual activity
+- Look at the breakdown by query to determine if a specific query type is being affected
+- Check for high CPU usage on zoekt-webserver
+- Check Honeycomb for unusual activity
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1505,9 +1505,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- 							    - Look at the breakdown by query to determine if a specific query type is being affected
-								- Check for high CPU usage on zoekt-webserver
-								- Check Honeycomb for unusual activity
+- Look at the breakdown by query to determine if a specific query type is being affected
+- Check for high CPU usage on zoekt-webserver
+- Check Honeycomb for unusual activity
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json

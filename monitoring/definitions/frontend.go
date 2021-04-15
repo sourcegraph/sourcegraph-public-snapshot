@@ -759,9 +759,10 @@ func Frontend() *monitoring.Container {
 							Panel:       monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
 							Owner:       monitoring.ObservableOwnerSearch,
 							PossibleSolutions: `
-							    - Look at the breakdown by query to determine if a specific query type is being affected
+								- Look at the breakdown by query to determine if a specific query type is being affected
 								- Check for high CPU usage on zoekt-webserver
-								- Check Honeycomb for unusual activity`,
+								- Check Honeycomb for unusual activity
+							`,
 						},
 						{
 							Name:        "mean_sentinel_stream_latency_5m",
@@ -775,9 +776,10 @@ func Frontend() *monitoring.Container {
 							),
 							Owner: monitoring.ObservableOwnerSearch,
 							PossibleSolutions: `
-							    - Look at the breakdown by query to determine if a specific query type is being affected
+								- Look at the breakdown by query to determine if a specific query type is being affected
 								- Check for high CPU usage on zoekt-webserver
-								- Check Honeycomb for unusual activity`,
+								- Check Honeycomb for unusual activity
+							`,
 						},
 					},
 					{
@@ -790,9 +792,10 @@ func Frontend() *monitoring.Container {
 							Panel:       monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
 							Owner:       monitoring.ObservableOwnerSearch,
 							PossibleSolutions: `
-							    - Look at the breakdown by query to determine if a specific query type is being affected
+								- Look at the breakdown by query to determine if a specific query type is being affected
 								- Check for high CPU usage on zoekt-webserver
-								- Check Honeycomb for unusual activity`,
+								- Check Honeycomb for unusual activity
+							`,
 						},
 						{
 							Name:        "90th_percentile_sentinel_stream_latency_5m",
@@ -806,9 +809,10 @@ func Frontend() *monitoring.Container {
 							),
 							Owner: monitoring.ObservableOwnerSearch,
 							PossibleSolutions: `
-							    - Look at the breakdown by query to determine if a specific query type is being affected
+								- Look at the breakdown by query to determine if a specific query type is being affected
 								- Check for high CPU usage on zoekt-webserver
-								- Check Honeycomb for unusual activity`,
+								- Check Honeycomb for unusual activity
+							`,
 						},
 					},
 					{
@@ -825,7 +829,8 @@ func Frontend() *monitoring.Container {
 							),
 							Owner: monitoring.ObservableOwnerSearch,
 							Interpretation: `
-								- The mean search duration for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
+								- The mean search duration for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+							`,
 						},
 						{
 							Name:        "mean_sentinel_stream_latency_by_query_5m",
@@ -840,7 +845,8 @@ func Frontend() *monitoring.Container {
 							),
 							Owner: monitoring.ObservableOwnerSearch,
 							Interpretation: `
-								- The mean streaming search latency for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
+								- The mean streaming search latency for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+							`,
 						},
 					},
 					{

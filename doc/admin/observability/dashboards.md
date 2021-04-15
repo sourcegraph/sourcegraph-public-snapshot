@@ -752,7 +752,7 @@ This panel indicates 90th percentile sentinel stream latency over 5m.
 
 This panel indicates mean successful sentinel search duration by query over 5m.
 
-								- The mean search duration for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+- The mean search duration for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
 <sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
@@ -762,7 +762,7 @@ This panel indicates mean successful sentinel search duration by query over 5m.
 
 This panel indicates mean sentinel stream latency by query over 5m.
 
-								- The mean streaming search latency for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+- The mean streaming search latency for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
 <sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
