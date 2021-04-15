@@ -23,7 +23,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [How-to guides](code_intelligence/how-to/index.md)
   - [Explanations](code_intelligence/explanations/index.md)
   - [Reference](code_intelligence/references/index.md)
-- [Batch changes](batch_changes/index.md)
+- [Batch Changes](batch_changes/index.md)
   - [Quickstart](batch_changes/quickstart.md)
   - [Explanations](batch_changes/explanations/index.md)
   - [Tutorials](batch_changes/tutorials/index.md)
