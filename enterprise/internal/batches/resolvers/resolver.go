@@ -15,9 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -680,59 +680,59 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 	}
 
 	if args.State != nil {
-		state := *args.State
+		state := btypes.ChangesetState(*args.State)
 		if !state.Valid() {
 			return opts, false, errors.New("changeset state not valid")
 		}
 
 		switch state {
-		case batches.ChangesetStateOpen:
-			externalState := batches.ChangesetExternalStateOpen
-			publicationState := batches.ChangesetPublicationStatePublished
+		case btypes.ChangesetStateOpen:
+			externalState := btypes.ChangesetExternalStateOpen
+			publicationState := btypes.ChangesetPublicationStatePublished
 			opts.ExternalState = &externalState
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateCompleted}
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
-		case batches.ChangesetStateDraft:
-			externalState := batches.ChangesetExternalStateDraft
-			publicationState := batches.ChangesetPublicationStatePublished
+		case btypes.ChangesetStateDraft:
+			externalState := btypes.ChangesetExternalStateDraft
+			publicationState := btypes.ChangesetPublicationStatePublished
 			opts.ExternalState = &externalState
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateCompleted}
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
-		case batches.ChangesetStateClosed:
-			externalState := batches.ChangesetExternalStateClosed
-			publicationState := batches.ChangesetPublicationStatePublished
+		case btypes.ChangesetStateClosed:
+			externalState := btypes.ChangesetExternalStateClosed
+			publicationState := btypes.ChangesetPublicationStatePublished
 			opts.ExternalState = &externalState
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateCompleted}
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
-		case batches.ChangesetStateMerged:
-			externalState := batches.ChangesetExternalStateMerged
-			publicationState := batches.ChangesetPublicationStatePublished
+		case btypes.ChangesetStateMerged:
+			externalState := btypes.ChangesetExternalStateMerged
+			publicationState := btypes.ChangesetPublicationStatePublished
 			opts.ExternalState = &externalState
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateCompleted}
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
-		case batches.ChangesetStateDeleted:
-			externalState := batches.ChangesetExternalStateDeleted
-			publicationState := batches.ChangesetPublicationStatePublished
+		case btypes.ChangesetStateDeleted:
+			externalState := btypes.ChangesetExternalStateDeleted
+			publicationState := btypes.ChangesetPublicationStatePublished
 			opts.ExternalState = &externalState
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateCompleted}
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
-		case batches.ChangesetStateUnpublished:
-			publicationState := batches.ChangesetPublicationStateUnpublished
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateCompleted}
+		case btypes.ChangesetStateUnpublished:
+			publicationState := btypes.ChangesetPublicationStateUnpublished
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
-		case batches.ChangesetStateProcessing:
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateQueued, batches.ReconcilerStateProcessing}
-		case batches.ChangesetStateRetrying:
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateErrored}
-		case batches.ChangesetStateFailed:
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateFailed}
+		case btypes.ChangesetStateProcessing:
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateQueued, btypes.ReconcilerStateProcessing}
+		case btypes.ChangesetStateRetrying:
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateErrored}
+		case btypes.ChangesetStateFailed:
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateFailed}
 		default:
 			return opts, false, errors.Errorf("changeset state %q not supported in filtering", state)
 		}
 	}
 
 	if args.ReviewState != nil {
-		state := *args.ReviewState
+		state := btypes.ChangesetReviewState(*args.ReviewState)
 		if !state.Valid() {
 			return opts, false, errors.New("changeset review state not valid")
 		}
@@ -742,7 +742,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 		safe = false
 	}
 	if args.CheckState != nil {
-		state := *args.CheckState
+		state := btypes.ChangesetCheckState(*args.CheckState)
 		if !state.Valid() {
 			return opts, false, errors.New("changeset check state not valid")
 		}
@@ -752,7 +752,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 		safe = false
 	}
 	if args.OnlyPublishedByThisCampaign != nil || args.OnlyPublishedByThisBatchChange != nil {
-		published := batches.ChangesetPublicationStatePublished
+		published := btypes.ChangesetPublicationStatePublished
 
 		opts.OwnedByBatchChangeID = batchChangeID
 		opts.PublicationState = &published
@@ -962,7 +962,7 @@ func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externa
 	if err != nil {
 		return nil, err
 	}
-	cred := &store.SiteCredential{
+	cred := &btypes.SiteCredential{
 		ExternalServiceID:   externalServiceURL,
 		ExternalServiceType: externalServiceType,
 		Credential:          a,
@@ -1115,17 +1115,17 @@ func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.De
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func parseBatchChangeState(s *string) (batches.BatchChangeState, error) {
+func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 	if s == nil {
-		return batches.BatchChangeStateAny, nil
+		return btypes.BatchChangeStateAny, nil
 	}
 	switch *s {
 	case "OPEN":
-		return batches.BatchChangeStateOpen, nil
+		return btypes.BatchChangeStateOpen, nil
 	case "CLOSED":
-		return batches.BatchChangeStateClosed, nil
+		return btypes.BatchChangeStateClosed, nil
 	default:
-		return batches.BatchChangeStateAny, fmt.Errorf("unknown state %q", *s)
+		return btypes.BatchChangeStateAny, fmt.Errorf("unknown state %q", *s)
 	}
 }
 

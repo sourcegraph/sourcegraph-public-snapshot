@@ -1780,9 +1780,9 @@ A search result. Every type of search result, except FileMatch, must implement t
 """
 interface GenericSearchResultInterface {
     """
-    URL to an icon that is displayed with every search result.
+    DEPRECATED
     """
-    icon: String!
+    icon: String! @deprecated(reason: "Our API will not support returning icons in a future release")
     """
     A markdown string that is rendered prominently.
     """
@@ -2491,9 +2491,9 @@ A search result that is a Git commit.
 """
 type CommitSearchResult implements GenericSearchResultInterface {
     """
-    Base64 data uri to an icon.
+    DEPRECATED
     """
-    icon: String!
+    icon: String! @deprecated(reason: "Our API will not support returning icons in a future release")
     """
     A markdown string that is rendered prominently.
     """
@@ -2900,9 +2900,9 @@ type Repository implements Node & GenericSearchResultInterface {
     """
     viewerCanAdminister: Boolean!
     """
-    Base64 data uri to an icon.
+    DEPRECATED
     """
-    icon: String!
+    icon: String! @deprecated(reason: "Our API will not support returning icons in a future release")
     """
     A markdown string that is rendered prominently.
     """

@@ -183,7 +183,7 @@ func TestLoadExternalService(t *testing.T) {
 	}
 }
 
-func TestBatchesSource_GitserverPushConfig(t *testing.T) {
+func TestGitserverPushConfig(t *testing.T) {
 	t.Parallel()
 
 	oauthHTTPSAuthenticator := auth.OAuthBearerToken{Token: "bearer-test"}
@@ -387,16 +387,13 @@ func TestBatchesSource_GitserverPushConfig(t *testing.T) {
 	}
 	for _, tt := range tcs {
 		t.Run(tt.name, func(t *testing.T) {
-			src := &BatchesSource{
-				au: tt.authenticator,
-			}
 			repo := &types.Repo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ServiceType: tt.externalServiceType,
 				},
 				Sources: map[string]*types.SourceInfo{tt.cloneURL: {CloneURL: tt.cloneURL}},
 			}
-			havePushConfig, haveErr := src.GitserverPushConfig(repo)
+			havePushConfig, haveErr := gitserverPushConfig(repo, tt.authenticator)
 			if haveErr != tt.wantErr {
 				t.Fatalf("invalid error returned, want=%v have=%v", tt.wantErr, haveErr)
 			}

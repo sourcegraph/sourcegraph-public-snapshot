@@ -18,6 +18,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/conversion"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/validation"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 )
 
@@ -168,11 +169,9 @@ func testProject(ctx context.Context, indexer []string, project, name string) (p
 
 	log15.Debug("... \t Resource Usage:", "usage", result.usage)
 
-	output, err = validateDump(project)
-	if err != nil {
+	if err := validateDump(project); err != nil {
 		return projectResult{}, err
 	}
-
 	log15.Debug("... Validated dump.lsif")
 
 	bundle, err := readBundle(project)
@@ -225,14 +224,28 @@ func runIndexer(ctx context.Context, indexer []string, directory, name string) (
 	}, err
 }
 
-func validateDump(directory string) ([]byte, error) {
-	// TODO: Eventually this should use the package, rather than the installed module
-	//       but for now this will have to do.
+func validateDump(directory string) error {
+	dumpFile, err := os.Open(filepath.Join(directory, "dump.lsif"))
+	if err != nil {
+		return err
+	}
 
-	cmd := exec.Command("lsif-validate", "dump.lsif")
-	cmd.Dir = directory
+	ctx := validation.NewValidationContext()
+	validator := &validation.Validator{Context: ctx}
 
-	return cmd.CombinedOutput()
+	if err := validator.Validate(dumpFile); err != nil {
+		return err
+	}
+
+	if len(ctx.Errors) > 0 {
+		msg := fmt.Sprintf("Detected %d errors", len(ctx.Errors))
+		for i, err := range ctx.Errors {
+			msg += fmt.Sprintf("%d. %s", i, err)
+		}
+		return errors.New(msg)
+	}
+
+	return nil
 }
 
 func validateTestCases(directory string, bundle *semantic.GroupedBundleDataMaps) (testSuiteResult, error) {

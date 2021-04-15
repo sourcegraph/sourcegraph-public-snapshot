@@ -4,23 +4,23 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
 type CreateBatchSpecer interface {
-	CreateBatchSpec(ctx context.Context, batchSpec *batches.BatchSpec) error
+	CreateBatchSpec(ctx context.Context, batchSpec *btypes.BatchSpec) error
 }
 
-func CreateBatchSpec(t *testing.T, ctx context.Context, store CreateBatchSpecer, name string, userID int32) *batches.BatchSpec {
+func CreateBatchSpec(t *testing.T, ctx context.Context, store CreateBatchSpecer, name string, userID int32) *btypes.BatchSpec {
 	t.Helper()
 
-	s := &batches.BatchSpec{
+	s := &btypes.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
-		Spec: batches.BatchSpecFields{
+		Spec: btypes.BatchSpecFields{
 			Name:        name,
 			Description: "the description",
-			ChangesetTemplate: batches.ChangesetTemplate{
+			ChangesetTemplate: btypes.ChangesetTemplate{
 				Branch: "branch-name",
 			},
 		},

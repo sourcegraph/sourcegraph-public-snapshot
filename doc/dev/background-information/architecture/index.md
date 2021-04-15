@@ -46,9 +46,9 @@ If you want to learn more about code intelligence:
 - [Code intelligence developer documentation](../codeintel/index.md)
 - [Available indexers](../../../code_intelligence/references/indexers.md)
 
-## Batch changes
+## Batch Changes
 
-Batch changes (formerly known as [campaigns](../../../batch_changes/references/name-change.md)) create and manage large scale code changes across projects, repositories, and code hosts.
+Batch Changes (formerly known as [campaigns](../../../batch_changes/references/name-change.md)) creates and manages large scale code changes across projects, repositories, and code hosts.
 
 To create a batch change, users write a [batch spec](../../../batch_changes/references/batch_spec_yaml_reference.md), which is a YAML file that specifies the changes that should be performed, and the repositories that they should be performed upon — either through a Sourcegraph search, or by declaring them directly. This spec is then executed by [src-cli](#src-cli) on the user's machine (or in CI, or some other environment controlled by the user), which results in [changeset specs](../../../batch_changes/explanations/introduction_to_batch_changes.md#changeset-spec) that are sent to Sourcegraph. These changeset specs are then applied by Sourcegraph to create one or more changesets per repository. (A changeset is a pull request or merge request, depending on the code host.)
 
@@ -56,9 +56,9 @@ Once created, changesets are monitored by Sourcegraph, and their current review 
 
 If you want to learn more about batch changes:
 
-- [Batch changes product documentation](../../../batch_changes/index.md)
-- [Batch changes design principles](../../../batch_changes/explanations/batch_changes_design.md)
-- [Batch changes developer documentation](../batch_changes/index.md)
+- [Batch Changes product documentation](../../../batch_changes/index.md)
+- [Batch Changes design principles](../../../batch_changes/explanations/batch_changes_design.md)
+- [Batch Changes developer documentation](../batch_changes/index.md)
 - [How `src` executes a batch spec](../../../batch_changes/explanations/how_src_executes_a_batch_spec.md)
 
 ## Code insights

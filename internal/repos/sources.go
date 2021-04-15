@@ -102,36 +102,6 @@ type UserSource interface {
 	ValidateAuthenticator(ctx context.Context) error
 }
 
-// A DraftChangesetSource can create draft changesets and undraft them.
-type DraftChangesetSource interface {
-	// CreateDraftChangeset will create the Changeset on the source. If it already
-	// exists, *Changeset will be populated and the return value will be
-	// true.
-	CreateDraftChangeset(context.Context, *Changeset) (bool, error)
-	// UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
-	UndraftChangeset(context.Context, *Changeset) error
-}
-
-// A ChangesetSource can load the latest state of a list of Changesets.
-type ChangesetSource interface {
-	// LoadChangeset loads the given Changeset from the source and updates it.
-	// If the Changeset could not be found on the source, a ChangesetNotFoundError is returned.
-	LoadChangeset(context.Context, *Changeset) error
-	// CreateChangeset will create the Changeset on the source. If it already
-	// exists, *Changeset will be populated and the return value will be
-	// true.
-	CreateChangeset(context.Context, *Changeset) (bool, error)
-	// CloseChangeset will close the Changeset on the source, where "close"
-	// means the appropriate final state on the codehost (e.g. "declined" on
-	// Bitbucket Server).
-	CloseChangeset(context.Context, *Changeset) error
-	// UpdateChangeset can update Changesets.
-	UpdateChangeset(context.Context, *Changeset) error
-	// ReopenChangeset will reopen the Changeset on the source, if it's closed.
-	// If not, it's a noop.
-	ReopenChangeset(context.Context, *Changeset) error
-}
-
 type AffiliatedRepositorySource interface {
 	AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error)
 }
@@ -153,21 +123,6 @@ func newUnsupportedAuthenticatorError(source string, a auth.Authenticator) Unsup
 		source: source,
 	}
 }
-
-// ChangesetNotFoundError is returned by LoadChangeset if the changeset
-// could not be found on the codehost. This is only returned, if the
-// changeset is actually not found. Other not found errors, such as
-// repo not found should NOT raise this error, since it will cause
-// the changeset to be marked as deleted.
-type ChangesetNotFoundError struct {
-	Changeset *Changeset
-}
-
-func (e ChangesetNotFoundError) Error() string {
-	return fmt.Sprintf("Changeset with external ID %s not found", e.Changeset.Changeset.ExternalID)
-}
-
-func (e ChangesetNotFoundError) NonRetryable() bool { return true }
 
 // A SourceResult is sent by a Source over a channel for each repository it
 // yields when listing repositories

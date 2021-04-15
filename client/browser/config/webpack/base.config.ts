@@ -22,6 +22,22 @@ const babelLoader = {
 
 const extensionHostWorker = /main\.worker\.ts$/
 
+const getCSSLoaders = (...loaders: webpack.RuleSetUseItem[]): webpack.RuleSetUse => [
+    MiniCssExtractPlugin.loader,
+    ...loaders,
+    {
+        loader: 'postcss-loader',
+    },
+    {
+        loader: 'sass-loader',
+        options: {
+            sassOptions: {
+                includePaths: [path.resolve(__dirname, '../../../node_modules')],
+            },
+        },
+    },
+]
+
 export const config: webpack.Configuration = {
     entry: {
         // Browser extension
@@ -69,23 +85,22 @@ export const config: webpack.Configuration = {
             {
                 // SCSS rule for our own styles and Bootstrap
                 test: /\.(css|sass|scss)$/,
-                use: [
-                    MiniCssExtractPlugin.loader,
-                    {
-                        loader: 'css-loader',
-                    },
-                    {
-                        loader: 'postcss-loader',
-                    },
-                    {
-                        loader: 'sass-loader',
-                        options: {
-                            sassOptions: {
-                                includePaths: [path.resolve(__dirname, '../../../node_modules')],
-                            },
+                exclude: /\.module\.(sass|scss)$/,
+                use: getCSSLoaders({ loader: 'css-loader' }),
+            },
+            {
+                test: /\.(css|sass|scss)$/,
+                include: /\.module\.(sass|scss)$/,
+                use: getCSSLoaders({
+                    loader: 'css-loader',
+                    options: {
+                        sourceMap: false,
+                        localsConvention: 'camelCase',
+                        modules: {
+                            localIdentName: '[name]__[local]_[hash:base64:5]',
                         },
                     },
-                ],
+                }),
             },
             {
                 test: extensionHostWorker,

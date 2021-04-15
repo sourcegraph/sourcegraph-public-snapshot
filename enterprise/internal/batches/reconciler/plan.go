@@ -5,25 +5,25 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
-var operationPrecedence = map[batches.ReconcilerOperation]int{
-	batches.ReconcilerOperationPush:         0,
-	batches.ReconcilerOperationDetach:       0,
-	batches.ReconcilerOperationArchive:      0,
-	batches.ReconcilerOperationImport:       1,
-	batches.ReconcilerOperationPublish:      1,
-	batches.ReconcilerOperationPublishDraft: 1,
-	batches.ReconcilerOperationClose:        1,
-	batches.ReconcilerOperationReopen:       2,
-	batches.ReconcilerOperationUndraft:      3,
-	batches.ReconcilerOperationUpdate:       4,
-	batches.ReconcilerOperationSleep:        5,
-	batches.ReconcilerOperationSync:         6,
+var operationPrecedence = map[btypes.ReconcilerOperation]int{
+	btypes.ReconcilerOperationPush:         0,
+	btypes.ReconcilerOperationDetach:       0,
+	btypes.ReconcilerOperationArchive:      0,
+	btypes.ReconcilerOperationImport:       1,
+	btypes.ReconcilerOperationPublish:      1,
+	btypes.ReconcilerOperationPublishDraft: 1,
+	btypes.ReconcilerOperationClose:        1,
+	btypes.ReconcilerOperationReopen:       2,
+	btypes.ReconcilerOperationUndraft:      3,
+	btypes.ReconcilerOperationUpdate:       4,
+	btypes.ReconcilerOperationSleep:        5,
+	btypes.ReconcilerOperationSync:         6,
 }
 
-type Operations []batches.ReconcilerOperation
+type Operations []btypes.ReconcilerOperation
 
 func (ops Operations) IsNone() bool {
 	return len(ops) == 0
@@ -33,7 +33,7 @@ func (ops Operations) Equal(b Operations) bool {
 	if len(ops) != len(b) {
 		return false
 	}
-	bEntries := make(map[batches.ReconcilerOperation]struct{})
+	bEntries := make(map[btypes.ReconcilerOperation]struct{})
 	for _, e := range b {
 		bEntries[e] = struct{}{}
 	}
@@ -59,11 +59,11 @@ func (ops Operations) String() string {
 	return strings.Join(ss, " => ")
 }
 
-func (ops Operations) ExecutionOrder() []batches.ReconcilerOperation {
-	uniqueOps := []batches.ReconcilerOperation{}
+func (ops Operations) ExecutionOrder() []btypes.ReconcilerOperation {
+	uniqueOps := []btypes.ReconcilerOperation{}
 
 	// Make sure ops are unique.
-	seenOps := make(map[batches.ReconcilerOperation]struct{})
+	seenOps := make(map[btypes.ReconcilerOperation]struct{})
 	for _, op := range ops {
 		if _, ok := seenOps[op]; ok {
 			continue
@@ -84,10 +84,10 @@ func (ops Operations) ExecutionOrder() []batches.ReconcilerOperation {
 // to reconcile the current and the desired state of a changeset.
 type Plan struct {
 	// The changeset that is targeted in this plan.
-	Changeset *batches.Changeset
+	Changeset *btypes.Changeset
 
 	// The changeset spec that is used in this plan.
-	ChangesetSpec *batches.ChangesetSpec
+	ChangesetSpec *btypes.ChangesetSpec
 
 	// The operations that need to be done to reconcile the changeset.
 	Ops Operations
@@ -97,15 +97,15 @@ type Plan struct {
 	Delta *ChangesetSpecDelta
 }
 
-func (p *Plan) AddOp(op batches.ReconcilerOperation) { p.Ops = append(p.Ops, op) }
-func (p *Plan) SetOp(op batches.ReconcilerOperation) { p.Ops = Operations{op} }
+func (p *Plan) AddOp(op btypes.ReconcilerOperation) { p.Ops = append(p.Ops, op) }
+func (p *Plan) SetOp(op btypes.ReconcilerOperation) { p.Ops = Operations{op} }
 
 // DeterminePlan looks at the given changeset to determine what action the
 // reconciler should take.
 // It consumes the current and the previous changeset spec, if they exist. If
 // the current ChangesetSpec is not applied to a batch change, it returns an
 // error.
-func DeterminePlan(previousSpec, currentSpec *batches.ChangesetSpec, ch *batches.Changeset) (*Plan, error) {
+func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.Changeset) (*Plan, error) {
 	pl := &Plan{
 		Changeset:     ch,
 		ChangesetSpec: currentSpec,
@@ -130,15 +130,15 @@ func DeterminePlan(previousSpec, currentSpec *batches.ChangesetSpec, ch *batches
 		}
 	}
 	if wantDetach {
-		pl.SetOp(batches.ReconcilerOperationDetach)
+		pl.SetOp(btypes.ReconcilerOperationDetach)
 	}
 
 	if wantArchive {
-		pl.SetOp(batches.ReconcilerOperationArchive)
+		pl.SetOp(btypes.ReconcilerOperationArchive)
 	}
 
 	if ch.Closing {
-		pl.AddOp(batches.ReconcilerOperationClose)
+		pl.AddOp(btypes.ReconcilerOperationClose)
 		// Close is a final operation, nothing else should overwrite it.
 		return pl, nil
 	} else if wantDetachFromOwnerBatchChange || wantArchive || isArchived {
@@ -157,7 +157,7 @@ func DeterminePlan(previousSpec, currentSpec *batches.ChangesetSpec, ch *batches
 	if currentSpec == nil {
 		// If still more than one remains attached, we still want to import the changeset.
 		if ch.Unpublished() && isStillAttached {
-			pl.AddOp(batches.ReconcilerOperationImport)
+			pl.AddOp(btypes.ReconcilerOperationImport)
 		}
 		return pl, nil
 	}
@@ -169,34 +169,34 @@ func DeterminePlan(previousSpec, currentSpec *batches.ChangesetSpec, ch *batches
 	pl.Delta = delta
 
 	switch ch.PublicationState {
-	case batches.ChangesetPublicationStateUnpublished:
+	case btypes.ChangesetPublicationStateUnpublished:
 		if currentSpec.Spec.Published.True() {
-			pl.SetOp(batches.ReconcilerOperationPublish)
-			pl.AddOp(batches.ReconcilerOperationPush)
+			pl.SetOp(btypes.ReconcilerOperationPublish)
+			pl.AddOp(btypes.ReconcilerOperationPush)
 		} else if currentSpec.Spec.Published.Draft() && ch.SupportsDraft() {
 			// If configured to be opened as draft, and the changeset supports
 			// draft mode, publish as draft. Otherwise, take no action.
-			pl.SetOp(batches.ReconcilerOperationPublishDraft)
-			pl.AddOp(batches.ReconcilerOperationPush)
+			pl.SetOp(btypes.ReconcilerOperationPublishDraft)
+			pl.AddOp(btypes.ReconcilerOperationPush)
 		}
 
-	case batches.ChangesetPublicationStatePublished:
+	case btypes.ChangesetPublicationStatePublished:
 		// Don't take any actions for merged changesets.
-		if ch.ExternalState == batches.ChangesetExternalStateMerged {
+		if ch.ExternalState == btypes.ChangesetExternalStateMerged {
 			return pl, nil
 		}
 		if reopenAfterDetach(ch) {
-			pl.SetOp(batches.ReconcilerOperationReopen)
+			pl.SetOp(btypes.ReconcilerOperationReopen)
 		}
 
 		// Only do undraft, when the codehost supports draft changesets.
-		if delta.Undraft && batches.ExternalServiceSupports(ch.ExternalServiceType, batches.CodehostCapabilityDraftChangesets) {
-			pl.AddOp(batches.ReconcilerOperationUndraft)
+		if delta.Undraft && btypes.ExternalServiceSupports(ch.ExternalServiceType, btypes.CodehostCapabilityDraftChangesets) {
+			pl.AddOp(btypes.ReconcilerOperationUndraft)
 		}
 
 		if delta.AttributesChanged() {
 			if delta.NeedCommitUpdate() {
-				pl.AddOp(batches.ReconcilerOperationPush)
+				pl.AddOp(btypes.ReconcilerOperationPush)
 			}
 
 			// If we only need to update the diff and we didn't change the state of the changeset,
@@ -212,12 +212,12 @@ func DeterminePlan(previousSpec, currentSpec *batches.ChangesetSpec, ch *batches
 				// That's why we give them 3 seconds to update the changesets.
 				//
 				// Why 3 seconds? Well... 1 or 2 seem to be too short and 4 too long?
-				pl.AddOp(batches.ReconcilerOperationSleep)
-				pl.AddOp(batches.ReconcilerOperationSync)
+				pl.AddOp(btypes.ReconcilerOperationSleep)
+				pl.AddOp(btypes.ReconcilerOperationSync)
 			} else {
 				// Otherwise, we need to update the pull request on the code host or, if we
 				// need to reopen it, update it to make sure it has the newest state.
-				pl.AddOp(batches.ReconcilerOperationUpdate)
+				pl.AddOp(btypes.ReconcilerOperationUpdate)
 			}
 		}
 
@@ -228,8 +228,8 @@ func DeterminePlan(previousSpec, currentSpec *batches.ChangesetSpec, ch *batches
 	return pl, nil
 }
 
-func reopenAfterDetach(ch *batches.Changeset) bool {
-	closed := ch.ExternalState == batches.ChangesetExternalStateClosed
+func reopenAfterDetach(ch *btypes.Changeset) bool {
+	closed := ch.ExternalState == btypes.ChangesetExternalStateClosed
 	if !closed {
 		return false
 	}
@@ -249,7 +249,7 @@ func reopenAfterDetach(ch *batches.Changeset) bool {
 	return ch.AttachedTo(ch.OwnedByBatchChangeID)
 }
 
-func compareChangesetSpecs(previous, current *batches.ChangesetSpec) (*ChangesetSpecDelta, error) {
+func compareChangesetSpecs(previous, current *btypes.ChangesetSpec) (*ChangesetSpecDelta, error) {
 	delta := &ChangesetSpecDelta{}
 
 	if previous == nil {

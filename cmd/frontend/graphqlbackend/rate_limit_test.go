@@ -8,6 +8,7 @@ import (
 	"github.com/throttled/throttled/v2"
 	"github.com/throttled/throttled/v2/store/memstore"
 
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -568,7 +569,7 @@ func TestRatelimitFromConfig(t *testing.T) {
 			if !tc.enabled {
 				return
 			}
-			limited, result, err := rl.RateLimit(tc.uid, tc.isIP, tc.cost)
+			limited, result, err := rl.RateLimit(tc.uid, tc.cost, LimiterArgs{IsIP: tc.isIP})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -577,6 +578,97 @@ func TestRatelimitFromConfig(t *testing.T) {
 			}
 			if diff := cmp.Diff(tc.wantResult, result); diff != "" {
 				t.Fatal(diff)
+			}
+		})
+	}
+}
+
+func TestBasicLimiter(t *testing.T) {
+	tests := []struct {
+		name          string
+		limit         int
+		args          LimiterArgs
+		wantEnabled   bool
+		wantLimited   bool
+		wantRemaining int
+	}{
+		{
+			name:  "unknown, anonymous, other",
+			limit: 1,
+			args: LimiterArgs{
+				IsIP:          true,
+				Anonymous:     true,
+				RequestName:   "unknown",
+				RequestSource: trace.SourceOther,
+			},
+			wantEnabled:   true,
+			wantRemaining: 0,
+		},
+		{
+			name:  "unknown, NOT anonymous, other (doesn't count)",
+			limit: 1,
+			args: LimiterArgs{
+				IsIP:          true,
+				Anonymous:     false,
+				RequestName:   "unknown",
+				RequestSource: trace.SourceOther,
+			},
+			wantEnabled:   true,
+			wantRemaining: 1,
+		},
+		{
+			name:  "unknown, anonymous, browser (doesn't count)",
+			limit: 1,
+			args: LimiterArgs{
+				IsIP:          true,
+				Anonymous:     true,
+				RequestName:   "unknown",
+				RequestSource: trace.SourceBrowser,
+			},
+			wantEnabled:   true,
+			wantRemaining: 1,
+		},
+		{
+			name:  "disabled limiter",
+			limit: 0,
+			args: LimiterArgs{
+				IsIP:          true,
+				Anonymous:     true,
+				RequestName:   "unknown",
+				RequestSource: trace.SourceOther,
+			},
+			wantEnabled:   false,
+			wantRemaining: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			store, err := memstore.New(1)
+			if err != nil {
+				t.Fatal(err)
+			}
+			bl := BasicLimitWatcher{store: store}
+			bl.updateFromConfig(tt.limit)
+
+			limiter, enabled := bl.Get()
+
+			if got := enabled; got != tt.wantEnabled {
+				t.Fatalf("got %t, want %t", got, tt.wantEnabled)
+			}
+			if !enabled {
+				return
+			}
+
+			limited, results, err := limiter.RateLimit("foo", 1, tt.args)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := limited; got != tt.wantLimited {
+				t.Fatalf("got %t, want %t", got, tt.wantLimited)
+			}
+			if got := results.Remaining; got != tt.wantRemaining {
+				t.Fatalf("got %d, want %d", got, tt.wantRemaining)
 			}
 		})
 	}

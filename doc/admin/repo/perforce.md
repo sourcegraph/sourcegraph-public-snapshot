@@ -41,6 +41,11 @@ Use the `depots` field to configure which depots are mirrored/synchronized as Gi
 - [`p4.user`](perforce.md#p4-user)<br>The user to be authenticated for p4 CLI, and should be capable of performing `p4 ping`, `p4 login`, `p4 trust` and any p4 commands involved with `git p4 clone` and `git p4 sync` for listed `depots`. If repository permissions are mirrored, the user needs additional ability to perform the `p4 protects`, `p4 groups`, `p4 group`, `p4 users` commands (aka. "super" access level).
 - [`p4.passwd`](perforce.md#p4-passwd)<br>The ticket value to be used for authenticating the `p4.user`. It is recommended to create tickets of users in a group that never expire. Use the command `p4 -u <p4.user> login -p -a` to obtain a ticket value.
 
+Notable things about depot syncing:
+
+- It takes approximately one second to import one Perforce change into a Git commit, this translates to sync a Perforce depot with 1000 changes takes approximately 1000 seconds, which is about 17 minutes. It is possible to limit the maximum changes to import using `maxChanges` config option.
+- Rename of a Perforce depot will cause a re-import of the depot, including changing the depot on the Perforce server or the `repositoryPathPattern` config option.
+
 ### Repository permissions
 
 > NOTE: Permissions syncing for Perforce depots is available in Sourcegraph 3.26+.

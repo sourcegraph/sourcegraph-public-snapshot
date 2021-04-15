@@ -28,11 +28,13 @@ All notable changes to Sourcegraph are documented in this file.
   - A `repo:` filter is now required. This is due to an existing limitations where only 50 repositories can be searched at a time, so using a `repo:` filter makes sure the right code is being searched. Any existing code monitor without `repo:` in the trigger query will continue to work (with the limitation that not all repositories will be searched) but will require a `repo:` filter to be added when making any changes to it.
   - A `patternType` filter is no longer required. `patternType:literal` will be added to a code monitor query if not specified.
   - Added a new checklist UI to make it more intuitive to create code monitor trigger queries.
+- Deprecated the GraphQL `icon` field on `GenericSearchResultInterface`. It will be removed in a future release. [#20028](https://github.com/sourcegraph/sourcegraph/pull/20028/files)
 
 ### Fixed
 
 - A regression caused by search onboarding tour logic to never focus input in the search bar on the homepage. Input now focuses on the homepage if the search tour isn't in effect. [#19678](https://github.com/sourcegraph/sourcegraph/pull/19678)
 - New changes of a Perforce depot will now be reflected in `master` branch after the initial clone. [#19718](https://github.com/sourcegraph/sourcegraph/pull/19718)
+- Gitolite and Other type code host connection configuration can be correctly displayed. [#19976](https://github.com/sourcegraph/sourcegraph/pull/19976)
 
 ## 3.26.3
 

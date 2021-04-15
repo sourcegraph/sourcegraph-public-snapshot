@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -66,8 +66,8 @@ func TestChangesetResolver(t *testing.T) {
 		Repo:                repo.ID,
 		CurrentSpec:         unpublishedSpec.ID,
 		ExternalServiceType: "github",
-		PublicationState:    batches.ChangesetPublicationStateUnpublished,
-		ReconcilerState:     batches.ReconcilerStateCompleted,
+		PublicationState:    btypes.ChangesetPublicationStateUnpublished,
+		ReconcilerState:     btypes.ReconcilerStateCompleted,
 	})
 	erroredSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
 		User:          userID,
@@ -85,8 +85,8 @@ func TestChangesetResolver(t *testing.T) {
 		Repo:                repo.ID,
 		CurrentSpec:         erroredSpec.ID,
 		ExternalServiceType: "github",
-		PublicationState:    batches.ChangesetPublicationStateUnpublished,
-		ReconcilerState:     batches.ReconcilerStateErrored,
+		PublicationState:    btypes.ChangesetPublicationStateUnpublished,
+		ReconcilerState:     btypes.ReconcilerStateErrored,
 		FailureMessage:      "very bad error",
 	})
 
@@ -97,11 +97,11 @@ func TestChangesetResolver(t *testing.T) {
 		ExternalServiceType: "github",
 		ExternalID:          "12345",
 		ExternalBranch:      "open-pr",
-		ExternalState:       batches.ChangesetExternalStateOpen,
-		ExternalCheckState:  batches.ChangesetCheckStatePending,
-		ExternalReviewState: batches.ChangesetReviewStateChangesRequested,
-		PublicationState:    batches.ChangesetPublicationStatePublished,
-		ReconcilerState:     batches.ReconcilerStateCompleted,
+		ExternalState:       btypes.ChangesetExternalStateOpen,
+		ExternalCheckState:  btypes.ChangesetCheckStatePending,
+		ExternalReviewState: btypes.ChangesetReviewStateChangesRequested,
+		PublicationState:    btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:     btypes.ReconcilerStateCompleted,
 		Metadata: &github.PullRequest{
 			ID:          "12345",
 			Title:       "GitHub PR Title",
@@ -149,11 +149,11 @@ func TestChangesetResolver(t *testing.T) {
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "9876",
-		PublicationState:    batches.ChangesetPublicationStateUnpublished,
-		ReconcilerState:     batches.ReconcilerStateQueued,
+		PublicationState:    btypes.ChangesetPublicationStateUnpublished,
+		ReconcilerState:     btypes.ReconcilerStateQueued,
 	})
 
-	spec := &batches.BatchSpec{
+	spec := &btypes.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
@@ -161,7 +161,7 @@ func TestChangesetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	batchChange := &batches.BatchChange{
+	batchChange := &btypes.BatchChange{
 		Name:             "my-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
@@ -182,7 +182,7 @@ func TestChangesetResolver(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		changeset *batches.Changeset
+		changeset *btypes.Changeset
 		want      apitest.Changeset
 	}{
 		{
@@ -200,7 +200,7 @@ func TestChangesetResolver(t *testing.T) {
 					Typename:  "PreviewRepositoryComparison",
 					FileDiffs: testDiffGraphQL,
 				},
-				State:       string(batches.ChangesetStateUnpublished),
+				State:       string(btypes.ChangesetStateUnpublished),
 				CurrentSpec: apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(unpublishedSpec.RandID))},
 			},
 		},
@@ -219,7 +219,7 @@ func TestChangesetResolver(t *testing.T) {
 					Typename:  "PreviewRepositoryComparison",
 					FileDiffs: testDiffGraphQL,
 				},
-				State:       string(batches.ChangesetStateRetrying),
+				State:       string(btypes.ChangesetStateRetrying),
 				Error:       "very bad error",
 				CurrentSpec: apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(erroredSpec.RandID))},
 			},
@@ -241,7 +241,7 @@ func TestChangesetResolver(t *testing.T) {
 					ServiceKind: "GITHUB",
 					ServiceType: "github",
 				},
-				State: string(batches.ChangesetStateOpen),
+				State: string(btypes.ChangesetStateOpen),
 				Events: apitest.ChangesetEventConnection{
 					TotalCount: 2,
 				},
@@ -263,7 +263,7 @@ func TestChangesetResolver(t *testing.T) {
 				ExternalID: "9876",
 				Repository: apitest.Repository{Name: string(repo.Name)},
 				Labels:     []apitest.Label{},
-				State:      string(batches.ChangesetStateProcessing),
+				State:      string(btypes.ChangesetStateProcessing),
 			},
 		},
 	}

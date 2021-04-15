@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -22,26 +22,26 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			name:        "publish true",
 			currentSpec: ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStateUnpublished,
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
 			wantOperations: Operations{
-				batches.ReconcilerOperationPush,
-				batches.ReconcilerOperationPublish,
+				btypes.ReconcilerOperationPush,
+				btypes.ReconcilerOperationPublish,
 			},
 		},
 		{
 			name:        "publish as draft",
 			currentSpec: ct.TestSpecOpts{Published: "draft"},
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStateUnpublished,
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
-			wantOperations: Operations{batches.ReconcilerOperationPush, batches.ReconcilerOperationPublishDraft},
+			wantOperations: Operations{btypes.ReconcilerOperationPush, btypes.ReconcilerOperationPublishDraft},
 		},
 		{
 			name:        "publish false",
 			currentSpec: ct.TestSpecOpts{Published: false},
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStateUnpublished,
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
 			wantOperations: Operations{},
 		},
@@ -50,7 +50,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			currentSpec: ct.TestSpecOpts{Published: "draft"},
 			changeset: ct.TestChangesetOpts{
 				ExternalServiceType: extsvc.TypeBitbucketServer,
-				PublicationState:    batches.ChangesetPublicationStateUnpublished,
+				PublicationState:    btypes.ChangesetPublicationStateUnpublished,
 			},
 			// should be a noop
 			wantOperations: Operations{},
@@ -60,39 +60,39 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			previousSpec: ct.TestSpecOpts{Published: "draft"},
 			currentSpec:  ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 			},
-			wantOperations: Operations{batches.ReconcilerOperationUndraft},
+			wantOperations: Operations{btypes.ReconcilerOperationUndraft},
 		},
 		{
 			name:         "draft to publish true on unpublished changeset",
 			previousSpec: ct.TestSpecOpts{Published: "draft"},
 			currentSpec:  ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStateUnpublished,
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
-			wantOperations: Operations{batches.ReconcilerOperationPush, batches.ReconcilerOperationPublish},
+			wantOperations: Operations{btypes.ReconcilerOperationPush, btypes.ReconcilerOperationPublish},
 		},
 		{
 			name:         "title changed on published changeset",
 			previousSpec: ct.TestSpecOpts{Published: true, Title: "Before"},
 			currentSpec:  ct.TestSpecOpts{Published: true, Title: "After"},
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 			},
-			wantOperations: Operations{batches.ReconcilerOperationUpdate},
+			wantOperations: Operations{btypes.ReconcilerOperationUpdate},
 		},
 		{
 			name:         "commit diff changed on published changeset",
 			previousSpec: ct.TestSpecOpts{Published: true, CommitDiff: "testDiff"},
 			currentSpec:  ct.TestSpecOpts{Published: true, CommitDiff: "newTestDiff"},
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 			},
 			wantOperations: Operations{
-				batches.ReconcilerOperationPush,
-				batches.ReconcilerOperationSleep,
-				batches.ReconcilerOperationSync,
+				btypes.ReconcilerOperationPush,
+				btypes.ReconcilerOperationSleep,
+				btypes.ReconcilerOperationSync,
 			},
 		},
 		{
@@ -100,12 +100,12 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			previousSpec: ct.TestSpecOpts{Published: true, CommitMessage: "old message"},
 			currentSpec:  ct.TestSpecOpts{Published: true, CommitMessage: "new message"},
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
 			},
 			wantOperations: Operations{
-				batches.ReconcilerOperationPush,
-				batches.ReconcilerOperationSleep,
-				batches.ReconcilerOperationSync,
+				btypes.ReconcilerOperationPush,
+				btypes.ReconcilerOperationSleep,
+				btypes.ReconcilerOperationSync,
 			},
 		},
 		{
@@ -113,8 +113,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			previousSpec: ct.TestSpecOpts{Published: true, CommitDiff: "testDiff"},
 			currentSpec:  ct.TestSpecOpts{Published: true, CommitDiff: "newTestDiff"},
 			changeset: ct.TestChangesetOpts{
-				PublicationState: batches.ChangesetPublicationStatePublished,
-				ExternalState:    batches.ChangesetExternalStateMerged,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				ExternalState:    btypes.ChangesetExternalStateMerged,
 			},
 			// should be a noop
 			wantOperations: Operations{},
@@ -124,13 +124,13 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			previousSpec: ct.TestSpecOpts{Published: true},
 			currentSpec:  ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
-				PublicationState:   batches.ChangesetPublicationStatePublished,
-				ExternalState:      batches.ChangesetExternalStateClosed,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				ExternalState:      btypes.ChangesetExternalStateClosed,
 				OwnedByBatchChange: 1234,
-				BatchChanges:       []batches.BatchChangeAssoc{{BatchChangeID: 1234}},
+				BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: 1234}},
 			},
 			wantOperations: Operations{
-				batches.ReconcilerOperationReopen,
+				btypes.ReconcilerOperationReopen,
 			},
 		},
 		{
@@ -138,15 +138,15 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			previousSpec: ct.TestSpecOpts{Published: true},
 			currentSpec:  ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
-				PublicationState:   batches.ChangesetPublicationStatePublished,
-				ExternalState:      batches.ChangesetExternalStateOpen,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				ExternalState:      btypes.ChangesetExternalStateOpen,
 				OwnedByBatchChange: 1234,
-				BatchChanges:       []batches.BatchChangeAssoc{{BatchChangeID: 1234}},
+				BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: 1234}},
 				// Important bit:
 				Closing: true,
 			},
 			wantOperations: Operations{
-				batches.ReconcilerOperationClose,
+				btypes.ReconcilerOperationClose,
 			},
 		},
 		{
@@ -154,16 +154,16 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			previousSpec: ct.TestSpecOpts{Published: true},
 			currentSpec:  ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
-				PublicationState:   batches.ChangesetPublicationStatePublished,
-				ExternalState:      batches.ChangesetExternalStateClosed,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				ExternalState:      btypes.ChangesetExternalStateClosed,
 				OwnedByBatchChange: 1234,
-				BatchChanges:       []batches.BatchChangeAssoc{{BatchChangeID: 1234}},
+				BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: 1234}},
 				// Important bit:
 				Closing: true,
 			},
 			wantOperations: Operations{
 				// TODO: This should probably be a noop in the future
-				batches.ReconcilerOperationClose,
+				btypes.ReconcilerOperationClose,
 			},
 		},
 		{
@@ -171,13 +171,13 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			previousSpec: ct.TestSpecOpts{Published: true},
 			currentSpec:  ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
-				PublicationState:   batches.ChangesetPublicationStatePublished,
-				ExternalState:      batches.ChangesetExternalStateOpen,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				ExternalState:      btypes.ChangesetExternalStateOpen,
 				OwnedByBatchChange: 1234,
-				BatchChanges:       []batches.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}},
+				BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}},
 			},
 			wantOperations: Operations{
-				batches.ReconcilerOperationDetach,
+				btypes.ReconcilerOperationDetach,
 			},
 		},
 		{
@@ -185,10 +185,10 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			previousSpec: ct.TestSpecOpts{Published: true},
 			currentSpec:  ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
-				PublicationState:   batches.ChangesetPublicationStatePublished,
-				ExternalState:      batches.ChangesetExternalStateClosed,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				ExternalState:      btypes.ChangesetExternalStateClosed,
 				OwnedByBatchChange: 1234,
-				BatchChanges:       []batches.BatchChangeAssoc{},
+				BatchChanges:       []btypes.BatchChangeAssoc{},
 			},
 			wantOperations: Operations{
 				// Expect no operations.
@@ -198,46 +198,46 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			name:        "detaching a failed publish changeset",
 			currentSpec: ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
-				PublicationState:   batches.ChangesetPublicationStateUnpublished,
-				ReconcilerState:    batches.ReconcilerStateFailed,
+				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
+				ReconcilerState:    btypes.ReconcilerStateFailed,
 				OwnedByBatchChange: 1234,
-				BatchChanges:       []batches.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}},
+				BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}},
 			},
 			wantOperations: Operations{
-				batches.ReconcilerOperationDetach,
+				btypes.ReconcilerOperationDetach,
 			},
 		},
 		{
 			name: "detaching a failed importing changeset",
 			changeset: ct.TestChangesetOpts{
 				ExternalID:       "123",
-				PublicationState: batches.ChangesetPublicationStateUnpublished,
-				ReconcilerState:  batches.ReconcilerStateFailed,
-				BatchChanges:     []batches.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}},
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+				ReconcilerState:  btypes.ReconcilerStateFailed,
+				BatchChanges:     []btypes.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}},
 			},
 			wantOperations: Operations{
-				batches.ReconcilerOperationDetach,
+				btypes.ReconcilerOperationDetach,
 			},
 		},
 		{
 			name: "archiving",
 			changeset: ct.TestChangesetOpts{
-				PublicationState:   batches.ChangesetPublicationStatePublished,
-				ExternalState:      batches.ChangesetExternalStateOpen,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				ExternalState:      btypes.ChangesetExternalStateOpen,
 				OwnedByBatchChange: 1234,
-				BatchChanges:       []batches.BatchChangeAssoc{{BatchChangeID: 1234, Archive: true}},
+				BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: 1234, Archive: true}},
 			},
 			wantOperations: Operations{
-				batches.ReconcilerOperationArchive,
+				btypes.ReconcilerOperationArchive,
 			},
 		},
 		{
 			name: "archiving already-archived changeset",
 			changeset: ct.TestChangesetOpts{
-				PublicationState:   batches.ChangesetPublicationStatePublished,
-				ExternalState:      batches.ChangesetExternalStateClosed,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				ExternalState:      btypes.ChangesetExternalStateClosed,
 				OwnedByBatchChange: 1234,
-				BatchChanges: []batches.BatchChangeAssoc{{
+				BatchChanges: []btypes.BatchChangeAssoc{{
 					BatchChangeID: 1234, Archive: true, IsArchived: true,
 				}},
 			},
@@ -249,32 +249,32 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			name: "import changeset",
 			changeset: ct.TestChangesetOpts{
 				ExternalID:       "123",
-				PublicationState: batches.ChangesetPublicationStateUnpublished,
-				ReconcilerState:  batches.ReconcilerStateQueued,
-				BatchChanges:     []batches.BatchChangeAssoc{{BatchChangeID: 1234}},
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+				ReconcilerState:  btypes.ReconcilerStateQueued,
+				BatchChanges:     []btypes.BatchChangeAssoc{{BatchChangeID: 1234}},
 			},
 			wantOperations: Operations{
-				batches.ReconcilerOperationImport,
+				btypes.ReconcilerOperationImport,
 			},
 		},
 		{
 			name: "detaching an importing changeset but remains imported by another",
 			changeset: ct.TestChangesetOpts{
 				ExternalID:       "123",
-				PublicationState: batches.ChangesetPublicationStateUnpublished,
-				ReconcilerState:  batches.ReconcilerStateQueued,
-				BatchChanges:     []batches.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}, {BatchChangeID: 2345}},
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+				ReconcilerState:  btypes.ReconcilerStateQueued,
+				BatchChanges:     []btypes.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}, {BatchChangeID: 2345}},
 			},
 			wantOperations: Operations{
-				batches.ReconcilerOperationDetach,
-				batches.ReconcilerOperationImport,
+				btypes.ReconcilerOperationDetach,
+				btypes.ReconcilerOperationImport,
 			},
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			var previousSpec, currentSpec *batches.ChangesetSpec
+			var previousSpec, currentSpec *btypes.ChangesetSpec
 			if tc.previousSpec != (ct.TestSpecOpts{}) {
 				previousSpec = ct.BuildChangesetSpec(t, tc.previousSpec)
 			}

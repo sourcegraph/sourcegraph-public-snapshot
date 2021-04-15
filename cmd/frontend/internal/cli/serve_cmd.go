@@ -262,7 +262,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	if err != nil {
 		return err
 	}
-	rateLimitWatcher := graphqlbackend.NewRateLimiteWatcher(ratelimitStore)
+	rateLimitWatcher := graphqlbackend.NewBasicLimitWatcher(ratelimitStore)
 
 	server, err := makeExternalAPI(db, schema, enterprise, rateLimitWatcher)
 	if err != nil {
@@ -294,7 +294,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	return nil
 }
 
-func makeExternalAPI(db dbutil.DB, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter *graphqlbackend.RateLimitWatcher) (goroutine.BackgroundRoutine, error) {
+func makeExternalAPI(db dbutil.DB, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
 	// Create the external HTTP handler.
 	externalHandler, err := newExternalHTTPHandler(db, schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler, rateLimiter)
 	if err != nil {
@@ -316,7 +316,7 @@ func makeExternalAPI(db dbutil.DB, schema *graphql.Schema, enterprise enterprise
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, db dbutil.DB, enterprise enterprise.Services, rateLimiter *graphqlbackend.RateLimitWatcher) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(schema *graphql.Schema, db dbutil.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}

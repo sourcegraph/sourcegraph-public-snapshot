@@ -11,6 +11,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 )
 
 func LoginHandler(config *oauth2.Config, failure http.Handler) http.Handler {
@@ -43,6 +44,11 @@ func gitlabHandler(config *oauth2.Config, success, failure http.Handler) http.Ha
 		}
 		user, err := gitlabClient.GetUser(ctx, "")
 		err = validateResponse(user, err)
+		if err != nil {
+			// TODO: Prefer a more general purpose fix, potentially
+			// https://github.com/sourcegraph/sourcegraph/pull/20000
+			sentry.CaptureError(err, map[string]string{})
+		}
 		if err != nil {
 			ctx = gologin.WithError(ctx, err)
 			failure.ServeHTTP(w, req.WithContext(ctx))
