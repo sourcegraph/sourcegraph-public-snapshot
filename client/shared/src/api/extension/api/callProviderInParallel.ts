@@ -1,5 +1,5 @@
 import { concat, from, Observable, of } from 'rxjs'
-import { catchError, debounceTime, defaultIfEmpty, map, mergeMap, scan, switchMap } from 'rxjs/operators'
+import { catchError, defaultIfEmpty, map, mergeMap, scan, switchMap } from 'rxjs/operators'
 import sourcegraph from 'sourcegraph'
 
 import { asError, ErrorLike } from '../../../util/errors'
@@ -18,7 +18,6 @@ export function callViewProvidersInParallel<W extends ContributableViewContainer
     maxParallelQueries = DEFAULT_MAX_PARALLEL_QUERIES
 ): Observable<ViewProviderResult[]> {
     return providers.pipe(
-        debounceTime(0),
         switchMap(providers =>
             // Add first synthetic observable with null withing to trigger
             // all operators chain immediately in first time
@@ -53,6 +52,7 @@ export function callViewProvidersInParallel<W extends ContributableViewContainer
 
                         accumulator[index] = payload
 
+                        console.log(accumulator)
                         return accumulator
                     },
                     [null, ...providers.map(provider => ({ id: provider.id, view: undefined }))] as [
