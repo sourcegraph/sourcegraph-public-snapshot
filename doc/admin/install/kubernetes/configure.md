@@ -172,6 +172,7 @@ Add a network rule that allows ingress traffic to port 30080 (HTTP) on at least 
      ```
 
   - Get the EXTERNAL-IP address (will be ephemeral unless you [make it static](https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address#promote_ephemeral_ip)).
+     
      ```bash
      kubectl get node $NODE -o wide
      ```
@@ -184,7 +185,8 @@ Sourcegraph should now be accessible at `$EXTERNAL_ADDR:30080`, where `$EXTERNAL
 
 Network policy is a Kubernetes resource that defines how pods are allowed to communicate with each other and with
 other network endpoints. If the cluster administration requires an associated NetworkPolicy when doing an installation,
-then we recommend running Sourcegraph in a namespace (as described below in the [namespaced overlay](#namespaced-overlay)).
+then we recommend running Sourcegraph in a namespace (as described in our [Overlays docs](overlays.md) or below in the 
+[Using NetworkPolicy with Namespaced Overlay Example](#using-networkpolicy-with-namespaced-overlay)).
 You can then use the `namespaceSelector` to allow traffic between the Sourcegraph pods.
 When you create the namespace you need to give it a label so it can be used in a `matchLabels` clause.
 
@@ -235,9 +237,10 @@ spec:
           name: ns-sourcegraph
 ```
 
-### Using NetworkPolicy with Namespaced Overlay
+### Using NetworkPolicy with Namespaced Overlay Example
 
-1. Create a yaml file (`networkPolicy.yaml` for example) in the root directory:
+1. Create a yaml file (`networkPolicy.yaml` for example) in the root directory with the added namespace after 
+applying the [Namespaced Overlay](overlays.md#namespaced-overlay):
 
    ```yaml
    kind: NetworkPolicy
@@ -267,13 +270,13 @@ spec:
              name: ns-<EXAMPLE NAMESPACE>
    ```
 
-1. `kubectl apply -f networkPolicy.yaml` => networkpolicy.networking.k8s.io/np-sourcegraph created
+1. Run `kubectl apply -f networkPolicy.yaml` to apply changes from the `networkPolicy.yaml` file
 
-1. `kubectl apply -f generated-cluster/networking.k8s.io_v1beta1_ingress_sourcegraph-frontend.yaml` => ingress.networking.k8s.io/sourcegraph-frontend configured
+1. Run `kubectl apply -f generated-cluster/networking.k8s.io_v1beta1_ingress_sourcegraph-frontend.yaml`  to apply changes from the `networkPolicy.yaml` file
 
 1. Apply setting to all using `kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive`
 
-1. Run `kubectl get pods -A` to check for the namespaces and their status --it should now be up and running 🎉
+1. Run `kubectl get pods -A` to check for the namespaces and their status --it should now be up and running
 
 1. Access Sourcegraph on your local machine by temporarily making the frontend port accessible:
 
