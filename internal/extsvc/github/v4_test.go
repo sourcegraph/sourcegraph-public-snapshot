@@ -372,7 +372,7 @@ func TestCreatePullRequestComment(t *testing.T) {
 	defer save()
 
 	pr := &PullRequest{
-		// github.com/sourcegraph/automation-testing/pull/44
+		// https://github.com/sourcegraph/automation-testing/pull/44
 		ID: "MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5",
 	}
 
