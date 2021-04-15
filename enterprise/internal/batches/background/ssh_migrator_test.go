@@ -17,6 +17,8 @@ func TestSSHMigrator(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	user := ct.CreateTestUser(t, db, false)
 
+	ct.MockRSAKeygen(t)
+
 	cstore := store.New(db)
 
 	migrator := &sshMigrator{cstore}
