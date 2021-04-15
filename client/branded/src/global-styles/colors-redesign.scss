@@ -81,8 +81,8 @@ $redesign-teal: $oc-teal-7;
 :root .theme-redesign {
     --primary: #{$redesign-blue};
     --primary-hover: #{$redesign-indigo};
-    --secondary: #a305e1;
-    --secondary-2: #{$redesign-pink};
+    --brand-secondary: #a305e1;
+    --brand-secondary-2: #{$redesign-pink};
     --success: #{$redesign-green};
     --success-2: #afe0b8;
     --info: #{$redesign-cyan};
@@ -104,6 +104,9 @@ $redesign-teal: $oc-teal-7;
 .theme-light.theme-redesign,
 .theme-light .theme-redesign {
     --primary-2: #a3d0ff;
+    --secondary: #{$redesign-gray-04};
+    --secondary-2: #eef1f7;
+    --secondary-3: #c6cfe1;
     --success-3: #319e44;
     --info-2: #a8dbe2;
     --info-3: #0bb3ca;
@@ -141,6 +144,9 @@ $redesign-teal: $oc-teal-7;
 .theme-dark.theme-redesign,
 .theme-dark .theme-redesign {
     --primary-2: #0f59aa;
+    --secondary: #{$redesign-gray-08};
+    --secondary-2: #242936;
+    --secondary-3: #1f232e;
     --success-3: #237332;
     --info-2: #99cdd6;
     --info-3: #005766;
