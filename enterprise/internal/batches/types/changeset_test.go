@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config"
+	configtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config/testing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -613,9 +613,7 @@ func TestChangeset_ResetQueued(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			config.Reset()
-			conf.Mock(tc.config)
-			defer conf.Mock(nil)
+			configtesting.Mock(t, tc.config)
 
 			// Set up a funky changeset state so we verify that the fields that
 			// should be overwritten are.
