@@ -132,9 +132,9 @@ Sourcegraph Cloud currently supports two search contexts:
 - Your personal context, `context:@username`, which automatically includes all repositories you add to the Sourcegraph instance.
 - The global context, `context:global`, which includes all repositories on the Sourcegraph instance.
 
-Self-hosted Sourcegraph instances currently have this functionality disabled, because it is under active development. To enable on your instance use the following config in your user or organization settings.
+This feature is currently under active development for self-hosted Sourcegraph instances and is therefore disabled by default. If enabled on your instance with the below configuration, users will not see the search context functionality until at least one repository is added by that user (which is not yet available on private instances). 
 
-> NOTE: This will allow any user at your organization to add code from GitHub.com and GitLab.com to your instance using their personal token.
+To enable search contexts on your private instance, use the following config in your user or organization settings:
 
 ```json
 "experimentalFeatures": {  
