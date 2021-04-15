@@ -104,13 +104,23 @@ func (s *UserExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec 
 	}
 	s.ensureStore()
 
-	var encAuthData, keyID string
+	var (
+		encrypted, keyID string
+	)
 
 	if data.AuthData != nil {
-		encAuthData, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
+		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
 		if err != nil {
 			return 0, err
 		}
+		data.AuthData = rawMessagePtr(encrypted)
+	}
+	if data.Data != nil {
+		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.Data))
+		if err != nil {
+			return 0, err
+		}
+		data.Data = rawMessagePtr(encrypted)
 	}
 
 	err = s.Handle().DB().QueryRowContext(ctx, `
@@ -129,7 +139,7 @@ AND client_id = $3
 AND account_id = $4
 AND deleted_at IS NULL
 RETURNING user_id
-`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encAuthData, data.Data, keyID).Scan(&userID)
+`, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data, keyID).Scan(&userID)
 	if err == sql.ErrNoRows {
 		err = userExternalAccountNotFoundError{[]interface{}{spec}}
 	}
@@ -189,13 +199,21 @@ AND deleted_at IS NULL
 		return tx.insert(ctx, userID, spec, data)
 	}
 
-	var encAuthData, keyID string
+	var encrypted, keyID string
 
 	if data.AuthData != nil {
-		encAuthData, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
+		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
 		if err != nil {
 			return err
 		}
+		data.AuthData = rawMessagePtr(encrypted)
+	}
+	if data.Data != nil {
+		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.Data))
+		if err != nil {
+			return err
+		}
+		data.Data = rawMessagePtr(encrypted)
 	}
 
 	// Update the external account (it exists).
@@ -215,7 +233,7 @@ AND client_id = %s
 AND account_id = %s
 AND user_id = %s
 AND deleted_at IS NULL
-`, encAuthData, data.Data, keyID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID))
+`, data.AuthData, data.Data, keyID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, userID))
 	if err != nil {
 		return err
 	}
@@ -255,21 +273,31 @@ func (s *UserExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 }
 
 func (s *UserExternalAccountsStore) insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error {
-	var encAuthData, keyID string
-	var err error
+	var (
+		encrypted, keyID string
+		err              error
+	)
 
 	if data.AuthData != nil {
-		encAuthData, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
+		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.AuthData))
 		if err != nil {
 			return err
 		}
+		data.AuthData = rawMessagePtr(encrypted)
+	}
+	if data.Data != nil {
+		encrypted, keyID, err = MaybeEncrypt(ctx, s.getEncryptionKey(), string(*data.Data))
+		if err != nil {
+			return err
+		}
+		data.Data = rawMessagePtr(encrypted)
 	}
 
 	return s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.insert
 INSERT INTO user_external_accounts (user_id, service_type, service_id, client_id, account_id, auth_data, account_data, encryption_key_id)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encAuthData, data.Data, keyID))
+`, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data, keyID))
 }
 
 // TouchExpired sets the given user external account to be expired now.
@@ -409,10 +437,8 @@ func (s *UserExternalAccountsStore) listBySQL(ctx context.Context, querySuffix *
 			return nil, err
 		}
 
-		var encAuthData string
 		if authData.Valid {
-			encAuthData = authData.String
-			decryptedAuthData, err := MaybeDecrypt(ctx, s.getEncryptionKey(), encAuthData, keyID)
+			decryptedAuthData, err := MaybeDecrypt(ctx, s.getEncryptionKey(), authData.String, keyID)
 			if err != nil {
 				return nil, err
 			}
@@ -424,8 +450,15 @@ func (s *UserExternalAccountsStore) listBySQL(ctx context.Context, querySuffix *
 		}
 
 		if data.Valid {
-			jData := json.RawMessage(data.String)
-			acct.Data = &jData
+			decryptedData, err := MaybeDecrypt(ctx, s.getEncryptionKey(), data.String, keyID)
+			if err != nil {
+				return nil, err
+			}
+
+			if decryptedData != "" {
+				jData := json.RawMessage(decryptedData)
+				acct.Data = &jData
+			}
 		}
 
 		results = append(results, &acct)
@@ -503,4 +536,8 @@ func MaybeDecrypt(ctx context.Context, key encryption.Key, data, keyIdent string
 	}
 
 	return decrypted.Secret(), nil
+}
+func rawMessagePtr(s string) *json.RawMessage {
+	msg := json.RawMessage(s)
+	return &msg
 }

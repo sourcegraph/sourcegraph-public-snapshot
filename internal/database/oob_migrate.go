@@ -180,8 +180,8 @@ func (m *ExternalServiceConfigMigrator) listConfigsForUpdate(ctx context.Context
 	return services, nil
 }
 
-// ExternalServiceConfigMigrator is a background job that encrypts
-// external services config on startup.
+// ExternalAccountsMigrator is a background job that encrypts
+// external accounts data on startup.
 // It periodically waits until a keyring is configured to determine
 // how many services it must migrate.
 // Scheduling and progress report is delegated to the out of band
@@ -215,7 +215,7 @@ func (m *ExternalAccountsMigrator) Progress(ctx context.Context) (float64, error
 				CAST(c1.count AS float) / CAST(c2.count AS float)
 			END
 		FROM
-			(SELECT COUNT(*) AS count FROM user_external_accounts WHERE encryption_key_id != '' OR auth_data = '') c1,
+			(SELECT COUNT(*) AS count FROM user_external_accounts WHERE encryption_key_id != '' AND (account_data IS NOT NULL OR auth_data IS NOT NULL)) c1,
 			(SELECT COUNT(*) AS count FROM user_external_accounts) c2
 	`)))
 	return progress, err
@@ -246,32 +246,56 @@ func (m *ExternalAccountsMigrator) Up(ctx context.Context) (err error) {
 	defer func() { err = tx.Done(err) }()
 
 	store := ExternalAccountsWith(tx)
-	accounts, err := store.listBySQL(ctx, sqlf.Sprintf("WHERE encryption_key_id = '' AND auth_data != '' ORDER BY id ASC LIMIT %s FOR UPDATE SKIP LOCKED", m.BatchSize))
+	accounts, err := store.listBySQL(ctx, sqlf.Sprintf("WHERE encryption_key_id = '' AND (account_data IS NOT NULL OR auth_data IS NOT NULL) ORDER BY id ASC LIMIT %s FOR UPDATE SKIP LOCKED", m.BatchSize))
 	if err != nil {
 		return err
 	}
 
 	for _, acc := range accounts {
-		var encAuthData []byte
+		var (
+			encAuthData *string
+			encData     *string
+		)
 		if acc.AuthData != nil {
-			encAuthData, err = key.Encrypt(ctx, []byte(*acc.AuthData))
+			encrypted, err := key.Encrypt(ctx, *acc.AuthData)
 			if err != nil {
 				return err
 			}
 
 			// ensure encryption round-trip is valid
-			decrypted, err := key.Decrypt(ctx, encAuthData)
+			decrypted, err := key.Decrypt(ctx, encrypted)
 			if err != nil {
 				return err
 			}
 			if decrypted.Secret() != string(*acc.AuthData) {
 				return errors.New("invalid encryption round-trip")
 			}
+
+			encAuthData = strptr(string(encrypted))
+		}
+
+		if acc.Data != nil {
+			encrypted, err := key.Encrypt(ctx, *acc.Data)
+			if err != nil {
+				return err
+			}
+
+			// ensure encryption round-trip is valid
+			decrypted, err := key.Decrypt(ctx, encrypted)
+			if err != nil {
+				return err
+			}
+			if decrypted.Secret() != string(*acc.Data) {
+				return errors.New("invalid encryption round-trip")
+			}
+
+			encData = strptr(string(encrypted))
 		}
 
 		if err := tx.Exec(ctx, sqlf.Sprintf(
-			"UPDATE user_external_accounts SET auth_data = %s, encryption_key_id = %s WHERE id = %d",
-			string(encAuthData),
+			"UPDATE user_external_accounts SET auth_data = %s, account_data = %s, encryption_key_id = %s WHERE id = %d",
+			encAuthData,
+			encData,
 			keyIdent,
 			acc.ID,
 		)); err != nil {
