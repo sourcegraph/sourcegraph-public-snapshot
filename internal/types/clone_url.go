@@ -19,8 +19,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// RepoCloneURL builds a cloneURl for the given repo based on the
+// RepoCloneURL builds a cloneURL for the given repo based on the
 // external service configuration.
+// It authentication information is found in the configuration,
+// it returns an authenticated URL for the selected code host.
 func RepoCloneURL(kind, config string, repo *Repo) (string, error) {
 	parsed, err := extsvc.ParseConfig(kind, config)
 	if err != nil {
