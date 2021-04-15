@@ -5,6 +5,10 @@
     flex-direction: column;
     align-items: center;
 
+    // Prevent any internal z-index (heavily used by Bootstrap) from interfering
+    // with global React Portal UI such a Reach modals or Shepherd search onboarding tour.
+    isolation: isolate;
+
     &__app-router-container {
         flex: 1 1 auto;
         min-height: 0;

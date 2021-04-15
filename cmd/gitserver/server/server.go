@@ -1584,6 +1584,9 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 			s.repoUpdateLocksMu.Unlock()
 
 			err = s.doBackgroundRepoUpdate(repo)
+			if err != nil {
+				log15.Error("performing background repo update", "error", err)
+			}
 			ctx, cancel := s.serverContext()
 			defer cancel()
 			s.setLastErrorNonFatal(ctx, repo, err)

@@ -174,7 +174,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		// If we are over our limit for user added repos we abort the sync
 		totalAllowed := uint64(s.UserReposMaxPerSite)
 		if totalAllowed == 0 {
-			totalAllowed = uint64(ConfUserReposMaxPerSite())
+			totalAllowed = uint64(conf.UserReposMaxPerSite())
 		}
 		userAdded, err := tx.CountUserAddedRepos(ctx)
 		if err != nil {
@@ -189,7 +189,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		var sourcedRepoCount int64
 		maxAllowed := s.UserReposMaxPerUser
 		if maxAllowed == 0 {
-			maxAllowed = ConfUserReposMaxPerUser()
+			maxAllowed = conf.UserReposMaxPerUser()
 		}
 		onSourced = func(r *types.Repo) error {
 			newCount := atomic.AddInt64(&sourcedRepoCount, 1)
@@ -223,14 +223,13 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		log15.Warn("Non fatal error during sync", "externalService", svc.ID, "unauthorized", unauthorized, "accountSuspended", accountSuspended)
 	}
 
-	// Unless explicitly specified with the "all" setting or the owner of the service has the "AllowUserExternalServicePrivate" tag,
-	// user added external services should only sync public code.
-	if isUserOwned && conf.ExternalServiceUserMode() != conf.ExternalServiceModeAll {
-		ok, err := database.GlobalUsers.HasTag(ctx, svc.NamespaceUserID, database.TagAllowUserExternalServicePrivate)
-		if err != nil {
-			return errors.Wrap(err, "checking user tag")
-		}
-		if !ok {
+	// Unless our site config explicitly allows private code or the user has the
+	// "AllowUserExternalServicePrivate" tag, user added external services should
+	// only sync public code.
+	if isUserOwned {
+		if mode, err := database.UsersWith(tx).UserAllowedExternalServices(ctx, svc.NamespaceUserID); err != nil {
+			return errors.Wrap(err, "checking if user can add private code")
+		} else if mode != conf.ExternalServiceModeAll {
 			sourced = sourced.Filter(func(r *types.Repo) bool { return !r.Private })
 		}
 	}

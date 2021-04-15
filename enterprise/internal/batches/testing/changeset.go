@@ -8,8 +8,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
 
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -19,22 +19,22 @@ type TestChangesetOpts struct {
 	BatchChange  int64
 	CurrentSpec  int64
 	PreviousSpec int64
-	BatchChanges []batches.BatchChangeAssoc
+	BatchChanges []btypes.BatchChangeAssoc
 
 	ExternalServiceType string
 	ExternalID          string
 	ExternalBranch      string
-	ExternalState       batches.ChangesetExternalState
-	ExternalReviewState batches.ChangesetReviewState
-	ExternalCheckState  batches.ChangesetCheckState
+	ExternalState       btypes.ChangesetExternalState
+	ExternalReviewState btypes.ChangesetReviewState
+	ExternalCheckState  btypes.ChangesetCheckState
 
 	DiffStatAdded   int32
 	DiffStatChanged int32
 	DiffStatDeleted int32
 
-	PublicationState batches.ChangesetPublicationState
+	PublicationState btypes.ChangesetPublicationState
 
-	ReconcilerState batches.ReconcilerState
+	ReconcilerState btypes.ReconcilerState
 	FailureMessage  string
 	NumFailures     int64
 
@@ -48,7 +48,7 @@ type TestChangesetOpts struct {
 }
 
 type CreateChangeseter interface {
-	CreateChangeset(ctx context.Context, changeset *batches.Changeset) error
+	CreateChangeset(ctx context.Context, changeset *btypes.Changeset) error
 }
 
 func CreateChangeset(
@@ -56,7 +56,7 @@ func CreateChangeset(
 	ctx context.Context,
 	store CreateChangeseter,
 	opts TestChangesetOpts,
-) *batches.Changeset {
+) *btypes.Changeset {
 	t.Helper()
 
 	changeset := BuildChangeset(opts)
@@ -68,12 +68,12 @@ func CreateChangeset(
 	return changeset
 }
 
-func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
+func BuildChangeset(opts TestChangesetOpts) *btypes.Changeset {
 	if opts.ExternalServiceType == "" {
 		opts.ExternalServiceType = extsvc.TypeGitHub
 	}
 
-	changeset := &batches.Changeset{
+	changeset := &btypes.Changeset{
 		RepoID:         opts.Repo,
 		CurrentSpecID:  opts.CurrentSpec,
 		PreviousSpecID: opts.PreviousSpec,
@@ -106,7 +106,7 @@ func BuildChangeset(opts TestChangesetOpts) *batches.Changeset {
 	}
 
 	if opts.BatchChange != 0 {
-		changeset.BatchChanges = []batches.BatchChangeAssoc{
+		changeset.BatchChanges = []btypes.BatchChangeAssoc{
 			{BatchChangeID: opts.BatchChange, IsArchived: opts.IsArchived, Archive: opts.Archive},
 		}
 	}
@@ -125,9 +125,9 @@ type ChangesetAssertions struct {
 	CurrentSpec        int64
 	PreviousSpec       int64
 	OwnedByBatchChange int64
-	ReconcilerState    batches.ReconcilerState
-	PublicationState   batches.ChangesetPublicationState
-	ExternalState      batches.ChangesetExternalState
+	ReconcilerState    btypes.ReconcilerState
+	PublicationState   btypes.ChangesetPublicationState
+	ExternalState      btypes.ChangesetExternalState
 	ExternalID         string
 	ExternalBranch     string
 	DiffStat           *diff.Stat
@@ -148,7 +148,7 @@ type ChangesetAssertions struct {
 	ArchivedInOwnerBatchChange bool
 }
 
-func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) {
+func AssertChangeset(t *testing.T, c *btypes.Changeset, a ChangesetAssertions) {
 	t.Helper()
 
 	if c == nil {
@@ -321,10 +321,10 @@ func AssertChangeset(t *testing.T, c *batches.Changeset, a ChangesetAssertions) 
 }
 
 type GetChangesetByIDer interface {
-	GetChangesetByID(ctx context.Context, id int64) (*batches.Changeset, error)
+	GetChangesetByID(ctx context.Context, id int64) (*btypes.Changeset, error)
 }
 
-func ReloadAndAssertChangeset(t *testing.T, ctx context.Context, s GetChangesetByIDer, c *batches.Changeset, a ChangesetAssertions) (reloaded *batches.Changeset) {
+func ReloadAndAssertChangeset(t *testing.T, ctx context.Context, s GetChangesetByIDer, c *btypes.Changeset, a ChangesetAssertions) (reloaded *btypes.Changeset) {
 	t.Helper()
 
 	reloaded, err := s.GetChangesetByID(ctx, c.ID)
@@ -338,17 +338,17 @@ func ReloadAndAssertChangeset(t *testing.T, ctx context.Context, s GetChangesetB
 }
 
 type UpdateChangeseter interface {
-	UpdateChangeset(ctx context.Context, changeset *batches.Changeset) error
+	UpdateChangeset(ctx context.Context, changeset *btypes.Changeset) error
 }
 
-func SetChangesetPublished(t *testing.T, ctx context.Context, s UpdateChangeseter, c *batches.Changeset, externalID, externalBranch string) {
+func SetChangesetPublished(t *testing.T, ctx context.Context, s UpdateChangeseter, c *btypes.Changeset, externalID, externalBranch string) {
 	t.Helper()
 
 	c.ExternalBranch = externalBranch
 	c.ExternalID = externalID
-	c.PublicationState = batches.ChangesetPublicationStatePublished
-	c.ReconcilerState = batches.ReconcilerStateCompleted
-	c.ExternalState = batches.ChangesetExternalStateOpen
+	c.PublicationState = btypes.ChangesetPublicationStatePublished
+	c.ReconcilerState = btypes.ReconcilerStateCompleted
+	c.ExternalState = btypes.ChangesetExternalStateOpen
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatalf("failed to update changeset: %s", err)
@@ -357,10 +357,10 @@ func SetChangesetPublished(t *testing.T, ctx context.Context, s UpdateChangesete
 
 var FailedChangesetFailureMessage = "Failed test"
 
-func SetChangesetFailed(t *testing.T, ctx context.Context, s UpdateChangeseter, c *batches.Changeset) {
+func SetChangesetFailed(t *testing.T, ctx context.Context, s UpdateChangeseter, c *btypes.Changeset) {
 	t.Helper()
 
-	c.ReconcilerState = batches.ReconcilerStateFailed
+	c.ReconcilerState = btypes.ReconcilerStateFailed
 	c.FailureMessage = &FailedChangesetFailureMessage
 	c.NumFailures = 5
 
@@ -369,15 +369,15 @@ func SetChangesetFailed(t *testing.T, ctx context.Context, s UpdateChangeseter, 
 	}
 }
 
-func SetChangesetClosed(t *testing.T, ctx context.Context, s UpdateChangeseter, c *batches.Changeset) {
+func SetChangesetClosed(t *testing.T, ctx context.Context, s UpdateChangeseter, c *btypes.Changeset) {
 	t.Helper()
 
-	c.PublicationState = batches.ChangesetPublicationStatePublished
-	c.ReconcilerState = batches.ReconcilerStateCompleted
+	c.PublicationState = btypes.ChangesetPublicationStatePublished
+	c.ReconcilerState = btypes.ReconcilerStateCompleted
 	c.Closing = false
-	c.ExternalState = batches.ChangesetExternalStateClosed
+	c.ExternalState = btypes.ChangesetExternalStateClosed
 
-	assocs := make([]batches.BatchChangeAssoc, 0)
+	assocs := make([]btypes.BatchChangeAssoc, 0)
 	for _, assoc := range c.BatchChanges {
 		if !assoc.Detach {
 			if assoc.Archive {

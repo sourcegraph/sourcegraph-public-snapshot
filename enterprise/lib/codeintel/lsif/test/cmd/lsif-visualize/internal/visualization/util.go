@@ -1,8 +1,8 @@
 package visualization
 
 import (
-	reader "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
-	reader2 "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/test/internal/reader"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/internal/reader"
+	protocolReader "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
 )
 
 //
@@ -11,7 +11,7 @@ import (
 // forEachInV calls the given function on each sink vertex adjacent to the given
 // edge. If any invocation returns false, iteration of the adjacent vertices will
 // not complete and false will be returned immediately.
-func forEachInV(edge reader.Edge, f func(inV int) bool) bool {
+func forEachInV(edge protocolReader.Edge, f func(inV int) bool) bool {
 	if edge.InV != 0 {
 		if !f(edge.InV) {
 			return false
@@ -26,9 +26,9 @@ func forEachInV(edge reader.Edge, f func(inV int) bool) bool {
 }
 
 // buildForwardGraph returns a map from OutV to InV/InVs properties across all edges of the graph.
-func buildForwardGraph(stasher *reader2.Stasher) map[int][]int {
+func buildForwardGraph(stasher *reader.Stasher) map[int][]int {
 	edges := map[int][]int{}
-	_ = stasher.Edges(func(lineContext reader2.LineContext, edge reader.Edge) bool {
+	_ = stasher.Edges(func(lineContext reader.LineContext, edge protocolReader.Edge) bool {
 		// Note: skip contains relationships because it ruins the visualizer
 		// We need to replace this with a smarter graph output that won't go up/down
 		// contains relationships: if we have a range, we have ALL ranges in that

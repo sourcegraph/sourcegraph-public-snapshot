@@ -14,8 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -44,7 +44,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	adminID := ct.CreateTestUser(t, db, true).ID
 	orgID := ct.InsertTestOrg(t, db, orgname)
 
-	spec, err := batches.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
+	spec, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changesetSpec, err := batches.NewChangesetSpecFromRaw(ct.NewRawChangesetSpecGitBranch(repoID, "deadb33f"))
+	changesetSpec, err := btypes.NewChangesetSpecFromRaw(ct.NewRawChangesetSpecGitBranch(repoID, "deadb33f"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	matchingBatchChange := &batches.BatchChange{
+	matchingBatchChange := &btypes.BatchChange{
 		Name:             spec.Spec.Name,
 		NamespaceOrgID:   orgID,
 		InitialApplierID: userID,
@@ -156,7 +156,7 @@ func TestBatchSpecResolver(t *testing.T) {
 
 	// Now create an updated changeset spec and check that we get a superseding
 	// batch spec.
-	sup, err := batches.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
+	sup, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}

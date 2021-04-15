@@ -8,7 +8,7 @@ import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
 import UserIcon from 'mdi-react/UserIcon'
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
+import React, { useState, useMemo, useCallback, useEffect, useContext } from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { Observable, EMPTY, from } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
@@ -42,7 +42,7 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
-import { getCombinedViews } from '../../insights/backend'
+import { InsightsApiContext, InsightsViewGrid } from '../../insights'
 import { Settings } from '../../schema/settings.schema'
 import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../../search'
 import { basename } from '../../util/path'
@@ -52,7 +52,6 @@ import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { TreeEntriesSection } from './TreeEntriesSection'
-import { ViewGrid } from './ViewGrid'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -263,6 +262,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
             [props.extensionsController]
         )
     )
+
+    const { getCombinedViews } = useContext(InsightsApiContext)
     const views = useObservable(
         useMemo(
             () =>
@@ -287,7 +288,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                           )
                       )
                     : EMPTY,
-            [showCodeInsights, workspaceUri, uri, props.extensionsController]
+            [getCombinedViews, showCodeInsights, workspaceUri, uri, props.extensionsController]
         )
     )
 
@@ -419,7 +420,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         )}
                     </header>
                     {views && (
-                        <ViewGrid
+                        <InsightsViewGrid
                             {...props}
                             className="tree-page__section"
                             views={views}

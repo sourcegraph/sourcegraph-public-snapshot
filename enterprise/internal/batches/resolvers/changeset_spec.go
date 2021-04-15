@@ -9,9 +9,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func marshalChangesetSpecRandID(id string) graphql.ID {
@@ -28,12 +29,12 @@ var _ graphqlbackend.ChangesetSpecResolver = &changesetSpecResolver{}
 type changesetSpecResolver struct {
 	store *store.Store
 
-	changesetSpec *batches.ChangesetSpec
+	changesetSpec *btypes.ChangesetSpec
 
 	repo *types.Repo
 }
 
-func NewChangesetSpecResolver(ctx context.Context, store *store.Store, changesetSpec *batches.ChangesetSpec) (*changesetSpecResolver, error) {
+func NewChangesetSpecResolver(ctx context.Context, store *store.Store, changesetSpec *btypes.ChangesetSpec) (*changesetSpecResolver, error) {
 	resolver := &changesetSpecResolver{
 		store:         store,
 		changesetSpec: changesetSpec,
@@ -56,7 +57,7 @@ func NewChangesetSpecResolver(ctx context.Context, store *store.Store, changeset
 	return resolver, nil
 }
 
-func NewChangesetSpecResolverWithRepo(store *store.Store, repo *types.Repo, changesetSpec *batches.ChangesetSpec) *changesetSpecResolver {
+func NewChangesetSpecResolverWithRepo(store *store.Store, repo *types.Repo, changesetSpec *btypes.ChangesetSpec) *changesetSpecResolver {
 	return &changesetSpecResolver{
 		store:         store,
 		repo:          repo,
@@ -70,8 +71,8 @@ func (r *changesetSpecResolver) ID() graphql.ID {
 	return marshalChangesetSpecRandID(r.changesetSpec.RandID)
 }
 
-func (r *changesetSpecResolver) Type() batches.ChangesetSpecDescriptionType {
-	return r.changesetSpec.Spec.Type()
+func (r *changesetSpecResolver) Type() string {
+	return string(r.changesetSpec.Spec.Type())
 }
 
 func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend.ChangesetDescription, error) {
@@ -119,7 +120,7 @@ var _ graphqlbackend.ChangesetDescription = &changesetDescriptionResolver{}
 type changesetDescriptionResolver struct {
 	store        *store.Store
 	repoResolver *graphqlbackend.RepositoryResolver
-	desc         *batches.ChangesetSpecDescription
+	desc         *btypes.ChangesetSpecDescription
 	diffStat     diff.Stat
 }
 

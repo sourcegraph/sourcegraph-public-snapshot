@@ -1,56 +1,90 @@
+# These queries are currently enabled by default on sourcegraph.com
 groups:
-    - name: global_same_line_regex
+    - name: monitoring_queries
       queries:
-          - query: func rtoorg patterntype:regexp
-          - query: func bool bar patterntype:regexp
-          - query: func bool patterntype:regexp
-          - query: int32 error patterntype:regexp
-          - query: func return patterntype:regexp
-          - query: config override patterntype:regexp
+          # Regex search
+          - name: regex_small # ~2 results
+            query: >
+              patterntype:regexp
+              se[arc]{3}hZoekt
 
-    - name: no_scope_content_medium_literal
-      queries:
-          - query: lang:java kms count:1000
-          - query: cfssl lang:go -file:vendor/ count:1000
-          - query: setDetails( count:1000
-          - query: gcc_build count:1000
-          - query: NTG6 count:1000
-          - query: daimler count:1000 type:path
-          - query: context.WithValue count:1000
-          - query: streaming
-          - query: converter
-          - query: httpclient
+          - name: regex_medium # ~50 results
+            query: >
+              patterntype:regexp
+              can_handle_hl_color\b
 
-    - name: no_scope_content_small_literal
-      queries:
-          - query: --exclude-task=test
-          - query: '"adding helm values to the environment"'
-          - query: AuthorizationCodeRequestParameters
-          - query: CommThread(LPVOID lang:c++
-          - query: RemoteTaskAction
-          - query: THNN_CudaSpatialConvolutionMM_updateOutput
-          - query: Xml_StackOverflow lang:c#
-          - query: ale_go_gopls
-          - query: bazel:gcc_build
-          - query: beaconDataUpdate
-          - query: binlog_event.cpp
-          - query: corpshare
-          - query: init_file_metadata
-          - query: k8s-controller-custom-resource
-          - query: lang:java aws kms decrypt
-          - query: mysql_global_status_slow_queries
+          - name: regex_large # 500+ results
+            query: >
+              patterntype:regexp
+              try_init
 
-    - name: repo_file_scope_content_small_literal
-      queries:
-          - query: repo:^github\.com/ElemeFE/element$ file:^src/directives repeat-click
-          - query: repo:^github\.com/apache/incubator-tvm$ file:^python/tvm/autotvm ApplyGraphBest
-          - query: repo:^github\.com/cockroachdb/cockroach-gen$ file:^pkg/ccl/importccl/read_import_csv\.go p.record
-          - query: repo:^github\.com/domoticz/domoticz$ file:^main/WebServer\.cpp gettransfer
-          - query: repo:^github\.com/ianstormtaylor/slate$ file:^packages/slate-react/src getfragment
-          - query: repo:^github\.com/kubernetes/kubernetes$ file:^cluster/gce/gci Installing
-          - query: repo:^github\.com/pichillilorenzo/flutter_inappwebview$ file:^lib/src/in_app_webview_controller\.dart addJavaScriptHandler
-          - query: repo:^github\.com/testdrivenio/fastapi-crud-async$ file:^src/app async
+          - name: regex_two_sameline # ~200 results
+            query: >
+                patterntype:regexp
+                matt senses
 
-    - name: structural_search
-      queries:
-          - query: repogroup:go-gh-100 language:go -file:test -file:vendor -file:Godeps strings.Index(..., ...) > -1 or strings.Index(..., ...) >= 0 or strings.Index(..., ...) != -1
+          - name: regex_three_sameline # ~70 results
+            query: >
+                patterntype:regexp
+                mk tim hike
+
+          - name: regex_repo_scope_small # ~3 results
+            query: >
+                patterntype:regexp
+                repo:^github\.com/sgtest/slate$
+                getfragment
+
+          - name: regex_repo_scope_large # ~600 results
+            query: >
+                patterntype:regexp
+                repo:^github\.com/sgtest/flutter_inappwebview$
+                count:800
+                add\w+
+
+          - name: regex_file_scope # ~2 results
+            query: >
+                patterntype:regexp
+                repo:^github\.com/sgtest/kubernetes$
+                file:^cluster/gce/gci
+                Installing
+
+          # Structural search
+          - name: structural_repo_scope_small # ~15 results
+            query: >
+                patterntype:structural
+                repo:^github\.com/sgtest/fastapi-crud-async$
+                file:^src/app
+                async def :[1](...)
+
+          - name: structural_multi_repo_small # ~51 results
+            query: >
+                patterntype:structural
+                repo:^github\.com/sourcegraph/
+                strings.ToUpper(...)
+
+          # Literal search
+          - name: literal_small # ~5 results
+            query: >
+                patterntype:literal
+                --exclude-task=test
+
+          - name: literal_large # 1000+ results
+            query: >
+                patterntype:literal
+                lang:go
+                -file:vendor/
+                count:1000
+                cfssl
+
+          - name: literal_repo_scope # ~11 results
+            query: >
+                patterntype:literal
+                repo:^github\.com/sgtest/element$
+                repeat-click
+
+          - name: literal_file_scope # ~10 results
+            query: >
+                patterntype:literal
+                repo:^github\.com/sgtest/cockroach-gen$
+                file:^pkg/ccl/importccl/read_import_csv\.go
+                p.record

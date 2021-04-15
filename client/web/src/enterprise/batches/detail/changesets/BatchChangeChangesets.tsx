@@ -1,7 +1,7 @@
 import * as H from 'history'
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { Subject } from 'rxjs'
-import { repeatWhen, delay, withLatestFrom, map, filter } from 'rxjs/operators'
+import { repeatWhen, delay, withLatestFrom, map, filter, tap } from 'rxjs/operators'
 
 import { createHoverifier } from '@sourcegraph/codeintellify'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -28,7 +28,7 @@ import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
 } from '../backend'
 
-import { BatchChangeChangesetsHeader, BatchChangeChangesetsHeaderWithCheckboxes } from './BatchChangeChangesetsHeader'
+import { BatchChangeChangesetsHeader, BatchChangeChangesetsHeaderProps } from './BatchChangeChangesetsHeader'
 import { ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
 import { ChangesetNodeProps, ChangesetNode } from './ChangesetNode'
 import { ChangesetSelectRow } from './ChangesetSelectRow'
@@ -74,6 +74,8 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     onlyArchived,
     enableSelect,
 }) => {
+    const [availableChangesets, setAvailableChangesets] = useState<Set<string>>(new Set())
+
     const [selectedChangesets, setSelectedChangesets] = useState<Set<string>>(new Set())
     const onSelect = useCallback(
         (id: string, selected: boolean): void => {
@@ -90,8 +92,23 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
         [setSelectedChangesets]
     )
 
-    const deselectAll = useCallback((): void => setSelectedChangesets(new Set()), [setSelectedChangesets])
     const changesetSelected = useCallback((id: string): boolean => selectedChangesets.has(id), [selectedChangesets])
+    const [allSelected, setAllSelected] = useState<boolean>(false)
+
+    const deselectAll = useCallback((): void => setSelectedChangesets(new Set()), [setSelectedChangesets])
+    const selectAll = useCallback((): void => setSelectedChangesets(availableChangesets), [
+        availableChangesets,
+        setSelectedChangesets,
+    ])
+
+    const toggleSelectAll = useCallback((): void => {
+        setAllSelected(previous => !previous)
+        if (allSelected) {
+            deselectAll()
+        } else {
+            selectAll()
+        }
+    }, [setAllSelected, allSelected, selectAll, deselectAll])
 
     const [isSubmittingSelected, setIsSubmittingSelected] = useState<boolean | Error>(false)
     const onSubmitSelected = useCallback(async () => {
@@ -109,11 +126,12 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
         try {
             await detachChangesets(batchChangeID, [...selectedChangesets])
             deselectAll()
+            setAllSelected(false)
             telemetryService.logViewEvent('BatchChangeDetailsPageDetachArchivedChangesets')
         } catch (error) {
             setIsSubmittingSelected(asError(error))
         }
-    }, [batchChangeID, selectedChangesets, setIsSubmittingSelected, deselectAll, telemetryService])
+    }, [batchChangeID, selectedChangesets, setIsSubmittingSelected, deselectAll, setAllSelected, telemetryService])
 
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
@@ -121,6 +139,16 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
         reviewState: null,
         search: null,
     })
+
+    const setChangesetFiltersAndDeselectAll = useCallback(
+        (filters: ChangesetFilters) => {
+            deselectAll()
+            setAllSelected(false)
+            setChangesetFilters(filters)
+        },
+        [deselectAll, setChangesetFilters]
+    )
+
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArguments) =>
             queryChangesets({
@@ -133,7 +161,9 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                 onlyPublishedByThisBatchChange: null,
                 search: changesetFilters.search,
                 onlyArchived: !!onlyArchived,
-            }).pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
+            })
+                .pipe(tap(data => setAvailableChangesets(new Set(data.nodes.map(node => node.id)))))
+                .pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
         [
             batchChangeID,
             changesetFilters.state,
@@ -201,19 +231,22 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
 
     return (
         <>
-            {!hideFilters && selectedChangesets.size === 0 && (
-                <ChangesetFilterRow history={history} location={location} onFiltersChange={setChangesetFilters} />
+            {!hideFilters && (
+                <ChangesetFilterRow
+                    history={history}
+                    location={location}
+                    onFiltersChange={enableSelect ? setChangesetFiltersAndDeselectAll : setChangesetFilters}
+                />
             )}
-            {viewerCanAdminister && selectedChangesets.size > 0 && (
+            {viewerCanAdminister && enableSelect && availableChangesets.size > 0 && (
                 <ChangesetSelectRow
                     selected={selectedChangesets}
                     onSubmit={onSubmitSelected}
-                    deselectAll={deselectAll}
                     isSubmitting={isSubmittingSelected}
                 />
             )}
             <div className="list-group position-relative" ref={nextContainerElement}>
-                <FilteredConnection<ChangesetFields, Omit<ChangesetNodeProps, 'node'>>
+                <FilteredConnection<ChangesetFields, Omit<ChangesetNodeProps, 'node'>, BatchChangeChangesetsHeaderProps>
                     className="mt-2"
                     nodeComponent={ChangesetNode}
                     nodeComponentProps={{
@@ -242,9 +275,13 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                             ? 'batch-change-changesets__grid--with-checkboxes mb-3'
                             : 'batch-change-changesets__grid mb-3'
                     }
-                    headComponent={
-                        enableSelect ? BatchChangeChangesetsHeaderWithCheckboxes : BatchChangeChangesetsHeader
-                    }
+                    headComponent={BatchChangeChangesetsHeader}
+                    headComponentProps={{
+                        enableSelect,
+                        allSelected,
+                        toggleSelectAll,
+                        disabled: !(viewerCanAdminister && !isSubmittingSelected),
+                    }}
                     // Only show the empty element, if no filters are selected.
                     emptyElement={
                         filtersSelected(changesetFilters) ? (

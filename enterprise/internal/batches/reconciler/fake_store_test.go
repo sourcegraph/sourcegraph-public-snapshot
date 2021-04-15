@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
 type mockMissingErr struct {
@@ -17,10 +17,10 @@ func (e mockMissingErr) Error() string {
 }
 
 type FakeStore struct {
-	GetBatchChangeMock func(context.Context, store.GetBatchChangeOpts) (*batches.BatchChange, error)
+	GetBatchChangeMock func(context.Context, store.GetBatchChangeOpts) (*btypes.BatchChange, error)
 }
 
-func (fs *FakeStore) GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*batches.BatchChange, error) {
+func (fs *FakeStore) GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
 	if fs.GetBatchChangeMock != nil {
 		return fs.GetBatchChangeMock(ctx, opts)
 	}

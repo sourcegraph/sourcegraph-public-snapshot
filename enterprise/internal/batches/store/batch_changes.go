@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -48,7 +48,7 @@ var batchChangeInsertColumns = []*sqlf.Query{
 }
 
 // CreateBatchChange creates the given batch change.
-func (s *Store) CreateBatchChange(ctx context.Context, c *batches.BatchChange) error {
+func (s *Store) CreateBatchChange(ctx context.Context, c *btypes.BatchChange) error {
 	q := s.createBatchChangeQuery(c)
 
 	return s.query(ctx, q, func(sc scanner) (err error) {
@@ -63,7 +63,7 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
-func (s *Store) createBatchChangeQuery(c *batches.BatchChange) *sqlf.Query {
+func (s *Store) createBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
@@ -91,7 +91,7 @@ func (s *Store) createBatchChangeQuery(c *batches.BatchChange) *sqlf.Query {
 }
 
 // UpdateBatchChange updates the given bach change.
-func (s *Store) UpdateBatchChange(ctx context.Context, c *batches.BatchChange) error {
+func (s *Store) UpdateBatchChange(ctx context.Context, c *btypes.BatchChange) error {
 	q := s.updateBatchChangeQuery(c)
 
 	return s.query(ctx, q, func(sc scanner) (err error) { return scanBatchChange(c, sc) })
@@ -105,7 +105,7 @@ WHERE id = %s
 RETURNING %s
 `
 
-func (s *Store) updateBatchChangeQuery(c *batches.BatchChange) *sqlf.Query {
+func (s *Store) updateBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 	c.UpdatedAt = s.now()
 
 	return sqlf.Sprintf(
@@ -141,7 +141,7 @@ DELETE FROM batch_changes WHERE id = %s
 // counting batches.
 type CountBatchChangesOpts struct {
 	ChangesetID int64
-	State       batches.BatchChangeState
+	State       btypes.BatchChangeState
 
 	InitialApplierID int32
 
@@ -178,9 +178,9 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts) *sqlf.Query {
 	}
 
 	switch opts.State {
-	case batches.BatchChangeStateOpen:
+	case btypes.BatchChangeStateOpen:
 		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL"))
-	case batches.BatchChangeStateClosed:
+	case btypes.BatchChangeStateClosed:
 		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
 	}
 
@@ -215,10 +215,10 @@ type GetBatchChangeOpts struct {
 }
 
 // GetBatchChange gets a batch change matching the given options.
-func (s *Store) GetBatchChange(ctx context.Context, opts GetBatchChangeOpts) (*batches.BatchChange, error) {
+func (s *Store) GetBatchChange(ctx context.Context, opts GetBatchChangeOpts) (*btypes.BatchChange, error) {
 	q := getBatchChangeQuery(&opts)
 
-	var c batches.BatchChange
+	var c btypes.BatchChange
 	err := s.query(ctx, q, func(sc scanner) error {
 		return scanBatchChange(&c, sc)
 	})
@@ -326,7 +326,7 @@ type ListBatchChangesOpts struct {
 	LimitOpts
 	ChangesetID int64
 	Cursor      int64
-	State       batches.BatchChangeState
+	State       btypes.BatchChangeState
 
 	InitialApplierID int32
 
@@ -335,12 +335,12 @@ type ListBatchChangesOpts struct {
 }
 
 // ListBatchChanges lists batch changes with the given filters.
-func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts) (cs []*batches.BatchChange, next int64, err error) {
+func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts) (cs []*btypes.BatchChange, next int64, err error) {
 	q := listBatchChangesQuery(&opts)
 
-	cs = make([]*batches.BatchChange, 0, opts.DBLimit())
+	cs = make([]*btypes.BatchChange, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) error {
-		var c batches.BatchChange
+		var c btypes.BatchChange
 		if err := scanBatchChange(&c, sc); err != nil {
 			return err
 		}
@@ -384,9 +384,9 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts) *sqlf.Query {
 	}
 
 	switch opts.State {
-	case batches.BatchChangeStateOpen:
+	case btypes.BatchChangeStateOpen:
 		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL"))
-	case batches.BatchChangeStateClosed:
+	case btypes.BatchChangeStateClosed:
 		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
 	}
 
@@ -414,7 +414,7 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts) *sqlf.Query {
 	)
 }
 
-func scanBatchChange(c *batches.BatchChange, s scanner) error {
+func scanBatchChange(c *btypes.BatchChange, s scanner) error {
 	return s.Scan(
 		&c.ID,
 		&c.Name,

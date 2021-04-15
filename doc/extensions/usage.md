@@ -42,4 +42,4 @@ On a self-hosted Sourcegraph instance, add the same JSON above to global setting
 
 The Sourcegraph-maintained Sourcegraph extension [git-extras](https://sourcegraph.com/extensions/sourcegraph/git-extras) and all search-based code intelligence extensions are enabled by default. 
 
-
+We enable these extensions by default because they are essentially native product features that make use of the [Sourcegraph extension API](authoring/index.md), because they are maintained by the Sourcegraph team, and because they don't connect to any outside servers (neither Sourcegraph-owned nor third-party-owned). 

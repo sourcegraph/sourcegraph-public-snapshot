@@ -10,7 +10,6 @@ const { add } = storiesOf('web/batches/ChangesetSelectRow', module).addDecorator
 ))
 
 const onSubmit = (): void => {}
-const deselectAll = (): void => {}
 
 add('all states', () => (
     <EnterpriseWebStory>
@@ -19,7 +18,6 @@ add('all states', () => (
                 <ChangesetSelectRow
                     {...props}
                     onSubmit={onSubmit}
-                    deselectAll={deselectAll}
                     selected={new Set(['id-1', 'id-2'])}
                     isSubmitting={false}
                 />
@@ -27,7 +25,6 @@ add('all states', () => (
                 <ChangesetSelectRow
                     {...props}
                     onSubmit={onSubmit}
-                    deselectAll={deselectAll}
                     selected={new Set(['id-1', 'id-2'])}
                     isSubmitting={true}
                 />
@@ -35,7 +32,6 @@ add('all states', () => (
                 <ChangesetSelectRow
                     {...props}
                     onSubmit={onSubmit}
-                    deselectAll={deselectAll}
                     selected={new Set(['id-1', 'id-2'])}
                     isSubmitting={new Error('something went wrong with the backend :(')}
                 />

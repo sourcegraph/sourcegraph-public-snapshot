@@ -683,6 +683,14 @@ describe('Search', () => {
                 () => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown') !== null
             )
 
+        const isSearchContextHighlightTourStepVisible = () =>
+            driver.page.evaluate(
+                () =>
+                    document.querySelector<HTMLDivElement>(
+                        'div[data-shepherd-step-id="search-contexts-start-tour"]'
+                    ) !== null
+            )
+
         const isSearchContextDropdownDisabled = () =>
             driver.page.evaluate(
                 () => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown')?.disabled
@@ -789,6 +797,21 @@ describe('Search', () => {
                 () => document.querySelectorAll('.test-converted-context').length
             )
             expect(convertedContexts).toBe(versionContexts.length)
+        })
+
+        test('highlight tour step should be visible with empty local storage', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            expect(await isSearchContextHighlightTourStepVisible()).toBeTruthy()
+        })
+
+        test('highlight tour step should not be visible if already seen', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
+            await driver.page.evaluate(() =>
+                localStorage.setItem('has-seen-search-contexts-dropdown-highlight-tour-step', 'true')
+            )
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            expect(await isSearchContextHighlightTourStepVisible()).toBeFalsy()
         })
     })
 })
