@@ -32,7 +32,7 @@ import (
 )
 
 func TestNullIDResilience(t *testing.T) {
-	mockRSAKeygen(t)
+	ct.MockRSAKeygen(t)
 
 	db := dbtesting.GetDB(t)
 	sr := New(store.New(db))
@@ -832,7 +832,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		t.Skip()
 	}
 
-	mockRSAKeygen(t)
+	ct.MockRSAKeygen(t)
 
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
@@ -962,7 +962,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 		t.Skip()
 	}
 
-	mockRSAKeygen(t)
+	ct.MockRSAKeygen(t)
 
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
