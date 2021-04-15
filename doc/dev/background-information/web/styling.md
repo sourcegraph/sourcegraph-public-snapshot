@@ -56,7 +56,26 @@ A component may need styles that are common to all environments, like internal l
 We write those styles in SCSS stylesheets that are imported into the host environment.
 In some cases these can be overridden by passing another class name for that element.
 
-To avoid naming conflicts we structure these files using the [BEM convention](http://getbem.com/naming/) (Block - Element - Modifier).
+#### CSS Modules
+
+[CSS modules](https://github.com/css-modules/css-modules) is the **preferred** way to avoid name conflicts in CSS classes.
+To use this approach, colocate a SCSS stylesheet with the React component and use the `.module.scss.` suffix in a file name.
+
+Example:
+
+- `PageSelector.tsx` component would have a `PageSelector.module.scss` file next to it.
+- Use `yarn watch-generate` to generate a Typescript type declaration file: `PageSelector.module.scss.d.ts` in the same folder.
+- After that, it's possible to type-safely use class names from the CSS module.
+
+```tsx
+import styles from './PageSelector.module.scss'
+
+<button className={styles.pageSelectorButton} />
+```
+
+#### BEM convention
+
+The older approach is the [BEM convention](http://getbem.com/naming/) (Block - Element - Modifier).
 The _block_ name is always the React component name, _elements_ and _modifiers_ are used as specified in BEM.
 A _block_ must not be referenced in any other React component than the one with the matching name.
 
@@ -64,7 +83,7 @@ Example:
 
 ```scss
 .some-component {
-    // .. styles ...
+    // ... styles ...
 
     &__element {
         // ... styles ...

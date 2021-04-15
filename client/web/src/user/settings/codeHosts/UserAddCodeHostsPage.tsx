@@ -195,6 +195,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                               key={kind}
                               type="button"
                               onClick={() => {
+                                  eventLogger.log('UserAttemptConnectCodeHost', { kind })
                                   setOauthRequestFor(kind)
                                   ifNotNavigated(() => {
                                       setOauthRequestFor(undefined)

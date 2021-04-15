@@ -18,7 +18,7 @@ import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringNavItem } from '../code-monitoring/CodeMonitoringNavItem'
 import { LinkWithIcon } from '../components/LinkWithIcon'
 import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
-import { InsightsNavItem } from '../insights/InsightsNavLink'
+import { InsightsNavItem } from '../insights/components/InsightsNavLink/InsightsNavLink'
 import {
     KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,

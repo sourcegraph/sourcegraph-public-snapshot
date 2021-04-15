@@ -4,7 +4,7 @@ import React from 'react'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringNavItem } from '../code-monitoring/CodeMonitoringNavItem'
 import { WebStory } from '../components/WebStory'
-import { InsightsNavItem } from '../insights/InsightsNavLink'
+import { InsightsNavItem } from '../insights/components/InsightsNavLink/InsightsNavLink'
 
 import { MenuNavItem } from './MenuNavItem'
 

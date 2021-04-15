@@ -9,16 +9,16 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { ErrorAlert } from '../../components/alerts'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
-import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../../insights/backend'
-import { ViewContent, ViewContentProps } from '../../views/ViewContent'
+import { ErrorAlert } from '../../../components/alerts'
+import { ErrorBoundary } from '../../../components/ErrorBoundary'
+import { ViewContent, ViewContentProps } from '../../../views/ViewContent'
+import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../../core/backend/types'
 
 // TODO use a method to get width that also triggers when file explorer is closed
 // (WidthProvider only listens to window resize events)
 const ResponsiveGridLayout = WidthProvider(Responsive)
 
-export interface ViewGridProps
+export interface InsightsViewGridProps
     extends Omit<ViewContentProps, 'viewContent' | 'viewID' | 'containerClassName'>,
         TelemetryProps {
     views: ViewInsightProviderResult[]
@@ -97,7 +97,7 @@ const getInsightViewIcon = (source: ViewInsightProviderSourceType): MdiReactIcon
     }
 }
 
-export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
+export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = props => {
     const onResizeOrDragStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item) => {
             try {
@@ -110,7 +110,7 @@ export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
     )
 
     return (
-        <div className={classNames(props.className, 'view-grid')}>
+        <div className={classNames(props.className, 'insights-view-grid')}>
             <ResponsiveGridLayout
                 breakpoints={breakpoints}
                 layouts={viewsToReactGridLayouts(props.views)}
@@ -123,7 +123,7 @@ export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
                 onDragStart={onResizeOrDragStart}
             >
                 {props.views.map(({ id, view, source }) => (
-                    <div key={id} className={classNames('card view-grid__item')}>
+                    <div key={id} className={classNames('card insights-view-grid__item')}>
                         <ErrorBoundary
                             location={props.location}
                             extraContext={
@@ -156,14 +156,16 @@ export const ViewGrid: React.FunctionComponent<ViewGridProps> = props => {
                                 </>
                             ) : (
                                 <>
-                                    <h3 className="view-grid__view-title">{view.title}</h3>
-                                    {view.subtitle && <div className="view-grid__view-subtitle">{view.subtitle}</div>}
+                                    <h3 className="insights-view-grid__view-title">{view.title}</h3>
+                                    {view.subtitle && (
+                                        <div className="insights-view-grid__view-subtitle">{view.subtitle}</div>
+                                    )}
                                     <ViewContent
                                         {...props}
                                         settingsCascade={props.settingsCascade}
                                         viewContent={view.content}
                                         viewID={id}
-                                        containerClassName="view-grid__item"
+                                        containerClassName="insights-view-grid__item"
                                     />
                                 </>
                             )}

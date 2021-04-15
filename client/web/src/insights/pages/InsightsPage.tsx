@@ -1,37 +1,29 @@
 import GearIcon from 'mdi-react/GearIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useCallback, useEffect, useMemo } from 'react'
-import { from } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import React, { useCallback, useEffect, useMemo, useContext } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { FeedbackBadge } from '../components/FeedbackBadge'
-import { Page } from '../components/Page'
-import { PageHeader } from '../components/PageHeader'
-import { ViewGrid, ViewGridProps } from '../repo/tree/ViewGrid'
+import { FeedbackBadge } from '../../components/FeedbackBadge'
+import { Page } from '../../components/Page'
+import { PageHeader } from '../../components/PageHeader'
+import { InsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../components'
+import { InsightsApiContext } from '../core/backend/api-provider'
 
-import { getCombinedViews } from './backend'
-import { InsightsIcon } from './icon'
-
-interface InsightsPageProps extends ExtensionsControllerProps, Omit<ViewGridProps, 'views'>, TelemetryProps {}
+interface InsightsPageProps extends ExtensionsControllerProps, Omit<InsightsViewGridProps, 'views'>, TelemetryProps {}
 
 export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
+    const { getInsightCombinedViews } = useContext(InsightsApiContext)
+
     const views = useObservable(
-        useMemo(
-            () =>
-                getCombinedViews(() =>
-                    from(props.extensionsController.extHostAPI).pipe(
-                        switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightsViews({})))
-                    )
-                ),
-            [props.extensionsController]
-        )
+        useMemo(() => getInsightCombinedViews(props.extensionsController?.extHostAPI), [
+            props.extensionsController,
+            getInsightCombinedViews,
+        ])
     )
 
     useEffect(() => {
@@ -73,7 +65,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
                         <LoadingSpinner className="my-4" />
                     </div>
                 ) : (
-                    <ViewGrid {...props} views={views} />
+                    <InsightsViewGrid {...props} views={views} />
                 )}
             </Page>
         </div>
