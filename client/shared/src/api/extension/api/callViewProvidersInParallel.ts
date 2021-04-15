@@ -18,7 +18,7 @@ interface NullishViewProviderResult extends Omit<ViewProviderResult, 'view'> {
      * we have to mark this empty stream with default null value for view field.
      * Because of that we can't use just ViewProviderResult type.
      * */
-    view: sourcegraph.View | undefined | ErrorLike | null;
+    view: sourcegraph.View | undefined | ErrorLike | null
 }
 
 /**
@@ -80,7 +80,10 @@ export function callViewProvidersInParallel<W extends ContributableViewContainer
                         accumulator[index - 1] = payload
 
                         return accumulator
-                    }, [...providers.map(provider => ({ id: provider.id, view: undefined }))] as NullishViewProviderResult[]
+                    },
+                    [
+                        ...providers.map(provider => ({ id: provider.id, view: undefined })),
+                    ] as NullishViewProviderResult[]
                 )
             )
         ),
