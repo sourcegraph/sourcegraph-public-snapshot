@@ -26,6 +26,7 @@ import { FlatExtensionHostAPI } from '../contract'
 import { ContributableViewContainer, TextDocumentPositionParameters } from '../protocol'
 import { ExtensionViewer, ViewerId, ViewerWithPartialModel } from '../viewerTypes'
 
+import { callViewProvidersInParallel } from './api/callProviderInParallel'
 import { ExtensionCodeEditor } from './api/codeEditor'
 import { providerResultToObservable, ProxySubscribable, proxySubscribable } from './api/common'
 import { computeContext, Context, ContributionScope } from './api/context/context'
@@ -43,7 +44,6 @@ import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
 import { updateContext } from './extensionHost'
 import { ExtensionHostState } from './extensionHostState'
 import { addWithRollback } from './util'
-import { callViewProvidersInParallel } from './api/callProviderInParallel';
 
 export function createExtensionHostAPI(state: ExtensionHostState): FlatExtensionHostAPI {
     const getTextDocument = (uri: string): ExtensionDocument => {
