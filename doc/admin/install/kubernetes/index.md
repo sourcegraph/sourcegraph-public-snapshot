@@ -32,7 +32,7 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 1. Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository and check out the version tag you wish to deploy:
 
     ```
-    # 🚨 The master branch tracks development. 
+    # 🚨 The master branch tracks development.
     # Use the branch of this repository corresponding to the version of Sourcegraph you wish to deploy, e.g. git checkout 3.24
     git clone https://github.com/sourcegraph/deploy-sourcegraph
     cd deploy-sourcegraph
@@ -55,7 +55,7 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 1. Monitor the status of the deployment:
 
     ```
-    kubectl get pods -o wide -w
+    kubectl get pods -o wide --watch
     ```
 
 1. After deployment is completed, verify Sourcegraph is running by temporarily making the frontend port accessible:

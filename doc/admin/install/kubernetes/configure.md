@@ -19,7 +19,7 @@ This will make upgrades far easier and is a good practice not just for Sourcegra
    When you upgrade Sourcegraph, you will merge upstream into this branch.
 
    ```bash
-   export $SOURCEGRAPH_VERSION="v3.26.3"
+   export SOURCEGRAPH_VERSION="v3.26.3"
    git checkout $SOURCEGRAPH_VERSION -b release
    ```
 
@@ -281,7 +281,7 @@ spec:
    kubectl port-forward svc/sourcegraph-frontend 3080:30080
    ```
 
-1. Open http://localhost:3080 in your browser and you will see a setup page. 
+1. Open http://localhost:3080 in your browser and you will see a setup page.
 
 1. 🎉 Congrats, you have Sourcegraph up and running! Now [configure your deployment](configure.md).
 

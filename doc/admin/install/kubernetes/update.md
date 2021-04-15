@@ -29,7 +29,7 @@ These steps assume that you followed the [forking instructions in docs/configure
 1. Monitor the status of the deployment.
 
    ```
-   watch kubectl get pods -o wide
+   kubectl get pods -o wide --watch
    ```
 
 ## Rollback
