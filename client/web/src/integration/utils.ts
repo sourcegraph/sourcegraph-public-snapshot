@@ -91,6 +91,10 @@ export const percySnapshotWithVariants = async (
         return
     }
 
+    if (percyEnabled) {
+        return
+    }
+
     // Theme-light
     await setColorScheme(page, 'light', config?.waitForCodeHighlighting)
     await percySnapshot(page, `${name} - light theme`)
