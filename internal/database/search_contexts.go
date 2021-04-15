@@ -33,9 +33,9 @@ func (s *SearchContextsStore) Transact(ctx context.Context) (*SearchContextsStor
 }
 
 const searchContextsPermissionsConditionFmtStr = `(
-	-- Bypass permission check
+    -- Bypass permission check
     %s
-	-- Happy path of public search contexts
+    -- Happy path of public search contexts
     OR sc.public
     -- Private user contexts are available only to its creator
     OR (sc.namespace_user_id IS NOT NULL AND sc.namespace_user_id = %d)
