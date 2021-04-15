@@ -945,7 +945,8 @@ const getNextScheduledChangesetFmtstr = `
 SELECT %s
 FROM changesets
 WHERE reconciler_state = %s
-ORDER BY updated_at DESC
+ORDER BY updated_at ASC
+LIMIT 1
 `
 
 func (s *Store) GetChangesetPlaceInLine(ctx context.Context, id int64) (int, error) {
