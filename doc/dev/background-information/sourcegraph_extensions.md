@@ -51,3 +51,10 @@ Here are all repositories beyond sourcegraph/sourcegraph that relate to extensio
 - [go-imports-search](https://github.com/sourcegraph/go-imports-search)
 - [js-dependency-search](https://github.com/sourcegraph/js-dependency-search)
 - [sourcegraph-find-replace](https://github.com/sourcegraph/sourcegraph-find-replace)
+
+## Resources
+
+A list of resources for developers.
+
+- [Testing Extensions](../../extensions/authoring/testing_extensions.md)
+
