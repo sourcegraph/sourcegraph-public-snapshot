@@ -19,8 +19,7 @@ This will make upgrades far easier and is a good practice not just for Sourcegra
    When you upgrade Sourcegraph, you will merge upstream into this branch.
 
    ```bash
-   SOURCEGRAPH_VERSION="v3.26.3"
-   export $SOURCEGRAPH_VERSION
+   export $SOURCEGRAPH_VERSION="v3.26.3"
    git checkout $SOURCEGRAPH_VERSION -b release
    ```
 
