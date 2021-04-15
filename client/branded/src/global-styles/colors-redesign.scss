@@ -76,19 +76,50 @@ $redesign-teal: $oc-teal-7;
     $box-shadow: 0 0.25rem 0.5rem rgba($redesign-gray-08, 0.07);
 }
 
+$redesign-primary: $redesign-blue;
+$redesign-success: $redesign-green;
+$redesign-danger: $redesign-red;
+$redesign-warning: $redesign-yellow;
+$redesign-info: $redesign-cyan;
+$redesign-merged: $redesign-purple;
+
+$theme-colors-redesign: (
+    'primary': $redesign-primary,
+    'success': $redesign-success,
+    'danger': $redesign-danger,
+    'warning': $redesign-warning,
+    'info': $redesign-info,
+    // Added to bg- and text- utilities because it is commonly needed in our app.
+    'merged': $redesign-purple,
+);
+
+$theme-colors-redesign-light: map-merge(
+    $theme-colors-redesign,
+    (
+        'secondary': $redesign-gray-04,
+    )
+);
+
+$theme-colors-redesign-dark: map-merge(
+    $theme-colors-redesign,
+    (
+        'secondary': $redesign-gray-08,
+    )
+);
+
 :root.theme-redesign,
 // Descendant selector is required for Storybook `addRedesignVariants` helper.
 :root .theme-redesign {
-    --primary: #{$redesign-blue};
+    --primary: #{$redesign-primary};
     --primary-hover: #{$redesign-indigo};
     --brand-secondary: #a305e1;
     --brand-secondary-2: #{$redesign-pink};
-    --success: #{$redesign-green};
+    --success: #{$redesign-success};
     --success-2: #afe0b8;
-    --info: #{$redesign-cyan};
-    --warning: #{$redesign-yellow};
+    --info: #{$redesign-info};
+    --warning: #{$redesign-warning};
     --warning-2: #fbd999;
-    --danger: #{$redesign-red};
+    --danger: #{$redesign-danger};
     --danger-2: #e9aaaa;
     --merged: #{$redesign-purple};
     --merged-2: #c6b6f6;

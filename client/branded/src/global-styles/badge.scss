@@ -9,3 +9,23 @@
         }
     }
 }
+
+.theme-light.theme-redesign,
+.theme-light .theme-redesign {
+    @each $color, $value in $theme-colors-redesign-light {
+        .badge-#{$color},
+        a.badge-#{$color} {
+            @include badge-variant($value);
+        }
+    }
+}
+
+.theme-dark.theme-redesign,
+.theme-dark .theme-redesign {
+    @each $color, $value in $theme-colors-redesign-dark {
+        .badge-#{$color},
+        a.badge-#{$color} {
+            @include badge-variant($value);
+        }
+    }
+}

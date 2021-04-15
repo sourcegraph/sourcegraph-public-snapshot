@@ -12,6 +12,32 @@
     }
 }
 
+.theme-light.theme-redesign,
+.theme-light .theme-redesign {
+    @each $color, $value in $theme-colors-redesign-light {
+        .alert-#{$color} {
+            @include alert-variant(
+                theme-color-level($color, $alert-bg-level-light),
+                theme-color-level($color, $alert-border-level-light),
+                theme-color-level($color, $alert-color-level-light)
+            );
+        }
+    }
+}
+
+.theme-dark.theme-redesign,
+.theme-dark .theme-redesign {
+    @each $color, $value in $theme-colors-redesign-dark {
+        .alert-#{$color} {
+            @include alert-variant(
+                theme-color-level($color, $alert-bg-level),
+                theme-color-level($color, $alert-border-level),
+                theme-color-level($color, $alert-color-level)
+            );
+        }
+    }
+}
+
 .alert-heading {
     color: inherit !important;
 }

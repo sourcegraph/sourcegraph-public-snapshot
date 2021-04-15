@@ -13,6 +13,33 @@
     }
 }
 
+// @mixin button-variant($background, $border, $hover-background: darken($background, 7.5%), $hover-border: darken($border, 10%), $active-background: darken($background, 10%), $active-border: darken($border, 12.5%)) {
+
+// TODO: Darken vs semantic?
+.theme-light.theme-redesign,
+.theme-light .theme-redesign {
+    @each $color, $value in $theme-colors-redesign-light {
+        .btn-#{$color} {
+            @include button-variant($background: $value, $border: $value);
+        }
+        .btn-outline-#{$color} {
+            @include button-outline-variant($color: $value, $color-hover: $value);
+        }
+    }
+}
+
+.theme-dark.theme-redesign,
+.theme-dark .theme-redesign {
+    @each $color, $value in $theme-colors-redesign-dark {
+        .btn-#{$color} {
+            @include button-variant($background: $value, $border: $value);
+        }
+        .btn-outline-#{$color} {
+            @include button-outline-variant($color: $value, $color-hover: $value);
+        }
+    }
+}
+
 // btn-outline-secondary uses a different text color for better contrast.
 // theme classes are necessary because of specifity.
 .theme-dark,
