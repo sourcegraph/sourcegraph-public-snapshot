@@ -47,7 +47,12 @@ import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
 import { VersionContext } from './schema/site.schema'
-import { resolveVersionContext, parseSearchURL, getAvailableSearchContextSpecOrDefault } from './search'
+import {
+    resolveVersionContext,
+    parseSearchURL,
+    getAvailableSearchContextSpecOrDefault,
+    getGlobalSearchContextFilter,
+} from './search'
 import {
     search,
     fetchSavedSearches,
@@ -259,8 +264,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
               undefined
             : undefined
 
-        const selectedSearchContextSpec = localStorage.getItem(LAST_SEARCH_CONTEXT_KEY) || 'global'
-
         this.state = {
             themePreference: readStoredThemePreference(),
             systemIsLightTheme: !this.darkThemeMediaList.matches,
@@ -278,7 +281,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showOnboardingTour: false,
             showSearchContext: false,
             showSearchContextManagement: false,
-            selectedSearchContextSpec,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
             hasUserDefinedContexts: false,
@@ -380,6 +382,13 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                     }
                 })
         )
+
+        const lastSelectedSearchContextSpec = localStorage.getItem(LAST_SEARCH_CONTEXT_KEY) || 'global'
+        if (!getGlobalSearchContextFilter(this.state.parsedSearchQuery)) {
+            // If no context is present in the query, select the last saved search context from localStorage
+            // as currently selected search context
+            this.setSelectedSearchContextSpec(lastSelectedSearchContextSpec)
+        }
 
         // Send initial versionContext to extensions
         this.setVersionContext(this.state.versionContext).catch(error => {

@@ -730,6 +730,18 @@ describe('Search', () => {
             expect(await isSearchContextDropdownVisible()).toBeFalsy()
         })
 
+        test('Reset unavailable saved search context from localStorage if no context in query', async () => {
+            // First initialize localStorage on the page
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+            await driver.page.evaluate(() => localStorage.setItem('sg-last-search-context', 'doesnotexist'))
+            // Visit the test page with localStorage initialized
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp', {
+                waitUntil: 'networkidle2',
+            })
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
+        })
+
         test('Convert version context', async () => {
             testContext.overrideGraphQL({
                 ...testContextForSearchContexts,
