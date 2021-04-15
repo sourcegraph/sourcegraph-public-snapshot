@@ -918,11 +918,12 @@ WHERE
 	%s
 `
 
-func (s *Store) GetNextScheduledChangeset(ctx context.Context) (*btypes.Changeset, error) {
+func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (*btypes.Changeset, error) {
 	q := sqlf.Sprintf(
-		getNextScheduledChangesetFmtstr,
-		sqlf.Join(ChangesetColumns, ","),
+		enqueueNextScheduledChangesetFmtstr,
 		btypes.ReconcilerStateScheduled.ToDB(),
+		btypes.ReconcilerStateQueued.ToDB(),
+		sqlf.Join(ChangesetColumns, ","),
 	)
 
 	var c btypes.Changeset
@@ -940,13 +941,20 @@ func (s *Store) GetNextScheduledChangeset(ctx context.Context) (*btypes.Changese
 	return &c, nil
 }
 
-const getNextScheduledChangesetFmtstr = `
--- source: enterprise/internal/batches/store/changesets.go:GetNextScheduledChangesetQuery
-SELECT %s
-FROM changesets
-WHERE reconciler_state = %s
-ORDER BY updated_at ASC
-LIMIT 1
+const enqueueNextScheduledChangesetFmtstr = `
+-- source: enterprise/internal/batches/store/changesets.go:EnqueueNextScheduledChangeset
+WITH c AS (
+	SELECT *
+	FROM changesets
+	WHERE reconciler_state = %s
+	ORDER BY updated_at ASC
+	LIMIT 1
+)
+UPDATE changesets
+SET reconciler_state = %s
+FROM c
+WHERE c.id = changesets.id
+RETURNING %s
 `
 
 func (s *Store) GetChangesetPlaceInLine(ctx context.Context, id int64) (int, error) {

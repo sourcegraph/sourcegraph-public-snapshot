@@ -7,7 +7,6 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
@@ -93,23 +92,16 @@ func (s *Scheduler) Stop() {
 }
 
 func (s *Scheduler) enqueueChangeset() error {
-	cs, err := s.store.GetNextScheduledChangeset(s.ctx)
-	if err != nil {
-		// Let's see if this is an error caused by there being no changesets to
-		// enqueue (which is fine), or something less expected, in which case
-		// we should log the error.
-		if err != store.ErrNoResults {
-			log15.Warn("error retrieving the next scheduled changeset", "err", err)
-		}
-		return err
+	_, err := s.store.EnqueueNextScheduledChangeset(s.ctx)
+
+	// Let's see if this is an error caused by there being no changesets to
+	// enqueue (which is fine), or something less expected, in which case we
+	// should log the error.
+	if err != nil && err != store.ErrNoResults {
+		log15.Warn("error enqueueing the next scheduled changeset", "err", err)
 	}
 
-	// We have a changeset to enqueue, so let's move it into the right state.
-	cs.ReconcilerState = btypes.ReconcilerStateQueued
-	if err := s.store.UpsertChangeset(s.ctx, cs); err != nil {
-		log15.Warn("error updating the next scheduled changeset", "err", err, "changeset", cs)
-	}
-	return nil
+	return err
 }
 
 // backoff implements a very simple bounded exponential backoff strategy.

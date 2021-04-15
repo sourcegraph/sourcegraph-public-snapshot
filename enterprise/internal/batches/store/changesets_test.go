@@ -1918,7 +1918,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	}
 }
 
-func testStoreGetNextScheduledChangeset(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreEnqueueNextScheduledChangeset(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	// Like testStoreListChangesetsTextSearch(), this is similar to the setup
 	// in testStoreChangesets(), but we need a more fine grained set of
 	// changesets to handle the different scenarios.
@@ -1973,7 +1973,7 @@ func testStoreGetNextScheduledChangeset(t *testing.T, ctx context.Context, s *St
 
 	// By definition, the first changeset should be next, since it has the
 	// earliest update time and is in the right state.
-	have, err := s.GetNextScheduledChangeset(ctx)
+	have, err := s.EnqueueNextScheduledChangeset(ctx)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -1983,13 +1983,13 @@ func testStoreGetNextScheduledChangeset(t *testing.T, ctx context.Context, s *St
 		t.Errorf("unexpected changeset: have=%v want=%v", have, first)
 	}
 
-	// Now if we enqueue first, second should be the next scheduled changeset.
-	first.ReconcilerState = btypes.ReconcilerStateQueued
-	if err := s.UpsertChangeset(ctx, first); err != nil {
-		t.Fatal(err)
+	// Let's check that first's state was updated.
+	if want := btypes.ReconcilerStateQueued; have.ReconcilerState != want {
+		t.Errorf("unexpected reconciler state: have=%v want=%v", have.ReconcilerState, want)
 	}
 
-	have, err = s.GetNextScheduledChangeset(ctx)
+	// Given the updated state, second should be the next scheduled changeset.
+	have, err = s.EnqueueNextScheduledChangeset(ctx)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -1999,14 +1999,14 @@ func testStoreGetNextScheduledChangeset(t *testing.T, ctx context.Context, s *St
 		t.Errorf("unexpected changeset: have=%v want=%v", have, second)
 	}
 
-	// Finally, the same again: we'll mark second as queued, and then we
-	// shouldn't get any changesets.
-	second.ReconcilerState = btypes.ReconcilerStateQueued
-	if err := s.UpsertChangeset(ctx, second); err != nil {
-		t.Fatal(err)
+	// Let's check that second's state was updated.
+	if want := btypes.ReconcilerStateQueued; have.ReconcilerState != want {
+		t.Errorf("unexpected reconciler state: have=%v want=%v", have.ReconcilerState, want)
 	}
 
-	if _, err = s.GetNextScheduledChangeset(ctx); err != ErrNoResults {
+	// Now we've enqueued the two scheduled changesets, we shouldn't be able to
+	// enqueue another.
+	if _, err = s.EnqueueNextScheduledChangeset(ctx); err != ErrNoResults {
 		t.Errorf("unexpected error: have=%v want=%v", err, ErrNoResults)
 	}
 }
