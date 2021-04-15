@@ -30,10 +30,10 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 		VALUES
 			(1, 'ViewInsights', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
 			(2, 'ViewInsights', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(3, 'InsightAddition', '{"insightType": "searchInsights"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 days'),
+			(3, 'InsightAddition', '{"insightType": "searchInsights"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
 			(4, 'InsightAddition', '{"insightType": "codeStatsInsights"}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
 			(5, 'InsightAddition', '{"insightType": "searchInsights"}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(6, 'InsightEdit', '{"insightType": "searchInsights"}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '8 days'),
+			(6, 'InsightEdit', '{"insightType": "searchInsights"}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '2 days'),
 			(7, 'InsightAddition', '{"insightType": "codeStatsInsights"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '8 days')
 	`, now)
 	if err != nil {
@@ -54,18 +54,18 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 
 	usageStatisticsByInsight := []*types.InsightUsageStatistics{
 		{
-			InsightType:      &searchInsightsType,
-			Additions:        &twoInt,
-			Edits:            &oneInt,
+			InsightType:      &codeStatsInsightsType,
+			Additions:        &oneInt,
+			Edits:            &zeroInt,
 			Removals:         &zeroInt,
 			Hovers:           &zeroInt,
 			UICustomizations: &zeroInt,
 			DataPointClicks:  &zeroInt,
 		},
 		{
-			InsightType:      &codeStatsInsightsType,
+			InsightType:      &searchInsightsType,
 			Additions:        &twoInt,
-			Edits:            &zeroInt,
+			Edits:            &oneInt,
 			Removals:         &zeroInt,
 			Hovers:           &zeroInt,
 			UICustomizations: &zeroInt,

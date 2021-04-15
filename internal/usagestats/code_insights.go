@@ -15,12 +15,12 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.C
 		COUNT(*) FILTER (WHERE name = 'ViewInsights')                       AS insights_page_views,
 		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsights')        AS insights_unique_page_views,
 		COUNT(distinct anonymous_user_id)
-			FILTER (WHERE name = 'InsightAddition'
-				AND timestamp > DATE_TRUNC('week', $1::timestamp))			AS weekly_insight_creators,
+			FILTER (WHERE name = 'InsightAddition')							AS weekly_insight_creators,
 		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 				AS insight_configure_click,
 		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 				AS insight_add_more_click
 	FROM event_logs
-	WHERE name in ('ViewInsights', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick');
+	WHERE name in ('ViewInsights', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick')
+		AND timestamp > DATE_TRUNC('week', $1::timestamp);
 	`
 
 	if err := db.QueryRowContext(ctx, platformQuery, timeNow()).Scan(
@@ -43,11 +43,12 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.C
 		COUNT(*) FILTER (WHERE name = 'InsightDataPointClick') 	AS data_point_clicks
 	FROM event_logs
 	WHERE name in ('InsightAddition', 'InsightEdit', 'InsightRemoval', 'InsightHover', 'InsightUICustomization', 'InsightDataPointClick')
+		AND timestamp > DATE_TRUNC('week', $1::timestamp)
 	GROUP BY insight_type;
 	`
 
 	usageStatisticsByInsight := []*types.InsightUsageStatistics{}
-	rows, err := db.QueryContext(ctx, metricsByInsightQuery)
+	rows, err := db.QueryContext(ctx, metricsByInsightQuery, timeNow())
 
 	if err != nil {
 		return nil, err
