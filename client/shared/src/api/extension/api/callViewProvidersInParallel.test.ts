@@ -3,7 +3,7 @@ import { TestScheduler } from 'rxjs/testing'
 
 import { ContributableViewContainer } from '../../protocol';
 
-import { callViewProvidersInParallel } from './callProviderInParallel'
+import { callViewProvidersInParallel } from './callViewProvidersInParallel'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 

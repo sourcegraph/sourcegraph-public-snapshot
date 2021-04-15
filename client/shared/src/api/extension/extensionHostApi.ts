@@ -26,7 +26,7 @@ import { FlatExtensionHostAPI } from '../contract'
 import { ContributableViewContainer, TextDocumentPositionParameters } from '../protocol'
 import { ExtensionViewer, ViewerId, ViewerWithPartialModel } from '../viewerTypes'
 
-import { callViewProvidersInParallel } from './api/callProviderInParallel'
+import { callViewProvidersInParallel } from './api/callViewProvidersInParallel'
 import { ExtensionCodeEditor } from './api/codeEditor'
 import { providerResultToObservable, ProxySubscribable, proxySubscribable } from './api/common'
 import { computeContext, Context, ContributionScope } from './api/context/context'
