@@ -44,6 +44,15 @@ func newTaker(schedule *window.Schedule) *taker {
 
 	goroutine.Go(func() {
 		for {
+			// Check if we received a done signal after sleeping on the previous
+			// iteration.
+			select {
+			case <-t.done:
+				close(t.C)
+				return
+			default:
+			}
+
 			if _, err := schedule.Take(); err == window.ErrZeroSchedule {
 				// With a zero schedule, we never want to send anything over C.
 				// We'll wait for the taker to be stopped, and then close C.
