@@ -9,49 +9,50 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestTakerGoBrrr(t *testing.T) {
+func TestTickerGoBrrr(t *testing.T) {
 	// We'll run the tests in this file in parallel, since they need to perform
 	// brief blocks, and there's no reason we should run them sequentially.
 	t.Parallel()
 
 	// We'll set up an unlimited schedule, and then use that to verify that
-	// delays are appropriately handled and that stopping the taker works as
+	// delays are appropriately handled and that stopping the ticker works as
 	// expected.
 	cfg, err := window.NewConfiguration(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	taker := newTaker(cfg.Schedule())
+	ticker := newTicker(cfg.Schedule())
 
 	// Take three as quickly as we can, with no delays going back.
 	for i := 0; i < 3; i++ {
-		c := <-taker.C
+		c := <-ticker.C
 		if c == nil {
 			t.Errorf("unexpected nil channel")
 		}
 		c <- time.Duration(0)
 	}
 
-	// Now send back a 10 ms delay and ensure that it takes at least 10 ms to get the following message.
+	// Now send back a 10 ms delay and ensure that it takes at least 10 ms to
+	// get the following message.
 	delay := 10 * time.Millisecond
 	now := time.Now()
-	c := <-taker.C
+	c := <-ticker.C
 	c <- delay
 
-	c = <-taker.C
+	c = <-ticker.C
 	if have := time.Since(now); have < delay {
 		t.Errorf("unexpectedly short delay between takes: have=%v want>=%v", have, delay)
 	}
 	c <- time.Duration(0)
 
-	// Finally, let's stop the taker and make sure that the channel is closed.
-	taker.stop()
-	if c := <-taker.C; c != nil {
+	// Finally, let's stop the ticker and make sure that the channel is closed.
+	ticker.stop()
+	if c := <-ticker.C; c != nil {
 		t.Errorf("unexpected non-nil channel: %v", c)
 	}
 }
 
-func TestTakerRateLimited(t *testing.T) {
+func TestTickerRateLimited(t *testing.T) {
 	t.Parallel()
 
 	// We'll set up a 100/sec rate limit, and then ensure we take at least 10 ms
@@ -62,27 +63,27 @@ func TestTakerRateLimited(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	taker := newTaker(cfg.Schedule())
+	ticker := newTicker(cfg.Schedule())
 
 	// We'll take two messages, which should be at least 10 ms apart.
 	now := time.Now()
-	c := <-taker.C
+	c := <-ticker.C
 	c <- time.Duration(0)
 
-	c = <-taker.C
+	c = <-ticker.C
 	if have, want := time.Since(now), 10*time.Millisecond; have < want {
 		t.Errorf("unexpectedly short delay between takes: have=%v want>=%v", have, want)
 	}
 	c <- time.Duration(0)
 
-	// Finally, let's stop the taker and make sure that the channel is closed.
-	taker.stop()
-	if c := <-taker.C; c != nil {
+	// Finally, let's stop the ticker and make sure that the channel is closed.
+	ticker.stop()
+	if c := <-ticker.C; c != nil {
 		t.Errorf("unexpected non-nil channel: %v", c)
 	}
 }
 
-func TestTakerZero(t *testing.T) {
+func TestTickerZero(t *testing.T) {
 	t.Parallel()
 
 	// Set up a zero rate limit.
@@ -92,22 +93,22 @@ func TestTakerZero(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	taker := newTaker(cfg.Schedule())
+	ticker := newTicker(cfg.Schedule())
 
-	// Wait for taker.C, which should only ever return nil (since the channel
+	// Wait for ticker.C, which should only ever return nil (since the channel
 	// will be closed).
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if c := <-taker.C; c != nil {
+		if c := <-ticker.C; c != nil {
 			t.Errorf("unexpected non-nil channel: %v", c)
 		}
 	}()
 
-	// Wait 10 ms and then stop the taker.
+	// Wait 10 ms and then stop the ticker.
 	time.Sleep(10 * time.Millisecond)
-	taker.stop()
+	ticker.stop()
 
 	wg.Wait()
 }

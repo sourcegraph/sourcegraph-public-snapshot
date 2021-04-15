@@ -41,7 +41,7 @@ func (s *Scheduler) Start() {
 
 	for {
 		schedule := config.ActiveWindow().Schedule()
-		taker := newTaker(schedule)
+		ticker := newTicker(schedule)
 		validity := time.NewTimer(time.Until(schedule.ValidUntil()))
 
 		log15.Debug("applying batch change schedule", "schedule", schedule, "until", schedule.ValidUntil())
@@ -49,7 +49,7 @@ func (s *Scheduler) Start() {
 	scheduleloop:
 		for {
 			select {
-			case delay := <-taker.C:
+			case delay := <-ticker.C:
 				// We can enqueue a changeset. Let's try to do so, ensuring that
 				// we always return a duration back down the delay channel.
 				if err := s.enqueueChangeset(); err != nil {
@@ -77,12 +77,12 @@ func (s *Scheduler) Start() {
 			case <-s.done:
 				// The scheduler service has been asked to stop, so let's stop.
 				log15.Debug("stopping the batch change scheduler")
-				taker.stop()
+				ticker.stop()
 				return
 			}
 		}
 
-		taker.stop()
+		ticker.stop()
 	}
 }
 

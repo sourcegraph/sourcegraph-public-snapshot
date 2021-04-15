@@ -9,25 +9,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-// taker wraps the Take() method provided by schedules to return a stream of
-// messages indicating when a changeset should be scheduled. The scheduler can
-// optionally ask the taker to delay the next Take() call if no changesets were ready
-// when consuming the last message: this is important to avoid a busy-wait loop.
+// ticker wraps the Take() method provided by schedules to return a stream of
+// messages indicating when a changeset should be scheduled, in essentially the
+// same way a time.Ticker periodically sends messages over a channel. The
+// scheduler can optionally ask the ticker to delay the next Take() call if no
+// changesets were ready when consuming the last message: this is important to
+// avoid a busy-wait loop.
 //
-// Note that taker does not check the validity period of the schedule it is
-// given; the caller should do this and stop the taker if the schedule expires
+// Note that ticker does not check the validity period of the schedule it is
+// given; the caller should do this and stop the ticker if the schedule expires
 // or the configuration updates.
 //
-// It is important that the caller calls stop() when the taker is no longer in
+// It is important that the caller calls stop() when the ticker is no longer in
 // use, otherwise a goroutine, channel, and probably a rate limiter will be
 // leaked.
-type taker struct {
+type ticker struct {
 	// C is the channel that will receive messages when a changeset can be
 	// scheduled. The receiver must respond on the channel embedded in the
-	// message to indicate if the next Take() should be delayed: if so, the
+	// message to indicate if the next tick should be delayed: if so, the
 	// duration must be that value, otherwise a zero duration must be sent.
 	//
-	// If nil is sent over this channel, an error occurred, and this taker must
+	// If nil is sent over this channel, an error occurred, and this ticker must
 	// be stopped and discarded immediately.
 	C chan chan time.Duration
 
@@ -35,8 +37,8 @@ type taker struct {
 	schedule *window.Schedule
 }
 
-func newTaker(schedule *window.Schedule) *taker {
-	t := &taker{
+func newTicker(schedule *window.Schedule) *ticker {
+	t := &ticker{
 		C:        make(chan chan time.Duration),
 		done:     make(chan struct{}),
 		schedule: schedule,
@@ -55,7 +57,7 @@ func newTaker(schedule *window.Schedule) *taker {
 
 			if _, err := schedule.Take(); err == window.ErrZeroSchedule {
 				// With a zero schedule, we never want to send anything over C.
-				// We'll wait for the taker to be stopped, and then close C.
+				// We'll wait for the ticker to be stopped, and then close C.
 				<-t.done
 				close(t.C)
 				return
@@ -83,6 +85,6 @@ func newTaker(schedule *window.Schedule) *taker {
 	return t
 }
 
-func (t *taker) stop() {
+func (t *ticker) stop() {
 	close(t.done)
 }
