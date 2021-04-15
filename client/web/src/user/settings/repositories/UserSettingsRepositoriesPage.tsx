@@ -275,7 +275,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
                 <h2 className="mb-2">Repositories</h2>
-                <Link className="btn btn-primary" to={`${routingPrefix}/repositories/manage`}>
+                <Link className="btn btn-primary" to={`${routingPrefix}/repositories/manage`} onClick={console.log}>
                     {(hasRepos && <>Manage Repositories</>) || (
                         <>
                             <AddIcon className="icon-inline" /> Add repositories

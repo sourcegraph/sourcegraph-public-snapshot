@@ -23,7 +23,7 @@ const isCodeHighlightQuery = (url: string): boolean =>
  */
 const waitForCodeHighlighting = async (page: Page): Promise<void> => {
     const requestDidFire = await page
-        .waitForRequest(request => isCodeHighlightQuery(request.url()), { timeout: 5000 })
+        .waitForRequest(request => isCodeHighlightQuery(request.url()), { timeout: 1000 })
         .catch(
             () =>
                 // request won't always fire if data is cached
@@ -31,7 +31,7 @@ const waitForCodeHighlighting = async (page: Page): Promise<void> => {
         )
 
     if (requestDidFire) {
-        await page.waitForResponse(request => isCodeHighlightQuery(request.url()), { timeout: 5000 })
+        await page.waitForResponse(request => isCodeHighlightQuery(request.url()), { timeout: 1000 })
     }
 }
 
@@ -67,7 +67,7 @@ export const setColorScheme = async (
     // Check Monaco editor is styled correctly
     await page.waitForFunction(
         expectedClassName => document.querySelector('.monaco-editor')?.classList.contains(expectedClassName),
-        { timeout: 5000 },
+        { timeout: 1000 },
         ColorSchemeToMonacoEditorClassName[scheme]
     )
 }
@@ -80,7 +80,7 @@ const waitUntil = (time: number): Promise<void> => new Promise((resolve, reject)
 
 const percySnapshotWithWait: typeof percySnapshot = async (page, name) => {
     try {
-        await Promise.race([percySnapshot(page, name), waitUntil(5000)])
+        await Promise.race([percySnapshot(page, name), waitUntil(1000)])
     } catch {
         console.error('Percy snapshot took longer than 5 seconds')
     }
