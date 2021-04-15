@@ -11,8 +11,8 @@ import (
 
 // taker wraps the Take() method provided by schedules to return a stream of
 // messages indicating when a changeset should be scheduled. The scheduler can
-// optionally ask the taker to delay the next Take() call if no changesets are
-// ready: this is important to avoid a busy-wait loop.
+// optionally ask the taker to delay the next Take() call if no changesets were ready
+// when consuming the last message: this is important to avoid a busy-wait loop.
 //
 // Note that taker does not check the validity period of the schedule it is
 // given; the caller should do this and stop the taker if the schedule expires
