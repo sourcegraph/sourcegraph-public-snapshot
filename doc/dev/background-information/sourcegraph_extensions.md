@@ -57,4 +57,4 @@ Here are all repositories beyond sourcegraph/sourcegraph that relate to extensio
 A list of resources for developers.
 
 - [Testing Extensions](../../extensions/authoring/testing_extensions.md)
-
+- [Testing a Pull Request](testing_pr.md)
