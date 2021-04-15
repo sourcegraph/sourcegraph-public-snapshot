@@ -215,7 +215,7 @@ func (m *ExternalAccountsMigrator) Progress(ctx context.Context) (float64, error
 				CAST(c1.count AS float) / CAST(c2.count AS float)
 			END
 		FROM
-			(SELECT COUNT(*) AS count FROM user_external_accounts WHERE encryption_key_id != '' AND (account_data IS NOT NULL OR auth_data IS NOT NULL)) c1,
+			(SELECT COUNT(*) AS count FROM user_external_accounts WHERE encryption_key_id != '' OR (account_data IS NULL AND auth_data IS NULL)) c1,
 			(SELECT COUNT(*) AS count FROM user_external_accounts) c2
 	`)))
 	return progress, err
