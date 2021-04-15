@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/window"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -29,6 +30,12 @@ func ActiveWindow() *window.Configuration {
 // configuration each time it is updated.
 func Subscribe() chan *window.Configuration {
 	return ensureConfig().Subscribe()
+}
+
+// Unsubscribe removes a channel returned from Subscribe() from the notification
+// list.
+func Unsubscribe(ch chan *window.Configuration) {
+	ensureConfig().Unsubscribe(ch)
 }
 
 // Reset destroys the existing singleton and forces it to be reinitialised the
@@ -62,11 +69,11 @@ type configuration struct {
 	mu          sync.RWMutex
 	active      *window.Configuration
 	raw         *[]*schema.BatchChangeRolloutWindow
-	subscribers []chan *window.Configuration
+	subscribers map[chan *window.Configuration]struct{}
 }
 
 func newConfiguration() *configuration {
-	c := &configuration{subscribers: []chan *window.Configuration{}}
+	c := &configuration{subscribers: map[chan *window.Configuration]struct{}{}}
 
 	first := true
 	conf.Watch(func() {
@@ -121,16 +128,28 @@ func (c *configuration) Subscribe() chan *window.Configuration {
 	defer c.mu.Unlock()
 
 	ch := make(chan *window.Configuration)
-	config.subscribers = append(config.subscribers, ch)
+	config.subscribers[ch] = struct{}{}
 
 	return ch
+}
+
+func (c *configuration) Unsubscribe(ch chan *window.Configuration) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	delete(config.subscribers, ch)
 }
 
 func (c *configuration) notify() {
 	// This should only be called from functions that have already locked the
 	// configuration mutex for at least read access.
-	for _, subscriber := range c.subscribers {
-		subscriber <- c.active
+	for subscriber := range c.subscribers {
+		// We don't need to block on this, and we don't want any accidentally
+		// closed channels to cause a panic, so we'll wrap this in
+		// goroutine.Go() to fire and forget the updates.
+		func(ch chan *window.Configuration, active *window.Configuration) {
+			goroutine.Go(func() { ch <- active })
+		}(subscriber, c.active)
 	}
 }
 

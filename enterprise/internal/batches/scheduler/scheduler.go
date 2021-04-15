@@ -38,6 +38,7 @@ func (s *Scheduler) Start() {
 
 	// Set up our configuration listener.
 	cfg := config.Subscribe()
+	defer config.Unsubscribe(cfg)
 
 	for {
 		schedule := config.ActiveWindow().Schedule()
