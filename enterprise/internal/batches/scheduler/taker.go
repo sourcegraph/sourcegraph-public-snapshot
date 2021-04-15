@@ -64,7 +64,6 @@ func newTaker(schedule *window.Schedule) *taker {
 				close(t.C)
 				// Ensure we drain done so that there isn't a panic if and when
 				// stop() is called.
-				go func() { <-t.done }()
 				return
 			}
 
@@ -85,6 +84,5 @@ func newTaker(schedule *window.Schedule) *taker {
 }
 
 func (t *taker) stop() {
-	t.done <- struct{}{}
 	close(t.done)
 }
