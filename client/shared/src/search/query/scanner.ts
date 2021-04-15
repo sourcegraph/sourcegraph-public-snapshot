@@ -129,16 +129,15 @@ const quoted = (delimiter: string): Scanner<Literal> => (input, start) => {
 }
 
 /**
- * Returns a {@link Scanner} that will attempt to scan tokens matching
- * the given character in a search query.
+ * A {@link Scanner} that scans a ':' separator for fields.
  */
-const character = (character: string): Scanner<Literal> => (input, start) => {
-    if (input[start] !== character) {
-        return { type: 'error', expected: character, at: start }
+const filterSeparator = (input: string, start: number): ScanResult<Literal> => {
+    if (input[start] !== ':') {
+        return { type: 'error', expected: ':', at: start }
     }
     return {
         type: 'success',
-        term: createLiteral(character, { start, end: start + 1 }),
+        term: createLiteral(':', { start, end: start + 1 }),
     }
 }
 
@@ -334,8 +333,6 @@ const comment = scanToken(
 )
 
 const filterField = scanToken(new RegExp(`-?(${filterTypeKeysWithAliases.join('|')})+(?=:)`, 'i'))
-
-const filterSeparator = character(':')
 
 const filterValue = oneOf<Literal>(quoted('"'), quoted("'"), scanBalancedLiteral, literal)
 
