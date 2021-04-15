@@ -32,64 +32,59 @@ func NewScheduler(ctx context.Context, bstore *store.Store) *Scheduler {
 }
 
 func (s *Scheduler) Start() {
-	goroutine.Go(func() {
-		// Set up a global backoff strategy where we start at 5 seconds, up to a
-		// minute, when we don't have any changesets to enqueue. Without this,
-		// an unlimited schedule will essentially busy-wait calling Take().
-		backoff := newBackoff(5*time.Second, 2, 1*time.Minute)
+	// Set up a global backoff strategy where we start at 5 seconds, up to a
+	// minute, when we don't have any changesets to enqueue. Without this, an
+	// unlimited schedule will essentially busy-wait calling Take().
+	backoff := newBackoff(5*time.Second, 2, 1*time.Minute)
 
-		// Set up our configuration listener.
-		cfg := config.Subscribe()
+	// Set up our configuration listener.
+	cfg := config.Subscribe()
 
+	for {
+		schedule := config.Active().Schedule()
+		taker := newTaker(schedule)
+		validity := time.NewTimer(time.Until(schedule.ValidUntil()))
+
+		log15.Debug("applying batch change schedule", "schedule", schedule, "until", schedule.ValidUntil())
+
+	scheduleloop:
 		for {
-			schedule := config.Active().Schedule()
-			taker := newTaker(schedule)
-			validity := time.NewTimer(time.Until(schedule.ValidUntil()))
-
-			log15.Debug("applying batch change schedule", "schedule", schedule, "until", schedule.ValidUntil())
-
-		scheduleloop:
-			for {
-				select {
-				case delay := <-taker.C:
-					// We can enqueue a changeset. Let's try to do so, ensuring
-					// that we always return a duration back down the delay
-					// channel.
-					if err := s.enqueueChangeset(); err != nil {
-						// If we get an error back, we need to increment the
-						// backoff delay and return that. enqueueChangeset will
-						// have handled any logging we need to do.
-						delay <- backoff.next()
-					} else {
-						// All is well, so we should reset the backoff delay
-						// and loop immediately.
-						backoff.reset()
-						delay <- time.Duration(0)
-					}
-
-				case <-validity.C:
-					// The schedule is no longer valid, so let's break out of
-					// this loop and build a new schedule.
-					break scheduleloop
-
-				case <-cfg:
-					// The batch change rollout window configuration was
-					// updated, so let's break out of this loop and build a new
-					// schedule.
-					break scheduleloop
-
-				case <-s.done:
-					// The scheduler service has been asked to stop, so let's
-					// stop.
-					log15.Debug("stopping the batch change scheduler")
-					taker.stop()
-					return
+			select {
+			case delay := <-taker.C:
+				// We can enqueue a changeset. Let's try to do so, ensuring that
+				// we always return a duration back down the delay channel.
+				if err := s.enqueueChangeset(); err != nil {
+					// If we get an error back, we need to increment the backoff
+					// delay and return that. enqueueChangeset will have handled
+					// any logging we need to do.
+					delay <- backoff.next()
+				} else {
+					// All is well, so we should reset the backoff delay and
+					// loop immediately.
+					backoff.reset()
+					delay <- time.Duration(0)
 				}
-			}
 
-			taker.stop()
+			case <-validity.C:
+				// The schedule is no longer valid, so let's break out of this
+				// loop and build a new schedule.
+				break scheduleloop
+
+			case <-cfg:
+				// The batch change rollout window configuration was updated, so
+				// let's break out of this loop and build a new schedule.
+				break scheduleloop
+
+			case <-s.done:
+				// The scheduler service has been asked to stop, so let's stop.
+				log15.Debug("stopping the batch change scheduler")
+				taker.stop()
+				return
+			}
 		}
-	})
+
+		taker.stop()
+	}
 }
 
 func (s *Scheduler) Stop() {
