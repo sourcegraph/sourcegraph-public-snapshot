@@ -130,6 +130,7 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
                     html: current.html,
                     anchor: current.anchor,
                     kind: current.kind,
+                    isLightTheme,
                 }
 
                 if (current.kind === DiffHunkLineType.UNCHANGED) {

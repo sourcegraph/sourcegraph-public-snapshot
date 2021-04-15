@@ -30,7 +30,7 @@ export const diffDomFunctions: DOMFunctions = {
     getDiffCodePart: (codeElement: HTMLElement): DiffPart => {
         const tableCell = codeElement.closest('td') as HTMLTableCellElement
         const tableRow = codeElement.parentElement as HTMLTableRowElement
-        const isSplitMode = tableRow.cells.length === 4
+        const isSplitMode = tableRow.classList.contains('file-diff-hunks__table--split-row')
 
         if (tableRow.classList.contains('diff-hunk__line--addition')) {
             return 'head'

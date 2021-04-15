@@ -26,6 +26,7 @@ interface Line {
     decorations: (TextDocumentDecoration & Record<'after', DecorationAttachmentRenderOptions>)[]
     className: string
     dataPart: 'head' | 'base'
+    isLightTheme: boolean
 }
 
 interface LineType {
@@ -72,6 +73,7 @@ export const Line: React.FunctionComponent<Line> = ({
     decorations,
     className,
     dataPart,
+    isLightTheme,
 }) => {
     const hunkStyles = lineType(kind)
 
@@ -100,7 +102,7 @@ export const Line: React.FunctionComponent<Line> = ({
                 <div className="diff-hunk--split__line--code d-inline-block">
                     <div dangerouslySetInnerHTML={{ __html: html }} data-diff-marker={diffHunkTypeIndicators[kind]} />
                     {decorations.map((decoration, index) => {
-                        const style = decorationAttachmentStyleForTheme(decoration.after, true)
+                        const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
                         return (
                             <React.Fragment key={index}>
                                 {' '}
