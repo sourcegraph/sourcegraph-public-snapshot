@@ -706,6 +706,78 @@ This panel indicates percentage pods available.
 
 <br />
 
+### Frontend: Sentinel queries (only on sourcegraph.com)
+
+#### frontend: mean_successful_sentinel_duration_5m
+
+This panel indicates mean successful sentinel search duration over 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-mean-successful-sentinel-duration-5m).
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### frontend: mean_sentinel_stream_latency_5m
+
+This panel indicates mean sentinel stream latency over 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-mean-sentinel-stream-latency-5m).
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### frontend: 90th_percentile_successful_sentinel_duration_5m
+
+This panel indicates 90th percentile successful sentinel search duration over 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-successful-sentinel-duration-5m).
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### frontend: 90th_percentile_sentinel_stream_latency_5m
+
+This panel indicates 90th percentile sentinel stream latency over 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-sentinel-stream-latency-5m).
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### frontend: mean_successful_sentinel_duration_by_query_5m
+
+This panel indicates mean successful sentinel search duration by query over 5m.
+
+								- The mean search duration for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### frontend: mean_sentinel_stream_latency_by_query_5m
+
+This panel indicates mean sentinel stream latency by query over 5m.
+
+								- The mean streaming search latency for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### frontend: unsuccessful_status_rate_5m
+
+This panel indicates unsuccessful status rate per 5m.
+
+- The rate of unsuccessful sentinel query, broken down by failure type
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
 ## Git Server
 
 <p class="subtitle">Stores, manages, and operates Git repositories.</p>
