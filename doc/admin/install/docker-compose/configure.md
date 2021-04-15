@@ -10,7 +10,7 @@ We **strongly** recommend that you create your own fork of [sourcegraph/deploy-s
 - Create a `release` branch to track all of your customizations to Sourcegraph. When you upgrade Sourcegraph, you will merge upstream into this branch.
 
 ```bash
-SOURCEGRAPH_VERSION="v3.24.1"
+export SOURCEGRAPH_VERSION="v3.26.3"
 git checkout $SOURCEGRAPH_VERSION -b release
 ```
 
