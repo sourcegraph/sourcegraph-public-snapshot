@@ -109,10 +109,7 @@ func createChangesetJobQuery(c *btypes.ChangesetJob) (*sqlf.Query, error) {
 
 // GetChangesetJobOpts captures the query options needed for getting a BatchSpec
 type GetChangesetJobOpts struct {
-	ID            int64
-	States        []string
-	BatchChangeID int64
-	ChangesetID   int64
+	ID int64
 }
 
 // GetChangesetJob gets a BatchSpec matching the given options.
@@ -137,35 +134,18 @@ func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (
 var getChangesetJobsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/changeset_jobs.go:GetChangesetJob
 SELECT %s FROM changeset_jobs
+INNER JOIN changesets ON changesets.id = changeset_jobs.changeset_id
+INNER JOIN repo ON repo.id = changesets.repo_id
 WHERE %s
 LIMIT 1
 `
 
 func getChangesetJobQuery(opts *GetChangesetJobOpts) *sqlf.Query {
-	var preds []*sqlf.Query
-	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
-	}
-	if opts.BatchChangeID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_change_id = %s", opts.BatchChangeID))
-	}
-	if opts.ChangesetID != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_id = %s", opts.ChangesetID))
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
-	}
-
-	if len(opts.States) != 0 {
-		states := []*sqlf.Query{}
-		for _, state := range opts.States {
-			states = append(states, sqlf.Sprintf("%s", state))
-		}
-		preds = append(preds, sqlf.Sprintf("state IN (%s)", sqlf.Join(states, ",")))
-	}
-
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
+		preds = append(preds, sqlf.Sprintf("changeset_jobs.id = %s", opts.ID))
 	}
 
 	return sqlf.Sprintf(

@@ -3,9 +3,9 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS changeset_jobs (
     id BIGSERIAL PRIMARY KEY,
     bulk_group text NOT NULL,
-    user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    batch_change_id integer NOT NULL REFERENCES batch_changes(id) ON DELETE CASCADE,
-    changeset_id integer NOT NULL REFERENCES changesets(id) ON DELETE CASCADE,
+    user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE,
+    batch_change_id integer NOT NULL REFERENCES batch_changes(id) ON DELETE CASCADE DEFERRABLE,
+    changeset_id integer NOT NULL REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE,
 
     job_type text NOT NULL,
     payload jsonb DEFAULT '{}'::jsonb CHECK (jsonb_typeof(payload) = 'object'::text),
