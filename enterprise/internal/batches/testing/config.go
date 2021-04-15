@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
-func Mock(t testing.TB, mockery *conf.Unified) {
+func MockConfig(t testing.TB, mockery *conf.Unified) {
 	t.Helper()
 
 	conf.Mock(mockery)

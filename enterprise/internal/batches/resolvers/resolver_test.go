@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	configtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -357,7 +356,7 @@ func TestApplyBatchChange(t *testing.T) {
 
 	// Ensure our site configuration doesn't have rollout windows so we get a
 	// consistent initial state.
-	configtesting.Mock(t, &conf.Unified{})
+	ct.MockConfig(t, &conf.Unified{})
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
