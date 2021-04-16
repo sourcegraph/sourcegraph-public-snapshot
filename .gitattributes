@@ -1,4 +1,3 @@
-cmd/frontend/graphqlbackend/schema.go linguist-generated=true
 cmd/repo-updater/repos/testdata/** linguist-generated=true
 **/__fixtures__/** linguist-generated=true
 **/bindata.go linguist-generated=true
