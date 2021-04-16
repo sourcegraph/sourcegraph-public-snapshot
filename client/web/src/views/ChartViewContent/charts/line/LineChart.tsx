@@ -2,8 +2,7 @@ import { ParentSize } from '@visx/responsive'
 import { EventEmitterProvider } from '@visx/xychart'
 import React, { ReactElement } from 'react'
 
-import { DEFAULT_LINE_STROKE } from './colors'
-import { LineChartContent, LineChartContentProps } from './components/LineChartContent'
+import { getLineStroke, LineChartContent, LineChartContentProps } from './components/LineChartContent'
 
 export interface LineChartProps<Datum extends object> extends LineChartContentProps<Datum> {}
 
@@ -42,7 +41,7 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
                         <li key={line.dataKey.toString()} className="line-chart__legend-item">
                             <div
                                 /* eslint-disable-next-line react/forbid-dom-props */
-                                style={{ backgroundColor: line.stroke ?? DEFAULT_LINE_STROKE }}
+                                style={{ backgroundColor: getLineStroke(line) }}
                                 className="line-chart__legend-mark"
                             />
                             {line.name}

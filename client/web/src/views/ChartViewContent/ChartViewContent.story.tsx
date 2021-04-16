@@ -2,11 +2,10 @@ import { storiesOf } from '@storybook/react'
 import isChromatic from 'chromatic/isChromatic'
 import { createMemoryHistory } from 'history'
 import React from 'react'
-import { BrowserRouter } from 'react-router-dom'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import webStyles from '../../SourcegraphWebApp.scss'
+import { WebStory } from '../../components/WebStory';
 
 import { ChartViewContent } from './ChartViewContent'
 
@@ -21,11 +20,9 @@ const commonProps = {
 }
 
 const { add } = storiesOf('web/ChartViewContent', module).addDecorator(story => (
-    <BrowserRouter>
-        <style>{webStyles}</style>
-        {/* Chart will always fill the container, so we need to give the container an explicit size. */}
-        <div style={{ width: '32rem', height: '16rem' }}>{story()}</div>
-    </BrowserRouter>
+    <WebStory>
+        {() => <div style={{ width: '32rem', height: '16rem' }}>{story()}</div>}
+    </WebStory>
 ))
 
 add('Line chart', () => (

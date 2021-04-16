@@ -1,5 +1,4 @@
 import { curveLinear } from '@visx/curve'
-import { GlyphDot as Glyph } from '@visx/glyph'
 import { GridRows } from '@visx/grid'
 import { GridScale } from '@visx/grid/lib/types'
 import { Group } from '@visx/group'
@@ -13,15 +12,14 @@ import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useRef
 import { noop } from 'rxjs'
 import { LineChartContent as LineChartContentType } from 'sourcegraph'
 
-import { MaybeLink } from '../../MaybeLink'
 import { DEFAULT_LINE_STROKE } from '../colors'
 import { generateAccessors } from '../helpers/generate-accessors'
 import { usePointerEventEmitters } from '../helpers/use-event-emitters'
 import { useScales } from '../helpers/use-scales'
 import { onDatumZoneClick } from '../types'
 
+import { ActiveDatum, GlyphContent } from './GlyphContent';
 import {
-    dateLabelFormatter,
     dateTickFormatter,
     numberFormatter,
     Tick,
@@ -48,7 +46,7 @@ const SCALES_CONFIG = {
 }
 
 // Line color accessor
-const getLineStroke = <Datum extends object>(
+export const getLineStroke = <Datum extends object>(
     line: LineChartContentType<Datum, keyof Datum>['series'][number]
 ): string => line?.stroke ?? DEFAULT_LINE_STROKE
 
@@ -67,15 +65,6 @@ export interface LineChartContentProps<Datum extends object>
     onDatumZoneClick: onDatumZoneClick
     /** Callback calls every time when link-point and only link-point on the chart was clicked. */
     onDatumLinkClick: (event: React.MouseEvent) => void
-}
-
-/**
- * Type for active datum state in LineChartContent component. In order to render active state
- * for hovered or focused point we need to track active datum to calculate styles for active glyph.
- */
-interface ActiveDatum<Datum extends object> extends EventHandlerParams<Datum> {
-    /** Series of data of active datum */
-    line?: LineChartContentProps<Datum>['series'][number]
 }
 
 /**
@@ -178,9 +167,9 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     })
 
     // We only need to catch pointerout event on root element - chart
-    // we can't relay on event propagation here because this leads us to
+    // we can't rely on event propagation here because this leads us to
     // unnecessary calls when some child element had lost cursor he fired
-    // that unnecessary event. So we have t track pointerout by ourselves.
+    // that unnecessary event. So we have to track the pointerout by ourselves.
     // This focused ref is kind of a flag to track do we have any event from
     // user on chart or not used below in move and out handlers to fire pointerout
     // event in right moment and avoid unnecessary onPointerOut calls.
@@ -338,53 +327,21 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                         // Don't have info about line in props. @visx/xychart doesn't expose this information
                                         // Move this arrow function in separate component when API of GlyphSeries will be fixed.
                                         /* eslint-disable-next-line react/jsx-no-bind */
-                                        renderGlyph={props => {
-                                            // Pay attention that props.key here is actually index of current datum.
-                                            // Implementation problem of @visx/xychart
-                                            const hovered =
-                                                hoveredDatum?.index === +props.key && hoveredDatum.key === line.dataKey
-                                            const focused =
-                                                focusedDatum?.index === +props.key && focusedDatum.key === line.dataKey
-
-                                            const linkURL = line.linkURLs?.[+props.key]
-                                            const currentDatum = {
-                                                key: line.dataKey.toString(),
-                                                index: +props.key,
-                                                datum: props.datum,
-                                            }
-
-                                            const xAxisValue = dateLabelFormatter(new Date(accessors.x(props.datum)))
-                                            const yAxisValue =
-                                                (accessors.y?.[line.dataKey](props.datum) as string) ?? ''
-                                            const ariaLabel = `Point ${+props.key + 1} of line ${index + 1} of ${
-                                                series.length
-                                            }. X value: ${xAxisValue}. Y value: ${yAxisValue}`
-
-                                            return (
-                                                <MaybeLink
-                                                    to={linkURL}
+                                        renderGlyph={glyphProps => (
+                                                <GlyphContent
+                                                    {...glyphProps}
+                                                    index={glyphProps.key}
+                                                    hoveredDatum={hoveredDatum}
+                                                    focusedDatum={focusedDatum}
+                                                    accessors={accessors}
+                                                    line={line}
+                                                    lineIndex={index}
+                                                    totalNumberOfLines={series.length}
+                                                    setFocusedDatum={setFocusedDatum}
                                                     onPointerUp={stopPropagation}
                                                     onClick={onDatumLinkClick}
-                                                    /* eslint-disable-next-line react/jsx-no-bind */
-                                                    onFocus={() => linkURL && setFocusedDatum(currentDatum)}
-                                                    /* eslint-disable-next-line react/jsx-no-bind */
-                                                    onBlur={() => linkURL && setFocusedDatum(null)}
-                                                    className="line-chart__glyph-link"
-                                                    role={linkURL ? 'link' : 'graphics-dataunit'}
-                                                    aria-label={ariaLabel}
-                                                >
-                                                    <Glyph
-                                                        className={classnames('line-chart__glyph', {
-                                                            'line-chart__glyph--active': hovered,
-                                                        })}
-                                                        cx={props.x}
-                                                        cy={props.y}
-                                                        stroke={getLineStroke(line)}
-                                                        r={hovered || focused ? 6 : 4}
-                                                    />
-                                                </MaybeLink>
-                                            )
-                                        }}
+                                                />
+                                            )}
                                     />
                                 </Group>
                             ))}

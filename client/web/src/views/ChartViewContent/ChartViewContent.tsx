@@ -10,6 +10,7 @@ import { BarChart } from './charts/bar/BarChart'
 import { LineChart } from './charts/line/LineChart'
 import { DatumZoneClickEvent } from './charts/line/types'
 import { PieChart } from './charts/pie/PieChart'
+import { getInsightTypeByViewId } from './utils/get-insight-type-by-view-id';
 
 /**
  * Displays chart view content.
@@ -32,7 +33,7 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
     const { content, className = '', history, viewID, telemetryService } = props
 
     const handleDatumLinkClick = useCallback(() => {
-        telemetryService.log('InsightDataPointClick', { insightType: viewID.split('.')[0] })
+        telemetryService.log('InsightDataPointClick', { insightType: getInsightTypeByViewId(viewID) })
     }, [viewID, telemetryService])
 
     // Click link-zone handler for line chart only. Catch click around point and redirect user by
@@ -45,7 +46,7 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
                 return
             }
 
-            telemetryService.log('InsightDataPointClick', { insightType: viewID.split('.')[0] })
+            telemetryService.log('InsightDataPointClick', { insightType: getInsightTypeByViewId(viewID) })
             linkHandler(event.originEvent, event.link)
         }
     }, [history, viewID, telemetryService])
