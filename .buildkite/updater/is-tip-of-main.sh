@@ -3,11 +3,6 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -euxo pipefail
 
-# There are two GITHUB tokens required on our pipeline,
-# one for ghe.sgdev.org and this. This line ensures for
-# this job we're using the correct token
-export GITHUB_TOKEN="${BUILDKITE_GITHUBDOTCOM_TOKEN}"
-
 COMMIT="${BUILDKITE_COMMIT}"
 
 API_SLUG="repos/sourcegraph/sourcegraph/commits"
