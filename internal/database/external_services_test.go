@@ -13,6 +13,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -384,9 +386,10 @@ func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
 	store := ExternalServices(db)
-	store.PreCreateExternalService = func(ctx context.Context) error {
+	BeforeCreateExternalService = func(ctx context.Context, db dbutil.DB) error {
 		return errcode.NewPresentationError("test plan limit exceeded")
 	}
+	t.Cleanup(func() { BeforeCreateExternalService = nil })
 	if err := store.Create(ctx, confGet, es); err == nil {
 		t.Fatal("expected an error, got none")
 	}
