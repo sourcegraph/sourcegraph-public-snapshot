@@ -1917,3 +1917,96 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		})
 	}
 }
+
+func testStoreEnqueueNextScheduledChangeset(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+	// Like testStoreListChangesetsTextSearch(), this is similar to the setup
+	// in testStoreChangesets(), but we need a more fine grained set of
+	// changesets to handle the different scenarios.
+
+	rs := database.ReposWith(s)
+	es := database.ExternalServicesWith(s)
+
+	// We can just pre-can a repo. The kind doesn't matter here.
+	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
+	if err := rs.Create(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	// Let's define a quick and dirty helper to create changesets with a
+	// specific state and update time, since those are the key fields.
+	createChangeset := func(title string, lastUpdated time.Time, state btypes.ReconcilerState) *btypes.Changeset {
+		// First, we need to create a changeset spec.
+		spec := &btypes.ChangesetSpec{
+			Spec: &btypes.ChangesetSpecDescription{
+				Title: "fake spec",
+			},
+		}
+		if err := s.CreateChangesetSpec(ctx, spec); err != nil {
+			t.Fatalf("creating changeset spec: %v", err)
+		}
+
+		// Now we can use that to create a changeset.
+		cs := &btypes.Changeset{
+			RepoID:              repo.ID,
+			CreatedAt:           clock.Now(),
+			UpdatedAt:           lastUpdated,
+			Metadata:            &github.PullRequest{Title: title},
+			ExternalServiceType: extsvc.TypeGitHub,
+			CurrentSpecID:       spec.ID,
+			PublicationState:    btypes.ChangesetPublicationStateUnpublished,
+			ReconcilerState:     state,
+		}
+
+		if err := s.CreateChangeset(ctx, cs); err != nil {
+			t.Fatalf("creating changeset:\nerr: %+v\nchangeset: %+v", err, cs)
+		}
+		return cs
+	}
+
+	// Let's define two changesets that are scheduled out of their "natural"
+	// order, and one changeset that is already queued.
+	var (
+		second = createChangeset("after", time.Now().Add(1*time.Minute), btypes.ReconcilerStateScheduled)
+		first  = createChangeset("next", time.Now(), btypes.ReconcilerStateScheduled)
+		_      = createChangeset("queued", time.Now().Add(1*time.Minute), btypes.ReconcilerStateQueued)
+	)
+
+	// By definition, the first changeset should be next, since it has the
+	// earliest update time and is in the right state.
+	have, err := s.EnqueueNextScheduledChangeset(ctx)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	if have == nil {
+		t.Errorf("unexpected nil changeset")
+	} else if have.ID != first.ID {
+		t.Errorf("unexpected changeset: have=%v want=%v", have, first)
+	}
+
+	// Let's check that first's state was updated.
+	if want := btypes.ReconcilerStateQueued; have.ReconcilerState != want {
+		t.Errorf("unexpected reconciler state: have=%v want=%v", have.ReconcilerState, want)
+	}
+
+	// Given the updated state, second should be the next scheduled changeset.
+	have, err = s.EnqueueNextScheduledChangeset(ctx)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	if have == nil {
+		t.Errorf("unexpected nil changeset")
+	} else if have.ID != second.ID {
+		t.Errorf("unexpected changeset: have=%v want=%v", have, second)
+	}
+
+	// Let's check that second's state was updated.
+	if want := btypes.ReconcilerStateQueued; have.ReconcilerState != want {
+		t.Errorf("unexpected reconciler state: have=%v want=%v", have.ReconcilerState, want)
+	}
+
+	// Now we've enqueued the two scheduled changesets, we shouldn't be able to
+	// enqueue another.
+	if _, err = s.EnqueueNextScheduledChangeset(ctx); err != ErrNoResults {
+		t.Errorf("unexpected error: have=%v want=%v", err, ErrNoResults)
+	}
+}

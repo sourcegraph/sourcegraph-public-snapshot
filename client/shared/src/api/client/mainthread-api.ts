@@ -108,7 +108,7 @@ export const initMainThreadAPI = (
         return Promise.resolve(commandEntry.run(...(args || [])))
     }
 
-    subscription.add(registerBuiltinClientCommands(platformContext, registerCommand))
+    subscription.add(registerBuiltinClientCommands(platformContext, extensionHost, registerCommand))
 
     const commandErrors = new Subject<PlainNotification>()
     const exposedToClient: ExposedToClient = {

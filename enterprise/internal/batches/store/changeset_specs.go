@@ -604,8 +604,17 @@ func getRewirerMappingCurrentState(state *btypes.ChangesetState) (*sqlf.Query, e
 		q = sqlf.Sprintf("reconciler_state = %s", btypes.ReconcilerStateErrored.ToDB())
 	case btypes.ChangesetStateFailed:
 		q = sqlf.Sprintf("reconciler_state = %s", btypes.ReconcilerStateFailed.ToDB())
+	case btypes.ChangesetStateScheduled:
+		q = sqlf.Sprintf("reconciler_state = %s", btypes.ReconcilerStateScheduled.ToDB())
 	case btypes.ChangesetStateProcessing:
-		q = sqlf.Sprintf("reconciler_state = %s", btypes.ReconcilerStateCompleted.ToDB())
+		q = sqlf.Sprintf("reconciler_state NOT IN (%s)",
+			sqlf.Join([]*sqlf.Query{
+				sqlf.Sprintf("%s", btypes.ReconcilerStateErrored.ToDB()),
+				sqlf.Sprintf("%s", btypes.ReconcilerStateFailed.ToDB()),
+				sqlf.Sprintf("%s", btypes.ReconcilerStateScheduled.ToDB()),
+				sqlf.Sprintf("%s", btypes.ReconcilerStateCompleted.ToDB()),
+			}, ","),
+		)
 	case btypes.ChangesetStateUnpublished:
 		q = sqlf.Sprintf("publication_state = %s", btypes.ChangesetPublicationStateUnpublished)
 	case btypes.ChangesetStateDraft:

@@ -33,7 +33,7 @@ func TestPermissionLevels(t *testing.T) {
 		t.Skip()
 	}
 
-	mockRSAKeygen(t)
+	ct.MockRSAKeygen(t)
 
 	db := dbtesting.GetDB(t)
 

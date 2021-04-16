@@ -18,10 +18,6 @@ indexport=$((6072 + replica))
 # - https://github.com/sourcegraph/infrastructure/blob/d67cfdaf7760b926df165745e40f7bd9507d1c20/docker-images/zoekt-webserver/Dockerfile#L27-L34
 export GOGC=50
 
-# Test the new scheduler in dev. This can be removed once it is enabled by
-# default. https://github.com/sourcegraph/sourcegraph/issues/18305
-export ZOEKTSCHED="enable=1"
-
 case "$cmd" in
 
 indexserver)

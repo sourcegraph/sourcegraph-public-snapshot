@@ -240,3 +240,13 @@ func (s GithubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
 
 	return c.Changeset.SetMetadata(pr)
 }
+
+// CreateComment posts a comment on the Changeset.
+func (s GithubSource) CreateComment(ctx context.Context, c *Changeset, text string) error {
+	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitHub pull request")
+	}
+
+	return s.client.CreatePullRequestComment(ctx, pr, text)
+}

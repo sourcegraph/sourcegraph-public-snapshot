@@ -305,15 +305,19 @@ func (r *changesetResolver) State() (string, error) {
 	// Note that there's an inverse version of this function in
 	// getRewirerMappingCurrentState(): if one changes, so should the other.
 
-	if r.changeset.ReconcilerState == btypes.ReconcilerStateErrored {
+	switch r.changeset.ReconcilerState {
+	case btypes.ReconcilerStateErrored:
 		return string(btypes.ChangesetStateRetrying), nil
-	}
-	if r.changeset.ReconcilerState == btypes.ReconcilerStateFailed {
+	case btypes.ReconcilerStateFailed:
 		return string(btypes.ChangesetStateFailed), nil
+	case btypes.ReconcilerStateScheduled:
+		return string(btypes.ChangesetStateScheduled), nil
+	default:
+		if r.changeset.ReconcilerState != btypes.ReconcilerStateCompleted {
+			return string(btypes.ChangesetStateProcessing), nil
+		}
 	}
-	if r.changeset.ReconcilerState != btypes.ReconcilerStateCompleted {
-		return string(btypes.ChangesetStateProcessing), nil
-	}
+
 	if r.changeset.PublicationState == btypes.ChangesetPublicationStateUnpublished {
 		return string(btypes.ChangesetStateUnpublished), nil
 	}
