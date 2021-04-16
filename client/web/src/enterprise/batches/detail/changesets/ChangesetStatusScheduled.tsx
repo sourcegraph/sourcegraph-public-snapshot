@@ -1,8 +1,9 @@
-import React, { useCallback, useState } from 'react'
-import TimerOutlineIcon from 'mdi-react/TimerOutlineIcon'
 import classNames from 'classnames'
-import { getChangesetScheduleEstimate } from '../backend'
 import { formatDistance, isBefore, parseISO } from 'date-fns'
+import TimerOutlineIcon from 'mdi-react/TimerOutlineIcon'
+import React, { useCallback, useState } from 'react'
+
+import { getChangesetScheduleEstimate } from '../backend'
 
 // This is copied from ChangesetStatusCell.
 const iconClassNames = 'm-0 text-nowrap flex-column align-items-center justify-content-center'
@@ -14,7 +15,7 @@ const iconClassNames = 'm-0 text-nowrap flex-column align-items-center justify-c
 // estimate is more than a week away).
 type MemoisedEstimate = Date | 'initial' | 'loading' | null
 
-const estimateTooltip = (estimate: MemoisedEstimate) => {
+const estimateTooltip = (estimate: MemoisedEstimate): string | null => {
     if (estimate === 'initial' || estimate === 'loading') {
         return null
     }
@@ -23,31 +24,20 @@ const estimateTooltip = (estimate: MemoisedEstimate) => {
         const now = new Date()
         if (isBefore(estimate, now)) {
             return 'This changeset will be processed soon.'
-        } else {
-            return `This changeset will be processed in approximately ${formatDistance(estimate, now)}.`
         }
+        return `This changeset will be processed in approximately ${formatDistance(estimate, now)}.`
     }
 
     return 'No estimate is available for when this changeset will be processed.'
 }
 
-export const ChangesetStatusScheduled: React.FunctionComponent<{
-    id?: string
-    label?: JSX.Element
+interface Props {
+    id: string
+    label: JSX.Element
     className?: string
-}> = ({ id, label = <span>Scheduled</span>, className }) => {
-    // If there's no ID (for example, when previewing a batch change), then no
-    // dynamic behaviour is required, and we can just return a static icon and
-    // label.
-    if (!id) {
-        return (
-            <div className={classNames(iconClassNames, className)}>
-                <TimerOutlineIcon />
-                {label}
-            </div>
-        )
-    }
+}
 
+const DynamicChangesetStatusScheduled: React.FunctionComponent<Props> = ({ id, label, className }) => {
     // Calculating the estimate is just expensive enough that we don't want to
     // do it for every changeset. (If we did, we'd just request the field when
     // we make the initial GraphQL call to list the changesets.)
@@ -85,9 +75,41 @@ export const ChangesetStatusScheduled: React.FunctionComponent<{
     }, [estimate, id])
 
     return (
-        <div className={classNames(iconClassNames, className)} onMouseOver={onMouseOver} data-tooltip={tooltip}>
+        <div
+            className={classNames(iconClassNames, className)}
+            onMouseOver={onMouseOver}
+            onFocus={onMouseOver}
+            data-tooltip={tooltip}
+        >
             <TimerOutlineIcon />
             {label}
         </div>
     )
 }
+
+const StaticChangesetStatusScheduled: React.FunctionComponent<Pick<Props, 'label' | 'className'>> = ({
+    label,
+    className,
+}) => (
+    <div className={classNames(iconClassNames, className)}>
+        <TimerOutlineIcon />
+        {label}
+    </div>
+)
+
+export const ChangesetStatusScheduled: React.FunctionComponent<Partial<Props>> = ({
+    id,
+    label = <span>Scheduled</span>,
+    className,
+}) => (
+    // If there's no ID (for example, when previewing a batch change), then no
+    // dynamic behaviour is required, and we can just return a static icon and
+    // label. Otherwise, we need the whole dynamic shebang.
+    <>
+        {id ? (
+            <DynamicChangesetStatusScheduled id={id} label={label} className={className} />
+        ) : (
+            <StaticChangesetStatusScheduled label={label} className={className} />
+        )}
+    </>
+)
