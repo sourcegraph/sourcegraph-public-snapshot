@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
@@ -13,6 +14,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import {
     CaseSensitivityProps,
@@ -35,6 +37,7 @@ import { SearchResultTypeTabs } from '../SearchResultTypeTabs'
 import { VersionContextWarning } from '../VersionContextWarning'
 
 import { StreamingProgress } from './progress/StreamingProgress'
+import { SearchSidebar } from './SearchSidebar'
 import { StreamingSearchResultsFilterBars } from './StreamingSearchResultsFilterBars'
 import { StreamingSearchResultsList } from './StreamingSearchResultsList'
 
@@ -190,17 +193,27 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         [query, telemetryService, props]
     )
 
+    const { isRedesignEnabled } = useRedesignToggle()
+
     return (
-        <div className="test-search-results search-results d-flex flex-column w-100">
+        <div
+            className={classNames(
+                'test-search-results search-results d-flex w-100',
+                isRedesignEnabled ? 'flex-row' : 'flex-column'
+            )}
+        >
             <PageTitle key="page-title" title={query} />
-            <StreamingSearchResultsFilterBars {...props} results={results} />
+
+            {isRedesignEnabled ? <SearchSidebar /> : <StreamingSearchResultsFilterBars {...props} results={results} />}
             <div className="search-results-list">
                 <div className="d-lg-flex mb-2 align-items-end flex-wrap">
-                    <SearchResultTypeTabs
-                        {...props}
-                        query={props.navbarSearchQueryState.query}
-                        className="search-results-list__tabs"
-                    />
+                    {!isRedesignEnabled && (
+                        <SearchResultTypeTabs
+                            {...props}
+                            query={props.navbarSearchQueryState.query}
+                            className="search-results-list__tabs"
+                        />
+                    )}
 
                     <SearchResultsInfoBar
                         {...props}
