@@ -60,7 +60,7 @@
 }
 
 .theme-light.theme-redesign {
-    @each $color, $variants in $theme-colors-redesign-light-2 {
+    @each $color, $variants in $theme-colors-redesign-light {
         .btn-#{$color} {
             @include redesign-button-variant(
                 $base-color: map-get($variants, 1),
@@ -79,7 +79,7 @@
 }
 
 .theme-dark.theme-redesign {
-    @each $color, $variants in $theme-colors-redesign-dark-2 {
+    @each $color, $variants in $theme-colors-redesign-dark {
         .btn-#{$color} {
             @include redesign-button-variant(
                 $base-color: map-get($variants, 1),

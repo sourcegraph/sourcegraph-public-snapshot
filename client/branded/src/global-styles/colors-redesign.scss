@@ -83,31 +83,7 @@ $redesign-warning: $redesign-yellow;
 $redesign-info: $redesign-cyan;
 $redesign-merged: $redesign-purple;
 
-$theme-colors-redesign: (
-    'primary': $redesign-primary,
-    'success': $redesign-success,
-    'danger': $redesign-danger,
-    'warning': $redesign-warning,
-    'info': $redesign-info,
-    // Added to bg- and text- utilities because it is commonly needed in our app.
-    'merged': $redesign-purple,
-);
-
-$theme-colors-redesign-light: map-merge(
-    $theme-colors-redesign,
-    (
-        'secondary': $redesign-gray-04,
-    )
-);
-
-$theme-colors-redesign-dark: map-merge(
-    $theme-colors-redesign,
-    (
-        'secondary': $redesign-gray-08,
-    )
-);
-
-$theme-colors-redesign-light-2: (
+$theme-colors-redesign-light: (
     'primary': (
         1: $redesign-primary,
         2: #a3d0ff,
@@ -145,7 +121,7 @@ $theme-colors-redesign-light-2: (
     ),
 );
 
-$theme-colors-redesign-dark-2: (
+$theme-colors-redesign-dark: (
     'primary': (
         1: $redesign-primary,
         2: #0f59aa,
