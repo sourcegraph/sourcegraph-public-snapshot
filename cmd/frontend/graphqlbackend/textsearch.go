@@ -284,36 +284,36 @@ func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.M
 
 var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error)
 
-func fileMatchesToSearchResults(db dbutil.DB, results []result.FileMatch) []SearchResultResolver {
-	results2 := make([]SearchResultResolver, len(results))
-	for i, result := range results {
-		results2[i] = &FileMatchResolver{
-			FileMatch:    result,
-			RepoResolver: NewRepositoryResolver(db, result.Repo.ToRepo()),
+func fileMatchesToSearchResults(db dbutil.DB, matches []result.FileMatch) []SearchResultResolver {
+	results := make([]SearchResultResolver, len(matches))
+	for i, match := range matches {
+		results[i] = &FileMatchResolver{
+			FileMatch:    match,
+			RepoResolver: NewRepositoryResolver(db, match.Repo.ToRepo()),
 			db:           db,
 		}
 	}
-	return results2
+	return results
 }
 
-func fileMatchResolversToSearchResults(results []*FileMatchResolver) []SearchResultResolver {
-	results2 := make([]SearchResultResolver, len(results))
-	for i, result := range results {
-		results2[i] = result
+func fileMatchResolversToSearchResults(resolvers []*FileMatchResolver) []SearchResultResolver {
+	results := make([]SearchResultResolver, len(resolvers))
+	for i, resolver := range resolvers {
+		results[i] = resolver
 	}
-	return results2
+	return results
 }
 
-func searchResultsToFileMatchResults(results []SearchResultResolver) ([]*FileMatchResolver, error) {
-	results2 := make([]*FileMatchResolver, len(results))
-	for i, result := range results {
-		fm, ok := result.ToFileMatch()
+func searchResultsToFileMatchResults(resolvers []SearchResultResolver) ([]*FileMatchResolver, error) {
+	results := make([]*FileMatchResolver, len(resolvers))
+	for i, resolver := range resolvers {
+		fm, ok := resolver.ToFileMatch()
 		if !ok {
 			return nil, fmt.Errorf("expected only file match results")
 		}
-		results2[i] = fm
+		results[i] = fm
 	}
-	return results2, nil
+	return results, nil
 }
 
 // searchFilesInRepoBatch is a convenience function around searchFilesInRepos
