@@ -274,8 +274,8 @@ async function completeFilter(
         return null
     }
     if (resolvedFilter.definition.suggestions) {
-        // If the filter definition has an associated suggestion type,
-        // use it to filter dynamic suggestions.
+        // If the filter definition has an associated dynamic suggestion type,
+        // use it to retrieve dynamic suggestions from the backend.
         const suggestions = await dynamicSuggestions.pipe(first()).toPromise()
         return {
             suggestions: suggestions
@@ -285,8 +285,9 @@ async function completeFilter(
                 .map(partialCompletionItem => ({
                     ...partialCompletionItem,
                     // Set the current value as filterText, so that all dynamic suggestions
-                    // returned by the server are displayed. otherwise, if the current filter value
-                    // is a regex pattern, Monaco's filtering might hide some suggestions.
+                    // returned by the server are displayed. Otherwise, if the current filter value
+                    // is a regex pattern like `repo:^` Monaco's filtering will try match `^` against the
+                    // suggestions, and not display them because they don't match.
                     filterText: value?.value,
                     range: value ? toMonacoRange(value.range) : defaultRange,
                     command: COMPLETION_ITEM_SELECTED,
