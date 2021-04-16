@@ -372,34 +372,32 @@ const followedBy = (scanToken: Scanner<Token>, scanNext: Scanner<Token>): Scanne
  * in a search query.
  */
 const filter: Scanner<Filter> = (input, start) => {
-    const scannedField = filterField(input, start)
-    if (scannedField.type === 'error') {
-        return scannedField
+    const scanPrefix = followedBy(filterField, filterSeparator)
+    const result = scanPrefix(input, start)
+    if (result.type === 'error') {
+        return result
     }
-    const scannedSeparator = filterSeparator(input, scannedField.term.range.end)
-    if (scannedSeparator.type === 'error') {
-        return scannedSeparator
-    }
-    let scannedValue: ScanResult<Literal> | undefined
-    if (input[scannedSeparator.term.range.end] === undefined) {
-        scannedValue = undefined
+    const [field, separator] = result.term as [Literal, Literal]
+    let value: ScanResult<Literal> | undefined
+    if (input[separator.range.end] === undefined) {
+        value = undefined
     } else {
-        scannedValue = scanPredicateValue(input, scannedSeparator.term.range.end, scannedField.term)
-        if (scannedValue.type === 'error') {
-            scannedValue = filterValue(input, scannedSeparator.term.range.end)
+        value = scanPredicateValue(input, separator.range.end, field)
+        if (value.type === 'error') {
+            value = filterValue(input, separator.range.end)
         }
     }
-    if (scannedValue && scannedValue.type === 'error') {
-        return scannedValue
+    if (value && value.type === 'error') {
+        return value
     }
     return {
         type: 'success',
         term: {
             type: 'filter',
-            range: { start, end: scannedValue ? scannedValue.term.range.end : scannedSeparator.term.range.end },
-            field: scannedField.term,
-            value: scannedValue?.term,
-            negated: scannedField.term.value.startsWith('-'),
+            range: { start, end: value ? value.term.range.end : separator.range.end },
+            field,
+            value: value?.term,
+            negated: field.value.startsWith('-'),
         },
     }
 }
