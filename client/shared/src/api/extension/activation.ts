@@ -51,7 +51,17 @@ export function observeActiveExtensions(
 
 export function activateExtensions(
     state: Pick<ExtensionHostState, 'activeExtensions' | 'contributions' | 'haveInitialExtensionsLoaded' | 'settings'>,
-    mainAPI: Remote<MainThreadAPI>
+    mainAPI: Remote<Pick<MainThreadAPI, 'getScriptURLForExtension' | 'logEvent'>>,
+    /**
+     * Function that activates an extension.
+     * Returns a promise that resolves once the extension is activated.
+     * */
+    activate = activateExtension,
+    /**
+     * Function that de-activates an extension.
+     * Returns a promise that resolves once the extension is de-activated.
+     * */
+    deactivate = deactivateExtension
 ): Subscription {
     const getScriptURLs = memoizeObservable(
         () =>
@@ -70,10 +80,8 @@ export function activateExtensions(
     const previouslyActivatedExtensions = new Set<string>()
     const extensionContributions = new Map<string, Contributions>()
     const contributionsToAdd = new Map<string, Contributions>()
-    const extensionsSubscription = state.activeExtensions
+    const extensionsSubscription = combineLatest([state.activeExtensions, getScriptURLs(null)])
         .pipe(
-            // TODO(tj): combine latest?
-            withLatestFrom(getScriptURLs(null)),
             concatMap(([activeExtensions, getScriptURLs]) => {
                 const toDeactivate = new Set<string>()
                 const toActivate = new Map<string, ConfiguredExtension | ExecutableExtension>()
@@ -161,12 +169,12 @@ export function activateExtensions(
                                             })
                                     }
 
-                                    return activateExtension(id, scriptURL).catch(error =>
+                                    return activate(id, scriptURL).catch(error =>
                                         console.error(`Error activating extension ${id}:`, asError(error))
                                     )
                                 }),
                                 [...toDeactivate].map(id =>
-                                    deactivateExtension(id).catch(error =>
+                                    deactivate(id).catch(error =>
                                         console.error(`Error deactivating extension ${id}:`, asError(error))
                                     )
                                 ),
