@@ -93,7 +93,16 @@ func textDecoder(query string, t *template.Template, w io.Writer) streaming.Deco
 			if !progress.Done {
 				return
 			}
-			err := t.ExecuteTemplate(w, "progress", progress)
+
+			templateData := struct {
+				streaming.Progress
+				LimitHit bool
+			}{
+				Progress: *progress,
+				LimitHit: isLimitHit(progress),
+			}
+
+			err := t.ExecuteTemplate(w, "progress", &templateData)
 			if err != nil {
 				logError(fmt.Sprintf("error when executing template: %s\n", err))
 			}
@@ -178,6 +187,17 @@ func textDecoder(query string, t *template.Template, w io.Writer) streaming.Deco
 			}
 		},
 	}
+}
+
+// isLimitHit returns true if any of the skipped reasons indicate a limit was
+// hit. This is the same logic we use in the webapp.
+func isLimitHit(progress *streaming.Progress) bool {
+	for _, p := range progress.Skipped {
+		if strings.Contains(string(p.Reason), "-limit") {
+			return true
+		}
+	}
+	return false
 }
 
 const streamingTemplate = `
@@ -265,7 +285,7 @@ const streamingTemplate = `
 	{{- else -}}
 		{{- color "success" -}}
 	{{- end -}}
-	{{- .MatchCount -}}{{if len .Skipped}}+{{end}} results{{- color "nc" -}}
+	{{- .MatchCount -}}{{if .LimitHit}}+{{end}} results{{- color "nc" -}}
 	{{- " in " -}}{{color "success"}}{{msDuration .DurationMs}}{{if .RepositoriesCount}}{{- color "nc" -}}
 	{{- " from " -}}{{color "success"}}{{.RepositoriesCount}}{{- " Repositories" -}}{{- color "nc" -}}{{end}}
 	{{- "\n" -}}
