@@ -62,7 +62,7 @@
     .btn,
     // Required because `.btn.btn-sm { @extend small }` includes `font-weight: inherit;` that we don't need.
     .btn.btn-sm {
-        // Use placeholder selector only styles defined for `.theme-redesign label`.
+        // Use placeholder-selector to extend only styles defined for `.theme-redesign label`.
         @extend %label-base;
     }
 }
