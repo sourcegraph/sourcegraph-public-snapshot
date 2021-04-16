@@ -274,18 +274,6 @@ async function completeFilter(
         return null
     }
     if (resolvedFilter.definition.suggestions) {
-        if (Array.isArray(resolvedFilter.definition.suggestions)) {
-            // what is the significance of this if it's not a discrete value?
-            return {
-                suggestions: resolvedFilter.definition.suggestions.map(label => ({
-                    label,
-                    kind: Monaco.languages.CompletionItemKind.Text,
-                    insertText: label + ' ',
-                    range: value ? toMonacoRange(value.range) : defaultRange,
-                    command: COMPLETION_ITEM_SELECTED,
-                })),
-            }
-        }
         // If the filter definition has an associated suggestion type,
         // use it to filter dynamic suggestions.
         const suggestions = await dynamicSuggestions.pipe(first()).toPromise()
