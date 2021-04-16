@@ -10,7 +10,7 @@ import { BarChart } from './charts/bar/BarChart'
 import { LineChart } from './charts/line/LineChart'
 import { DatumZoneClickEvent } from './charts/line/types'
 import { PieChart } from './charts/pie/PieChart'
-import { getInsightTypeByViewId } from './utils/get-insight-type-by-view-id';
+import { getInsightTypeByViewId } from './utils/get-insight-type-by-view-id'
 
 /**
  * Displays chart view content.

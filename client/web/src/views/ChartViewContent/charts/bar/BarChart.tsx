@@ -141,7 +141,9 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                             const classes = classnames('bar-chart__bar', { 'bar-chart__bar--with-link': link })
                             const yValue = yAccessor(datum)
                             const xValue = formatXLabel(index)
-                            const ariaLabel = `Bar ${index + 1} of ${data.length}. X value: ${xValue}. Y value: ${yValue}`
+                            const ariaLabel = `Bar ${index + 1} of ${
+                                data.length
+                            }. X value: ${xValue}. Y value: ${yValue}`
 
                             return (
                                 <MaybeLink

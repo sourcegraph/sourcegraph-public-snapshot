@@ -18,14 +18,8 @@ import { usePointerEventEmitters } from '../helpers/use-event-emitters'
 import { useScales } from '../helpers/use-scales'
 import { onDatumZoneClick } from '../types'
 
-import { ActiveDatum, GlyphContent } from './GlyphContent';
-import {
-    dateTickFormatter,
-    numberFormatter,
-    Tick,
-    getTickXProps,
-    getTickYProps,
-} from './TickComponent'
+import { ActiveDatum, GlyphContent } from './GlyphContent'
+import { dateTickFormatter, numberFormatter, Tick, getTickXProps, getTickYProps } from './TickComponent'
 import { TooltipContent } from './TooltipContent'
 
 // Chart configuration
@@ -328,20 +322,20 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                         // Move this arrow function in separate component when API of GlyphSeries will be fixed.
                                         /* eslint-disable-next-line react/jsx-no-bind */
                                         renderGlyph={glyphProps => (
-                                                <GlyphContent
-                                                    {...glyphProps}
-                                                    index={glyphProps.key}
-                                                    hoveredDatum={hoveredDatum}
-                                                    focusedDatum={focusedDatum}
-                                                    accessors={accessors}
-                                                    line={line}
-                                                    lineIndex={index}
-                                                    totalNumberOfLines={series.length}
-                                                    setFocusedDatum={setFocusedDatum}
-                                                    onPointerUp={stopPropagation}
-                                                    onClick={onDatumLinkClick}
-                                                />
-                                            )}
+                                            <GlyphContent
+                                                {...glyphProps}
+                                                index={glyphProps.key}
+                                                hoveredDatum={hoveredDatum}
+                                                focusedDatum={focusedDatum}
+                                                accessors={accessors}
+                                                line={line}
+                                                lineIndex={index}
+                                                totalNumberOfLines={series.length}
+                                                setFocusedDatum={setFocusedDatum}
+                                                onPointerUp={stopPropagation}
+                                                onClick={onDatumLinkClick}
+                                            />
+                                        )}
                                     />
                                 </Group>
                             ))}

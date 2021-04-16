@@ -1,4 +1,3 @@
-
 /**
  * Returns insight type according to viewID and our naming convention
  * [extensionName].[name/id of code insight].[place = Home | Insight page | Directory]

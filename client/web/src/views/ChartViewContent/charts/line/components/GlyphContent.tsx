@@ -1,13 +1,13 @@
-import { GlyphDot as Glyph } from '@visx/glyph';
-import { EventHandlerParams, GlyphProps } from '@visx/xychart/lib/types';
-import classnames from 'classnames';
-import React, { MouseEventHandler, PointerEventHandler, ReactElement } from 'react';
+import { GlyphDot as Glyph } from '@visx/glyph'
+import { EventHandlerParams, GlyphProps } from '@visx/xychart/lib/types'
+import classnames from 'classnames'
+import React, { MouseEventHandler, PointerEventHandler, ReactElement } from 'react'
 
-import { MaybeLink } from '../../MaybeLink';
-import { Accessors } from '../types';
+import { MaybeLink } from '../../MaybeLink'
+import { Accessors } from '../types'
 
-import { getLineStroke, LineChartContentProps } from './LineChartContent';
-import { dateLabelFormatter } from './TickComponent';
+import { getLineStroke, LineChartContentProps } from './LineChartContent'
+import { dateLabelFormatter } from './TickComponent'
 
 /**
  * Type for active datum state in LineChartContent component. In order to render active state
@@ -61,13 +61,11 @@ export function GlyphContent<Datum extends object>(props: GlyphContentProps<Datu
         setFocusedDatum,
         x: xCoordinate,
         y: yCoordinate,
-    } = props;
+    } = props
 
-    const currentDatumIndex = +index;
-    const hovered =
-        hoveredDatum?.index === currentDatumIndex && hoveredDatum.key === line.dataKey
-    const focused =
-        focusedDatum?.index === currentDatumIndex && focusedDatum.key === line.dataKey
+    const currentDatumIndex = +index
+    const hovered = hoveredDatum?.index === currentDatumIndex && hoveredDatum.key === line.dataKey
+    const focused = focusedDatum?.index === currentDatumIndex && focusedDatum.key === line.dataKey
 
     const linkURL = line.linkURLs?.[currentDatumIndex]
     const currentDatum = {
@@ -77,11 +75,10 @@ export function GlyphContent<Datum extends object>(props: GlyphContentProps<Datu
     }
 
     const xAxisValue = dateLabelFormatter(new Date(accessors.x(datum)))
-    const yAxisValue =
-        (accessors.y?.[line.dataKey](datum) as string) ?? ''
-    const ariaLabel = `Point ${currentDatumIndex + 1} of line ${lineIndex + 1} of ${
-        totalNumberOfLines
-    }. X value: ${xAxisValue}. Y value: ${yAxisValue}`
+    const yAxisValue = (accessors.y?.[line.dataKey](datum) as string) ?? ''
+    const ariaLabel = `Point ${currentDatumIndex + 1} of line ${
+        lineIndex + 1
+    } of ${totalNumberOfLines}. X value: ${xAxisValue}. Y value: ${yAxisValue}`
 
     return (
         <MaybeLink
