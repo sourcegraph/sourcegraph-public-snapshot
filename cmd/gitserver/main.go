@@ -34,7 +34,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -94,16 +93,8 @@ func main() {
 			if err != nil {
 				return "", err
 			}
-
 			for _, info := range r.Sources {
-				// build the clone url using the external service config instead of using
-				// the source CloneURL field
-				svc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
-				if err != nil {
-					return "", err
-				}
-
-				return types.RepoCloneURL(svc.Kind, svc.Config, r)
+				return info.CloneURL, nil
 			}
 			return "", fmt.Errorf("no sources for %q", repo)
 		},
