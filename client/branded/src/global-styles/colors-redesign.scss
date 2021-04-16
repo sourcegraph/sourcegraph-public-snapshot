@@ -156,13 +156,13 @@ $theme-colors-redesign-dark: (
     --merged: #{$redesign-merged};
     --merged-2: #c6b6f6;
     --merged-3: #6b47d6;
+    --light-text: #{$white};
+    --dark-text: #343a4d;
     --line-number-color: #{$redesign-gray-06};
     --header-icon-color: #{$redesign-gray-05};
-    --reversed-text: #{$white};
     --logo-orange: #{$logo-orange};
     --logo-blue: #{$logo-blue};
     --logo-purple: #{$redesign-purple};
-    --dark-text: #343a4d;
     --tooltip-bg: #{$redesign-gray-08};
 
     // TODO: Move out of colors

@@ -13,7 +13,7 @@
         background-color: $lighter-color-variant;
         border-color: $lighter-color-variant;
         opacity: 1;
-        color: var(--reversed-text);
+        color: var(--light-text);
     }
 
     &.focus,
@@ -23,7 +23,7 @@
         background-color: $base-color;
     }
 
-    color: var(--reversed-text);
+    color: var(--light-text);
 }
 
 @mixin redesign-button-outline-variant($base-color, $lighter-color-variant) {
