@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
@@ -40,7 +40,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	}
 	ct.MockRepoPermissions(t, db, userID, repo.ID)
 
-	spec := &batches.BatchSpec{
+	spec := &btypes.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
@@ -48,7 +48,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	batchChange := &batches.BatchChange{
+	batchChange := &btypes.BatchChange{
 		Name:             "my-unique-name",
 		NamespaceUserID:  userID,
 		InitialApplierID: userID,
@@ -63,8 +63,8 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	changeset1 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
-		PublicationState:    batches.ChangesetPublicationStateUnpublished,
-		ExternalReviewState: batches.ChangesetReviewStatePending,
+		PublicationState:    btypes.ChangesetPublicationStateUnpublished,
+		ExternalReviewState: btypes.ChangesetReviewStatePending,
 		OwnedByBatchChange:  batchChange.ID,
 		BatchChange:         batchChange.ID,
 	})
@@ -74,9 +74,9 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		ExternalServiceType: "github",
 		ExternalID:          "12345",
 		ExternalBranch:      "open-pr",
-		ExternalState:       batches.ChangesetExternalStateOpen,
-		PublicationState:    batches.ChangesetPublicationStatePublished,
-		ExternalReviewState: batches.ChangesetReviewStatePending,
+		ExternalState:       btypes.ChangesetExternalStateOpen,
+		PublicationState:    btypes.ChangesetPublicationStatePublished,
+		ExternalReviewState: btypes.ChangesetReviewStatePending,
 		OwnedByBatchChange:  batchChange.ID,
 		BatchChange:         batchChange.ID,
 	})
@@ -86,9 +86,9 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		ExternalServiceType: "github",
 		ExternalID:          "56789",
 		ExternalBranch:      "merged-pr",
-		ExternalState:       batches.ChangesetExternalStateMerged,
-		PublicationState:    batches.ChangesetPublicationStatePublished,
-		ExternalReviewState: batches.ChangesetReviewStatePending,
+		ExternalState:       btypes.ChangesetExternalStateMerged,
+		PublicationState:    btypes.ChangesetPublicationStatePublished,
+		ExternalReviewState: btypes.ChangesetReviewStatePending,
 		OwnedByBatchChange:  batchChange.ID,
 		BatchChange:         batchChange.ID,
 	})
@@ -97,9 +97,9 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		ExternalServiceType: "github",
 		ExternalID:          "987651",
 		ExternalBranch:      "open-hidden-pr",
-		ExternalState:       batches.ChangesetExternalStateOpen,
-		PublicationState:    batches.ChangesetPublicationStatePublished,
-		ExternalReviewState: batches.ChangesetReviewStatePending,
+		ExternalState:       btypes.ChangesetExternalStateOpen,
+		PublicationState:    btypes.ChangesetPublicationStatePublished,
+		ExternalReviewState: btypes.ChangesetReviewStatePending,
 		OwnedByBatchChange:  batchChange.ID,
 		BatchChange:         batchChange.ID,
 	})
@@ -160,7 +160,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 		t.Run(fmt.Sprintf("Unsafe opts %t, first %d", tc.useUnsafeOpts, tc.firstParam), func(t *testing.T) {
 			input := map[string]interface{}{"batchChange": batchChangeAPIID, "first": int64(tc.firstParam)}
 			if tc.useUnsafeOpts {
-				input["reviewState"] = batches.ChangesetReviewStatePending
+				input["reviewState"] = btypes.ChangesetReviewStatePending
 			}
 			var response struct{ Node apitest.BatchChange }
 			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetConnection)

@@ -9,24 +9,24 @@ import (
 	"github.com/sourcegraph/batch-change-utils/overridable"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
 func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	batchSpecs := make([]*batches.BatchSpec, 0, 3)
+	batchSpecs := make([]*btypes.BatchSpec, 0, 3)
 
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(batchSpecs); i++ {
-			c := &batches.BatchSpec{
+			c := &btypes.BatchSpec{
 				RawSpec: `{"name": "Foobar", "description": "My description"}`,
-				Spec: batches.BatchSpecFields{
+				Spec: btypes.BatchSpecFields{
 					Name:        "Foobar",
 					Description: "My description",
-					ChangesetTemplate: batches.ChangesetTemplate{
+					ChangesetTemplate: btypes.ChangesetTemplate{
 						Title:  "Hello there",
 						Body:   "This is the body",
 						Branch: "my-branch",
-						Commit: batches.CommitTemplate{
+						Commit: btypes.CommitTemplate{
 							Message: "commit message",
 						},
 						Published: overridable.FromBoolOrString(false),
@@ -283,8 +283,8 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	})
 
 	t.Run("DeleteExpiredBatchSpecs", func(t *testing.T) {
-		underTTL := clock.Now().Add(-batches.BatchSpecTTL + 1*time.Minute)
-		overTTL := clock.Now().Add(-batches.BatchSpecTTL - 1*time.Minute)
+		underTTL := clock.Now().Add(-btypes.BatchSpecTTL + 1*time.Minute)
+		overTTL := clock.Now().Add(-btypes.BatchSpecTTL - 1*time.Minute)
 
 		tests := []struct {
 			createdAt         time.Time
@@ -303,7 +303,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		}
 
 		for _, tc := range tests {
-			batchSpec := &batches.BatchSpec{
+			batchSpec := &btypes.BatchSpec{
 				UserID:          1,
 				NamespaceUserID: 1,
 				CreatedAt:       tc.createdAt,
@@ -314,7 +314,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			}
 
 			if tc.hasBatchChange {
-				batchChange := &batches.BatchChange{
+				batchChange := &btypes.BatchChange{
 					Name:             "not-blank",
 					InitialApplierID: 1,
 					NamespaceUserID:  1,
@@ -328,7 +328,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			}
 
 			if tc.hasChangesetSpecs {
-				changesetSpec := &batches.ChangesetSpec{
+				changesetSpec := &btypes.ChangesetSpec{
 					RepoID:      1,
 					BatchSpecID: batchSpec.ID,
 				}

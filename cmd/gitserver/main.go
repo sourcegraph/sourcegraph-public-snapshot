@@ -12,6 +12,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+
 	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
@@ -46,6 +48,8 @@ var (
 )
 
 func main() {
+	ctx := context.Background()
+
 	env.Lock()
 	env.HandleHelpFlag()
 
@@ -75,6 +79,11 @@ func main() {
 	}
 	repoStore := database.Repos(db)
 	externalServiceStore := database.ExternalServices(db)
+
+	err = keyring.Init(ctx)
+	if err != nil {
+		log.Fatalf("failed to initialise keyring: %s", err)
+	}
 
 	gitserver := server.Server{
 		ReposDir:           reposDir,

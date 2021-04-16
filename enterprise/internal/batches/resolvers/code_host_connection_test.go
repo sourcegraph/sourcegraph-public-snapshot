@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -48,7 +49,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	}
 
 	t.Run("Query.BatchChangesCodeHosts", func(t *testing.T) {
-		cred := &store.SiteCredential{
+		cred := &btypes.SiteCredential{
 			ExternalServiceID:   ghRepo.ExternalRepo.ServiceID,
 			ExternalServiceType: ghRepo.ExternalRepo.ServiceType,
 			Credential:          &auth.OAuthBearerToken{Token: "SOSECRET"},
@@ -162,7 +163,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		siteCred := &store.SiteCredential{
+		siteCred := &btypes.SiteCredential{
 			ExternalServiceID:   bbsRepo.ExternalRepo.ServiceID,
 			ExternalServiceType: bbsRepo.ExternalRepo.ServiceType,
 			Credential:          &auth.OAuthBearerToken{Token: "SOSECRET"},

@@ -1,0 +1,58 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"body":"test-comment"}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.com/api/v4/projects/16606088/merge_requests/2/notes
+    method: POST
+  response:
+    body: '{"id":552054539,"type":null,"body":"test-comment","attachment":null,"author":{"id":5005329,"name":"Erik
+      Seliger","username":"eseliger","state":"active","avatar_url":"https://secure.gravatar.com/avatar/2582d91847f35b619bea3bd0f910964d?s=80\u0026d=identicon","web_url":"https://gitlab.com/eseliger"},"created_at":"2021-04-15T01:24:03.306Z","updated_at":"2021-04-15T01:24:03.306Z","system":false,"noteable_id":48629396,"noteable_type":"MergeRequest","resolvable":false,"confidential":false,"noteable_iid":2,"commands_changes":{}}'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 64015f3f5911ad18-OTP
+      Cf-Request-Id:
+      - 0974b9db930000ad1808831000000001
+      Content-Length:
+      - "526"
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 15 Apr 2021 01:24:03 GMT
+      Etag:
+      - W/"159d66b1b17addcb551cdcabbfb16efa"
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Gitlab-Lb:
+      - fe-12-lb-gprd
+      Gitlab-Sv:
+      - api-06-sv-gprd
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Gitlab-Feature-Category:
+      - code_review
+      X-Request-Id:
+      - 01F39J1H0Q4J2W4PCVEQPFXC1Q
+      X-Runtime:
+      - "0.156449"
+    status: 201 Created
+    code: 201
+    duration: ""

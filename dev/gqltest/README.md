@@ -4,7 +4,7 @@ This directory contains API-based integration tests in the form of standard Go t
 
 ## How to set up credentials
 
-Tests use environment variables to accept credentials of different external services involved, suggest to use [direnv](https://direnv.net/) to presistent those credentials for your convenience. Here is a comperhensive example `.envrc` file (you're free to use any other means, e.g. `.profile` or `.bashrc`):
+Tests use environment variables to accept credentials of different external services involved, it is suggested to use [direnv](https://direnv.net/) to persist those credentials for your convenience. Here is a comprehensive example `.envrc` file (you're free to use any other means, e.g. `.profile` or `.bashrc`):
 
 ```sh
 # Your GitHub personal access token, this token needs to have scope to access private
@@ -12,7 +12,7 @@ Tests use environment variables to accept credentials of different external serv
 # please post a message on #dev-chat to ask for an invite.
 export GITHUB_TOKEN=<REDACTED>
 
-# Please go to https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/5q5lnpirajegt7uifngeabrak4
+# Please go to https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zpxz7vl3ek7j3yxbnjvh6utrei
 # and copy relevant credentials to here.
 export AWS_ACCESS_KEY_ID=<REDACTED>
 export AWS_SECRET_ACCESS_KEY=<REDACTED>
@@ -24,7 +24,7 @@ export BITBUCKET_SERVER_TOKEN=<REDACTED>
 export BITBUCKET_SERVER_USERNAME=<REDACTED>
 ```
 
-You need to run `direnv allow` after editing the `.envrc` file.
+You need to run `direnv allow` after editing the `.envrc` file (it is suggested to place the `.envrc` file under `dev/gqltest`).
 
 Alternatively you can use the 1password CLI tool:
 

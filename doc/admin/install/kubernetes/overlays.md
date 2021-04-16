@@ -83,7 +83,7 @@ One benefit of generating manifest from base instead of modifying base directly 
 
 1. Create a new branch for the customizations from the current release branch
 
-  ```shell
+  ```
   git checkout 3.26
   git checkout -b 3.26-kustomize   
   ```
@@ -96,16 +96,16 @@ One benefit of generating manifest from base instead of modifying base directly 
 
 1. Ensure the services came up correctly, then commit all the customizations to the new branch
 
-  ```shell
-  git add /Overalys/$MY_OVERLAYS/*
-  git commit amend -m "Message" # Keeping all overlays contained to a single commit allows for easier cherry-picking
-  ```
+    ```
+    git add /Overalys/$MY_OVERLAYS/*
+    git commit amend -m "Message" # Keeping all overlays contained to a single commit allows for easier cherry-picking
+    ```
 
 1. Start Sourcegraph on your local machine by temporarily making the frontend port accessible:
 
-  ```
-  kubectl port-forward svc/sourcegraph-frontend 3080:30080
-  ```
+    ```
+    kubectl port-forward svc/sourcegraph-frontend 3080:30080
+    ```
 
 1. Open http://localhost:3080 in your browser and you will see a setup page. 
 
@@ -121,19 +121,21 @@ This overlay adds a namespace declaration to all the manifests.
 
 1. Execute this from the root directory of the repository to generate:
 
-  ```shell script
-  ./overlay-generate-cluster.sh namespaced generated-cluster
-  ```
+    ```
+    ./overlay-generate-cluster.sh namespaced generated-cluster
+    ```
 
 1. Create the namespace if it doesn't exist yet:
 
-  ```kubectl create namespace ns-<EXAMPLE NAMESPACE>
-  kubectl label namespace ns-<EXAMPLE NAMESPACE> name=ns-sourcegraph
-  ```
+    ```
+    kubectl create namespace ns-<EXAMPLE NAMESPACE>
+    kubectl label namespace ns-<EXAMPLE NAMESPACE> name=ns-sourcegraph
+    ```
 
 1. Execute this from the root directory of the repository to apply the generated manifests from the `generated-cluster` directory:
 
-  ```kubectl apply -n ns-<EXAMPLE NAMESPACE> --prune -l deploy=sourcegraph -f generated-cluster --recursive
+  ```
+  kubectl apply -n ns-<EXAMPLE NAMESPACE> --prune -l deploy=sourcegraph -f generated-cluster --recursive
   ```
 
 1. Run `kubectl get pods -A` to check for the namespaces and their status --it should now be up and running 🎉
@@ -155,12 +157,14 @@ In Kubernetes 1.18 `fsGroup` gets an additional [feature](https://kubernetes.io/
 
 To use it execute the following command from the root directory of this repository:
 
-```./overlay-generate-cluster.sh non-root-create-cluster generated-cluster
+```
+./overlay-generate-cluster.sh non-root-create-cluster generated-cluster
 ```
 
 After executing the script you can apply the generated manifests from the generated-cluster directory:
 
-```kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
+```
+kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 ```
 
 
@@ -178,12 +182,14 @@ This kustomization is for Sourcegraph installations that want to run containers 
 
 To use it, execute the following command from the root directory of this repository:
 
-```./overlay-generate-cluster.sh non-root generated-cluster
+```
+./overlay-generate-cluster.sh non-root generated-cluster
 ```
 
 After executing the script you can apply the generated manifests from the generated-cluster directory:
 
-```kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
+```
+kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 ```
 
 
@@ -196,12 +202,14 @@ overlay `non-root`.
 
 This kustomization injects initContainers in all pods with persistent volumes to transfer ownership of directories to specified non-root users. It is used for migrating existing installations to a non-root environment.
 
-```./overlay-generate-cluster.sh migrate-to-nonroot generated-cluster
+```
+./overlay-generate-cluster.sh migrate-to-nonroot generated-cluster
 ```
 
 After executing the script you can apply the generated manifests from the generated-cluster directory:
 
-```kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
+```
+kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 ```
 
 
@@ -212,12 +220,14 @@ This version and `non-privileged` need to stay in sync. This version is only use
 
 To use it, execute the following command from the root directory of this repository:
 
-```./overlay-generate-cluster.sh non-privileged-create-cluster generated-cluster
+```
+./overlay-generate-cluster.sh non-privileged-create-cluster generated-cluster
 ```
 
 After executing the script you can apply the generated manifests from the generated-cluster directory:
 
-```kubectl create namespace ns-sourcegraph
+```
+kubectl create namespace ns-sourcegraph
 kubectl apply -n ns-sourcegraph --prune -l deploy=sourcegraph -f generated-cluster --recursive
 ```
 
@@ -236,12 +246,14 @@ This kustomization deletes resource declarations and storage classnames to enabl
 
 To use it, execute the following command from the root directory:
 
-```./overlay-generate-cluster.sh minikube generated-cluster
+```
+./overlay-generate-cluster.sh minikube generated-cluster
 ```
 
 After executing the script you can apply the generated manifests from the generated-cluster directory:
 
-```minikube start
+```
+minikube start
 kubectl create namespace ns-sourcegraph
 kubectl -n ns-sourcegraph apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 kubectl -n ns-sourcegraph expose deployment sourcegraph-frontend --type=NodePort --name sourcegraph --port=3080 --target-port=3080
@@ -250,7 +262,8 @@ minikube service list
 
 To tear it down:
 
-```kubectl delete namespaces ns-sourcegraph
+```
+kubectl delete namespaces ns-sourcegraph
 minikube stop
 ```
 
@@ -258,14 +271,16 @@ minikube stop
 ## Upgrading sourcegraph with an overlay
 
 1. Create a new branch from the origin branch to the version upgrading to
-  ```shell
-  git checkout 3.23
-  ```
+
+    ```
+    git checkout 3.23
+    ```
 
 1. Create a new branch for this specific version
-  ```shell
-  git checkout -b "nameofbranch/version"
-  ```
+
+    ```
+    git checkout -b "nameofbranch/version"
+    ```
 
 1. Cherry pick the customizations for this version
 
@@ -281,6 +296,6 @@ minikube stop
 > error: error retrieving RESTMappings to prune: invalid resource networking.k8s.io/v1, Kind=Ingress, Namespaced=true: no matches for kind "Ingress" in version "networking.k8s.io/v1"
 
 - Make sure the client version of your kubectl matches the one used by the server. Run `kubectl version` to check.
-- See the ["Configure network access"](configure.md#configure-network-access)
+- See the ["Configure network access"](configure.md#security-configure-network-access)
 - Check for duplicate `sourcegraph-frontend` using `kubectl get ingresses -A`
-  - Delete duplicate using `kubectl delete ingress sourcegraph-frontend -n default`
+- Delete duplicate using `kubectl delete ingress sourcegraph-frontend -n default`

@@ -13,10 +13,6 @@ $media-md: 768px;
 $media-lg: 992px;
 $media-xl: 1200px;
 
-$theme-colors-light: (
-    'secondary': $secondary-light,
-);
-
 :root {
     --border-color: rgba(0, 0, 0, 0.125);
     --mark-bg: #{$mark-bg-light};

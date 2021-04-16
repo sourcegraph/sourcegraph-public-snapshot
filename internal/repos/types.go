@@ -5,58 +5,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
-
-// A Changeset of an existing Repo.
-type Changeset struct {
-	Title   string
-	Body    string
-	HeadRef string
-	BaseRef string
-
-	*batches.Changeset
-	*types.Repo
-}
-
-// IsOutdated returns true when the attributes of the nested
-// batches.Changeset do not match the attributes (title, body, ...) set on
-// the Changeset.
-func (c *Changeset) IsOutdated() (bool, error) {
-	currentTitle, err := c.Changeset.Title()
-	if err != nil {
-		return false, err
-	}
-
-	if currentTitle != c.Title {
-		return true, nil
-	}
-
-	currentBody, err := c.Changeset.Body()
-	if err != nil {
-		return false, err
-	}
-
-	if currentBody != c.Body {
-		return true, nil
-	}
-
-	currentBaseRef, err := c.Changeset.BaseRef()
-	if err != nil {
-		return false, err
-	}
-
-	if git.EnsureRefPrefix(currentBaseRef) != git.EnsureRefPrefix(c.BaseRef) {
-		return true, nil
-	}
-
-	return false, nil
-}
 
 // pick deterministically chooses between a and b a repo to keep and
 // discard. It is used when resolving conflicts on sourced repositories.
