@@ -9,7 +9,7 @@ import { WebGraphQlOperations } from '../graphql-operations'
 const CODE_HIGHLIGHTING_QUERIES: Partial<keyof (WebGraphQlOperations & SharedGraphQlOperations)>[] = [
     'highlightCode',
     'Blob',
-    'HighlightFile',
+    'HighlightedFile',
 ]
 
 /**
