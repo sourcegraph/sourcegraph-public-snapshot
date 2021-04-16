@@ -382,7 +382,12 @@ func NewBasicLimitWatcher(store throttled.GCRAStore) *BasicLimitWatcher {
 		store: store,
 	}
 	conf.Watch(func() {
-		basic.updateFromConfig(conf.Get().ExperimentalFeatures.RateLimitAnonymous)
+		e := conf.Get().ExperimentalFeatures
+		if e == nil {
+			basic.updateFromConfig(0)
+			return
+		}
+		basic.updateFromConfig(e.RateLimitAnonymous)
 	})
 	return basic
 }
@@ -422,10 +427,9 @@ type BasicLimiter struct {
 // quantity of 1.
 func (bl *BasicLimiter) RateLimit(_ string, _ int, args LimiterArgs) (bool, throttled.RateLimitResult, error) {
 	if args.Anonymous && args.RequestName == "unknown" && args.RequestSource == trace.SourceOther {
-		return bl.GCRARateLimiter.RateLimit("basic_rl", 1)
+		return bl.GCRARateLimiter.RateLimit("basic", 1)
 	}
-	// Don't limit but take a peek at the state of the limiter.
-	return bl.GCRARateLimiter.RateLimit("basic_rl", 0)
+	return false, throttled.RateLimitResult{}, nil
 }
 
 // RateLimitWatcher stores the currently configured rate limiter and whether or
