@@ -1,6 +1,6 @@
 # Testing a pull request 
 
-When submitting a pull request to a Sourcegraph-maintained extension repositories, there are a few tests you'll need to pass before the request can be reviewed. These tests runs logical tests that we author to make sure our code runs as expected.
+When submitting a pull request to a Sourcegraph-maintained extension repository, there are a few tests you'll need to pass before the request can be reviewed. These tests run logical tests that we author to make sure our code runs as expected.
 
 ## What are the tests?
 - **Prettier** is responsible for mostly visual choices like if we have a line of code that's longer than 70 characters, it will fail. This has nothing to do with the correctness of the code, more of a stylistic choice we make as a team to make sure we all use the same standard.
