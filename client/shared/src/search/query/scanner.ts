@@ -16,6 +16,7 @@ import {
     PatternKind,
     CharacterRange,
     createLiteral,
+    Separator,
 } from './token'
 
 /**
@@ -377,7 +378,7 @@ const filter: Scanner<Filter> = (input, start) => {
     if (result.type === 'error') {
         return result
     }
-    const [field, separator] = result.term as [Literal, Literal]
+    const [field, separator] = result.term as [Literal, Separator]
     let value: ScanResult<Literal> | undefined
     if (input[separator.range.end] === undefined) {
         value = undefined
