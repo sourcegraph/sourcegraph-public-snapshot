@@ -7,9 +7,12 @@ import (
 	"net/url"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/defaults"
-	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
+	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
+	"github.com/aws/aws-sdk-go-v2/config"
+	awscredentials "github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/codecommit"
 	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 	"golang.org/x/net/http2"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -27,9 +30,8 @@ type AWSCodeCommitSource struct {
 	svc    *types.ExternalService
 	config *schema.AWSCodeCommitConnection
 
-	awsConfig    aws.Config
-	awsPartition endpoints.Partition // "aws", "aws-cn", "aws-us-gov"
-	awsRegion    endpoints.Region
+	awsPartition string // "aws", "aws-cn", "aws-us-gov"
+	awsRegion    string
 	client       *awscodecommit.Client
 
 	exclude excludeFunc
@@ -45,22 +47,12 @@ func NewAWSCodeCommitSource(svc *types.ExternalService, cf *httpcli.Factory) (*A
 }
 
 func newAWSCodeCommitSource(svc *types.ExternalService, c *schema.AWSCodeCommitConnection, cf *httpcli.Factory) (*AWSCodeCommitSource, error) {
-	awsConfig := defaults.Config()
-	awsConfig.Region = c.Region
-	awsConfig.Credentials = aws.StaticCredentialsProvider{
-		Value: aws.Credentials{
-			AccessKeyID:     c.AccessKeyID,
-			SecretAccessKey: c.SecretAccessKey,
-			Source:          "sourcegraph-site-configuration",
-		},
-	}
-
 	if cf == nil {
 		cf = httpcli.NewExternalHTTPClientFactory()
 	}
 
 	cli, err := cf.Doer(func(c *http.Client) error {
-		tr := aws.NewBuildableHTTPClient().GetTransport()
+		tr := awshttp.NewBuildableClient().GetTransport()
 		if err := http2.ConfigureTransport(tr); err != nil {
 			return err
 		}
@@ -72,7 +64,23 @@ func newAWSCodeCommitSource(svc *types.ExternalService, c *schema.AWSCodeCommitC
 	if err != nil {
 		return nil, err
 	}
-	awsConfig.HTTPClient = cli
+
+	awsConfig, err := config.LoadDefaultConfig(context.Background(),
+		config.WithRegion(c.Region),
+		config.WithCredentialsProvider(
+			awscredentials.StaticCredentialsProvider{
+				Value: aws.Credentials{
+					AccessKeyID:     c.AccessKeyID,
+					SecretAccessKey: c.SecretAccessKey,
+					Source:          "sourcegraph-site-configuration",
+				},
+			},
+		),
+		config.WithHTTPClient(cli),
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	var eb excludeBuilder
 	for _, r := range c.Exclude {
@@ -85,21 +93,18 @@ func newAWSCodeCommitSource(svc *types.ExternalService, c *schema.AWSCodeCommitC
 	}
 
 	s := &AWSCodeCommitSource{
-		svc:       svc,
-		config:    c,
-		awsConfig: awsConfig,
-		exclude:   exclude,
-		client:    awscodecommit.NewClient(awsConfig),
+		svc:     svc,
+		config:  c,
+		exclude: exclude,
+		client:  awscodecommit.NewClient(awsConfig),
 	}
 
-	var ok bool
-	s.awsPartition, ok = endpoints.DefaultPartitions().ForRegion(c.Region)
-	if ok {
-		s.awsRegion, ok = s.awsPartition.Regions()[c.Region]
+	endpoint, err := codecommit.NewDefaultEndpointResolver().ResolveEndpoint(c.Region, codecommit.EndpointResolverOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("failed to resolve AWS region %q", c.Region))
 	}
-	if !ok {
-		return nil, fmt.Errorf("unrecognized AWS region name: %q", c.Region)
-	}
+	s.awsPartition = endpoint.PartitionID
+	s.awsRegion = endpoint.SigningRegion
 
 	return s, nil
 }

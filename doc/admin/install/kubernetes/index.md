@@ -22,22 +22,23 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 1. After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/) with `kubectl`.
 
-      ```bash
-      # Google Cloud Platform (GCP) users are required to give their user the ability to create roles in Kubernetes [(see GCP's documentation)](https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#prerequisites_for_using_role-based_access_control):
-      kubectl create clusterrolebinding cluster-admin-binding \
-        --clusterrole cluster-admin --user $(gcloud config get-value account)
-      ```
+    ```
+    # Google Cloud Platform (GCP) users are required to give their user the ability to create roles in Kubernetes.
+    # See the [GCP's documentation: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#prerequisites_for_using_role-based_access_control
+    kubectl create clusterrolebinding cluster-admin-binding \
+      --clusterrole cluster-admin --user $(gcloud config get-value account)
+    ```
 
 1. Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository and check out the version tag you wish to deploy:
 
-      ```bash
-      # 🚨 The master branch tracks development. 
-      # Use the branch of this repository corresponding to the version of Sourcegraph you wish to deploy, e.g. git checkout 3.24
-      git clone https://github.com/sourcegraph/deploy-sourcegraph
-      cd deploy-sourcegraph
-      SOURCEGRAPH_VERSION="v3.26.3"
-      git checkout $SOURCEGRAPH_VERSION
-      ```
+    ```
+    # 🚨 The master branch tracks development. 
+    # Use the branch of this repository corresponding to the version of Sourcegraph you wish to deploy, e.g. git checkout 3.24
+    git clone https://github.com/sourcegraph/deploy-sourcegraph
+    cd deploy-sourcegraph
+    SOURCEGRAPH_VERSION="v3.26.3"
+    git checkout $SOURCEGRAPH_VERSION
+    ```
 
 1. Configure the `sourcegraph` storage class for the cluster by following ["Configure a storage class"](./configure.md#configure-a-storage-class).
 
@@ -47,21 +48,21 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 1. Deploy the desired version of Sourcegraph to your cluster:
 
-  ```
-  ./kubectl-apply-all.sh
-  ```
+    ```
+    ./kubectl-apply-all.sh
+    ```
 
 1. Monitor the status of the deployment:
 
-   ```
-   kubectl get pods -o wide -w
-   ```
+    ```
+    kubectl get pods -o wide -w
+    ```
 
-1. After deployement is completed, verify Sourcegraph is running by temporarily making the frontend port accessible:
+1. After deployment is completed, verify Sourcegraph is running by temporarily making the frontend port accessible:
 
-   ```
-   kubectl port-forward svc/sourcegraph-frontend 3080:30080
-   ```
+    ```
+    kubectl port-forward svc/sourcegraph-frontend 3080:30080
+    ```
 
 1. Open http://localhost:3080 in your browser and you will see a setup page.
 
@@ -71,7 +72,7 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 See the [Configuration docs](configure.md).
 
-### Configuration
+### Overlays
 
 See the [Overlays docs](overlays.md).
 
@@ -99,15 +100,15 @@ manifests that cannot be installed otherwise.
 
 - Manifests deployed by cluster-admin
 
-   ```bash
-   ./kubectl-apply-all.sh -l sourcegraph-resource-requires=cluster-admin
-   ```
+    ```bash
+    ./kubectl-apply-all.sh -l sourcegraph-resource-requires=cluster-admin
+    ```
 
 - Manifests deployed by non-cluster-admin
 
-   ```bash
-   ./kubectl-apply-all.sh -l sourcegraph-resource-requires=no-cluster-admin
-   ```
+    ```bash
+    ./kubectl-apply-all.sh -l sourcegraph-resource-requires=no-cluster-admin
+    ```
 
 We also provide an [overlay](overlays.md#non-privileged-overlay) that generates a version of the manifests that does not
 require cluster-admin privileges.

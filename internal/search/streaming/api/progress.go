@@ -203,7 +203,7 @@ func number(i int) string {
 		return strconv.Itoa(i)
 	}
 	if i < 10000 {
-		return fmt.Sprintf("%d,%d", i/1000, i%1000)
+		return fmt.Sprintf("%d,%0.3d", i/1000, i%1000)
 	}
 	return fmt.Sprintf("%dk", i/1000)
 }

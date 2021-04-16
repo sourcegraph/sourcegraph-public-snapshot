@@ -3,7 +3,7 @@ package reconciler
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -13,7 +13,7 @@ func init() {
 	dbtesting.DBNameSuffix = "batchchangesreconcilerdb"
 }
 
-func buildGithubPR(now time.Time, externalState batches.ChangesetExternalState) *github.PullRequest {
+func buildGithubPR(now time.Time, externalState btypes.ChangesetExternalState) *github.PullRequest {
 	state := string(externalState)
 
 	pr := &github.PullRequest{
@@ -36,12 +36,12 @@ func buildGithubPR(now time.Time, externalState batches.ChangesetExternalState) 
 		UpdatedAt: now,
 	}
 
-	if externalState == batches.ChangesetExternalStateDraft {
+	if externalState == btypes.ChangesetExternalStateDraft {
 		pr.State = "OPEN"
 		pr.IsDraft = true
 	}
 
-	if externalState == batches.ChangesetExternalStateClosed {
+	if externalState == btypes.ChangesetExternalStateClosed {
 		// We add a "ClosedEvent" so that the SyncChangesets call that happens after closing
 		// the PR has the "correct" state to set the ExternalState
 		pr.TimelineItems = append(pr.TimelineItems, github.TimelineItem{

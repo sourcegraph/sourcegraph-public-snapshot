@@ -11,18 +11,18 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	cs := make([]*batches.BatchChange, 0, 3)
+	cs := make([]*btypes.BatchChange, 0, 3)
 
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(cs); i++ {
-			c := &batches.BatchChange{
+			c := &btypes.BatchChange{
 				Name:        fmt.Sprintf("test-batch-change-%d", i),
 				Description: "All the Javascripts are belong to us",
 
@@ -92,7 +92,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 
 		t.Run("ChangesetID", func(t *testing.T) {
 			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				BatchChanges: []batches.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
+				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
 			})
 
 			count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{ChangesetID: changeset.ID})
@@ -170,7 +170,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		t.Run("By ChangesetID", func(t *testing.T) {
 			for i := 1; i <= len(cs); i++ {
 				changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-					BatchChanges: []batches.BatchChangeAssoc{{BatchChangeID: cs[i-1].ID}},
+					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[i-1].ID}},
 				})
 				opts := ListBatchChangesOpts{ChangesetID: changeset.ID}
 
@@ -195,7 +195,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		})
 
 		// The batch changes store returns the batch changes in reversed order.
-		reversedBatchChanges := make([]*batches.BatchChange, len(cs))
+		reversedBatchChanges := make([]*btypes.BatchChange, len(cs))
 		for i, c := range cs {
 			reversedBatchChanges[len(cs)-i-1] = c
 		}
@@ -251,22 +251,22 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 
 		filterTests := []struct {
 			name  string
-			state batches.BatchChangeState
-			want  []*batches.BatchChange
+			state btypes.BatchChangeState
+			want  []*btypes.BatchChange
 		}{
 			{
 				name:  "Any",
-				state: batches.BatchChangeStateAny,
+				state: btypes.BatchChangeStateAny,
 				want:  reversedBatchChanges,
 			},
 			{
 				name:  "Closed",
-				state: batches.BatchChangeStateClosed,
+				state: btypes.BatchChangeStateClosed,
 				want:  reversedBatchChanges[:len(reversedBatchChanges)-1],
 			},
 			{
 				name:  "Open",
-				state: batches.BatchChangeStateOpen,
+				state: btypes.BatchChangeStateOpen,
 				want:  cs[0:1],
 			},
 		}
@@ -480,7 +480,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		var testDiffStatCount int32 = 10
 		ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 			Repo:            repo.ID,
-			BatchChanges:    []batches.BatchChangeAssoc{{BatchChangeID: batchChangeID}},
+			BatchChanges:    []btypes.BatchChangeAssoc{{BatchChangeID: batchChangeID}},
 			DiffStatAdded:   testDiffStatCount,
 			DiffStatChanged: testDiffStatCount,
 			DiffStatDeleted: testDiffStatCount,
@@ -550,7 +550,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 		// Set up two batch changes and specs: one in the user's namespace (which
 		// should be deleted when the user is hard deleted), and one that is
 		// merely created by the user (which should remain).
-		ownedSpec := &batches.BatchSpec{
+		ownedSpec := &btypes.BatchSpec{
 			NamespaceUserID: user.ID,
 			UserID:          user.ID,
 		}
@@ -558,7 +558,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 			t.Fatal(err)
 		}
 
-		unownedSpec := &batches.BatchSpec{
+		unownedSpec := &btypes.BatchSpec{
 			NamespaceOrgID: orgID,
 			UserID:         user.ID,
 		}
@@ -566,7 +566,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 			t.Fatal(err)
 		}
 
-		ownedBatchChange := &batches.BatchChange{
+		ownedBatchChange := &btypes.BatchChange{
 			Name:             "owned",
 			NamespaceUserID:  user.ID,
 			InitialApplierID: user.ID,
@@ -578,7 +578,7 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 			t.Fatal(err)
 		}
 
-		unownedBatchChange := &batches.BatchChange{
+		unownedBatchChange := &btypes.BatchChange{
 			Name:             "unowned",
 			NamespaceOrgID:   orgID,
 			InitialApplierID: user.ID,

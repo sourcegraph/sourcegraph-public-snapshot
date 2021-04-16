@@ -42,12 +42,16 @@ type CommitSearchResultResolver struct {
 }
 
 func (r *CommitSearchResultResolver) Select(path filter.SelectPath) SearchResultResolver {
-	switch path.Type {
-	case filter.Repository:
-		return r.Commit().Repository()
-	case filter.Commit:
-		return r
+	match := r.CommitMatch.Select(path)
+
+	// Turn result type back into a resolver
+	switch v := match.(type) {
+	case *result.RepoMatch:
+		return NewRepositoryResolver(r.db, &types.Repo{Name: v.Name, ID: v.ID})
+	case *result.CommitMatch:
+		return &CommitSearchResultResolver{db: r.db, CommitMatch: *v, gitCommitResolver: r.gitCommitResolver}
 	}
+
 	return nil
 }
 

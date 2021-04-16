@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
 var _ graphqlbackend.BatchChangesConnectionResolver = &batchChangesConnectionResolver{}
@@ -19,7 +19,7 @@ type batchChangesConnectionResolver struct {
 
 	// cache results because they are used by multiple fields
 	once         sync.Once
-	batchChanges []*batches.BatchChange
+	batchChanges []*btypes.BatchChange
 	next         int64
 	err          error
 }
@@ -59,7 +59,7 @@ func (r *batchChangesConnectionResolver) PageInfo(ctx context.Context) (*graphql
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *batchChangesConnectionResolver) compute(ctx context.Context) ([]*batches.BatchChange, int64, error) {
+func (r *batchChangesConnectionResolver) compute(ctx context.Context) ([]*btypes.BatchChange, int64, error) {
 	r.once.Do(func() {
 		r.batchChanges, r.next, r.err = r.store.ListBatchChanges(ctx, r.opts)
 	})

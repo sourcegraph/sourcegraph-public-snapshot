@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
 type changesetsConnectionResolver struct {
@@ -24,7 +24,7 @@ type changesetsConnectionResolver struct {
 
 	once sync.Once
 	// changesets contains all changesets in this connection.
-	changesets batches.Changesets
+	changesets btypes.Changesets
 	next       int64
 	err        error
 }
@@ -81,7 +81,7 @@ func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, e
 // compute loads all changesets matched by r.opts.
 // If r.optsSafe is true, it returns all of them. If not, it filters out the
 // ones to which the user doesn't have access by using the authz filter.
-func (r *changesetsConnectionResolver) compute(ctx context.Context) (cs batches.Changesets, next int64, err error) {
+func (r *changesetsConnectionResolver) compute(ctx context.Context) (cs btypes.Changesets, next int64, err error) {
 	r.once.Do(func() {
 		opts := r.opts
 		if !r.optsSafe {

@@ -61,6 +61,30 @@ func TestSearchProgress(t *testing.T) {
 	}
 }
 
+func TestNumber(t *testing.T) {
+	cases := map[int]string{
+		0:     "0",
+		1:     "1",
+		100:   "100",
+		999:   "999",
+		1000:  "1,000",
+		1234:  "1,234",
+		3004:  "3,004",
+		3040:  "3,040",
+		3400:  "3,400",
+		9999:  "9,999",
+		10000: "10k",
+		10400: "10k",
+		54321: "54k",
+	}
+	for n, want := range cases {
+		got := number(n)
+		if got != want {
+			t.Errorf("number(%d) got %q want %q", n, got, want)
+		}
+	}
+}
+
 type repo struct {
 	name string
 }

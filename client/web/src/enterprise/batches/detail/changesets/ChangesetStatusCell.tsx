@@ -6,6 +6,7 @@ import ErrorIcon from 'mdi-react/ErrorIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourceMergeIcon from 'mdi-react/SourceMergeIcon'
 import SourcePullIcon from 'mdi-react/SourcePullIcon'
+import TimerOutlineIcon from 'mdi-react/TimerOutlineIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React from 'react'
 
@@ -25,6 +26,8 @@ export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellPro
             return <ChangesetStatusError className={className} />
         case ChangesetState.RETRYING:
             return <ChangesetStatusRetrying className={className} />
+        case ChangesetState.SCHEDULED:
+            return <ChangesetStatusScheduled className={className} />
         case ChangesetState.PROCESSING:
             return <ChangesetStatusProcessing className={className} />
         case ChangesetState.UNPUBLISHED:
@@ -113,6 +116,15 @@ export const ChangesetStatusRetrying: React.FunctionComponent<{ label?: JSX.Elem
 }) => (
     <div className={classNames(iconClassNames, className)}>
         <AutorenewIcon />
+        {label}
+    </div>
+)
+export const ChangesetStatusScheduled: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
+    label = <span>Scheduled</span>,
+    className,
+}) => (
+    <div className={classNames(iconClassNames, className)}>
+        <TimerOutlineIcon />
         {label}
     </div>
 )

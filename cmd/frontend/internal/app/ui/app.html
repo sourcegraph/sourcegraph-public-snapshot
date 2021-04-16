@@ -22,7 +22,7 @@
 		{{end}}
 	{{end}}
 	<title>{{.Title}}</title>
-	{{if not .WebpackDevServer}}<link rel="stylesheet" href="{{.AssetURL}}/styles/app.bundle.css?{{version "styles/app.bundle.css"}}">{{end}}
+	{{if not .WebpackDevServer}}<link rel="stylesheet" href="{{.Manifest.AppCSSBundlePath}}">{{end}}
 	<link id='sourcegraph-chrome-webstore-item' rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack">
 	<link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Sourcegraph Search">
 	{{ if .Context.SourcegraphDotComMode }}
@@ -57,7 +57,7 @@
 		<br>
 		You need to enable JavaScript to run this app.
 	</noscript>
-	<script src="{{.AssetURL}}/scripts/app.bundle.js?{{version "scripts/app.bundle.js"}}"></script>
+	<script src="{{.Manifest.AppJSBundlePath}}"></script>
 	{{.Injected.BodyBottom}}
 </body>
 

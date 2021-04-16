@@ -1408,3 +1408,30 @@ func (c *Client) AuthenticatedUsername(ctx context.Context) (username string, er
 
 	return username, nil
 }
+
+func (c *Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest, body string) error {
+	if pr.ToRef.Repository.Slug == "" {
+		return errors.New("repository slug empty")
+	}
+
+	if pr.ToRef.Repository.Project.Key == "" {
+		return errors.New("project key empty")
+	}
+
+	path := fmt.Sprintf(
+		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/comments",
+		pr.ToRef.Repository.Project.Key,
+		pr.ToRef.Repository.Slug,
+		pr.ID,
+	)
+
+	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
+
+	payload := map[string]interface{}{
+		"text": body,
+	}
+
+	var resp *Comment
+	_, err := c.send(ctx, "POST", path, qry, &payload, &resp)
+	return err
+}
