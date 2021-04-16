@@ -12,23 +12,23 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.C
 
 	const platformQuery = `
 	SELECT
-		COUNT(*) FILTER (WHERE name = 'ViewInsights')                       AS insights_page_views,
-		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsights')        AS insights_unique_page_views,
+		COUNT(*) FILTER (WHERE name = 'ViewInsights')                       AS weekly_insights_page_views,
+		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsights')        AS weekly_insights_unique_page_views,
 		COUNT(distinct anonymous_user_id)
 			FILTER (WHERE name = 'InsightAddition')							AS weekly_insight_creators,
-		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 				AS insight_configure_click,
-		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 				AS insight_add_more_click
+		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 				AS weekly_insight_configure_click,
+		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 				AS weekly_insight_add_more_click
 	FROM event_logs
 	WHERE name in ('ViewInsights', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick')
 		AND timestamp > DATE_TRUNC('week', $1::timestamp);
 	`
 
 	if err := db.QueryRowContext(ctx, platformQuery, timeNow()).Scan(
-		&stats.InsightsPageViews,
-		&stats.InsightsUniquePageViews,
+		&stats.WeeklyInsightsPageViews,
+		&stats.WeeklyInsightsUniquePageViews,
 		&stats.WeeklyInsightCreators,
-		&stats.InsightConfigureClick,
-		&stats.InsightAddMoreClick,
+		&stats.WeeklyInsightConfigureClick,
+		&stats.WeeklyInsightAddMoreClick,
 	); err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.C
 	GROUP BY insight_type;
 	`
 
-	usageStatisticsByInsight := []*types.InsightUsageStatistics{}
+	weeklyUsageStatisticsByInsight := []*types.InsightUsageStatistics{}
 	rows, err := db.QueryContext(ctx, metricsByInsightQuery, timeNow())
 
 	if err != nil {
@@ -56,23 +56,23 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.C
 	defer rows.Close()
 
 	for rows.Next() {
-		insightUsageStatistics := types.InsightUsageStatistics{}
+		weeklyInsightUsageStatistics := types.InsightUsageStatistics{}
 
 		if err := rows.Scan(
-			&insightUsageStatistics.InsightType,
-			&insightUsageStatistics.Additions,
-			&insightUsageStatistics.Edits,
-			&insightUsageStatistics.Removals,
-			&insightUsageStatistics.Hovers,
-			&insightUsageStatistics.UICustomizations,
-			&insightUsageStatistics.DataPointClicks,
+			&weeklyInsightUsageStatistics.InsightType,
+			&weeklyInsightUsageStatistics.Additions,
+			&weeklyInsightUsageStatistics.Edits,
+			&weeklyInsightUsageStatistics.Removals,
+			&weeklyInsightUsageStatistics.Hovers,
+			&weeklyInsightUsageStatistics.UICustomizations,
+			&weeklyInsightUsageStatistics.DataPointClicks,
 		); err != nil {
 			return nil, err
 		}
 
-		usageStatisticsByInsight = append(usageStatisticsByInsight, &insightUsageStatistics)
+		weeklyUsageStatisticsByInsight = append(weeklyUsageStatisticsByInsight, &weeklyInsightUsageStatistics)
 	}
-	stats.UsageStatisticsByInsight = usageStatisticsByInsight
+	stats.WeeklyUsageStatisticsByInsight = weeklyUsageStatisticsByInsight
 
 	if err := rows.Err(); err != nil {
 		return nil, err

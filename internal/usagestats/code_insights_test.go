@@ -52,7 +52,7 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 	searchInsightsType := "searchInsights"
 	codeStatsInsightsType := "codeStatsInsights"
 
-	usageStatisticsByInsight := []*types.InsightUsageStatistics{
+	weeklyUsageStatisticsByInsight := []*types.InsightUsageStatistics{
 		{
 			InsightType:      &codeStatsInsightsType,
 			Additions:        &oneInt,
@@ -74,11 +74,11 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 	}
 
 	want := &types.CodeInsightsUsageStatistics{
-		UsageStatisticsByInsight:       usageStatisticsByInsight,
-		InsightsPageViews:              &twoInt,
-		InsightsUniquePageViews:        &oneInt,
-		InsightConfigureClick:          &zeroInt,
-		InsightAddMoreClick:            &zeroInt,
+		WeeklyUsageStatisticsByInsight: weeklyUsageStatisticsByInsight,
+		WeeklyInsightsPageViews:        &twoInt,
+		WeeklyInsightsUniquePageViews:  &oneInt,
+		WeeklyInsightConfigureClick:    &zeroInt,
+		WeeklyInsightAddMoreClick:      &zeroInt,
 		WeekStart:                      weekStart,
 		WeeklyInsightCreators:          &twoInt,
 		WeeklyFirstTimeInsightCreators: &oneInt,
