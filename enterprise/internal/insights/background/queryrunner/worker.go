@@ -136,6 +136,42 @@ FROM insights_query_runner_jobs
 WHERE id = %s;
 `
 
+type JobsStatus struct {
+	Queued, Processing uint64
+	Completed          uint64
+	Errored, Failed    uint64
+}
+
+// QueryJobsStatus queries the current status of jobs for the specified series.
+func QueryJobsStatus(ctx context.Context, workerBaseStore *basestore.Store, seriesID string) (*JobsStatus, error) {
+	var status JobsStatus
+	for _, work := range []struct {
+		stateName string
+		result    *uint64
+	}{
+		{"queued", &status.Queued},
+		{"processing", &status.Processing},
+		{"completed", &status.Completed},
+		{"errored", &status.Errored},
+		{"failed", &status.Failed},
+	} {
+		value, _, err := basestore.ScanFirstInt(workerBaseStore.Query(
+			ctx,
+			sqlf.Sprintf(queryJobsStatusFmtStr, seriesID, work.stateName)),
+		)
+		if err != nil {
+			return nil, err
+		}
+		*work.result = uint64(value)
+	}
+	return &status, nil
+}
+
+const queryJobsStatusFmtStr = `
+-- source: enterprise/internal/insights/background/queryrunner/worker.go:JobsStatus
+SELECT COUNT(*) FROM insights_query_runner_jobs WHERE series_id=%s AND state=%s
+`
+
 // Job represents a single job for the query runner worker to perform. When enqueued, it is stored
 // in the insights_query_runner_jobs table - then the worker dequeues it by reading it from that
 // table.
