@@ -1,5 +1,5 @@
-import { concat, from, Observable, of } from 'rxjs'
-import { catchError, defaultIfEmpty, map, mergeMap, scan, switchMap } from 'rxjs/operators'
+import { from, Observable, of } from 'rxjs'
+import { catchError, defaultIfEmpty, map, mergeMap, scan, startWith, switchMap } from 'rxjs/operators'
 import sourcegraph from 'sourcegraph'
 
 import { asError, ErrorLike } from '../../../util/errors'
@@ -20,6 +20,12 @@ interface NullishViewProviderResult extends Omit<ViewProviderResult, 'view'> {
      * */
     view: sourcegraph.View | undefined | ErrorLike | null
 }
+
+/**
+ * This is kind of synthetic event to trigger first run of pipe operators flow
+ * of callViewProvidersInParallel sequence.
+ */
+const COLD_START = 'ColdCallViewProviderStart' as const
 
 /**
  * Load view providers in parallel with parallel queries limit.
@@ -45,10 +51,11 @@ export function callViewProvidersInParallel<W extends ContributableViewContainer
         switchMap(providers =>
             // Add first synthetic observable with null withing to trigger
             // all operators chain immediately in first time
-            concat(of(null), from(providers)).pipe(
+            from(providers).pipe(
+                startWith(COLD_START),
                 mergeMap(
                     (provider, index) =>
-                        provider
+                        provider !== COLD_START
                             ? // Just because we have this first nullable synthetic event we have to avoid
                               // calling provideView on null value
                               providerResultToObservable(provider.viewProvider.provideView(context)).pipe(
@@ -67,8 +74,8 @@ export function callViewProvidersInParallel<W extends ContributableViewContainer
                 // Collect all responses to one result array
                 scan(
                     (accumulator, current) => {
-                        // Skip null step
-                        if (current === null) {
+                        // Skip cold start step
+                        if (current === COLD_START) {
                             return accumulator
                         }
 
