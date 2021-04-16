@@ -96,7 +96,11 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                                         data-part="base"
                                         id={oldAnchor}
                                     >
-                                        {persistLines && <Link to={{ hash: oldAnchor }}>{oldLine - 1}</Link>}
+                                        {persistLines && (
+                                            <Link className="diff-hunk__num--line" to={{ hash: oldAnchor }}>
+                                                {oldLine - 1}
+                                            </Link>
+                                        )}
                                     </td>
                                 ) : (
                                     <td className="diff-hunk__num diff-hunk__num--empty" />
