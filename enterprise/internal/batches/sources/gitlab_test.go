@@ -603,6 +603,87 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("CreateComment", func(t *testing.T) {
+		commentBody := "test-comment"
+		t.Run("invalid metadata", func(t *testing.T) {
+			defer func() { _ = recover() }()
+
+			p := newGitLabChangesetSourceTestProvider(t)
+			_ = p.source.CreateComment(p.ctx, &Changeset{
+				Repo: &types.Repo{
+					Metadata: struct{}{},
+				},
+			}, commentBody)
+			t.Error("invalid metadata did not panic")
+		})
+
+		t.Run("error from CreateComment", func(t *testing.T) {
+			inner := errors.New("foo")
+			mr := &gitlab.MergeRequest{}
+
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.changeset.Changeset.Metadata = mr
+			p.mockCreateComment(commentBody, mr, inner)
+
+			have := p.source.CreateComment(p.ctx, p.changeset, commentBody)
+			if !errors.Is(have, inner) {
+				t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
+			}
+		})
+
+		t.Run("success", func(t *testing.T) {
+			mr := &gitlab.MergeRequest{IID: 2}
+
+			p := newGitLabChangesetSourceTestProvider(t)
+			p.changeset.Changeset.Metadata = mr
+			p.mockCreateComment(commentBody, mr, nil)
+
+			if err := p.source.CreateComment(p.ctx, p.changeset, commentBody); err != nil {
+				t.Errorf("unexpected error: %+v", err)
+			}
+		})
+
+		t.Run("integration", func(t *testing.T) {
+			name := "GitlabSource_CreateComment_success"
+
+			t.Run(name, func(t *testing.T) {
+				cf, save := newClientFactory(t, name)
+				defer save(t)
+
+				lg := log15.New()
+				lg.SetHandler(log15.DiscardHandler())
+
+				svc := &types.ExternalService{
+					Kind: extsvc.KindGitLab,
+					Config: marshalJSON(t, &schema.GitLabConnection{
+						Url:   "https://gitlab.com",
+						Token: os.Getenv("GITLAB_TOKEN"),
+					}),
+				}
+
+				gitlabSource, err := NewGitLabSource(svc, cf)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				ctx := context.Background()
+				cs := &Changeset{
+					Repo: &types.Repo{Metadata: &gitlab.Project{
+						// sourcegraph/sourcegraph
+						ProjectCommon: gitlab.ProjectCommon{ID: 16606088},
+					}},
+					Changeset: &btypes.Changeset{Metadata: &gitlab.MergeRequest{
+						IID: gitlab.ID(2),
+					}},
+				}
+
+				if err := gitlabSource.CreateComment(ctx, cs, "test-comment"); err != nil {
+					t.Fatal(err)
+				}
+			})
+		})
+	})
 }
 
 func TestReadNotesUntilSeen(t *testing.T) {
@@ -851,6 +932,16 @@ func (p *gitLabChangesetSourceTestProvider) mockUpdateMergeRequest(expectedMR, u
 	}
 }
 
+func (p *gitLabChangesetSourceTestProvider) mockCreateComment(expected string, mr *gitlab.MergeRequest, err error) {
+	gitlab.MockCreateMergeRequestNote = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest, body string) error {
+		p.testCommonParams(ctx, client, project)
+		if expected != body {
+			p.t.Errorf("invalid body passed: have %q; want %q", body, expected)
+		}
+		return err
+	}
+}
+
 func (p *gitLabChangesetSourceTestProvider) unmock() {
 	gitlab.MockCreateMergeRequest = nil
 	gitlab.MockGetMergeRequest = nil
@@ -859,6 +950,7 @@ func (p *gitLabChangesetSourceTestProvider) unmock() {
 	gitlab.MockGetMergeRequestPipelines = nil
 	gitlab.MockGetOpenMergeRequestByRefs = nil
 	gitlab.MockUpdateMergeRequest = nil
+	gitlab.MockCreateMergeRequestNote = nil
 }
 
 // panicDoer provides a httpcli.Doer implementation that panics if any attempt

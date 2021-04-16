@@ -239,3 +239,37 @@ func (c *Client) UpdateMergeRequest(ctx context.Context, project *Project, mr *M
 
 	return resp, nil
 }
+
+func (c *Client) CreateMergeRequestNote(ctx context.Context, project *Project, mr *MergeRequest, body string) error {
+	if MockCreateMergeRequestNote != nil {
+		return MockCreateMergeRequestNote(c, ctx, project, mr, body)
+	}
+
+	var payload struct {
+		Body string `json:"body"`
+	} = struct {
+		Body string `json:"body"`
+	}{
+		Body: body,
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return errors.Wrap(err, "marshalling payload")
+	}
+
+	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("projects/%d/merge_requests/%d/notes", project.ID, mr.IID), bytes.NewBuffer(data))
+	if err != nil {
+		return errors.Wrap(err, "creating request to comment on a merge request")
+	}
+
+	var resp struct {
+		ID int32 `json:"id"`
+	}
+	if _, _, err := c.do(ctx, req, &resp); err != nil {
+		return errors.Wrap(err, "sending request to comment on a merge request")
+	}
+
+	return nil
+}

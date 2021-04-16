@@ -367,6 +367,21 @@ func TestMarkPullRequestReadyForReview(t *testing.T) {
 	}
 }
 
+func TestCreatePullRequestComment(t *testing.T) {
+	cli, save := newV4Client(t, "CreatePullRequestComment")
+	defer save()
+
+	pr := &PullRequest{
+		// https://github.com/sourcegraph/automation-testing/pull/44
+		ID: "MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5",
+	}
+
+	err := cli.CreatePullRequestComment(context.Background(), pr, "test-comment")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestEstimateGraphQLCost(t *testing.T) {
 	for _, tc := range []struct {
 		name  string

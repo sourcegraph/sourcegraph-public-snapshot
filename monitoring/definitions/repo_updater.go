@@ -295,7 +295,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "src_repoupdater_external_services_total",
 							Description:       "the total number of external services",
-							Query:             `sum(src_repoupdater_external_services_total)`,
+							Query:             `max(src_repoupdater_external_services_total)`,
 							Critical:          monitoring.Alert().GreaterOrEqual(20000, nil).For(1 * time.Hour),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
@@ -304,7 +304,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "src_repoupdater_user_external_services_total",
 							Description:       "the total number of user added external services",
-							Query:             `sum(src_repoupdater_user_external_services_total)`,
+							Query:             `max(src_repoupdater_user_external_services_total)`,
 							Warning:           monitoring.Alert().GreaterOrEqual(20000, nil).For(1 * time.Hour),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
@@ -315,7 +315,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:        "repoupdater_queued_sync_jobs_total",
 							Description: "the total number of queued sync jobs",
-							Query:       `sum(src_repoupdater_queued_sync_jobs_total)`,
+							Query:       `max(src_repoupdater_queued_sync_jobs_total)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(100, nil).For(1 * time.Hour),
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
@@ -327,7 +327,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "repoupdater_completed_sync_jobs_total",
 							Description:       "the total number of completed sync jobs",
-							Query:             `sum(src_repoupdater_completed_sync_jobs_total)`,
+							Query:             `max(src_repoupdater_completed_sync_jobs_total)`,
 							Warning:           monitoring.Alert().GreaterOrEqual(100000, nil).For(1 * time.Hour),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
@@ -336,7 +336,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "repoupdater_errored_sync_jobs_total",
 							Description:       "the total number of errored sync jobs",
-							Query:             `sum(src_repoupdater_errored_sync_jobs_total)`,
+							Query:             `max(src_repoupdater_errored_sync_jobs_total)`,
 							Warning:           monitoring.Alert().GreaterOrEqual(100, nil).For(1 * time.Hour),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,

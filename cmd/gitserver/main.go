@@ -12,6 +12,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+
 	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
@@ -32,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -46,6 +49,8 @@ var (
 )
 
 func main() {
+	ctx := context.Background()
+
 	env.Lock()
 	env.HandleHelpFlag()
 
@@ -76,6 +81,11 @@ func main() {
 	repoStore := database.Repos(db)
 	externalServiceStore := database.ExternalServices(db)
 
+	err = keyring.Init(ctx)
+	if err != nil {
+		log.Fatalf("failed to initialise keyring: %s", err)
+	}
+
 	gitserver := server.Server{
 		ReposDir:           reposDir,
 		DesiredPercentFree: wantPctFree2,
@@ -84,8 +94,16 @@ func main() {
 			if err != nil {
 				return "", err
 			}
+
 			for _, info := range r.Sources {
-				return info.CloneURL, nil
+				// build the clone url using the external service config instead of using
+				// the source CloneURL field
+				svc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
+				if err != nil {
+					return "", err
+				}
+
+				return types.RepoCloneURL(svc.Kind, svc.Config, r)
 			}
 			return "", fmt.Errorf("no sources for %q", repo)
 		},

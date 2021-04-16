@@ -25,6 +25,7 @@ type ChangesetState string
 // ChangesetState constants.
 const (
 	ChangesetStateUnpublished ChangesetState = "UNPUBLISHED"
+	ChangesetStateScheduled   ChangesetState = "SCHEDULED"
 	ChangesetStateProcessing  ChangesetState = "PROCESSING"
 	ChangesetStateOpen        ChangesetState = "OPEN"
 	ChangesetStateDraft       ChangesetState = "DRAFT"
@@ -39,6 +40,7 @@ const (
 func (s ChangesetState) Valid() bool {
 	switch s {
 	case ChangesetStateUnpublished,
+		ChangesetStateScheduled,
 		ChangesetStateProcessing,
 		ChangesetStateOpen,
 		ChangesetStateDraft,
@@ -85,6 +87,7 @@ type ReconcilerState string
 
 // ReconcilerState constants.
 const (
+	ReconcilerStateScheduled  ReconcilerState = "SCHEDULED"
 	ReconcilerStateQueued     ReconcilerState = "QUEUED"
 	ReconcilerStateProcessing ReconcilerState = "PROCESSING"
 	ReconcilerStateErrored    ReconcilerState = "ERRORED"
@@ -95,7 +98,8 @@ const (
 // Valid returns true if the given ReconcilerState is valid.
 func (s ReconcilerState) Valid() bool {
 	switch s {
-	case ReconcilerStateQueued,
+	case ReconcilerStateScheduled,
+		ReconcilerStateQueued,
 		ReconcilerStateProcessing,
 		ReconcilerStateErrored,
 		ReconcilerStateFailed,
@@ -737,9 +741,10 @@ func (c *Changeset) Labels() []ChangesetLabel {
 	}
 }
 
-// ResetQueued resets the failure message and reset count and sets the changesets ReconcilerState to queued.
-func (c *Changeset) ResetQueued() {
-	c.ReconcilerState = ReconcilerStateQueued
+// ResetReconcilerState resets the failure message and reset count and sets the
+// changeset's ReconcilerState to the given value.
+func (c *Changeset) ResetReconcilerState(state ReconcilerState) {
+	c.ReconcilerState = state
 	c.NumResets = 0
 	c.NumFailures = 0
 	c.FailureMessage = nil
@@ -812,6 +817,7 @@ func WithExternalID(id string) func(*Changeset) bool {
 type ChangesetsStats struct {
 	Retrying    int32
 	Failed      int32
+	Scheduled   int32
 	Processing  int32
 	Unpublished int32
 	Draft       int32

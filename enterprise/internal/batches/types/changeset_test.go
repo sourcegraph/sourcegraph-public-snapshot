@@ -569,3 +569,54 @@ func TestChangesetMetadata(t *testing.T) {
 		t.Errorf("changeset url wrong. want=%q, have=%q", want, have)
 	}
 }
+
+func TestChangeset_ResetReconcilerState(t *testing.T) {
+	for name, tc := range map[string]struct {
+		changeset *Changeset
+		state     ReconcilerState
+	}{
+		"created changeset; has rollout windows": {
+			changeset: &Changeset{CurrentSpecID: 1},
+			state:     ReconcilerStateScheduled,
+		},
+		"created changeset; no rollout windows": {
+			changeset: &Changeset{CurrentSpecID: 1},
+			state:     ReconcilerStateQueued,
+		},
+		"tracking changeset; has rollout windows": {
+			changeset: &Changeset{CurrentSpecID: 0},
+			state:     ReconcilerStateQueued,
+		},
+		"tracking changeset; no rollout windows": {
+			changeset: &Changeset{CurrentSpecID: 0},
+			state:     ReconcilerStateQueued,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			// Set up a funky changeset state so we verify that the fields that
+			// should be overwritten are.
+			msg := "an appropriate error"
+			tc.changeset.NumResets = 42
+			tc.changeset.NumFailures = 43
+			tc.changeset.FailureMessage = &msg
+			tc.changeset.SyncErrorMessage = &msg
+
+			tc.changeset.ResetReconcilerState(tc.state)
+			if have := tc.changeset.ReconcilerState; have != tc.state {
+				t.Errorf("unexpected reconciler state: have=%v want=%v", have, tc.state)
+			}
+			if have := tc.changeset.NumResets; have != 0 {
+				t.Errorf("unexpected number of resets: have=%d want=0", have)
+			}
+			if have := tc.changeset.NumFailures; have != 0 {
+				t.Errorf("unexpected number of failures: have=%d want=0", have)
+			}
+			if have := tc.changeset.FailureMessage; have != nil {
+				t.Errorf("unexpected non-nil failure message: %s", *have)
+			}
+			if have := tc.changeset.SyncErrorMessage; have != nil {
+				t.Errorf("unexpected non-nil sync error message: %s", *have)
+			}
+		})
+	}
+}

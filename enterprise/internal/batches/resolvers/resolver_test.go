@@ -24,6 +24,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -32,7 +33,7 @@ import (
 )
 
 func TestNullIDResilience(t *testing.T) {
-	mockRSAKeygen(t)
+	ct.MockRSAKeygen(t)
 
 	db := dbtesting.GetDB(t)
 	sr := New(store.New(db))
@@ -352,6 +353,10 @@ func TestApplyBatchChange(t *testing.T) {
 
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
+
+	// Ensure our site configuration doesn't have rollout windows so we get a
+	// consistent initial state.
+	ct.MockConfig(t, &conf.Unified{})
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
@@ -832,7 +837,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		t.Skip()
 	}
 
-	mockRSAKeygen(t)
+	ct.MockRSAKeygen(t)
 
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
@@ -962,7 +967,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 		t.Skip()
 	}
 
-	mockRSAKeygen(t)
+	ct.MockRSAKeygen(t)
 
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)

@@ -1,5 +1,6 @@
 .repository-commit-page {
     overflow-y: auto;
+    width: 100%;
     position: relative; // For HoverOverlay positioning
 
     .git-commit-node {

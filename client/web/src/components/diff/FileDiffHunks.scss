@@ -1,4 +1,10 @@
+$color-addition: $green;
+$color-deletion: $red;
+
 .diff-boundary {
+    &__num {
+        background-color: var(--color-bg-2);
+    }
     &__num,
     &__content {
         padding-top: 0.325rem;
@@ -11,36 +17,70 @@
 
 .diff-hunk {
     &__num {
-        width: 1%;
+        background-color: var(--color-bg-2);
         min-width: 2.5rem;
-        padding: 0 0.75rem;
         font-size: 0.75rem;
         line-height: (20/12);
         white-space: nowrap;
         text-align: right;
         user-select: none;
-        cursor: pointer;
-        vertical-align: top;
-
+        vertical-align: top !important;
         font-family: $code-font-family;
-        color: var(--text-muted);
-        &:hover {
-            color: var(--body-color);
-        }
-
-        &::before {
-            content: attr(data-line);
+        padding: 0 0.5rem;
+        &--line {
+            color: var(--text-muted);
+            display: block;
+            &:hover {
+                color: var(--body-color);
+                text-decoration: none;
+            }
         }
     }
     &__content {
         padding-left: 0.5rem;
         padding-right: 0.5rem;
         font-family: $code-font-family;
-        white-space: pre;
+        white-space: pre-wrap;
         font-size: 0.75rem;
         &::before {
             padding-right: 0.5rem;
             content: attr(data-diff-marker);
+        }
+        &--empty {
+            background-color: var(--color-bg-2);
+            // This cell is always empty opacity will not affect any content
+            opacity: 0.5;
+        }
+    }
+
+    &--split {
+        table-layout: fixed;
+        &__line {
+            &--code {
+                word-wrap: break-word;
+                white-space: pre-wrap;
+                div {
+                    display: inline;
+                }
+            }
+            &--active {
+                background-color: rgba($oc-yellow-5, 0.17) !important;
+                &-num {
+                    background-color: rgba($oc-yellow-5, 0.25);
+                }
+            }
+            &--addition {
+                background-color: rgba($color-addition, 0.17);
+                &-num {
+                    background-color: rgba($color-addition, 0.25);
+                }
+            }
+            &--deletion {
+                background-color: rgba($color-deletion, 0.17);
+                &-num {
+                    background-color: rgba($color-deletion, 0.25);
+                }
+            }
         }
     }
 
@@ -50,9 +90,6 @@
     &__line--active &__content {
         background-color: rgba($oc-yellow-5, 0.25) !important;
     }
-
-    $color-addition: $oc-green-7;
-    $color-deletion: $oc-red-7;
     &__line--addition &__num {
         background-color: rgba($color-addition, 0.25);
     }

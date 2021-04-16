@@ -88,11 +88,11 @@ func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (Changese
 // AuthenticatedUsername uses the underlying bitbucketserver.Client to get the
 // username belonging to the credentials associated with the
 // BitbucketServerSource.
-func (s *BitbucketServerSource) AuthenticatedUsername(ctx context.Context) (string, error) {
+func (s BitbucketServerSource) AuthenticatedUsername(ctx context.Context) (string, error) {
 	return s.client.AuthenticatedUsername(ctx)
 }
 
-func (s *BitbucketServerSource) ValidateAuthenticator(ctx context.Context) error {
+func (s BitbucketServerSource) ValidateAuthenticator(ctx context.Context) error {
 	_, err := s.client.AuthenticatedUsername(ctx)
 	return err
 }
@@ -238,4 +238,14 @@ func (s BitbucketServerSource) ReopenChangeset(ctx context.Context, c *Changeset
 	}
 
 	return c.Changeset.SetMetadata(pr)
+}
+
+// CreateComment posts a comment on the Changeset.
+func (s BitbucketServerSource) CreateComment(ctx context.Context, c *Changeset, text string) error {
+	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a Bitbucket Server pull request")
+	}
+
+	return s.client.CreatePullRequestComment(ctx, pr, text)
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -415,7 +416,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 
 // ReenqueueChangeset loads the given changeset from the database, checks
 // whether the actor in the context has permission to enqueue a reconciler run and then
-// enqueues it by calling ResetQueued.
+// enqueues it by calling ResetReconcilerState.
 func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *btypes.Changeset, repo *types.Repo, err error) {
 	traceTitle := fmt.Sprintf("changeset: %d", id)
 	tr, ctx := trace.New(ctx, "service.RenqueueChangeset", traceTitle)
@@ -465,7 +466,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 		return nil, nil, errors.New("cannot re-enqueue changeset not in failed state")
 	}
 
-	changeset.ResetQueued()
+	changeset.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
 
 	if err = s.store.UpdateChangeset(ctx, changeset); err != nil {
 		return nil, nil, err
@@ -572,7 +573,7 @@ var ErrChangesetsToDetachNotFound = errors.New("some changesets that should be d
 
 // DetachChangesets detaches the given Changeset from the given BatchChange
 // by checking whether the actor in the context has permission to enqueue a
-// reconciler run and then enqueues it by calling ResetQueued.
+// reconciler run and then enqueues it by calling ResetReconcilerState.
 func (s *Service) DetachChangesets(ctx context.Context, batchChangeID int64, ids []int64) (err error) {
 	traceTitle := fmt.Sprintf("batchChangeID: %d, changeset: %d", batchChangeID, ids)
 	tr, ctx := trace.New(ctx, "service.DetachChangesets", traceTitle)
@@ -626,7 +627,7 @@ func (s *Service) DetachChangesets(ctx context.Context, batchChangeID int64, ids
 			continue
 		}
 
-		changeset.ResetQueued()
+		changeset.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
 
 		if err := tx.UpdateChangeset(ctx, changeset); err != nil {
 			return err

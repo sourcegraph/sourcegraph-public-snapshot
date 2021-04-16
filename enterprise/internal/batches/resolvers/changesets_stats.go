@@ -17,6 +17,9 @@ func (r *changesetsStatsResolver) Retrying() int32 {
 func (r *changesetsStatsResolver) Failed() int32 {
 	return r.stats.Failed
 }
+func (r *changesetsStatsResolver) Scheduled() int32 {
+	return r.stats.Scheduled
+}
 func (r *changesetsStatsResolver) Processing() int32 {
 	return r.stats.Processing
 }

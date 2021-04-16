@@ -21,7 +21,7 @@ function cssModulesTypings() {
  * Watch CSS modules and generates the TypeScript types for them.
  */
 function watchCSSModulesTypings() {
-  return spawn(BIN, ARGS, {
+  return spawn(BIN, [...ARGS, '--watch'], {
     stdio: 'inherit',
     shell: true,
   })
