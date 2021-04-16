@@ -151,6 +151,11 @@ $theme-colors-redesign-dark-2: (
         2: #0f59aa,
         3: $redesign-indigo,
     ),
+    'secondary': (
+        1: $redesign-gray-08,
+        2: #242936,
+        3: #1f232e,
+    ),
     'success': (
         1: $redesign-success,
         2: #afe0b8,
@@ -202,6 +207,7 @@ $theme-colors-redesign-dark-2: (
     --logo-orange: #{$logo-orange};
     --logo-blue: #{$logo-blue};
     --logo-purple: #{$logo-purple};
+    --dark-text: #343a4d;
 
     // TODO: Move out of colors
     --border-radius: 4px;

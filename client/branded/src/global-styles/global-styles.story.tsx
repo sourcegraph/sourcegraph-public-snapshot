@@ -702,6 +702,155 @@ add(
 )
 
 add(
+    'Buttons Redesign',
+    () => (
+        <>
+            <h1>Buttons</h1>
+            <p>
+                Use Bootstrap’s custom button styles for actions in forms, dialogs, and more with support for multiple
+                sizes, states, and more.{' '}
+                <a href="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</a>
+            </p>
+
+            <h2>Semantic variants</h2>
+            <div className="theme-light theme-redesign">
+                <button className="btn btn-primary mr-3">Button label</button>
+                <button className="btn btn-primary mr-3 focus ">Button focus</button>
+                <button className="btn btn-primary mr-3" disabled={true}>
+                    Button disabled
+                </button>
+            </div>
+            <br />
+            <div className="theme-dark theme-redesign" style={{ backgroundColor: 'var(--body-bg)', padding: '10px 0' }}>
+                <button className="btn btn-primary mr-3">Button label</button>
+                <button className="btn btn-primary mr-3 focus">Button focus</button>
+                <button className="btn btn-primary mr-3" disabled={true}>
+                    Button disabled
+                </button>
+            </div>
+            <br />
+            <div className="theme-light theme-redesign">
+                <button className="btn btn-secondary mr-3">Button label</button>
+                <button className="btn btn-secondary mr-3 focus ">Button focus</button>
+                <button className="btn btn-secondary mr-3" disabled={true}>
+                    Button disabled
+                </button>
+            </div>
+            <br />
+            <div className="theme-dark theme-redesign" style={{ backgroundColor: 'var(--body-bg)', padding: '10px 0' }}>
+                <button className="btn btn-secondary mr-3">Button label</button>
+                <button className="btn btn-secondary mr-3 focus">Button focus</button>
+                <button className="btn btn-secondary mr-3" disabled={true}>
+                    Button disabled
+                </button>
+            </div>
+            <br />
+            <div className="theme-light theme-redesign">
+                <button className="btn btn-danger mr-3">Button label</button>
+                <button className="btn btn-danger mr-3 focus ">Button focus</button>
+                <button className="btn btn-danger mr-3" disabled={true}>
+                    Button disabled
+                </button>
+            </div>
+            <br />
+            <div className="theme-dark theme-redesign" style={{ backgroundColor: 'var(--body-bg)', padding: '10px 0' }}>
+                <button className="btn btn-danger mr-3">Button label</button>
+                <button className="btn btn-danger mr-3 focus">Button focus</button>
+                <button className="btn btn-danger mr-3" disabled={true}>
+                    Button disabled
+                </button>
+            </div>
+            <br />
+            <div className="theme-light theme-redesign">
+                <button className="btn btn-success mr-3">Button label</button>
+                <button className="btn btn-success mr-3 focus ">Button focus</button>
+                <button className="btn btn-success mr-3" disabled={true}>
+                    Button disabled
+                </button>
+            </div>
+            <br />
+            <div className="theme-dark theme-redesign" style={{ backgroundColor: 'var(--body-bg)', padding: '10px 0' }}>
+                <button className="btn btn-success mr-3">Button label</button>
+                <button className="btn btn-success mr-3 focus">Button focus</button>
+                <button className="btn btn-success mr-3" disabled={true}>
+                    Button disabled
+                </button>
+            </div>
+            <br />
+            <div className="theme-light theme-redesign">
+                <button className="btn btn-warning mr-3">Button label</button>
+                <button className="btn btn-warning mr-3 focus ">Button focus</button>
+                <button className="btn btn-warning mr-3" disabled={true}>
+                    Button disabled
+                </button>
+            </div>
+            <br />
+            <div className="theme-dark theme-redesign" style={{ backgroundColor: 'var(--body-bg)', padding: '10px 0' }}>
+                <button className="btn btn-warning mr-3">Button label</button>
+                <button className="btn btn-warning mr-3 focus">Button focus</button>
+                <button className="btn btn-warning mr-3" disabled={true}>
+                    Button disabled
+                </button>
+            </div>
+            <br />
+            <div className="theme-light theme-redesign">
+                <button className="btn btn-info mr-3">Button label</button>
+                <button className="btn btn-info mr-3 focus ">Button focus</button>
+                <button className="btn btn-info mr-3" disabled={true}>
+                    Button disabled
+                </button>
+            </div>
+            <br />
+            <div className="theme-dark theme-redesign" style={{ backgroundColor: 'var(--body-bg)', padding: '10px 0' }}>
+                <button className="btn btn-info mr-3">Button label</button>
+                <button className="btn btn-info mr-3 focus">Button focus</button>
+                <button className="btn btn-info mr-3" disabled={true}>
+                    Button disabled
+                </button>
+            </div>
+            <br />
+            <div className="theme-light theme-redesign">
+                <button className="btn btn-outline-secondary mr-3">Button label</button>
+                <button className="btn btn-outline-secondary mr-3 focus ">Button focus</button>
+                <button className="btn btn-outline-secondary mr-3" disabled={true}>
+                    Button disabled
+                </button>
+            </div>
+            <br />
+            <div className="theme-dark theme-redesign" style={{ backgroundColor: 'var(--body-bg)', padding: '10px 0' }}>
+                <button className="btn btn-outline-secondary mr-3">Button label</button>
+                <button className="btn btn-outline-secondary mr-3 focus">Button focus</button>
+                <button className="btn btn-outline-secondary mr-3" disabled={true}>
+                    Button disabled
+                </button>
+            </div>
+            <br />
+            <div className="theme-light theme-redesign">
+                <button className="btn btn-outline-danger mr-3">Button label</button>
+                <button className="btn btn-outline-danger mr-3 focus ">Button focus</button>
+                <button className="btn btn-outline-danger mr-3" disabled={true}>
+                    Button disabled
+                </button>
+            </div>
+            <br />
+            <div className="theme-dark theme-redesign" style={{ backgroundColor: 'var(--body-bg)', padding: '10px 0' }}>
+                <button className="btn btn-outline-danger mr-3">Button label</button>
+                <button className="btn btn-outline-danger mr-3 focus">Button focus</button>
+                <button className="btn btn-outline-danger mr-3" disabled={true}>
+                    Button disabled
+                </button>
+            </div>
+        </>
+    ),
+    {
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=35%3A11',
+        },
+    }
+)
+
+add(
     'Button groups',
     () => {
         const [active, setActive] = useState<'Left' | 'Middle' | 'Right'>('Left')
