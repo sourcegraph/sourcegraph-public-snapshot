@@ -1,0 +1,73 @@
+:root {
+    --font-size-base: #{$font-size-base};
+}
+
+.theme-redesign {
+    h1 {
+        font-size: 1.625rem;
+        font-weight: 600;
+        letter-spacing: -0.031em;
+    }
+
+    h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: -0.016em;
+    }
+
+    h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: -0.016em;
+    }
+
+    h4 {
+        font-size: 1rem;
+        font-weight: 400;
+        letter-spacing: -0.016em;
+    }
+
+    h5 {
+        font-size: 0.625rem;
+        letter-spacing: 0.031em;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    // Body / Base / Medium
+    .font-weight-semibold {
+        font-weight: 500;
+    }
+
+    // Body / Base /Strong
+    strong {
+        font-weight: 600;
+    }
+
+    // Body / Small / Strong
+    // Required because this `body-small-strong` is the only element with `font-weight: 700;`.
+    // All other elements should have `font-weight` defined for `strong`.
+    p > small > strong {
+        font-weight: 700;
+    }
+
+    // Body / Small / Regular
+    small {
+        font-size: 0.75rem;
+        // Bootstrap applies `font-weight: 400;` to `small` element,
+        // but we want to control `font-weight` only with `strong` or `.font-weight-semibold`.
+        font-weight: inherit;
+    }
+
+    // Input / Small
+    .form-control small {
+        font-size: (11/14) + em;
+    }
+
+    // Label / Base
+    label,
+    %label-base {
+        font-weight: 500;
+        letter-spacing: -0.016em;
+    }
+}

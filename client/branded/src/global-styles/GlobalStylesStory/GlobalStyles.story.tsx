@@ -16,9 +16,11 @@ import 'storybook-addon-designs'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
 
-import { BrandedStory } from '../components/BrandedStory'
-import { CodeSnippet } from '../components/CodeSnippet'
-import { Form } from '../components/Form'
+import { BrandedStory } from '../../components/BrandedStory'
+import { CodeSnippet } from '../../components/CodeSnippet'
+import { Form } from '../../components/Form'
+
+import { TextVariations } from './TextVariations'
 
 const semanticColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'merged'] as const
 
@@ -36,7 +38,7 @@ const TextStory: React.FunctionComponent = () => (
         <h2>Headings</h2>
         <table className="table">
             <tbody>
-                {(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const).map(Heading => (
+                {(['h1', 'h2', 'h3', 'h4', 'h5'] as const).map(Heading => (
                     <tr key={Heading}>
                         <td>
                             <code>
@@ -52,6 +54,9 @@ const TextStory: React.FunctionComponent = () => (
                 ))}
             </tbody>
         </table>
+
+        <h2>Text variations</h2>
+        <TextVariations />
 
         <h2>Prose</h2>
         <p>Text uses system fonts. The fonts should never be overridden.</p>
@@ -486,7 +491,7 @@ add(
                             <small>Use a superscript to align the badge top-right of the heading text.</small>
                         </td>
                     </tr>
-                    {(['h2', 'h3', 'h4', 'h5', 'h6'] as const).map(Heading => (
+                    {(['h2', 'h3', 'h4', 'h5'] as const).map(Heading => (
                         <tr key={Heading}>
                             <td>
                                 <code>{`<${Heading}>`}</code>

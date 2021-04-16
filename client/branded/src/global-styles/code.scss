@@ -35,3 +35,10 @@ kbd {
 .search-keyword {
     color: var(--search-keyword-color);
 }
+
+.theme-redesign {
+    code small,
+    .text-code small {
+        font-size: (11/12) + em;
+    }
+}
