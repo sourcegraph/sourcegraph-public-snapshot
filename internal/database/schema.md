@@ -51,6 +51,7 @@ Foreign-key constraints:
     "batch_changes_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
+    TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_batch_change_id_fkey" FOREIGN KEY (batch_change_id) REFERENCES batch_changes(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_owned_by_batch_spec_id_fkey" FOREIGN KEY (owned_by_batch_change_id) REFERENCES batch_changes(id) ON DELETE SET NULL DEFERRABLE
 Triggers:
     trig_delete_batch_change_reference_on_changesets AFTER DELETE ON batch_changes FOR EACH ROW EXECUTE FUNCTION delete_batch_change_reference_on_changesets()
@@ -119,6 +120,38 @@ Check constraints:
     "changeset_events_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
 Foreign-key constraints:
     "changeset_events_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+# Table "public.changeset_jobs"
+```
+     Column      |           Type           | Collation | Nullable |                  Default                   
+-----------------+--------------------------+-----------+----------+--------------------------------------------
+ id              | bigint                   |           | not null | nextval('changeset_jobs_id_seq'::regclass)
+ bulk_group      | text                     |           | not null | 
+ user_id         | integer                  |           | not null | 
+ batch_change_id | integer                  |           | not null | 
+ changeset_id    | integer                  |           | not null | 
+ job_type        | text                     |           | not null | 
+ payload         | jsonb                    |           |          | '{}'::jsonb
+ state           | text                     |           |          | 'queued'::text
+ failure_message | text                     |           |          | 
+ started_at      | timestamp with time zone |           |          | 
+ finished_at     | timestamp with time zone |           |          | 
+ process_after   | timestamp with time zone |           |          | 
+ num_resets      | integer                  |           | not null | 0
+ num_failures    | integer                  |           | not null | 0
+ execution_logs  | json[]                   |           |          | 
+ created_at      | timestamp with time zone |           | not null | now()
+ updated_at      | timestamp with time zone |           | not null | now()
+Indexes:
+    "changeset_jobs_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "changeset_jobs_payload_check" CHECK (jsonb_typeof(payload) = 'object'::text)
+Foreign-key constraints:
+    "changeset_jobs_batch_change_id_fkey" FOREIGN KEY (batch_change_id) REFERENCES batch_changes(id) ON DELETE CASCADE DEFERRABLE
+    "changeset_jobs_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
+    "changeset_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -216,6 +249,7 @@ Foreign-key constraints:
     "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
     TABLE "changeset_events" CONSTRAINT "changeset_events_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -1586,6 +1620,7 @@ Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "batch_specs" CONSTRAINT "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "cm_emails" CONSTRAINT "cm_emails_changed_by_fk" FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE
     TABLE "cm_emails" CONSTRAINT "cm_emails_created_by_fk" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
