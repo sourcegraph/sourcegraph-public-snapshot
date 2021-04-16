@@ -8,41 +8,54 @@ TLS, enabling code intelligence, and exposing Sourcegraph to external traffic be
 ## Fork this repository
 
 We **strongly** recommend you fork the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository to track your configuration changes in Git.
-This will make upgrades far easier and is a good practice not just for Sourcegraph, but for any Kubernetes application.
+**This will make upgrades far easier** and is a good practice not just for Sourcegraph, but for any Kubernetes application.
 
 - Create a fork of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository.
 
-   - The fork can be public **unless** you plan to store secrets in the repository itself.
-   - We recommend not storing secrets in the repository itself and these instructions document how.
+> WARNING: Set it to **private** if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository.
+
+> NOTE: We do not recommend storing secrets in the repository itself and these instructions document how.
 
 - Create a `release` branch to track all of your customizations to Sourcegraph.
-   When you upgrade Sourcegraph, you will merge upstream into this branch.
+> NOTE: When you upgrade Sourcegraph, you will merge upstream into this branch.
 
-   ```bash
-   export SOURCEGRAPH_VERSION="v3.26.3"
-   git checkout $SOURCEGRAPH_VERSION -b release
-   ```
+```bash
+export SOURCEGRAPH_VERSION="v3.26.3"
+git checkout $SOURCEGRAPH_VERSION -b release
+```
 
-   If you followed the installation instructions, `SOURCEGRAPH_VERSION` should point at the Git tag you've deployed to your running Kubernetes cluster.
+If you followed the installation instructions, `$SOURCEGRAPH_VERSION` should point at the Git tag you've deployed to your running Kubernetes cluster.
 
-- Commit customizations to your release branch:
+### Commit customizations to your release branch:
 
-   - Commit manual modifications to Kubernetes YAML files.
-   - _Warning_: Modifications to files inside the `base` increases the odds of encountering git merge conflicts when upgrading. Consider using [overlays](overlays.md) instead.
-   - Commit commands that should be run on every update (e.g. `kubectl apply`) to [kubectl-apply-all.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/kubectl-apply-all.sh).
-   - Commit commands that generally only need to be run once per cluster to (e.g. `kubectl create secret`, `kubectl expose`) to [create-new-cluster.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/create-new-cluster.sh).
+- Commit manual modifications to Kubernetes YAML files.
+> WARNING: Modifications to files inside the `base` increases the odds of encountering git merge conflicts when upgrading. Consider using [overlays](overlays.md) instead.
 
-- When you upgrade, merge the corresponding upstream release tag into your release branch. E.g., `git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph` to add the upstream remote and `git checkout release && git merge v3.15.0` to merge the upstream release tag into your release branch.
+- Commit commands that should be run on every update (e.g. `kubectl apply`) to [kubectl-apply-all.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/kubectl-apply-all.sh).
 
-- _See also [git strategies when using overlays](overlays.md#git-strategies-with-overlays)_
+- Commit commands that generally only need to be run once per cluster to (e.g. `kubectl create secret`, `kubectl expose`) to [create-new-cluster.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/create-new-cluster.sh).
+
+## Upgrading with a forked repository
+
+When you upgrade, merge the corresponding `upstream release` tag into your `release` branch _(created from the [Fork this repository](#fork-this-repository) step). 
+
+```bash
+# to add the upstream remote.
+git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph-docker
+# to merge the upstream release tag into your release branch.
+git checkout release && git merge v3.26.3
+```
+
+_See also [git strategies when using overlays](overlays.md#git-strategies-with-overlays)_
+
+
 
 ## Dependencies
 
 Configuration steps in this file depend on [jq](https://stedolan.github.io/jq/),
 [yj](https://github.com/sourcegraph/yj) and [jy](https://github.com/sourcegraph/jy).
 
-If you choose to use [overlays](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/#bases-and-overlays)
-you need the [kustomize](https://kustomize.io/) tool installed.
+Install the [kustomize](https://kustomize.io/) tool if you choose to use [overlays](overlays.md),.
 
 ## Table of contents
 
@@ -92,17 +105,25 @@ There are a few approaches, but using an ingress controller is recommended.
 
 For production environments, we recommend using the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/).
 
-As part of our base configuration we install an ingress for [sourcegraph-frontend](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Ingress.yaml). It installs rules for the default ingress, see comments to restrict it to a specific host.
+- As part of our base configuration, we install an ingress for [sourcegraph-frontend](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Ingress.yaml). It installs rules for the default ingress, see comments to restrict it to a specific host.
 
-In addition to the sourcegraph-frontend ingress, you'll need to install the NGINX ingress controller (ingress-nginx). Follow the instructions at https://kubernetes.github.io/ingress-nginx/deploy/ to create the ingress controller. Add the files to [configure/ingress-nginx](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ingress-nginx), including an [install.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ingress-nginx/install.sh) file which applies the relevant manifests. We include sample generic-cloud manifests as part of this repository, but please follow the official instructions for your cloud provider.
+- In addition to the sourcegraph-frontend ingress, you'll need to install the NGINX ingress controller (ingress-nginx). 
 
-Add the [configure/ingress-nginx/install.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ingress-nginx/install.sh) command to [create-new-cluster.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/create-new-cluster.sh) and commit the change:
+- Follow the instructions at https://kubernetes.github.io/ingress-nginx/deploy/ to create the ingress controller. 
+
+- Add the files to [configure/ingress-nginx](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ingress-nginx), including an [install.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ingress-nginx/install.sh) file which applies the relevant manifests. 
+
+- We include sample generic-cloud manifests as part of this repository, but please follow the official instructions for your cloud provider.
+
+- Add the [configure/ingress-nginx/install.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ingress-nginx/install.sh) command to [create-new-cluster.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/create-new-cluster.sh) and commit the change:
 
 ```shell
 echo ./configure/ingress-nginx/install.sh >> create-new-cluster.sh
 ```
 
-Once the ingress has acquired an external address, you should be able to access Sourcegraph using that. You can check the external address by running the following command and looking for the `LoadBalancer` entry:
+- Once the ingress has acquired an external address, you should be able to access Sourcegraph using that. 
+
+- You can check the external address by running the following command and looking for the `LoadBalancer` entry:
 
 ```bash
 kubectl -n ingress-nginx get svc
@@ -134,50 +155,50 @@ work):
 
 ### Network rule
 
-> Note: this setup path does not support TLS.
+> NOTE: this setup path does not support TLS.
 
 Add a network rule that allows ingress traffic to port 30080 (HTTP) on at least one node.
 
-- [Google Cloud Platform Firewall rules](https://cloud.google.com/compute/docs/vpc/using-firewalls).
+#### [Google Cloud Platform Firewall rules](https://cloud.google.com/compute/docs/vpc/using-firewalls).
 
-  - Expose the necessary ports.
+- Expose the necessary ports.
 
-     ```bash
-     gcloud compute --project=$PROJECT firewall-rules create sourcegraph-frontend-http --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:30080
-     ```
+```bash
+gcloud compute --project=$PROJECT firewall-rules create sourcegraph-frontend-http --direction=INGRESS --priority=1000 --network=default --action=ALLOW --rules=tcp:30080
+```
 
-  - Change the type of the `sourcegraph-frontend` service in [base/frontend/sourcegraph-frontend.Service.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Service.yaml) from `ClusterIP` to `NodePort`:
+- Change the type of the `sourcegraph-frontend` service in [base/frontend/sourcegraph-frontend.Service.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Service.yaml) from `ClusterIP` to `NodePort`:
 
-     ```diff
-     spec:
-        ports:
-        - name: http
-          port: 30080
-     +    nodePort: 30080
-     -  type: ClusterIP
-     +  type: NodePort
-     ```
+```diff
+spec:
+  ports:
+  - name: http
+    port: 30080
++    nodePort: 30080
+-  type: ClusterIP
++  type: NodePort
+```
 
-  - Directly applying this change to the service [will fail](https://github.com/kubernetes/kubernetes/issues/42282). Instead, you must delete the old service and then create the new one (this will result in a few seconds of downtime):
+- Directly applying this change to the service [will fail](https://github.com/kubernetes/kubernetes/issues/42282). Instead, you must delete the old service and then create the new one (this will result in a few seconds of downtime):
 
-  ```shell
-  kubectl delete svc sourcegraph-frontend
-  kubectl apply -f base/frontend/sourcegraph-frontend.Service.yaml
-  ```
+```shell
+kubectl delete svc sourcegraph-frontend
+kubectl apply -f base/frontend/sourcegraph-frontend.Service.yaml
+```
 
-  - Find a node name.
+- Find a node name.
 
-     ```bash
-     kubectl get pods -l app=sourcegraph-frontend -o=custom-columns=NODE:.spec.nodeName
-     ```
+```bash
+kubectl get pods -l app=sourcegraph-frontend -o=custom-columns=NODE:.spec.nodeName
+```
 
-  - Get the EXTERNAL-IP address (will be ephemeral unless you [make it static](https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address#promote_ephemeral_ip)).
-     
-     ```bash
-     kubectl get node $NODE -o wide
-     ```
+- Get the EXTERNAL-IP address (will be ephemeral unless you [make it static](https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address#promote_ephemeral_ip)).
 
-- [AWS Security Group rules](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_SecurityGroups.html).
+```bash
+kubectl get node $NODE -o wide
+```
+
+#### [AWS Security Group rules](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_SecurityGroups.html).
 
 Sourcegraph should now be accessible at `$EXTERNAL_ADDR:30080`, where `$EXTERNAL_ADDR` is the address of _any_ node in the cluster.
 
@@ -205,7 +226,7 @@ If the namespace already exists you can still label it like so
 kubectl label namespace ns-sourcegraph name=ns-sourcegraph
 ```
 
-> Note: You will need to augment this example NetworkPolicy to allow traffic to external services
+> NOTE: You will need to augment this example NetworkPolicy to allow traffic to external services
 > you plan to use (like github.com) and ingress traffic from
 > the outside to the frontend for the users of the Sourcegraph installation.
 > Check out this [collection](https://github.com/ahmetb/kubernetes-network-policy-recipes) of NetworkPolicies to get started.
@@ -306,7 +327,7 @@ If you exposed your Sourcegraph instance via an ingress controller as described 
    kubectl create secret tls sourcegraph-tls --key $PATH_TO_KEY --cert $PATH_TO_CERT
    ```
 
-   Update [create-new-cluster.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/create-new-cluster.sh) with the previous command.
+- Update [create-new-cluster.sh](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/create-new-cluster.sh) with the previous command.
 
    ```
    echo kubectl create secret tls sourcegraph-tls --key $PATH_TO_KEY --cert $PATH_TO_CERT >> create-new-cluster.sh
@@ -332,16 +353,15 @@ If you exposed your Sourcegraph instance via an ingress controller as described 
        host: sourcegraph.example.com
    ```
 
-- Change your `externalURL` in [the site configuration](https://docs.sourcegraph.com/admin/config/site_config) to e.g. `https://sourcegraph.example.com`:
+- Change your `externalURL` in [the site configuration](https://docs.sourcegraph.com/admin/config/site_config) to e.g. `https://sourcegraph.example.com`.
 
-  - Update the ingress controller with the previous changes with the following command.
+- Update the ingress controller with the previous changes with the following command:
 
   ```bash
   kubectl apply -f base/frontend/sourcegraph-frontend.Ingress.yaml
   ```
 
-**WARNING:** Do NOT commit the actual TLS cert and key files to your fork (unless your fork is
-private **and** you are okay with storing secrets in it).
+> WARNING: Do NOT commit the actual TLS cert and key files to your fork (unless your fork is private **and** you are okay with storing secrets in it).
 
 ### NGINX service
 
@@ -422,9 +442,9 @@ Mount the [secret as a volume](https://kubernetes.io/docs/concepts/configuration
 
 3. Apply the updated `gitserver` configuration to your cluster.
 
-   ```bash
-    ./kubectl-apply-all.sh
-   ```
+  ```bash
+  ./kubectl-apply-all.sh
+  ```
 
 **WARNING:** Do NOT commit the actual `id_rsa` and `known_hosts` files to your fork (unless
 your fork is private **and** you are okay with storing secrets in it).
@@ -501,15 +521,15 @@ See [the official documentation](https://kubernetes.io/docs/concepts/configurati
 
 Sourcegraph expects there to be storage class named `sourcegraph` that it uses for all its persistent volume claims. This storage class must be configured before applying the base configuration to your cluster.
 
-Create `base/sourcegraph.StorageClass.yaml` with the appropriate configuration for your cloud provider and commit the file to your fork.
+- Create `base/sourcegraph.StorageClass.yaml` with the appropriate configuration for your cloud provider and commit the file to your fork.
 
-The sourceraph storageclass will retain any persistent volumes created in the event of an accidental deletion of a persistent volume claim.
+- The sourceraph storageclass will retain any persistent volumes created in the event of an accidental deletion of a persistent volume claim.
 
-This cannot be changed once the storage class has been created. Persistent volumes not created with the reclaimPolicy set to `Retain` can be patched with the following command:
+- This cannot be changed once the storage class has been created. Persistent volumes not created with the reclaimPolicy set to `Retain` can be patched with the following command:
 
-```bash
-kubectl patch pv <your-pv-name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
-```
+    ```bash
+    kubectl patch pv <your-pv-name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
+    ```
 
 See [the official documentation](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/#changing-the-reclaim-policy-of-a-persistentvolume) for more information about patching persistent volumes.
 
@@ -627,7 +647,7 @@ Simply edit the relevant PostgreSQL environment variables (e.g. PGHOST, PGPORT, 
 
 Sourcegraph communicates with the Kubernetes API for service discovery. It also has some janitor DaemonSets that clean up temporary cache data. To do that we need to create RBAC resources.
 
-If using cluster roles and cluster rolebinding RBAC is not an option, then you can use the [non-privileged](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/non-privileged) overlay to generate modified manifests. Read the [section](#overlay-basic-principles) below about overlays.
+If using cluster roles and cluster rolebinding RBAC is not an option, then you can use the [non-privileged](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/non-privileged) overlay to generate modified manifests. Read the [Overlays](#overlays) section below about overlays.
 
 ## Add license key
 
@@ -655,3 +675,7 @@ for all images under `base/`:
 ```bash
 for IMAGE in $(grep --include '*.yaml' -FR 'image:' base | awk '{ print $(NF) }'); do docker pull "$IMAGE"; done;
 ```
+
+## Troubleshooting
+
+See the [Troubleshooting docs](troubleshoot.md).
