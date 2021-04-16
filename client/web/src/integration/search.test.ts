@@ -3,7 +3,7 @@ import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
-import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
@@ -18,6 +18,7 @@ import { SearchEvent } from '../search/stream'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createJsContext, siteGQLID, siteID } from './jscontext'
+import { percySnapshotWithVariants } from './utils'
 
 const searchResults = (): SearchResult => ({
     search: {
@@ -117,6 +118,15 @@ describe('Search', () => {
 
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
         driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
+
+    test('Styled correctly on results page', async () => {
+        testContext.overrideGraphQL({
+            ...commonSearchGraphQLResults,
+        })
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
+        await driver.page.waitForSelector('#monaco-query-input')
+        await percySnapshotWithVariants(driver.page, 'Search results page')
+    })
 
     describe('Search filters', () => {
         test('Search filters are shown on search result pages and clicking them triggers a new search', async () => {
@@ -496,7 +506,9 @@ describe('Search', () => {
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
 
-            await percySnapshot(driver.page, 'Streaming diff search syntax highlighting')
+            await percySnapshotWithVariants(driver.page, 'Streaming diff search syntax highlighting', {
+                waitForCodeHighlighting: true,
+            })
         })
 
         test('Streaming commit search syntax highlighting', async () => {
@@ -545,7 +557,9 @@ describe('Search', () => {
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
 
-            await percySnapshot(driver.page, 'Streaming commit search syntax highlighting')
+            await percySnapshotWithVariants(driver.page, 'Streaming commit search syntax highlighting', {
+                waitForCodeHighlighting: true,
+            })
         })
     })
 
