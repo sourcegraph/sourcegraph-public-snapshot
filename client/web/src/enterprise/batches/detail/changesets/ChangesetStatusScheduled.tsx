@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import { formatDistance, isBefore, parseISO } from 'date-fns'
+import { formatDistanceToNow, isBefore, parseISO } from 'date-fns'
 import TimerOutlineIcon from 'mdi-react/TimerOutlineIcon'
 import React, { useCallback, useState } from 'react'
 
@@ -25,7 +25,10 @@ const estimateTooltip = (estimate: MemoisedEstimate): string | null => {
         if (isBefore(estimate, now)) {
             return 'This changeset will be processed soon.'
         }
-        return `This changeset will be processed in approximately ${formatDistance(estimate, now)}.`
+        // formatDistanceToNow() usually includes modifiers like "about" for
+        // hazier date ranges, so we don't need to hedge here in the static
+        // verbiage.
+        return `This changeset will be processed in ${formatDistanceToNow(estimate)}.`
     }
 
     return 'No estimate is available for when this changeset will be processed.'
