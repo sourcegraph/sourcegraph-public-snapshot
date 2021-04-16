@@ -37,7 +37,7 @@ func searchSymbols(ctx context.Context, db dbutil.DB, args *search.TextParameter
 	if mockSearchSymbols != nil {
 		results, stats, err := mockSearchSymbols(ctx, args, limit)
 		stream.Send(SearchEvent{
-			Results: fileMatchResultsToSearchResults(results),
+			Results: fileMatchResolversToSearchResults(results),
 			Stats:   statsDeref(stats),
 		})
 		return err
@@ -95,10 +95,10 @@ func searchSymbols(ctx context.Context, db dbutil.DB, args *search.TextParameter
 		goroutine.Go(func() {
 			defer run.Release()
 
-			matches, err := searchSymbolsInRepo(ctx, db, repoRevs, args.PatternInfo, limit)
+			matches, err := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, limit)
 			stats, err := handleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
 			stream.Send(SearchEvent{
-				Results: fileMatchResultsToSearchResults(matches),
+				Results: fileMatchesToSearchResults(db, matches),
 				Stats:   stats,
 			})
 			if err != nil {
@@ -146,7 +146,7 @@ func symbolCount(fmrs []*FileMatchResolver) int {
 	return nsym
 }
 
-func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []*FileMatchResolver, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.FileMatch, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
@@ -172,8 +172,6 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 	if err != nil {
 		return nil, err
 	}
-
-	repoResolver := NewRepositoryResolver(db, repoRevs.Repo.ToRepo())
 
 	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
 		Repo:            repoRevs.Repo.Name,
@@ -201,25 +199,22 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 	}
 
 	// Create file matches from partitioned symbols
-	fileMatchResolvers := make([]*FileMatchResolver, 0, len(symbolMatchesByPath))
+	fileMatches := make([]result.FileMatch, 0, len(symbolMatchesByPath))
 	for path, symbolMatches := range symbolMatchesByPath {
-		fileMatchResolvers = append(fileMatchResolvers, &FileMatchResolver{
-			db:           db,
-			RepoResolver: repoResolver,
-			FileMatch: result.FileMatch{
-				Path:     path,
-				Symbols:  symbolMatches,
-				Repo:     repoRevs.Repo,
-				CommitID: commitID,
-				InputRev: &inputRev,
-			},
+		fileMatches = append(fileMatches, result.FileMatch{
+			Path:     path,
+			Symbols:  symbolMatches,
+			Repo:     repoRevs.Repo,
+			CommitID: commitID,
+			InputRev: &inputRev,
 		})
 	}
 
-	sort.Slice(fileMatchResolvers, func(i, j int) bool {
-		return fileMatchResolvers[i].Path < fileMatchResolvers[j].Path
+	// Make the results deterministic
+	sort.Slice(fileMatches, func(i, j int) bool {
+		return fileMatches[i].Path < fileMatches[j].Path
 	})
-	return fileMatchResolvers, err
+	return fileMatches, err
 }
 
 // unescapePattern expects a regexp pattern of the form /^ ... $/ and unescapes

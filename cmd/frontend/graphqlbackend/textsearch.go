@@ -284,7 +284,19 @@ func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.M
 
 var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error)
 
-func fileMatchResultsToSearchResults(results []*FileMatchResolver) []SearchResultResolver {
+func fileMatchesToSearchResults(db dbutil.DB, results []result.FileMatch) []SearchResultResolver {
+	results2 := make([]SearchResultResolver, len(results))
+	for i, result := range results {
+		results2[i] = &FileMatchResolver{
+			FileMatch:    result,
+			RepoResolver: NewRepositoryResolver(db, result.Repo.ToRepo()),
+			db:           db,
+		}
+	}
+	return results2
+}
+
+func fileMatchResolversToSearchResults(results []*FileMatchResolver) []SearchResultResolver {
 	results2 := make([]SearchResultResolver, len(results))
 	for i, result := range results {
 		results2[i] = result
@@ -322,7 +334,7 @@ func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextPara
 	if mockSearchFilesInRepos != nil {
 		results, mockStats, err := mockSearchFilesInRepos(args)
 		stream.Send(SearchEvent{
-			Results: fileMatchResultsToSearchResults(results),
+			Results: fileMatchResolversToSearchResults(results),
 			Stats:   statsDeref(mockStats),
 		})
 		return err
@@ -475,7 +487,7 @@ func callSearcherOverRepos(
 					// non-diff search reports timeout through err, so pass false for timedOut
 					stats, err := handleRepoSearchResult(repoRev, repoLimitHit, false, err)
 					stream.Send(SearchEvent{
-						Results: fileMatchResultsToSearchResults(matches),
+						Results: fileMatchResolversToSearchResults(matches),
 						Stats:   stats,
 					})
 					return err
