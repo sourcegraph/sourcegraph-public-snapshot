@@ -57,12 +57,29 @@ const { add } = storiesOf('web/diffs/FileDiffHunks', module).addDecorator(story 
     <div className="p-3 container">{story()}</div>
 ))
 
-add('One diff hunk', () => (
+add('One diff unified hunk', () => (
     <WebStory>
         {webProps => (
             <FileDiffHunks
+                diffMode="unified"
                 {...webProps}
-                persistLines={boolean('persistLines', false)}
+                persistLines={boolean('persistLines', true)}
+                fileDiffAnchor="abc"
+                lineNumbers={boolean('lineNumbers', true)}
+                hunks={DEMO_HUNKS}
+                className="abcdef"
+            />
+        )}
+    </WebStory>
+))
+
+add('One diff split hunk', () => (
+    <WebStory>
+        {webProps => (
+            <FileDiffHunks
+                diffMode="split"
+                {...webProps}
+                persistLines={boolean('persistLines', true)}
                 fileDiffAnchor="abc"
                 lineNumbers={boolean('lineNumbers', true)}
                 hunks={DEMO_HUNKS}
