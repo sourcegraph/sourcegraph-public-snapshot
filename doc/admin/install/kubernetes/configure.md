@@ -37,11 +37,11 @@ If you followed the installation instructions, `$SOURCEGRAPH_VERSION` should poi
 
 ## Upgrading with a forked repository
 
-When you upgrade, merge the corresponding `upstream release` tag into your `release` branch _(created from the [Fork this repository](#fork-this-repository) step). 
+When you upgrade, merge the corresponding `upstream release` tag into your `release` branch _(created from the [Fork this repository](#fork-this-repository) step)_. 
 
 ```bash
 # to add the upstream remote.
-git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph-docker
+git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph
 # to merge the upstream release tag into your release branch.
 git checkout release && git merge v3.26.3
 ```
@@ -57,43 +57,7 @@ Configuration steps in this file depend on [jq](https://stedolan.github.io/jq/),
 
 Install the [kustomize](https://kustomize.io/) tool if you choose to use [overlays](overlays.md),.
 
-## Table of contents
 
-### Common configuration
-
-- [Configure a storage class](#configure-a-storage-class)
-- [Configure network access](#configure-network-access)
-- [Update site configuration](#update-site-configuration)
-- [Configure TLS/SSL](#configure-tlsssl)
-- [Configure repository cloning via SSH](#configure-repository-cloning-via-ssh)
-- [Configure SSDs to boost performance](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ssd/README.md).
-- [Increase memory or CPU limits](#increase-memory-or-cpu-limits)
-
-### Security
-
-- [Using NetworkPolicy](#using-networkpolicy)
-- [Using NetworkPolicy with Namespaced Overlay](#using-networkpolicy-with-namespaced-overlay)
-
-### Less common configuration
-
-- [Configure gitserver replica count](#configure-gitserver-replica-count)
-- [Configure indexed-search replica count](#configure-indexed-search-replica-count)
-- [Assign resource-hungry pods to larger nodes](#assign-resource-hungry-pods-to-larger-nodes)
-- [Configure Alertmanager](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/prometheus/alertmanager/README.md)
-- [Disable or customize Jaeger tracing](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/jaeger/README.md)
-- [Configure custom Redis](#configure-custom-redis)
-- [Configure custom PostgreSQL](#configure-custom-postgres)
-- [Install without RBAC](#install-without-rbac)
-- [Use non-default namespace](#use-non-default-namespace)
-- [Pulling images locally](#pulling-images-locally)
-
-### Working with overlays
-
-- [Overlay basic principles](overlays.md#overlay-basic-principles)
-- [Handling overlays in this repository](overlays.md#handling-overlays)
-- [namespaced overlay](#namespaced-overlay)
-- [non-root overlay](overlays.md#non-root-overlay)
-- [non-privileged overlay](overlays.md#non-privileged-overlay)
 
 ## Security - Configure network access
 
@@ -309,9 +273,13 @@ applying the [Namespaced Overlay](overlays.md#namespaced-overlay):
 
 1. 🎉 Congrats, you have Sourcegraph up and running! Now [configure your deployment](configure.md).
 
+
+
 ## Update site configuration
 
 Sourcegraph's application configuration is stored in the PostgreSQL database. For editing this configuration you may use the web UI. See [site configuration](../../config/site_config.md) for more information.
+
+
 
 ## Configure TLS/SSL
 
@@ -366,6 +334,8 @@ If you exposed your Sourcegraph instance via an ingress controller as described 
 ### NGINX service
 
 If you exposed your Sourcegraph instance via the altenative nginx service as described in ["nginx service"](#nginx-service), those instructions already walked you through setting up TLS/SSL.
+
+
 
 ## Configure repository cloning via SSH
 
@@ -449,6 +419,8 @@ Mount the [secret as a volume](https://kubernetes.io/docs/concepts/configuration
 **WARNING:** Do NOT commit the actual `id_rsa` and `known_hosts` files to your fork (unless
 your fork is private **and** you are okay with storing secrets in it).
 
+
+
 ## Configure gitserver replica count
 
 Increasing the number of `gitserver` replicas can improve performance when your instance contains a large number of repositories. Repository clones are consistently striped across all `gitserver` replicas. Other services need to be aware of how many `gitserver` replicas exist so they can resolve an individual repo.
@@ -497,6 +469,8 @@ find . -name "*.sedibak" -delete
 
 Commit the outstanding changes.
 
+
+
 ## Configure indexed-search replica count
 
 Increasing the number of `indexed-search` replicas can improve performance and reliability when your instance contains a large number of repositories. Repository indexes are distributed evenly across all `indexed-search` replicas.
@@ -504,6 +478,8 @@ Increasing the number of `indexed-search` replicas can improve performance and r
 By default `indexed-search` relies on kubernetes service discovery, so adjusting the number of replicas just requires updating the `replicas` field in [indexed-search.StatefulSet.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/indexed-search/indexed-search.StatefulSet.yaml).
 
 Not Recommended: To use a static list of indexed-search servers you can configure `INDEXED_SEARCH_SERVERS` on `sourcegraph-frontend`. It uses the same format as `SRC_GIT_SERVERS` above. Adjusting replica counts will require the same steps as gitserver.
+
+
 
 ## Assign resource-hungry pods to larger nodes
 
@@ -625,6 +601,8 @@ for p in "${PVC[@]}"; do yq eval -i ".spec.storageClassName|=\"$SC\"" "$p"; done
 for s in "${STS[@]}"; do yq eval -i ".spec.volumeClaimTemplates.[].spec.storageClassName|=\"$SC\"" "$s"; done
 ```
 
+
+
 ## Configure custom Redis
 
 Sourcegraph supports specifying a custom Redis server for:
@@ -637,17 +615,23 @@ If you want to specify a custom Redis server, you'll need specify the correspond
 - `sourcegraph-frontend`
 - `repo-updater`
 
+
+
 ## Configure custom PostgreSQL
 
 You can use your own PostgreSQL v12+ server with Sourcegraph if you wish. For example, you may prefer this if you already have existing backup infrastructure around your own PostgreSQL server, wish to use Amazon RDS, etc.
 
 Simply edit the relevant PostgreSQL environment variables (e.g. PGHOST, PGPORT, PGUSER, [etc.](http://www.postgresql.org/docs/current/static/libpq-envars.html)) in [base/frontend/sourcegraph-frontend.Deployment.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Deployment.yaml) to point to your existing PostgreSQL instance.
 
+
+
 ## Install without cluster-wide RBAC
 
 Sourcegraph communicates with the Kubernetes API for service discovery. It also has some janitor DaemonSets that clean up temporary cache data. To do that we need to create RBAC resources.
 
 If using cluster roles and cluster rolebinding RBAC is not an option, then you can use the [non-privileged](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/non-privileged) overlay to generate modified manifests. Read the [Overlays](#overlays) section below about overlays.
+
+
 
 ## Add license key
 
@@ -657,6 +641,8 @@ Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https:/
 
 - Once you have a license key, add it to your [site configuration](https://docs.sourcegraph.com/admin/config/site_config).
 
+
+
 ## Overlays
 
 An overlay specifies customizations for a base directory of Kubernetes manifests. It enables us to change parameters (number of replicas, namespace, etc) for Kubernetes components without affecting the base directory. Read the [Overlays docs](overlays.md) for more information about using overlays with Sourcegraph.
@@ -664,6 +650,8 @@ An overlay specifies customizations for a base directory of Kubernetes manifests
 ### Use non-default namespace
 
 Modifying the base manifests to use a non-default namespace can be done using the [namespaced overlay](overlays.md#use-non-default-namespace).
+
+
 
 ## Pulling images locally
 
@@ -675,6 +663,8 @@ for all images under `base/`:
 ```bash
 for IMAGE in $(grep --include '*.yaml' -FR 'image:' base | awk '{ print $(NF) }'); do docker pull "$IMAGE"; done;
 ```
+
+
 
 ## Troubleshooting
 
