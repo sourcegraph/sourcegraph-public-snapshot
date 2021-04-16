@@ -107,11 +107,83 @@ $theme-colors-redesign-dark: map-merge(
     )
 );
 
+$theme-colors-redesign-light-2: (
+    'primary': (
+        1: $redesign-primary,
+        2: #a3d0ff,
+        3: $redesign-indigo,
+    ),
+    'secondary': (
+        1: $redesign-gray-04,
+        2: #eef1f7,
+        3: #c6cfe1,
+    ),
+    'success': (
+        1: $redesign-success,
+        2: #afe0b8,
+        3: #319e44,
+    ),
+    'info': (
+        1: $redesign-info,
+        2: #a8dbe2,
+        3: #0bb3ca,
+    ),
+    'warning': (
+        1: $redesign-warning,
+        2: #fbd999,
+        3: #e09200,
+    ),
+    'danger': (
+        1: $redesign-danger,
+        2: #e9aaaa,
+        3: #b52626,
+    ),
+    'merged': (
+        1: $redesign-purple,
+        2: #c6b6f6,
+        3: #6b47d6,
+    ),
+);
+
+$theme-colors-redesign-dark-2: (
+    'primary': (
+        1: $redesign-primary,
+        2: #0f59aa,
+        3: $redesign-indigo,
+    ),
+    'success': (
+        1: $redesign-success,
+        2: #afe0b8,
+        3: #237332,
+    ),
+    'info': (
+        1: $redesign-info,
+        2: #99cdd6,
+        3: #005766,
+    ),
+    'warning': (
+        1: $redesign-warning,
+        2: #fbd999,
+        3: #9c6500,
+    ),
+    'danger': (
+        1: $redesign-danger,
+        2: #e9aaaa,
+        3: #801b1b,
+    ),
+    'merged': (
+        1: $redesign-purple,
+        2: #c6b6f6,
+        3: #6b47d6,
+    ),
+);
+
 :root.theme-redesign,
 // Descendant selector is required for Storybook `addRedesignVariants` helper.
 :root .theme-redesign {
     --primary: #{$redesign-primary};
-    --primary-hover: #{$redesign-indigo};
+    --primary-3: #{$redesign-indigo};
+    --primary-hover: #{$redesign-indigo}; // TODO: What is primary-hover
     --brand-secondary: #a305e1;
     --brand-secondary-2: #{$redesign-pink};
     --success: #{$redesign-success};
@@ -130,6 +202,11 @@ $theme-colors-redesign-dark: map-merge(
     --logo-orange: #{$logo-orange};
     --logo-blue: #{$logo-blue};
     --logo-purple: #{$logo-purple};
+
+    // TODO: Move out of colors
+    --border-radius: 4px;
+    --border-radius-sm: 4px;
+    --border-radius-lg: 4px;
 }
 
 .theme-light.theme-redesign,

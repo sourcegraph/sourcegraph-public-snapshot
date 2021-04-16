@@ -86,6 +86,10 @@ $text-muted: var(--text-muted);
     --logo-blue: #{$logo-blue};
     --logo-purple: #{$logo-purple};
     --code-bg: #{$gray-01};
+    // TODO: Move out of colors
+    --border-radius: 2px;
+    --border-radius-sm: 1px;
+    --border-radius-lg: 4px;
 }
 .theme-light {
     // Affects default browser styles
