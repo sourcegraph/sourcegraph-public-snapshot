@@ -337,7 +337,8 @@ func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Co
 var getAllRevisionsForRepoFmtStr = `
 SELECT DISTINCT scr.revision
 FROM search_context_repos scr
-JOIN (
+-- Only return revisions whose search context has not been deleted
+INNER JOIN (
   SELECT id
   FROM search_contexts
   WHERE deleted_at IS NULL
