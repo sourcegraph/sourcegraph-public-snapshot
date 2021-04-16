@@ -3,7 +3,6 @@ import { Page } from 'puppeteer'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
-import { REDESIGN_TOGGLE_KEY } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { WebGraphQlOperations } from '../graphql-operations'
 
@@ -78,6 +77,12 @@ export const setColorScheme = async (
     await page.waitForTimeout(500)
 }
 
+const toggleRedesign = async (page: Page, enabled: boolean): Promise<void> => {
+    await page.evaluate(enabled => document.documentElement.classList.toggle('theme-redesign', enabled), enabled)
+    await page.evaluate(enabled => localStorage.setItem('isRedesignEnabled', enabled ? 'true' : 'false'), enabled)
+    await page.evaluate(() => window.dispatchEvent(new Event('storage')))
+}
+
 export interface PercySnapshotConfig {
     waitForCodeHighlighting: boolean
 }
@@ -105,26 +110,18 @@ export const percySnapshotWithVariants = async (
     await percySnapshot(page, `${name} - light theme`)
 
     // Theme-light with redesign
-    await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
-    await page.evaluate(() => localStorage.setItem(REDESIGN_TOGGLE_KEY, 'true'))
-    await page.evaluate(() => window.dispatchEvent(new Event('storage')))
+    await toggleRedesign(page, true)
     await percySnapshot(page, `${name} - light theme with redesign enabled`)
-    await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
-    await page.evaluate(() => localStorage.setItem(REDESIGN_TOGGLE_KEY, 'false'))
-    await page.evaluate(() => window.dispatchEvent(new Event('storage')))
+    await toggleRedesign(page, false)
 
     // Theme-dark
     await setColorScheme(page, 'dark', config?.waitForCodeHighlighting)
     await percySnapshot(page, `${name} - dark theme`)
 
     // Theme-dark with redesign
-    await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
-    await page.evaluate(() => localStorage.setItem(REDESIGN_TOGGLE_KEY, 'true'))
-    await page.evaluate(() => window.dispatchEvent(new Event('storage')))
+    await toggleRedesign(page, true)
     await percySnapshot(page, `${name} - dark theme with redesign enabled`)
-    await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
-    await page.evaluate(() => localStorage.setItem(REDESIGN_TOGGLE_KEY, 'false'))
-    await page.evaluate(() => window.dispatchEvent(new Event('storage')))
+    await toggleRedesign(page, false)
 
     // Reset to light theme
     await setColorScheme(page, 'light', config?.waitForCodeHighlighting)
