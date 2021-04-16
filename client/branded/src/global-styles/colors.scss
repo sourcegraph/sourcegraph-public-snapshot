@@ -85,7 +85,6 @@ $text-muted: var(--text-muted);
     --logo-orange: #{$logo-orange};
     --logo-blue: #{$logo-blue};
     --logo-purple: #{$logo-purple};
-    --code-bg: #{$gray-01};
 }
 .theme-light {
     // Affects default browser styles
@@ -100,6 +99,7 @@ $text-muted: var(--text-muted);
     --color-bg-5: #{$gray-13};
     --color-bg-6: #{$gray-13};
     --color-text-3: #{rgba($gray-17, 0.5)};
+    --code-bg: #{$gray-01};
     --mark-bg: #{$mark-bg-light};
     --text-muted: #6d727c;
     --line-number-color: #{$gray-05};
@@ -136,6 +136,7 @@ $text-muted: var(--text-muted);
     --color-bg-5: #{$gray-17};
     --color-bg-6: #{$gray-06};
     --color-text-3: #{rgba(#ffffff, 0.5)};
+    --code-bg: #{$gray-21};
     --mark-bg: #{$mark-bg-dark};
     --text-muted: #{$gray-07};
     --line-number-color: #{$gray-18};
