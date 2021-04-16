@@ -14,7 +14,7 @@ $border-radius-lg: var(--border-radius-lg);
 $font-size-base: 0.875rem;
 $line-height-base: (20/14);
 
-$box-shadow: 0 0.25rem 0.5rem rgba($gray-19, 0.07);
+$box-shadow: var(--box-shadow);
 
 $grid-gutter-width: 1.5rem;
 
@@ -52,7 +52,7 @@ $badge-padding-x: 0.6em;
 
 // Tooltips
 
-$tooltip-bg: $gray-19;
+$tooltip-bg: var(--tooltip-bg);
 
 // Forms
 

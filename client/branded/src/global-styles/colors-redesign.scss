@@ -15,22 +15,28 @@ $redesign-gray-10: #1d212f;
 $redesign-gray-11: #181b26;
 $redesign-gray-12: #14171f;
 $redesign-black: #0f111a;
-// TODO: Update these values to match new Bootstrap designs
 $redesign-blue: #0b70db;
 $redesign-red: $oc-red-9;
 $redesign-pink: #d68cf3;
 $redesign-indigo: #0864c6;
 $redesign-cyan: #72dbe8;
-// These are unchanged, preserved here for simplicity
 $redesign-purple: $oc-violet-7;
 $redesign-orange: $oc-orange-7;
 $redesign-yellow: $oc-yellow-7;
 $redesign-green: $oc-green-7;
 $redesign-teal: $oc-teal-7;
 
+// Semantic base colors. These are the same regardless of dark/light theme.
+$redesign-primary: $redesign-blue;
+$redesign-success: $redesign-green;
+$redesign-info: $redesign-cyan;
+$redesign-warning: $redesign-yellow;
+$redesign-danger: $redesign-red;
+$redesign-merged: $redesign-purple;
+
 // If `bootstap-use-redesign-variables` is enabled, we update our SCSS variables to match the new redesign
 @if $bootstap-use-redesign-variables {
-    // Bootstrap colors
+    // Bootstrap core colors
     $blue: $redesign-blue;
     $indigo: $redesign-indigo;
     $purple: $redesign-purple;
@@ -42,9 +48,6 @@ $redesign-teal: $oc-teal-7;
     $teal: $redesign-teal;
     $cyan: $redesign-cyan;
 
-    // Logo
-    $logo-purple: $redesign-purple;
-
     // Globals
     $primary: $redesign-blue;
     $secondary: $redesign-gray-08;
@@ -52,36 +55,13 @@ $redesign-teal: $oc-teal-7;
     $info: $redesign-cyan;
     $warning: $redesign-yellow;
     $danger: $redesign-red;
-    $secondary-light: $redesign-gray-03;
+    $secondary-light: $redesign-gray-03; // TODO: Stop using secondary-light
     $merged: $redesign-purple;
 
     // mark- colors
-    $mark-bg-light: rgba(255, 218, 30, 0.5);
+    $mark-bg-light: rgba(255, 218, 30, 0.5); // Only used by browser extension?
     $mark-bg-dark: rgba(16, 104, 2, 0.5);
-
-    // Additional Bootstrap theming
-    $theme-colors: (
-        'merged': $merged,
-    );
-    $theme-colors-light: (
-        'secondary': $secondary-light,
-    );
-
-    // Bootstrap Tooltip
-    // Assumption: uses light-mode body-color, which matches current behavior
-    $tooltip-bg: $redesign-gray-08;
-
-    // Bootstrap box-shadows
-    // Assumption: Uses light-mode body-color, which matches current behavior
-    $box-shadow: 0 0.25rem 0.5rem rgba($redesign-gray-08, 0.07);
 }
-
-$redesign-primary: $redesign-blue;
-$redesign-success: $redesign-green;
-$redesign-danger: $redesign-red;
-$redesign-warning: $redesign-yellow;
-$redesign-info: $redesign-cyan;
-$redesign-merged: $redesign-purple;
 
 $theme-colors-redesign-light: (
     'primary': (
@@ -115,7 +95,7 @@ $theme-colors-redesign-light: (
         3: #b52626,
     ),
     'merged': (
-        1: $redesign-purple,
+        1: $redesign-merged,
         2: #c6b6f6,
         3: #6b47d6,
     ),
@@ -153,7 +133,7 @@ $theme-colors-redesign-dark: (
         3: #801b1b,
     ),
     'merged': (
-        1: $redesign-purple,
+        1: $redesign-merged,
         2: #c6b6f6,
         3: #6b47d6,
     ),
@@ -164,7 +144,6 @@ $theme-colors-redesign-dark: (
 :root .theme-redesign {
     --primary: #{$redesign-primary};
     --primary-3: #{$redesign-indigo};
-    --primary-hover: #{$redesign-indigo}; // TODO: What is primary-hover
     --brand-secondary: #a305e1;
     --brand-secondary-2: #{$redesign-pink};
     --success: #{$redesign-success};
@@ -174,7 +153,7 @@ $theme-colors-redesign-dark: (
     --warning-2: #fbd999;
     --danger: #{$redesign-danger};
     --danger-2: #e9aaaa;
-    --merged: #{$redesign-purple};
+    --merged: #{$redesign-merged};
     --merged-2: #c6b6f6;
     --merged-3: #6b47d6;
     --line-number-color: #{$redesign-gray-06};
@@ -182,13 +161,16 @@ $theme-colors-redesign-dark: (
     --reversed-text: #{$white};
     --logo-orange: #{$logo-orange};
     --logo-blue: #{$logo-blue};
-    --logo-purple: #{$logo-purple};
+    --logo-purple: #{$redesign-purple};
     --dark-text: #343a4d;
+    --tooltip-bg: #{$redesign-gray-08};
 
     // TODO: Move out of colors
     --border-radius: 4px;
     --border-radius-sm: 4px;
     --border-radius-lg: 4px;
+    // Assumption: Uses light-mode body-color, which matches current behavior
+    --box-shadow: 0 0.25rem 0.5rem rgba($redesign-gray-08, 0.07);
 }
 
 .theme-light.theme-redesign,
