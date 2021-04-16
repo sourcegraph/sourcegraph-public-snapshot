@@ -2,14 +2,11 @@ package backend
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"sort"
 
 	"github.com/google/zoekt"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -51,7 +48,12 @@ type RepoIndexOptions struct {
 
 // GetIndexOptions returns a json blob for consumption by
 // sourcegraph-zoekt-indexserver. It is for repos based on site settings c.
-func GetIndexOptions(ctx context.Context, c *schema.SiteConfiguration, getRepoIndexOptions func(repo string) (*RepoIndexOptions, error), repos ...string) []byte {
+func GetIndexOptions(
+	c *schema.SiteConfiguration,
+	getRepoIndexOptions func(repo string) (*RepoIndexOptions, error),
+	getSearchContextRevisions func(repoID int32) ([]string, error),
+	repos ...string,
+) []byte {
 	// Limit concurrency to 32 to avoid too many active network requests and
 	// strain on gitserver (as ported from zoekt-sourcegraph-indexserver). In
 	// future we want a more intelligent global limit based on scale.
@@ -62,7 +64,7 @@ func GetIndexOptions(ctx context.Context, c *schema.SiteConfiguration, getRepoIn
 		sema <- struct{}{}
 		go func(i int) {
 			defer func() { <-sema }()
-			results[i] = getIndexOptions(ctx, c, repos[i], getRepoIndexOptions)
+			results[i] = getIndexOptions(c, repos[i], getRepoIndexOptions, getSearchContextRevisions)
 		}(i)
 	}
 
@@ -74,7 +76,12 @@ func GetIndexOptions(ctx context.Context, c *schema.SiteConfiguration, getRepoIn
 	return bytes.Join(results, []byte{'\n'})
 }
 
-func getIndexOptions(ctx context.Context, c *schema.SiteConfiguration, repoName string, getRepoIndexOptions func(repo string) (*RepoIndexOptions, error)) []byte {
+func getIndexOptions(
+	c *schema.SiteConfiguration,
+	repoName string,
+	getRepoIndexOptions func(repo string) (*RepoIndexOptions, error),
+	getSearchContextRevisions func(repo int32) ([]string, error),
+) []byte {
 	opts, err := getRepoIndexOptions(repoName)
 	if err != nil {
 		return marshal(&zoektIndexOptions{Error: err.Error()})
@@ -105,15 +112,12 @@ func getIndexOptions(ctx context.Context, c *schema.SiteConfiguration, repoName 
 	}
 
 	// Add all branches that are referenced by search contexts
-	{
-		sc := database.SearchContexts(dbconn.Global)
-		revs, err := sc.GetAllRevisionsForRepo(ctx, opts.RepoID)
-		if err != nil {
-			return marshal(&zoektIndexOptions{Error: err.Error()})
-		}
-		for _, rev := range revs {
-			branches[rev] = struct{}{}
-		}
+	revs, err := getSearchContextRevisions(opts.RepoID)
+	if err != nil {
+		return marshal(&zoektIndexOptions{Error: err.Error()})
+	}
+	for _, rev := range revs {
+		branches[rev] = struct{}{}
 	}
 
 	for branch := range branches {
