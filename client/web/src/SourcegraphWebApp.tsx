@@ -49,12 +49,7 @@ import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
 import { VersionContext } from './schema/site.schema'
-import {
-    resolveVersionContext,
-    parseSearchURL,
-    getAvailableSearchContextSpecOrDefault,
-    getGlobalSearchContextFilter,
-} from './search'
+import { resolveVersionContext, parseSearchURL, getAvailableSearchContextSpecOrDefault } from './search'
 import {
     search,
     fetchSavedSearches,
