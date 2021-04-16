@@ -342,18 +342,27 @@ const openingParen = scanToken(/\(/, (_input, range): OpeningParen => ({ type: '
 const closingParen = scanToken(/\)/, (_input, range): ClosingParen => ({ type: 'closingParen', range }))
 
 /**
- * Returns a {@link Scanner} that succeeds if a token scanned by `scanToken`,
- * followed by whitespace or EOF, is found in the search query.
+ * Returns a {@link Scanner} that succeeds if `scanTerm` succeeds,
+ * followed by `scanNext`.
  */
-const followedBy = (scanToken: Scanner<Token>, scanNext: Scanner<Token>): Scanner<Token[]> => (input, start) => {
-    const tokens: Token[] = []
-    const tokenResult = scanToken(input, start)
-    if (tokenResult.type === 'error') {
-        return tokenResult
+const followedBy = (scanTerm: Scanner<Term>, scanNext: Scanner<Token>): Scanner<Token[]> => (input, start) => {
+    const result = scanTerm(input, start)
+    if (result.type === 'error') {
+        return result
     }
-    tokens.push(tokenResult.term)
-    let { end } = tokenResult.term.range
-    if (input[end] !== undefined) {
+    let end: number | undefined
+    const tokens: Token[] = []
+    if (Array.isArray(result.term)) {
+        for (const token of result.term) {
+            tokens.push(token)
+            end = token.range.end
+        }
+    } else {
+        tokens.push(result.term)
+        end = result.term.range.end
+    }
+    // Invariant: end is defined.
+    if (end && input[end] !== undefined) {
         const next = scanNext(input, end)
         if (next.type === 'error') {
             return next
