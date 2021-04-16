@@ -400,7 +400,13 @@ func (bl *BasicLimitWatcher) updateFromConfig(limit int) {
 		log15.Debug("BasicLimiter disabled")
 		return
 	}
-	l, err := throttled.NewGCRARateLimiter(bl.store, throttled.RateQuota{MaxRate: throttled.PerHour(limit)})
+	maxBurstPercentage := 0.2
+	l, err := throttled.NewGCRARateLimiter(
+		bl.store,
+		throttled.RateQuota{
+			MaxRate:  throttled.PerHour(limit),
+			MaxBurst: int(float64(limit) * maxBurstPercentage)},
+	)
 	if err != nil {
 		log15.Warn("error updating BasicLimiter from config")
 		bl.rl.Store(&BasicLimiter{nil, false})
