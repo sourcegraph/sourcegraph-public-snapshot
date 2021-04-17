@@ -1044,6 +1044,34 @@ describe('getMonacoTokens()', () => {
         `)
     })
 
+    test('do not decorate regex syntax when filter value is quoted', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:"^do-not-attempt$" file:\'.*\'')), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 23,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 24,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 29,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
+
     test('decorate repo revision syntax, path with wildcard and negation', () => {
         expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:foo@*refs/heads/*:*!refs/heads/release*')), true))
             .toMatchInlineSnapshot(`
