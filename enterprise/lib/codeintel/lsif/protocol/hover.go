@@ -57,6 +57,18 @@ func (m MarkedString) MarshalJSON() ([]byte, error) {
 	return marshaller.Marshal((markedString)(m))
 }
 
+type MarkupKind string
+
+const (
+	PlainText MarkupKind = "plaintext"
+	Markdown  MarkupKind = "markdown"
+)
+
+type MarkupContent struct {
+	Kind  MarkupKind
+	Value string
+}
+
 type TextDocumentHover struct {
 	Edge
 	OutV uint64 `json:"outV"`
