@@ -8,11 +8,11 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { FeedbackBadge } from '../../components/FeedbackBadge'
-import { Page } from '../../components/Page'
-import { PageHeader } from '../../components/PageHeader'
-import { InsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../components'
-import { InsightsApiContext } from '../core/backend/api-provider'
+import { FeedbackBadge } from '../../../components/FeedbackBadge'
+import { Page } from '../../../components/Page'
+import { PageHeader } from '../../../components/PageHeader'
+import { InsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
+import { InsightsApiContext } from '../../core/backend/api-provider'
 
 export interface InsightsPageProps extends ExtensionsControllerProps, Omit<InsightsViewGridProps, 'views'>, TelemetryProps {}
 

@@ -3,11 +3,16 @@ import { RouteComponentProps, Switch, Route } from 'react-router';
 
 import { lazyComponent } from '../util/lazyComponent';
 
-import { InsightsPageProps } from './pages/InsightsPage';
+import { InsightsPageProps } from './pages/dashboard/InsightsPage';
 
 const InsightsLazyPage = lazyComponent<InsightsPageProps, 'InsightsPage'>(
-    () => import('./pages/InsightsPage'),
+    () => import('./pages/dashboard/InsightsPage'),
     'InsightsPage'
+)
+
+const InsightCreateLazyPage = lazyComponent(
+    () => import('./pages/create/CreateInsightPage'),
+    'CreateInsightPage'
 )
 
 /**
@@ -30,7 +35,11 @@ export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = prop
                 exact={true}
             />
 
-            <Route />
+            <Route
+                path={`${match.url}/create`}>
+
+                <InsightCreateLazyPage/>
+            </Route>
         </Switch>
     );
 }

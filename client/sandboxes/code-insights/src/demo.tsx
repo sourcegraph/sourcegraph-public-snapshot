@@ -39,7 +39,6 @@ const CONTEXT = {
 const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/insights',
-        exact: true,
         render: lazyComponent(() => import('@sourcegraph/web/src/insights/InsightsRouter'), 'InsightsRouter'),
     },
 ]
