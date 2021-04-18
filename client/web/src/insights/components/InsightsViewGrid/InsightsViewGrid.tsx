@@ -5,6 +5,7 @@ import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React, { useCallback, useMemo } from 'react'
 import { Layout as ReactGridLayout, Layouts as ReactGridLayouts, Responsive, WidthProvider } from 'react-grid-layout'
 
+import { isFirefox } from '@sourcegraph/browser/src/shared/util/context'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -13,7 +14,6 @@ import { ErrorAlert } from '../../../components/alerts'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { ViewContent, ViewContentProps } from '../../../views/ViewContent'
 import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../../core/backend/types'
-import { isFirefox } from '@sourcegraph/browser/out/src/shared/util/context';
 
 // TODO use a method to get width that also triggers when file explorer is closed
 // (WidthProvider only listens to window resize events)
