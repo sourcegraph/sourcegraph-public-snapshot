@@ -3,11 +3,11 @@ package usagestats
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func GetCodeMonitoringUsageStatistics(ctx context.Context) (*types.CodeMonitoringUsageStatistics, error) {
+func GetCodeMonitoringUsageStatistics(ctx context.Context, db dbutil.DB) (*types.CodeMonitoringUsageStatistics, error) {
 	const getCodeMonitoringUsageStatisticsQuery = `
 SELECT
     codeMonitoringPageViews,
@@ -35,7 +35,7 @@ FROM (
 ) sub`
 
 	codeMonitoringUsageStats := &types.CodeMonitoringUsageStatistics{}
-	if err := dbconn.Global.QueryRowContext(ctx, getCodeMonitoringUsageStatisticsQuery).Scan(
+	if err := db.QueryRowContext(ctx, getCodeMonitoringUsageStatisticsQuery).Scan(
 		&codeMonitoringUsageStats.CodeMonitoringPageViews,
 		&codeMonitoringUsageStats.CreateCodeMonitorPageViews,
 		&codeMonitoringUsageStats.CreateCodeMonitorPageViewsWithTriggerQuery,
