@@ -17,8 +17,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -323,10 +323,10 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			})
 
 			t.Run("valid merge request state change events", func(t *testing.T) {
-				for action, want := range map[string]batches.ChangesetEventKind{
-					"close":  batches.ChangesetEventKindGitLabClosed,
-					"merge":  batches.ChangesetEventKindGitLabMerged,
-					"reopen": batches.ChangesetEventKindGitLabReopened,
+				for action, want := range map[string]btypes.ChangesetEventKind{
+					"close":  btypes.ChangesetEventKindGitLabClosed,
+					"merge":  btypes.ChangesetEventKindGitLabMerged,
+					"reopen": btypes.ChangesetEventKindGitLabReopened,
 				} {
 					t.Run(action, func(t *testing.T) {
 						store := gitLabTestSetup(t, db)
@@ -385,7 +385,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 					t.Errorf("unexpected status code: have %d; want %d", have, want)
 				}
 
-				assertChangesetEventForChangeset(t, ctx, store, changeset, batches.ChangesetEventKindGitLabPipeline)
+				assertChangesetEventForChangeset(t, ctx, store, changeset, btypes.ChangesetEventKindGitLabPipeline)
 			})
 		})
 
@@ -853,7 +853,7 @@ func assertBodyIncludes(t *testing.T, r io.Reader, want string) {
 // assertChangesetEventForChangeset checks that one (and only one) changeset
 // event has been created on the given changeset, and that it is of the given
 // kind.
-func assertChangesetEventForChangeset(t *testing.T, ctx context.Context, tx *store.Store, changeset *batches.Changeset, want batches.ChangesetEventKind) {
+func assertChangesetEventForChangeset(t *testing.T, ctx context.Context, tx *store.Store, changeset *btypes.Changeset, want btypes.ChangesetEventKind) {
 	ces, _, err := tx.ListChangesetEvents(ctx, store.ListChangesetEventsOpts{
 		ChangesetIDs: []int64{changeset.ID},
 		LimitOpts:    store.LimitOpts{Limit: 100},
@@ -918,8 +918,8 @@ func createGitLabRepo(t *testing.T, ctx context.Context, rstore *database.RepoSt
 }
 
 // createGitLabChangeset creates a mock GitLab changeset.
-func createGitLabChangeset(t *testing.T, ctx context.Context, store *store.Store, repo *types.Repo) *batches.Changeset {
-	c := &batches.Changeset{
+func createGitLabChangeset(t *testing.T, ctx context.Context, store *store.Store, repo *types.Repo) *btypes.Changeset {
+	c := &btypes.Changeset{
 		RepoID:              repo.ID,
 		ExternalID:          "1",
 		ExternalServiceType: extsvc.TypeGitLab,
@@ -933,7 +933,7 @@ func createGitLabChangeset(t *testing.T, ctx context.Context, store *store.Store
 
 // createMergeRequestPayload creates a mock GitLab webhook payload of the merge
 // request object kind.
-func createMergeRequestPayload(t *testing.T, repo *types.Repo, changeset *batches.Changeset, action string) string {
+func createMergeRequestPayload(t *testing.T, repo *types.Repo, changeset *btypes.Changeset, action string) string {
 	cid, err := strconv.Atoi(changeset.ExternalID)
 	if err != nil {
 		t.Fatal(err)
@@ -961,7 +961,7 @@ func createMergeRequestPayload(t *testing.T, repo *types.Repo, changeset *batche
 
 // createPipelinePayload creates a mock GitLab webhook payload of the pipeline
 // object kind.
-func createPipelinePayload(t *testing.T, repo *types.Repo, changeset *batches.Changeset, pipeline gitlab.Pipeline) string {
+func createPipelinePayload(t *testing.T, repo *types.Repo, changeset *btypes.Changeset, pipeline gitlab.Pipeline) string {
 	pid, err := strconv.Atoi(repo.ExternalRepo.ID)
 	if err != nil {
 		t.Fatal(err)

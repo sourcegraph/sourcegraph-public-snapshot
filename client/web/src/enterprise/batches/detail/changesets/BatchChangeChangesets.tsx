@@ -276,16 +276,12 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                             : 'batch-change-changesets__grid mb-3'
                     }
                     headComponent={BatchChangeChangesetsHeader}
-                    headComponentProps={
-                        enableSelect
-                            ? {
-                                  enableSelect,
-                                  selected: allSelected,
-                                  toggleSelectAll,
-                                  disabled: !(viewerCanAdminister && !isSubmittingSelected),
-                              }
-                            : {}
-                    }
+                    headComponentProps={{
+                        enableSelect,
+                        allSelected,
+                        toggleSelectAll,
+                        disabled: !(viewerCanAdminister && !isSubmittingSelected),
+                    }}
                     // Only show the empty element, if no filters are selected.
                     emptyElement={
                         filtersSelected(changesetFilters) ? (

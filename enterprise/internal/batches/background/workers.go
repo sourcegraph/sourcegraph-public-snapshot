@@ -8,8 +8,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/reconciler"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -30,7 +30,7 @@ func newWorker(
 	ctx context.Context,
 	s *store.Store,
 	gitClient reconciler.GitserverClient,
-	sourcer repos.Sourcer,
+	sourcer sources.Sourcer,
 	metrics batchChangesMetrics,
 ) *workerutil.Worker {
 	r := reconciler.New(gitClient, sourcer, s)

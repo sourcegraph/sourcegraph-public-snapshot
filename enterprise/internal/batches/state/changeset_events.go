@@ -1,11 +1,11 @@
 package state
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
 // ChangesetEvents is a collection of changeset events
-type ChangesetEvents []*batches.ChangesetEvent
+type ChangesetEvents []*btypes.ChangesetEvent
 
 func (ce ChangesetEvents) Len() int      { return len(ce) }
 func (ce ChangesetEvents) Swap(i, j int) { ce[i], ce[j] = ce[j], ce[i] }

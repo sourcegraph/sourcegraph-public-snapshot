@@ -9,7 +9,6 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
@@ -34,7 +33,7 @@ type migratorAndOption struct {
 var _ goroutine.BackgroundRoutine = &Runner{}
 
 func NewRunnerWithDB(db dbutil.DB, refreshInterval time.Duration) *Runner {
-	return newRunner(NewStoreWithDB(dbconn.Global), glock.NewRealTicker(refreshInterval))
+	return newRunner(NewStoreWithDB(db), glock.NewRealTicker(refreshInterval))
 }
 
 func newRunner(store storeIface, refreshTicker glock.Ticker) *Runner {

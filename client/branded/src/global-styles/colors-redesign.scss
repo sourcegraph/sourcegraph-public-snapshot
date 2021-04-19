@@ -1,0 +1,182 @@
+// Set to true to compile Bootstrap with our redesign variables
+$bootstap-use-redesign-variables: false !default;
+
+// Redesign colors
+$redesign-gray-01: #f9fafb;
+$redesign-gray-02: #f0f1f2;
+$redesign-gray-03: #e6ebf2;
+$redesign-gray-04: #dbe2f0;
+$redesign-gray-05: #a6b6d9;
+$redesign-gray-06: #778299;
+$redesign-gray-07: #5e6e8c;
+$redesign-gray-08: #343a4d;
+$redesign-gray-09: #262b38;
+$redesign-gray-10: #1d212f;
+$redesign-gray-11: #181b26;
+$redesign-gray-12: #14171f;
+$redesign-black: #0f111a;
+// TODO: Update these values to match new Bootstrap designs
+$redesign-blue: #0b70db;
+$redesign-red: $oc-red-9;
+$redesign-pink: #d68cf3;
+$redesign-indigo: #0864c6;
+$redesign-cyan: #72dbe8;
+// These are unchanged, preserved here for simplicity
+$redesign-purple: $oc-violet-7;
+$redesign-orange: $oc-orange-7;
+$redesign-yellow: $oc-yellow-7;
+$redesign-green: $oc-green-7;
+$redesign-teal: $oc-teal-7;
+
+// If `bootstap-use-redesign-variables` is enabled, we update our SCSS variables to match the new redesign
+@if $bootstap-use-redesign-variables {
+    // Bootstrap colors
+    $blue: $redesign-blue;
+    $indigo: $redesign-indigo;
+    $purple: $redesign-purple;
+    $pink: $redesign-pink;
+    $red: $redesign-red;
+    $orange: $redesign-orange;
+    $yellow: $redesign-yellow;
+    $green: $redesign-green;
+    $teal: $redesign-teal;
+    $cyan: $redesign-cyan;
+
+    // Logo
+    $logo-purple: $redesign-purple;
+
+    // Globals
+    $primary: $redesign-blue;
+    $secondary: $redesign-gray-08;
+    $success: $redesign-green;
+    $info: $redesign-cyan;
+    $warning: $redesign-yellow;
+    $danger: $redesign-red;
+    $secondary-light: $redesign-gray-03;
+    $merged: $redesign-purple;
+
+    // mark- colors
+    $mark-bg-light: rgba(255, 218, 30, 0.5);
+    $mark-bg-dark: rgba(16, 104, 2, 0.5);
+
+    // Additional Bootstrap theming
+    $theme-colors: (
+        'merged': $merged,
+    );
+    $theme-colors-light: (
+        'secondary': $secondary-light,
+    );
+
+    // Bootstrap Tooltip
+    // Assumption: uses light-mode body-color, which matches current behavior
+    $tooltip-bg: $redesign-gray-08;
+
+    // Bootstrap box-shadows
+    // Assumption: Uses light-mode body-color, which matches current behavior
+    $box-shadow: 0 0.25rem 0.5rem rgba($redesign-gray-08, 0.07);
+}
+
+:root.theme-redesign,
+// Descendant selector is required for Storybook `addRedesignVariants` helper.
+:root .theme-redesign {
+    --primary: #{$redesign-blue};
+    --primary-hover: #{$redesign-indigo};
+    --brand-secondary: #a305e1;
+    --brand-secondary-2: #{$redesign-pink};
+    --success: #{$redesign-green};
+    --success-2: #afe0b8;
+    --info: #{$redesign-cyan};
+    --warning: #{$redesign-yellow};
+    --warning-2: #fbd999;
+    --danger: #{$redesign-red};
+    --danger-2: #e9aaaa;
+    --merged: #{$redesign-purple};
+    --merged-2: #c6b6f6;
+    --merged-3: #6b47d6;
+    --line-number-color: #{$redesign-gray-06};
+    --header-icon-color: #{$redesign-gray-05};
+    --reversed-text: #{$white};
+    --logo-orange: #{$logo-orange};
+    --logo-blue: #{$logo-blue};
+    --logo-purple: #{$logo-purple};
+}
+
+.theme-light.theme-redesign,
+.theme-light .theme-redesign {
+    --primary-2: #a3d0ff;
+    --secondary: #{$redesign-gray-04};
+    --secondary-2: #eef1f7;
+    --secondary-3: #c6cfe1;
+    --success-3: #319e44;
+    --info-2: #a8dbe2;
+    --info-3: #0bb3ca;
+    --warning-3: #e09200;
+    --danger-3: #b52626;
+    --body-color: #{$redesign-gray-08};
+    --body-bg: #{$redesign-gray-01};
+    --color-bg-1: #{$white};
+    --color-bg-2: #{$redesign-gray-03};
+    --color-bg-3: #{$redesign-gray-04};
+    --mark-bg: rgba(255, 218, 30, 0.5);
+    --text-muted: #{$redesign-gray-07};
+    --link-color: var(--primary);
+    --link-active-color: #0c7bf0;
+    --link-hover-color: #0c7bf0;
+    --border-color: #{$redesign-gray-03};
+    --border-color-2: #{$redesign-gray-04};
+    --border-active-color: var(--primary);
+    --search-query-text-color: #{$redesign-gray-12};
+    --search-filter-keyword-color: var(--primary);
+    --search-keyword-color: var(--secondary);
+    --infobar-warning-color: #{$oc-red-8};
+    --icon-color: #{$redesign-gray-06};
+    --code-bg: #{$redesign-gray-03};
+    --intel-bg: #{$white};
+
+    // TODO: Remove from use, replace with the variables referenced here
+    // Issue: https://github.com/sourcegraph/sourcegraph/issues/19973
+    --link-hover-bg-color: var(--color-bg-2);
+    --link-hover-bg-color-2: var(--color-bg-3);
+    --disabled-action-bg-color: var(--color-bg-3);
+    --disabled-action-text-color: var(--text-muted);
+}
+
+.theme-dark.theme-redesign,
+.theme-dark .theme-redesign {
+    --primary-2: #0f59aa;
+    --secondary: #{$redesign-gray-08};
+    --secondary-2: #242936;
+    --secondary-3: #1f232e;
+    --success-3: #237332;
+    --info-2: #99cdd6;
+    --info-3: #005766;
+    --warning-3: #9c6500;
+    --danger-3: #801b1b;
+    --body-color: #{$redesign-gray-04};
+    --body-bg: #{$redesign-gray-12};
+    --color-bg-1: #{$redesign-gray-11};
+    --color-bg-2: #{$redesign-gray-10};
+    --color-bg-3: #{$redesign-gray-08};
+    --mark-bg: rgba(16, 104, 2, 0.5);
+    --text-muted: #{$redesign-gray-05};
+    --link-color: #4393e7;
+    --link-active-color: #489ffa;
+    --link-hover-color: #489ffa;
+    --border-color: #{$redesign-gray-09};
+    --border-color-2: #{$redesign-gray-08};
+    --border-active-color: #4393e7;
+    --search-query-text-color: #{$redesign-gray-04};
+    --search-filter-keyword-color: #4393e7;
+    --search-keyword-color: var(--secondary-2);
+    --infobar-warning-color: #f05151;
+    --icon-color: #{$redesign-gray-05};
+    --code-bg: #{$redesign-gray-10};
+    --intel-bg: #{$redesign-gray-12};
+
+    // TODO: Remove from use, replace with the variables referenced here
+    // Issue: https://github.com/sourcegraph/sourcegraph/issues/19973
+    --link-hover-bg-color: var(--color-bg-2);
+    --link-hover-bg-color-2: var(--color-bg-3);
+    --disabled-action-bg-color: var(--color-bg-3);
+    --disabled-action-text-color: var(--text-muted);
+}

@@ -9,8 +9,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -27,8 +27,8 @@ func TestSyncerRun(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		now := time.Now()
 		syncStore := MockSyncStore{
-			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error) {
-				return []*batches.ChangesetSyncData{
+			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*btypes.ChangesetSyncData, error) {
+				return []*btypes.ChangesetSyncData{
 					{
 						ChangesetID:       1,
 						UpdatedAt:         now.Add(-2 * maxSyncDelay),
@@ -61,7 +61,7 @@ func TestSyncerRun(t *testing.T) {
 		now := time.Now()
 		updateCalled := false
 		syncStore := MockSyncStore{
-			getChangeset: func(context.Context, store.GetChangesetOpts) (*batches.Changeset, error) {
+			getChangeset: func(context.Context, store.GetChangesetOpts) (*btypes.Changeset, error) {
 				// Return ErrNoResults, which is the result you get when the changeset preconditions aren't met anymore.
 				// The sync data checks for the reconciler state and if it changed since the sync data was loaded,
 				// we don't get back the changeset here and skip it.
@@ -70,12 +70,12 @@ func TestSyncerRun(t *testing.T) {
 				// methods of sync store are mocked.
 				return nil, store.ErrNoResults
 			},
-			updateChangeset: func(context.Context, *batches.Changeset) error {
+			updateChangeset: func(context.Context, *btypes.Changeset) error {
 				updateCalled = true
 				return nil
 			},
-			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error) {
-				return []*batches.ChangesetSyncData{
+			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*btypes.ChangesetSyncData, error) {
+				return []*btypes.ChangesetSyncData{
 					{
 						ChangesetID:       1,
 						UpdatedAt:         now.Add(-2 * maxSyncDelay),
@@ -100,8 +100,8 @@ func TestSyncerRun(t *testing.T) {
 		defer cancel()
 		now := time.Now()
 		syncStore := MockSyncStore{
-			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error) {
-				return []*batches.ChangesetSyncData{
+			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*btypes.ChangesetSyncData, error) {
+				return []*btypes.ChangesetSyncData{
 					{
 						ChangesetID:       1,
 						UpdatedAt:         now,
@@ -131,8 +131,8 @@ func TestSyncerRun(t *testing.T) {
 		// Empty schedule but then we add an item
 		ctx, cancel := context.WithCancel(context.Background())
 		syncStore := MockSyncStore{
-			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error) {
-				return []*batches.ChangesetSyncData{}, nil
+			listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*btypes.ChangesetSyncData, error) {
+				return []*btypes.ChangesetSyncData{}, nil
 			},
 		}
 		syncFunc := func(ctx context.Context, ids int64) error {
@@ -165,11 +165,11 @@ func TestSyncRegistry(t *testing.T) {
 
 	externalServiceID := "https://example.com/"
 
-	codeHosts := []*batches.CodeHost{{ExternalServiceID: externalServiceID, ExternalServiceType: extsvc.TypeGitHub}}
+	codeHosts := []*btypes.CodeHost{{ExternalServiceID: externalServiceID, ExternalServiceType: extsvc.TypeGitHub}}
 
 	syncStore := MockSyncStore{
-		listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) (data []*batches.ChangesetSyncData, err error) {
-			return []*batches.ChangesetSyncData{
+		listChangesetSyncData: func(ctx context.Context, opts store.ListChangesetSyncDataOpts) (data []*btypes.ChangesetSyncData, err error) {
+			return []*btypes.ChangesetSyncData{
 				{
 					ChangesetID:           1,
 					UpdatedAt:             now,
@@ -177,7 +177,7 @@ func TestSyncRegistry(t *testing.T) {
 				},
 			}, nil
 		},
-		listCodeHosts: func(c context.Context, lcho store.ListCodeHostsOpts) ([]*batches.CodeHost, error) {
+		listCodeHosts: func(c context.Context, lcho store.ListCodeHostsOpts) ([]*btypes.CodeHost, error) {
 			return codeHosts, nil
 		},
 	}
@@ -195,12 +195,12 @@ func TestSyncRegistry(t *testing.T) {
 	assertSyncerCount(1)
 
 	// Adding it again should have no effect
-	r.Add(&batches.CodeHost{ExternalServiceID: "https://example.com/", ExternalServiceType: extsvc.TypeGitHub})
+	r.Add(&btypes.CodeHost{ExternalServiceID: "https://example.com/", ExternalServiceType: extsvc.TypeGitHub})
 	assertSyncerCount(1)
 
 	// Simulate a service being removed
 	oldCodeHosts := codeHosts
-	codeHosts = []*batches.CodeHost{}
+	codeHosts = []*btypes.CodeHost{}
 	r.HandleExternalServiceSync(api.ExternalService{
 		ID:        1,
 		Kind:      extsvc.KindGitHub,
@@ -298,9 +298,9 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 	hasCredential := false
 	syncStore := &MockSyncStore{
-		getSiteCredential: func(ctx context.Context, opts store.GetSiteCredentialOpts) (*store.SiteCredential, error) {
+		getSiteCredential: func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
 			if hasCredential {
-				return &store.SiteCredential{Credential: &auth.OAuthBearerToken{Token: "456"}}, nil
+				return &btypes.SiteCredential{Credential: &auth.OAuthBearerToken{Token: "456"}}, nil
 			}
 			return nil, store.ErrNoResults
 		},
@@ -331,33 +331,33 @@ func TestLoadChangesetSource(t *testing.T) {
 }
 
 type MockSyncStore struct {
-	listCodeHosts         func(context.Context, store.ListCodeHostsOpts) ([]*batches.CodeHost, error)
-	listChangesetSyncData func(context.Context, store.ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error)
-	getChangeset          func(context.Context, store.GetChangesetOpts) (*batches.Changeset, error)
-	updateChangeset       func(context.Context, *batches.Changeset) error
-	upsertChangesetEvents func(context.Context, ...*batches.ChangesetEvent) error
-	getSiteCredential     func(ctx context.Context, opts store.GetSiteCredentialOpts) (*store.SiteCredential, error)
+	listCodeHosts         func(context.Context, store.ListCodeHostsOpts) ([]*btypes.CodeHost, error)
+	listChangesetSyncData func(context.Context, store.ListChangesetSyncDataOpts) ([]*btypes.ChangesetSyncData, error)
+	getChangeset          func(context.Context, store.GetChangesetOpts) (*btypes.Changeset, error)
+	updateChangeset       func(context.Context, *btypes.Changeset) error
+	upsertChangesetEvents func(context.Context, ...*btypes.ChangesetEvent) error
+	getSiteCredential     func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
 	getExternalServiceIDs func(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
 	transact              func(context.Context) (*store.Store, error)
 }
 
-func (m MockSyncStore) ListChangesetSyncData(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*batches.ChangesetSyncData, error) {
+func (m MockSyncStore) ListChangesetSyncData(ctx context.Context, opts store.ListChangesetSyncDataOpts) ([]*btypes.ChangesetSyncData, error) {
 	return m.listChangesetSyncData(ctx, opts)
 }
 
-func (m MockSyncStore) GetChangeset(ctx context.Context, opts store.GetChangesetOpts) (*batches.Changeset, error) {
+func (m MockSyncStore) GetChangeset(ctx context.Context, opts store.GetChangesetOpts) (*btypes.Changeset, error) {
 	return m.getChangeset(ctx, opts)
 }
 
-func (m MockSyncStore) UpdateChangeset(ctx context.Context, c *batches.Changeset) error {
+func (m MockSyncStore) UpdateChangeset(ctx context.Context, c *btypes.Changeset) error {
 	return m.updateChangeset(ctx, c)
 }
 
-func (m MockSyncStore) UpsertChangesetEvents(ctx context.Context, cs ...*batches.ChangesetEvent) error {
+func (m MockSyncStore) UpsertChangesetEvents(ctx context.Context, cs ...*btypes.ChangesetEvent) error {
 	return m.upsertChangesetEvents(ctx, cs...)
 }
 
-func (m MockSyncStore) GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*store.SiteCredential, error) {
+func (m MockSyncStore) GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
 	return m.getSiteCredential(ctx, opts)
 }
 
@@ -393,6 +393,6 @@ func (m MockSyncStore) Clock() func() time.Time {
 	return timeutil.Now
 }
 
-func (m MockSyncStore) ListCodeHosts(ctx context.Context, opts store.ListCodeHostsOpts) ([]*batches.CodeHost, error) {
+func (m MockSyncStore) ListCodeHosts(ctx context.Context, opts store.ListCodeHostsOpts) ([]*btypes.CodeHost, error) {
 	return m.listCodeHosts(ctx, opts)
 }

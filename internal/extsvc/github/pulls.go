@@ -907,6 +907,31 @@ func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, ba
 	return &pr, nil
 }
 
+const createPullRequestCommentMutation = `
+mutation CreatePullRequestComment($input: AddCommentInput!) {
+  addComment(input: $input) {
+    subject { id }
+  }
+}
+`
+
+// CreatePullRequestComment creates a comment on the PullRequest on Github.
+func (c *V4Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest, body string) error {
+	var result struct {
+		AddComment struct {
+			Subject struct {
+				ID string
+			} `json:"subject"`
+		} `json:"addComment"`
+	}
+
+	input := map[string]interface{}{"input": struct {
+		SubjectID string `json:"subjectId"`
+		Body      string `json:"body"`
+	}{SubjectID: pr.ID, Body: body}}
+	return c.requestGraphQL(ctx, createPullRequestCommentMutation, input, &result)
+}
+
 func (c *V4Client) loadRemainingTimelineItems(ctx context.Context, prID string, pageInfo PageInfo) (items []TimelineItem, err error) {
 	version := c.determineGitHubVersion(ctx)
 	timelineItemTypes, err := timelineItemTypes(version)

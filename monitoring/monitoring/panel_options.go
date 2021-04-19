@@ -149,3 +149,58 @@ func (panelOptionsLibrary) AlertThresholds() ObservablePanelOption {
 		}
 	}
 }
+
+// ColorOverride takes a seriesName (which can be a regex pattern) and a color in hex format (#ABABAB).
+// Series that match the seriesName will be colored accordingly.
+func (panelOptionsLibrary) ColorOverride(seriesName string, color string) ObservablePanelOption {
+	return func(_ Observable, panel *sdk.GraphPanel) {
+		panel.SeriesOverrides = append(panel.SeriesOverrides, sdk.SeriesOverride{
+			Alias: seriesName,
+			Color: &color,
+		})
+	}
+}
+
+// LegendOnRight moves the legend to the right side of the panel
+func (panelOptionsLibrary) LegendOnRight() ObservablePanelOption {
+	return func(_ Observable, panel *sdk.GraphPanel) {
+		panel.Legend.RightSide = true
+	}
+}
+
+// HoverShowAll makes hover tooltips show all series rather than just the one being hovered over
+func (panelOptionsLibrary) HoverShowAll() ObservablePanelOption {
+	return func(_ Observable, panel *sdk.GraphPanel) {
+		panel.Tooltip.Shared = true
+	}
+}
+
+// HoverSort sorts the series either "ascending", "descending", or "none".
+// Default is "none".
+func (panelOptionsLibrary) HoverSort(order string) ObservablePanelOption {
+	return func(_ Observable, panel *sdk.GraphPanel) {
+		switch order {
+		case "ascending":
+			panel.Tooltip.Sort = 1
+		case "descending":
+			panel.Tooltip.Sort = 2
+		default:
+			panel.Tooltip.Sort = 0
+		}
+	}
+}
+
+// Fill sets the fill opacity for all series on the panel.
+// Set to 0 to disable fill.
+func (panelOptionsLibrary) Fill(fill int) ObservablePanelOption {
+	return func(_ Observable, panel *sdk.GraphPanel) {
+		panel.Fill = fill
+	}
+}
+
+// NoLegend disables the legend on the panel
+func (panelOptionsLibrary) NoLegend() ObservablePanelOption {
+	return func(_ Observable, panel *sdk.GraphPanel) {
+		panel.Legend.Show = false
+	}
+}

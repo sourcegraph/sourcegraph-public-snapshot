@@ -138,7 +138,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			mu.Lock()
 			statsAgg.Add(zsr.Stats)
 			nFilesMatches += len(zsr.Files)
-			nEvents += 1
+			nEvents++
 			mu.Unlock()
 
 			startSend := time.Now()
@@ -150,6 +150,10 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			mu.Unlock()
 		}
 	}))
+
+	if err != nil {
+		code = "error"
+	}
 
 	tr.LogFields(
 		log.Int("filematches", nFilesMatches),

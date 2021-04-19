@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -20,8 +20,8 @@ type batchChangesCodeHostConnectionResolver struct {
 	store                 *store.Store
 
 	once          sync.Once
-	chs           []*batches.CodeHost
-	chsPage       []*batches.CodeHost
+	chs           []*btypes.CodeHost
+	chsPage       []*btypes.CodeHost
 	credsByIDType map[idType]graphqlbackend.BatchChangesCredentialResolver
 	chsErr        error
 }
@@ -69,7 +69,7 @@ func (c *batchChangesCodeHostConnectionResolver) Nodes(ctx context.Context) ([]g
 	return nodes, nil
 }
 
-func (c *batchChangesCodeHostConnectionResolver) compute(ctx context.Context) (all, page []*batches.CodeHost, credsByIDType map[idType]graphqlbackend.BatchChangesCredentialResolver, err error) {
+func (c *batchChangesCodeHostConnectionResolver) compute(ctx context.Context) (all, page []*btypes.CodeHost, credsByIDType map[idType]graphqlbackend.BatchChangesCredentialResolver, err error) {
 	c.once.Do(func() {
 		// Don't pass c.limitOffset here, as we want all code hosts for the totalCount anyways.
 		c.chs, c.chsErr = c.store.ListCodeHosts(ctx, c.opts)
@@ -115,7 +115,7 @@ func (c *batchChangesCodeHostConnectionResolver) compute(ctx context.Context) (a
 		}
 
 		if c.onlyWithoutCredential {
-			chs := make([]*batches.CodeHost, 0)
+			chs := make([]*btypes.CodeHost, 0)
 			for _, ch := range c.chs {
 				t := idType{
 					externalServiceID:   ch.ExternalServiceID,

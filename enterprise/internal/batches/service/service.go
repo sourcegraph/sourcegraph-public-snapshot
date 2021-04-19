@@ -9,15 +9,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -31,7 +31,7 @@ func New(store *store.Store) *Service {
 // NewWithClock returns a Service the given clock used
 // to generate timestamps.
 func NewWithClock(store *store.Store, clock func() time.Time) *Service {
-	svc := &Service{store: store, sourcer: repos.NewSourcer(httpcli.NewExternalHTTPClientFactory()), clock: clock}
+	svc := &Service{store: store, sourcer: sources.NewSourcer(httpcli.NewExternalHTTPClientFactory()), clock: clock}
 
 	return svc
 }
@@ -39,7 +39,7 @@ func NewWithClock(store *store.Store, clock func() time.Time) *Service {
 type Service struct {
 	store *store.Store
 
-	sourcer repos.Sourcer
+	sourcer sources.Sourcer
 
 	clock func() time.Time
 }
@@ -60,7 +60,7 @@ type CreateBatchSpecOpts struct {
 }
 
 // CreateBatchSpec creates the BatchSpec.
-func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts) (spec *batches.BatchSpec, err error) {
+func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
 	actor := actor.FromContext(ctx)
 	tr, ctx := trace.New(ctx, "Service.CreateBatchSpec", fmt.Sprintf("Actor %s", actor))
 	defer func() {
@@ -68,7 +68,7 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 		tr.Finish()
 	}()
 
-	spec, err = batches.NewBatchSpecFromRaw(opts.RawSpec)
+	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 		return nil, err
 	}
 
-	byRandID := make(map[string]*batches.ChangesetSpec, len(cs))
+	byRandID := make(map[string]*btypes.ChangesetSpec, len(cs))
 	for _, changesetSpec := range cs {
 		// 🚨 SECURITY: We return an error if the user doesn't have access to one
 		// of the repositories associated with a ChangesetSpec.
@@ -138,14 +138,14 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 }
 
 // CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
-func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userID int32) (spec *batches.ChangesetSpec, err error) {
+func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userID int32) (spec *btypes.ChangesetSpec, err error) {
 	tr, ctx := trace.New(ctx, "Service.CreateChangesetSpec", fmt.Sprintf("User %d", userID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	spec, err = batches.NewChangesetSpecFromRaw(rawSpec)
+	spec, err = btypes.NewChangesetSpecFromRaw(rawSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 // applies to, if that BatchChange already exists.
 // If it doesn't exist yet, both return values are nil.
 // It accepts a *store.Store so that it can be used inside a transaction.
-func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *batches.BatchSpec) (*batches.BatchChange, error) {
+func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *btypes.BatchSpec) (*btypes.BatchChange, error) {
 	opts := store.GetBatchChangeOpts{
 		Name:            spec.Spec.Name,
 		NamespaceUserID: spec.NamespaceUserID,
@@ -203,7 +203,7 @@ func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *bat
 
 // GetNewestBatchSpec returns the newest batch spec that matches the given
 // spec's namespace and name and is owned by the given user, or nil if none is found.
-func (s *Service) GetNewestBatchSpec(ctx context.Context, tx *store.Store, spec *batches.BatchSpec, userID int32) (*batches.BatchSpec, error) {
+func (s *Service) GetNewestBatchSpec(ctx context.Context, tx *store.Store, spec *btypes.BatchSpec, userID int32) (*btypes.BatchSpec, error) {
 	opts := store.GetNewestBatchSpecOpts{
 		UserID:          userID,
 		NamespaceUserID: spec.NamespaceUserID,
@@ -243,7 +243,7 @@ func (o MoveBatchChangeOpts) String() string {
 
 // MoveBatchChange moves the batch change from one namespace to another and/or renames
 // the batch change.
-func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts) (batchChange *batches.BatchChange, err error) {
+func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
 	tr, ctx := trace.New(ctx, "Service.MoveBatchChange", opts.String())
 	defer func() {
 		tr.SetError(err)
@@ -289,7 +289,7 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 }
 
 // CloseBatchChange closes the BatchChange with the given ID if it has not been closed yet.
-func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangesets bool) (batchChange *batches.BatchChange, err error) {
+func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangesets bool) (batchChange *btypes.BatchChange, err error) {
 	traceTitle := fmt.Sprintf("batchChange: %d, closeChangesets: %t", id, closeChangesets)
 	tr, ctx := trace.New(ctx, "service.CloseBatchChange", traceTitle)
 	defer func() {
@@ -416,8 +416,8 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 
 // ReenqueueChangeset loads the given changeset from the database, checks
 // whether the actor in the context has permission to enqueue a reconciler run and then
-// enqueues it by calling ResetQueued.
-func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *batches.Changeset, repo *types.Repo, err error) {
+// enqueues it by calling ResetReconcilerState.
+func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *btypes.Changeset, repo *types.Repo, err error) {
 	traceTitle := fmt.Sprintf("changeset: %d", id)
 	tr, ctx := trace.New(ctx, "service.RenqueueChangeset", traceTitle)
 	defer func() {
@@ -462,11 +462,11 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 		return nil, nil, authErr
 	}
 
-	if changeset.ReconcilerState != batches.ReconcilerStateFailed {
+	if changeset.ReconcilerState != btypes.ReconcilerStateFailed {
 		return nil, nil, errors.New("cannot re-enqueue changeset not in failed state")
 	}
 
-	changeset.ResetQueued()
+	changeset.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
 
 	if err = s.store.UpdateChangeset(ctx, changeset); err != nil {
 		return nil, nil, err
@@ -509,8 +509,7 @@ var ErrNoNamespace = errors.New("no namespace given")
 // Since Bitbucket sends the username as a header in REST responses, we can
 // take it from there and complete the UserCredential.
 func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, externalServiceID, externalServiceType, token string) (string, error) {
-	srcer := sources.NewSourcer(s.sourcer, s.store)
-	css, err := srcer.ForExternalService(ctx, store.GetExternalServiceIDsOpts{
+	css, err := s.sourcer.ForExternalService(ctx, s.store, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
 	})
@@ -522,7 +521,7 @@ func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, exte
 		return "", err
 	}
 
-	usernameSource, ok := css.ChangesetSource.(usernameSource)
+	usernameSource, ok := css.(usernameSource)
 	if !ok {
 		return "", errors.New("external service source doesn't implement AuthenticatedUsername")
 	}
@@ -540,7 +539,7 @@ type usernameSource interface {
 	AuthenticatedUsername(ctx context.Context) (string, error)
 }
 
-var _ usernameSource = &repos.BitbucketServerSource{}
+var _ usernameSource = &sources.BitbucketServerSource{}
 
 // ValidateAuthenticator creates a ChangesetSource, configures it with the given
 // authenticator and validates it can correctly access the remote server.
@@ -549,8 +548,7 @@ func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, 
 		return Mocks.ValidateAuthenticator(ctx, externalServiceID, externalServiceType, a)
 	}
 
-	srcer := sources.NewSourcer(s.sourcer, s.store)
-	css, err := srcer.ForExternalService(ctx, store.GetExternalServiceIDsOpts{
+	css, err := s.sourcer.ForExternalService(ctx, s.store, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
 	})
@@ -575,7 +573,7 @@ var ErrChangesetsToDetachNotFound = errors.New("some changesets that should be d
 
 // DetachChangesets detaches the given Changeset from the given BatchChange
 // by checking whether the actor in the context has permission to enqueue a
-// reconciler run and then enqueues it by calling ResetQueued.
+// reconciler run and then enqueues it by calling ResetReconcilerState.
 func (s *Service) DetachChangesets(ctx context.Context, batchChangeID int64, ids []int64) (err error) {
 	traceTitle := fmt.Sprintf("batchChangeID: %d, changeset: %d", batchChangeID, ids)
 	tr, ctx := trace.New(ctx, "service.DetachChangesets", traceTitle)
@@ -629,7 +627,7 @@ func (s *Service) DetachChangesets(ctx context.Context, batchChangeID int64, ids
 			continue
 		}
 
-		changeset.ResetQueued()
+		changeset.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
 
 		if err := tx.UpdateChangeset(ctx, changeset); err != nil {
 			return err
