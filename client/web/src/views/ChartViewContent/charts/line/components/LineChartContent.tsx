@@ -160,7 +160,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!activeDatumLink })
 
     return (
-        <div className={rootClasses}>
+        <div className={rootClasses} data-testid="line-chart__content">
             <XYChart
                 xScale={scalesConfig.x}
                 yScale={scalesConfig.y}

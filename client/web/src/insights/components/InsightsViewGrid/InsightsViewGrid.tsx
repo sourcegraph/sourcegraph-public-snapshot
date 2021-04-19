@@ -156,12 +156,7 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
                                 </>
                             ) : (
                                 <>
-                                    <h3
-                                        className="insights-view-grid__view-title"
-                                        data-testid="insights-view-grid__view-title"
-                                    >
-                                        {view.title}
-                                    </h3>
+                                    <h3 className="insights-view-grid__view-title">{view.title}</h3>
                                     {view.subtitle && (
                                         <div className="insights-view-grid__view-subtitle">{view.subtitle}</div>
                                     )}
