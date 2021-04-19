@@ -231,7 +231,7 @@ func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint
 				Path:        fm.Path,
 				LineMatches: lineMatches,
 				LimitHit:    fm.LimitHit,
-				Repo:        repo,
+				Repo:        *repo,
 				CommitID:    commit,
 				InputRev:    &rev,
 			},

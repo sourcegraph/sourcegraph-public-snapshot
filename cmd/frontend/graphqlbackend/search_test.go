@@ -530,7 +530,7 @@ func mkFileMatch(db dbutil.DB, repo *types.RepoName, path string, lineNumbers ..
 	return mkFileMatchResolver(db, result.FileMatch{
 		Path:        path,
 		LineMatches: lines,
-		Repo:        repo,
+		Repo:        *repo,
 	})
 }
 

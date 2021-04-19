@@ -204,7 +204,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		fileMatches = append(fileMatches, result.FileMatch{
 			Path:     path,
 			Symbols:  symbolMatches,
-			Repo:     repoRevs.Repo,
+			Repo:     *repoRevs.Repo,
 			CommitID: commitID,
 			InputRev: &inputRev,
 		})

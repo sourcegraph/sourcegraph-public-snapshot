@@ -45,7 +45,7 @@ func TestSearchRepositories(t *testing.T) {
 		case "foo/one":
 			return []*FileMatchResolver{
 				mkFileMatchResolver(db, result.FileMatch{
-					Repo:     &types.RepoName{ID: 123, Name: repoName},
+					Repo:     types.RepoName{ID: 123, Name: repoName},
 					InputRev: &rev,
 					Path:     "f.go",
 				}),
@@ -53,7 +53,7 @@ func TestSearchRepositories(t *testing.T) {
 		case "bar/one":
 			return []*FileMatchResolver{
 				mkFileMatchResolver(db, result.FileMatch{
-					Repo:     &types.RepoName{ID: 789, Name: repoName},
+					Repo:     types.RepoName{ID: 789, Name: repoName},
 					InputRev: &rev,
 					Path:     "f.go",
 				}),
@@ -147,7 +147,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 		case "foo/one":
 			return []*FileMatchResolver{
 				mkFileMatchResolver(db, result.FileMatch{
-					Repo:     &types.RepoName{ID: 123, Name: repoName},
+					Repo:     types.RepoName{ID: 123, Name: repoName},
 					InputRev: &rev,
 					Path:     "foo.go",
 				}),
@@ -167,7 +167,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 			rev := "1a2b3c"
 			return []*FileMatchResolver{
 				mkFileMatchResolver(db, result.FileMatch{
-					Repo:     &types.RepoName{ID: 123, Name: repo.Repo.Name},
+					Repo:     types.RepoName{ID: 123, Name: repo.Repo.Name},
 					InputRev: &rev,
 					Path:     "foo.go",
 				}),
@@ -204,7 +204,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 			rev := "1a2b3c"
 			return []*FileMatchResolver{
 				mkFileMatchResolver(db, result.FileMatch{
-					Repo:     &types.RepoName{ID: 123, Name: repo.Repo.Name},
+					Repo:     types.RepoName{ID: 123, Name: repo.Repo.Name},
 					InputRev: &rev,
 					Path:     "foo.go",
 				}),
@@ -306,13 +306,9 @@ func BenchmarkSearchRepositories(b *testing.B) {
 }
 
 func mkFileMatchResolver(db dbutil.DB, fm result.FileMatch) *FileMatchResolver {
-	var repo *RepositoryResolver
-	if fm.Repo != nil {
-		repo = NewRepositoryResolver(db, fm.Repo.ToRepo())
-	}
 	return &FileMatchResolver{
 		db:           db,
 		FileMatch:    fm,
-		RepoResolver: repo,
+		RepoResolver: NewRepositoryResolver(db, fm.Repo.ToRepo()),
 	}
 }
