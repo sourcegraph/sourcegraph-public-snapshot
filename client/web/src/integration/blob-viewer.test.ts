@@ -951,12 +951,11 @@ describe('Blob viewer', () => {
             await driver.page.waitForSelector('.test-tooltip-find-references', { visible: true })
             await driver.page.click('.test-tooltip-find-references')
 
-            await driver.page.waitForSelector('.test-search-result', { visible: true })
+            await driver.page.waitForSelector('.test-file-match-children-item', { visible: true })
 
             await percySnapshotWithVariants(driver.page, 'Blob Reference Panel', { waitForCodeHighlighting: true })
 
             // Click on the first reference
-            await driver.page.waitForSelector('.test-file-match-children-item')
             await driver.page.click('.test-file-match-children-item')
 
             // Assert that the first line of code has text content which contains: 'file path: test spaces.ts'
