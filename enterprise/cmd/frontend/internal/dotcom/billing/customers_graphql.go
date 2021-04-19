@@ -31,7 +31,7 @@ func init() {
 	}
 }
 
-func (b BillingResolver) SetUserBilling(ctx context.Context, args *graphqlbackend.SetUserBillingArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r BillingResolver) SetUserBilling(ctx context.Context, args *graphqlbackend.SetUserBillingArgs) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may set a user's billing info.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func (b BillingResolver) SetUserBilling(ctx context.Context, args *graphqlbacken
 		}
 	}
 
-	if err := (dbBilling{db: b.DB}).setUserBillingCustomerID(ctx, userID, args.BillingCustomerID); err != nil {
+	if err := (dbBilling{db: r.DB}).setUserBillingCustomerID(ctx, userID, args.BillingCustomerID); err != nil {
 		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
