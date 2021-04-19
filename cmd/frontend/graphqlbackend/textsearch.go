@@ -347,6 +347,7 @@ func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextPara
 	var indexed *indexedSearchRequest
 	if args.Mode == search.ZoektGlobalSearch {
 		indexed = &indexedSearchRequest{
+			db:    db,
 			args:  args,
 			typ:   textRequest,
 			repos: &indexedRepoRevs{},
