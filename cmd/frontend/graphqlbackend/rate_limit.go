@@ -432,7 +432,7 @@ type BasicLimiter struct {
 // RateLimit limits unauthenticated requests to the GraphQL API with an equal
 // quantity of 1.
 func (bl *BasicLimiter) RateLimit(_ string, _ int, args LimiterArgs) (bool, throttled.RateLimitResult, error) {
-	if args.Anonymous && args.RequestName == "unknown" && args.RequestSource == trace.SourceOther {
+	if args.Anonymous && args.RequestName == "unknown" && args.RequestSource == trace.SourceOther && bl.GCRARateLimiter != nil {
 		return bl.GCRARateLimiter.RateLimit("basic", 1)
 	}
 	return false, throttled.RateLimitResult{}, nil
