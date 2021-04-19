@@ -85,7 +85,7 @@ func indexedSymbolsBranch(ctx context.Context, repository, commit string) string
 	return ""
 }
 
-func searchZoektSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitResolver, branch string, queryString *string, first *int32, includePatterns *[]string) (res []symbolResolver, err error) {
+func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	raw := *queryString
 	if raw == "" {
 		raw = ".*"
@@ -150,22 +150,18 @@ func searchZoektSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitReso
 					continue
 				}
 
-				res = append(res, toSymbolResolver(
-					db,
-					commit,
-					&result.SymbolMatch{
-						Symbol: result.Symbol{
-							Name:       m.SymbolInfo.Sym,
-							Kind:       m.SymbolInfo.Kind,
-							Parent:     m.SymbolInfo.Parent,
-							ParentKind: m.SymbolInfo.ParentKind,
-							Path:       file.FileName,
-							Line:       l.LineNumber,
-							Language:   file.Language,
-						},
-						BaseURI: baseURI,
+				res = append(res, &result.SymbolMatch{
+					Symbol: result.Symbol{
+						Name:       m.SymbolInfo.Sym,
+						Kind:       m.SymbolInfo.Kind,
+						Parent:     m.SymbolInfo.Parent,
+						ParentKind: m.SymbolInfo.ParentKind,
+						Path:       file.FileName,
+						Line:       l.LineNumber,
+						Language:   file.Language,
 					},
-				))
+					BaseURI: baseURI,
+				})
 			}
 		}
 	}
@@ -176,7 +172,12 @@ func computeSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitResolver
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
 	if branch := indexedSymbolsBranch(ctx, commit.repoResolver.Name(), string(commit.oid)); branch != "" {
-		return searchZoektSymbols(ctx, db, commit, branch, query, first, includePatterns)
+		symbols, err := searchZoektSymbols(ctx, commit, branch, query, first, includePatterns)
+		res := make([]symbolResolver, 0, len(symbols))
+		for _, symbol := range symbols {
+			res = append(res, toSymbolResolver(db, commit, symbol))
+		}
+		return res, err
 	}
 
 	ctx, done := context.WithTimeout(ctx, 5*time.Second)
