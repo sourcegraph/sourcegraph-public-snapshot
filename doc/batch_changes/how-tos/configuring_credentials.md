@@ -1,8 +1,8 @@
-# Configuring user credentials
+# Configuring credentials
 
 > NOTE: This page describes functionality added in Sourcegraph 3.22. Older Sourcegraph versions only allow batch changes to be applied and managed by site admins.
 
-In order to [publish changesets with Batch Changes](publishing_changesets.md), you need to add a personal access token for each code host that your batch change interact with. These tokens are used by Sourcegraph to create and manage changesets as you, and with your specific permissions, on the code host.
+In order to [publish changesets with Batch Changes](publishing_changesets.md), you need to add a personal access token for each code host that your batch change interacts with. These tokens are used by Sourcegraph to create and manage changesets on behalf of yourself, and with your specific permissions, on the code host. Since Sourcegraph 3.27, it is also possible to configure a global service account per code host to be used, when the user doesn't have credentials configured.
 
 ## Requirements
 
@@ -10,13 +10,29 @@ In order to [publish changesets with Batch Changes](publishing_changesets.md), y
 
 ## Adding a personal access token
 
-Adding personal access tokens is done through the the Batch Changes section of your user settings:
+Access tokens can be configured either for your user account, or globally, if you're a site admin of the Sourcegraph instance.
+
+### For yourself
+
+Adding personal access tokens is done through the Batch Changes section of your user settings:
 
 1. From any Sourcegraph page, click on your avatar at the top right of the page.
 1. Select **Settings** from the dropdown menu.
 1. Click **Batch Changes** on the sidebar menu.
 
-You should now see a list of the code hosts that are configured on Sourcegraph. Code hosts with tokens configured are indicated by a green tick, while code hosts without tokens have an empty red circle next to them.
+You should now see a list of the code hosts that are configured on Sourcegraph. Code hosts with tokens configured are indicated by a green tick, while code hosts without tokens have an empty red circle next to them. If a global access token has been configured, it is not required (but you can still do it, to create the changesets under your name) to do this. The UI will inform you if that's the case.
+
+### Global service account
+
+Configuring a global service account is done through the Batch Changes section of the site admin area: _(Site admins only)_
+
+1. From any Sourcegraph page, click on your avatar at the top right of the page.
+1. Select **Site admin** from the dropdown menu.
+1. Click **Batch Changes** on the sidebar menu.
+
+You should now see a list of the code hosts that are configured on Sourcegraph. Code hosts with tokens configured are indicated by a green tick, while code hosts without tokens have an empty red circle next to them. Credentials that are configured here will be usable by all users of the Sourcegraph instance for publishing and updating changesets on the code host.
+
+### Configuring a code host
 
 <video width="1920" height="1080" autoplay loop muted playsinline controls style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://sourcegraphstatic.com/docs/videos/batch_changes/user-tokens.webm" type="video/webm">
@@ -67,7 +83,6 @@ Sourcegraph requires the access token to have the `write` permission on both pro
 
 ## Removing a personal access token
 
-
 Removing personal access tokens is done through the the Batch Changes section of your user settings. To access this page, follow these instructions (also shown in the video below):
 
 1. From any Sourcegraph page, click on your avatar at the top right of the page.
@@ -78,7 +93,7 @@ You should now see a list of the code hosts that are configured on Sourcegraph. 
 
 <video width="1920" height="1080" autoplay loop muted playsinline controls style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://sourcegraphstatic.com/docs/videos/batch_changes/removing-user-token.webm" type="video/webm">
-  <sourec src="https://sourcegraphstatic.com/docs/videos/batch_changes/removing-user-token.mp4" type="video/mp4">
+  <source src="https://sourcegraphstatic.com/docs/videos/batch_changes/removing-user-token.mp4" type="video/mp4">
 </video>
 
 To remove a personal access token for a code host, click **Remove** next to that code host. The code host's indicator will change to an empty red circle to indicate that no token is configured for that code host:

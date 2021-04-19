@@ -101,9 +101,9 @@ _You probably don't want to publish these toy "Hello World" changesets to active
 
 ### Configure code host credentials
 
-Since Batch Changes need write permissions to open changesets, you'll need to add a personal access token for each code host you'll be publishing changesets on. This is a one time operation that you don't need to do for each batch change.
+Since Batch Changes need write permissions to open changesets, you might need to add a personal access token for each code host you'll be publishing changesets on. This is a one time operation that you don't need to do for each batch change. Administrators of your Sourcegraph instance can also [configure global credentials](how-tos/configuring_credentials.md), so you don't need to go through this process. The UI for configuring the tokens will tell you when there is a global token configured.
 
-See "[Configuring user credentials](how-tos/configuring_user_credentials.md)" for more detail on adding and removing user tokens beyond the quickstart below, or ["Code host interactions in Batch Changes"](explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes) for details on what the permissions are used for.
+See "[Configuring user credentials](how-tos/configuring_credentials.md)" for more detail on adding and removing user tokens beyond the quickstart below, or ["Code host interactions in Batch Changes"](explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes) for details on what the permissions are used for.
 
 To add a personal access token:
 
@@ -111,7 +111,7 @@ To add a personal access token:
 1. Select **Settings** from the dropdown menu.
 1. Click **Batch Changes** on the sidebar menu.
 1. Click **Add token** next to the code host you want to configure.
-1. Go to the code host and create a personal access token with the exact scopes or permissions required, which are noted below the token text field. For more provider-specific detail, please refer to "[GitHub](how-tos/configuring_user_credentials.md#github)", "[GitLab](how-tos/configuring_user_credentials.md#gitlab)", or "[Bitbucket Server](how-tos/configuring_user_credentials.md#bitbucket-server)".
+1. Go to the code host and create a personal access token with the exact scopes or permissions required, which are noted below the token text field. For more provider-specific detail, please refer to "[GitHub](how-tos/configuring_credentials.md#github)", "[GitLab](how-tos/configuring_credentials.md#gitlab)", or "[Bitbucket Server](how-tos/configuring_credentials.md#bitbucket-server)".
 1. Click **Add token** to save the token.
 
 The red circle next to the code host will now change to a green tick. Sourcegraph has everything it needs to publish changesets to that code host!

@@ -49,7 +49,7 @@ Interactions with the code host are performed by Sourcegraph with your personal 
 - Updating a changeset
 - Closing a changeset
 
-For instructions on adding and managing your code host access tokens, please refer to "[Configuring user credentials](../how-tos/configuring_user_credentials.md)".
+For instructions on adding and managing your code host access tokens, please refer to "[Configuring credentials](../how-tos/configuring_credentials.md)".
 
 See these code host specific pages for which permissions and scopes the tokens require:
 
@@ -62,6 +62,8 @@ See these code host specific pages for which permissions and scopes the tokens r
 Site admins will fall back to using the Sourcegraph token for the code host if they have not added a personal access token. This makes it easier to try out Batch Changes, but be aware that this may result in changesets being created or changed with different permissions to your normal code host user.
 
 Non-admin users are unable to apply batch changes without configuring access tokens.
+
+**NOTE** that this fallback has been deprecated in Sourcegraph 3.27 and is due to be removed in Sourcegraph 3.29.
 
 ## Repository permissions for Batch Changes
 
