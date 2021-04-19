@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
@@ -215,6 +216,9 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 		})
 	}
 
+	sort.Slice(fileMatchResolvers, func(i, j int) bool {
+		return fileMatchResolvers[i].Path < fileMatchResolvers[j].Path
+	})
 	return fileMatchResolvers, err
 }
 
