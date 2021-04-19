@@ -112,7 +112,7 @@ type GetChangesetJobOpts struct {
 	ID int64
 }
 
-// GetChangesetJob gets a BatchSpec matching the given options.
+// GetChangesetJob gets a ChangesetJob matching the given options.
 func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (*btypes.ChangesetJob, error) {
 	q := getChangesetJobQuery(&opts)
 
