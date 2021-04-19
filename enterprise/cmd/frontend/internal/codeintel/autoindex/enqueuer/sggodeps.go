@@ -35,7 +35,7 @@ func (s *IndexEnqueuer) enqueueSourcegraphGoRootDependencies(ctx context.Context
 
 		traceLog := func(fields ...log.Field) {}
 		log15.Warn("Queueing dependency for auto-indexing", "repositoryID", repositoryID, "commit", commit)
-		if err := s.queueIndexForCommit(ctx, repositoryID, commit, false, traceLog); err != nil {
+		if err := s.queueIndexForCommit(ctx, repositoryID, commit, false, traceLog, true); err != nil {
 			return err
 		}
 	}
