@@ -167,7 +167,7 @@ func TestCorrelate(t *testing.T) {
 		ImportedMonikers:       datastructures.IDSetWith(18),
 		ExportedMonikers:       datastructures.IDSetWith(19),
 		LinkedMonikers:         datastructures.DisjointIDSetWith(19, 21),
-		LinkedReferenceResults: map[int][]int{14: []int{15}},
+		LinkedReferenceResults: map[int][]int{14: {15}},
 		Contains: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 			2: datastructures.IDSetWith(4, 5, 6),
 			3: datastructures.IDSetWith(7, 8, 9),
