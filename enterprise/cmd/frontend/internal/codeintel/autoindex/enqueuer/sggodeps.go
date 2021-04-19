@@ -14,8 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-// versionPattern matches the form vX.Y.Z.-yyyymmddhhmmss-abcdefabcdef
-var versionPattern = lazyregexp.New(`^(.*)-(\d{14})-([a-f0-9]{12})$`)
+// versionPattern matches the form vX.Y.Z-yyyymmddhhmmss-abcdefabcdef
+var versionPattern = lazyregexp.New(`^(.*)-(.+)-([a-f0-9]{12})$`)
 
 func (s *IndexEnqueuer) enqueueSourcegraphGoRootDependencies(ctx context.Context, repositoryID int, commit string) error {
 	contents, err := s.gitserverClient.RawContents(ctx, repositoryID, commit, "go.mod")
@@ -24,7 +24,7 @@ func (s *IndexEnqueuer) enqueueSourcegraphGoRootDependencies(ctx context.Context
 	}
 
 	for _, line := range strings.Split(string(contents), "\n") {
-		repositoryID, commit, ok, err := s.extractTargetFromGoMod(ctx, strings.TrimSpace(line))
+		repositoryID, commit, ok, err := s.extractTargetFromGoMod(ctx, line)
 		if err != nil {
 			log15.Error("failed to extract dependency", "error", err)
 			continue
@@ -34,7 +34,7 @@ func (s *IndexEnqueuer) enqueueSourcegraphGoRootDependencies(ctx context.Context
 		}
 
 		traceLog := func(fields ...log.Field) {}
-		log15.Info("Queueing dependency for auto-indexing", "repositoryID", repositoryID, "commit", commit)
+		log15.Warn("Queueing dependency for auto-indexing", "repositoryID", repositoryID, "commit", commit)
 		if err := s.queueIndexForCommit(ctx, repositoryID, commit, false, traceLog); err != nil {
 			return err
 		}
@@ -44,8 +44,19 @@ func (s *IndexEnqueuer) enqueueSourcegraphGoRootDependencies(ctx context.Context
 }
 
 func (s *IndexEnqueuer) extractTargetFromGoMod(ctx context.Context, line string) (int, string, bool, error) {
+	if parts := strings.Split(line, "=>"); len(parts) > 1 {
+		return s.extractTargetFromGoMod(ctx, parts[1])
+	}
+
+	line = strings.TrimSpace(line)
 	if !strings.HasPrefix(line, "github.com/") {
 		return 0, "", false, nil
+	}
+
+	for _, suffix := range []string{"// indirect", "+incompatible"} {
+		if strings.HasSuffix(line, suffix) {
+			line = strings.TrimSpace(line[:len(line)-len(suffix)])
+		}
 	}
 
 	parts := strings.Split(line, " ")
