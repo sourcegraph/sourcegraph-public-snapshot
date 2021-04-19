@@ -27,15 +27,15 @@ import (
 func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
 	// Enforce the license's max user count by preventing the creation of new users when the max is
 	// reached.
-	database.GlobalUsers.BeforeCreateUser = enforcement.NewBeforeCreateUserHook(&usersStore{})
+	database.BeforeCreateUser = enforcement.NewBeforeCreateUserHook()
 
 	// Enforce non-site admin roles in Free tier.
-	database.GlobalUsers.AfterCreateUser = enforcement.NewAfterCreateUserHook()
-	database.GlobalUsers.BeforeSetUserIsSiteAdmin = enforcement.NewBeforeSetUserIsSiteAdmin()
+	database.AfterCreateUser = enforcement.NewAfterCreateUserHook()
+	database.BeforeSetUserIsSiteAdmin = enforcement.NewBeforeSetUserIsSiteAdmin()
 
 	// Enforce the license's max external service count by preventing the creation of new external
 	// services when the max is reached.
-	database.GlobalExternalServices.PreCreateExternalService = enforcement.NewPreCreateExternalServiceHook(&externalServicesStore{})
+	database.BeforeCreateExternalService = enforcement.NewBeforeCreateExternalServiceHook()
 
 	// Enforce the license's feature check for monitoring. If the license does not support the monitoring
 	// feature, then alternative debug handlers will be invoked.
@@ -106,7 +106,9 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 	enterpriseServices.LicenseResolver = resolvers.LicenseResolver{}
 
 	goroutine.Go(func() {
-		licensing.StartMaxUserCount(&usersStore{})
+		licensing.StartMaxUserCount(&usersStore{
+			db: db,
+		})
 	})
 	if envvar.SourcegraphDotComMode() {
 		goroutine.Go(productsubscription.StartCheckForUpcomingLicenseExpirations)
@@ -115,14 +117,10 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 	return nil
 }
 
-type usersStore struct{}
-
-func (usersStore) Count(ctx context.Context) (int, error) {
-	return database.GlobalUsers.Count(ctx, nil)
+type usersStore struct {
+	db dbutil.DB
 }
 
-type externalServicesStore struct{}
-
-func (externalServicesStore) Count(ctx context.Context, opts database.ExternalServicesListOptions) (int, error) {
-	return database.GlobalExternalServices.Count(ctx, opts)
+func (u *usersStore) Count(ctx context.Context) (int, error) {
+	return database.Users(u.db).Count(ctx, nil)
 }

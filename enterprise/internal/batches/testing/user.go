@@ -16,7 +16,7 @@ var CreateTestUser = func() func(*testing.T, dbutil.DB, bool) *types.User {
 	var mu sync.Mutex
 	count := 0
 
-	// This function replicates the minium amount of work required by
+	// This function replicates the minimum amount of work required by
 	// database.Users.Create to create a new user, but it doesn't require passing in
 	// a full database.NewUser every time.
 	return func(t *testing.T, db dbutil.DB, siteAdmin bool) *types.User {
