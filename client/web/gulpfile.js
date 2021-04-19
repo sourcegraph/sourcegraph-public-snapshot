@@ -1,5 +1,7 @@
 // @ts-check
-require('ts-node').register({})
+require('ts-node').register({
+  transpileOnly: true,
+})
 
 const log = require('fancy-log')
 const gulp = require('gulp')
