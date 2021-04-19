@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 func init() {
@@ -18,7 +19,7 @@ func init() {
 		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 			return nil, err
 		}
-		custID, err := dbBilling{}.getUserBillingCustomerID(ctx, nil, userID)
+		custID, err := dbBilling{db: dbconn.Global}.getUserBillingCustomerID(ctx, userID)
 		if err != nil {
 			return nil, err
 		}
@@ -30,7 +31,7 @@ func init() {
 	}
 }
 
-func (BillingResolver) SetUserBilling(ctx context.Context, args *graphqlbackend.SetUserBillingArgs) (*graphqlbackend.EmptyResponse, error) {
+func (b BillingResolver) SetUserBilling(ctx context.Context, args *graphqlbackend.SetUserBillingArgs) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may set a user's billing info.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -48,7 +49,7 @@ func (BillingResolver) SetUserBilling(ctx context.Context, args *graphqlbackend.
 		}
 	}
 
-	if err := (dbBilling{}).setUserBillingCustomerID(ctx, nil, userID, args.BillingCustomerID); err != nil {
+	if err := (dbBilling{db: b.DB}).setUserBillingCustomerID(ctx, userID, args.BillingCustomerID); err != nil {
 		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
