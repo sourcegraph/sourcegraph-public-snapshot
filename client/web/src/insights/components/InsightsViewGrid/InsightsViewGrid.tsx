@@ -5,7 +5,7 @@ import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React, { useCallback, useMemo } from 'react'
 import { Layout as ReactGridLayout, Layouts as ReactGridLayouts, Responsive, WidthProvider } from 'react-grid-layout'
 
-import { isFirefox } from '@sourcegraph/browser/src/shared/util/context'
+import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
