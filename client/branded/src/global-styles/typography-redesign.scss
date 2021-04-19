@@ -35,7 +35,7 @@
     }
 
     // Body / Base / Medium
-    .font-weight-semibold {
+    .font-weight-medium {
         font-weight: 500;
     }
 
@@ -55,7 +55,7 @@
     small {
         font-size: 0.75rem;
         // Bootstrap applies `font-weight: 400;` to `small` element,
-        // but we want to control `font-weight` only with `strong` or `.font-weight-semibold`.
+        // but we want to control `font-weight` only with `strong` or `.font-weight-medium`.
         font-weight: inherit;
     }
 

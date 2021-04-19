@@ -24,7 +24,7 @@ const TextLabel: React.FunctionComponent<TextLabelProps> = props => {
     }
 
     if (weight === 'Medium') {
-        return <span className="font-weight-semibold">{label}</span>
+        return <span className="font-weight-medium">{label}</span>
     }
 
     return <>{label}</>

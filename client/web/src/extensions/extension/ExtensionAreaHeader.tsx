@@ -99,7 +99,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                                 'alert-success': change === 'enabled',
                                             })}
                                         >
-                                            <span className="font-weight-semibold">{name}</span> is {change}
+                                            <span className="font-weight-medium">{name}</span> is {change}
                                         </div>
                                     )}
                                     {showCta && (
