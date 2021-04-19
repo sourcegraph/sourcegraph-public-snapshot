@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"time"
 
 	gh "github.com/google/go-github/v28/github"
 	"github.com/hashicorp/go-multierror"
@@ -44,9 +43,7 @@ var (
 )
 
 type Webhook struct {
-	Store            *store.Store
-	ExternalServices *database.ExternalServiceStore
-	Now              func() time.Time
+	Store *store.Store
 
 	// ServiceType corresponds to api.ExternalRepoSpec.ServiceType
 	// Example values: extsvc.TypeBitbucketServer, extsvc.TypeGitHub
@@ -145,7 +142,7 @@ func (h Webhook) upsertChangesetEvent(
 		return err
 	}
 
-	now := h.Now()
+	now := h.Store.Clock()()
 	event := &btypes.ChangesetEvent{
 		ChangesetID: cs.ID,
 		Kind:        btypes.ChangesetEventKindFor(ev),
@@ -197,7 +194,7 @@ func (h Webhook) upsertChangesetEvent(
 }
 
 // GitHubWebhook receives GitHub organization webhook events that are
-// relevant to batch changes, normalizes those events into ChangesetEvents
+// relevant to Batch Changes, normalizes those events into ChangesetEvents
 // and upserts them to the database.
 type GitHubWebhook struct {
 	*Webhook
@@ -205,14 +202,10 @@ type GitHubWebhook struct {
 
 type BitbucketServerWebhook struct {
 	*Webhook
-
-	// cache of config we've seen so that we can decide what changes
-	// need to be synced if any
-	configCache map[int64]*schema.BitbucketServerConnection
 }
 
 func NewGitHubWebhook(store *store.Store) *GitHubWebhook {
-	return &GitHubWebhook{&Webhook{store, store.ExternalServices(), store.Clock(), extsvc.TypeGitHub}}
+	return &GitHubWebhook{&Webhook{store, extsvc.TypeGitHub}}
 }
 
 // Register registers this webhook handler to handle events with the passed webhook router
@@ -745,7 +738,7 @@ func (h *GitHubWebhook) commitStatusEvent(e *gh.StatusEvent) *github.CommitStatu
 		SHA:        e.GetSHA(),
 		State:      e.GetState(),
 		Context:    e.GetContext(),
-		ReceivedAt: h.Now(),
+		ReceivedAt: h.Store.Clock()(),
 	}
 }
 
@@ -754,7 +747,7 @@ func (h *GitHubWebhook) checkSuiteEvent(cs *gh.CheckSuite) *github.CheckSuite {
 		ID:         cs.GetNodeID(),
 		Status:     cs.GetStatus(),
 		Conclusion: cs.GetConclusion(),
-		ReceivedAt: h.Now(),
+		ReceivedAt: h.Store.Clock()(),
 	}
 }
 
@@ -763,14 +756,13 @@ func (h *GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 		ID:         cr.GetNodeID(),
 		Status:     cr.GetStatus(),
 		Conclusion: cr.GetConclusion(),
-		ReceivedAt: h.Now(),
+		ReceivedAt: h.Store.Clock()(),
 	}
 }
 
 func NewBitbucketServerWebhook(store *store.Store) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
-		Webhook:     &Webhook{store, store.ExternalServices(), store.Clock(), extsvc.TypeBitbucketServer},
-		configCache: make(map[int64]*schema.BitbucketServerConnection),
+		Webhook: &Webhook{store, extsvc.TypeBitbucketServer},
 	}
 }
 
@@ -828,7 +820,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *type
 	if externalServiceID != 0 {
 		args.IDs = append(args.IDs, externalServiceID)
 	}
-	es, err := h.ExternalServices.List(r.Context(), args)
+	es, err := h.Store.ExternalServices().List(r.Context(), args)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}
