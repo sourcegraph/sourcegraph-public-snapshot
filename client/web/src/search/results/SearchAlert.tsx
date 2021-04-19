@@ -34,7 +34,11 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
             <AlertCircleIcon className="icon-inline" /> {alert.title}
         </h3>
 
-        {alert.description && <Markdown dangerousInnerHTML={renderMarkdown(alert.description)} history={history} />}
+        {alert.description && (
+            <p>
+                <Markdown dangerousInnerHTML={renderMarkdown(alert.description)} history={history} />
+            </p>
+        )}
 
         {alert.proposedQueries && (
             <>
