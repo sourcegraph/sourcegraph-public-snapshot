@@ -116,13 +116,7 @@ func (f *RepoContainsPredicate) parseNode(n Node) error {
 			return fmt.Errorf("unsupported option %q", v.Field)
 		}
 	case Pattern:
-		if v.Negated {
-			return errors.New("predicates do not currently support negated values")
-		}
-		if f.Content != "" {
-			return errors.New("cannot specify content multiple times")
-		}
-		f.Content = v.Value
+		return fmt.Errorf(`prepend 'file:' or 'content:' to "%s" to search repositories containing files or content respectively.`, v.Value)
 	case Operator:
 		if v.Kind == Or {
 			return errors.New("predicates do not currently support 'or' queries")

@@ -962,11 +962,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `repo contains content default`,
-				query:  `repo:contains(nextFileFirstLine)`,
-				counts: counts{Repo: 1},
-			},
-			{
 				name:   `or-expression on repo:contains`,
 				query:  `repo:contains(content:does-not-exist-D2E1E74C7279) or repo:contains(content:nextFileFirstLine)`,
 				counts: counts{Repo: 1},
