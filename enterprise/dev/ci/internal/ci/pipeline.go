@@ -49,7 +49,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// of differentiating "command" steps from other step types without refactoring
 		// everything.
 		if len(s.Command) > 0 {
-			s.TimeoutInMinutes = "60"
+			if s.TimeoutInMinutes == "" {
+
+				// Set the default value iff someone else hasn't set a custom one.
+				s.TimeoutInMinutes = "60"
+			}
 		}
 	})
 
