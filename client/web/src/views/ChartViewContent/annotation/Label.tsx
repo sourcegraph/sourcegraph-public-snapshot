@@ -119,7 +119,7 @@ export function Label({
         fontWeight: titleFontWeight,
         fontFamily: titleProps?.fontFamily,
         width: maxWidth,
-        ...titleProps as OriginTextProps,
+        ...(titleProps as OriginTextProps),
     })
 
     const { wordsByLines: subtitleWordsByLine } = useText({
@@ -130,7 +130,7 @@ export function Label({
         fontWeight: subtitleFontWeight,
         fontFamily: subtitleProps?.fontFamily,
         width: maxWidth,
-        ...subtitleProps as OriginTextProps,
+        ...(subtitleProps as OriginTextProps),
     })
 
     const titleMeasuredWidth = titleWordsByLine.reduce(
