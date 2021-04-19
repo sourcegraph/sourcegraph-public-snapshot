@@ -19,8 +19,6 @@ import (
 )
 
 func TestExtractCloneURL(t *testing.T) {
-	t.Parallel()
-
 	tcs := []struct {
 		name            string
 		want            string
@@ -211,8 +209,6 @@ func TestLoadExternalService(t *testing.T) {
 }
 
 func TestGitserverPushConfig(t *testing.T) {
-	t.Parallel()
-
 	oauthHTTPSAuthenticator := auth.OAuthBearerToken{Token: "bearer-test"}
 	oauthSSHAuthenticator := auth.OAuthBearerTokenWithSSH{
 		OAuthBearerToken: oauthHTTPSAuthenticator,
