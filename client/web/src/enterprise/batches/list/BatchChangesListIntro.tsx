@@ -63,6 +63,12 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                     </li>
                 </ul>
                 <ul className="text-muted mb-0 pl-3">
+                    <li>
+                        The site configuration now supports defining batch change rollout windows, which can be used to
+                        slow or disable pushing changesets at particular times of day or days of the week.
+                    </li>
+                </ul>
+                <ul className="text-muted mb-0 pl-3">
                     <li>Changesets will now be archived by default when not part of a batch change anymore.</li>
                 </ul>
                 <ul className="text-muted mb-0 pl-3">
