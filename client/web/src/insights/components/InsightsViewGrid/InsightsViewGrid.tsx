@@ -151,7 +151,7 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
                                         <LoadingSpinner /> Loading code insight
                                     </div>
                                     <InsightDescription
-                                        className="view-grid__view-description"
+                                        className="insights-view-grid__view-description"
                                         title={id}
                                         icon={getInsightViewIcon(source)}
                                     />
@@ -160,7 +160,7 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
                                 <>
                                     <ErrorAlert className="m-0" error={view} />
                                     <InsightDescription
-                                        className="view-grid__view-description"
+                                        className="insights-view-grid__view-description"
                                         title={id}
                                         icon={getInsightViewIcon(source)}
                                     />
