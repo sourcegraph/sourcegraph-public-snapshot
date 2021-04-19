@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -163,7 +164,7 @@ func TestConvertingVersionContextToSearchContext(t *testing.T) {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 	r := database.Repos(db)
 
 	repos, err := createRepos(ctx, r)
@@ -210,7 +211,7 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 	}
 
 	db := dbtesting.GetDB(t)
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 	r := database.Repos(db)
 
 	repos, err := createRepos(ctx, r)
