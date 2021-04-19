@@ -38,6 +38,25 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		env["PERCY_TARGET_BRANCH"] = c.branch
 	}
 
+	// Make all command steps timeout after 60 minutes in case a buildkite agent
+	// got stuck / died.
+	bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
+
+		// bk.Step is a union containing fields across all the different step types.
+		// However, "timeout_in_minutes" only applies to the "command" step type.
+		//
+		// Testing the length of the "Command" field seems to be the most reliable way
+		// of differentiating "command" steps from other step types without refactoring
+		// everything.
+		if len(s.Command) > 0 {
+			if s.TimeoutInMinutes == "" {
+
+				// Set the default value iff someone else hasn't set a custom one.
+				s.TimeoutInMinutes = "60"
+			}
+		}
+	})
+
 	if c.profilingEnabled {
 		bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
 			// wrap "time -v" around each command for CPU/RAM utilization information
