@@ -2,7 +2,7 @@
 
 > NOTE: This page describes functionality added in Sourcegraph 3.22. Older Sourcegraph versions only allow batch changes to be applied and managed by site admins.
 
-In order to [publish changesets with Batch Changes](publishing_changesets.md), you need to add a personal access token for each code host that your batch change interacts with. These tokens are used by Sourcegraph to create and manage changesets on behalf of yourself, and with your specific permissions, on the code host. Since Sourcegraph 3.27, it is also possible to configure a global service account per code host to be used, when the user doesn't have credentials configured.
+In order to [publish changesets with Batch Changes](publishing_changesets.md), you need to add a personal access token for each code host that your batch change interacts with. These tokens are used by Sourcegraph to create and manage changesets on behalf of yourself, and with your specific permissions, on the code host. Since Sourcegraph 3.27, it is also possible to configure a global service account per code host to be used when the user doesn't have credentials configured.
 
 ## Requirements
 
