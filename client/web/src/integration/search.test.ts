@@ -692,6 +692,10 @@ describe('Search', () => {
         })
 
         test('Missing context filter should default to global context', async () => {
+            // Initialize localStorage to a valid context, that should not be used
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+            await driver.page.evaluate(() => localStorage.setItem('sg-last-search-context', '@test'))
+            // Visit the search page with a query without a context filter
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
