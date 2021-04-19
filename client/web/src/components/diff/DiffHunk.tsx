@@ -1,6 +1,7 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-noninteractive-element-interactions: warn */
-import * as H from 'history'
 import * as React from 'react'
+import { useLocation } from 'react-router'
+import { Link } from 'react-router-dom'
 
 import {
     decorationAttachmentStyleForTheme,
@@ -9,44 +10,23 @@ import {
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { property, isDefined } from '@sourcegraph/shared/src/util/types'
+import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 
-import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
+import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
 
-interface DiffBoundaryProps extends FileDiffHunkFields {
-    lineNumberClassName: string
-    contentClassName: string
-    lineNumbers: boolean
-}
+import { DiffBoundary } from './DiffBoundary'
 
 const diffHunkTypeIndicators: Record<DiffHunkLineType, string> = {
     ADDED: '+',
     UNCHANGED: ' ',
     DELETED: '-',
 }
-
-const DiffBoundary: React.FunctionComponent<DiffBoundaryProps> = props => (
-    <tr className="diff-boundary">
-        {props.lineNumbers && <td className={`diff-boundary__num ${props.lineNumberClassName}`} colSpan={2} />}
-        <td className={`diff-boundary__content ${props.contentClassName}`} data-diff-marker=" ">
-            {props.oldRange.lines !== undefined && props.newRange.lines !== undefined && (
-                <code>
-                    @@ -{props.oldRange.startLine},{props.oldRange.lines} +{props.newRange.startLine},
-                    {props.newRange.lines} {props.section && `@@ ${props.section}`}
-                </code>
-            )}
-        </td>
-    </tr>
-)
-
 interface DiffHunkProps extends ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
     fileDiffAnchor: string
     hunk: FileDiffHunkFields
     lineNumbers: boolean
     decorations: Record<'head' | 'base', DecorationMapByLine>
-    location: H.Location
-    history: H.History
     /**
      * Reflect selected line in url
      *
@@ -60,18 +40,17 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
     decorations,
     hunk,
     lineNumbers,
-    location,
-    history,
     persistLines = true,
     isLightTheme,
 }) => {
     let oldLine = hunk.oldRange.startLine
     let newLine = hunk.newRange.startLine
+    const location = useLocation()
     return (
         <>
             <DiffBoundary
+                diffMode="unified"
                 {...hunk}
-                lineNumberClassName="diff-hunk__num--both"
                 contentClassName="diff-hunk__content"
                 lineNumbers={lineNumbers}
             />
@@ -111,29 +90,35 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                         {lineNumbers && (
                             <>
                                 {line.kind !== DiffHunkLineType.ADDED ? (
-                                    // TODO: Improve accessibility
-                                    // https://github.com/sourcegraph/sourcegraph/issues/19272
                                     <td
                                         className="diff-hunk__num"
                                         data-line={oldLine - 1}
                                         data-part="base"
                                         id={oldAnchor}
-                                        onClick={() => persistLines && history.push({ hash: oldAnchor })}
-                                    />
+                                    >
+                                        {persistLines && (
+                                            <Link className="diff-hunk__num--line" to={{ hash: oldAnchor }}>
+                                                {oldLine - 1}
+                                            </Link>
+                                        )}
+                                    </td>
                                 ) : (
                                     <td className="diff-hunk__num diff-hunk__num--empty" />
                                 )}
 
                                 {line.kind !== DiffHunkLineType.DELETED ? (
-                                    // TODO: Improve accessibility
-                                    // https://github.com/sourcegraph/sourcegraph/issues/19272
                                     <td
                                         className="diff-hunk__num"
                                         data-line={newLine - 1}
                                         data-part="head"
                                         id={newAnchor}
-                                        onClick={() => persistLines && history.push({ hash: newAnchor })}
-                                    />
+                                    >
+                                        {persistLines && (
+                                            <Link className="diff-hunk__num--line" to={{ hash: newAnchor }}>
+                                                {newLine - 1}
+                                            </Link>
+                                        )}
+                                    </td>
                                 ) : (
                                     <td className="diff-hunk__num diff-hunk__num--empty" />
                                 )}

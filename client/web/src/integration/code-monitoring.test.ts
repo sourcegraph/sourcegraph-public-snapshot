@@ -10,6 +10,7 @@ import { SearchResult } from '../graphql-operations'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
+import { percySnapshotWithVariants } from './utils'
 
 describe('Code monitoring', () => {
     let driver: Driver
@@ -96,6 +97,9 @@ describe('Code monitoring', () => {
         it('validates trigger query input', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring/new')
             await driver.page.waitForSelector('.test-name-input')
+
+            await percySnapshotWithVariants(driver.page, 'Code monitoring - Form')
+
             await driver.page.type('.test-name-input', 'test monitor')
 
             await driver.page.waitForSelector('.test-action-button')

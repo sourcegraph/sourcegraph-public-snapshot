@@ -2,11 +2,49 @@ import { DiffPart, DOMFunctions } from '@sourcegraph/codeintellify'
 
 export const diffDomFunctions: DOMFunctions = {
     getCodeElementFromTarget: (target: HTMLElement): HTMLTableCellElement | null => {
-        const row = target.closest('tr')
-        if (!row) {
+        const row = target.closest('td')
+        if (
+            !row ||
+            row.classList.contains('diff-boundary__content') ||
+            row.classList.contains('diff-boundary__num') ||
+            row.classList.contains('diff-hunk__content--empty') ||
+            row.classList.contains('diff-hunk__num')
+        ) {
             return null
         }
-        return row.cells[2]
+
+        return row
+    },
+
+    getLineNumberFromCodeElement: (codeCell: HTMLElement): number => {
+        let cell = codeCell.closest('td')!.previousElementSibling as HTMLTableCellElement
+        while (cell) {
+            if (cell.dataset.line) {
+                return parseInt(cell.dataset.line, 10)
+            }
+            cell = cell.previousElementSibling as HTMLTableCellElement
+        }
+        throw new Error('Could not find a line number in any cell')
+    },
+
+    getDiffCodePart: (codeElement: HTMLElement): DiffPart => {
+        const tableCell = codeElement.closest('td') as HTMLTableCellElement
+        const tableRow = codeElement.parentElement as HTMLTableRowElement
+        const isSplitMode = tableRow.classList.contains('file-diff-hunks__table--split-row')
+
+        if (tableRow.classList.contains('diff-hunk__line--addition')) {
+            return 'head'
+        }
+
+        if (tableRow.classList.contains('diff-hunk__line--deletion')) {
+            return 'base'
+        }
+
+        if (isSplitMode) {
+            return tableCell.nextElementSibling ? 'base' : 'head'
+        }
+
+        return 'head'
     },
 
     getCodeElementFromLineNumber: (
@@ -15,44 +53,17 @@ export const diffDomFunctions: DOMFunctions = {
         part?: DiffPart
     ): HTMLTableCellElement | null => {
         // For unchanged lines, prefer line number in head
-        const lineNumberCell = codeView.querySelector(`[data-line="${line}"][data-part="${part || 'head'}"]`)
+        const lineNumberCell = codeView.querySelector(
+            `[data-line="${line}"][data-part="${part || 'head'}"]`
+        ) as HTMLTableCellElement
         if (!lineNumberCell) {
             return null
         }
+
         const row = lineNumberCell.parentElement as HTMLTableRowElement
-        const codeCell = row.cells[2]
+        // row.cells.length === 4 is the number of cells for side by side diff
+        const codeCell = row.cells.length === 4 ? row.cells[lineNumberCell.cellIndex + 1] : row.cells[2]
         return codeCell
-    },
-
-    getLineNumberFromCodeElement: (codeCell: HTMLElement): number => {
-        const row = codeCell.closest('tr')
-        if (!row) {
-            throw new Error('Could not find closest row for codeCell')
-        }
-        const [baseLineNumberCell, headLineNumberCell] = row.cells
-        // For unchanged lines, prefer line number in head
-        if (headLineNumberCell.dataset.line) {
-            return +headLineNumberCell.dataset.line
-        }
-        if (baseLineNumberCell.dataset.line) {
-            return +baseLineNumberCell.dataset.line
-        }
-        throw new Error('Neither head or base line number cell have data-line set')
-    },
-
-    getDiffCodePart: (codeCell: HTMLElement): DiffPart => {
-        const row = codeCell.parentElement as HTMLTableRowElement
-        const [baseLineNumberCell, headLineNumberCell] = row.cells
-        if (baseLineNumberCell.dataset.part && headLineNumberCell.dataset.part) {
-            return null
-        }
-        if (baseLineNumberCell.dataset.part) {
-            return 'base'
-        }
-        if (headLineNumberCell.dataset.part) {
-            return 'head'
-        }
-        throw new Error('Could not figure out diff part for code element')
     },
 
     isFirstCharacterDiffIndicator: () => false,
