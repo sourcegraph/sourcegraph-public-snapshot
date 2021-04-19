@@ -11,12 +11,19 @@ const webpack = require('webpack')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
+const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
+
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 logger.info('Using mode', mode)
 
 const isDevelopment = mode === 'development'
 const isProduction = mode === 'production'
 const devtool = isProduction ? 'source-map' : 'cheap-module-eval-source-map'
+
+const shouldServeIndexHTML = process.env.WEBPACK_SERVE_INDEX === 'true'
+if (shouldServeIndexHTML) {
+  logger.info('Serving index.html with HTMLWebpackPlugin')
+}
 
 const shouldAnalyze = process.env.WEBPACK_ANALYZER === '1'
 if (shouldAnalyze) {
@@ -74,7 +81,7 @@ const config = {
         sourceMap: true,
         terserOptions: {
           compress: {
-            // // Don't inline functions, which causes name collisions with uglify-es:
+            // Don't inline functions, which causes name collisions with uglify-es:
             // https://github.com/mishoo/UglifyJS2/issues/2842
             inline: 1,
           },
@@ -147,6 +154,7 @@ const config = {
       // Only output files that are required to run the application
       filter: ({ isInitial }) => isInitial,
     }),
+    ...(shouldServeIndexHTML ? getHTMLWebpackPlugins() : []),
     ...(shouldAnalyze ? [new BundleAnalyzerPlugin()] : []),
   ],
   resolve: {

@@ -1,4 +1,5 @@
 // @ts-check
+require('ts-node').register({})
 
 const log = require('fancy-log')
 const gulp = require('gulp')
