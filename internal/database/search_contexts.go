@@ -350,10 +350,6 @@ ORDER BY scr.revision;
 
 // GetAllRevisionsForRepo returns the list of revisions that are used in search contexts for a given repo ID.
 func (s *SearchContextsStore) GetAllRevisionsForRepo(ctx context.Context, repoID int32) ([]string, error) {
-	if Mocks.SearchContexts.GetAllRevisionsForRepo != nil {
-		return Mocks.SearchContexts.GetAllRevisionsForRepo(ctx, repoID)
-	}
-
 	if a := actor.FromContext(ctx); a == nil || !a.Internal {
 		return nil, errors.New("GetAllRevisionsForRepo can only be accessed by an internal actor")
 	}
