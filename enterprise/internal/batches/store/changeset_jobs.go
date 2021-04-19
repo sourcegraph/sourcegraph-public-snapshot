@@ -107,7 +107,7 @@ func createChangesetJobQuery(c *btypes.ChangesetJob) (*sqlf.Query, error) {
 	), nil
 }
 
-// GetChangesetJobOpts captures the query options needed for getting a BatchSpec
+// GetChangesetJobOpts captures the query options needed for getting a ChangesetJob
 type GetChangesetJobOpts struct {
 	ID int64
 }
