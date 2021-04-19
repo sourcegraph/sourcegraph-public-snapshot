@@ -37,6 +37,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Credentials for Batch Changes are now validated when adding them. [#19602](https://github.com/sourcegraph/sourcegraph/pull/19602)
 - Batch Changes now ignore repositories that contain a `.batchignore` file. [#19877](https://github.com/sourcegraph/sourcegraph/pull/19877) and [src-cli#509](https://github.com/sourcegraph/src-cli/pull/509)
 - Side-by-side diff for commit visualization. [#19553](https://github.com/sourcegraph/sourcegraph/pull/19553)
+- The site configuration now supports defining batch change rollout windows, which can be used to slow or disable pushing changesets at particular times of day or days of the week. [#19796](https://github.com/sourcegraph/sourcegraph/pull/19796), [#19797](https://github.com/sourcegraph/sourcegraph/pull/19797), and [#19951](https://github.com/sourcegraph/sourcegraph/pull/19951).
 
 ### Changed
 
