@@ -17,10 +17,8 @@ func TestRepoContainsPredicate(t *testing.T) {
 			{`file`, `file:test`, &RepoContainsPredicate{File: "test"}},
 			{`file regex`, `file:test(a|b)*.go`, &RepoContainsPredicate{File: "test(a|b)*.go"}},
 			{`content`, `content:test`, &RepoContainsPredicate{Content: "test"}},
-			{`unnamed content`, `test`, &RepoContainsPredicate{Content: "test"}},
 			{`file and content`, `file:test.go content:abc`, &RepoContainsPredicate{File: "test.go", Content: "abc"}},
 			{`content and file`, `content:abc file:test.go`, &RepoContainsPredicate{File: "test.go", Content: "abc"}},
-			{`unrecognized field`, `abc:test`, &RepoContainsPredicate{Content: "abc:test"}},
 		}
 
 		for _, tc := range valid {
@@ -41,6 +39,8 @@ func TestRepoContainsPredicate(t *testing.T) {
 			{`empty`, ``, nil},
 			{`negated file`, `-file:test`, nil},
 			{`negated content`, `-content:test`, nil},
+			{`unsupported syntax`, `abc:test`, nil},
+			{`unnamed content`, `test`, nil},
 		}
 
 		for _, tc := range invalid {
