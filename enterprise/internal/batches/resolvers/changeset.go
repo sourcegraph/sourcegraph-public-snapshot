@@ -392,7 +392,7 @@ func (r *changesetResolver) ScheduleEstimateAt(ctx context.Context) (*graphqlbac
 
 	// Now we can ask the scheduler to estimate where this item would fall in
 	// the schedule.
-	return graphqlbackend.DateTimeOrNil(config.ActiveWindow().Estimate(time.Now(), place)), nil
+	return graphqlbackend.DateTimeOrNil(config.ActiveWindow().Estimate(r.store.Clock()(), place)), nil
 }
 
 func (r *changesetResolver) CurrentSpec(ctx context.Context) (graphqlbackend.VisibleChangesetSpecResolver, error) {
