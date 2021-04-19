@@ -2909,16 +2909,16 @@
     "@babel/helper-module-imports" "^7.0.0"
     "@babel/traverse" "^7.4.4"
 
-"@sourcegraph/codeintellify@^7.2.0":
-  version "7.2.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-7.2.0.tgz#f6755b64279f511980039347ff460a8fa1fcbd5d"
-  integrity sha512-V5xnT9IFQ/kyKyI91Pyf6FjsZTZL7GSVGGI5AOLE8WcQ1SWPLwurIlKer0dO4de/edXk5XVPQpA5GNWl/Z6P/w==
+"@sourcegraph/codeintellify@^7.2.2":
+  version "7.2.2"
+  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-7.2.2.tgz#6035801a6928d9f61d69fd0dcc12d2ad37284b3b"
+  integrity sha512-L88Bdid3gjADRgRSutO+tZkRgEbHPH/tOWoqNC+NTh6onCGpsBSBWpy7mauvDI3GTyhuGsgFBFsXpksp8oHbZA==
   dependencies:
     "@sourcegraph/event-positions" "^1.0.4"
     "@sourcegraph/extension-api-types" "^2.1.0"
     lodash "^4.17.10"
     rxjs "^6.5.5"
-    sourcegraph "^24.0.0"
+    sourcegraph "^24.0.0 || ^25.0.0"
     ts-key-enum "^2.0.0"
 
 "@sourcegraph/eslint-config@^0.24.0":
@@ -20823,11 +20823,6 @@ source-map@^0.7.3, source-map@~0.7.2:
   version "0.7.3"
   resolved "https://registry.npmjs.org/source-map/-/source-map-0.7.3.tgz#5302f8169031735226544092e64981f751750383"
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
-
-sourcegraph@^24.0.0:
-  version "24.8.0"
-  resolved "https://registry.npmjs.org/sourcegraph/-/sourcegraph-24.8.0.tgz#27dc196d8a050ac69f03c3680229d1866f57c754"
-  integrity sha512-uB2SbjEzcA/HWP3Rj+INUXqQweO8HmRdVWW7zesFWZQFBcu7JTcq0pg0jeAN71glKPIyyOgZVrIm1d7KoVzfZw==
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
