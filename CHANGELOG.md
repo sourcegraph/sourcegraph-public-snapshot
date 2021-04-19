@@ -48,6 +48,7 @@ All notable changes to Sourcegraph are documented in this file.
   - A `patternType` filter is no longer required. `patternType:literal` will be added to a code monitor query if not specified.
   - Added a new checklist UI to make it more intuitive to create code monitor trigger queries.
 - Deprecated the GraphQL `icon` field on `GenericSearchResultInterface`. It will be removed in a future release. [#20028](https://github.com/sourcegraph/sourcegraph/pull/20028/files)
+- Creating changesets through Batch Changes as a site-admin without configured Batch Changes credentials has been deprecated. Please configure user or global credentials before Sourcegraph 3.29 to not experience any interruptions in changeset creation. [#20143](https://github.com/sourcegraph/sourcegraph/pull/20143)
 
 ### Fixed
 
