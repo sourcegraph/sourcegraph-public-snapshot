@@ -549,7 +549,7 @@ func (*missingRepoRevsError) Error() string {
 	return "missing repo revs"
 }
 
-func alertForMissingRepoRevs(patternType query.SearchType, missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
+func alertForMissingRepoRevs(missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
 	var description string
 	if len(missingRepoRevs) == 1 {
 		if len(missingRepoRevs[0].RevSpecs()) == 1 {
@@ -558,11 +558,23 @@ func alertForMissingRepoRevs(patternType query.SearchType, missingRepoRevs []*se
 			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it has multiple specified revisions: @%s.", missingRepoRevs[0].Repo.Name, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
 		}
 	} else {
-		repoRevs := make([]string, 0, len(missingRepoRevs))
-		for _, r := range missingRepoRevs {
+		sampleSize := 10
+		if sampleSize > len(missingRepoRevs) {
+			sampleSize = len(missingRepoRevs)
+		}
+		repoRevs := make([]string, 0, sampleSize)
+		for _, r := range missingRepoRevs[:sampleSize] {
 			repoRevs = append(repoRevs, string(r.Repo.Name)+"@"+strings.Join(r.RevSpecs(), ","))
 		}
-		description = fmt.Sprintf("%d repositories matched by your repo: filter could not be searched because the following revisions do not exist, or differ but were specified for the same repository: %s.", len(missingRepoRevs), strings.Join(repoRevs, ", "))
+		b := strings.Builder{}
+		_, _ = fmt.Fprintf(&b, "%d repositories matched by your repo: filter could not be searched because the following revisions do not exist, or differ but were specified for the same repository:", len(missingRepoRevs))
+		for _, rr := range repoRevs {
+			_, _ = fmt.Fprintf(&b, "\n* %s", rr)
+		}
+		if sampleSize < len(missingRepoRevs) {
+			b.WriteString("\n* ...")
+		}
+		description = b.String()
 	}
 	return &searchAlert{
 		prometheusType: "missing_repo_revs",
@@ -649,7 +661,7 @@ func alertForError(err error, inputs *SearchInputs) *searchAlert {
 	)
 
 	if errors.As(err, &mErr) {
-		alert = alertForMissingRepoRevs(inputs.PatternType, mErr.Missing)
+		alert = alertForMissingRepoRevs(mErr.Missing)
 		alert.priority = 6
 	} else if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
 		alert = &searchAlert{
