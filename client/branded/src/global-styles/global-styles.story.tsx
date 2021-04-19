@@ -437,11 +437,16 @@ add(
                     .
                 </div>
             ))}
-            <div className={classNames('alert', 'alert-info')}>
-                A simple info alert — check it out! It can also contain{' '}
-                <button className="btn btn-link" onClick={flow(preventDefault, action('alert link clicked'))}>
-                    buttons like this
-                </button>
+            <div className="alert alert-info d-flex align-items-center">
+                <div className="flex-grow-1">An alert with a button</div>
+                {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus */}
+                <a
+                    role="button"
+                    className="btn btn-info"
+                    onClick={flow(preventDefault, action('alert button clicked'))}
+                >
+                    Call to action
+                </a>
             </div>
         </>
     ),
