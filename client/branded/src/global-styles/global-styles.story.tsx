@@ -431,7 +431,7 @@ add(
             {semanticColors.map(semantic => (
                 <div key={semantic} className={classNames('alert', `alert-${semantic}`)}>
                     A simple {semantic} alert — check it out! It can also contain{' '}
-                    <a href="/" className="alert-link" onClick={flow(preventDefault, action('alert link clicked'))}>
+                    <a href="/" onClick={flow(preventDefault, action('alert link clicked'))}>
                         links like this
                     </a>
                     .
