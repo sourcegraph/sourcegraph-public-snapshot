@@ -1,4 +1,5 @@
 @import 'bootstrap/scss/alert';
+@import 'bootstrap';
 
 .theme-light {
     @each $color, $value in map-merge($theme-colors, $theme-colors-light) {
@@ -18,4 +19,12 @@
 
 .alert-link {
     text-decoration: underline;
+}
+
+.alert.alert-info,
+.alert.alert-warning,
+.alert.alert-danger {
+    a {
+        @extend .alert-link;
+    }
 }
