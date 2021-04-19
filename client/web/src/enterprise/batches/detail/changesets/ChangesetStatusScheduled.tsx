@@ -3,6 +3,8 @@ import { formatDistanceToNow, isBefore, parseISO } from 'date-fns'
 import TimerOutlineIcon from 'mdi-react/TimerOutlineIcon'
 import React, { useCallback, useState } from 'react'
 
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+
 import { getChangesetScheduleEstimate } from '../backend'
 
 // This is copied from ChangesetStatusCell.
@@ -35,7 +37,7 @@ const estimateTooltip = (estimate: MemoisedEstimate): string | null => {
 }
 
 interface Props {
-    id: string
+    id: Scalars['ID']
     label: JSX.Element
     className?: string
 }

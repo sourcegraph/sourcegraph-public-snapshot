@@ -9,7 +9,7 @@ import SourcePullIcon from 'mdi-react/SourcePullIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React from 'react'
 
-import { ChangesetFields, ChangesetState } from '../../../../graphql-operations'
+import { ChangesetFields, ChangesetState, Scalars } from '../../../../graphql-operations'
 
 import { ChangesetStatusScheduled } from './ChangesetStatusScheduled'
 
