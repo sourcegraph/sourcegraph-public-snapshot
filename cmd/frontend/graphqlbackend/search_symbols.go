@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
@@ -185,33 +186,40 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 		// Ask for limit + 1 so we can detect whether there are more results than the limit.
 		First: limit + 1,
 	})
-	fileMatchesByURI := make(map[string]*FileMatchResolver)
-	fileMatches := make([]*FileMatchResolver, 0)
 
+	// All symbols are from the same repo, so we can just partition them by path
+	// to build fileMatches
+	symbolMatchesByPath := make(map[string][]*result.SymbolMatch)
 	for _, symbol := range symbols {
-		symbolRes := &result.SymbolMatch{
+		symbolMatch := &result.SymbolMatch{
 			Symbol:  symbol,
 			BaseURI: baseURI,
 		}
-		newFileMatchResolver := &FileMatchResolver{
-			db: db,
+
+		cur := symbolMatchesByPath[symbol.Path]
+		symbolMatchesByPath[symbol.Path] = append(cur, symbolMatch)
+	}
+
+	// Create file matches from partitioned symbols
+	fileMatchResolvers := make([]*FileMatchResolver, 0, len(symbolMatchesByPath))
+	for path, symbolMatches := range symbolMatchesByPath {
+		fileMatchResolvers = append(fileMatchResolvers, &FileMatchResolver{
+			db:           db,
+			RepoResolver: repoResolver,
 			FileMatch: result.FileMatch{
-				Path:     symbolRes.Symbol.Path,
-				Symbols:  []*result.SymbolMatch{symbolRes},
+				Path:     path,
+				Symbols:  symbolMatches,
 				Repo:     repoRevs.Repo,
 				CommitID: commitID,
 				InputRev: &inputRev,
 			},
-			RepoResolver: repoResolver,
-		}
-		if oldFileMatchResolver, ok := fileMatchesByURI[newFileMatchResolver.URL()]; ok {
-			oldFileMatchResolver.FileMatch.Symbols = append(oldFileMatchResolver.FileMatch.Symbols, symbolRes)
-		} else {
-			fileMatchesByURI[newFileMatchResolver.URL()] = newFileMatchResolver
-			fileMatches = append(fileMatches, newFileMatchResolver)
-		}
+		})
 	}
-	return fileMatches, err
+
+	sort.Slice(fileMatchResolvers, func(i, j int) bool {
+		return fileMatchResolvers[i].Path < fileMatchResolvers[j].Path
+	})
+	return fileMatchResolvers, err
 }
 
 // unescapePattern expects a regexp pattern of the form /^ ... $/ and unescapes
