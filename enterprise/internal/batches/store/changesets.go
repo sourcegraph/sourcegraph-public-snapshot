@@ -984,7 +984,7 @@ SELECT
 FROM (
 	SELECT
 		id,
-		ROW_NUMBER() OVER (ORDER BY updated_at ASC)
+		ROW_NUMBER() OVER (ORDER BY updated_at ASC) AS row_number
 	FROM
 		changesets
 	WHERE
