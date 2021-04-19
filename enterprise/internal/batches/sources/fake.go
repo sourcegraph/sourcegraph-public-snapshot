@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -256,8 +257,8 @@ func (s *FakeChangesetSource) CreateComment(ctx context.Context, c *Changeset, b
 	return s.Err
 }
 
-func (s *FakeChangesetSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
-	return gitserverPushConfig(repo, s.CurrentAuthenticator)
+func (s *FakeChangesetSource) GitserverPushConfig(ctx context.Context, store *database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
+	return gitserverPushConfig(ctx, store, repo, s.CurrentAuthenticator)
 }
 
 func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {

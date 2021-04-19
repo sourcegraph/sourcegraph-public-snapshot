@@ -125,9 +125,9 @@ func (s *sourcer) loadBatchesSource(ctx context.Context, tx SourcerStore, extern
 	return css, nil
 }
 
-func gitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
+func gitserverPushConfig(ctx context.Context, store *database.ExternalServiceStore, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
 	extSvcType := repo.ExternalRepo.ServiceType
-	cloneURL, err := extractCloneURL(repo)
+	cloneURL, err := extractCloneURL(ctx, store, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -366,13 +366,24 @@ func setBasicAuth(u *url.URL, extSvcType, username, password string) error {
 }
 
 // extractCloneURL returns a remote URL from the repo, preferring HTTPS over SSH.
-func extractCloneURL(repo *types.Repo) (string, error) {
+func extractCloneURL(ctx context.Context, s *database.ExternalServiceStore, repo *types.Repo) (string, error) {
 	if len(repo.Sources) == 0 {
 		return "", errors.New("no clone URL found for repo")
 	}
+
 	cloneURLs := make([]*url.URL, 0, len(repo.Sources))
 	for _, source := range repo.Sources {
-		parsedURL, err := vcs.ParseURL(source.CloneURL)
+		// build the clone url using the external service config instead of using
+		// the source CloneURL field
+		svc, err := s.GetByID(ctx, source.ExternalServiceID())
+		if err != nil {
+			return "", err
+		}
+		cloneURL, err := types.RepoCloneURL(svc.Kind, svc.Config, repo)
+		if err != nil {
+			return "", err
+		}
+		parsedURL, err := vcs.ParseURL(cloneURL)
 		if err != nil {
 			return "", err
 		}
