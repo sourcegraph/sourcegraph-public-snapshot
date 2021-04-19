@@ -613,6 +613,59 @@ add(
     }
 )
 
+interface ButtonVariantsProps {
+    variantType?: 'btn' | 'btn-outline'
+}
+
+const ButtonVariants: React.FunctionComponent<ButtonVariantsProps> = ({ variantType = 'btn' }) => (
+    <div
+        style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, max-content)',
+            gridAutoRows: '1fr',
+            gridGap: '1rem',
+            marginBottom: '1rem',
+        }}
+    >
+        {semanticColors.map(semantic => (
+            <React.Fragment key={semantic}>
+                <button
+                    type="button"
+                    key={semantic}
+                    className={classNames('btn', `${variantType}-${semantic}`)}
+                    onClick={flow(preventDefault, action('button clicked'))}
+                >
+                    {startCase(semantic)}
+                </button>
+                <button
+                    type="button"
+                    key={`${variantType} - ${semantic} - active`}
+                    className={classNames('btn', `${variantType}-${semantic}`, 'active')}
+                    onClick={flow(preventDefault, action('button clicked'))}
+                >
+                    Active
+                </button>
+                <button
+                    type="button"
+                    key={`${variantType} - ${semantic} - focus`}
+                    className={classNames('btn', `${variantType}-${semantic}`, 'focus')}
+                    onClick={flow(preventDefault, action('button clicked'))}
+                >
+                    Focus
+                </button>
+                <button
+                    type="button"
+                    key={`${variantType} - ${semantic} - disabled`}
+                    className={classNames('btn', `${variantType}-${semantic}`)}
+                    disabled={true}
+                >
+                    Disabled
+                </button>
+            </React.Fragment>
+        ))}
+    </div>
+)
+
 add(
     'Buttons',
     () => (
@@ -625,66 +678,10 @@ add(
             </p>
 
             <h2>Semantic variants</h2>
-            <p>
-                {semanticColors.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <button
-                            type="button"
-                            key={semantic}
-                            className={classNames('btn', `btn-${semantic}`)}
-                            onClick={flow(preventDefault, action('button clicked'))}
-                        >
-                            {startCase(semantic)}
-                        </button>{' '}
-                    </React.Fragment>
-                ))}
-            </p>
+            <ButtonVariants />
 
             <h2>Outline variants</h2>
-            <p>
-                {semanticColors.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <button
-                            type="button"
-                            key={semantic}
-                            className={classNames('btn', `btn-outline-${semantic}`)}
-                            onClick={flow(preventDefault, action('button clicked'))}
-                        >
-                            {startCase(semantic)}
-                        </button>{' '}
-                    </React.Fragment>
-                ))}
-            </p>
-
-            <h2>Disabled</h2>
-            <div className="mb-2">
-                {semanticColors.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <button
-                            type="button"
-                            key={semantic}
-                            className={classNames('btn', `btn-${semantic}`)}
-                            disabled={true}
-                        >
-                            Disabled
-                        </button>{' '}
-                    </React.Fragment>
-                ))}
-            </div>
-            <div className="mb-2">
-                {semanticColors.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <button
-                            type="button"
-                            key={semantic}
-                            className={classNames('btn', `btn-outline-${semantic}`)}
-                            disabled={true}
-                        >
-                            Disabled
-                        </button>{' '}
-                    </React.Fragment>
-                ))}
-            </div>
+            <ButtonVariants variantType="btn-outline" />
 
             <h2>Links</h2>
             <p>Links can be made to look like buttons too.</p>
@@ -694,10 +691,17 @@ add(
         </>
     ),
     {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=35%3A11',
-        },
+        design: [
+            {
+                type: 'figma',
+                url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=35%3A11',
+            },
+            {
+                type: 'figma',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2513',
+            },
+        ],
     }
 )
 
