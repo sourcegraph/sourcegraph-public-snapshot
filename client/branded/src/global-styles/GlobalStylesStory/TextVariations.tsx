@@ -78,7 +78,7 @@ export const TextVariations: React.FunctionComponent = () => (
             </tr>
             <tr>
                 <td>
-                    <code>{'<span class="form-control">'}</code>
+                    <code>{'<input class="form-control">'}</code>
                 </td>
                 <td>
                     <TextVariants
