@@ -66,7 +66,6 @@ export const setColorScheme = async (
     ])
 
     // Check Monaco editor is styled correctly
-    await page.waitForSelector('#monaco-query-input .monaco-editor', { visible: true })
     await page.waitForFunction(
         expectedClassName =>
             document.querySelector('#monaco-query-input .monaco-editor') &&
@@ -94,6 +93,9 @@ export const percySnapshotWithVariants = async (
     if (!percyEnabled) {
         return
     }
+
+    // Wait for Monaco editor to finish rendering before taking screenshots
+    await page.waitForSelector('#monaco-query-input .monaco-editor', { visible: true })
 
     // Theme-light
     await setColorScheme(page, 'light', config?.waitForCodeHighlighting)
