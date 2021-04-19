@@ -124,9 +124,3 @@ type usersStore struct {
 func (u *usersStore) Count(ctx context.Context) (int, error) {
 	return database.Users(u.db).Count(ctx, nil)
 }
-
-type externalServicesStore struct{}
-
-func (externalServicesStore) Count(ctx context.Context, opts database.ExternalServicesListOptions) (int, error) {
-	return database.GlobalExternalServices.Count(ctx, opts)
-}
