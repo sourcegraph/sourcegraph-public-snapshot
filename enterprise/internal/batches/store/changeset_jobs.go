@@ -33,7 +33,7 @@ var changesetJobInsertColumns = []*sqlf.Query{
 }
 
 // ChangesetJobColumns are used by the batch change related Store methods to insert,
-// update and query batches.
+// update and query changeset jobs.
 var ChangesetJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("changeset_jobs.id"),
 	sqlf.Sprintf("changeset_jobs.bulk_group"),
