@@ -166,7 +166,7 @@ func (lm lineMatchResolver) OffsetAndLengths() [][]int32 {
 }
 
 func (lm lineMatchResolver) LimitHit() bool {
-	return lm.LineMatch.LimitHit
+	return false
 }
 
 var mockSearchFilesInRepo func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
@@ -221,7 +221,6 @@ func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint
 				Preview:          lm.Preview,
 				OffsetAndLengths: ranges,
 				LineNumber:       int32(lm.LineNumber),
-				LimitHit:         false,
 			})
 		}
 
