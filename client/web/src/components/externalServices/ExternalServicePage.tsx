@@ -9,7 +9,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
-import { ExternalServiceFields, Scalars } from '../../graphql-operations'
+import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'
 import { ErrorAlert } from '../alerts'
 import { PageTitle } from '../PageTitle'
 
@@ -56,9 +56,13 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
     }, [externalServiceID, fetchExternalService])
 
     const onChange = useCallback(
-        (input: GQL.IAddExternalServiceInput) => {
+        (input: AddExternalServiceInput) => {
             if (isExternalService(externalServiceOrError)) {
-                setExternalServiceOrError({ ...externalServiceOrError, ...input })
+                setExternalServiceOrError({
+                    ...externalServiceOrError,
+                    ...input,
+                    namespace: externalServiceOrError.namespace,
+                })
             }
         },
         [externalServiceOrError, setExternalServiceOrError]
@@ -132,12 +136,12 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
             {isErrorLike(externalServiceOrError) && <ErrorAlert className="mb-3" error={externalServiceOrError} />}
             {externalServiceCategory && (
                 <div className="mb-3">
-                    <ExternalServiceCard {...externalServiceCategory} />
+                    <ExternalServiceCard {...externalServiceCategory} namespace={externalService?.namespace} />
                 </div>
             )}
             {externalService && externalServiceCategory && (
                 <ExternalServiceForm
-                    input={externalService}
+                    input={{ ...externalService, namespace: externalService.namespace?.id ?? null }}
                     editorActions={externalServiceCategory.editorActions}
                     jsonSchema={externalServiceCategory.jsonSchema}
                     error={error}

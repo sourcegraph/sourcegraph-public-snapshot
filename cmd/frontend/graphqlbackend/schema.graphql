@@ -2687,7 +2687,7 @@ type ExternalService implements Node {
     """
     The namespace this external service belongs to.
     """
-    namespace: ID
+    namespace: Namespace
     """
     The number of repos synced by the external service.
     """
@@ -2710,13 +2710,14 @@ type ExternalService implements Node {
     """
     lastSyncError: String
     """
-    LastSyncAt is the time the last sync job was run for this code host
+    LastSyncAt is the time the last sync job was run for this code host. Null if it
+    has never been synced so far.
     """
-    lastSyncAt: DateTime!
+    lastSyncAt: DateTime
     """
-    The timestamp of the next sync job
+    The timestamp of the next sync job. Null if not scheduled for a re-sync.
     """
-    nextSyncAt: DateTime!
+    nextSyncAt: DateTime
 }
 
 """

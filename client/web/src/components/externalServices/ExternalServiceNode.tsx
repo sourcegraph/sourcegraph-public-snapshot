@@ -1,6 +1,7 @@
 import * as H from 'history'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
+import UserIcon from 'mdi-react/UserIcon'
 import React, { useCallback, useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -48,7 +49,15 @@ export const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodePro
     return (
         <li className="external-service-node list-group-item py-2" data-test-external-service-name={node.displayName}>
             <div className="d-flex align-items-center justify-content-between">
-                <div>{node.displayName}</div>
+                <div>
+                    {node.namespace && (
+                        <>
+                            <UserIcon className="icon-inline" />
+                            <Link to={node.namespace.url}>{node.namespace.namespaceName}</Link>{' '}
+                        </>
+                    )}
+                    {node.displayName}
+                </div>
                 <div>
                     <Link
                         className="btn btn-secondary btn-sm test-edit-external-service-button"
