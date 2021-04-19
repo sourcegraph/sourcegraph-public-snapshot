@@ -21,14 +21,6 @@
     color: inherit;
 }
 
-.alert.alert-primary,
-.alert.alert-secondary,
-.alert.alert-success,
-.alert.alert-merged,
-.alert.alert-info,
-.alert.alert-warning,
-.alert.alert-danger {
-    a {
-        @extend .alert-link;
-    }
+.alert a {
+    @extend .alert-link;
 }
