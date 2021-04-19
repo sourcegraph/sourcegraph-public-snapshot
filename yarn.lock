@@ -4055,11 +4055,6 @@
   dependencies:
     "@types/unist" "*"
 
-"@types/he@1.1.1":
-  version "1.1.1"
-  resolved "https://registry.npmjs.org/@types/he/-/he-1.1.1.tgz#19e14033c4ee8f1a702c74dcc6182664839ac2b7"
-  integrity sha512-jpzrsR1ns0n3kyWt92QfOUQhIuJGQ9+QGa7M62rO6toe98woQjnsnzjdMtsQXCdvjjmqjS2ZBCC7xKw0cdzU+Q==
-
 "@types/highlight.js@9.12.4":
   version "9.12.4"
   resolved "https://registry.npmjs.org/@types/highlight.js/-/highlight.js-9.12.4.tgz#8c3496bd1b50cc04aeefd691140aa571d4dbfa34"
