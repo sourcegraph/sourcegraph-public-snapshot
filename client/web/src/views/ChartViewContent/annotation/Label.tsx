@@ -115,10 +115,11 @@ export function Label({
         children: title,
         verticalAnchor: 'start',
         capHeight: titleFontSize,
-        fontSize: titleFontSize,
-        fontWeight: titleFontWeight,
-        fontFamily: titleProps?.fontFamily,
         width: maxWidth,
+        style: {
+            fontSize: `${titleFontSize}px`,
+            fontWeight: titleFontWeight as any,
+        },
         ...(titleProps as OriginTextProps),
     })
 
@@ -126,10 +127,12 @@ export function Label({
         children: subtitle,
         verticalAnchor: 'start',
         capHeight: subtitleFontSize,
-        fontSize: subtitleFontSize,
-        fontWeight: subtitleFontWeight,
-        fontFamily: subtitleProps?.fontFamily,
         width: maxWidth,
+        style: {
+            fontSize: `${subtitleFontSize}px`,
+            fontWeight: subtitleFontWeight as any,
+            // fontFamily: subtitleProps?.fontFamily,
+        },
         ...(subtitleProps as OriginTextProps),
     })
 
@@ -143,7 +146,7 @@ export function Label({
         0
     )
 
-    const textMeasuredWidth = Math.floor(Math.min(maxWidth, Math.max(titleMeasuredWidth, subtitleMeasuredWidth)))
+    const textMeasuredWidth = Math.ceil(Math.min(maxWidth, Math.max(titleMeasuredWidth, subtitleMeasuredWidth)))
     const measuredWidth = padding.right + padding.left + textMeasuredWidth
     const width = propertyWidth ?? measuredWidth
     const innerWidth = width - padding.left - padding.right
