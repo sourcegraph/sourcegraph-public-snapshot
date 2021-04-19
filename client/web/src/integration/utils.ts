@@ -73,6 +73,8 @@ export const setColorScheme = async (
         { timeout: 1000 },
         ColorSchemeToMonacoEditorClassName[scheme]
     )
+    // Wait a tiny bit for Monaco syntax highlighting to be applied
+    await page.waitForTimeout(500)
 }
 
 export interface PercySnapshotConfig {
