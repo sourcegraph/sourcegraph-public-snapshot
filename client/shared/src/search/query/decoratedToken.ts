@@ -1015,26 +1015,22 @@ export const decorate = (token: Token): DecoratedToken[] => {
             if (
                 token.value &&
                 token.field.value.toLowerCase().match(/^-?(repo|r)$/i) &&
-                token.value.type === 'literal' &&
+                !token.value.quoted &&
                 specifiesRevision(token.value.value)
             ) {
                 decorated.push(...decorateRepoRevision(token.value))
-            } else if (
-                token.value &&
-                token.field.value.toLowerCase().match(/rev|revision/i) &&
-                token.value.type === 'literal'
-            ) {
+            } else if (token.value && token.field.value.toLowerCase().match(/rev|revision/i) && !token.value.quoted) {
                 decorated.push(...mapRevisionMeta(createLiteral(token.value.value, token.value.range)))
-            } else if (token.value && token.value.type === 'literal' && hasRegexpValue(token.field.value)) {
+            } else if (token.value && !token.value.quoted && hasRegexpValue(token.field.value)) {
                 // Highlight fields with regexp values.
                 if (hasPathLikeValue(token.field.value) && token.value?.type === 'literal') {
                     decorated.push(...mapPathMetaForRegexp(token.value))
                 } else {
                     decorated.push(...mapRegexpMetaSucceed(toPattern(token.value)))
                 }
-            } else if (token.field.value === 'context' && token.value?.type === 'literal') {
+            } else if (token.field.value === 'context' && token.value && !token.value.quoted) {
                 decorated.push(...decorateContext(token.value))
-            } else if (token.field.value === 'select' && token.value?.type === 'literal') {
+            } else if (token.field.value === 'select' && token.value && !token.value.quoted) {
                 decorated.push(...decorateSelector(token.value))
             } else if (token.value) {
                 decorated.push(token.value)
