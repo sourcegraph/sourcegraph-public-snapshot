@@ -69,6 +69,7 @@ function getCompletePadding(padding: LabelProps['backgroundPadding']): typeof DE
     return { ...DEFAULT_PADDING, ...padding }
 }
 
+/** Display a label - annotation block for pie chart arc */
 export function Label({
     anchorLineStroke = '#222',
     backgroundFill = '#eaeaea',

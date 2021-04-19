@@ -24,7 +24,9 @@
         stroke-width: 1;
 
         &--vertical {
+            // Hide line axis visually and hide from voice over
             stroke-width: 0;
+            display: none;
         }
     }
 
@@ -46,7 +48,9 @@
 
         &--vertical {
             line {
+                // Hide line ticks visually and hide them from voice over
                 stroke-width: 0;
+                display: none;
             }
         }
     }
@@ -62,6 +66,15 @@
             stroke: var(--border-color-2);
             stroke-width: 1;
         }
+    }
+
+    &__glyph-link:focus &__glyph {
+        stroke-width: 3;
+        // Unfortunately we can't use r styling right now as it's part of SVG 2 spec
+        // and for now we use js to track focus on link and change radius of line point with focus
+        // but when svg 2 will have broad browser support js implementation on focus should
+        // be removed and instead we should control the radius of points using the r attribute styling approach.
+        // r: 6;
     }
 
     &__glyph {
