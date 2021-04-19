@@ -19,7 +19,16 @@ export interface BaseToken {
 /**
  * All recognized tokens.
  */
-export type Token = Whitespace | OpeningParen | ClosingParen | Keyword | Comment | Literal | Pattern | Filter
+export type Token =
+    | Whitespace
+    | OpeningParen
+    | ClosingParen
+    | Keyword
+    | Comment
+    | Literal
+    | Pattern
+    | Filter
+    | Separator
 
 /**
  * A label associated with a pattern token. We don't use SearchPatternType because
@@ -62,6 +71,13 @@ export interface Filter extends BaseToken {
     field: Literal
     value: Literal | undefined
     negated: boolean
+}
+
+/**
+ * A filter separator, i.e., the `:` in `field:value`.
+ */
+export interface Separator extends BaseToken {
+    type: 'separator'
 }
 
 export enum KeywordKind {
