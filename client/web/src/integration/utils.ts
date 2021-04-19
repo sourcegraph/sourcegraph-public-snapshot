@@ -67,10 +67,14 @@ export const setColorScheme = async (
 
     // Check Monaco editor is styled correctly
     await page.waitForFunction(
-        expectedClassName => document.querySelector('.monaco-editor')?.classList.contains(expectedClassName),
+        expectedClassName =>
+            document.querySelector('#monaco-query-input .monaco-editor') &&
+            document.querySelector('#monaco-query-input .monaco-editor')?.classList.contains(expectedClassName),
         { timeout: 1000 },
         ColorSchemeToMonacoEditorClassName[scheme]
     )
+    // Wait a tiny bit for Monaco syntax highlighting to be applied
+    await page.waitForTimeout(500)
 }
 
 export interface PercySnapshotConfig {
@@ -91,6 +95,9 @@ export const percySnapshotWithVariants = async (
     if (!percyEnabled) {
         return
     }
+
+    // Wait for Monaco editor to finish rendering before taking screenshots
+    await page.waitForSelector('#monaco-query-input .monaco-editor', { visible: true })
 
     // Theme-light
     await setColorScheme(page, 'light', config?.waitForCodeHighlighting)
