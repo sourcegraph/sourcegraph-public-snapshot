@@ -437,6 +437,12 @@ add(
                     .
                 </div>
             ))}
+            <div className={classNames('alert', 'alert-info')}>
+                A simple info alert — check it out! It can also contain{' '}
+                <button className="btn btn-link" onClick={flow(preventDefault, action('alert link clicked'))}>
+                    buttons like this
+                </button>
+            </div>
         </>
     ),
     {

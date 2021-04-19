@@ -1,5 +1,4 @@
 @import 'bootstrap/scss/alert';
-@import 'bootstrap';
 
 .theme-light {
     @each $color, $value in map-merge($theme-colors, $theme-colors-light) {
