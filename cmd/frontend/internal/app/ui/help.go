@@ -39,7 +39,6 @@ func serveHelp(w http.ResponseWriter, r *http.Request) {
 	} else {
 		dest.Scheme = "https"
 		dest.Host = "docs.sourcegraph.com"
-
 	}
 
 	// Use temporary, not permanent, redirect, because the destination URL changes (depending on the

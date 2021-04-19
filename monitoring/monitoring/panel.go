@@ -93,7 +93,7 @@ func (p ObservablePanel) Interval(ms int) ObservablePanel {
 	return p
 }
 
-// With adds the provided option to be applied when building this panel.
+// With adds the provided options to be applied when building this panel.
 //
 // Before using this, check if the customization you want is already included in the
 // default `Panel()` or available as a function on `ObservablePanel`, such as
@@ -101,8 +101,8 @@ func (p ObservablePanel) Interval(ms int) ObservablePanel {
 //
 // Shared customizations are exported by `PanelOptions`, or you can write your option -
 // see `ObservablePanelOption` documentation for more details.
-func (p ObservablePanel) With(op ObservablePanelOption) ObservablePanel {
-	p.options = append(p.options, op)
+func (p ObservablePanel) With(ops ...ObservablePanelOption) ObservablePanel {
+	p.options = append(p.options, ops...)
 	return p
 }
 

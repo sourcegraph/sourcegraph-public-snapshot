@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -35,7 +35,7 @@ func TestBatchChangeResolver(t *testing.T) {
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(db, clock)
 
-	batchSpec := &batches.BatchSpec{
+	batchSpec := &btypes.BatchSpec{
 		RawSpec:        ct.TestRawBatchSpec,
 		UserID:         userID,
 		NamespaceOrgID: orgID,
@@ -44,7 +44,7 @@ func TestBatchChangeResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	batchChange := &batches.BatchChange{
+	batchChange := &btypes.BatchChange{
 		Name:             "my-unique-name",
 		Description:      "The batch change description",
 		NamespaceOrgID:   orgID,

@@ -24,6 +24,31 @@
     --input-group-addon-border-color: var(--color-bg-4);
 }
 
+.theme-light.theme-redesign,
+// Descendant selector is required for Storybook `addRedesignVariants` helper.
+.theme-light .theme-redesign {
+    --input-bg: #{$white};
+    --input-disabled-bg: #{$redesign-gray-04};
+    --input-border-color: #{$redesign-gray-04};
+    --input-color: #{$redesign-gray-09};
+    --input-placeholder-color: #{$redesign-gray-07};
+    --input-group-addon-color: #{$redesign-gray-08};
+    --input-group-addon-bg: #{$redesign-gray-03};
+    --input-group-addon-border-color: #{$redesign-gray-03};
+}
+
+.theme-dark.theme-redesign,
+.theme-dark .theme-redesign {
+    --input-bg: #{$redesign-gray-10};
+    --input-disabled-bg: #{$redesign-gray-08};
+    --input-border-color: #{$redesign-gray-08};
+    --input-color: #{$redesign-gray-04};
+    --input-placeholder-color: #{$redesign-gray-05};
+    --input-group-addon-color: #{$redesign-gray-01};
+    --input-group-addon-bg: #{$redesign-gray-08};
+    --input-group-addon-border-color: #{$redesign-gray-08};
+}
+
 // Prevent Firefox's default red outline for inputs
 :not(output):-moz-ui-invalid:not(:focus) {
     box-shadow: none;

@@ -13,19 +13,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // executePlan executes the given reconciler plan.
-func executePlan(ctx context.Context, gitserverClient GitserverClient, sourcer repos.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
+func executePlan(ctx context.Context, gitserverClient GitserverClient, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
 	e := &executor{
 		gitserverClient:   gitserverClient,
-		sourcer:           sources.NewSourcer(sourcer, tx),
+		sourcer:           sourcer,
 		noSleepBeforeSync: noSleepBeforeSync,
 		tx:                tx,
 		ch:                plan.Changeset,
@@ -38,14 +37,14 @@ func executePlan(ctx context.Context, gitserverClient GitserverClient, sourcer r
 
 type executor struct {
 	gitserverClient   GitserverClient
-	sourcer           *sources.Sourcer
+	sourcer           sources.Sourcer
 	noSleepBeforeSync bool
 	tx                *store.Store
-	ch                *batches.Changeset
-	spec              *batches.ChangesetSpec
+	ch                *btypes.Changeset
+	spec              *btypes.ChangesetSpec
 	delta             *ChangesetSpecDelta
 
-	css  *sources.BatchesSource
+	css  sources.ChangesetSource
 	repo *types.Repo
 }
 
@@ -68,40 +67,40 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 
 	for _, op := range plan.Ops.ExecutionOrder() {
 		switch op {
-		case batches.ReconcilerOperationSync:
+		case btypes.ReconcilerOperationSync:
 			err = e.syncChangeset(ctx)
 
-		case batches.ReconcilerOperationImport:
+		case btypes.ReconcilerOperationImport:
 			err = e.importChangeset(ctx)
 
-		case batches.ReconcilerOperationPush:
+		case btypes.ReconcilerOperationPush:
 			err = e.pushChangesetPatch(ctx)
 
-		case batches.ReconcilerOperationPublish:
+		case btypes.ReconcilerOperationPublish:
 			err = e.publishChangeset(ctx, false)
 
-		case batches.ReconcilerOperationPublishDraft:
+		case btypes.ReconcilerOperationPublishDraft:
 			err = e.publishChangeset(ctx, true)
 
-		case batches.ReconcilerOperationReopen:
+		case btypes.ReconcilerOperationReopen:
 			err = e.reopenChangeset(ctx)
 
-		case batches.ReconcilerOperationUpdate:
+		case btypes.ReconcilerOperationUpdate:
 			err = e.updateChangeset(ctx)
 
-		case batches.ReconcilerOperationUndraft:
+		case btypes.ReconcilerOperationUndraft:
 			err = e.undraftChangeset(ctx)
 
-		case batches.ReconcilerOperationClose:
+		case btypes.ReconcilerOperationClose:
 			err = e.closeChangeset(ctx)
 
-		case batches.ReconcilerOperationSleep:
+		case btypes.ReconcilerOperationSleep:
 			e.sleep()
 
-		case batches.ReconcilerOperationDetach:
+		case btypes.ReconcilerOperationDetach:
 			e.detachChangeset()
 
-		case batches.ReconcilerOperationArchive:
+		case btypes.ReconcilerOperationArchive:
 			e.archiveChangeset()
 
 		default:
@@ -157,7 +156,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 
 // publishChangeset creates the given changeset on its code host.
 func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err error) {
-	cs := &repos.Changeset{
+	cs := &sources.Changeset{
 		Title:     e.spec.Spec.Title,
 		Body:      e.spec.Spec.Body,
 		BaseRef:   e.spec.Spec.BaseRef,
@@ -175,7 +174,7 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 	var exists bool
 	if asDraft {
 		// If the changeset shall be published in draft mode, make sure the changeset source implements DraftChangesetSource.
-		draftCss, err := e.css.DraftChangesetSource()
+		draftCss, err := sources.ToDraftChangesetSource(e.css)
 		if err != nil {
 			return err
 		}
@@ -208,13 +207,13 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		}
 	}
 	// Set the changeset to published.
-	e.ch.PublicationState = batches.ChangesetPublicationStatePublished
+	e.ch.PublicationState = btypes.ChangesetPublicationStatePublished
 	return nil
 }
 
 func (e *executor) syncChangeset(ctx context.Context) error {
 	if err := e.loadChangeset(ctx); err != nil {
-		_, ok := err.(repos.ChangesetNotFoundError)
+		_, ok := err.(sources.ChangesetNotFoundError)
 		if !ok {
 			return err
 		}
@@ -235,20 +234,20 @@ func (e *executor) importChangeset(ctx context.Context) error {
 	}
 
 	// The changeset finished importing, so it is published now.
-	e.ch.PublicationState = batches.ChangesetPublicationStatePublished
+	e.ch.PublicationState = btypes.ChangesetPublicationStatePublished
 
 	return nil
 }
 
 func (e *executor) loadChangeset(ctx context.Context) error {
-	repoChangeset := &repos.Changeset{Repo: e.repo, Changeset: e.ch}
+	repoChangeset := &sources.Changeset{Repo: e.repo, Changeset: e.ch}
 	return e.css.LoadChangeset(ctx, repoChangeset)
 }
 
 // updateChangeset updates the given changeset's attribute on the code host
 // according to its ChangesetSpec and the delta previously computed.
 func (e *executor) updateChangeset(ctx context.Context) (err error) {
-	cs := repos.Changeset{
+	cs := sources.Changeset{
 		Title:     e.spec.Spec.Title,
 		Body:      e.spec.Spec.Body,
 		BaseRef:   e.spec.Spec.BaseRef,
@@ -272,7 +271,7 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 
 // reopenChangeset reopens the given changeset attribute on the code host.
 func (e *executor) reopenChangeset(ctx context.Context) (err error) {
-	cs := repos.Changeset{Repo: e.repo, Changeset: e.ch}
+	cs := sources.Changeset{Repo: e.repo, Changeset: e.ch}
 	if err := e.css.ReopenChangeset(ctx, &cs); err != nil {
 		return errors.Wrap(err, "updating changeset")
 	}
@@ -301,11 +300,11 @@ func (e *executor) archiveChangeset() {
 func (e *executor) closeChangeset(ctx context.Context) (err error) {
 	e.ch.Closing = false
 
-	if e.ch.ExternalState != batches.ChangesetExternalStateDraft && e.ch.ExternalState != batches.ChangesetExternalStateOpen {
+	if e.ch.ExternalState != btypes.ChangesetExternalStateDraft && e.ch.ExternalState != btypes.ChangesetExternalStateOpen {
 		return nil
 	}
 
-	cs := &repos.Changeset{Changeset: e.ch, Repo: e.repo}
+	cs := &sources.Changeset{Changeset: e.ch, Repo: e.repo}
 
 	if err := e.css.CloseChangeset(ctx, cs); err != nil {
 		return errors.Wrap(err, "closing changeset")
@@ -315,12 +314,12 @@ func (e *executor) closeChangeset(ctx context.Context) (err error) {
 
 // undraftChangeset marks the given changeset on its code host as ready for review.
 func (e *executor) undraftChangeset(ctx context.Context) (err error) {
-	draftCss, err := e.css.DraftChangesetSource()
+	draftCss, err := sources.ToDraftChangesetSource(e.css)
 	if err != nil {
 		return err
 	}
 
-	cs := &repos.Changeset{
+	cs := &sources.Changeset{
 		Title:     e.spec.Spec.Title,
 		Body:      e.spec.Spec.Body,
 		BaseRef:   e.spec.Spec.BaseRef,
@@ -342,10 +341,10 @@ func (e *executor) sleep() {
 	}
 }
 
-func loadChangesetSource(ctx context.Context, s *store.Store, sourcer *sources.Sourcer, ch *batches.Changeset, repo *types.Repo) (*sources.BatchesSource, error) {
+func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
 	// This is a changeset source using the external service config for authentication,
 	// based on our heuristic in the sources package.
-	css, err := sourcer.ForRepo(ctx, repo)
+	css, err := sourcer.ForRepo(ctx, s, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +356,7 @@ func loadChangesetSource(ctx context.Context, s *store.Store, sourcer *sources.S
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load owning batch change")
 		}
-		css, err = css.WithAuthenticatorForUser(ctx, batchChange.LastApplierID, repo)
+		css, err = sources.WithAuthenticatorForUser(ctx, s, css, batchChange.LastApplierID, repo)
 		if err != nil {
 			switch err {
 			case sources.ErrMissingCredentials:
@@ -378,7 +377,7 @@ func loadChangesetSource(ctx context.Context, s *store.Store, sourcer *sources.S
 		// a site-credential, but it's ok if it doesn't exist.
 		// TODO: This code-path will fail once the site credentials are the only
 		// fallback we want to use.
-		css, err = css.WithSiteAuthenticator(ctx, repo)
+		css, err = sources.WithSiteAuthenticator(ctx, s, css, repo)
 		if err != nil {
 			return nil, err
 		}
@@ -404,7 +403,7 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 	return nil
 }
 
-func buildCommitOpts(repo *types.Repo, spec *batches.ChangesetSpec, pushOpts *protocol.PushConfig) (opts protocol.CreateCommitFromPatchRequest, err error) {
+func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) (opts protocol.CreateCommitFromPatchRequest, err error) {
 	desc := spec.Spec
 
 	diff, err := desc.Diff()
@@ -458,10 +457,10 @@ func buildCommitOpts(repo *types.Repo, spec *batches.ChangesetSpec, pushOpts *pr
 }
 
 type getBatchChanger interface {
-	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*batches.BatchChange, error)
+	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error)
 }
 
-func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*batches.BatchChange, error) {
+func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*btypes.BatchChange, error) {
 	if id == 0 {
 		return nil, errors.New("changeset has no owning batch change")
 	}
@@ -480,7 +479,7 @@ type getNamespacer interface {
 	GetByID(ctx context.Context, orgID, userID int32) (*database.Namespace, error)
 }
 
-func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getNamespacer, cs *repos.Changeset) error {
+func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getNamespacer, cs *sources.Changeset) error {
 	batchChange, err := loadBatchChange(ctx, tx, cs.OwnedByBatchChangeID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load batch change")
@@ -511,7 +510,7 @@ var internalClient interface {
 	ExternalURL(context.Context) (string, error)
 } = api.InternalClient
 
-func batchChangeURL(ctx context.Context, ns *database.Namespace, c *batches.BatchChange) (string, error) {
+func batchChangeURL(ctx context.Context, ns *database.Namespace, c *btypes.BatchChange) (string, error) {
 	// To build the absolute URL, we need to know where Sourcegraph is!
 	extStr, err := internalClient.ExternalURL(ctx)
 	if err != nil {

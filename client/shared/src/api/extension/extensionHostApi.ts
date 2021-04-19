@@ -107,6 +107,10 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
             state.versionContext = context
             state.versionContextChanges.next(context)
         },
+        setSearchContext: context => {
+            state.searchContext = context
+            state.searchContextChanges.next(context)
+        },
 
         // Search
         transformSearchQuery: query =>

@@ -34,9 +34,9 @@ func TestResolver_InsightSeries(t *testing.T) {
 		resolver := newWithClock(timescale, postgres, clock)
 
 		// Create a mock store, delegating any un-mocked methods to the DB store.
-		dbStore := resolver.store
+		dbStore := resolver.insightsStore
 		mockStore := store.NewMockInterfaceFrom(dbStore)
-		resolver.store = mockStore
+		resolver.insightsStore = mockStore
 
 		// Create the insights connection resolver and query series.
 		conn, err := resolver.Insights(ctx)

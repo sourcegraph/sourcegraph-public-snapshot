@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
 func TestNextSync(t *testing.T) {
@@ -15,12 +15,12 @@ func TestNextSync(t *testing.T) {
 	clock := func() time.Time { return time.Date(2020, 01, 01, 01, 01, 01, 01, time.UTC) }
 	tests := []struct {
 		name string
-		h    *batches.ChangesetSyncData
+		h    *btypes.ChangesetSyncData
 		want time.Time
 	}{
 		{
 			name: "No time passed",
-			h: &batches.ChangesetSyncData{
+			h: &btypes.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock(),
 			},
@@ -28,7 +28,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Linear backoff",
-			h: &batches.ChangesetSyncData{
+			h: &btypes.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-1 * time.Hour),
 			},
@@ -36,7 +36,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Use max of ExternalUpdateAt and LatestEvent",
-			h: &batches.ChangesetSyncData{
+			h: &btypes.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-2 * time.Hour),
 				LatestEvent:       clock().Add(-1 * time.Hour),
@@ -45,7 +45,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Diff max is capped",
-			h: &batches.ChangesetSyncData{
+			h: &btypes.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-2 * maxSyncDelay),
 			},
@@ -53,7 +53,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Diff min is capped",
-			h: &batches.ChangesetSyncData{
+			h: &btypes.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-1 * minSyncDelay / 2),
 			},
@@ -61,7 +61,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Event arrives after sync",
-			h: &batches.ChangesetSyncData{
+			h: &btypes.ChangesetSyncData{
 				UpdatedAt:         clock(),
 				ExternalUpdatedAt: clock().Add(-1 * maxSyncDelay / 2),
 				LatestEvent:       clock().Add(10 * time.Minute),
@@ -70,7 +70,7 @@ func TestNextSync(t *testing.T) {
 		},
 		{
 			name: "Never synced",
-			h:    &batches.ChangesetSyncData{},
+			h:    &btypes.ChangesetSyncData{},
 			want: clock(),
 		},
 	}

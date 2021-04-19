@@ -1413,6 +1413,114 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
+## frontend: mean_successful_sentinel_duration_5m
+
+<p class="subtitle">mean successful sentinel search duration over 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> frontend: 5s+ mean successful sentinel search duration over 5m for 10m0s
+- <span class="badge badge-critical">critical</span> frontend: 8s+ mean successful sentinel search duration over 5m for 15m0s
+
+**Possible solutions**
+
+- Look at the breakdown by query to determine if a specific query type is being affected
+- Check for high CPU usage on zoekt-webserver
+- Check Honeycomb for unusual activity
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_mean_successful_sentinel_duration_5m",
+  "critical_frontend_mean_successful_sentinel_duration_5m"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+## frontend: mean_sentinel_stream_latency_5m
+
+<p class="subtitle">mean sentinel stream latency over 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> frontend: 2s+ mean sentinel stream latency over 5m for 5m0s
+- <span class="badge badge-critical">critical</span> frontend: 3s+ mean sentinel stream latency over 5m for 10m0s
+
+**Possible solutions**
+
+- Look at the breakdown by query to determine if a specific query type is being affected
+- Check for high CPU usage on zoekt-webserver
+- Check Honeycomb for unusual activity
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_mean_sentinel_stream_latency_5m",
+  "critical_frontend_mean_sentinel_stream_latency_5m"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+## frontend: 90th_percentile_successful_sentinel_duration_5m
+
+<p class="subtitle">90th percentile successful sentinel search duration over 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> frontend: 5s+ 90th percentile successful sentinel search duration over 5m for 10m0s
+- <span class="badge badge-critical">critical</span> frontend: 10s+ 90th percentile successful sentinel search duration over 5m for 15m0s
+
+**Possible solutions**
+
+- Look at the breakdown by query to determine if a specific query type is being affected
+- Check for high CPU usage on zoekt-webserver
+- Check Honeycomb for unusual activity
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_90th_percentile_successful_sentinel_duration_5m",
+  "critical_frontend_90th_percentile_successful_sentinel_duration_5m"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+## frontend: 90th_percentile_sentinel_stream_latency_5m
+
+<p class="subtitle">90th percentile sentinel stream latency over 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> frontend: 4s+ 90th percentile sentinel stream latency over 5m for 5m0s
+- <span class="badge badge-critical">critical</span> frontend: 6s+ 90th percentile sentinel stream latency over 5m for 10m0s
+
+**Possible solutions**
+
+- Look at the breakdown by query to determine if a specific query type is being affected
+- Check for high CPU usage on zoekt-webserver
+- Check Honeycomb for unusual activity
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_90th_percentile_sentinel_stream_latency_5m",
+  "critical_frontend_90th_percentile_sentinel_stream_latency_5m"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
 ## gitserver: disk_space_remaining
 
 <p class="subtitle">disk space remaining by instance</p>

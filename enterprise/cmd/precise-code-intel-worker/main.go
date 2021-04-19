@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws/awserr"
+	smithyhttp "github.com/aws/smithy-go/transport/http"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -199,15 +199,6 @@ func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) e
 }
 
 func isRequestError(err error) bool {
-	for err != nil {
-		if e, ok := err.(awserr.Error); ok {
-			if e.Code() == "RequestError" {
-				return true
-			}
-		}
-
-		err = errors.Unwrap(err)
-	}
-
-	return false
+	var rse *smithyhttp.RequestSendError
+	return errors.As(err, &rse)
 }

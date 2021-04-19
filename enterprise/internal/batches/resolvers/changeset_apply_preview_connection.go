@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -23,7 +23,7 @@ type changesetApplyPreviewConnectionResolver struct {
 	store *store.Store
 
 	opts        store.GetRewirerMappingsOpts
-	action      *batches.ReconcilerOperation
+	action      *btypes.ReconcilerOperation
 	batchSpecID int64
 
 	once     sync.Once
@@ -172,7 +172,7 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 	stats := &changesetApplyPreviewConnectionStatsResolver{}
 	for _, mapping := range mappings.All {
 		res := mappings.Resolver(mapping)
-		var ops []batches.ReconcilerOperation
+		var ops []string
 		if _, ok := res.ToHiddenChangesetApplyPreview(); ok {
 			// Hidden ones never perform operations.
 			continue
@@ -200,29 +200,29 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 		}
 		for _, op := range ops {
 			switch op {
-			case batches.ReconcilerOperationPush:
+			case string(btypes.ReconcilerOperationPush):
 				stats.push++
-			case batches.ReconcilerOperationUpdate:
+			case string(btypes.ReconcilerOperationUpdate):
 				stats.update++
-			case batches.ReconcilerOperationUndraft:
+			case string(btypes.ReconcilerOperationUndraft):
 				stats.undraft++
-			case batches.ReconcilerOperationPublish:
+			case string(btypes.ReconcilerOperationPublish):
 				stats.publish++
-			case batches.ReconcilerOperationPublishDraft:
+			case string(btypes.ReconcilerOperationPublishDraft):
 				stats.publishDraft++
-			case batches.ReconcilerOperationSync:
+			case string(btypes.ReconcilerOperationSync):
 				stats.sync++
-			case batches.ReconcilerOperationImport:
+			case string(btypes.ReconcilerOperationImport):
 				stats._import++
-			case batches.ReconcilerOperationClose:
+			case string(btypes.ReconcilerOperationClose):
 				stats.close++
-			case batches.ReconcilerOperationReopen:
+			case string(btypes.ReconcilerOperationReopen):
 				stats.reopen++
-			case batches.ReconcilerOperationSleep:
+			case string(btypes.ReconcilerOperationSleep):
 				stats.sleep++
-			case batches.ReconcilerOperationDetach:
+			case string(btypes.ReconcilerOperationDetach):
 				stats.detach++
-			case batches.ReconcilerOperationArchive:
+			case string(btypes.ReconcilerOperationArchive):
 				stats.archive++
 			}
 		}
@@ -240,17 +240,17 @@ func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (
 	return r.mappings, r.err
 }
 
-// rewirerMappingsFacade wraps store.RewirerMappings to provide memoised pagination
+// rewirerMappingsFacade wraps btypes.RewirerMappings to provide memoised pagination
 // and filtering functionality.
 type rewirerMappingsFacade struct {
-	All store.RewirerMappings
+	All btypes.RewirerMappings
 
 	// Inputs from outside the resolver that we need to build other resolvers.
 	batchSpecID int64
 	store       *store.Store
 
 	// This field is set when ReconcileBatchChange is called.
-	batchChange *batches.BatchChange
+	batchChange *btypes.BatchChange
 
 	// Cache of filtered pages.
 	pagesMu sync.Mutex
@@ -258,7 +258,7 @@ type rewirerMappingsFacade struct {
 
 	// Cache of rewirer mapping resolvers.
 	resolversMu sync.Mutex
-	resolvers   map[*store.RewirerMapping]graphqlbackend.ChangesetApplyPreviewResolver
+	resolvers   map[*btypes.RewirerMapping]graphqlbackend.ChangesetApplyPreviewResolver
 }
 
 // newRewirerMappingsFacade creates a new rewirer mappings object, which
@@ -268,7 +268,7 @@ func newRewirerMappingsFacade(s *store.Store, batchSpecID int64) *rewirerMapping
 		batchSpecID: batchSpecID,
 		store:       s,
 		pages:       make(map[rewirerMappingPageOpts]*rewirerMappingPage),
-		resolvers:   make(map[*store.RewirerMapping]graphqlbackend.ChangesetApplyPreviewResolver),
+		resolvers:   make(map[*btypes.RewirerMapping]graphqlbackend.ChangesetApplyPreviewResolver),
 	}
 }
 
@@ -289,23 +289,17 @@ func (rmf *rewirerMappingsFacade) compute(ctx context.Context, opts store.GetRew
 		TextSearch:    opts.TextSearch,
 		CurrentState:  opts.CurrentState,
 	}
-	if rmf.All, err = rmf.store.GetRewirerMappings(ctx, opts); err != nil {
-		return err
-	}
-	if err := rmf.All.Hydrate(ctx, rmf.store); err != nil {
-		return err
-	}
-
-	return nil
+	rmf.All, err = rmf.store.GetRewirerMappings(ctx, opts)
+	return err
 }
 
 type rewirerMappingPageOpts struct {
 	*database.LimitOffset
-	Op *batches.ReconcilerOperation
+	Op *btypes.ReconcilerOperation
 }
 
 type rewirerMappingPage struct {
-	Mappings store.RewirerMappings
+	Mappings btypes.RewirerMappings
 
 	// TotalCount represents the total count of filtered results, but not
 	// necessarily the full set of results.
@@ -321,9 +315,9 @@ func (rmf *rewirerMappingsFacade) Page(ctx context.Context, opts rewirerMappingP
 		return page, nil
 	}
 
-	var filtered store.RewirerMappings
+	var filtered btypes.RewirerMappings
 	if opts.Op != nil {
-		filtered = store.RewirerMappings{}
+		filtered = btypes.RewirerMappings{}
 		for _, mapping := range rmf.All {
 			res, ok := rmf.Resolver(mapping).ToVisibleChangesetApplyPreview()
 			if !ok {
@@ -336,7 +330,7 @@ func (rmf *rewirerMappingsFacade) Page(ctx context.Context, opts rewirerMappingP
 			}
 
 			for _, op := range ops {
-				if op == *opts.Op {
+				if op == string(*opts.Op) {
 					filtered = append(filtered, mapping)
 					break
 				}
@@ -346,12 +340,12 @@ func (rmf *rewirerMappingsFacade) Page(ctx context.Context, opts rewirerMappingP
 		filtered = rmf.All
 	}
 
-	var page store.RewirerMappings
+	var page btypes.RewirerMappings
 	if lo := opts.LimitOffset; lo != nil {
 		if limit, offset := lo.Limit, lo.Offset; limit < 0 || offset < 0 || offset > len(filtered) {
 			// The limit and/or offset are outside the possible bounds, so we
 			// just need to make the slice not nil.
-			page = store.RewirerMappings{}
+			page = btypes.RewirerMappings{}
 		} else if limit == 0 {
 			page = filtered[offset:]
 		} else {
@@ -372,7 +366,7 @@ func (rmf *rewirerMappingsFacade) Page(ctx context.Context, opts rewirerMappingP
 	return rmf.pages[opts], nil
 }
 
-func (rmf *rewirerMappingsFacade) Resolver(mapping *store.RewirerMapping) graphqlbackend.ChangesetApplyPreviewResolver {
+func (rmf *rewirerMappingsFacade) Resolver(mapping *btypes.RewirerMapping) graphqlbackend.ChangesetApplyPreviewResolver {
 	rmf.resolversMu.Lock()
 	defer rmf.resolversMu.Unlock()
 
@@ -391,7 +385,7 @@ func (rmf *rewirerMappingsFacade) Resolver(mapping *store.RewirerMapping) graphq
 	return rmf.resolvers[mapping]
 }
 
-func (rmf *rewirerMappingsFacade) ResolverWithNextSync(mapping *store.RewirerMapping, nextSync time.Time) graphqlbackend.ChangesetApplyPreviewResolver {
+func (rmf *rewirerMappingsFacade) ResolverWithNextSync(mapping *btypes.RewirerMapping, nextSync time.Time) graphqlbackend.ChangesetApplyPreviewResolver {
 	// As the apply target resolvers don't cache the preloaded next sync value
 	// when creating the changeset resolver, we can shallow copy and update the
 	// field rather than having to build a whole new resolver.

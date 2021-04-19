@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
@@ -36,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
 
 type InjectedHTML struct {
@@ -62,9 +62,10 @@ type Common struct {
 	Injected InjectedHTML
 	Metadata *Metadata
 	Context  jscontext.JSContext
-	AssetURL string
 	Title    string
 	Error    *pageError
+
+	Manifest *assets.WebpackManifest
 
 	WebpackDevServer bool // whether the Webpack dev server is running (WEBPACK_DEV_SERVER env var)
 
@@ -119,6 +120,11 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		return mockNewCommon(w, r, title, serveError)
 	}
 
+	manifest, err := assets.LoadWebpackManifest()
+	if err != nil {
+		return nil, errors.Wrap(err, "loading webpack manifest")
+	}
+
 	common := &Common{
 		Injected: InjectedHTML{
 			HeadTop:    template.HTML(conf.Get().HtmlHeadTop),
@@ -127,8 +133,8 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			BodyBottom: template.HTML(conf.Get().HtmlBodyBottom),
 		},
 		Context:  jscontext.NewJSContextFromRequest(r),
-		AssetURL: assetsutil.URL("").String(),
 		Title:    title,
+		Manifest: manifest,
 		Metadata: &Metadata{
 			Title:       globals.Branding().BrandName,
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",

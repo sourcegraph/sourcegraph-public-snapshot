@@ -2,14 +2,14 @@ import React from 'react'
 
 export interface BatchChangeChangesetsHeaderProps {
     enableSelect?: boolean
-    selected?: boolean
+    allSelected?: boolean
     toggleSelectAll?: () => void
     disabled?: boolean
 }
 
 export const BatchChangeChangesetsHeader: React.FunctionComponent<BatchChangeChangesetsHeaderProps> = ({
     enableSelect,
-    selected,
+    allSelected,
     toggleSelectAll,
     disabled,
 }) => (
@@ -19,7 +19,7 @@ export const BatchChangeChangesetsHeader: React.FunctionComponent<BatchChangeCha
             <input
                 type="checkbox"
                 className="btn ml-2"
-                checked={selected}
+                checked={allSelected}
                 onChange={toggleSelectAll}
                 disabled={!!disabled}
                 data-tooltip="Click to select all changesets"

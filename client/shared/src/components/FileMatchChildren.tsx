@@ -78,7 +78,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
 
     const { result, isLightTheme, fetchHighlightedFileLineRanges, eventLogger, onFirstResultLoad } = props
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (isFirst, startLine, endLine) => {
+        (isFirst, startLine, endLine, isLightTheme) => {
             const startTime = Date.now()
             return fetchHighlightedFileLineRanges(
                 {
@@ -111,15 +111,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 })
             )
         },
-        [
-            result,
-            isLightTheme,
-            fetchHighlightedFileLineRanges,
-            grouped,
-            optimizeHighlighting,
-            eventLogger,
-            onFirstResultLoad,
-        ]
+        [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, eventLogger, onFirstResultLoad]
     )
 
     if (NO_SEARCH_HIGHLIGHTING) {

@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func serveGraphQL(schema *graphql.Schema, rlw *graphqlbackend.RateLimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
+func serveGraphQL(schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
 	return func(w http.ResponseWriter, r *http.Request) (err error) {
 		if r.Method != "POST" {
 			// The URL router should not have routed to this handler if method is not POST, but just in
@@ -64,6 +64,10 @@ func serveGraphQL(schema *graphql.Schema, rlw *graphqlbackend.RateLimitWatcher, 
 			requestSource: string(requestSource),
 		}
 
+		defer func() {
+			traceGraphQL(traceData)
+		}()
+
 		uid, isIP, anonymous := getUID(r)
 		traceData.uid = uid
 		traceData.anonymous = anonymous
@@ -84,13 +88,23 @@ func serveGraphQL(schema *graphql.Schema, rlw *graphqlbackend.RateLimitWatcher, 
 			traceData.cost = cost
 
 			if rl, enabled := rlw.Get(); enabled && cost != nil {
-				limited, result, err := rl.RateLimit(uid, isIP, cost.FieldCount)
+				limited, result, err := rl.RateLimit(uid, cost.FieldCount, graphqlbackend.LimiterArgs{
+					IsIP:          isIP,
+					Anonymous:     anonymous,
+					RequestName:   requestName,
+					RequestSource: requestSource,
+				})
 				if err != nil {
 					log15.Error("checking GraphQL rate limit", "error", err)
 					traceData.limitError = err
 				} else {
 					traceData.limited = limited
 					traceData.limitResult = result
+					if limited {
+						w.Header().Set("Retry-After", strconv.Itoa(int(result.RetryAfter.Seconds())))
+						w.WriteHeader(http.StatusTooManyRequests)
+						return nil
+					}
 				}
 			}
 		}
@@ -98,7 +112,6 @@ func serveGraphQL(schema *graphql.Schema, rlw *graphqlbackend.RateLimitWatcher, 
 		traceData.execStart = time.Now()
 		response := schema.Exec(r.Context(), params.Query, params.OperationName, params.Variables)
 		traceData.queryErrors = response.Errors
-		traceGraphQL(traceData)
 		responseJSON, err := json.Marshal(response)
 		if err != nil {
 			return err

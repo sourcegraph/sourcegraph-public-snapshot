@@ -3,14 +3,6 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -euxo pipefail
 
-# HACK: For whatever reason, we hard-code our
-# own, different github token in our pipeline's env settings.
-# This causes authentication requests to fail. Setting this
-# here is a workaround until we can dedicate time to
-# figure out why this is the case.
-# TODO: @sourcegraph/distribution
-export GITHUB_TOKEN="${GITHUB_TOKEN_COPY:-DEPLOY_SOURCEGRAPH_GITHUB_TOKEN}"
-
 COMMIT="${BUILDKITE_COMMIT}"
 
 API_SLUG="repos/sourcegraph/sourcegraph/commits"

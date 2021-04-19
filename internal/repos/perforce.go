@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -89,8 +90,8 @@ func (s PerforceSource) makeRepo(depot string) *types.Repo {
 				CloneURL: cloneURL,
 			},
 		},
-		Metadata: map[string]interface{}{
-			"depot": depot,
+		Metadata: &perforce.Depot{
+			Depot: depot,
 		},
 	}
 }
