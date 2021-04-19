@@ -63,7 +63,7 @@ Site admins will fall back to using the Sourcegraph token for the code host if t
 
 Non-admin users are unable to apply batch changes without configuring access tokens.
 
-**NOTE** that this fallback has been deprecated in Sourcegraph 3.27 and is due to be removed in Sourcegraph 3.29.
+> WARNING: This fallback has been deprecated in Sourcegraph 3.27 and is due to be removed in Sourcegraph 3.29.
 
 ## Repository permissions for Batch Changes
 
