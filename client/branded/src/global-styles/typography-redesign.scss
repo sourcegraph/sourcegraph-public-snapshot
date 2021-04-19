@@ -60,7 +60,8 @@
     }
 
     // Input / Small
-    .form-control small {
+    .form-control-sm,
+    %form-control-sm {
         font-size: (11/14) + em;
     }
 

@@ -65,4 +65,8 @@
         // Use placeholder-selector to extend only styles defined for `.theme-redesign label`.
         @extend %label-base;
     }
+
+    .btn.btn-sm {
+        @extend %form-control-sm;
+    }
 }
