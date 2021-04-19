@@ -83,6 +83,8 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
                     showAnchorLine={false}
                     title={title}
                     subtitleDy={0}
+                    titleFontWeight={200}
+                    subtitleFontWeight={200}
                     titleProps={TITLE_PROPS}
                     subtitleProps={SUBTITLE_PROPS}
                     subtitle={subtitle}
