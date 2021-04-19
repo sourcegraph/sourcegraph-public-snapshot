@@ -371,7 +371,7 @@ func (r *RepoName) ToRepo() *Repo {
 }
 
 // RepoNames is an utility type with convenience methods for operating on lists of repo names
-type RepoNames []*RepoName
+type RepoNames []RepoName
 
 func (rs RepoNames) Len() int           { return len(rs) }
 func (rs RepoNames) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
@@ -1527,6 +1527,6 @@ type SearchContext struct {
 // converted when needed. We could use search.RepositoryRevisions directly instead, but it
 // introduces an import cycle with `internal/vcs/git` package when used in `internal/database/search_contexts.go`.
 type SearchContextRepositoryRevisions struct {
-	Repo      *RepoName
+	Repo      RepoName
 	Revisions []string
 }

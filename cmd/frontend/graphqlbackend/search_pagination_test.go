@@ -44,10 +44,10 @@ func TestSearchPagination_unmarshalSearchCursor(t *testing.T) {
 
 func TestSearchPagination_sliceSearchResults(t *testing.T) {
 	db := new(dbtesting.MockDB)
-	repoName := func(name string) *types.RepoName {
+	repoName := func(name string) types.RepoName {
 		// Backcompat extract ID from name.
 		id := name[len(name)-1] - '0'
-		return &types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
+		return types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
 	result := mkFileMatch
 	format := func(r slicedSearchResults) string {
@@ -254,12 +254,12 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		}
 		return revs
 	}
-	repoName := func(name string) *types.RepoName {
+	repoName := func(name string) types.RepoName {
 		// Backcompat extract ID from name.
 		id := name[len(name)-1] - '0'
-		return &types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
+		return types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
-	result := func(db dbutil.DB, repo *types.RepoName, path, rev string) *FileMatchResolver {
+	result := func(db dbutil.DB, repo types.RepoName, path, rev string) *FileMatchResolver {
 		fm := mkFileMatch(db, repo, path)
 		fm.InputRev = &rev
 		return fm
@@ -467,10 +467,10 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 		}
 		return revs
 	}
-	repoName := func(name string) *types.RepoName {
+	repoName := func(name string) types.RepoName {
 		// Backcompat extract ID from name.
 		id := name[len(name)-1] - '0'
-		return &types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
+		return types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
 	result := mkFileMatch
 	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
@@ -587,10 +587,10 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 		}
 		return revs
 	}
-	repoName := func(name string) *types.RepoName {
+	repoName := func(name string) types.RepoName {
 		// Backcompat extract ID from name.
 		id := name[len(name)-1] - 'a' + 1
-		return &types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
+		return types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
 	result := mkFileMatch
 	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
@@ -752,8 +752,8 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 	}
 }
 
-func reposMap(repos ...*types.RepoName) map[api.RepoID]*types.RepoName {
-	m := make(map[api.RepoID]*types.RepoName, len(repos))
+func reposMap(repos ...types.RepoName) map[api.RepoID]types.RepoName {
+	m := make(map[api.RepoID]types.RepoName, len(repos))
 	for _, r := range repos {
 		m[r.ID] = r
 	}

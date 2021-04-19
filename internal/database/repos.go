@@ -541,7 +541,7 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 }
 
 // ListRepoNames returns a list of repositories names and ids.
-func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (results []*types.RepoName, err error) {
+func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (results []types.RepoName, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListRepoNames", "")
 	defer func() {
 		tr.SetError(err)
@@ -557,7 +557,7 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
 
-	var repos []*types.RepoName
+	var repos []types.RepoName
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.RepoName
 		err := rows.Scan(&r.ID, &r.Name)
@@ -565,7 +565,7 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 			return err
 		}
 
-		repos = append(repos, &r)
+		repos = append(repos, r)
 		return nil
 	})
 	if err != nil {
@@ -826,7 +826,7 @@ type ListDefaultReposOptions struct {
 
 // ListDefaultRepos returns a list of default repos. Default repos are a union of
 // repos in our default_repos table and repos owned by users.
-func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposOptions) (results []*types.RepoName, err error) {
+func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposOptions) (results []types.RepoName, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListDefaultRepos", "")
 	defer func() {
 		tr.SetError(err)
@@ -881,7 +881,7 @@ WHERE EXISTS(SELECT 1 FROM user_public_repos WHERE repo_id = repo.id)
 		if err := rows.Scan(&r.ID, &r.Name); err != nil {
 			return nil, errors.Wrap(err, "scanning row from default_repos table")
 		}
-		results = append(results, &r)
+		results = append(results, r)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, errors.Wrap(err, "scanning rows for default repos")

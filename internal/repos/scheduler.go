@@ -301,7 +301,7 @@ func (s *updateScheduler) SetCloned(names []string) {
 }
 
 // EnsureScheduled ensures that all repos in repos exist in the scheduler.
-func (s *updateScheduler) EnsureScheduled(repos []*types.RepoName) {
+func (s *updateScheduler) EnsureScheduled(repos []types.RepoName) {
 	s.schedule.insertNew(repos)
 }
 
@@ -705,7 +705,7 @@ func (s *schedule) setCloned(names []string) {
 }
 
 // insertNew will insert repos only if they are not known to the scheduler
-func (s *schedule) insertNew(repos []*types.RepoName) {
+func (s *schedule) insertNew(repos []types.RepoName) {
 	required := make(map[string]struct{}, len(repos))
 	for _, n := range repos {
 		required[strings.ToLower(string(n.Name))] = struct{}{}
