@@ -365,7 +365,7 @@ func correlateItemEdge(state *wrappedState, id int, edge Edge) error {
 		for _, inV := range edge.InVs {
 			if _, ok := state.ReferenceData[inV]; ok {
 				// Link reference data identifiers together
-				state.LinkedReferenceResults.Link(edge.OutV, inV)
+				state.LinkedReferenceResults[edge.OutV] = append(state.LinkedReferenceResults[edge.OutV], inV)
 			} else {
 				if _, ok = state.RangeData[inV]; !ok {
 					return malformedDump(id, inV, "range")
