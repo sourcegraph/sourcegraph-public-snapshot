@@ -2,11 +2,13 @@ package resolvers
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -15,8 +17,9 @@ var _ graphqlbackend.InsightsResolver = &Resolver{}
 
 // Resolver is the GraphQL resolver of all things related to Insights.
 type Resolver struct {
-	store        store.Interface
-	settingStore *database.SettingStore
+	insightsStore   store.Interface
+	workerBaseStore *basestore.Store
+	settingStore    *database.SettingStore
 }
 
 // New returns a new Resolver whose store uses the given Timescale and Postgres DBs.
@@ -28,14 +31,16 @@ func New(timescale, postgres dbutil.DB) graphqlbackend.InsightsResolver {
 // clock for timestamps.
 func newWithClock(timescale, postgres dbutil.DB, clock func() time.Time) *Resolver {
 	return &Resolver{
-		store:        store.NewWithClock(timescale, clock),
-		settingStore: database.Settings(postgres),
+		insightsStore:   store.NewWithClock(timescale, clock),
+		workerBaseStore: basestore.NewWithDB(postgres, sql.TxOptions{}),
+		settingStore:    database.Settings(postgres),
 	}
 }
 
 func (r *Resolver) Insights(ctx context.Context) (graphqlbackend.InsightConnectionResolver, error) {
 	return &insightConnectionResolver{
-		store:        r.store,
-		settingStore: r.settingStore,
+		insightsStore:   r.insightsStore,
+		workerBaseStore: r.workerBaseStore,
+		settingStore:    r.settingStore,
 	}, nil
 }

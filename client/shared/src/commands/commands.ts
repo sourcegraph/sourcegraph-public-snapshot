@@ -1,5 +1,6 @@
+import { Remote } from 'comlink'
 import { concat, from, of, Subscription, Unsubscribable } from 'rxjs'
-import { first, switchMap } from 'rxjs/operators'
+import { first } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
 import { Position } from '@sourcegraph/extension-api-types'
@@ -7,9 +8,9 @@ import { Position } from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { CommandEntry } from '../api/client/mainthread-api'
 import { KeyPath, SettingsEdit, updateSettings } from '../api/client/services/settings'
+import { FlatExtensionHostAPI } from '../api/contract'
 import { ActionContributionClientCommandUpdateConfiguration, Evaluated } from '../api/protocol'
 import { PlatformContext } from '../platform/context'
-import { extensionsController } from '../util/searchTestHelpers'
 
 /**
  * Registers the builtin client commands that are required for Sourcegraph extensions. See
@@ -18,6 +19,7 @@ import { extensionsController } from '../util/searchTestHelpers'
  */
 export function registerBuiltinClientCommands(
     context: Pick<PlatformContext, 'requestGraphQL' | 'telemetryService' | 'settings' | 'updateSettings'>,
+    extensionHost: Remote<FlatExtensionHostAPI>,
     registerCommand: (entryToRegister: CommandEntry) => sourcegraph.Unsubscribable
 ): Unsubscribable {
     const subscription = new Subscription()
@@ -58,12 +60,7 @@ export function registerBuiltinClientCommands(
             command: 'executeLocationProvider',
             run: (id: string, uri: string, position: Position) =>
                 concat(
-                    // TODO(tj): extension host location provider
-                    from(extensionsController.extHostAPI).pipe(
-                        switchMap(extensionHostAPI =>
-                            wrapRemoteObservable(extensionHostAPI.getLocations(id, { textDocument: { uri }, position }))
-                        )
-                    ),
+                    wrapRemoteObservable(extensionHost.getLocations(id, { textDocument: { uri }, position })),
                     // Concat with [] to avoid undefined promise value when the getLocation observable completes
                     // without emitting. See https://github.com/ReactiveX/rxjs/issues/1736.
                     of([])

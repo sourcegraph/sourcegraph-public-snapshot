@@ -3,6 +3,7 @@ package background
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -18,6 +19,7 @@ func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factor
 		newWorker(ctx, batchesStore, gitserver.DefaultClient, sourcer, metrics),
 		newWorkerResetter(batchesStore, metrics),
 		newSpecExpireWorker(ctx, batchesStore),
+		scheduler.NewScheduler(ctx, batchesStore),
 	}
 	return routines
 }

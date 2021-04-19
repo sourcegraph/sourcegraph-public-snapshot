@@ -3,6 +3,7 @@ package rewirer
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -55,7 +56,7 @@ func TestRewirer_Rewire(t *testing.T) {
 			}},
 			wantChangesets: []ct.ChangesetAssertions{
 				// No match, should be re-enqueued and detached from the batch change.
-				assertResetQueued(ct.ChangesetAssertions{
+				assertResetReconcilerState(ct.ChangesetAssertions{
 					Repo:       testRepoID,
 					DetachFrom: []int64{testBatchChangeID},
 				}),
@@ -77,7 +78,7 @@ func TestRewirer_Rewire(t *testing.T) {
 			}},
 			wantChangesets: []ct.ChangesetAssertions{
 				// No match, should be re-enqueued and detached from the batch change.
-				assertResetQueued(ct.ChangesetAssertions{
+				assertResetReconcilerState(ct.ChangesetAssertions{
 					PublicationState:   btypes.ChangesetPublicationStateUnpublished,
 					OwnedByBatchChange: testBatchChangeID,
 					CurrentSpec:        testChangesetSpecID,
@@ -105,7 +106,7 @@ func TestRewirer_Rewire(t *testing.T) {
 			}},
 			wantChangesets: []ct.ChangesetAssertions{
 				// No match, should be re-enqueued and detached from the batch change.
-				assertResetQueued(ct.ChangesetAssertions{
+				assertResetReconcilerState(ct.ChangesetAssertions{
 					PublicationState:   btypes.ChangesetPublicationStatePublished,
 					ExternalState:      btypes.ChangesetExternalStateOpen,
 					OwnedByBatchChange: testBatchChangeID,
@@ -140,7 +141,7 @@ func TestRewirer_Rewire(t *testing.T) {
 			}},
 			wantChangesets: []ct.ChangesetAssertions{
 				// No match, should be re-enqueued and detached from the batch change.
-				assertResetQueued(ct.ChangesetAssertions{
+				assertResetReconcilerState(ct.ChangesetAssertions{
 					PublicationState:   btypes.ChangesetPublicationStatePublished,
 					ExternalState:      btypes.ChangesetExternalStateMerged,
 					OwnedByBatchChange: testBatchChangeID,
@@ -175,7 +176,7 @@ func TestRewirer_Rewire(t *testing.T) {
 			}},
 			wantChangesets: []ct.ChangesetAssertions{
 				// No match, should be re-enqueued and detached from the batch change.
-				assertResetQueued(ct.ChangesetAssertions{
+				assertResetReconcilerState(ct.ChangesetAssertions{
 					PublicationState:   btypes.ChangesetPublicationStatePublished,
 					ExternalState:      btypes.ChangesetExternalStateClosed,
 					OwnedByBatchChange: testBatchChangeID,
@@ -217,7 +218,7 @@ func TestRewirer_Rewire(t *testing.T) {
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{assertResetQueued(ct.ChangesetAssertions{
+			wantChangesets: []ct.ChangesetAssertions{assertResetReconcilerState(ct.ChangesetAssertions{
 				Repo:       testRepoID,
 				ExternalID: "123",
 				// Imported changesets always start as unpublished and will be set to published once the import succeeded.
@@ -237,7 +238,7 @@ func TestRewirer_Rewire(t *testing.T) {
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{assertResetQueued(ct.ChangesetAssertions{
+			wantChangesets: []ct.ChangesetAssertions{assertResetReconcilerState(ct.ChangesetAssertions{
 				Repo:               testRepoID,
 				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
 				AttachedTo:         []int64{testBatchChangeID},
@@ -321,7 +322,7 @@ func TestRewirer_Rewire(t *testing.T) {
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{assertResetQueued(ct.ChangesetAssertions{
+			wantChangesets: []ct.ChangesetAssertions{assertResetReconcilerState(ct.ChangesetAssertions{
 				Repo:       testRepoID,
 				ExternalID: "123",
 				// Now should be attached to both btypes.
@@ -378,7 +379,7 @@ func TestRewirer_Rewire(t *testing.T) {
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{assertResetQueued(ct.ChangesetAssertions{
+			wantChangesets: []ct.ChangesetAssertions{assertResetReconcilerState(ct.ChangesetAssertions{
 				Repo:               testRepoID,
 				ExternalID:         "123",
 				OwnedByBatchChange: testBatchChangeID,
@@ -410,7 +411,7 @@ func TestRewirer_Rewire(t *testing.T) {
 				}),
 				Repo: testRepo,
 			}},
-			wantChangesets: []ct.ChangesetAssertions{assertResetQueued(ct.ChangesetAssertions{
+			wantChangesets: []ct.ChangesetAssertions{assertResetReconcilerState(ct.ChangesetAssertions{
 				Repo:               testRepoID,
 				ExternalID:         "123",
 				OwnedByBatchChange: testBatchChangeID,
@@ -445,8 +446,8 @@ func TestRewirer_Rewire(t *testing.T) {
 	}
 }
 
-func assertResetQueued(a ct.ChangesetAssertions) ct.ChangesetAssertions {
-	a.ReconcilerState = btypes.ReconcilerStateQueued
+func assertResetReconcilerState(a ct.ChangesetAssertions) ct.ChangesetAssertions {
+	a.ReconcilerState = global.DefaultReconcilerEnqueueState()
 	a.NumFailures = 0
 	a.NumResets = 0
 	a.FailureMessage = nil

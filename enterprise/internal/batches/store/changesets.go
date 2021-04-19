@@ -877,6 +877,7 @@ func (s *Store) GetChangesetsStats(ctx context.Context, batchChangeID int64) (st
 			&stats.Total,
 			&stats.Retrying,
 			&stats.Failed,
+			&stats.Scheduled,
 			&stats.Processing,
 			&stats.Unpublished,
 			&stats.Closed,
@@ -902,7 +903,8 @@ SELECT
 	COUNT(*) AS total,
 	COUNT(*) FILTER (WHERE changesets.reconciler_state = 'errored') AS retrying,
 	COUNT(*) FILTER (WHERE changesets.reconciler_state = 'failed') AS failed,
-	COUNT(*) FILTER (WHERE changesets.reconciler_state NOT IN ('failed', 'errored', 'completed')) AS processing,
+	COUNT(*) FILTER (WHERE changesets.reconciler_state = 'scheduled') AS scheduled,
+	COUNT(*) FILTER (WHERE changesets.reconciler_state NOT IN ('failed', 'errored', 'completed', 'scheduled')) AS processing,
 	COUNT(*) FILTER (WHERE changesets.publication_state = 'UNPUBLISHED' AND changesets.reconciler_state = 'completed') AS unpublished,
 	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'CLOSED'  AND NOT %s) AS closed,
 	COUNT(*) FILTER (WHERE %s AND changesets.external_state = 'DRAFT'   AND NOT %s) AS draft,
@@ -915,6 +917,49 @@ INNER JOIN repo on repo.id = changesets.repo_id
 WHERE
 	%s
 `
+
+func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (*btypes.Changeset, error) {
+	q := sqlf.Sprintf(
+		enqueueNextScheduledChangesetFmtstr,
+		btypes.ReconcilerStateScheduled.ToDB(),
+		btypes.ReconcilerStateQueued.ToDB(),
+		sqlf.Join(ChangesetColumns, ","),
+	)
+
+	var c btypes.Changeset
+	err := s.query(ctx, q, func(sc scanner) error {
+		return scanChangeset(&c, sc)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if c.ID == 0 {
+		return nil, ErrNoResults
+	}
+
+	return &c, nil
+}
+
+const enqueueNextScheduledChangesetFmtstr = `
+-- source: enterprise/internal/batches/store/changesets.go:EnqueueNextScheduledChangeset
+WITH c AS (
+	SELECT *
+	FROM changesets
+	WHERE reconciler_state = %s
+	ORDER BY updated_at ASC
+	LIMIT 1
+)
+UPDATE changesets
+SET reconciler_state = %s
+FROM c
+WHERE c.id = changesets.id
+RETURNING %s
+`
+
+func (s *Store) GetChangesetPlaceInLine(ctx context.Context, id int64) (int, error) {
+	return 0, errors.New("unimplemented")
+}
 
 func archivedInBatchChange(batchChangeID string) *sqlf.Query {
 	return sqlf.Sprintf(

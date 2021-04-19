@@ -42,7 +42,9 @@ func Init(ctx context.Context) error {
 		return err
 	}
 	if ring != nil {
+		mu.Lock()
 		defaultRing = *ring
+		mu.Unlock()
 	}
 
 	conf.ContributeValidator(func(cfg conf.Unified) conf.Problems {

@@ -1164,8 +1164,17 @@ ORDER BY id ASC
 			acct.AuthData = &msg
 		}
 		if data.Valid {
-			tmp := json.RawMessage(data.String)
-			acct.Data = &tmp
+			tmp, err := database.MaybeDecrypt(
+				ctx,
+				keyring.Default().UserExternalAccountKey,
+				data.String,
+				encryptionKeyID,
+			)
+			if err != nil {
+				return nil, err
+			}
+			msg := json.RawMessage(tmp)
+			acct.Data = &msg
 		}
 		accounts = append(accounts, &acct)
 	}

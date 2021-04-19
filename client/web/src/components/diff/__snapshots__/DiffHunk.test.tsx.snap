@@ -6,14 +6,16 @@ Array [
     className="diff-boundary"
   >
     <td
-      className="diff-boundary__num diff-hunk__num--both"
+      className="diff-boundary__num"
       colSpan={2}
     />
     <td
       className="diff-boundary__content diff-hunk__content"
       data-diff-marker=" "
     >
-      <code>
+      <code
+        className="diff-hunk__line--code diff-hunk__content"
+      >
         @@ -
         159
         ,
@@ -35,15 +37,29 @@ Array [
       data-line={159}
       data-part="base"
       id="anchor_L159"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L159"
+        onClick={[Function]}
+      >
+        159
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={159}
       data-part="head"
       id="anchor_R159"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R159"
+        onClick={[Function]}
+      >
+        159
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -67,15 +83,29 @@ Array [
       data-line={160}
       data-part="base"
       id="anchor_L160"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L160"
+        onClick={[Function]}
+      >
+        160
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={160}
       data-part="head"
       id="anchor_R160"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R160"
+        onClick={[Function]}
+      >
+        160
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -99,15 +129,29 @@ Array [
       data-line={161}
       data-part="base"
       id="anchor_L161"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L161"
+        onClick={[Function]}
+      >
+        161
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={161}
       data-part="head"
       id="anchor_R161"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R161"
+        onClick={[Function]}
+      >
+        161
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -131,8 +175,15 @@ Array [
       data-line={162}
       data-part="base"
       id="anchor_L162"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L162"
+        onClick={[Function]}
+      >
+        162
+      </a>
+    </td>
     <td
       className="diff-hunk__num diff-hunk__num--empty"
     />
@@ -162,8 +213,15 @@ Array [
       data-line={162}
       data-part="head"
       id="anchor_R162"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R162"
+        onClick={[Function]}
+      >
+        162
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker="+"
@@ -187,15 +245,29 @@ Array [
       data-line={163}
       data-part="base"
       id="anchor_L163"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L163"
+        onClick={[Function]}
+      >
+        163
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={163}
       data-part="head"
       id="anchor_R163"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R163"
+        onClick={[Function]}
+      >
+        163
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -219,15 +291,29 @@ Array [
       data-line={164}
       data-part="base"
       id="anchor_L164"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L164"
+        onClick={[Function]}
+      >
+        164
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={164}
       data-part="head"
       id="anchor_R164"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R164"
+        onClick={[Function]}
+      >
+        164
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -251,15 +337,29 @@ Array [
       data-line={165}
       data-part="base"
       id="anchor_L165"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L165"
+        onClick={[Function]}
+      >
+        165
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={165}
       data-part="head"
       id="anchor_R165"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R165"
+        onClick={[Function]}
+      >
+        165
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -284,14 +384,16 @@ Array [
     className="diff-boundary"
   >
     <td
-      className="diff-boundary__num diff-hunk__num--both"
+      className="diff-boundary__num"
       colSpan={2}
     />
     <td
       className="diff-boundary__content diff-hunk__content"
       data-diff-marker=" "
     >
-      <code>
+      <code
+        className="diff-hunk__line--code diff-hunk__content"
+      >
         @@ -
         159
         ,
@@ -313,15 +415,29 @@ Array [
       data-line={159}
       data-part="base"
       id="anchor_L159"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L159"
+        onClick={[Function]}
+      >
+        159
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={159}
       data-part="head"
       id="anchor_R159"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R159"
+        onClick={[Function]}
+      >
+        159
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -362,15 +478,29 @@ Array [
       data-line={160}
       data-part="base"
       id="anchor_L160"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L160"
+        onClick={[Function]}
+      >
+        160
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={160}
       data-part="head"
       id="anchor_R160"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R160"
+        onClick={[Function]}
+      >
+        160
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -394,15 +524,29 @@ Array [
       data-line={161}
       data-part="base"
       id="anchor_L161"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L161"
+        onClick={[Function]}
+      >
+        161
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={161}
       data-part="head"
       id="anchor_R161"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R161"
+        onClick={[Function]}
+      >
+        161
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -426,8 +570,15 @@ Array [
       data-line={162}
       data-part="base"
       id="anchor_L162"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L162"
+        onClick={[Function]}
+      >
+        162
+      </a>
+    </td>
     <td
       className="diff-hunk__num diff-hunk__num--empty"
     />
@@ -474,8 +625,15 @@ Array [
       data-line={162}
       data-part="head"
       id="anchor_R162"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R162"
+        onClick={[Function]}
+      >
+        162
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker="+"
@@ -499,15 +657,29 @@ Array [
       data-line={163}
       data-part="base"
       id="anchor_L163"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L163"
+        onClick={[Function]}
+      >
+        163
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={163}
       data-part="head"
       id="anchor_R163"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R163"
+        onClick={[Function]}
+      >
+        163
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -531,15 +703,29 @@ Array [
       data-line={164}
       data-part="base"
       id="anchor_L164"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L164"
+        onClick={[Function]}
+      >
+        164
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={164}
       data-part="head"
       id="anchor_R164"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R164"
+        onClick={[Function]}
+      >
+        164
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -563,15 +749,29 @@ Array [
       data-line={165}
       data-part="base"
       id="anchor_L165"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L165"
+        onClick={[Function]}
+      >
+        165
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={165}
       data-part="head"
       id="anchor_R165"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R165"
+        onClick={[Function]}
+      >
+        165
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -596,14 +796,16 @@ Array [
     className="diff-boundary"
   >
     <td
-      className="diff-boundary__num diff-hunk__num--both"
+      className="diff-boundary__num"
       colSpan={2}
     />
     <td
       className="diff-boundary__content diff-hunk__content"
       data-diff-marker=" "
     >
-      <code>
+      <code
+        className="diff-hunk__line--code diff-hunk__content"
+      >
         @@ -
         159
         ,
@@ -625,15 +827,29 @@ Array [
       data-line={159}
       data-part="base"
       id="anchor_L159"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L159"
+        onClick={[Function]}
+      >
+        159
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={159}
       data-part="head"
       id="anchor_R159"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R159"
+        onClick={[Function]}
+      >
+        159
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -673,15 +889,29 @@ Array [
       data-line={160}
       data-part="base"
       id="anchor_L160"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L160"
+        onClick={[Function]}
+      >
+        160
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={160}
       data-part="head"
       id="anchor_R160"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R160"
+        onClick={[Function]}
+      >
+        160
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -705,15 +935,29 @@ Array [
       data-line={161}
       data-part="base"
       id="anchor_L161"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L161"
+        onClick={[Function]}
+      >
+        161
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={161}
       data-part="head"
       id="anchor_R161"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R161"
+        onClick={[Function]}
+      >
+        161
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -737,8 +981,15 @@ Array [
       data-line={162}
       data-part="base"
       id="anchor_L162"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L162"
+        onClick={[Function]}
+      >
+        162
+      </a>
+    </td>
     <td
       className="diff-hunk__num diff-hunk__num--empty"
     />
@@ -784,8 +1035,15 @@ Array [
       data-line={162}
       data-part="head"
       id="anchor_R162"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R162"
+        onClick={[Function]}
+      >
+        162
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker="+"
@@ -809,15 +1067,29 @@ Array [
       data-line={163}
       data-part="base"
       id="anchor_L163"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L163"
+        onClick={[Function]}
+      >
+        163
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={163}
       data-part="head"
       id="anchor_R163"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R163"
+        onClick={[Function]}
+      >
+        163
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -841,15 +1113,29 @@ Array [
       data-line={164}
       data-part="base"
       id="anchor_L164"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L164"
+        onClick={[Function]}
+      >
+        164
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={164}
       data-part="head"
       id="anchor_R164"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R164"
+        onClick={[Function]}
+      >
+        164
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
@@ -873,15 +1159,29 @@ Array [
       data-line={165}
       data-part="base"
       id="anchor_L165"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_L165"
+        onClick={[Function]}
+      >
+        165
+      </a>
+    </td>
     <td
       className="diff-hunk__num"
       data-line={165}
       data-part="head"
       id="anchor_R165"
-      onClick={[Function]}
-    />
+    >
+      <a
+        className="diff-hunk__num--line"
+        href="/#anchor_R165"
+        onClick={[Function]}
+      >
+        165
+      </a>
+    </td>
     <td
       className="diff-hunk__content"
       data-diff-marker=" "
