@@ -37,7 +37,7 @@ func GetOrAssignUserCustomerID(ctx context.Context, userID int32) (_ string, err
 		err = tx.Commit()
 	}()
 
-	custID, err := dbBilling{}.getUserBillingCustomerID(ctx, tx, userID)
+	custID, err := dbBilling{db: tx}.getUserBillingCustomerID(ctx, userID)
 	if err != nil {
 		return "", err
 	}
@@ -62,7 +62,7 @@ func GetOrAssignUserCustomerID(ctx context.Context, userID int32) (_ string, err
 			}
 		}()
 
-		if err := (dbBilling{}).setUserBillingCustomerID(ctx, tx, userID, &newCustID); err != nil {
+		if err := (dbBilling{db: tx}).setUserBillingCustomerID(ctx, userID, &newCustID); err != nil {
 			return "", err
 		}
 		custID = &newCustID

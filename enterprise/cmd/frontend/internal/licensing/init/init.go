@@ -111,7 +111,9 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 		})
 	})
 	if envvar.SourcegraphDotComMode() {
-		goroutine.Go(productsubscription.StartCheckForUpcomingLicenseExpirations)
+		goroutine.Go(func() {
+			productsubscription.StartCheckForUpcomingLicenseExpirations(db)
+		})
 	}
 
 	return nil

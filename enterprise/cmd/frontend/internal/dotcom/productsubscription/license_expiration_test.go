@@ -73,7 +73,7 @@ func TestCheckForUpcomingLicenseExpirations(t *testing.T) {
 	})
 
 	client := &fakeSlackClient{}
-	checkForUpcomingLicenseExpirations(clock, client)
+	checkForUpcomingLicenseExpirations(nil, clock, client)
 
 	wantPayloads := []*slack.Payload{
 		{Text: "The license for user `alice` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/e9450fb2-87c7-47ae-a713-a376c4618faa|will expire *in the next 24 hours*> :rotating_light:"},
