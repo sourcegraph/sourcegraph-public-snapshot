@@ -20,6 +20,8 @@ import {
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { REDESIGN_CLASS_NAME, getIsRedesignEnabled } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
@@ -259,8 +261,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
               undefined
             : undefined
 
-        const selectedSearchContextSpec = localStorage.getItem(LAST_SEARCH_CONTEXT_KEY) || 'global'
-
         this.state = {
             themePreference: readStoredThemePreference(),
             systemIsLightTheme: !this.darkThemeMediaList.matches,
@@ -278,7 +278,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showOnboardingTour: false,
             showSearchContext: false,
             showSearchContextManagement: false,
-            selectedSearchContextSpec,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
             hasUserDefinedContexts: false,
@@ -380,6 +379,19 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                     }
                 })
         )
+
+        if (this.state.parsedSearchQuery && !filterExists(this.state.parsedSearchQuery, FilterType.context)) {
+            // If a context filter does not exist in the query, we have to switch the selected context
+            // to global to match the UI with the backend semantics (if no context is specified in the query,
+            // the query is run in global context).
+            this.setSelectedSearchContextSpec('global')
+        }
+        if (!this.state.parsedSearchQuery) {
+            // If no query is present (e.g. search page, settings page), select the last saved
+            // search context from localStorage as currently selected search context.
+            const lastSelectedSearchContextSpec = localStorage.getItem(LAST_SEARCH_CONTEXT_KEY) || 'global'
+            this.setSelectedSearchContextSpec(lastSelectedSearchContextSpec)
+        }
 
         // Send initial versionContext to extensions
         this.setVersionContext(this.state.versionContext).catch(error => {
