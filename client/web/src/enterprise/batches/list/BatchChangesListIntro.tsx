@@ -59,7 +59,7 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                 <ul className="text-muted mb-0 pl-3">
                     <li>
                         Site admins can now configure a global service account to be used when creating and updating
-                        changesets on code hosts.
+                        changesets on code hosts and the user has no credential configured.
                     </li>
                 </ul>
                 <ul className="text-muted mb-0 pl-3">
