@@ -66,8 +66,11 @@ export const setColorScheme = async (
     ])
 
     // Check Monaco editor is styled correctly
+    await page.waitForSelector('#monaco-query-input .monaco-editor', { visible: true })
     await page.waitForFunction(
-        expectedClassName => document.querySelector('.monaco-editor')?.classList.contains(expectedClassName),
+        expectedClassName =>
+            document.querySelector('#monaco-query-input .monaco-editor') &&
+            document.querySelector('#monaco-query-input .monaco-editor')?.classList.contains(expectedClassName),
         { timeout: 1000 },
         ColorSchemeToMonacoEditorClassName[scheme]
     )
