@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executor"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches"
@@ -25,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
-	enterpriseGraphQL "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 )
 
@@ -41,6 +41,7 @@ var initFunctions = map[string]func(ctx context.Context, db dbutil.DB, outOfBand
 	"insights":     insights.Init,
 	"batches":      batches.InitFrontend,
 	"codemonitors": codemonitors.Init,
+	"dotcom":       dotcom.Init,
 }
 
 func enterpriseSetupHook(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services {
@@ -48,8 +49,6 @@ func enterpriseSetupHook(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Ru
 	if debug {
 		log.Println("enterprise edition")
 	}
-
-	enterpriseGraphQL.InitDotcom(db)
 
 	ctx := context.Background()
 	enterpriseServices := enterprise.DefaultServices()

@@ -8,27 +8,24 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/stripeutil"
 )
 
-func init() {
-	// TODO(efritz) - de-globalize assignments in this function
-	graphqlbackend.UserURLForSiteAdminBilling = func(ctx context.Context, userID int32) (*string, error) {
-		// 🚨 SECURITY: Only site admins may view the billing URL, because it may contain sensitive
-		// data or identifiers.
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-			return nil, err
-		}
-		custID, err := dbBilling{db: dbconn.Global}.getUserBillingCustomerID(ctx, userID)
-		if err != nil {
-			return nil, err
-		}
-		if custID != nil {
-			u := CustomerURL(*custID)
-			return &u, nil
-		}
-		return nil, nil
+func (r BillingResolver) UserURLForSiteAdminBilling(ctx context.Context, userID int32) (*string, error) {
+	// 🚨 SECURITY: Only site admins may view the billing URL, because it may contain sensitive
+	// data or identifiers.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
 	}
+	custID, err := dbBilling{db: r.DB}.getUserBillingCustomerID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if custID != nil {
+		u := stripeutil.CustomerURL(*custID)
+		return &u, nil
+	}
+	return nil, nil
 }
 
 func (r BillingResolver) SetUserBilling(ctx context.Context, args *graphqlbackend.SetUserBillingArgs) (*graphqlbackend.EmptyResponse, error) {

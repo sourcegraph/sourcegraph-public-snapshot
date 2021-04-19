@@ -5,6 +5,7 @@ import { userAreaRoutes } from '../../user/area/routes'
 import { UserAreaRoute, UserAreaRouteContext } from '../../user/area/UserArea'
 import { lazyComponent } from '../../util/lazyComponent'
 import { NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
+import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
 
 const NamespaceBatchChangesArea = lazyComponent<NamespaceBatchChangesAreaProps, 'NamespaceBatchChangesArea'>(
@@ -26,6 +27,7 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
                 }`}
             />
         ),
+        condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
         path: '/campaigns',

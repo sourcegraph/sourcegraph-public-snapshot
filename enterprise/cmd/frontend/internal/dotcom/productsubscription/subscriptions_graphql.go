@@ -21,21 +21,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/stripeutil"
 	db_ "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
-
-func init() {
-	// TODO(efritz) - de-globalize assignments in this function
-	graphqlbackend.ProductSubscriptionByID = func(ctx context.Context, db dbutil.DB, id graphql.ID) (graphqlbackend.ProductSubscription, error) {
-		return productSubscriptionByID(ctx, db, id)
-	}
-}
 
 // productSubscription implements the GraphQL type ProductSubscription.
 type productSubscription struct {
 	db dbutil.DB
 	v  *dbSubscription
+}
+
+// ProductSubscriptionByID looks up and returns the ProductSubscription with the given GraphQL
+// ID. If no such ProductSubscription exists, it returns a non-nil error.
+func (p ProductSubscriptionLicensingResolver) ProductSubscriptionByID(ctx context.Context, id graphql.ID) (graphqlbackend.ProductSubscription, error) {
+	return productSubscriptionByID(ctx, p.DB, id)
 }
 
 // productSubscriptionByID looks up and returns the ProductSubscription with the given GraphQL
@@ -169,7 +169,7 @@ func (r *productSubscription) URLForSiteAdminBilling(ctx context.Context) (*stri
 		return nil, err
 	}
 	if id := r.v.BillingSubscriptionID; id != nil {
-		u := billing.SubscriptionURL(*id)
+		u := stripeutil.SubscriptionURL(*id)
 		return &u, nil
 	}
 	return nil, nil

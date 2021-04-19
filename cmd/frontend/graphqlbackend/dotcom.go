@@ -2,25 +2,16 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-// Dotcom is the implementation of the GraphQL type DotcomMutation. If it is not set at runtime, a
-// "not implemented" error is returned to API clients who invoke it.
-//
-// This is contributed by enterprise.
-var Dotcom DotcomResolver
-
-func (schemaResolver) Dotcom() (DotcomResolver, error) {
-	if Dotcom == nil {
-		return nil, errors.New("dotcom is not implemented")
-	}
-	return Dotcom, nil
+type DotcomRootResolver interface {
+	DotcomResolver
+	Dotcom() DotcomResolver
+	NodeResolvers() map[string]NodeByIDFunc
 }
 
 // DotcomResolver is the interface for the GraphQL types DotcomMutation and DotcomQuery.
@@ -40,12 +31,10 @@ type DotcomResolver interface {
 	PreviewProductSubscriptionInvoice(context.Context, *PreviewProductSubscriptionInvoiceArgs) (ProductSubscriptionPreviewInvoice, error)
 	ProductLicenses(context.Context, *ProductLicensesArgs) (ProductLicenseConnection, error)
 	ProductPlans(context.Context) ([]ProductPlan, error)
+	ProductLicenseByID(ctx context.Context, id graphql.ID) (ProductLicense, error)
+	ProductSubscriptionByID(ctx context.Context, id graphql.ID) (ProductSubscription, error)
+	UserURLForSiteAdminBilling(ctx context.Context, userID int32) (*string, error)
 }
-
-// ProductSubscriptionByID is called to look up a ProductSubscription given its GraphQL ID.
-//
-// This is contributed by enterprise.
-var ProductSubscriptionByID func(context.Context, dbutil.DB, graphql.ID) (ProductSubscription, error)
 
 // ProductSubscription is the interface for the GraphQL type ProductSubscription.
 type ProductSubscription interface {
@@ -153,11 +142,6 @@ type PreviewProductSubscriptionInvoiceArgs struct {
 	SubscriptionToUpdate *graphql.ID
 	ProductSubscription  ProductSubscriptionInput
 }
-
-// ProductLicenseByID is called to look up a ProductLicense given its GraphQL ID.
-//
-// This is contributed by enterprise.
-var ProductLicenseByID func(context.Context, dbutil.DB, graphql.ID) (ProductLicense, error)
 
 // ProductLicense is the interface for the GraphQL type ProductLicense.
 type ProductLicense interface {
