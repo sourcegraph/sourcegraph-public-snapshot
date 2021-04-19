@@ -53,7 +53,7 @@ var ChangesetJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("changeset_jobs.updated_at"),
 }
 
-// CreateBatchChange creates the given batch change.
+// CreateChangesetJob creates the given changeset job.
 func (s *Store) CreateChangesetJob(ctx context.Context, c *btypes.ChangesetJob) error {
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
