@@ -20,10 +20,6 @@ func TestRepoContainsPredicate(t *testing.T) {
 			{`unnamed content`, `test`, &RepoContainsPredicate{Content: "test"}},
 			{`file and content`, `file:test.go content:abc`, &RepoContainsPredicate{File: "test.go", Content: "abc"}},
 			{`content and file`, `content:abc file:test.go`, &RepoContainsPredicate{File: "test.go", Content: "abc"}},
-
-			// TODO (@camdencheek) Query parsing currently checks parameter names against an allowlist.
-			// This will be a problem as soon as we add more fields. Might make sense to do
-			// as part of #19075
 			{`unrecognized field`, `abc:test`, &RepoContainsPredicate{Content: "abc:test"}},
 		}
 
