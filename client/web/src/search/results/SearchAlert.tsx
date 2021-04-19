@@ -1,6 +1,6 @@
+import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { ReactNode } from 'react'
-import { useHistory } from 'react-router'
 import { Link } from 'react-router-dom'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
@@ -17,6 +17,7 @@ interface SearchAlertProps {
     versionContext?: string
     searchContextSpec?: string
     children?: ReactNode[]
+    history: H.History
 }
 
 export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
@@ -26,46 +27,44 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
     versionContext,
     searchContextSpec,
     children,
-}) => {
-    const history = useHistory()
-    return (
-        <div className="alert alert-info m-2" data-testid="alert-container">
-            <h3>
-                <AlertCircleIcon className="icon-inline" /> {alert.title}
-            </h3>
+    history,
+}) => (
+    <div className="alert alert-info m-2" data-testid="alert-container">
+        <h3>
+            <AlertCircleIcon className="icon-inline" /> {alert.title}
+        </h3>
 
-            {alert.description && <Markdown dangerousInnerHTML={renderMarkdown(alert.description)} history={history} />}
+        {alert.description && <Markdown dangerousInnerHTML={renderMarkdown(alert.description)} history={history} />}
 
-            {alert.proposedQueries && (
-                <>
-                    <h4>Did you mean:</h4>
-                    <ul className="list-unstyled">
-                        {alert.proposedQueries.map(proposedQuery => (
-                            <li key={proposedQuery.query}>
-                                <Link
-                                    className="btn btn-secondary btn-sm"
-                                    data-testid="proposed-query-link"
-                                    to={
-                                        '/search?' +
-                                        buildSearchURLQuery(
-                                            proposedQuery.query,
-                                            patternType || SearchPatternType.literal,
-                                            caseSensitive,
-                                            versionContext,
-                                            searchContextSpec
-                                        )
-                                    }
-                                >
-                                    {proposedQuery.query || proposedQuery.description}
-                                </Link>
-                                {proposedQuery.query && proposedQuery.description && ` — ${proposedQuery.description}`}
-                            </li>
-                        ))}
-                    </ul>
-                </>
-            )}
+        {alert.proposedQueries && (
+            <>
+                <h4>Did you mean:</h4>
+                <ul className="list-unstyled">
+                    {alert.proposedQueries.map(proposedQuery => (
+                        <li key={proposedQuery.query}>
+                            <Link
+                                className="btn btn-secondary btn-sm"
+                                data-testid="proposed-query-link"
+                                to={
+                                    '/search?' +
+                                    buildSearchURLQuery(
+                                        proposedQuery.query,
+                                        patternType || SearchPatternType.literal,
+                                        caseSensitive,
+                                        versionContext,
+                                        searchContextSpec
+                                    )
+                                }
+                            >
+                                {proposedQuery.query || proposedQuery.description}
+                            </Link>
+                            {proposedQuery.query && proposedQuery.description && ` — ${proposedQuery.description}`}
+                        </li>
+                    ))}
+                </ul>
+            </>
+        )}
 
-            {children}
-        </div>
-    )
-}
+        {children}
+    </div>
+)
