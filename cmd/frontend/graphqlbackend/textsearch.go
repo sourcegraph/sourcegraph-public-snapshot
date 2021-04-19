@@ -221,7 +221,7 @@ func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint
 				Preview:          lm.Preview,
 				OffsetAndLengths: ranges,
 				LineNumber:       int32(lm.LineNumber),
-				LimitHit:         lm.LimitHit,
+				LimitHit:         false,
 			})
 		}
 
