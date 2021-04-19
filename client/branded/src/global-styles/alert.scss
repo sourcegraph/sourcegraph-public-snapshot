@@ -21,6 +21,6 @@
     color: inherit;
 }
 
-.alert a {
+.alert a:not(.btn) {
     @extend .alert-link;
 }
