@@ -188,15 +188,36 @@ const { add } = storiesOf('web/diffs/FileDiffNode', module).addDecorator(story =
     <div className="p-3 container">{story()}</div>
 ))
 
-add('All file node states overview', () => (
+add('All unified file node states overview', () => (
     <WebStory>
         {webProps => (
             <>
                 {FILE_DIFF_NODES.map((node, index) => (
                     <FileDiffNode
                         {...webProps}
+                        diffMode="unified"
                         key={index}
-                        persistLines={boolean('persistLines', false)}
+                        persistLines={boolean('persistLines', true)}
+                        lineNumbers={boolean('lineNumbers', true)}
+                        node={node}
+                        className="abcdef"
+                    />
+                ))}
+            </>
+        )}
+    </WebStory>
+))
+
+add('All split file node states overview', () => (
+    <WebStory>
+        {webProps => (
+            <>
+                {FILE_DIFF_NODES.map((node, index) => (
+                    <FileDiffNode
+                        {...webProps}
+                        diffMode="split"
+                        key={index}
+                        persistLines={boolean('persistLines', true)}
                         lineNumbers={boolean('lineNumbers', true)}
                         node={node}
                         className="abcdef"

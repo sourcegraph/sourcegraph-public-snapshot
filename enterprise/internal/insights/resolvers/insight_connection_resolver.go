@@ -9,14 +9,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var _ graphqlbackend.InsightConnectionResolver = &insightConnectionResolver{}
 
 type insightConnectionResolver struct {
-	store        store.Interface
-	settingStore discovery.SettingStore
+	insightsStore   store.Interface
+	workerBaseStore *basestore.Store
+	settingStore    discovery.SettingStore
 
 	// cache results because they are used by multiple fields
 	once     sync.Once
@@ -32,7 +34,11 @@ func (r *insightConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend
 	}
 	resolvers := make([]graphqlbackend.InsightResolver, 0, len(nodes))
 	for _, insight := range nodes {
-		resolvers = append(resolvers, &insightResolver{store: r.store, insight: insight})
+		resolvers = append(resolvers, &insightResolver{
+			insightsStore:   r.insightsStore,
+			workerBaseStore: r.workerBaseStore,
+			insight:         insight,
+		})
 	}
 	return resolvers, nil
 }
@@ -65,8 +71,9 @@ func (r *insightConnectionResolver) compute(ctx context.Context) ([]*schema.Insi
 var _ graphqlbackend.InsightResolver = &insightResolver{}
 
 type insightResolver struct {
-	store   store.Interface
-	insight *schema.Insight
+	insightsStore   store.Interface
+	workerBaseStore *basestore.Store
+	insight         *schema.Insight
 }
 
 func (r *insightResolver) Title() string { return r.insight.Title }
@@ -77,7 +84,11 @@ func (r *insightResolver) Series() []graphqlbackend.InsightSeriesResolver {
 	series := r.insight.Series
 	resolvers := make([]graphqlbackend.InsightSeriesResolver, 0, len(series))
 	for _, series := range series {
-		resolvers = append(resolvers, &insightSeriesResolver{store: r.store, series: series})
+		resolvers = append(resolvers, &insightSeriesResolver{
+			insightsStore:   r.insightsStore,
+			workerBaseStore: r.workerBaseStore,
+			series:          series,
+		})
 	}
 	return resolvers
 }

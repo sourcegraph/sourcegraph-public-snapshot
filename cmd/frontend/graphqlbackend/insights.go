@@ -16,6 +16,13 @@ type InsightsDataPointResolver interface {
 	Value() float64
 }
 
+type InsightStatusResolver interface {
+	TotalPoints() int32
+	PendingJobs() int32
+	CompletedJobs() int32
+	FailedJobs() int32
+}
+
 type InsightsPointsArgs struct {
 	From *DateTime
 	To   *DateTime
@@ -24,6 +31,7 @@ type InsightsPointsArgs struct {
 type InsightSeriesResolver interface {
 	Label() string
 	Points(ctx context.Context, args *InsightsPointsArgs) ([]InsightsDataPointResolver, error)
+	Status(ctx context.Context) (InsightStatusResolver, error)
 }
 
 type InsightResolver interface {

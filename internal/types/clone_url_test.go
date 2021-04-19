@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -223,12 +224,12 @@ func TestPerforceCloneURL(t *testing.T) {
 		P4Passwd: "pa$$word",
 	}
 
-	repo := map[string]interface{}{
-		"depot": "//Sourcegraph",
+	repo := &perforce.Depot{
+		Depot: "//Sourcegraph/",
 	}
 
 	got := perforceCloneURL(repo, &cfg)
-	want := "perforce://admin:pa$$word@ssl:111.222.333.444:1666//Sourcegraph"
+	want := "perforce://admin:pa$$word@ssl:111.222.333.444:1666//Sourcegraph/"
 	if got != want {
 		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
 	}

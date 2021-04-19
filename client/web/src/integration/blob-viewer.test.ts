@@ -20,6 +20,7 @@ import {
     createBlobContentResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
+import { percySnapshotWithVariants } from './utils'
 
 describe('Blob viewer', () => {
     let driver: Driver
@@ -52,6 +53,7 @@ describe('Blob viewer', () => {
         TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, ['README.md', fileName]),
         Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
     }
+
     beforeEach(() => {
         testContext.overrideGraphQL(commonBlobGraphQlResults)
     })
@@ -711,7 +713,7 @@ describe('Blob viewer', () => {
                     response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                 })
 
-            const timeout = 3000
+            const timeout = 5000
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
 
             // File 1 (test.ts). Only line two contains 'word'
@@ -948,6 +950,8 @@ describe('Blob viewer', () => {
             // Click 'Find references'
             await driver.page.waitForSelector('.test-tooltip-find-references', { visible: true })
             await driver.page.click('.test-tooltip-find-references')
+
+            await percySnapshotWithVariants(driver.page, 'Blob Reference Panel', { waitForCodeHighlighting: true })
 
             // Click on the first reference
             await driver.page.waitForSelector('.test-file-match-children-item')
