@@ -169,9 +169,9 @@ func (lm lineMatchResolver) LimitHit() bool {
 	return lm.LineMatch.LimitHit
 }
 
-var mockSearchFilesInRepo func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
+var mockSearchFilesInRepo func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.FileMatch, limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint.Map, repo types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]*FileMatchResolver, bool, error) {
+func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]result.FileMatch, bool, error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
@@ -208,8 +208,7 @@ func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint
 		return nil, false, err
 	}
 
-	repoResolver := NewRepositoryResolver(db, repo.ToRepo())
-	resolvers := make([]*FileMatchResolver, 0, len(matches))
+	resolvers := make([]result.FileMatch, 0, len(matches))
 	for _, fm := range matches {
 		lineMatches := make([]*result.LineMatch, 0, len(fm.LineMatches))
 		for _, lm := range fm.LineMatches {
@@ -225,17 +224,13 @@ func searchFilesInRepo(ctx context.Context, db dbutil.DB, searcherURLs *endpoint
 			})
 		}
 
-		resolvers = append(resolvers, &FileMatchResolver{
-			db: db,
-			FileMatch: result.FileMatch{
-				Path:        fm.Path,
-				LineMatches: lineMatches,
-				LimitHit:    fm.LimitHit,
-				Repo:        repo,
-				CommitID:    commit,
-				InputRev:    &rev,
-			},
-			RepoResolver: repoResolver,
+		resolvers = append(resolvers, result.FileMatch{
+			Path:        fm.Path,
+			LineMatches: lineMatches,
+			LimitHit:    fm.LimitHit,
+			Repo:        repo,
+			CommitID:    commit,
+			InputRev:    &rev,
 		})
 	}
 
@@ -479,7 +474,7 @@ func callSearcherOverRepos(
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					matches, repoLimitHit, err := searchFilesInRepo(ctx, db, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], index, args.PatternInfo, fetchTimeout)
+					matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], index, args.PatternInfo, fetchTimeout)
 					if err != nil {
 						tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
@@ -487,7 +482,7 @@ func callSearcherOverRepos(
 					// non-diff search reports timeout through err, so pass false for timedOut
 					stats, err := handleRepoSearchResult(repoRev, repoLimitHit, false, err)
 					stream.Send(SearchEvent{
-						Results: fileMatchResolversToSearchResults(matches),
+						Results: fileMatchesToSearchResults(db, matches),
 						Stats:   stats,
 					})
 					return err
