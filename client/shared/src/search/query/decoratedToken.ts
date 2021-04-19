@@ -859,6 +859,66 @@ const mapOffset = (token: Token, offset: number): Token => {
 }
 
 /**
+ * Returns true if a `contains(...)` predicate is valid. This predicate is currently valid when one of
+ * `file:` or `content:` is specified, or both. Any additional filters or tokens besides whitespace
+ * makes this body invalid.
+ */
+const validContainsBody = (tokens: Token[]): boolean => {
+    const fileIndex = tokens.findIndex(token => token.type === 'filter' && token.field.value === 'file')
+    if (fileIndex !== -1) {
+        tokens.splice(fileIndex, 1)
+    }
+    const contentIndex = tokens.findIndex(token => token.type === 'filter' && token.field.value === 'content')
+    if (contentIndex !== -1) {
+        tokens.splice(contentIndex, 1)
+    }
+    if (tokens.filter(value => value.type !== 'whitespace').length > 0) {
+        return false
+    }
+    return true
+}
+
+/**
+ * Attempts to decorate `contains(file:foo content:bar)` syntax. Fails if
+ * the body contains unsupported syntax. This function takes care to
+ * decorate `content:` values as regular expression syntax.
+ */
+const decorateContainsBody = (body: string, offset: number): DecoratedToken[] | undefined => {
+    const result = scanSearchQuery(body, false, SearchPatternType.regexp)
+    if (result.type === 'error') {
+        return undefined
+    }
+    if (!validContainsBody([...result.term])) {
+        // There are more things in this query than we support.
+        return undefined
+    }
+    const decorated: DecoratedToken[] = result.term.flatMap(token => {
+        if (token.type === 'filter' && token.field.value === 'file') {
+            return decorate(mapOffset(token, offset))
+        }
+        if (token.type === 'filter' && token.field.value === 'content') {
+            return [
+                {
+                    type: 'field',
+                    value: token.field.value,
+                    range: {
+                        start: token.field.range.start + offset,
+                        end: token.field.range.end + offset,
+                    },
+                },
+                ...(token.value
+                    ? token.value.quoted
+                        ? [mapOffset(token.value, offset)]
+                        : mapRegexpMetaSucceed(toPattern(mapOffset(token.value, offset) as Literal))
+                    : []),
+            ]
+        }
+        return [mapOffset(token, offset)]
+    })
+    return decorated
+}
+
+/**
  * Decorates the body part of predicate syntax `name(body)`.
  */
 const decoratePredicateBody = (path: string[], body: string, offset: number): DecoratedToken[] => {
@@ -866,9 +926,9 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
     switch (path.join('.')) {
         case 'contains':
             // eslint-disable-next-line no-case-declarations
-            const tokens = scanSearchQuery(body, false, SearchPatternType.regexp)
-            if (tokens.type === 'success') {
-                return tokens.term.flatMap(token => decorate(mapOffset(token, offset)))
+            const result = decorateContainsBody(body, offset)
+            if (result !== undefined) {
+                return result
             }
             break
         case 'contains.file':

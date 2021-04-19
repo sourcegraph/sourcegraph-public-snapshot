@@ -1283,7 +1283,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('highlight recognized predicate with multiple fields', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:contains(file:README.md content:fix)')), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:contains(file:README.md content:^fix$)')), true))
             .toMatchInlineSnapshot(`
             [
               {
@@ -1324,10 +1324,18 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 37,
+                "scopes": "metaRegexpAssertion"
+              },
+              {
+                "startIndex": 38,
                 "scopes": "identifier"
               },
               {
-                "startIndex": 40,
+                "startIndex": 41,
+                "scopes": "metaRegexpAssertion"
+              },
+              {
+                "startIndex": 42,
                 "scopes": "metaPredicateParenthesis"
               }
             ]
