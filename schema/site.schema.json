@@ -322,7 +322,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "pattern": "^(mon(day)?|tue(s|sday)?|wed(nesday)?|thu(r|rs|rsday)?|fri(day)?|sat(urday)?|sun(day)?)$"
+              "pattern": "^([mM]on(day)?|[tT]ue(s|sday)?|[wW]ed(nesday)?|[tT]hu(r|rs|rsday)?|[fF]ri(day)?|[sS]at(urday)?|[sS]un(day)?)$"
             }
           }
         },
