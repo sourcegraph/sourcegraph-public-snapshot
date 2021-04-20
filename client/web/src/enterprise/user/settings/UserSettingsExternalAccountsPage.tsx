@@ -13,7 +13,6 @@ import {
     UserAreaUserFields,
     ExternalAccountFields,
     ExternalAccountsConnectionFields,
-    UserAreaUserFields,
     UserExternalAccountsResult,
     UserExternalAccountsVariables,
 } from '../../../graphql-operations'

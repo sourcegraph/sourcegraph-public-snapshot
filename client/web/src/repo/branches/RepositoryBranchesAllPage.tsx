@@ -4,7 +4,7 @@ import { Observable } from 'rxjs'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { GitRefType, GitRefConnectionFields, GitRefFields, GitRefType } from '../../graphql-operations'
+import { GitRefType, GitRefConnectionFields, GitRefFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { GitReferenceNode, queryGitReferences } from '../GitReference'
 
