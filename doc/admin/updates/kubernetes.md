@@ -17,6 +17,12 @@ and any manual migration steps you must perform.
 
 ## 3.26 -> 3.27
 
+TODO
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.26).*
+
+## 3.26 -> 3.27
+
 > Warning: ⚠️ Sourcegraph 3.27 now requires **Postgres 12+**.
 
 If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12.6 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied supplied database images.
