@@ -3,6 +3,7 @@ import { Page } from 'puppeteer'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
+import { REDESIGN_TOGGLE_KEY, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { WebGraphQlOperations } from '../graphql-operations'
 
@@ -78,9 +79,16 @@ export const setColorScheme = async (
 }
 
 const toggleRedesign = async (page: Page, enabled: boolean): Promise<void> => {
-    await page.evaluate(enabled => document.documentElement.classList.toggle('theme-redesign', enabled), enabled)
-    await page.evaluate(enabled => localStorage.setItem('isRedesignEnabled', enabled ? 'true' : 'false'), enabled)
-    await page.evaluate(() => window.dispatchEvent(new Event('storage')))
+    await page.evaluate(
+        (className: string, storageKey: string, enabled: boolean) => {
+            document.documentElement.classList.toggle(className, enabled)
+            localStorage.setItem(storageKey, enabled ? 'true' : 'false')
+            window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: enabled ? 'true' : 'false' }))
+        },
+        REDESIGN_CLASS_NAME,
+        REDESIGN_TOGGLE_KEY,
+        enabled
+    )
 }
 
 export interface PercySnapshotConfig {
