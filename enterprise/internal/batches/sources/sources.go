@@ -371,14 +371,22 @@ func extractCloneURL(ctx context.Context, s *database.ExternalServiceStore, repo
 		return "", errors.New("no clone URL found for repo")
 	}
 
-	cloneURLs := make([]*url.URL, 0, len(repo.Sources))
+	externalServiceIDs := make([]int64, 0, len(repo.Sources))
 	for _, source := range repo.Sources {
+		externalServiceIDs = append(externalServiceIDs, source.ExternalServiceID())
+	}
+
+	svcs, err := s.List(ctx, database.ExternalServicesListOptions{
+		IDs: externalServiceIDs,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	cloneURLs := make([]*url.URL, 0, len(svcs))
+	for _, svc := range svcs {
 		// build the clone url using the external service config instead of using
 		// the source CloneURL field
-		svc, err := s.GetByID(ctx, source.ExternalServiceID())
-		if err != nil {
-			return "", err
-		}
 		cloneURL, err := types.RepoCloneURL(svc.Kind, svc.Config, repo)
 		if err != nil {
 			return "", err

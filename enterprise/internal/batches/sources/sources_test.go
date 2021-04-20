@@ -33,14 +33,6 @@ func TestExtractCloneURL(t *testing.T) {
 			},
 		},
 		{
-			name: "https user password",
-			want: "https://git:secrettoken@github.com/sourcegraph/sourcegraph",
-			configs: []string{
-				`{"url": "https://github.com", "authorization": {}}`,
-			},
-			overrideRepoURL: "https://git:secrettoken@github.com/sourcegraph/sourcegraph",
-		},
-		{
 			name: "ssh",
 			want: "ssh://git@github.com/sourcegraph/sourcegraph.git",
 			configs: []string{
@@ -85,15 +77,20 @@ func TestExtractCloneURL(t *testing.T) {
 				}
 			}
 
-			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
-				return &types.ExternalService{
-					ID:     id,
-					Kind:   extsvc.KindGitHub,
-					Config: tc.configs[int(id)],
-				}, nil
+			database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				services := make([]*types.ExternalService, 0, len(opt.IDs))
+				for _, id := range opt.IDs {
+					services = append(services, &types.ExternalService{
+						ID:     id,
+						Kind:   extsvc.KindGitHub,
+						Config: tc.configs[int(id)],
+					})
+				}
+
+				return services, nil
 			}
 			t.Cleanup(func() {
-				database.Mocks.ExternalServices.GetByID = nil
+				database.Mocks.ExternalServices.List = nil
 			})
 
 			have, err := extractCloneURL(context.Background(), &database.ExternalServiceStore{}, repo)
@@ -229,7 +226,6 @@ func TestGitserverPushConfig(t *testing.T) {
 		externalServiceType string
 		config              string
 		repoMetadata        interface{}
-		overrideRepoURL     string
 		authenticator       auth.Authenticator
 		wantPushConfig      *protocol.PushConfig
 		wantErr             error
@@ -683,15 +679,20 @@ func TestGitserverPushConfig(t *testing.T) {
 				ID: "::1", // see SourceInfo.ExternalServiceID
 			}
 
-			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
-				return &types.ExternalService{
-					ID:     id,
-					Kind:   extsvc.TypeToKind(tt.externalServiceType),
-					Config: tt.config,
-				}, nil
+			database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				services := make([]*types.ExternalService, 0, len(opt.IDs))
+				for _, id := range opt.IDs {
+					services = append(services, &types.ExternalService{
+						ID:     id,
+						Kind:   extsvc.TypeToKind(tt.externalServiceType),
+						Config: tt.config,
+					})
+				}
+
+				return services, nil
 			}
 			t.Cleanup(func() {
-				database.Mocks.ExternalServices.GetByID = nil
+				database.Mocks.ExternalServices.List = nil
 			})
 
 			havePushConfig, haveErr := gitserverPushConfig(context.Background(), &database.ExternalServiceStore{}, repo, tt.authenticator)

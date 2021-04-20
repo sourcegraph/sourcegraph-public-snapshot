@@ -13,6 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -36,19 +39,24 @@ func TestRepo(t *testing.T, store *database.ExternalServiceStore, serviceKind st
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 
+	return TestRepoWithService(t, store, &svc)
+}
+
+func TestRepoWithService(t *testing.T, store *database.ExternalServiceStore, svc *types.ExternalService) *types.Repo {
+	t.Helper()
+
 	return &types.Repo{
 		Name:    api.RepoName(fmt.Sprintf("repo-%d", svc.ID)),
 		URI:     fmt.Sprintf("repo-%d", svc.ID),
 		Private: true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", svc.ID),
-			ServiceType: extsvc.KindToType(serviceKind),
-			ServiceID:   fmt.Sprintf("https://%s.com/", strings.ToLower(serviceKind)),
+			ServiceType: extsvc.KindToType(svc.Kind),
+			ServiceID:   fmt.Sprintf("https://%s.com/", strings.ToLower(svc.Kind)),
 		},
 		Sources: map[string]*types.SourceInfo{
 			svc.URN(): {
-				ID:       svc.URN(),
-				CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
+				ID: svc.URN(),
 			},
 		},
 	}
@@ -82,11 +90,11 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, count int)
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepo(t, esStore, extsvc.KindGitHub)
-		r.Sources = map[string]*types.SourceInfo{ext.URN(): {
-			ID:       ext.URN(),
-			CloneURL: "https://secrettoken@github.com/" + string(r.Name),
-		}}
+		r := TestRepoWithService(t, esStore, ext)
+		r.Metadata = &github.Repository{
+			NameWithOwner: string(r.Name),
+			URL:           fmt.Sprintf("https://github.com/sourcegraph/%s", string(r.Name)),
+		}
 
 		rs = append(rs, r)
 	}
@@ -119,11 +127,12 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepo(t, esStore, extsvc.KindGitLab)
-		r.Sources = map[string]*types.SourceInfo{ext.URN(): {
-			ID:       ext.URN(),
-			CloneURL: "https://git:gitlab-token@gitlab.com/" + string(r.Name),
-		}}
+		r := TestRepoWithService(t, esStore, ext)
+		r.Metadata = &gitlab.Project{
+			ProjectCommon: gitlab.ProjectCommon{
+				HTTPURLToRepo: fmt.Sprintf("https://gitlab.com/sourcegraph/%s", string(r.Name)),
+			},
+		}
 
 		rs = append(rs, r)
 	}
@@ -203,7 +212,6 @@ func CreateBbsSSHTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, coun
 }
 
 func createBbsRepos(t *testing.T, ctx context.Context, db dbutil.DB, ext *types.ExternalService, count int, cloneBaseURL string) ([]*types.Repo, *types.ExternalService) {
-
 	t.Helper()
 
 	repoStore := database.Repos(db)
@@ -215,14 +223,20 @@ func createBbsRepos(t *testing.T, ctx context.Context, db dbutil.DB, ext *types.
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepo(t, esStore, extsvc.KindBitbucketServer)
-		r.Sources = map[string]*types.SourceInfo{
-			ext.URN(): {
-				ID:       ext.URN(),
-				CloneURL: cloneBaseURL + "/" + string(r.Name),
-			},
+		r := TestRepoWithService(t, esStore, ext)
+		var metadata bitbucketserver.Repo
+		urlType := "http"
+		if strings.HasPrefix(cloneBaseURL, "ssh") {
+			urlType = "ssh"
 		}
-
+		metadata.Links.Clone = append(metadata.Links.Clone, struct {
+			Href string "json:\"href\""
+			Name string "json:\"name\""
+		}{
+			Name: urlType,
+			Href: cloneBaseURL + "/" + string(r.Name),
+		})
+		r.Metadata = &metadata
 		rs = append(rs, r)
 	}
 
