@@ -4,54 +4,57 @@
     @import 'bootstrap/scss/buttons';
     @import 'bootstrap/scss/button-group';
 
-    @each $color, $value in $theme-colors-redesign {
+    /*
+    * Generate
+    */
+    @each $color, $variants in $theme-colors-redesign-variants {
         .btn-#{$color} {
             color: var(--light-text);
             border-color: transparent;
-            background-color: var(--#{$color});
+            background-color: map-get($variants, 1);
 
             &:hover {
                 color: var(--light-text);
-                background-color: var(--#{$color}-3);
+                background-color: map-get($variants, 3);
             }
 
             &:focus,
             &.focus,
             &:active,
             &.active {
-                background-color: var(--#{$color});
+                background-color: map-get($variants, 1);
                 border-color: var(--body-bg);
 
                 @at-root #{selector-append('.theme-light', &)} {
-                    box-shadow: 0 0 0 2px var(--#{$color}-2);
+                    box-shadow: 0 0 0 2px map-get($variants, 2);
                 }
                 @at-root #{selector-append('.theme-dark', &)} {
-                    box-shadow: 0 0 0 2px var(--#{$color}-3);
+                    box-shadow: 0 0 0 2px map-get($variants, 3);
                 }
             }
 
             &.disabled,
             &:disabled {
                 opacity: 1;
-                background-color: var(--#{$color}-2);
-                border-color: var(--#{$color}-2);
+                background-color: map-get($variants, 2);
+                border-color: map-get($variants, 2);
             }
         }
 
         .btn-outline-#{$color} {
             color: var(--body-color);
-            border-color: var(--#{$color});
+            border-color: map-get($variants, 1);
             background-color: transparent;
 
             &:hover {
                 background-color: var(--body-bg);
                 @at-root #{selector-append('.theme-light', &)} {
-                    color: var(--#{$color}-3);
-                    border-color: var(--#{$color}-3);
+                    color: map-get($variants, 3);
+                    border-color: map-get($variants, 3);
                 }
                 @at-root #{selector-append('.theme-dark', &)} {
-                    color: var(--#{$color});
-                    border-color: var(--#{$color});
+                    color: map-get($variants, 1);
+                    border-color: map-get($variants, 1);
                 }
             }
 
@@ -66,10 +69,10 @@
             &:active,
             &.active {
                 @at-root #{selector-append('.theme-light', &)} {
-                    box-shadow: 0 0 0 2px var(--#{$color}-2);
+                    box-shadow: 0 0 0 2px map-get($variants, 2);
                 }
                 @at-root #{selector-append('.theme-dark', &)} {
-                    box-shadow: 0 0 0 2px var(--#{$color}-3);
+                    box-shadow: 0 0 0 2px map-get($variants, 3);
                 }
             }
         }

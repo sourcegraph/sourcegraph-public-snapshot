@@ -2,10 +2,10 @@
     --border-radius: 2px;
     --border-radius-sm: 1px;
     --border-radius-lg: 4px;
-}
 
-:root.theme-redesign {
-    --border-radius: 4px;
-    --border-radius-sm: 4px;
-    --border-radius-lg: 4px;
+    .theme-redesign {
+        --border-radius: 4px;
+        --border-radius-sm: 4px;
+        --border-radius-lg: 4px;
+    }
 }
