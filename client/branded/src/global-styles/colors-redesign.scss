@@ -1,6 +1,3 @@
-// Set to true to compile Bootstrap with our redesign variables
-$bootstap-use-redesign-variables: false !default;
-
 // Redesign colors
 $redesign-gray-01: #f9fafb;
 $redesign-gray-02: #f0f1f2;
@@ -36,35 +33,6 @@ $theme-colors-redesign: (
     danger: $redesign-red,
     merged: $redesign-purple,
 );
-
-// If `bootstap-use-redesign-variables` is enabled, we update our SCSS variables to match the new redesign
-@if $bootstap-use-redesign-variables {
-    // Bootstrap core colors
-    $blue: $redesign-blue;
-    $indigo: $redesign-indigo;
-    $purple: $redesign-purple;
-    $pink: $redesign-pink;
-    $red: $redesign-red;
-    $orange: $redesign-orange;
-    $yellow: $redesign-yellow;
-    $green: $redesign-green;
-    $teal: $redesign-teal;
-    $cyan: $redesign-cyan;
-
-    // Globals
-    $primary: $redesign-blue;
-    $secondary: $redesign-gray-08;
-    $success: $redesign-green;
-    $info: $redesign-cyan;
-    $warning: $redesign-yellow;
-    $danger: $redesign-red;
-    $secondary-light: $redesign-gray-03; // TODO: Stop using secondary-light
-    $merged: $redesign-purple;
-
-    // mark- colors
-    $mark-bg-light: rgba(255, 218, 30, 0.5); // Only used by browser extension?
-    $mark-bg-dark: rgba(16, 104, 2, 0.5);
-}
 
 :root.theme-redesign,
 // Descendant selector is required for Storybook `addRedesignVariants` helper.
