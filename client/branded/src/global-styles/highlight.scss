@@ -76,115 +76,13 @@
         color: #b31d28;
         background: rgba(255, 0, 0, 0.2);
     }
-}
 
-.theme-dark {
-    // Adapted from https://github.com/highlightjs/highlight.js/blob/1b10552510a1ec13a3d30d46281dc268553ad157/src/styles/vs2015.css
-
-    .hljs-keyword,
-    .hljs-literal,
-    .hljs-symbol,
-    .hljs-name {
-        color: #569cd6;
-    }
-    .hljs-link {
-        color: #569cd6;
-        text-decoration: underline;
-    }
-
-    .hljs-built_in,
-    .hljs-type {
-        color: #4ec9b0;
-    }
-
-    .hljs-number,
-    .hljs-class {
-        color: #b8d7a3;
-    }
-
-    .hljs-string,
-    .hljs-meta-string {
-        color: #d69d85;
-    }
-
-    .hljs-regexp,
-    .hljs-template-tag {
-        color: #9a5334;
-    }
-
-    .hljs-subst,
-    .hljs-function,
-    .hljs-title,
-    .hljs-params,
-    .hljs-formula {
-        color: #dcdcdc;
-    }
-
-    .hljs-comment,
-    .hljs-quote {
-        color: #57a64a;
-    }
-
-    .hljs-doctag {
-        color: #608b4e;
-    }
-
-    .hljs-meta,
-    .hljs-meta-keyword,
-    .hljs-tag {
-        color: #9b9b9b;
-    }
-
-    .hljs-variable,
-    .hljs-template-variable {
-        color: #bd63c5;
-    }
-
-    .hljs-attr,
-    .hljs-attribute,
-    .hljs-builtin-name {
-        color: #9cdcfe;
-    }
-
-    .hljs-section {
-        color: #ffd700;
-    }
-
-    .hljs-emphasis {
-        font-style: italic;
-    }
-
-    .hljs-strong {
-        font-weight: bold;
-    }
-
-    .hljs-bullet,
-    .hljs-selector-tag,
-    .hljs-selector-id,
-    .hljs-selector-class,
-    .hljs-selector-attr,
-    .hljs-selector-pseudo {
-        color: #d7ba7d;
-    }
-
-    .hljs-addition {
-        background-color: #024c00;
-        color: #d9f2d8;
-    }
-
-    .hljs-deletion {
-        background-color: #4c0000;
-        color: #fecccc;
-    }
-}
-
-.theme-light {
     // These colors are my description of them.
     // They don't match up with other defined colors.
     --hl-yellow: #b58900;
     --hl-green: #859900;
     --hl-red: #dc322f;
-    --hl-orange: #cb4b16;
+    --hl-orange: #cb5b16;
     --hl-blue: #268bd2;
     --hl-cyan: #2aa198;
     --hl-eggshell: #eee8d5;
@@ -200,6 +98,7 @@
     --hl-gray-4: #586e75;
     --hl-gray-5: #2b3750;
 
+	// bg colors
     --hl-bg-red: #f5dbdd;
     --hl-bg-green: #deeade;
 
@@ -539,24 +438,126 @@
                 }
             }
         }
+
+		.hl-ts {
+			.hl-keyword.hl-control {
+				color: var(--hl-orange);
+			}
+		}
     }
 }
 
 .theme-dark {
+    // Adapted from https://github.com/highlightjs/highlight.js/blob/1b10552510a1ec13a3d30d46281dc268553ad157/src/styles/vs2015.css
+
+    .hljs-keyword,
+    .hljs-literal,
+    .hljs-symbol,
+    .hljs-name {
+        color: #569cd6;
+    }
+    .hljs-link {
+        color: #569cd6;
+        text-decoration: underline;
+    }
+
+    .hljs-built_in,
+    .hljs-type {
+        color: #4ec9b0;
+    }
+
+    .hljs-number,
+    .hljs-class {
+        color: #b8d7a3;
+    }
+
+    .hljs-string,
+    .hljs-meta-string {
+        color: #d69d85;
+    }
+
+    .hljs-regexp,
+    .hljs-template-tag {
+        color: #9a5334;
+    }
+
+    .hljs-subst,
+    .hljs-function,
+    .hljs-title,
+    .hljs-params,
+    .hljs-formula {
+        color: #dcdcdc;
+    }
+
+    .hljs-comment,
+    .hljs-quote {
+        color: #57a64a;
+    }
+
+    .hljs-doctag {
+        color: #608b4e;
+    }
+
+    .hljs-meta,
+    .hljs-meta-keyword,
+    .hljs-tag {
+        color: #9b9b9b;
+    }
+
+    .hljs-variable,
+    .hljs-template-variable {
+        color: #bd63c5;
+    }
+
+    .hljs-attr,
+    .hljs-attribute,
+    .hljs-builtin-name {
+        color: #9cdcfe;
+    }
+
+    .hljs-section {
+        color: #ffd700;
+    }
+
+    .hljs-emphasis {
+        font-style: italic;
+    }
+
+    .hljs-strong {
+        font-weight: bold;
+    }
+
+    .hljs-bullet,
+    .hljs-selector-tag,
+    .hljs-selector-id,
+    .hljs-selector-class,
+    .hljs-selector-attr,
+    .hljs-selector-pseudo {
+        color: #d7ba7d;
+    }
+
+    .hljs-addition {
+        background-color: #024c00;
+        color: #d9f2d8;
+    }
+
+    .hljs-deletion {
+        background-color: #4c0000;
+        color: #fecccc;
+    }
+
     --hl-gray-0: #bdd4e3;
     --hl-gray-1: #8fa1b3;
     --hl-gray-2: #c0c5ce;
     --hl-gray-4: #4f5b66;
     --hl-gray-5: #96b5b4;
     --hl-gray-6: #969896;
-
     --hl-dark-green: #359448;
     --hl-dark-blue-1: #329af0;
     --hl-dark-blue-2: #268bd2;
     --hl-dark-blue-3: #35a5ff;
     --hl-dark-yellow: #ebcb8b;
     --hl-dark-red: #bf616a;
-
     --hl-blue: #72c3fc;
     --hl-yellow: #fff3bf;
     --hl-red: #ffb0af;
@@ -567,7 +568,6 @@
     --hl-brown: #ab7967;
     --hl-black: #2b303b;
     --hl-white: #f2f4f8;
-
     --hl-bg-red: #bf616a;
     --hl-bg-dark-red: #350b10;
     --hl-bg-dark-green: #0e2414;
