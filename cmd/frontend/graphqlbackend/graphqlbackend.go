@@ -383,18 +383,15 @@ type schemaResolver struct {
 
 	db                dbutil.DB
 	repoupdaterClient *repoupdater.Client
+	nodeByIDFns       map[string]NodeByIDFunc
 }
 
-// newSchemaResolver will return a new schemaResolver. If repoupdaterClient is nil, then it will use
-// repoupdater.DefaultClient instead.
-func newSchemaResolver(db dbutil.DB, repoupdaterClient *repoupdater.Client) *schemaResolver {
-	if repoupdaterClient == nil {
-		repoupdaterClient = repoupdater.DefaultClient
-	}
+// newSchemaResolver will return a new schemaResolver using repoupdater.DefaultClient.
+func newSchemaResolver(db dbutil.DB) *schemaResolver {
 
-	return &schemaResolver{
+	r := &schemaResolver{
 		db:                db,
-		repoupdaterClient: repoupdaterClient,
+		repoupdaterClient: repoupdater.DefaultClient,
 
 		BatchChangesResolver: defaultBatchChangesResolver{},
 		AuthzResolver:        defaultAuthzResolver{},
@@ -402,6 +399,73 @@ func newSchemaResolver(db dbutil.DB, repoupdaterClient *repoupdater.Client) *sch
 		InsightsResolver:     defaultInsightsResolver{},
 		LicenseResolver:      defaultLicenseResolver{},
 	}
+
+	r.nodeByIDFns = map[string]NodeByIDFunc{
+		"AccessToken": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return accessTokenByID(ctx, db, id)
+		},
+		"ProductLicense": func(ctx context.Context, id graphql.ID) (Node, error) {
+			if f := ProductLicenseByID; f != nil {
+				return f(ctx, db, id)
+			}
+			return nil, errors.New("not implemented")
+		},
+		"ProductSubscription": func(ctx context.Context, id graphql.ID) (Node, error) {
+			if f := ProductSubscriptionByID; f != nil {
+				return f(ctx, db, id)
+			}
+			return nil, errors.New("not implemented")
+		},
+		"ExternalAccount": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return externalAccountByID(ctx, db, id)
+		},
+		externalServiceIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
+			return externalServiceByID(ctx, db, id)
+		},
+		"GitRef": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.gitRefByID(ctx, id)
+		},
+		"Repository": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.repositoryByID(ctx, id)
+		},
+		"User": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return UserByID(ctx, db, id)
+		},
+		"Org": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return OrgByID(ctx, db, id)
+		},
+		"OrganizationInvitation": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return orgInvitationByID(ctx, db, id)
+		},
+		"GitCommit": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.gitCommitByID(ctx, id)
+		},
+		"RegistryExtension": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return RegistryExtensionByID(ctx, db, id)
+		},
+		"SavedSearch": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.savedSearchByID(ctx, id)
+		},
+		"Site": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.siteByGQLID(ctx, id)
+		},
+		"LSIFUpload": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.LSIFUploadByID(ctx, id)
+		},
+		"LSIFIndex": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.LSIFIndexByID(ctx, id)
+		},
+		"CodeMonitor": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.MonitorByID(ctx, id)
+		},
+		"OutOfBandMigration": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.OutOfBandMigrationByID(ctx, id)
+		},
+		"SearchContext": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.SearchContextByID(ctx, id)
+		},
+	}
+	return r
 }
 
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
