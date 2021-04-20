@@ -141,7 +141,6 @@ var testSearchGQLQuery = `
 				preview
 				lineNumber
 				offsetAndLengths
-				limitHit
 			}
 		}
 
