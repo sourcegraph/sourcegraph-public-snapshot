@@ -585,7 +585,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             'mb-0': true,
                         })}
                     >
-                        Sync selected public repositories
+                        Sync selected repositories
                     </p>
                 </div>
             </label>
