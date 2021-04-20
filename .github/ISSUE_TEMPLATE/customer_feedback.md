@@ -2,7 +2,7 @@
 name: 'Customer #feedback'
 about: 'Customer #feedback via an internal Sourcegraph teammate'
 title: ''
-labels: '#feedback'
+labels: 'feedback'
 assignees: ''
 
 ---
