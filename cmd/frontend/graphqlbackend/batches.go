@@ -408,7 +408,6 @@ type VisibleChangesetSpecResolver interface {
 type ChangesetSpecDeltaResolver interface {
 	TitleChanged() bool
 	BodyChanged() bool
-	Undraft() bool
 	BaseRefChanged() bool
 	DiffChanged() bool
 	CommitMessageChanged() bool

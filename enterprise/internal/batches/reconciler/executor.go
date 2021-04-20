@@ -301,8 +301,6 @@ func (e *executor) archiveChangeset() {
 
 // closeChangeset closes the given changeset on its code host if its ExternalState is OPEN or DRAFT.
 func (e *executor) closeChangeset(ctx context.Context) (err error) {
-	e.ch.Closing = false
-
 	if e.ch.ExternalState != btypes.ChangesetExternalStateDraft && e.ch.ExternalState != btypes.ChangesetExternalStateOpen {
 		return nil
 	}
