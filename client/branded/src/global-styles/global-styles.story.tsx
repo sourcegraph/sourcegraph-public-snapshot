@@ -9,6 +9,7 @@ import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
 import { flow, startCase } from 'lodash'
+import SearchIcon from 'mdi-react/SearchIcon'
 import openColor from 'open-color'
 import React, { useState } from 'react'
 import 'storybook-addon-designs'
@@ -16,9 +17,9 @@ import 'storybook-addon-designs'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
 
-import { BrandedStory } from '../components/BrandedStory'
-import { CodeSnippet } from '../components/CodeSnippet'
-import { Form } from '../components/Form'
+import { BrandedStory } from '../../components/BrandedStory'
+import { CodeSnippet } from '../../components/CodeSnippet'
+import { Form } from '../../components/Form'
 
 const semanticColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'merged'] as const
 
@@ -652,6 +653,14 @@ const ButtonVariants: React.FunctionComponent<ButtonVariantsProps> = ({ variantT
                     disabled={true}
                 >
                     Disabled
+                </button>
+                <button
+                    type="button"
+                    key={`${variantType} - ${variant} - icon`}
+                    className={classNames('btn', `${variantType}-${variant}`)}
+                >
+                    <SearchIcon className="icon-inline mr-1" />
+                    With icon
                 </button>
             </React.Fragment>
         ))}

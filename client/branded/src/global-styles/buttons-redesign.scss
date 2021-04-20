@@ -77,6 +77,11 @@
                     box-shadow: 0 0 0 2px $dark-color-variant;
                 }
             }
+
+            // Set inlined icons to match outline border
+            svg {
+                fill: $base-color;
+            }
         }
     }
 }
@@ -156,6 +161,10 @@
             &:active,
             &.active {
                 box-shadow: 0 0 0 2px var(--primary-2);
+            }
+
+            svg {
+                fill: var(--body-color);
             }
         }
     }
