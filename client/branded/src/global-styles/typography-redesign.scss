@@ -35,16 +35,9 @@
         font-weight: 500;
     }
 
-    // Body / Base /Strong
+    // Body / Base / Strong
     strong {
         font-weight: 600;
-    }
-
-    // Body / Small / Strong
-    // Required because this `body-small-strong` is the only element with `font-weight: 700;`.
-    // All other elements should have `font-weight` defined for `strong`.
-    p > small > strong {
-        font-weight: 700;
     }
 
     // Body / Small / Regular

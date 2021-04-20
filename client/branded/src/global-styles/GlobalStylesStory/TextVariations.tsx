@@ -13,18 +13,19 @@ interface TextLabelProps {
     size: TextSize
     weight: TextWeight
     name: string
+    className?: string
 }
 
 const TextLabel: React.FunctionComponent<TextLabelProps> = props => {
-    const { size, weight, name } = props
+    const { size, weight, name, className } = props
     const label = `This is ${name} / ${size} / ${weight}`
 
     if (weight === 'Strong') {
-        return <strong>{label}</strong>
+        return <strong className={className}>{label}</strong>
     }
 
     if (weight === 'Medium') {
-        return <span className="font-weight-medium">{label}</span>
+        return <span className={classNames('font-weight-medium', className)}>{label}</span>
     }
 
     return <>{label}</>
@@ -64,6 +65,9 @@ export const TextVariations: React.FunctionComponent = () => (
                 <td>Body Text</td>
                 <td>
                     <TextVariants component="p" name="Body" weights={['Regular', 'Medium', 'Strong']} />
+                    <p className={styles.textVariant}>
+                        <TextLabel size="Base" weight="Strong" name="Input" className="font-weight-bold" />
+                    </p>
                 </td>
             </tr>
             <tr>
