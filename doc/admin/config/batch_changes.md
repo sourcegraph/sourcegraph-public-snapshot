@@ -18,7 +18,7 @@ To restore the default behavior, you can either delete the `batchChanges.rollout
 
 Or, to put it another way:
 
-| `batchChanges.rolloutWindows` configuration | Behaviour |
+| `batchChanges.rolloutWindows` configuration | Behavior |
 |---------------------------------------------|-----------|
 | Omitted, or set to `null`                   | Changesets will be reconciled as fast as the code host allows; essentially the same as setting a single `{"rate": "unlimited"}` window. |
 | Set to an array (even if empty)             | Changesets will be reconciled using the rate limit in the current window. If no window covers the current period, then no changesets will be reconciled until a window with a non-zero [`rate`](#rate) opens. |
