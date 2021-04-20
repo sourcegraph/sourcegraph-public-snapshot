@@ -858,6 +858,13 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 	dir := s.dir(req.Repo)
 	if !repoCloned(dir) {
+		if conf.Get().DisableAutoGitUpdates {
+			log15.Debug("not cloning on demand as DisableAutoGitUpdates is set")
+			status = "repo-not-found"
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{})
+		}
+
 		cloneProgress, cloneInProgress := s.locker.Status(dir)
 		if cloneInProgress {
 			status = "clone-in-progress"
