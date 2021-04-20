@@ -64,8 +64,7 @@ $theme-colors-redesign: (
     --box-shadow: 0 0.25rem 0.5rem rgba($redesign-gray-08, 0.07);
 }
 
-.theme-light.theme-redesign,
-.theme-light .theme-redesign {
+.theme-light.theme-redesign {
     --primary-2: #a3d0ff;
     --secondary: #{$redesign-gray-04};
     --secondary-2: #eef1f7;
@@ -104,8 +103,7 @@ $theme-colors-redesign: (
     --disabled-action-text-color: var(--text-muted);
 }
 
-.theme-dark.theme-redesign,
-.theme-dark .theme-redesign {
+.theme-dark.theme-redesign {
     --primary-2: #0f59aa;
     --secondary: #{$redesign-gray-08};
     --secondary-2: #242936;
