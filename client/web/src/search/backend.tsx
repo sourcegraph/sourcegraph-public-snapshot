@@ -287,7 +287,7 @@ export const fetchAutoDefinedSearchContexts = defer(() =>
 
 export function fetchSearchContexts({
     first,
-    includeAll,
+    namespaceFilterType,
     namespace,
     query,
     after,
@@ -295,7 +295,7 @@ export function fetchSearchContexts({
     first: number
     query?: string
     namespace?: Scalars['ID']
-    includeAll?: boolean
+    namespaceFilterType?: GQL.SearchContextsNamespaceFilterType
     after?: string
 }): Observable<ListSearchContextsResult['searchContexts']> {
     return requestGraphQL<ListSearchContextsResult, ListSearchContextsVariables>(
@@ -304,15 +304,15 @@ export function fetchSearchContexts({
                 $first: Int!
                 $after: String
                 $query: String
+                $namespaceFilterType: SearchContextsNamespaceFilterType
                 $namespace: ID
-                $includeAll: Boolean!
             ) {
                 searchContexts(
                     first: $first
                     after: $after
                     query: $query
+                    namespaceFilterType: $namespaceFilterType
                     namespace: $namespace
-                    includeAll: $includeAll
                 ) {
                     nodes {
                         ...SearchContextFields
@@ -330,8 +330,8 @@ export function fetchSearchContexts({
             first,
             after: after ?? null,
             query: query ?? null,
+            namespaceFilterType: namespaceFilterType ?? null,
             namespace: namespace ?? null,
-            includeAll: includeAll ?? false,
         }
     ).pipe(
         map(dataOrThrowErrors),

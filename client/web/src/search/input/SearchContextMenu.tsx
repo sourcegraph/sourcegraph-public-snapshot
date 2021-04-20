@@ -198,7 +198,6 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                         fetchSearchContexts({
                             first: searchContextsPerPageToLoad,
                             query,
-                            includeAll: true,
                             after: cursor,
                         }),
                     ])

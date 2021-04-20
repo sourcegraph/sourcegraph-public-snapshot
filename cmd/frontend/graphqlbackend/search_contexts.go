@@ -18,6 +18,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+const (
+	namespaceFilterTypeInstance  = "INSTANCE"
+	namespaceFilterTypeNamespace = "NAMESPACE"
+)
+
 type searchContextResolver struct {
 	sc *types.SearchContext
 	db dbutil.DB
@@ -37,11 +42,11 @@ func (r *searchContextRepositoryRevisionsResolver) Revisions(ctx context.Context
 }
 
 type listSearchContextsArgs struct {
-	First      int32
-	After      *string
-	Query      *string
-	Namespace  *graphql.ID
-	IncludeAll bool
+	First               int32
+	After               *string
+	Query               *string
+	NamespaceFilterType *string
+	Namespace           *graphql.ID
 }
 
 type searchContextConnection struct {
@@ -137,8 +142,16 @@ func (r *schemaResolver) AutoDefinedSearchContexts(ctx context.Context) ([]*sear
 }
 
 func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchContextsArgs) (*searchContextConnection, error) {
-	if args.IncludeAll && args.Namespace != nil {
-		return nil, errors.New("parameters IncludeAll and Namespace are mutually exclusive")
+	var namespaceFilterType string
+	if args.NamespaceFilterType != nil {
+		namespaceFilterType = *args.NamespaceFilterType
+	}
+
+	if args.Namespace != nil && namespaceFilterType != namespaceFilterTypeNamespace {
+		return nil, errors.New("namespace can only be used if namespaceFilterType is NAMESPACE")
+	}
+	if args.Namespace == nil && namespaceFilterType == namespaceFilterTypeNamespace {
+		return nil, errors.New("namespace has to be non-nil if namespaceFilterType is NAMESPACE")
 	}
 
 	// Request one extra to determine if there are more pages
@@ -156,7 +169,7 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 		return nil, err
 	}
 
-	opts := database.ListSearchContextsOptions{Name: searchContextName, IncludeAll: newArgs.IncludeAll}
+	opts := database.ListSearchContextsOptions{Name: searchContextName, NoNamespace: namespaceFilterType == namespaceFilterTypeInstance}
 	if newArgs.Namespace != nil {
 		err := UnmarshalNamespaceID(*newArgs.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
 		if err != nil {

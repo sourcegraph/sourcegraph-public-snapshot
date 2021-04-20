@@ -1447,14 +1447,15 @@ type Query {
         """
         query: String
         """
-        Limit search context results to a particular namespace (user or org). If not provided, results will be limited to instance-level contexts.
-        Search contexts are limited to those available to the current user. Mutually exclusive with the 'includeAll' parameter.
+        Specifies the filter type used to narrow down the search contexts using their namespaces. If not set,
+        search contexts are not filtered by namespace.
+        """
+        namespaceFilterType: SearchContextsNamespaceFilterType
+        """
+        Limit search context results to a particular namespace (user or org). Namespace parameter has to be set
+        if namespaceFilterType is set to NAMESPACE. If namespaceFilterType is INSTANCE or not set, it should not be set.
         """
         namespace: ID
-        """
-        Include all search contexts that are available to the current user. Mutually exclusive with the 'namespace' parameter.
-        """
-        includeAll: Boolean!
     ): SearchContextConnection!
     """
     (experimental) Determines whether the search context is within the set of search contexts available to the current user.
@@ -3285,6 +3286,20 @@ type VersionContext {
     The description of the version context.
     """
     description: String!
+}
+
+"""
+(experimental) Search context namespace filter types available to narrow down contexts when querying.
+"""
+enum SearchContextsNamespaceFilterType {
+    """
+    Limits available search contexts to instance-level contexts (without a namespace).
+    """
+    INSTANCE
+    """
+    Limits available search contexts to those with a specific namespace (user or org) which is provided separately.
+    """
+    NAMESPACE
 }
 
 """

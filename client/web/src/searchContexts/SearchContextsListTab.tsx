@@ -22,7 +22,6 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
             fetchSearchContexts({
                 first: args.first ?? 1,
                 query: args.query ?? undefined,
-                includeAll: true,
                 after: args.after ?? undefined,
             }),
         []
