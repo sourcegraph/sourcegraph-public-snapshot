@@ -26,6 +26,7 @@ Sourcegraph uses a configurable internal rate limiter for API requests made from
 ## Repo Updater State
 
 **Repo Updater State** is a useful debugging tool for site admins to monitor:
+
 - **Schedule**: The schedule of when repositories get enqueued into the Update Queue.
 - **Update Queue**: A priority queue of repositories to update. A worker continuously dequeues them and sends updates to gitserver.
 - **Sync jobs**: The current list of external service sync jobs, ordered by start date descending
