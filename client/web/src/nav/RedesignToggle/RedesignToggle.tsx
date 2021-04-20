@@ -1,15 +1,15 @@
 import React, { useCallback } from 'react'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { useRedesignSubject, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignSubject'
+import { useRedesignToggle, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 export const RedesignToggle: React.FunctionComponent = () => {
-    const [redesignSubject, isRedesignEnabled] = useRedesignSubject()
+    const [isRedesignEnabled, setIsRedesignEnabled] = useRedesignToggle()
 
     const handleRedesignToggle = useCallback((): void => {
-        redesignSubject.next(!isRedesignEnabled)
+        setIsRedesignEnabled(!isRedesignEnabled)
         document.documentElement.classList.toggle(REDESIGN_CLASS_NAME, !isRedesignEnabled)
-    }, [isRedesignEnabled, redesignSubject])
+    }, [isRedesignEnabled, setIsRedesignEnabled])
 
     return (
         <div className="px-2 py-1">

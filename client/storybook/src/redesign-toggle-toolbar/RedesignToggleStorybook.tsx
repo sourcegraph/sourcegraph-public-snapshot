@@ -1,7 +1,7 @@
 import { Icons, IconButton } from '@storybook/components'
 import React, { ReactElement } from 'react'
 
-import { useRedesignSubject, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignSubject'
+import { useRedesignToggle, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 const toggleRedesignClass = (element: HTMLElement, isRedesignEnabled: boolean): void => {
     element.classList.toggle(REDESIGN_CLASS_NAME, !isRedesignEnabled)
@@ -27,10 +27,10 @@ const updateManager = (isRedesignEnabled: boolean): void => {
 }
 
 export const RedesignToggleStorybook = (): ReactElement => {
-    const [redesignSubject, isRedesignEnabled] = useRedesignSubject()
+    const [isRedesignEnabled, setIsRedesignEnabled] = useRedesignToggle()
 
     const handleRedesignToggle = (): void => {
-        redesignSubject.next(!isRedesignEnabled)
+        setIsRedesignEnabled(!isRedesignEnabled)
         updatePreview(!!isRedesignEnabled)
         updateManager(!!isRedesignEnabled)
     }
