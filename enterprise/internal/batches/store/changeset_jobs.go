@@ -143,9 +143,7 @@ LIMIT 1
 func getChangesetJobQuery(opts *GetChangesetJobOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
-	}
-	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_jobs.id = %s", opts.ID))
+		sqlf.Sprintf("changeset_jobs.id = %s", opts.ID),
 	}
 
 	return sqlf.Sprintf(
