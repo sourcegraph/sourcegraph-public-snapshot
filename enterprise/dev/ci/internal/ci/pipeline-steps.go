@@ -49,7 +49,7 @@ func addWebApp(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":webpack::globe_with_meridians: Build",
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
-		bk.Env("ENTERPRISE", "0"))
+		bk.Env("ENTERPRISE", ""))
 
 	// Webapp enterprise build
 	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
