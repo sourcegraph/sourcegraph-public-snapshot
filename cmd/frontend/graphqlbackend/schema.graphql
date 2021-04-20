@@ -1452,8 +1452,8 @@ type Query {
         """
         namespaceFilterType: SearchContextsNamespaceFilterType
         """
-        Limit search context results to a particular namespace (user or org). Namespace parameter has to be set
-        if namespaceFilterType is set to NAMESPACE. If namespaceFilterType is INSTANCE or not set, it should not be set.
+        Limit search contexts to a specific namespace (user or org). Namespace parameter has to be set if namespaceFilterType is set to NAMESPACE.
+        If namespaceFilterType is INSTANCE or not set, namespace should not be set.
         """
         namespace: ID
     ): SearchContextConnection!
@@ -3297,7 +3297,7 @@ enum SearchContextsNamespaceFilterType {
     """
     INSTANCE
     """
-    Limits available search contexts to those with a specific namespace (user or org) which is provided separately.
+    Limits available search contexts to a specific namespace (user or org).
     """
     NAMESPACE
 }
