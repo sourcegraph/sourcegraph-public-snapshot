@@ -69,4 +69,10 @@
         font-weight: 500;
         letter-spacing: -0.016em;
     }
+
+    label.text-uppercase,
+    %label-uppercase {
+        font-size: 0.75rem;
+        letter-spacing: 0.016em;
+    }
 }

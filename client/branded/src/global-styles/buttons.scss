@@ -66,7 +66,11 @@
         @extend %label-base;
     }
 
-    .btn.btn-sm {
-        @extend %form-control-sm;
+    .btn.text-uppercase {
+        @extend %label-uppercase;
+
+        &.btn-sm {
+            font-size: 0.6875rem;
+        }
     }
 }

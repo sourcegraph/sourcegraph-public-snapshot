@@ -72,6 +72,7 @@ export const TextVariations: React.FunctionComponent = () => (
                 </td>
                 <td>
                     <TextVariants component="label" name="Label" />
+                    <TextVariants component="label" name="Label" className="text-uppercase" />
                 </td>
             </tr>
             <tr>
