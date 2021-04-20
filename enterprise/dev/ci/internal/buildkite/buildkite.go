@@ -28,6 +28,7 @@ type BuildOptions struct {
 type Step struct {
 	Label            string                 `json:"label"`
 	Command          []string               `json:"command,omitempty"`
+	TimeoutInMinutes string                 `json:"timeout_in_minutes,omitempty"`
 	Trigger          string                 `json:"trigger,omitempty"`
 	Async            bool                   `json:"async,omitempty"`
 	Build            *BuildOptions          `json:"build,omitempty"`

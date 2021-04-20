@@ -118,40 +118,40 @@ func getInitialSiteAdminEmail(ctx context.Context) (_ string, err error) {
 	return database.GlobalUserEmails.GetInitialSiteAdminEmail(ctx)
 }
 
-func getAndMarshalBatchChangesUsageJSON(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalBatchChangesUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalBatchChangesUsageJSON")(&err)
 
-	batchChangesUsage, err := usagestats.GetBatchChangesUsageStatistics(ctx)
+	batchChangesUsage, err := usagestats.GetBatchChangesUsageStatistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 	return json.Marshal(batchChangesUsage)
 }
 
-func getAndMarshalGrowthStatisticsJSON(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalGrowthStatisticsJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalGrowthStatisticsJSON")(&err)
 
-	growthStatistics, err := usagestats.GetGrowthStatistics(ctx)
+	growthStatistics, err := usagestats.GetGrowthStatistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 	return json.Marshal(growthStatistics)
 }
 
-func getAndMarshalSavedSearchesJSON(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalSavedSearchesJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSavedSearchesJSON")(&err)
 
-	savedSearches, err := usagestats.GetSavedSearches(ctx)
+	savedSearches, err := usagestats.GetSavedSearches(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 	return json.Marshal(savedSearches)
 }
 
-func getAndMarshalHomepagePanelsJSON(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalHomepagePanelsJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalHomepagePanelsJSON")(&err)
 
-	homepagePanels, err := usagestats.GetHomepagePanels(ctx)
+	homepagePanels, err := usagestats.GetHomepagePanels(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -168,10 +168,10 @@ func getAndMarshalRepositoriesJSON(ctx context.Context) (_ json.RawMessage, err 
 	return json.Marshal(repos)
 }
 
-func getAndMarshalRetentionStatisticsJSON(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalRetentionStatisticsJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalRetentionStatisticsJSON")(&err)
 
-	retentionStatistics, err := usagestats.GetRetentionStatistics(ctx)
+	retentionStatistics, err := usagestats.GetRetentionStatistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -179,10 +179,10 @@ func getAndMarshalRetentionStatisticsJSON(ctx context.Context) (_ json.RawMessag
 	return json.Marshal(retentionStatistics)
 }
 
-func getAndMarshalSearchOnboardingJSON(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalSearchOnboardingJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSearchOnboardingJSON")(&err)
 
-	searchOnboarding, err := usagestats.GetSearchOnboarding(ctx)
+	searchOnboarding, err := usagestats.GetSearchOnboarding(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -212,10 +212,10 @@ func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context, db dbutil.DB) (
 	return json.Marshal(searchUsage)
 }
 
-func getAndMarshalExtensionsUsageStatisticsJSON(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalExtensionsUsageStatisticsJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalExtensionsUsageStatisticsJSON")
 
-	extensionsUsage, err := usagestats.GetExtensionsUsageStatistics(ctx)
+	extensionsUsage, err := usagestats.GetExtensionsUsageStatistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -223,10 +223,10 @@ func getAndMarshalExtensionsUsageStatisticsJSON(ctx context.Context) (_ json.Raw
 	return json.Marshal(extensionsUsage)
 }
 
-func getAndMarshalCodeInsightsUsageJSON(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
 
-	codeInsightsUsage, err := usagestats.GetCodeInsightsUsageStatistics(ctx)
+	codeInsightsUsage, err := usagestats.GetCodeInsightsUsageStatistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -234,10 +234,10 @@ func getAndMarshalCodeInsightsUsageJSON(ctx context.Context) (_ json.RawMessage,
 	return json.Marshal(codeInsightsUsage)
 }
 
-func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context) (_ json.RawMessage, err error) {
+func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeMonitoringUsageJSON")
 
-	codeMonitoringUsage, err := usagestats.GetCodeMonitoringUsageStatistics(ctx)
+	codeMonitoringUsage, err := usagestats.GetCodeMonitoringUsageStatistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -372,26 +372,26 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 		if err != nil {
 			logFunc("telemetry: updatecheck.hasFindRefsOccurred failed", "error", err)
 		}
-		r.BatchChangesUsage, err = getAndMarshalBatchChangesUsageJSON(ctx)
+		r.BatchChangesUsage, err = getAndMarshalBatchChangesUsageJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalBatchChangesUsageJSON failed", "error", err)
 		}
-		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx)
+		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalGrowthStatisticsJSON failed", "error", err)
 		}
 
-		r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx)
+		r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalSavedSearchesJSON failed", "error", err)
 		}
 
-		r.HomepagePanels, err = getAndMarshalHomepagePanelsJSON(ctx)
+		r.HomepagePanels, err = getAndMarshalHomepagePanelsJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalHomepagePanelsJSON failed", "error", err)
 		}
 
-		r.SearchOnboarding, err = getAndMarshalSearchOnboardingJSON(ctx)
+		r.SearchOnboarding, err = getAndMarshalSearchOnboardingJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalSearchOnboardingJSON failed", "error", err)
 		}
@@ -401,22 +401,22 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getAndMarshalRepositoriesJSON failed", "error", err)
 		}
 
-		r.RetentionStatistics, err = getAndMarshalRetentionStatisticsJSON(ctx)
+		r.RetentionStatistics, err = getAndMarshalRetentionStatisticsJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalRetentionStatisticsJSON failed", "error", err)
 		}
 
-		r.ExtensionsUsage, err = getAndMarshalExtensionsUsageStatisticsJSON(ctx)
+		r.ExtensionsUsage, err = getAndMarshalExtensionsUsageStatisticsJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalExtensionsUsageStatisticsJSON failed", "error", err)
 		}
 
-		r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx)
+		r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalCodeInsightsUsageJSON failed", "error", err)
 		}
 
-		r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx)
+		r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalCodeMonitoringUsageJSON failed", "error", err)
 		}

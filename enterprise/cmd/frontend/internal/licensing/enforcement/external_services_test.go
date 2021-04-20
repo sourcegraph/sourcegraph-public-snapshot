@@ -54,22 +54,14 @@ func TestNewPreCreateExternalServiceHook(t *testing.T) {
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
-			store := mockExternalServicesStore{extSvcCount: test.externalServiceCount}
-			err := NewPreCreateExternalServiceHook(&store)(context.Background())
+			database.Mocks.ExternalServices.Count = func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error) {
+				return test.externalServiceCount, nil
+			}
+			t.Cleanup(func() { database.Mocks.ExternalServices.Count = nil })
+			err := NewBeforeCreateExternalServiceHook()(context.Background(), nil)
 			if gotErr := err != nil; gotErr != test.wantErr {
 				t.Errorf("got error %v, want %v", gotErr, test.wantErr)
 			}
 		})
 	}
-}
-
-// A mockExternalServicesStore implements the ExternalServicesStore interface for test purposes.
-type mockExternalServicesStore struct {
-	extSvcCount int
-	err         error
-}
-
-// Count returns the number of external services currently configured.
-func (m *mockExternalServicesStore) Count(_ context.Context, _ database.ExternalServicesListOptions) (int, error) {
-	return m.extSvcCount, m.err
 }

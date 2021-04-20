@@ -11,6 +11,7 @@ import { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
+import { percySnapshotWithVariants } from './utils'
 
 describe('Organizations', () => {
     const testOrg = subtypeOf<OrganizationResult['organization']>()({
@@ -84,6 +85,9 @@ describe('Organizations', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/site-admin/organizations')
 
             await driver.page.waitForSelector('.test-create-org-button')
+
+            await percySnapshotWithVariants(driver.page, 'Site admin org page')
+
             await driver.page.click('.test-create-org-button')
 
             await driver.replaceText({

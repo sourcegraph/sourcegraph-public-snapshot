@@ -21,7 +21,7 @@ type State struct {
 	ImportedMonikers       *datastructures.IDSet           // moniker ids that have kind "import"
 	ExportedMonikers       *datastructures.IDSet           // moniker ids that have kind "export"
 	LinkedMonikers         *datastructures.DisjointIDSet   // tracks which moniker ids are related via next edges
-	LinkedReferenceResults *datastructures.DisjointIDSet   // tracks which reference result ids are related via next edges
+	LinkedReferenceResults map[int][]int                   // tracks which reference result ids are related via item edges
 	Monikers               *datastructures.DefaultIDSetMap // maps items to their monikers
 	Contains               *datastructures.DefaultIDSetMap // maps ranges to containing documents
 	Diagnostics            *datastructures.DefaultIDSetMap // maps diagnostics to their documents
@@ -43,7 +43,7 @@ func newState() *State {
 		ImportedMonikers:       datastructures.NewIDSet(),
 		ExportedMonikers:       datastructures.NewIDSet(),
 		LinkedMonikers:         datastructures.NewDisjointIDSet(),
-		LinkedReferenceResults: datastructures.NewDisjointIDSet(),
+		LinkedReferenceResults: map[int][]int{},
 		Monikers:               datastructures.NewDefaultIDSetMap(),
 		Contains:               datastructures.NewDefaultIDSetMap(),
 		Diagnostics:            datastructures.NewDefaultIDSetMap(),

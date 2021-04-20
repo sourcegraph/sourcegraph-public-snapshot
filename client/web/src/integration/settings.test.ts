@@ -7,6 +7,7 @@ import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
+import { percySnapshotWithVariants } from './utils'
 
 describe('Settings', () => {
     let driver: Driver
@@ -96,6 +97,8 @@ describe('Settings', () => {
                 true,
                 'Expected save button to be disabled'
             )
+
+            await percySnapshotWithVariants(driver.page, 'Settings page')
 
             // Replace with new settings
             const newSettings = '{ /* These are new settings */}'

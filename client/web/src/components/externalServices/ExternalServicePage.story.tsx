@@ -29,10 +29,15 @@ const fetchExternalService: typeof _fetchExternalService = () =>
         webhookURL: null,
         lastSyncError: null,
         repoCount: 0,
-        lastSyncAt: '0001-01-01T00:00:00Z',
-        nextSyncAt: '0001-01-01T00:00:00Z',
+        lastSyncAt: null,
+        nextSyncAt: null,
         updatedAt: '2021-03-15T19:39:11Z',
         createdAt: '2021-03-15T19:39:11Z',
+        namespace: {
+            id: 'userid',
+            namespaceName: 'johndoe',
+            url: '/users/johndoe',
+        },
     })
 
 add('View external service config', () => (

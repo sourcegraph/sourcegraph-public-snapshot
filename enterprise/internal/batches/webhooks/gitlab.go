@@ -21,10 +21,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type GitLabWebhook struct{ *Webhook }
+type GitLabWebhook struct {
+	*Webhook
+}
 
 func NewGitLabWebhook(store *store.Store) *GitLabWebhook {
-	return &GitLabWebhook{&Webhook{store, store.ExternalServices(), store.Clock(), extsvc.TypeGitLab}}
+	return &GitLabWebhook{&Webhook{store, extsvc.TypeGitLab}}
 }
 
 // ServeHTTP implements the http.Handler interface.
@@ -106,7 +108,7 @@ func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw str
 		return nil, errors.Wrap(err, "parsing the raw external service ID")
 	}
 
-	es, err := h.ExternalServices.List(ctx, database.ExternalServicesListOptions{
+	es, err := h.Store.ExternalServices().List(ctx, database.ExternalServicesListOptions{
 		IDs:   []int64{id},
 		Kinds: []string{extsvc.KindGitLab},
 	})

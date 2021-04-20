@@ -28,6 +28,8 @@ type Predicate interface {
 var DefaultPredicateRegistry = predicateRegistry{
 	FieldRepo: {
 		"contains":              func() Predicate { return &RepoContainsPredicate{} },
+		"contains.file":         func() Predicate { return &RepoContainsFilePredicate{} },
+		"contains.content":      func() Predicate { return &RepoContainsContentPredicate{} },
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 	},
 }
@@ -114,13 +116,7 @@ func (f *RepoContainsPredicate) parseNode(n Node) error {
 			return fmt.Errorf("unsupported option %q", v.Field)
 		}
 	case Pattern:
-		if v.Negated {
-			return errors.New("predicates do not currently support negated values")
-		}
-		if f.Content != "" {
-			return errors.New("cannot specify content multiple times")
-		}
-		f.Content = v.Value
+		return fmt.Errorf(`prepend 'file:' or 'content:' to "%s" to search repositories containing files or content respectively.`, v.Value)
 	case Operator:
 		if v.Kind == Or {
 			return errors.New("predicates do not currently support 'or' queries")
@@ -165,6 +161,56 @@ func (f *RepoContainsPredicate) Plan(parent Basic) (Plan, error) {
 	nodes = append(nodes, nonPredicateRepos(parent)...)
 	return ToPlan(Dnf(nodes))
 }
+
+/* repo:contains.content(pattern) */
+
+type RepoContainsContentPredicate struct {
+	Pattern string
+}
+
+func (f *RepoContainsContentPredicate) ParseParams(params string) error {
+	if _, err := regexp.Compile(params); err != nil {
+		return fmt.Errorf("contains.content argument: %w", err)
+	}
+	if params == "" {
+		return fmt.Errorf("contains.content argument should not be empty")
+	}
+	f.Pattern = params
+	return nil
+}
+
+func (f *RepoContainsContentPredicate) Field() string { return FieldRepo }
+func (f *RepoContainsContentPredicate) Name() string  { return "contains.content" }
+func (f *RepoContainsContentPredicate) Plan(parent Basic) (Plan, error) {
+	contains := RepoContainsPredicate{File: "", Content: f.Pattern}
+	return contains.Plan(parent)
+}
+
+/* repo:contains.file(pattern) */
+
+type RepoContainsFilePredicate struct {
+	Pattern string
+}
+
+func (f *RepoContainsFilePredicate) ParseParams(params string) error {
+	if _, err := regexp.Compile(params); err != nil {
+		return fmt.Errorf("contains.file argument: %w", err)
+	}
+	if params == "" {
+		return fmt.Errorf("contains.file argument should not be empty")
+	}
+	f.Pattern = params
+	return nil
+}
+
+func (f *RepoContainsFilePredicate) Field() string { return FieldRepo }
+func (f *RepoContainsFilePredicate) Name() string  { return "contains.file" }
+func (f *RepoContainsFilePredicate) Plan(parent Basic) (Plan, error) {
+	contains := RepoContainsPredicate{File: f.Pattern, Content: ""}
+	return contains.Plan(parent)
+}
+
+/* repo:contains.commit.after(...) */
 
 type RepoContainsCommitAfterPredicate struct {
 	TimeRef string

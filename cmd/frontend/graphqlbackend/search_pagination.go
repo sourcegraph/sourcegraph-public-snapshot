@@ -193,7 +193,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	var alert *searchAlert
 
 	if len(resolved.MissingRepoRevs) > 0 {
-		alert = alertForMissingRepoRevs(r.PatternType, resolved.MissingRepoRevs)
+		alert = alertForMissingRepoRevs(resolved.MissingRepoRevs)
 	}
 
 	log15.Info("next cursor for paginated search request",

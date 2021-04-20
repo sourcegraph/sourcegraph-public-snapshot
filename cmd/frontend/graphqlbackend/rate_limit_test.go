@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -583,67 +584,31 @@ func TestRatelimitFromConfig(t *testing.T) {
 	}
 }
 
-func TestBasicLimiter(t *testing.T) {
+func TestBasicLimiterEnabled(t *testing.T) {
 	tests := []struct {
-		name          string
-		limit         int
-		args          LimiterArgs
-		wantEnabled   bool
-		wantLimited   bool
-		wantRemaining int
+		limit       int
+		wantEnabled bool
 	}{
 		{
-			name:  "unknown, anonymous, other",
-			limit: 1,
-			args: LimiterArgs{
-				IsIP:          true,
-				Anonymous:     true,
-				RequestName:   "unknown",
-				RequestSource: trace.SourceOther,
-			},
-			wantEnabled:   true,
-			wantRemaining: 0,
+			limit:       1,
+			wantEnabled: true,
 		},
 		{
-			name:  "unknown, NOT anonymous, other (doesn't count)",
-			limit: 1,
-			args: LimiterArgs{
-				IsIP:          true,
-				Anonymous:     false,
-				RequestName:   "unknown",
-				RequestSource: trace.SourceOther,
-			},
-			wantEnabled:   true,
-			wantRemaining: 1,
+			limit:       100,
+			wantEnabled: true,
 		},
 		{
-			name:  "unknown, anonymous, browser (doesn't count)",
-			limit: 1,
-			args: LimiterArgs{
-				IsIP:          true,
-				Anonymous:     true,
-				RequestName:   "unknown",
-				RequestSource: trace.SourceBrowser,
-			},
-			wantEnabled:   true,
-			wantRemaining: 1,
+			limit:       0,
+			wantEnabled: false,
 		},
 		{
-			name:  "disabled limiter",
-			limit: 0,
-			args: LimiterArgs{
-				IsIP:          true,
-				Anonymous:     true,
-				RequestName:   "unknown",
-				RequestSource: trace.SourceOther,
-			},
-			wantEnabled:   false,
-			wantRemaining: 0,
+			limit:       -1,
+			wantEnabled: false,
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(fmt.Sprintf("limit:%d", tt.limit), func(t *testing.T) {
 			store, err := memstore.New(1)
 			if err != nil {
 				t.Fatal(err)
@@ -651,25 +616,50 @@ func TestBasicLimiter(t *testing.T) {
 			bl := BasicLimitWatcher{store: store}
 			bl.updateFromConfig(tt.limit)
 
-			limiter, enabled := bl.Get()
+			_, enabled := bl.Get()
 
 			if got := enabled; got != tt.wantEnabled {
 				t.Fatalf("got %t, want %t", got, tt.wantEnabled)
 			}
-			if !enabled {
-				return
-			}
-
-			limited, results, err := limiter.RateLimit("foo", 1, tt.args)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got := limited; got != tt.wantLimited {
-				t.Fatalf("got %t, want %t", got, tt.wantLimited)
-			}
-			if got := results.Remaining; got != tt.wantRemaining {
-				t.Fatalf("got %d, want %d", got, tt.wantRemaining)
-			}
 		})
+	}
+}
+
+func TestBasicLimiter(t *testing.T) {
+	store, err := memstore.New(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bl := BasicLimitWatcher{store: store}
+	bl.updateFromConfig(1)
+
+	limiter, enabled := bl.Get()
+	if !enabled {
+		t.Fatalf("got %t, want true", enabled)
+	}
+
+	// These arguments correspond to call we want to limit.
+	limiterArgs := LimiterArgs{
+		Anonymous:     true,
+		RequestName:   "unknown",
+		RequestSource: trace.SourceOther,
+	}
+
+	// 1st call should not be limited.
+	limited, _, err := limiter.RateLimit("", 1, limiterArgs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if limited {
+		t.Fatalf("got %t, want false", limited)
+	}
+
+	// 2nd call should be limited.
+	limited, _, err = limiter.RateLimit("", 1, limiterArgs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !limited {
+		t.Fatalf("got %t, want true", limited)
 	}
 }

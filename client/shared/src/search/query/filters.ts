@@ -112,7 +112,7 @@ interface BaseFilterDefinition {
     alias?: string
     description: string
     discreteValues?: (value: Literal | undefined) => string[]
-    suggestions?: SearchSuggestion['__typename'] | string[]
+    suggestions?: SearchSuggestion['__typename']
     default?: string
     /** Whether the filter may only be used 0 or 1 times in a query. */
     singular?: boolean
@@ -211,9 +211,9 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         singular: true,
     },
     [FilterType.lang]: {
+        discreteValues: () => LANGUAGES,
         negatable: true,
         description: negated => `${negated ? 'Exclude' : 'Include only'} results from the given language`,
-        suggestions: LANGUAGES,
     },
     [FilterType.message]: {
         negatable: true,

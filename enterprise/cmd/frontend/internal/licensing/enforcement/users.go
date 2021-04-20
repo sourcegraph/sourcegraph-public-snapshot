@@ -16,8 +16,8 @@ import (
 
 // NewBeforeCreateUserHook returns a BeforeCreateUserHook closure with the given UsersStore
 // that determines whether new user is allowed to be created.
-func NewBeforeCreateUserHook(s licensing.UsersStore) func(context.Context) error {
-	return func(ctx context.Context) error {
+func NewBeforeCreateUserHook() func(context.Context, dbutil.DB) error {
+	return func(ctx context.Context, db dbutil.DB) error {
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
 			return err
@@ -36,7 +36,7 @@ func NewBeforeCreateUserHook(s licensing.UsersStore) func(context.Context) error
 		}
 
 		// Block creation of a new user beyond the licensed user count (unless true-up is allowed).
-		userCount, err := s.Count(ctx)
+		userCount, err := database.Users(db).Count(ctx, nil)
 		if err != nil {
 			return err
 		}

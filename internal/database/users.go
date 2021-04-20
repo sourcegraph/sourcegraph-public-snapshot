@@ -32,15 +32,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// UserStore provides access to the `users` table.
-//
-// For a detailed overview of the schema, see schema.md.
-type UserStore struct {
-	*basestore.Store
-
+// User hooks
+var (
 	// BeforeCreateUser (if set) is a hook called before creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
-	BeforeCreateUser func(context.Context) error
+	BeforeCreateUser func(ctx context.Context, db dbutil.DB) error
 	// AfterCreateUser (if set) is a hook called after creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
 	// Whatever this hook mutates in database should be reflected on the `user` argument as well.
@@ -48,6 +44,13 @@ type UserStore struct {
 	// BeforeSetUserIsSiteAdmin (if set) is a hook called before promoting/revoking a user to be a
 	// site admin.
 	BeforeSetUserIsSiteAdmin func(isSiteAdmin bool) error
+)
+
+// UserStore provides access to the `users` table.
+//
+// For a detailed overview of the schema, see schema.md.
+type UserStore struct {
+	*basestore.Store
 
 	once sync.Once
 }
@@ -272,8 +275,8 @@ func (u *UserStore) create(ctx context.Context, info NewUser) (newUser *types.Us
 	}
 
 	// Run BeforeCreateUser hook.
-	if u.BeforeCreateUser != nil {
-		if err := u.BeforeCreateUser(ctx); err != nil {
+	if BeforeCreateUser != nil {
+		if err := BeforeCreateUser(ctx, u.Store.Handle().DB()); err != nil {
 			return nil, errors.Wrap(err, "pre create user hook")
 		}
 	}
@@ -350,8 +353,8 @@ func (u *UserStore) create(ctx context.Context, info NewUser) (newUser *types.Us
 		}
 
 		// Run AfterCreateUser hook
-		if u.AfterCreateUser != nil {
-			if err := u.AfterCreateUser(ctx, u.Store.Handle().DB(), user); err != nil {
+		if AfterCreateUser != nil {
+			if err := AfterCreateUser(ctx, u.Store.Handle().DB(), user); err != nil {
 				return nil, errors.Wrap(err, "after create user hook")
 			}
 		}
@@ -571,8 +574,8 @@ func (u *UserStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 	}
 	u.ensureStore()
 
-	if u.BeforeSetUserIsSiteAdmin != nil {
-		if err := u.BeforeSetUserIsSiteAdmin(isSiteAdmin); err != nil {
+	if BeforeSetUserIsSiteAdmin != nil {
+		if err := BeforeSetUserIsSiteAdmin(isSiteAdmin); err != nil {
 			return err
 		}
 	}

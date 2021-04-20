@@ -17,8 +17,5 @@ Sourcegraph can sync repositories from code hosts and other similar services.
 
 **Users** can configure the following public code hosts:
 
-- [GitHub](github.md)
-- [GitLab](gitlab.md)
-- [Bitbucket Cloud](bitbucket_cloud.md)
-
-The feature is currently in private beta.
+- [GitHub.com](github.md)
+- [GitLab.com](gitlab.md)

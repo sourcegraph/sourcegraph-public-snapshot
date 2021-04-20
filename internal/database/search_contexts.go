@@ -8,6 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -31,12 +32,43 @@ func (s *SearchContextsStore) Transact(ctx context.Context) (*SearchContextsStor
 	return &SearchContextsStore{Store: txBase}, nil
 }
 
+const searchContextsPermissionsConditionFmtStr = `(
+    -- Bypass permission check
+    %s
+    -- Happy path of public search contexts
+    OR sc.public
+    -- Private user contexts are available only to its creator
+    OR (sc.namespace_user_id IS NOT NULL AND sc.namespace_user_id = %d)
+    -- Private org contexts are available only to its members
+    OR (sc.namespace_org_id IS NOT NULL AND EXISTS (SELECT FROM org_members om WHERE om.org_id = sc.namespace_org_id AND om.user_id = %d))
+    -- Private instance-level contexts are available only to site-admins
+    OR (sc.namespace_user_id IS NULL AND sc.namespace_org_id IS NULL AND EXISTS (SELECT FROM users u WHERE u.id = %d AND u.site_admin))
+)`
+
+func searchContextsPermissionsCondition(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
+	a := actor.FromContext(ctx)
+	authenticatedUserID := int32(0)
+	bypassPermissionsCheck := a.Internal
+	if !bypassPermissionsCheck && a.IsAuthenticated() {
+		currentUser, err := Users(db).GetByCurrentAuthUser(ctx)
+		if err != nil {
+			return nil, err
+		}
+		authenticatedUserID = currentUser.ID
+		bypassPermissionsCheck = currentUser.SiteAdmin
+	}
+	q := sqlf.Sprintf(searchContextsPermissionsConditionFmtStr, bypassPermissionsCheck, authenticatedUserID, authenticatedUserID, authenticatedUserID)
+	return q, nil
+}
+
 const listSearchContextsFmtStr = `
 SELECT sc.id, sc.name, sc.description, sc.public, sc.namespace_user_id, sc.namespace_org_id, u.username, o.name
 FROM search_contexts sc
 LEFT JOIN users u on sc.namespace_user_id = u.id
 LEFT JOIN orgs o on sc.namespace_org_id = o.id
-WHERE sc.deleted_at IS NULL AND (%s)
+WHERE sc.deleted_at IS NULL
+	AND (%s) -- permission conditions
+	AND (%s) -- query conditions
 ORDER BY sc.id ASC
 LIMIT %d
 `
@@ -102,7 +134,11 @@ func getSearchContextsQueryConditions(opts ListSearchContextsOptions) ([]*sqlf.Q
 }
 
 func (s *SearchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf.Query, limit int32) ([]*types.SearchContext, error) {
-	rows, err := s.Query(ctx, sqlf.Sprintf(listSearchContextsFmtStr, cond, limit))
+	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
+	if err != nil {
+		return nil, err
+	}
+	rows, err := s.Query(ctx, sqlf.Sprintf(listSearchContextsFmtStr, permissionsCond, cond, limit))
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +192,11 @@ func (s *SearchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 		conds = append(conds, sqlf.Sprintf("sc.name = %s", opts.Name))
 	}
 
-	rows, err := s.Query(ctx, sqlf.Sprintf(listSearchContextsFmtStr, sqlf.Join(conds, "\n AND "), 1))
+	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
+	if err != nil {
+		return nil, err
+	}
+	rows, err := s.Query(ctx, sqlf.Sprintf(listSearchContextsFmtStr, permissionsCond, sqlf.Join(conds, "\n AND "), 1))
 	if err != nil {
 		return nil, err
 	}
@@ -226,8 +266,7 @@ func (s *SearchContextsStore) createSearchContext(ctx context.Context, searchCon
 		insertSearchContextFmtStr,
 		searchContext.Name,
 		searchContext.Description,
-		// Always insert search context as public until private contexts are supported
-		true,
+		searchContext.Public,
 		nullInt32Column(searchContext.NamespaceUserID),
 		nullInt32Column(searchContext.NamespaceOrgID),
 	))
@@ -331,4 +370,45 @@ func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Co
 
 	sort.Slice(out, func(i, j int) bool { return out[i].Repo.ID < out[j].Repo.ID })
 	return out, nil
+}
+
+var getAllRevisionsForRepoFmtStr = `
+SELECT DISTINCT scr.revision
+FROM search_context_repos scr
+-- Only return revisions whose search context has not been soft-deleted
+INNER JOIN (
+  SELECT id
+  FROM search_contexts
+  WHERE deleted_at IS NULL
+) sc
+ON sc.id = scr.search_context_id
+WHERE scr.repo_id = %d
+ORDER BY scr.revision;
+`
+
+// GetAllRevisionsForRepo returns the list of revisions that are used in search contexts for a given repo ID.
+func (s *SearchContextsStore) GetAllRevisionsForRepo(ctx context.Context, repoID int32) ([]string, error) {
+	if a := actor.FromContext(ctx); a == nil || !a.Internal {
+		return nil, errors.New("GetAllRevisionsForRepo can only be accessed by an internal actor")
+	}
+
+	rows, err := s.Query(ctx, sqlf.Sprintf(
+		getAllRevisionsForRepoFmtStr,
+		repoID,
+	))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	revs := make([]string, 0)
+	for rows.Next() {
+		var rev string
+		if err = rows.Scan(&rev); err != nil {
+			return nil, err
+		}
+		revs = append(revs, rev)
+	}
+
+	return revs, nil
 }

@@ -16,6 +16,7 @@ import {
     PatternKind,
     CharacterRange,
     createLiteral,
+    Separator,
 } from './token'
 
 /**
@@ -341,18 +342,27 @@ const openingParen = scanToken(/\(/, (_input, range): OpeningParen => ({ type: '
 const closingParen = scanToken(/\)/, (_input, range): ClosingParen => ({ type: 'closingParen', range }))
 
 /**
- * Returns a {@link Scanner} that succeeds if a token scanned by `scanToken`,
- * followed by whitespace or EOF, is found in the search query.
+ * Returns a {@link Scanner} that succeeds if `scanTerm` succeeds,
+ * followed by `scanNext`.
  */
-const followedBy = (scanToken: Scanner<Token>, scanNext: Scanner<Token>): Scanner<Token[]> => (input, start) => {
-    const tokens: Token[] = []
-    const tokenResult = scanToken(input, start)
-    if (tokenResult.type === 'error') {
-        return tokenResult
+const followedBy = (scanTerm: Scanner<Term>, scanNext: Scanner<Token>): Scanner<Token[]> => (input, start) => {
+    const result = scanTerm(input, start)
+    if (result.type === 'error') {
+        return result
     }
-    tokens.push(tokenResult.term)
-    let { end } = tokenResult.term.range
-    if (input[end] !== undefined) {
+    let end: number | undefined
+    const tokens: Token[] = []
+    if (Array.isArray(result.term)) {
+        for (const token of result.term) {
+            tokens.push(token)
+            end = token.range.end
+        }
+    } else {
+        tokens.push(result.term)
+        end = result.term.range.end
+    }
+    // Invariant: end is defined.
+    if (end && input[end] !== undefined) {
         const next = scanNext(input, end)
         if (next.type === 'error') {
             return next
@@ -372,34 +382,32 @@ const followedBy = (scanToken: Scanner<Token>, scanNext: Scanner<Token>): Scanne
  * in a search query.
  */
 const filter: Scanner<Filter> = (input, start) => {
-    const scannedField = filterField(input, start)
-    if (scannedField.type === 'error') {
-        return scannedField
+    const scanPrefix = followedBy(filterField, filterSeparator)
+    const result = scanPrefix(input, start)
+    if (result.type === 'error') {
+        return result
     }
-    const scannedSeparator = filterSeparator(input, scannedField.term.range.end)
-    if (scannedSeparator.type === 'error') {
-        return scannedSeparator
-    }
-    let scannedValue: ScanResult<Literal> | undefined
-    if (input[scannedSeparator.term.range.end] === undefined) {
-        scannedValue = undefined
+    const [field, separator] = result.term as [Literal, Separator]
+    let value: ScanResult<Literal> | undefined
+    if (input[separator.range.end] === undefined) {
+        value = undefined
     } else {
-        scannedValue = scanPredicateValue(input, scannedSeparator.term.range.end, scannedField.term)
-        if (scannedValue.type === 'error') {
-            scannedValue = filterValue(input, scannedSeparator.term.range.end)
+        value = scanPredicateValue(input, separator.range.end, field)
+        if (value.type === 'error') {
+            value = filterValue(input, separator.range.end)
         }
     }
-    if (scannedValue && scannedValue.type === 'error') {
-        return scannedValue
+    if (value && value.type === 'error') {
+        return value
     }
     return {
         type: 'success',
         term: {
             type: 'filter',
-            range: { start, end: scannedValue ? scannedValue.term.range.end : scannedSeparator.term.range.end },
-            field: scannedField.term,
-            value: scannedValue?.term,
-            negated: scannedField.term.value.startsWith('-'),
+            range: { start, end: value ? value.term.range.end : separator.range.end },
+            field,
+            value: value?.term,
+            negated: field.value.startsWith('-'),
         },
     }
 }
