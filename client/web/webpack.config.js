@@ -27,7 +27,7 @@ const rootDirectory = path.resolve(__dirname, '..', '..')
 const nodeModulesPath = path.resolve(rootDirectory, 'node_modules')
 const monacoEditorPaths = [path.resolve(nodeModulesPath, 'monaco-editor')]
 
-const isEnterpriseBuild = !!process.env.ENTERPRISE
+const isEnterpriseBuild = process.env.ENTERPRISE && Boolean(JSON.parse(process.env.ENTERPRISE))
 const enterpriseDirectory = path.resolve(__dirname, 'src', 'enterprise')
 
 const babelLoader = {
