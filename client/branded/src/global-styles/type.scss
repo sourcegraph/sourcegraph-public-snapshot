@@ -57,14 +57,7 @@ sup {
     }
 }
 
-.theme-light .theme-redesign,
-.theme-light.theme-redesign {
-    @each $color, $value in $theme-colors-redesign {
-        @include text-emphasis-variant('.text-#{$color}', $value, true);
-    }
-}
-
-.theme-dark .theme-redesign,
+.theme-light.theme-redesign,
 .theme-dark.theme-redesign {
     @each $color, $value in $theme-colors-redesign {
         @include text-emphasis-variant('.text-#{$color}', $value, true);
