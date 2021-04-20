@@ -13,14 +13,18 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
-- Extension publishing will now add a `gitHead` property to the extension's manifest. [#500](https://github.com/sourcegraph/src-cli/pull/500)
-- `src batch [apply|preview]` now ignore repositories in which a `.batchignore` file exists. The `-force-override-ignore` flag can be used to turn that behaviour off. [#509](https://github.com/sourcegraph/src-cli/pull/509)
-
 ### Changed
 
 ### Fixed
 
 ### Removed
+
+## 3.27.0
+
+### Added
+
+- Extension publishing will now add a `gitHead` property to the extension's manifest. [#500](https://github.com/sourcegraph/src-cli/pull/500)
+- `src batch [apply|preview]` now ignore repositories in which a `.batchignore` file exists. The `-force-override-ignore` flag can be used to turn that behaviour off. [#509](https://github.com/sourcegraph/src-cli/pull/509)
 
 ## 3.26.3
 
