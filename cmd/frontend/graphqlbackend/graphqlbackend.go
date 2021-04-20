@@ -6,10 +6,7 @@ import (
 	"errors"
 	"log"
 	"os"
-	"sort"
 	"strconv"
-	"strings"
-	"sync"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -20,7 +17,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
@@ -29,12 +25,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var (
@@ -375,16 +368,6 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 		graphql.Tracer(&prometheusTracer{db: db}),
 		graphql.UseStringDescriptions(),
 	)
-}
-
-// EmptyResponse is a type that can be used in the return signature for graphql queries
-// that don't require a return value.
-type EmptyResponse struct{}
-
-// AlwaysNil exists since various graphql tools expect at least one field to be
-// present in the schema so we provide a dummy one here that is always nil.
-func (er *EmptyResponse) AlwaysNil() *string {
-	return nil
 }
 
 type Node interface {
