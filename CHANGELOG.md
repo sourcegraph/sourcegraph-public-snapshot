@@ -15,7 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- Backoff logic when we fail to update repositories.  [#20204](https://github.com/sourcegraph/sourcegraph/pull/20204)
+- Repositories that gitserver fails to clone or fetch are now gradually moved to the back of the background update queue instead of remaining at the front. [#20204](https://github.com/sourcegraph/sourcegraph/pull/20204)
 
 ### Changed
 
