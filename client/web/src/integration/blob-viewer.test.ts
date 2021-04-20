@@ -149,9 +149,9 @@ describe('Blob viewer', () => {
                                         'Log to console\n</span></span></td></tr>' +
                                         '<tr><td class="line" data-line="2"/>' +
                                         '<td class="code"><span class="hl-source hl-js hl-react"><span class="hl-meta hl-function-call hl-method hl-js">' +
-                                        '<span class="hl-support hl-type hl-object hl-console hl-js">console</span>' +
+                                        '<span class="hl-support hl-type hl-object hl-console hl-js test-console-token">console</span>' +
                                         '<span class="hl-punctuation hl-accessor hl-js">.</span>' +
-                                        '<span class="hl-support hl-function hl-console hl-js">log</span>' +
+                                        '<span class="hl-support hl-function hl-console hl-js test-log-token">log</span>' +
                                         '<span class="hl-meta hl-group hl-js"><span class="hl-punctuation hl-section hl-group hl-begin hl-js">(</span>' +
                                         '<span class="hl-meta hl-string hl-js"><span class="hl-string hl-quoted hl-double hl-js">' +
                                         '<span class="hl-punctuation hl-definition hl-string hl-begin hl-js">&quot;</span>' +
@@ -428,7 +428,7 @@ describe('Blob viewer', () => {
                                     aborted: false,
                                     html:
                                         // Note: whitespace in this string is significant.
-                                        '<table><tbody><tr><td class="line" data-line="1"/>' +
+                                        '<table class="test-log-token"><tbody><tr><td class="line" data-line="1"/>' +
                                         '<td class="code"><span class="hl-source hl-js hl-react"><span class="hl-comment hl-line hl-double-slash hl-js">' +
                                         '<span class="hl-punctuation hl-definition hl-comment hl-js">//</span> ' +
                                         'Log to console\n</span></span></td></tr>' +
@@ -436,7 +436,7 @@ describe('Blob viewer', () => {
                                         '<span class="hl-meta hl-function-call hl-method hl-js">' +
                                         '<span class="hl-support hl-type hl-object hl-console hl-js">console</span>' +
                                         '<span class="hl-punctuation hl-accessor hl-js">.</span>' +
-                                        '<span class="hl-support hl-function hl-console hl-js">log</span>' +
+                                        '<span class="hl-support hl-function hl-console hl-js test-log-token">log</span>' +
                                         '<span class="hl-meta hl-group hl-js"><span class="hl-punctuation hl-section hl-group hl-begin hl-js">(</span>' +
                                         '<span class="hl-meta hl-string hl-js"><span class="hl-string hl-quoted hl-double hl-js">' +
                                         '<span class="hl-punctuation hl-definition hl-string hl-begin hl-js">&quot;</span>Hello world' +
@@ -880,9 +880,24 @@ describe('Blob viewer', () => {
                                 highlight: {
                                     aborted: false,
                                     html:
-                                        `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color: gray">&sol;&sol; file path: ${filePath}</span></div></td></tr>\n` +
-                                        '<tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: #859900;" class="test-console-token">console</span><span style="color: #657b83;">.</span><span style="color: #859900;" class="test-log-token">log</span><span style="color: #657b83;">(</span><span style="color: #839496;">&quot;</span><span style="color: #2aa198;">Hello world</span><span style="color: #839496;">&quot;</span><span style="color: #657b83;">)</span></div></td></tr>\n' +
-                                        '</tbody></table>',
+                                        '<table><tbody><tr><td class="line" data-line="1"/><td class="code">' +
+                                        '<span class="hl-source hl-js hl-react"><span class="hl-comment hl-line hl-double-slash hl-js">' +
+                                        '<span class="hl-punctuation hl-definition hl-comment hl-js">//</span>' +
+                                        ` file path: ${filePath}\n` +
+                                        '</span></span></td></tr>' +
+                                        '<tr><td class="line" data-line="2"/>' +
+                                        '<td class="code"><span class="hl-source hl-js hl-react">' +
+                                        '<span class="hl-meta hl-function-call hl-method hl-js">' +
+                                        '<span class="hl-support hl-type hl-object hl-console hl-js test-console-token">console</span>' +
+                                        '<span class="hl-punctuation hl-accessor hl-js">.</span>' +
+                                        '<span class="hl-support hl-function hl-console hl-js test-log-token">log</span>' +
+                                        '<span class="hl-meta hl-group hl-js"><span class="hl-punctuation hl-section hl-group hl-begin hl-js">(</span>' +
+                                        '<span class="hl-meta hl-string hl-js"><span class="hl-string hl-quoted hl-double hl-js">' +
+                                        '<span class="hl-punctuation hl-definition hl-string hl-begin hl-js">&quot;</span>' +
+                                        'Hello world' +
+                                        '<span class="hl-punctuation hl-definition hl-string hl-end hl-js">&quot;</span></span></span>' +
+                                        '<span class="hl-punctuation hl-section hl-group hl-end hl-js">)</span></span>' +
+                                        '\n</span></span></td></tr></tbody></table>',
                                     lineRanges: [],
                                 },
                             },
@@ -900,9 +915,24 @@ describe('Blob viewer', () => {
                                 highlight: {
                                     aborted: false,
                                     html:
-                                        `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color: gray">&sol;&sol; file path: ${filePath}</span></div></td></tr>\n` +
-                                        '<tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: #859900;" class="test-console-token">console</span><span style="color: #657b83;">.</span><span style="color: #859900;" class="test-log-token">log</span><span style="color: #657b83;">(</span><span style="color: #839496;">&quot;</span><span style="color: #2aa198;">Hello world</span><span style="color: #839496;">&quot;</span><span style="color: #657b83;">)</span></div></td></tr>\n' +
-                                        '</tbody></table>',
+                                        '<table><tbody><tr><td class="line" data-line="1"/><td class="code">' +
+                                        '<span class="hl-source hl-js hl-react"><span class="hl-comment hl-line hl-double-slash hl-js">' +
+                                        '<span class="hl-punctuation hl-definition hl-comment hl-js">//</span>' +
+                                        ` file path: ${filePath}\n` +
+                                        '</span></span></td></tr>' +
+                                        '<tr><td class="line" data-line="2"/>' +
+                                        '<td class="code"><span class="hl-source hl-js hl-react">' +
+                                        '<span class="hl-meta hl-function-call hl-method hl-js">' +
+                                        '<span class="hl-support hl-type hl-object hl-console hl-js test-console-token">console</span>' +
+                                        '<span class="hl-punctuation hl-accessor hl-js">.</span>' +
+                                        '<span class="hl-support hl-function hl-console hl-js test-log-token">log</span>' +
+                                        '<span class="hl-meta hl-group hl-js"><span class="hl-punctuation hl-section hl-group hl-begin hl-js">(</span>' +
+                                        '<span class="hl-meta hl-string hl-js"><span class="hl-string hl-quoted hl-double hl-js">' +
+                                        '<span class="hl-punctuation hl-definition hl-string hl-begin hl-js">&quot;</span>' +
+                                        'Hello world' +
+                                        '<span class="hl-punctuation hl-definition hl-string hl-end hl-js">&quot;</span></span></span>' +
+                                        '<span class="hl-punctuation hl-section hl-group hl-end hl-js">)</span></span>' +
+                                        '\n</span></span></td></tr></tbody></table>',
                                     lineRanges: [],
                                 },
                             },
