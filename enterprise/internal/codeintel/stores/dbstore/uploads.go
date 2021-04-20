@@ -613,7 +613,7 @@ func (s *Store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ ti
 
 const getOldestCommitDateQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetOldestCommitDate
-SELECT MIN(committed_at) FROM lsif_uploads WHERE repository_id = %s AND state = 'completed' AND committed_at IS NOT NULL
+SELECT committed_at FROM lsif_uploads WHERE repository_id = %s AND state = 'completed' AND committed_at IS NOT NULL ORDER BY committed_at LIMIT 1
 `
 
 // UpdateCommitedAt updates the commit date for the given repository.
