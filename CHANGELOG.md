@@ -28,6 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 - A regression where incorrect query highlighting happens for certain quoted values. [#20110](https://github.com/sourcegraph/sourcegraph/pull/20110)
 - We now respect the `DisableAutoGitUpdates` setting when cloning or fetching repos on demand and during cleanup tasks that may re-clone old repos. [#20194](https://github.com/sourcegraph/sourcegraph/pull/20194)
 -
+- We now respect the `disableAutoGitUpdates` setting when cloning or fetching repos on demand and during cleanup tasks that may re-clone old repos. [#20194](https://github.com/sourcegraph/sourcegraph/pull/20194)
 
 ### Removed
 
