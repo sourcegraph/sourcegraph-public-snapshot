@@ -193,7 +193,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         [query, telemetryService, props]
     )
 
-    const { isRedesignEnabled } = useRedesignToggle()
+    const [isRedesignEnabled] = useRedesignToggle()
 
     return (
         <div
