@@ -403,7 +403,6 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                             caseSensitive={this.props.caseSensitive}
                                             patternType={this.props.patternType}
                                             versionContext={this.props.versionContext}
-                                            history={this.props.history}
                                         >
                                             {' '}
                                             {results.timedout.length > 0 &&

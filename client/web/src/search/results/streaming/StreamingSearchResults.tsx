@@ -244,7 +244,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         caseSensitive={caseSensitive}
                         patternType={patternType}
                         versionContext={versionContext}
-                        history={props.history}
                     />
                 )}
 
