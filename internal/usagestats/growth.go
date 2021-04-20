@@ -5,14 +5,14 @@ package usagestats
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// source: internal/usagestats/growth.go:GetGrowthStatistics
-func GetGrowthStatistics(ctx context.Context) (*types.GrowthStatistics, error) {
+func GetGrowthStatistics(ctx context.Context, db dbutil.DB) (*types.GrowthStatistics, error) {
 	const q = `
-	WITH
+  -- source: internal/usagestats/growth.go:GetGrowthStatistics
+  WITH
   all_usage_by_user_and_month AS (
   SELECT
     user_id,
@@ -87,7 +87,7 @@ FROM
 		churnedUsers     int
 		retainedUsers    int
 	)
-	if err := dbconn.Global.QueryRowContext(ctx, q).Scan(
+	if err := db.QueryRowContext(ctx, q).Scan(
 		&createdUsers,
 		&deletedUsers,
 		&resurrectedUsers,

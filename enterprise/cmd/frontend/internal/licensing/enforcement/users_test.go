@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -88,19 +89,17 @@ func TestEnforcement_PreCreateUser(t *testing.T) {
 				return test.license, "test-signature", nil
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
-			store := fakeStore{count: test.activeUserCount}
-			err := NewBeforeCreateUserHook(store)(context.Background())
+			database.Mocks.Users.Count = func(ctx context.Context, opt *database.UsersListOptions) (int, error) {
+				return test.activeUserCount, nil
+			}
+			t.Cleanup(func() { database.Mocks.Users.Count = nil })
+
+			err := NewBeforeCreateUserHook()(context.Background(), nil)
 			if gotErr := err != nil; gotErr != test.wantErr {
 				t.Errorf("got error %v, want %v", gotErr, test.wantErr)
 			}
 		})
 	}
-}
-
-type fakeStore struct{ count int }
-
-func (s fakeStore) Count(context.Context) (int, error) {
-	return s.count, nil
 }
 
 func TestEnforcement_AfterCreateUser(t *testing.T) {

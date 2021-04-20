@@ -8,7 +8,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -48,7 +47,7 @@ func TestRetentionUsageStatistics(t *testing.T) {
 	}
 
 	// Insert user
-	_, err := dbconn.Global.Exec(
+	_, err := db.Exec(
 		`INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, site_admin)
 		VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
 		"test", "test", nil, userCreationDate, userCreationDate, "foobar", userCreationDate, true)
@@ -56,7 +55,7 @@ func TestRetentionUsageStatistics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	have, err := GetRetentionStatistics(ctx)
+	have, err := GetRetentionStatistics(ctx, db)
 	if err != nil {
 		t.Fatal(err)
 	}

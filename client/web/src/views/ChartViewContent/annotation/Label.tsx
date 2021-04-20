@@ -1,12 +1,15 @@
-// This component is a fork of Lable component from @visx/annotaion package
-// Replace this component by original when https://github.com/airbnb/visx/issues/1126 will be resolved
+// This component is a fork of Label component from @visx/annotaion package
+// Replace this component by original when https://github.com/airbnb/visx/issues/1111 will be resolved
 
 import { AnnotationContext } from '@visx/annotation'
 import Group from '@visx/group/lib/Group'
-import Text, { TextProps } from '@visx/text/lib/Text'
-import classnames from 'classnames'
+import { useText } from '@visx/text'
+import { TextProps as OriginTextProps } from '@visx/text/lib/Text'
+import classname from 'classnames'
 import React, { ReactElement, useContext, useMemo } from 'react'
 import useMeasure, { Options as UseMeasureOptions } from 'react-use-measure'
+
+import { Text, TextProps } from './Text'
 
 export interface LabelProps {
     /** Stroke color of anchor line. */
@@ -51,6 +54,8 @@ export interface LabelProps {
     verticalAnchor?: TextProps['verticalAnchor']
     /** Width of annotation, including background, for text wrapping. */
     width?: number
+    /** Max width of annotation, including background, for text wrapping. */
+    maxWidth?: number
     /** Left offset of entire AnnotationLabel, if not specified uses x + dx from Annotation. */
     x?: number
     /** Top offset of entire AnnotationLabel, if not specified uses y + dy from Annotation. */
@@ -69,6 +74,7 @@ function getCompletePadding(padding: LabelProps['backgroundPadding']): typeof DE
     return { ...DEFAULT_PADDING, ...padding }
 }
 
+/** Display a label - annotation block for pie chart arc */
 export function Label({
     anchorLineStroke = '#222',
     backgroundFill = '#eaeaea',
@@ -91,6 +97,7 @@ export function Label({
     titleProps,
     verticalAnchor: propsVerticalAnchor,
     width: propertyWidth,
+    maxWidth = 125,
     x: propsX,
     y: propsY,
 }: LabelProps): ReactElement | null {
@@ -105,9 +112,45 @@ export function Label({
     const { x = 0, y = 0, dx = 0, dy = 0 } = useContext(AnnotationContext)
     const height = Math.floor(padding.top + padding.bottom + (titleBounds.height ?? 0) + (subtitleBounds.height ?? 0))
 
-    const measuredWidth = padding.right + padding.left + Math.max(titleBounds.width ?? 0, subtitleBounds.width ?? 0)
+    const { wordsByLines: titleWordsByLine } = useText({
+        children: title,
+        verticalAnchor: 'start',
+        capHeight: titleFontSize,
+        width: maxWidth,
+        style: {
+            fontSize: `${titleFontSize}px`,
+            fontWeight: titleFontWeight as any,
+        },
+        ...(titleProps as OriginTextProps),
+    })
+
+    const { wordsByLines: subtitleWordsByLine } = useText({
+        children: subtitle,
+        verticalAnchor: 'start',
+        capHeight: subtitleFontSize,
+        width: maxWidth,
+        style: {
+            fontSize: `${subtitleFontSize}px`,
+            fontWeight: subtitleFontWeight as any,
+            // fontFamily: subtitleProps?.fontFamily,
+        },
+        ...(subtitleProps as OriginTextProps),
+    })
+
+    const titleMeasuredWidth = titleWordsByLine.reduce(
+        (maxTitleWidth, line) => Math.max(maxTitleWidth, line.width ?? 0),
+        0
+    )
+
+    const subtitleMeasuredWidth = subtitleWordsByLine.reduce(
+        (maxSubtitleWidth, line) => Math.max(maxSubtitleWidth, line.width ?? 0),
+        0
+    )
+
+    const textMeasuredWidth = Math.ceil(Math.min(maxWidth, Math.max(titleMeasuredWidth, subtitleMeasuredWidth)))
+    const measuredWidth = padding.right + padding.left + textMeasuredWidth
     const width = propertyWidth ?? measuredWidth
-    const innerWidth = (width ?? measuredWidth) - padding.left - padding.right
+    const innerWidth = width - padding.left - padding.right
 
     // offset container position based on horizontal + vertical anchor
     const horizontalAnchor =
@@ -163,7 +206,7 @@ export function Label({
             top={containerCoords.y}
             left={containerCoords.x}
             pointerEvents="none"
-            className={classnames('visx-annotationlabel', className)}
+            className={classname('visx-annotationlabel', className)}
             opacity={titleBounds.height === 0 && subtitleBounds.height === 0 ? 0 : 1}
         >
             {showBackground && (

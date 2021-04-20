@@ -209,7 +209,7 @@
     },
     "cloudDefault": {
       "title": "CloudDefault",
-      "description": "Only to be used in development to override the cloud_default column",
+      "description": "Only used to override the cloud_default column from a config file specified by EXTSVC_CONFIG_FILE",
       "type": "boolean",
       "default": false
     }

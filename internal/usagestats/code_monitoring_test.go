@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -22,9 +21,9 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
 	mockTimeNow(now)
 
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
-	_, err := dbconn.Global.Exec(`
+	_, err := db.Exec(`
 		INSERT INTO event_logs
 			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
 		VALUES
@@ -39,7 +38,7 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	have, err := GetCodeMonitoringUsageStatistics(ctx)
+	have, err := GetCodeMonitoringUsageStatistics(ctx, db)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -4,6 +4,7 @@ const path = require('path')
 
 const { generateNamespace } = require('@gql2ts/from-schema')
 const { DEFAULT_OPTIONS, DEFAULT_TYPE_MAP } = require('@gql2ts/language-typescript')
+const glob = require('glob')
 const { buildSchema, introspectionFromSchema } = require('graphql')
 const gulp = require('gulp')
 const { compile: compileJSONSchema } = require('json-schema-to-typescript')
@@ -13,7 +14,7 @@ const { format, resolveConfig } = require('prettier')
 const { cssModulesTypings, watchCSSModulesTypings } = require('./dev/generateCssModulesTypes')
 const { generateGraphQlOperations, ALL_DOCUMENTS_GLOB } = require('./dev/generateGraphQlOperations')
 
-const GRAPHQL_SCHEMA_PATH = path.join(__dirname, '../../cmd/frontend/graphqlbackend/schema.graphql')
+const GRAPHQL_SCHEMA_GLOB = path.join(__dirname, '../../cmd/frontend/graphqlbackend/*.graphql')
 
 /**
  * Generates the TypeScript types for the GraphQL schema.
@@ -22,8 +23,13 @@ const GRAPHQL_SCHEMA_PATH = path.join(__dirname, '../../cmd/frontend/graphqlback
  * @returns {Promise<void>}
  */
 async function graphQlSchema() {
-  const schemaString = await readFile(GRAPHQL_SCHEMA_PATH, 'utf8')
-  const schema = buildSchema(schemaString)
+  const schemaFiles = glob.sync(GRAPHQL_SCHEMA_GLOB)
+  let combinedSchema = ''
+  for (const schemaPath of schemaFiles) {
+    const schemaString = await readFile(schemaPath, 'utf8')
+    combinedSchema += `\n${schemaString}`
+  }
+  const schema = buildSchema(combinedSchema)
 
   const result = introspectionFromSchema(schema)
 
@@ -64,7 +70,7 @@ async function graphQlSchema() {
  */
 async function watchGraphQlSchema() {
   await new Promise((resolve, reject) => {
-    gulp.watch(GRAPHQL_SCHEMA_PATH, graphQlSchema).on('error', reject)
+    gulp.watch(GRAPHQL_SCHEMA_GLOB, graphQlSchema).on('error', reject)
   })
 }
 

@@ -2,17 +2,17 @@
 
 - [Overlays](#overlays)
   - [Overlay basic principles](#overlay-basic-principles)
-  - [Handling overlays](#handling-overlays-in-this-repository)
+  - [Handling overlays](#handling-overlays)
   - [Git Strategies when using overlays to reduce conflicts](#git-strategies-with-overlays)
-    - [Steps to setup overlay](#steps-to-setup-overlays)
+    - [Steps](#general-steps)
       - [Namespaced overlay](#namespaced-overlay)
-      - [Non-root create cluster overlay](#non-root-create-cluster)
+      - [Non-root create cluster overlay](#non-root-create-cluster-overlay)
       - [Non-root overlay](#non-root-overlay)
       - [Migrate-to-nonroot overlay](#migrate-to-nonroot-overlay)
-      - [Non-privileged create cluster overlay](#non-privileged-create-cluster)
+      - [Non-privileged create cluster overlay](#non-privileged-create-cluster-overlay)
       - [Non-privileged overlay](#non-privileged-overlay)
       - [minibus overlay](#minibus-overlay)
-    - [Upgrading sourcegraph with an overlay](#upgrading-sourcegraph-with-an-overlay)
+    - [Upgrading Sourcegraph with an overlay](#upgrading-sourcegraph-with-an-overlay)
   - [Troubleshooting](#troubleshooting)
 
 
@@ -43,7 +43,7 @@ in the conventional way using `kubectl apply -f`.
 ## Handling overlays
 
 The overlays provided in our [overlays directory](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays) rely on the `kustomize` tool and the `overlay-generate-cluster.sh` script in the
-root directory of this repository to generate the manifests. There are two reasons why it was set up like this:
+`root` directory to generate the manifests. There are two reasons why it was set up like this:
 
 - It avoids having to put a `kustomization.yaml` file in the `base` directory and forcing users that don't use overlays
   to deal with it (unfortunately `kubectl apply -f` doesn't work if a `kustomization.yaml` file is in the directory).
@@ -51,11 +51,13 @@ root directory of this repository to generate the manifests. There are two reaso
 - It generates manifests instead of applying them directly. This provides opportunity to additionally validate the files
   and also allows using `kubectl apply -f` with `--prune` flag turned on (`apply -k` with `--prune` does not work correctly).
 
-To generate the manifests run the `overlay-generate-cluster.sh` with two arguments: 
+To generate the manifests run the `overlay-generate-cluster.sh` with two arguments:
+
 - the name of the overlay
+
 - and a path to an output directory where the generated manifests will be
 
-Example (assuming you are in the root directory of this repository):
+Example (assuming you are in the `root` directory):
 
 ```shell script
 ./overlay-generate-cluster.sh non-root generated-cluster
@@ -79,7 +81,7 @@ One benefit of generating manifest from base instead of modifying base directly 
 [Bases and Overlays](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/#bases-and-overlays) allow you to separate your unique changes from the upstream bases. 
 
 
-## Steps to setup overlay
+## General Steps
 
 1. Create a new branch for the customizations from the current release branch
 
@@ -116,10 +118,18 @@ One benefit of generating manifest from base instead of modifying base directly 
 
 This overlay adds a namespace declaration to all the manifests. 
 
-1. Change the namespace by replacing `ns-sourcegraph` to name of your choice (`<EXAMPLE NAMESPACE>` in this example) in the
+1. Create a new branch for the customizations from the current release branch
+
+    ```
+    # EXAMPLE
+    git checkout 3.26
+    git checkout -b 3.26-kustomize   
+    ```
+
+1. Change the namespace by replacing `ns-sourcegraph` to the name of your choice (`<EXAMPLE NAMESPACE>` in this example) in the
 [overlays/namespaced/kustomization.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/namespaced/kustomization.yaml) file.
 
-1. Execute this from the root directory of the repository to generate:
+1. Generate the overlay by running this command from the `root` directory:
 
     ```
     ./overlay-generate-cluster.sh namespaced generated-cluster
@@ -132,13 +142,17 @@ This overlay adds a namespace declaration to all the manifests.
     kubectl label namespace ns-<EXAMPLE NAMESPACE> name=ns-sourcegraph
     ```
 
-1. Execute this from the root directory of the repository to apply the generated manifests from the `generated-cluster` directory:
+1. Apply the generated manifests (from the `generated-cluster` directory) by running this command from the `root` directory:
 
   ```
   kubectl apply -n ns-<EXAMPLE NAMESPACE> --prune -l deploy=sourcegraph -f generated-cluster --recursive
   ```
 
-1. Run `kubectl get pods -A` to check for the namespaces and their status --it should now be up and running 🎉
+1. Check for the namespaces and their status with:
+
+  ```
+  kubectl get pods -A
+  ```
 
 
 ## Non-root create cluster overlay
@@ -155,7 +169,7 @@ If we only do it at cluster creation time (when the disks are empty) it is fast 
 
 In Kubernetes 1.18 `fsGroup` gets an additional [feature](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#configure-volume-permission-and-ownership-change-policy-for-pods) called `fsGroupChangePolicy` that will allow us to control the chmod/chown better.
 
-To use it execute the following command from the root directory of this repository:
+To use it execute the following command from the `root` directory:
 
 ```
 ./overlay-generate-cluster.sh non-root-create-cluster generated-cluster
@@ -180,7 +194,7 @@ This kustomization is for Sourcegraph installations that want to run containers 
 
 > Note: To create a fresh installation use non-root-create-cluster first and then use this overlay.
 
-To use it, execute the following command from the root directory of this repository:
+To use it, execute the following command from the `root` directory:
 
 ```
 ./overlay-generate-cluster.sh non-root generated-cluster
@@ -218,7 +232,7 @@ This kustomization is for Sourcegraph installations in clusters with security re
 
 This version and `non-privileged` need to stay in sync. This version is only used for cluster creation.
 
-To use it, execute the following command from the root directory of this repository:
+To use it, execute the following command from the `root` directory:
 
 ```
 ./overlay-generate-cluster.sh non-privileged-create-cluster generated-cluster
@@ -244,7 +258,7 @@ If you are starting a fresh installation use the overlay `non-privileged-create-
 
 This kustomization deletes resource declarations and storage classnames to enable running Sourcegraph on minikube.
 
-To use it, execute the following command from the root directory:
+To use it, execute the following command from the `root` directory:
 
 ```
 ./overlay-generate-cluster.sh minikube generated-cluster
@@ -268,12 +282,12 @@ minikube stop
 ```
 
 
-## Upgrading sourcegraph with an overlay
+## Upgrading Sourcegraph with an overlay
 
 1. Create a new branch from the origin branch to the version upgrading to
 
     ```
-    git checkout 3.23
+    git checkout 3.25
     ```
 
 1. Create a new branch for this specific version
@@ -293,9 +307,4 @@ minikube stop
 
 # Troubleshooting
 
-> error: error retrieving RESTMappings to prune: invalid resource networking.k8s.io/v1, Kind=Ingress, Namespaced=true: no matches for kind "Ingress" in version "networking.k8s.io/v1"
-
-- Make sure the client version of your kubectl matches the one used by the server. Run `kubectl version` to check.
-- See the ["Configure network access"](configure.md#security-configure-network-access)
-- Check for duplicate `sourcegraph-frontend` using `kubectl get ingresses -A`
-- Delete duplicate using `kubectl delete ingress sourcegraph-frontend -n default`
+See the [Troubleshooting docs](troubleshoot.md).
