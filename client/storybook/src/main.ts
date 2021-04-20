@@ -122,7 +122,7 @@ const config = {
             test: /\.(sass|scss)$/,
             // Make sure Storybook styles get handled by the Storybook config
             exclude: [/\.module\.(sass|scss)$/, storybookDirectory],
-            use: getCSSLoaders('to-string-loader', 'css-loader'),
+            use: getCSSLoaders('@terminus-term/to-string-loader', 'css-loader'),
         })
 
         config.module?.rules.unshift({
@@ -153,7 +153,7 @@ const config = {
             test: /\.css$/,
             // Make sure Storybook styles get handled by the Storybook config
             exclude: [storybookDirectory, ...monacoEditorPaths],
-            use: ['to-string-loader', 'css-loader'],
+            use: ['@terminus-term/to-string-loader', 'css-loader'],
         })
 
         config.module.rules.push({
