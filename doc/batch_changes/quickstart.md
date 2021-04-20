@@ -101,7 +101,7 @@ _You probably don't want to publish these toy "Hello World" changesets to active
 
 ### Configure code host credentials
 
-Since Batch Changes need write permissions to open changesets, you might need to add a personal access token for each code host you'll be publishing changesets on. This is a one time operation that you don't need to do for each batch change. Administrators of your Sourcegraph instance can also [configure global credentials](how-tos/configuring_credentials.md), so you don't need to go through this process. The UI for configuring the tokens will tell you when there is a global token configured.
+Since Batch Changes need write permissions to open changesets, you might need to add a personal access token for each code host you'll be publishing changesets on. This is a one time operation that you don't need to do for each batch change. Administrators of your Sourcegraph instance can also [configure global credentials](how-tos/configuring_credentials.md#global_service_account), so you don't need to go through this process. The UI for configuring the tokens will tell you when there is a global token configured.
 
 See "[Configuring user credentials](how-tos/configuring_credentials.md)" for more detail on adding and removing user tokens beyond the quickstart below, or ["Code host interactions in Batch Changes"](explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes) for details on what the permissions are used for.
 
