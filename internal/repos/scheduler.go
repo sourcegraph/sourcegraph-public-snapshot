@@ -95,6 +95,10 @@ const (
 // then the next update will be scheduled 6 hours from then.
 // This heuristic is simple to compute and has nice backoff properties.
 //
+// If an error occurs when attempting to fetch a repo we perform exponential
+// backoff by doubling the current interval. This ensures that problematic repos
+// don't stay in the front of the schedule clogging up the queue.
+//
 // When it is time for a repo to update, the scheduler inserts the repo into a queue.
 //
 // A worker continuously dequeues repos and sends updates to gitserver, but its concurrency
@@ -200,6 +204,12 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 				}
 				if interval := getCustomInterval(conf.Get(), string(repo.Name)); interval > 0 {
 					s.schedule.updateInterval(repo, interval)
+				} else if err != nil {
+					// On error we will double the current interval so that we back off and don't
+					// get stuck with problematic repos with low intervals.
+					if currentInterval, ok := s.schedule.getCurrentInterval(repo); ok {
+						s.schedule.updateInterval(repo, currentInterval*2)
+					}
 				} else if resp != nil && resp.LastFetched != nil && resp.LastChanged != nil {
 					// This is the heuristic that is described in the updateScheduler documentation.
 					// Update that documentation if you update this logic.
@@ -765,6 +775,19 @@ func (s *schedule) updateInterval(repo configuredRepo, interval time.Duration) {
 		s.rescheduleTimer()
 	}
 	s.mu.Unlock()
+}
+
+// getCurrentInterval gets the current interval for the supplied repo and a bool
+// indicating whether it was found.
+func (s *schedule) getCurrentInterval(repo configuredRepo) (time.Duration, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	update, ok := s.index[repo.ID]
+	if !ok || update == nil {
+		return 0, false
+	}
+	return update.Interval, true
 }
 
 // remove removes a repo from the schedule.

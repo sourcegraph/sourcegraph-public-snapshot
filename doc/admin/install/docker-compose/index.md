@@ -13,6 +13,7 @@ If you want to migrate from the single-container server (`sourcegraph/server`) t
   - Sourcegraph requires SSD backed storage.
 
 > WARNING: You need to create a [fork of our deployment reference.](configure.md#fork-this-repository)
+
 ### Storage
 
 The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. These volumes are stored at `/var/lib/docker/volumes` by [default on Linux](https://docs.docker.com/storage/#choose-the-right-type-of-mount).
@@ -32,7 +33,7 @@ It takes less than 5 minutes to run and install Sourcegraph using Docker Compose
 
 git clone https://github.com/sourcegraph/deploy-sourcegraph-docker
 cd deploy-sourcegraph-docker/docker-compose
-SOURCEGRAPH_VERSION="v3.26.3"
+export SOURCEGRAPH_VERSION="v3.26.3"
 git checkout $SOURCEGRAPH_VERSION
 docker-compose up -d
 ```

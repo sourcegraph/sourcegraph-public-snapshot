@@ -9,13 +9,6 @@
     "jsx": "react",
     "rootDir": ".",
     "outDir": "out",
-    "plugins": [
-      {
-        "name": "ts-graphql-plugin",
-        "schema": "../../cmd/frontend/graphqlbackend/schema.graphql",
-        "tag": "gql",
-      },
-    ],
   },
   "references": [{ "path": "../shared" }, { "path": "../branded" }, { "path": "../../schema" }],
   "include": ["**/*", ".*", "./src/**/*.json"],

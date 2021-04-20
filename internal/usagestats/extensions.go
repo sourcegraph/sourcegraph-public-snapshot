@@ -3,11 +3,11 @@ package usagestats
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func GetExtensionsUsageStatistics(ctx context.Context) (*types.ExtensionsUsageStatistics, error) {
+func GetExtensionsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.ExtensionsUsageStatistics, error) {
 	stats := types.ExtensionsUsageStatistics{}
 
 	// Query for evaluating success of individual extensions
@@ -24,7 +24,7 @@ func GetExtensionsUsageStatistics(ctx context.Context) (*types.ExtensionsUsageSt
 	`
 
 	usageStatisticsByExtension := []*types.ExtensionUsageStatistics{}
-	rows, err := dbconn.Global.QueryContext(ctx, extensionsQuery, timeNow())
+	rows, err := db.QueryContext(ctx, extensionsQuery, timeNow())
 
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func GetExtensionsUsageStatistics(ctx context.Context) (*types.ExtensionsUsageSt
 	FROM non_default_extensions_by_user;
 	`
 
-	if err := dbconn.Global.QueryRowContext(ctx, platformQuery, timeNow()).Scan(
+	if err := db.QueryRowContext(ctx, platformQuery, timeNow()).Scan(
 		&stats.WeekStart,
 		&stats.AverageNonDefaultExtensions,
 		&stats.NonDefaultExtensionUsers,

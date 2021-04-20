@@ -14,7 +14,7 @@ func init() {
 }
 
 func TestDBUsersBillingCustomerID(t *testing.T) {
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	t.Run("existing user", func(t *testing.T) {
@@ -23,17 +23,17 @@ func TestDBUsersBillingCustomerID(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if custID, err := (dbBilling{}).getUserBillingCustomerID(ctx, nil, u.ID); err != nil {
+		if custID, err := (dbBilling{db: db}).getUserBillingCustomerID(ctx, u.ID); err != nil {
 			t.Fatal(err)
 		} else if custID != nil {
 			t.Errorf("got %q, want nil", *custID)
 		}
 
 		t.Run("set to non-nil", func(t *testing.T) {
-			if err := (dbBilling{}).setUserBillingCustomerID(ctx, nil, u.ID, strptr("x")); err != nil {
+			if err := (dbBilling{db: db}).setUserBillingCustomerID(ctx, u.ID, strptr("x")); err != nil {
 				t.Fatal(err)
 			}
-			if custID, err := (dbBilling{}).getUserBillingCustomerID(ctx, nil, u.ID); err != nil {
+			if custID, err := (dbBilling{db: db}).getUserBillingCustomerID(ctx, u.ID); err != nil {
 				t.Fatal(err)
 			} else if want := "x"; custID == nil || *custID != want {
 				t.Errorf("got %v, want %q", custID, want)
@@ -41,10 +41,10 @@ func TestDBUsersBillingCustomerID(t *testing.T) {
 		})
 
 		t.Run("set to nil", func(t *testing.T) {
-			if err := (dbBilling{}).setUserBillingCustomerID(ctx, nil, u.ID, nil); err != nil {
+			if err := (dbBilling{db: db}).setUserBillingCustomerID(ctx, u.ID, nil); err != nil {
 				t.Fatal(err)
 			}
-			if custID, err := (dbBilling{}).getUserBillingCustomerID(ctx, nil, u.ID); err != nil {
+			if custID, err := (dbBilling{db: db}).getUserBillingCustomerID(ctx, u.ID); err != nil {
 				t.Fatal(err)
 			} else if custID != nil {
 				t.Errorf("got %q, want nil", *custID)
@@ -53,10 +53,10 @@ func TestDBUsersBillingCustomerID(t *testing.T) {
 	})
 
 	t.Run("nonexistent user", func(t *testing.T) {
-		if _, err := (dbBilling{}).getUserBillingCustomerID(ctx, nil, 123 /* doesn't exist */); !errcode.IsNotFound(err) {
+		if _, err := (dbBilling{db: db}).getUserBillingCustomerID(ctx, 123 /* doesn't exist */); !errcode.IsNotFound(err) {
 			t.Errorf("got %v, want errcode.IsNotFound(err) == true", err)
 		}
-		if err := (dbBilling{}).setUserBillingCustomerID(ctx, nil, 123 /* doesn't exist */, strptr("x")); !errcode.IsNotFound(err) {
+		if err := (dbBilling{db: db}).setUserBillingCustomerID(ctx, 123 /* doesn't exist */, strptr("x")); !errcode.IsNotFound(err) {
 			t.Errorf("got %v, want errcode.IsNotFound(err) == true", err)
 		}
 	})

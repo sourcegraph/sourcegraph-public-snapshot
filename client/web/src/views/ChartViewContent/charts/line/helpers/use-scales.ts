@@ -19,7 +19,7 @@ interface UseScalesProps<Datum> {
         y: ScaleConfig<AxisScaleOutput, any, any>
     }
     /** Accessors map to get value from datum object */
-    accessors: Accessors<Datum, string>
+    accessors: Accessors<Datum, keyof Datum>
     /** Chart width in px */
     width: number
     /** Chart height in px */

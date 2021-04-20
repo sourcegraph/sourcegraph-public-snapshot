@@ -92,34 +92,40 @@ func TestCanonicalizeReferenceResults(t *testing.T) {
 				1004: datastructures.IDSetWith(3010),
 			}),
 		},
-		LinkedReferenceResults: linkedReferenceResults,
+		LinkedReferenceResults: map[int][]int{2001: {2003, 2004}, 2002: {2001}},
 	}
 	canonicalizeReferenceResults(state)
 
 	expectedState := &State{
 		RangeData: map[int]Range{
 			3001: {ReferenceResultID: 2002},
-			3002: {ReferenceResultID: 2001},
+			3002: {ReferenceResultID: 2003},
 		},
 		ResultSetData: map[int]ResultSet{
-			5003: {ReferenceResultID: 2001},
+			5003: {ReferenceResultID: 2003},
 			5004: {ReferenceResultID: 2004},
 		},
 		ReferenceData: map[int]*datastructures.DefaultIDSetMap{
 			2001: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 				1001: datastructures.IDSetWith(3005, 3008),
 				1003: datastructures.IDSetWith(3009),
+				1004: datastructures.IDSetWith(3010),
 			}),
 			2002: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
+				1001: datastructures.IDSetWith(3005, 3008),
 				1002: datastructures.IDSetWith(3006),
-				1004: datastructures.IDSetWith(3007),
+				1003: datastructures.IDSetWith(3009),
+				1004: datastructures.IDSetWith(3007, 3010),
+			}),
+			2003: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
+				1001: datastructures.IDSetWith(3008),
+				1003: datastructures.IDSetWith(3009),
 			}),
 			2004: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 				1004: datastructures.IDSetWith(3010),
 			}),
 		},
-
-		LinkedReferenceResults: linkedReferenceResults,
+		LinkedReferenceResults: map[int][]int{2001: {2003, 2004}, 2002: {2001}},
 	}
 
 	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {

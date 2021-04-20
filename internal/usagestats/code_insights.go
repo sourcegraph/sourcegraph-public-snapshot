@@ -3,11 +3,11 @@ package usagestats
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func GetCodeInsightsUsageStatistics(ctx context.Context) (*types.CodeInsightsUsageStatistics, error) {
+func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.CodeInsightsUsageStatistics, error) {
 	stats := types.CodeInsightsUsageStatistics{}
 
 	const platformQuery = `
@@ -23,7 +23,7 @@ func GetCodeInsightsUsageStatistics(ctx context.Context) (*types.CodeInsightsUsa
 	WHERE name in ('ViewInsights', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick');
 	`
 
-	if err := dbconn.Global.QueryRowContext(ctx, platformQuery, timeNow()).Scan(
+	if err := db.QueryRowContext(ctx, platformQuery, timeNow()).Scan(
 		&stats.InsightsPageViews,
 		&stats.InsightsUniquePageViews,
 		&stats.WeeklyInsightCreators,
@@ -47,7 +47,7 @@ func GetCodeInsightsUsageStatistics(ctx context.Context) (*types.CodeInsightsUsa
 	`
 
 	usageStatisticsByInsight := []*types.InsightUsageStatistics{}
-	rows, err := dbconn.Global.QueryContext(ctx, metricsByInsightQuery)
+	rows, err := db.QueryContext(ctx, metricsByInsightQuery)
 
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func GetCodeInsightsUsageStatistics(ctx context.Context) (*types.CodeInsightsUsa
 	WHERE first_time > DATE_TRUNC('week', $1::timestamp);
 	`
 
-	if err := dbconn.Global.QueryRowContext(ctx, weeklyFirstTimeCreatorsQuery, timeNow()).Scan(
+	if err := db.QueryRowContext(ctx, weeklyFirstTimeCreatorsQuery, timeNow()).Scan(
 		&stats.WeekStart,
 		&stats.WeeklyFirstTimeInsightCreators,
 	); err != nil {

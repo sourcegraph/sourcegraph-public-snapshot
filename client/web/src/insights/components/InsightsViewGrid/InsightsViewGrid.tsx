@@ -2,11 +2,12 @@ import classNames from 'classnames'
 import { MdiReactIconComponentType } from 'mdi-react'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { Layout as ReactGridLayout, Layouts as ReactGridLayouts, Responsive, WidthProvider } from 'react-grid-layout'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../components/alerts'
@@ -109,6 +110,15 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
         [props.telemetryService]
     )
 
+    // For Firefox we can't use css transform/translate to put view grid item in right place.
+    // Instead of this we have to fallback on css position:absolute top/left properties.
+    // Reason: Since we use coordinate transformation svg.getScreenCTM from svg viewport
+    // to dom viewport in order to calculate chart tooltip position and firefox has
+    // a bug about providing right value of screenCTM matrix when parent has css transform.
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1610093
+    // Back to css transforms when this bug will be resolved in Firefox.
+    const useCSSTransforms = useMemo(() => !isFirefox(), [])
+
     return (
         <div className={classNames(props.className, 'insights-view-grid')}>
             <ResponsiveGridLayout
@@ -118,6 +128,7 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
                 autoSize={true}
                 rowHeight={6 * 16}
                 containerPadding={[0, 0]}
+                useCSSTransforms={useCSSTransforms}
                 margin={[12, 12]}
                 onResizeStart={onResizeOrDragStart}
                 onDragStart={onResizeOrDragStart}
@@ -140,7 +151,7 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
                                         <LoadingSpinner /> Loading code insight
                                     </div>
                                     <InsightDescription
-                                        className="view-grid__view-description"
+                                        className="insights-view-grid__view-description"
                                         title={id}
                                         icon={getInsightViewIcon(source)}
                                     />
@@ -149,7 +160,7 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
                                 <>
                                     <ErrorAlert className="m-0" error={view} />
                                     <InsightDescription
-                                        className="view-grid__view-description"
+                                        className="insights-view-grid__view-description"
                                         title={id}
                                         icon={getInsightViewIcon(source)}
                                     />

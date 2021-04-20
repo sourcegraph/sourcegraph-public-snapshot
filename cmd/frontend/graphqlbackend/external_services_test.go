@@ -241,7 +241,7 @@ func TestAddExternalService(t *testing.T) {
 					kind
 					displayName
 					config
-					namespace
+					namespace { id }
 				}
 			}
 		`,

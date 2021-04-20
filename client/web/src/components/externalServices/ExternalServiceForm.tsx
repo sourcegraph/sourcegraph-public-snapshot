@@ -3,11 +3,11 @@ import React, { useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
+import { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { ErrorAlert, ErrorMessage } from '../alerts'
 
@@ -15,7 +15,7 @@ import { AddExternalServiceOptions } from './externalServices'
 
 interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, ThemeProps, TelemetryProps {
     history: H.History
-    input: GQL.IAddExternalServiceInput
+    input: AddExternalServiceInput
     error?: ErrorLike
     warning?: string | null
     mode: 'edit' | 'create'
@@ -23,7 +23,7 @@ interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorAc
     hideDisplayNameField?: boolean
     submitName?: string
     onSubmit: (event?: React.FormEvent<HTMLFormElement>) => void
-    onChange: (change: GQL.IAddExternalServiceInput) => void
+    onChange: (change: AddExternalServiceInput) => void
     autoFocus?: boolean
 }
 

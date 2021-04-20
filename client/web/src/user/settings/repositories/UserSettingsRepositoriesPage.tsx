@@ -1,3 +1,4 @@
+import { isAfter, parseISO } from 'date-fns'
 import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -136,7 +137,6 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 let repoCount = 0
 
                                 for (const node of result.nodes) {
-                                    const nextSyncAt = new Date(node.nextSyncAt)
                                     repoCount += node.repoCount
 
                                     // when the service was just added both
@@ -146,8 +146,10 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                     }
 
                                     // if the next sync is in the future we must not be syncing
-                                    if (now > nextSyncAt) {
-                                        pending = 'pending'
+                                    if (node.nextSyncAt) {
+                                        if (isAfter(now, parseISO(node.nextSyncAt))) {
+                                            pending = 'pending'
+                                        }
                                     }
                                 }
 

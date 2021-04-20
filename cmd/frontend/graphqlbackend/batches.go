@@ -621,6 +621,7 @@ type ExternalChangesetResolver interface {
 
 	Error() *string
 	SyncerError() *string
+	ScheduleEstimateAt(ctx context.Context) (*DateTime, error)
 
 	CurrentSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
 }

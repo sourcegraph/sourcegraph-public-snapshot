@@ -9,7 +9,7 @@ import { Accessors } from '../types'
 export function generateAccessors<Datum extends object>(
     xAxis: ChartAxis<keyof Datum, Datum>,
     series: { dataKey: keyof Datum }[]
-): Accessors<Datum, string> {
+): Accessors<Datum, keyof Datum> {
     const { dataKey: xDataKey, scale = 'time' } = xAxis
 
     return {
@@ -20,15 +20,15 @@ export function generateAccessors<Datum extends object>(
                   new Date((data?.[xDataKey] as unknown) as number)
                 : // In case if we got linear scale we have to operate with numbers
                   +(data?.[xDataKey] ?? 0),
-        y: series.reduce<Record<string, (data: Datum) => any>>((accessors, currentLine) => {
+        y: series.reduce((accessors, currentLine) => {
             const { dataKey } = currentLine
             // as unknown as string quick hack for cast Datum[keyof Datum] to string
             // fix that when we will have a value type for LineChartContent<D> generic
-            const key = (dataKey as unknown) as string
+            const key = (dataKey as unknown) as keyof Datum
 
             accessors[key] = data => +data[dataKey]
 
             return accessors
-        }, {}),
+        }, {} as Record<keyof Datum, (data: Datum) => any>),
     }
 }

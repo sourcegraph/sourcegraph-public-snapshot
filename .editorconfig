@@ -24,3 +24,7 @@ switch_case_indent = true
 
 [**/node_modules/**]
 ignore = true
+
+# shfmt shouldn't format third-party script codecov.sh
+[dev/ci/codecov.sh]
+ignore = true
