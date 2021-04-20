@@ -765,7 +765,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	var stdoutN, stderrN int64
 	var status string
 	var execErr error
-	var ensureRevisionStatus string
+	ensureRevisionStatus := "noop"
 
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 
@@ -893,11 +893,12 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		return
 	}
 
-	didUpdate := s.ensureRevision(ctx, req.Repo, req.EnsureRevision, dir)
-	if didUpdate {
-		ensureRevisionStatus = "fetched"
-	} else {
-		ensureRevisionStatus = "noop"
+	if !conf.Get().DisableAutoGitUpdates {
+		// ensureRevision may kick off a git fetch operation which we don't want if we've
+		// configured DisableAutoGitUpdates.
+		if s.ensureRevision(ctx, req.Repo, req.EnsureRevision, dir) {
+			ensureRevisionStatus = "fetched"
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/octet-stream")
