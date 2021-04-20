@@ -49,7 +49,9 @@
 
     // Body / Small / Regular
     small {
-        font-size: 0.75rem;
+        // Use string interpolation and calc() to avoid using Sass own max() function.
+        // See: https://github.com/sass/node-sass/issues/2815#issuecomment-575926329
+        font-size: calc(min(0.75rem, #{(11/12)}em));
         // Bootstrap applies `font-weight: 400;` to `small` element,
         // but we want to control `font-weight` only with `strong` or `.font-weight-medium`.
         font-weight: inherit;

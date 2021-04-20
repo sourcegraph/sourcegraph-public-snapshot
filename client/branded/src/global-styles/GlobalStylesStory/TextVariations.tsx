@@ -61,9 +61,7 @@ export const TextVariations: React.FunctionComponent = () => (
     <table className="table">
         <tbody>
             <tr>
-                <td>
-                    <code>{'<p>'}</code>
-                </td>
+                <td>Body Text</td>
                 <td>
                     <TextVariants component="p" name="Body" weights={['Regular', 'Medium', 'Strong']} />
                 </td>
@@ -81,11 +79,14 @@ export const TextVariations: React.FunctionComponent = () => (
                     <code>{'<input class="form-control">'}</code>
                 </td>
                 <td>
-                    <TextVariants
-                        component="span"
-                        name="Input"
-                        className={classNames('form-control', styles.inputVariant)}
-                    />
+                    <span className={classNames('form-control', styles.inputVariant, styles.textVariant)}>
+                        <TextLabel size="Base" weight="Regular" name="Input" />
+                    </span>
+                    <span
+                        className={classNames('form-control form-control-sm', styles.inputVariant, styles.textVariant)}
+                    >
+                        <TextLabel size="Small" weight="Regular" name="Input" />
+                    </span>
                 </td>
             </tr>
             <tr>
