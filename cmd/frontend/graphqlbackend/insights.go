@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
@@ -10,6 +9,11 @@ import (
 // This file just contains stub GraphQL resolvers and data types for Code Insights which merely
 // return an error if not running in enterprise mode. The actual resolvers can be found in
 // enterprise/internal/insights/resolvers
+
+// InsightsResolver is the root resolver.
+type InsightsResolver interface {
+	Insights(ctx context.Context) (InsightConnectionResolver, error)
+}
 
 type InsightsDataPointResolver interface {
 	DateTime() DateTime
@@ -45,18 +49,3 @@ type InsightConnectionResolver interface {
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
-
-// InsightsResolver is the root resolver.
-type InsightsResolver interface {
-	Insights(ctx context.Context) (InsightConnectionResolver, error)
-}
-
-var insightsOnlyInEnterprise = errors.New("insights are only available in enterprise")
-
-type defaultInsightsResolver struct{}
-
-func (defaultInsightsResolver) Insights(ctx context.Context) (InsightConnectionResolver, error) {
-	return nil, insightsOnlyInEnterprise
-}
-
-var DefaultInsightsResolver InsightsResolver = defaultInsightsResolver{}

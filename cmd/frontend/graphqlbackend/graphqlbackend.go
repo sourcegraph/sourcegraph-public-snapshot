@@ -356,6 +356,7 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 	if insights != nil {
 		EnterpriseResolvers.insightsResolver = insights
 		resolver.InsightsResolver = insights
+		schemas = append(schemas, InsightsSchema)
 	}
 
 	if authz != nil {
@@ -422,8 +423,7 @@ func newSchemaResolver(db dbutil.DB) *schemaResolver {
 		db:                db,
 		repoupdaterClient: repoupdater.DefaultClient,
 
-		AuthzResolver:    defaultAuthzResolver{},
-		InsightsResolver: defaultInsightsResolver{},
+		AuthzResolver: defaultAuthzResolver{},
 	}
 
 	r.nodeByIDFns = map[string]NodeByIDFunc{

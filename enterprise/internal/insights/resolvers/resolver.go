@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -43,4 +44,16 @@ func (r *Resolver) Insights(ctx context.Context) (graphqlbackend.InsightConnecti
 		workerBaseStore: r.workerBaseStore,
 		settingStore:    r.settingStore,
 	}, nil
+}
+
+type disabledResolver struct{}
+
+func NewDisabledResolver() graphqlbackend.InsightsResolver {
+	return &disabledResolver{}
+}
+
+var ErrCodeInsightsDisabled = errors.New("code insights has been disabled")
+
+func (r *disabledResolver) Insights(ctx context.Context) (graphqlbackend.InsightConnectionResolver, error) {
+	return nil, ErrCodeInsightsDisabled
 }

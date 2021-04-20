@@ -27,3 +27,7 @@ var LicenseSchema string
 // CodeMonitorsSchema is the Code Monitoring raw graqhql schema.
 //go:embed code_monitors.graphql
 var CodeMonitorsSchema string
+
+// InsightsSchema is the Code Insights raw graqhql schema.
+//go:embed insights.graphql
+var InsightsSchema string
