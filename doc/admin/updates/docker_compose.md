@@ -21,7 +21,9 @@ TODO
 
 > Warning: ⚠️ Sourcegraph 3.27 now requires **Postgres 12+**.
 
-If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12.6 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied supplied database images.
+If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied supplied database images.
+
+Afterwards, please upgrade to the [`v3.27.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.27.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
 ## 3.25 -> 3.26
 
