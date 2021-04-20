@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"os"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
@@ -113,6 +114,10 @@ func (m *ExternalServiceConfigMigrator) Up(ctx context.Context) (err error) {
 func (m *ExternalServiceConfigMigrator) Down(ctx context.Context) (err error) {
 	key := keyring.Default().ExternalServiceKey
 	if key == nil {
+		return nil
+	}
+
+	if os.Getenv("ALLOW_DECRYPT_MIGRATION") != "true" {
 		return nil
 	}
 
@@ -309,6 +314,10 @@ func (m *ExternalAccountsMigrator) Up(ctx context.Context) (err error) {
 func (m *ExternalAccountsMigrator) Down(ctx context.Context) (err error) {
 	key := keyring.Default().UserExternalAccountKey
 	if key == nil {
+		return nil
+	}
+
+	if os.Getenv("ALLOW_DECRYPT_MIGRATION") != "true" {
 		return nil
 	}
 
