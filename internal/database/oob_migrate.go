@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"os"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
@@ -14,8 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-const AllowDecryptMigration = "ALLOW_DECRYPT_MIGRATION"
-
 // ExternalServiceConfigMigrator is a background job that encrypts
 // external services config on startup.
 // It periodically waits until a keyring is configured to determine
@@ -24,8 +21,9 @@ const AllowDecryptMigration = "ALLOW_DECRYPT_MIGRATION"
 // migration package.
 // The migration is non destructive and can be reverted.
 type ExternalServiceConfigMigrator struct {
-	store     *basestore.Store
-	BatchSize int
+	store        *basestore.Store
+	BatchSize    int
+	AllowDecrypt bool
 }
 
 func NewExternalServiceConfigMigrator(store *basestore.Store) *ExternalServiceConfigMigrator {
@@ -119,7 +117,7 @@ func (m *ExternalServiceConfigMigrator) Down(ctx context.Context) (err error) {
 		return nil
 	}
 
-	if os.Getenv(AllowDecryptMigration) != "true" {
+	if !m.AllowDecrypt {
 		return nil
 	}
 
@@ -195,8 +193,9 @@ func (m *ExternalServiceConfigMigrator) listConfigsForUpdate(ctx context.Context
 // migration package.
 // The migration is non destructive and can be reverted.
 type ExternalAccountsMigrator struct {
-	store     *basestore.Store
-	BatchSize int
+	store        *basestore.Store
+	BatchSize    int
+	AllowDecrypt bool
 }
 
 func NewExternalAccountsMigrator(store *basestore.Store) *ExternalAccountsMigrator {
@@ -319,7 +318,7 @@ func (m *ExternalAccountsMigrator) Down(ctx context.Context) (err error) {
 		return nil
 	}
 
-	if os.Getenv(AllowDecryptMigration) != "true" {
+	if !m.AllowDecrypt {
 		return nil
 	}
 

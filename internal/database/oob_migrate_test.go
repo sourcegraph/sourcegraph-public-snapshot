@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -36,16 +35,12 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		}
 	}
 
-	os.Setenv(AllowDecryptMigration, "true")
-	t.Cleanup(func() {
-		os.Setenv(AllowDecryptMigration, "")
-	})
-
 	t.Run("Up/Down/Progress", func(t *testing.T) {
 		db := dbtesting.GetDB(t)
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 2
+		migrator.AllowDecrypt = true
 
 		requireProgressEqual := func(want float64) {
 			t.Helper()
@@ -190,6 +185,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 10
+		migrator.AllowDecrypt = true
 
 		// Create 10 external services
 		svcs := types.GenerateExternalServices(10, types.MakeExternalServices()...)
@@ -294,8 +290,6 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 			}
 		}
 
-		os.Setenv(AllowDecryptMigration, "")
-
 		// setup key after storing the services
 		defer setupKey()()
 
@@ -377,11 +371,6 @@ func TestExternalAccountsMigrator(t *testing.T) {
 		}
 	}
 
-	os.Setenv("ALLOW_DECRYPT_MIGRATION", "true")
-	t.Cleanup(func() {
-		os.Setenv("ALLOW_DECRYPT_MIGRATION", "")
-	})
-
 	createAccounts := func(db dbutil.DB, n int) []*extsvc.Account {
 		accounts := make([]*extsvc.Account, 0, n)
 
@@ -416,6 +405,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 
 		migrator := NewExternalAccountsMigratorWithDB(db)
 		migrator.BatchSize = 2
+		migrator.AllowDecrypt = true
 
 		requireProgressEqual := func(want float64) {
 			t.Helper()
@@ -542,6 +532,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 
 		migrator := NewExternalAccountsMigratorWithDB(db)
 		migrator.BatchSize = 10
+		migrator.AllowDecrypt = true
 
 		// Create 10 accounts
 		accounts := createAccounts(db, 10)
@@ -629,9 +620,6 @@ func TestExternalAccountsMigrator(t *testing.T) {
 		if err := migrator.Up(ctx); err != nil {
 			t.Fatal(err)
 		}
-
-		// disallow decryption
-		os.Setenv(AllowDecryptMigration, "")
 
 		// revert the migration
 		if err := migrator.Down(ctx); err != nil {
