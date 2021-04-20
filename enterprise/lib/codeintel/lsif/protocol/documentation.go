@@ -1,23 +1,7 @@
 package protocol
 
-// Documentation is a Vertex which includes a DocumentationResult.
-type Documentation struct {
-	Vertex
-	Result *DocumentationResult `json:"result"`
-}
-
-func NewDocumentation(id uint64, result *DocumentationResult) Documentation {
-	return Documentation{
-		Vertex: Vertex{
-			Element: Element{
-				ID:   id,
-				Type: ElementVertex,
-			},
-			Label: VertexDocumentation,
-		},
-		Result: result,
-	}
-}
+// Sourcegraph extension to LSIF: documentation.
+// See https://github.com/slimsag/language-server-protocol/pull/2
 
 // DocumentationEdge is an edge which connects a Documentation Vertex to a Project
 // Vertex.
@@ -41,7 +25,15 @@ func NewDocumentationEdge(id, inV, outV uint64) DocumentationEdge {
 	}
 }
 
-type DocumentationResult struct {
+// A Documentation vertex describes hierarchial project-wide documentation.
+// It represents documentation for a programming construct (variable, function, etc.) or group of
+// programming constructs in a workspace (library, package, crate, module, etc.)
+//
+// The exact structure of the documentation depends on what makes sense for the specific language
+// and concepts being described.
+type Documentation struct {
+	Vertex
+
 	// A human-readable URL slug identifier for this documentation. It should be unique relative to
 	// sibling Documentation.
 	Slug string `json:"slug"`
@@ -66,6 +58,20 @@ type DocumentationResult struct {
 	// "documentation" vertex IDs. For example, this documentation may describe a class and have
 	// children describing each method of the class.
 	Children []uint64 `json:"children"`
+}
+
+// NewDocumentation initializes a "documentation" vertex with the given ID. The caller should then
+// populate the required fields.
+func NewDocumentation(id uint64) Documentation {
+	return Documentation{
+		Vertex: Vertex{
+			Element: Element{
+				ID:   id,
+				Type: ElementVertex,
+			},
+			Label: VertexDocumentation,
+		},
+	}
 }
 
 type InteractiveMarkupContent struct {
