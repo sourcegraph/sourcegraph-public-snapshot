@@ -1,7 +1,7 @@
 import classnames from 'classnames';
 import React, { ReactElement } from 'react';
 
-import styles from './FormSeriesInput.module.scss'
+import styles from './FormColorInput.module.scss'
 
 interface FormColorPickerProps {
     className?: string;
@@ -23,7 +23,7 @@ const DEFAULT_COLOURS = [
     { color: 'var(--oc-orange-7)' },
 ];
 
-export function FormColorPicker(props: FormColorPickerProps): ReactElement {
+export function FormColorInput(props: FormColorPickerProps): ReactElement {
     const { className, colours = DEFAULT_COLOURS } = props;
 
     return (

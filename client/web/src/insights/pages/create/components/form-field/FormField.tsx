@@ -1,26 +1,25 @@
 import classnames from 'classnames';
-import React, { ReactElement } from 'react';
+import React, { InputHTMLAttributes, ReactElement } from 'react';
 
 import styles from './FormField.module.scss';
 
-interface InputFieldProps {
-    name: string;
+interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement>{
+    title: string;
     description?: string;
-    placeholder?: string;
     className?: string
 }
 
 export function InputField(props: InputFieldProps): ReactElement {
-    const { name, placeholder, description, className } = props;
+    const { title, placeholder, description, className, ...otherProps } = props;
 
     return (
         <label className={classnames(styles.formField, className)}>
-            <h4>{name}</h4>
+            <h4>{title}</h4>
 
             <input
                 type="text"
                 className={classnames(styles.formFieldInput, 'form-control')}
-                placeholder={placeholder}
+                {...otherProps}
             />
 
             <span className={classnames(styles.formFieldDescription, 'text-muted')}>

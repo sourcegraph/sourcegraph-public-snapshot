@@ -8,12 +8,15 @@ import { PageTitle } from '../../../components/PageTitle';
 import { InputField } from './components/form-field/FormField';
 import { FormGroup } from './components/form-group/FormGroup';
 import { FormRadioInput } from './components/form-radio-input/FormRadioInput';
-import { FormColorPicker } from './components/form-series-input/FormSeriesInput';
+import { FormSeries } from './components/form-series/FormSeries';
 import styles from './CreateinsightPage.module.scss'
 
 interface CreateInsightPageProps {}
 
-export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> = () => (
+export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> = props => {
+    const {} = props;
+
+    return (
         <Page className='col-8'>
             <PageTitle title='Create new code insight'/>
 
@@ -35,19 +38,19 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
             <Form className={styles.createInsightForm}>
 
                 <InputField
-                    name='Name'
+                    title='Name'
                     description='Chose a unique for your insights'
                     placeholder='Enter the unique name for your insight'
                     className={styles.createInsightFormField}/>
 
                 <InputField
-                    name='Title'
+                    title='Title'
                     description='Shown as title for your insight'
                     placeholder='ex. Migration to React function components'
                     className={styles.createInsightFormField}/>
 
                 <InputField
-                    name='Repositories'
+                    title='Repositories'
                     description='Create a list of repositories to run your search over. Separate them with comas.'
                     placeholder='Add or search for repositories'
                     className={styles.createInsightFormField}/>
@@ -77,34 +80,7 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
                     name='Data series'
                     subtitle='Add any number of data series to your chart'>
 
-                    <div className={styles.createInsightSeriesContent}>
-
-                        <InputField
-                            name='Name'
-                            placeholder='ex. Function component'
-                            description='Name shown in the legend and tooltip'
-                            className={styles.createInsightFormFieldSeries}/>
-
-                        <InputField
-                            name='Query'
-                            placeholder='ex. spatternType:regexp const\\s\\w+:\\s(React\\.)?FunctionComponent'
-                            description='Do not include the repo: filter as it will be added automatically for the current repository'
-                            className={styles.createInsightFormFieldSeries}/>
-
-                        <FormGroup
-                            name='Color'
-                            className={styles.createInsightFormFieldSeries}>
-
-                            <FormColorPicker/>
-                        </FormGroup>
-
-                        <button
-                            type='button'
-                            className={classnames(styles.createInsightSeriesButton,'button')}>
-
-                            Done
-                        </button>
-                    </div>
+                    <FormSeries className={styles.createInsightSeries}/>
                 </FormGroup>
 
                 <hr className={styles.createInsightSeparator}/>
@@ -159,3 +135,4 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
             </Form>
         </Page>
     )
+}

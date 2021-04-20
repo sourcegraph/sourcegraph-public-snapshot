@@ -24,7 +24,7 @@ export function FormRadioInput(props: RadioInputProps): ReactElement {
                 <span>{name}</span>
                 { description &&
                     <span className='text-muted'>
-                        – {description}
+                        {' '} – {description}
                     </span>}
             </div>
         </label>
