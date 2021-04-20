@@ -27,7 +27,7 @@
 ### Prerequisites
 
 - Git
-- Go (1.16 or later)
+- Go (1.15 or later)
 - Docker
 - PostgreSQL (v11 or higher)
 - Node.js (version 8 or 10)
