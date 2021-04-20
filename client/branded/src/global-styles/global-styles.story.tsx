@@ -642,7 +642,6 @@ const ButtonVariants: React.FunctionComponent<ButtonVariantsProps> = ({ variantT
                     type="button"
                     key={`${variantType} - ${variant} - focus`}
                     className={classNames('btn', `${variantType}-${variant}`, 'focus')}
-                    onClick={flow(preventDefault, action('button clicked'))}
                 >
                     Focus
                 </button>
