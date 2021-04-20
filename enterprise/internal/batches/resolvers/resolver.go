@@ -113,6 +113,35 @@ func logBackendEvent(ctx context.Context, db dbutil.DB, name string, args interf
 	return usagestats.LogBackendEvent(db, actor.UID, name, jsonArg)
 }
 
+func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
+	return map[string]graphqlbackend.NodeByIDFunc{
+		"Campaign": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.CampaignByID(ctx, id)
+		},
+		"BatchChange": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.BatchChangeByID(ctx, id)
+		},
+		"CampaignSpec": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.CampaignSpecByID(ctx, id)
+		},
+		"BatchSpec": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.BatchSpecByID(ctx, id)
+		},
+		"ChangesetSpec": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.ChangesetSpecByID(ctx, id)
+		},
+		"Changeset": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.ChangesetByID(ctx, id)
+		},
+		"CampaignsCredential": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.CampaignsCredentialByID(ctx, id)
+		},
+		"BatchChangesCredential": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.BatchChangesCredentialByID(ctx, id)
+		},
+	}
+}
+
 func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
 	if err := batchChangesEnabled(ctx); err != nil {
 		return nil, err
