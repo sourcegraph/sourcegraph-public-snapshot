@@ -19,7 +19,7 @@ func NewDocumentation(id uint64, result *DocumentationResult) Documentation {
 	}
 }
 
-// DocumentationEdge is an edge which connects a Documentation Vertex to a Moniker
+// DocumentationEdge is an edge which connects a Documentation Vertex to a Project
 // Vertex.
 type DocumentationEdge struct {
 	Edge
@@ -72,7 +72,7 @@ type InteractiveMarkupContent struct {
 type DocumentationVisibility string
 
 const (
-	Deprecated DocumentationVisibility = "deprecated"
-	Exported   DocumentationVisibility = "exported"
-	Unexported DocumentationVisibility = "unexported"
+	DocumentationDeprecated DocumentationVisibility = "deprecated"
+	DocumentationExported   DocumentationVisibility = "exported"
+	DocumentationUnexported DocumentationVisibility = "unexported"
 )
