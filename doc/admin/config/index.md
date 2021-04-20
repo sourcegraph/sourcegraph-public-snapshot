@@ -21,3 +21,4 @@
 
 - [Loading configuration via the file system](advanced_config_file.md)
 - [Restore postgres database from snapshot](restore/index.md)
+- [Enabling database encryption for sensitive data](encryption.md)
