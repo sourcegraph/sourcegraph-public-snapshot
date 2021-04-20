@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react'
 
-import { REDESIGN_CLASS_NAME } from './useRedesignToggle'
+import { REDESIGN_CLASS_NAME } from './useRedesignSubject'
 
 /**
  *

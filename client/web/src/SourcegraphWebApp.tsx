@@ -23,7 +23,7 @@ import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { REDESIGN_CLASS_NAME, getIsRedesignEnabled } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import { REDESIGN_CLASS_NAME, getIsRedesignEnabled } from '@sourcegraph/shared/src/util/useRedesignSubject'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { ErrorBoundary } from './components/ErrorBoundary'
