@@ -1,78 +1,79 @@
-@mixin redesign-button-variant($base-color, $lighter-color-variant, $darker-color-variant) {
-    @include button-variant(
-        $background: $base-color,
-        $border: $base-color,
-        $hover-background: $darker-color-variant,
-        $hover-border: transparent,
-        $active-background: $base-color,
-        $active-border: transparent
-    );
+.theme-redesign.theme-dark,
+.theme-redesign.theme-light {
+    // Ensure Bootstrap does not create any variants, we will use our own theme-colors
+    $theme-colors: map-remove($theme-colors, 'primary', 'secondary', 'success', 'info', 'danger', 'warning', 'merged');
+    @import 'bootstrap/scss/buttons';
+    @import 'bootstrap/scss/button-group';
+}
+
+@mixin redesign-button-variant($background-color, $disabled-color, $hover-color, $focus-outline-color) {
+    color: var(--light-text);
+    border-color: transparent;
+    background-color: $background-color;
+
+    &:hover {
+        color: var(--light-text);
+        background-color: $hover-color;
+    }
+
+    &:focus,
+    &.focus,
+    &:active,
+    &.active {
+        background-color: $background-color;
+        border-color: var(--body-bg);
+        box-shadow: 0 0 0 2px $focus-outline-color;
+    }
 
     &.disabled,
     &:disabled {
-        background-color: $lighter-color-variant;
-        border-color: $lighter-color-variant;
         opacity: 1;
-        color: var(--light-text);
+        background-color: $disabled-color;
+        border-color: $disabled-color;
+    }
+}
+
+@mixin redesign-button-outline-variant($border-color, $hover-color, $focus-outline-color) {
+    color: var(--body-color);
+    border-color: $border-color;
+    background-color: transparent;
+
+    &:hover {
+        background-color: var(--body-bg);
+        color: $hover-color;
+        border-color: $hover-color;
     }
 
     &.focus,
-    &:focus {
-        border-color: var(--body-bg);
-        box-shadow: 0 0 0 2px $lighter-color-variant;
-        background-color: $base-color;
-    }
-
-    color: var(--light-text);
-}
-
-@mixin redesign-button-outline-variant($base-color, $lighter-color-variant) {
-    @include button-outline-variant(
-        $color: var(--body-color),
-        $color-hover: $base-color,
-        $active-background: transparent,
-        $active-border: $lighter-color-variant
-    );
-
-    @include hover() {
-        background-color: var(--color-bg-1);
-        border-color: $base-color;
+    &:focus,
+    &:active,
+    &.active {
+        box-shadow: 0 0 0 2px $focus-outline-color;
     }
 
     &.disabled,
     &:disabled {
         color: var(--text-muted);
-        border-color: $base-color;
         background-color: var(--color-bg-1);
     }
-
-    &.focus,
-    &:focus {
-        box-shadow: 0 0 0 2px $lighter-color-variant;
-    }
-
-    &:not(:disabled):not(.disabled):active,
-    &:not(:disabled):not(.disabled).active {
-        color: $base-color;
-    }
-
-    border-color: $base-color;
 }
 
 .theme-light.theme-redesign {
     @each $color, $variants in $theme-colors-redesign-light {
         .btn-#{$color} {
             @include redesign-button-variant(
-                $base-color: map-get($variants, 1),
-                $lighter-color-variant: map-get($variants, 2),
-                $darker-color-variant: map-get($variants, 3)
+                $background-color: map-get($variants, 1),
+                $disabled-color: map-get($variants, 2),
+                $hover-color: map-get($variants, 3),
+                $focus-outline-color: map-get($variants, 2)
             );
         }
 
         .btn-outline-#{$color} {
             @include redesign-button-outline-variant(
-                $base-color: map-get($variants, 1),
-                $lighter-color-variant: map-get($variants, 2)
+                $border-color: map-get($variants, 1),
+                $hover-color: map-get($variants, 3),
+                $focus-outline-color: map-get($variants, 2)
             );
         }
     }
@@ -82,29 +83,19 @@
     @each $color, $variants in $theme-colors-redesign-dark {
         .btn-#{$color} {
             @include redesign-button-variant(
-                $base-color: map-get($variants, 1),
-                $lighter-color-variant: map-get($variants, 2),
-                $darker-color-variant: map-get($variants, 3)
+                $background-color: map-get($variants, 1),
+                $disabled-color: map-get($variants, 2),
+                $hover-color: map-get($variants, 3),
+                $focus-outline-color: map-get($variants, 3)
             );
-
-            // Invert to use a darker focus border in dark mode
-            &.focus,
-            &:focus {
-                box-shadow: 0 0 0 2px map-get($variants, 3);
-            }
         }
 
         .btn-outline-#{$color} {
             @include redesign-button-outline-variant(
-                $base-color: map-get($variants, 1),
-                $lighter-color-variant: map-get($variants, 2)
+                $border-color: map-get($variants, 1),
+                $hover-color: map-get($variants, 1),
+                $focus-outline-color: map-get($variants, 3)
             );
-
-            // Invert to use a darker focus border in dark mode
-            &.focus,
-            &:focus {
-                box-shadow: 0 0 0 2px map-get($variants, 3);
-            }
         }
     }
 }
@@ -112,48 +103,41 @@
 // Overides
 .theme-light.theme-redesign,
 .theme-dark.theme-redesign {
-    .btn-secondary {
+    // Update text colors to improve contrast
+    .btn-secondary,
+    .btn-outline-secondary {
         color: var(--body-color);
-        @include hover() {
-            border: 1px solid var(--color-bg-3);
-            background-color: var(--color-bg-2);
-        }
+
         &:focus,
-        &.focus {
+        &.focus,
+        &:active,
+        &.active {
             color: var(--body-color);
+            // Use blue focus outline to improve contrast
             box-shadow: 0 0 0 2px var(--primary-2);
         }
+
+        &:hover {
+            color: var(--body-color);
+        }
+
         &:disabled,
         &.disabled {
-            border: 1px solid var(--color-bg-3);
-            background-color: var(--secondary-2);
             color: var(--text-muted);
         }
     }
-
-    .btn-outline-secondary {
-        @include hover() {
-            color: var(--body-color);
-            background-color: var(--color-bg-1);
-        }
-        &:not(:disabled):not(.disabled):active,
-        &:not(:disabled):not(.disabled).active {
-            color: var(--body-color);
-        }
-        &:focus,
-        &.focus {
-            box-shadow: 0 0 0 2px var(--primary-2);
-        }
-    }
-
     .btn-warning,
     .btn-info {
         color: var(--dark-text);
+
+        &:hover,
         &:focus,
         &.focus,
-        &:hover {
+        &:active,
+        &.active {
             color: var(--dark-text);
         }
+
         &:disabled,
         &.disabled {
             color: var(--text-muted);
