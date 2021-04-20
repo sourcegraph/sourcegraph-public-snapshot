@@ -8,3 +8,4 @@ Site admins can also:
 - [Control the rate at which Batch Changes will create changesets](../../../admin/config/batch_changes.md#rollout-windows).
 - [Disable Batch Changes](../explanations/permissions_in_batch_changes.md#disabling-batch-changes).
 - [Disable Batch Changes for non-site-admin users](../explanations/permissions_in_batch_changes.md#disabling-batch-changes-for-non-site-admin-users).
+- [Configure global credentials](configuring_credentials.md) for pushing and updating changesets.
