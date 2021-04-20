@@ -15,23 +15,6 @@
                 background-color: var(--#{$color}-3);
             }
 
-            @at-root .theme-light#{&} {
-                &:focus,
-                &.focus,
-                &:active,
-                &.active {
-                    box-shadow: 0 0 0 4px var(--#{$color}-2);
-                }
-            }
-
-            @at-root .theme-dark#{&} {
-                &:focus,
-                &.focus,
-                &:active,
-                &.active {
-                    box-shadow: 0 0 0 4px var(--#{$color}-3);
-                }
-            }
             &:focus,
             &.focus,
             &:active,

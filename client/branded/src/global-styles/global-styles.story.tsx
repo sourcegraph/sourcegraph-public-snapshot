@@ -20,7 +20,7 @@ import { BrandedStory } from '../components/BrandedStory'
 import { CodeSnippet } from '../components/CodeSnippet'
 import { Form } from '../components/Form'
 
-const semanticColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info'] as const
+const semanticColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'merged'] as const
 
 const preventDefault = <E extends React.SyntheticEvent>(event: E): E => {
     event.preventDefault()
