@@ -1,0 +1,78 @@
+
+.create-insight {
+
+    &__sub-title-container {
+        margin-bottom: 2rem;
+    }
+
+    &__form {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__form-field {
+        max-width: 80%;
+    }
+
+    &__form-field + &__form-field{
+        margin-top: 2rem;
+    }
+
+    &__form-field--series + &__form-field--series{
+        margin-top: 1.5rem;
+    }
+
+    &__radio-group-content {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    &__radio + &__radio {
+        margin-left: 1rem;
+    }
+
+    &__separator {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+        width: 100%;
+    }
+
+    &__series-content {
+        display: flex;
+        flex-direction: column;
+        border-radius: 4px;
+        border: 1px solid var(--border-color);
+        padding: 1rem;
+    }
+
+    &__series-button {
+        align-self: flex-start;
+        padding: 8px 12px;
+        background-color: #999999;
+        border-radius: 4px;
+        border: none;
+        color: white;
+    }
+
+    &__step-input {
+        flex-basis: 100px;
+        margin-right: 1rem;
+    }
+
+    &__button  {
+        align-self: flex-start;
+        padding: 8px 12px;
+        border-radius: 4px;
+        border: 1px solid #999999;
+
+        &--active {
+            background-color: #999999;
+            color: white;
+            border: none;
+        }
+    }
+
+    &__button +  &__button {
+        margin-left: 0.5rem;
+    }
+}

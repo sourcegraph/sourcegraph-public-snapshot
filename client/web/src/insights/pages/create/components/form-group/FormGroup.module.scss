@@ -1,0 +1,26 @@
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+
+    $self: &;
+
+    &--with-subtitle {
+
+        #{$self}__name {
+            margin-bottom: 0.25rem;
+        }
+    }
+
+    &__name {
+        margin-bottom: 1rem;
+    }
+
+    &__content {
+        margin-bottom: 1rem;
+    }
+
+    &__description {
+        font-size: 0.875em;
+    }
+}

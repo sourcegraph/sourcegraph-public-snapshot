@@ -1,0 +1,42 @@
+
+.form-color-picker {
+    display: flex;
+    flex-direction: column;
+
+    &__colour-content {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: 0.75rem;
+    }
+
+    &__color-block {
+        width: 2rem;
+        height: 2rem;
+        position: relative;
+        background-color: currentColor;
+        border-radius: 50%;
+
+        &--active {
+            &:before {
+                content: "";
+                display: block;
+                border: solid 2px currentColor;
+                width: calc(2rem + 8px);
+                height: calc(2rem + 8px);
+                top: 50%;
+                left: 50%;
+                position: absolute;
+                border-radius: 50%;
+                transform: translate(-50%, -50%);
+            }
+        }
+    }
+
+    &__color-block + &__color-block {
+        margin-left: 0.75rem;
+    }
+
+    &__custom-color {
+        color: var(--link-color)
+    }
+}

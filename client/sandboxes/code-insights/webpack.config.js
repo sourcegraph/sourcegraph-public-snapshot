@@ -25,7 +25,25 @@ module.exports = {
         use: ['babel-loader'],
       },
       {
+        test: /\.module\.(sass|scss)$/,
+        use: [
+          'style-loader',
+          {
+            loader: 'css-loader',
+            options: {
+              sourceMap: true,
+              localsConvention: 'camelCase',
+              modules: {
+                localIdentName: '[name]__[local]_[hash:base64:5]',
+              },
+            },
+          },
+          'sass-loader',
+        ],
+      },
+      {
         test: /\.(scss)$/i,
+        exclude: /\.module\.(sass|scss)$/,
         use: [
           'style-loader',
           {

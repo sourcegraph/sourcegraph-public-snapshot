@@ -1,0 +1,14 @@
+
+.radio-input {
+    display: flex;
+    align-items: center;
+
+    &__input {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    &__description-content {
+        padding-left: 0.5rem;
+    }
+}
