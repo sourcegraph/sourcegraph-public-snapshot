@@ -26,13 +26,16 @@ $redesign-yellow: $oc-yellow-7;
 $redesign-green: $oc-green-7;
 $redesign-teal: $oc-teal-7;
 
-// Semantic base colors. These are the same regardless of dark/light theme.
-$redesign-primary: $redesign-blue;
-$redesign-success: $redesign-green;
-$redesign-info: $redesign-cyan;
-$redesign-warning: $redesign-yellow;
-$redesign-danger: $redesign-red;
-$redesign-merged: $redesign-purple;
+// Core semantic base colors.
+$theme-colors-redesign: (
+    primary: $redesign-blue,
+    secondary: $redesign-gray-04,
+    success: $redesign-green,
+    info: $redesign-cyan,
+    warning: $redesign-yellow,
+    danger: $redesign-red,
+    merged: $redesign-purple,
+);
 
 // If `bootstap-use-redesign-variables` is enabled, we update our SCSS variables to match the new redesign
 @if $bootstap-use-redesign-variables {
@@ -63,99 +66,21 @@ $redesign-merged: $redesign-purple;
     $mark-bg-dark: rgba(16, 104, 2, 0.5);
 }
 
-$theme-colors-redesign-light: (
-    'primary': (
-        1: $redesign-primary,
-        2: #a3d0ff,
-        3: $redesign-indigo,
-    ),
-    'secondary': (
-        1: $redesign-gray-04,
-        2: #eef1f7,
-        3: #c6cfe1,
-    ),
-    'success': (
-        1: $redesign-success,
-        2: #afe0b8,
-        3: #319e44,
-    ),
-    'info': (
-        1: $redesign-info,
-        2: #a8dbe2,
-        3: #0bb3ca,
-    ),
-    'warning': (
-        1: $redesign-warning,
-        2: #fbd999,
-        3: #e09200,
-    ),
-    'danger': (
-        1: $redesign-danger,
-        2: #e9aaaa,
-        3: #b52626,
-    ),
-    'merged': (
-        1: $redesign-merged,
-        2: #c6b6f6,
-        3: #6b47d6,
-    ),
-);
-
-$theme-colors-redesign-dark: (
-    'primary': (
-        1: $redesign-primary,
-        2: #0f59aa,
-        3: $redesign-indigo,
-    ),
-    'secondary': (
-        1: $redesign-gray-08,
-        2: #242936,
-        3: #1f232e,
-    ),
-    'success': (
-        1: $redesign-success,
-        2: #afe0b8,
-        3: #237332,
-    ),
-    'info': (
-        1: $redesign-info,
-        2: #99cdd6,
-        3: #005766,
-    ),
-    'warning': (
-        1: $redesign-warning,
-        2: #fbd999,
-        3: #9c6500,
-    ),
-    'danger': (
-        1: $redesign-danger,
-        2: #e9aaaa,
-        3: #801b1b,
-    ),
-    'merged': (
-        1: $redesign-merged,
-        2: #c6b6f6,
-        3: #6b47d6,
-    ),
-);
-
-$theme-colors-redesign-tokens: 'primary', 'secondary', 'success', 'info', 'warning', 'danger', 'merged';
-
 :root.theme-redesign,
 // Descendant selector is required for Storybook `addRedesignVariants` helper.
 :root .theme-redesign {
-    --primary: #{$redesign-primary};
+    --primary: #{map-get($theme-colors-redesign, 'primary')};
     --primary-3: #{$redesign-indigo};
     --brand-secondary: #a305e1;
     --brand-secondary-2: #{$redesign-pink};
-    --success: #{$redesign-success};
+    --success: #{map-get($theme-colors-redesign, 'success')};
     --success-2: #afe0b8;
-    --info: #{$redesign-info};
-    --warning: #{$redesign-warning};
+    --info: #{map-get($theme-colors-redesign, 'info')};
+    --warning: #{map-get($theme-colors-redesign, 'warning')};
     --warning-2: #fbd999;
-    --danger: #{$redesign-danger};
+    --danger: #{map-get($theme-colors-redesign, 'danger')};
     --danger-2: #e9aaaa;
-    --merged: #{$redesign-merged};
+    --merged: #{map-get($theme-colors-redesign, 'merged')};
     --merged-2: #c6b6f6;
     --merged-3: #6b47d6;
     --light-text: #{$white};

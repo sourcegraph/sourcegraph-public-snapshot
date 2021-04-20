@@ -11,21 +11,11 @@
 }
 
 .theme-light.theme-redesign,
-.theme-light .theme-redesign {
-    @each $color, $variants in $theme-colors-redesign-light {
+.theme-dark.theme-redesign {
+    @each $color, $value in $theme-colors-redesign {
         .badge-#{$color},
         a.badge-#{$color} {
-            @include badge-variant(map-get($variants, 1));
-        }
-    }
-}
-
-.theme-dark.theme-redesign,
-.theme-dark .theme-redesign {
-    @each $color, $variants in $theme-colors-redesign-dark {
-        .badge-#{$color},
-        a.badge-#{$color} {
-            @include badge-variant(map-get($variants, 1));
+            @include badge-variant($value);
         }
     }
 }

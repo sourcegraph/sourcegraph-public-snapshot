@@ -59,15 +59,15 @@ sup {
 
 .theme-light .theme-redesign,
 .theme-light.theme-redesign {
-    @each $color, $variants in $theme-colors-redesign-light {
-        @include text-emphasis-variant('.text-#{$color}', map-get($variants, 1), true);
+    @each $color, $value in $theme-colors-redesign {
+        @include text-emphasis-variant('.text-#{$color}', $value, true);
     }
 }
 
 .theme-dark .theme-redesign,
 .theme-dark.theme-redesign {
-    @each $color, $variants in $theme-colors-redesign-dark {
-        @include text-emphasis-variant('.text-#{$color}', map-get($variants, 1), true);
+    @each $color, $value in $theme-colors-redesign {
+        @include text-emphasis-variant('.text-#{$color}', $value, true);
     }
 }
 

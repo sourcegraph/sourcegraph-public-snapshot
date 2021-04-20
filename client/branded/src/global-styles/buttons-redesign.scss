@@ -4,7 +4,7 @@
     @import 'bootstrap/scss/buttons';
     @import 'bootstrap/scss/button-group';
 
-    @each $color in $theme-colors-redesign-tokens {
+    @each $color, $value in $theme-colors-redesign {
         .btn-#{$color} {
             color: var(--light-text);
             border-color: transparent;
