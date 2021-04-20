@@ -7,4 +7,3 @@ The
 [`@sourcegraph/extension-api-stubs`](https://github.com/sourcegraph/extension-api-stubs)
 module is a useful tool to mock the Sourcegraph API and make assertions about
 the calls that your extensions makes to it.
-
