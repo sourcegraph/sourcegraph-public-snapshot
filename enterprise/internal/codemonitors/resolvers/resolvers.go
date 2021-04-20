@@ -36,6 +36,14 @@ func (r *Resolver) Now() time.Time {
 	return r.store.Now()
 }
 
+func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
+	return map[string]graphqlbackend.NodeByIDFunc{
+		"CodeMonitor": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.MonitorByID(ctx, id)
+		},
+	}
+}
+
 func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) (graphqlbackend.MonitorConnectionResolver, error) {
 	// Request one extra to determine if there are more pages
 	newArgs := *args

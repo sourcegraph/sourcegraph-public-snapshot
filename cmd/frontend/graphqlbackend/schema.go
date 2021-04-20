@@ -23,3 +23,7 @@ var DotcomSchema string
 // LicenseSchema is the Licensing raw graqhql schema.
 //go:embed license.graphql
 var LicenseSchema string
+
+// CodeMonitorsSchema is the Code Monitoring raw graqhql schema.
+//go:embed code_monitors.graphql
+var CodeMonitorsSchema string
