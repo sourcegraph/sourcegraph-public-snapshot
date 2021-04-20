@@ -10,6 +10,8 @@ Configuring rollout windows allows changesets to be created and updated at a slo
 
 Rollout windows are configured through the `batchChanges.rolloutWindows` [site configuration option](site_config.md). If specified, this option contains an array of rollout window objects that are used to schedule changesets. The format of these objects [is given below](#rollout-window-object).
 
+When rollout windows are enabled, changesets will initially enter a **Scheduled** state when their batch change is applied. Hovering or tapping on the changeset's state icon will provide an estimate of when the changeset will be reconciled.
+
 To restore the default behavior, you can either delete the `batchChanges.rolloutWindows` option, or set it to `null`.
 
 ### Rollout window object
