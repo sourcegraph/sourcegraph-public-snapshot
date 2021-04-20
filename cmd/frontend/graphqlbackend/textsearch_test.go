@@ -39,21 +39,21 @@ import (
 func TestSearchFilesInRepos(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
+			return []result.FileMatch{{
 				Repo:     repo,
 				InputRev: &rev,
 				Path:     "main.go",
-			})}, false, nil
+			}}, false, nil
 		case "foo/two":
-			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
+			return []result.FileMatch{{
 				Repo:     repo,
 				InputRev: &rev,
 				Path:     "main.go",
-			})}, false, nil
+			}}, false, nil
 		case "foo/empty":
 			return nil, false, nil
 		case "foo/cloning":
@@ -132,27 +132,27 @@ func TestSearchFilesInRepos(t *testing.T) {
 func TestSearchFilesInReposStream(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
+			return []result.FileMatch{{
 				Repo:     repo,
 				InputRev: &rev,
 				Path:     "main.go",
-			})}, false, nil
+			}}, false, nil
 		case "foo/two":
-			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
+			return []result.FileMatch{{
 				Repo:     repo,
 				InputRev: &rev,
 				Path:     "main.go",
-			})}, false, nil
+			}}, false, nil
 		case "foo/three":
-			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
+			return []result.FileMatch{{
 				Repo:     repo,
 				InputRev: &rev,
 				Path:     "main.go",
-			})}, false, nil
+			}}, false, nil
 		default:
 			return nil, false, errors.New("Unexpected repo")
 		}
@@ -212,15 +212,15 @@ func mkStatusMap(m map[string]search.RepoStatus) search.RepoStatusMap {
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
-			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
+			return []result.FileMatch{{
 				Repo:     repo,
 				InputRev: &rev,
 				Path:     "main.go",
-			})}, false, nil
+			}}, false, nil
 		default:
 			panic("unexpected repo")
 		}
