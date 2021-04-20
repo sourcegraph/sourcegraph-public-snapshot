@@ -143,7 +143,7 @@ func TestGettingSearchContextFromVersionContext(t *testing.T) {
 	}
 }
 
-func createRepos(ctx context.Context, repoStore *database.RepoStore) ([]*types.RepoName, error) {
+func createRepos(ctx context.Context, repoStore *database.RepoStore) ([]types.RepoName, error) {
 	err := repoStore.Create(ctx, &types.Repo{Name: "github.com/example/a"}, &types.Repo{Name: "github.com/example/b"})
 	if err != nil {
 		return nil, err
@@ -156,7 +156,7 @@ func createRepos(ctx context.Context, repoStore *database.RepoStore) ([]*types.R
 	if err != nil {
 		return nil, err
 	}
-	return []*types.RepoName{{ID: repoA.ID, Name: repoA.Name}, {ID: repoB.ID, Name: repoB.Name}}, nil
+	return []types.RepoName{{ID: repoA.ID, Name: repoA.Name}, {ID: repoB.ID, Name: repoB.Name}}, nil
 }
 
 func TestConvertingVersionContextToSearchContext(t *testing.T) {

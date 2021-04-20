@@ -57,7 +57,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 	repoRevs := &search.RepositoryRevisions{
-		Repo: &types.RepoName{ID: 1, Name: "repo"},
+		Repo: types.RepoName{ID: 1, Name: "repo"},
 		Revs: []search.RevisionSpecifier{{RevSpec: "rev"}},
 	}
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, db, search.CommitParameters{

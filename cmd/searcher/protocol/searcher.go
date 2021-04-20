@@ -214,7 +214,4 @@ type LineMatch struct {
 	// representing each match on a line.
 	// Offsets and lengths are measured in characters, not bytes.
 	OffsetAndLengths [][2]int
-
-	// LimitHit is true if OffsetAndLengths may not include all OffsetAndLengths.
-	LimitHit bool
 }

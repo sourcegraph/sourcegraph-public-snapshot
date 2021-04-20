@@ -407,7 +407,7 @@ type scheduler interface {
 	SetCloned([]string)
 
 	// EnsureScheduled ensures that all the repos provided are known to the scheduler
-	EnsureScheduled([]*types.RepoName)
+	EnsureScheduled([]types.RepoName)
 }
 
 func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps *repos.GitolitePhabricatorMetadataSyncer) {

@@ -303,16 +303,11 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 		}
 	}()
 
-	var repoName types.RepoName
-	if op.RepoRevs.Repo != nil {
-		repoName = *op.RepoRevs.Repo
-	}
-
 	var results []*CommitSearchResultResolver
 	for event := range events {
 		timedOut = timedOut || !event.Complete || ctx.Err() == context.DeadlineExceeded
 
-		results = logCommitSearchResultsToResolvers(ctx, db, &op, repoName, event.Results)
+		results = logCommitSearchResultsToResolvers(ctx, db, &op, op.RepoRevs.Repo, event.Results)
 		if len(results) > 0 {
 			resultCount += len(event.Results)
 			limitHit = resultCount > int(op.PatternInfo.FileMatchLimit)

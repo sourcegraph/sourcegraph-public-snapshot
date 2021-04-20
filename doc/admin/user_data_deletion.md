@@ -13,3 +13,4 @@ When deleting or nuking a user, the following information is removed:
 - Organization membership information (which organizations the user is a part of, any invitations created by or targeting the user).
 - Sourcegraph extensions published by the user on the instance the deletion request is sent to.
 - User, Organization, or Global settings authored or modified by the user.
+- Bulk operations on changesets and batch changes created by the user.

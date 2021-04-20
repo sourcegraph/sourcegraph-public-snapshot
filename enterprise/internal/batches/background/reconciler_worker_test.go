@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func TestWorkerView(t *testing.T) {
+func TestReconcilerWorkerView(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
