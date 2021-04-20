@@ -7,12 +7,12 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/introspection"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
@@ -330,11 +330,38 @@ func prometheusGraphQLRequestName(requestName string) string {
 }
 
 func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
-	resolver := newSchemaResolver(db, repoupdater.DefaultClient)
+	resolver := newSchemaResolver(db)
+	schemas := []string{MainSchema}
 
 	if batchChanges != nil {
 		EnterpriseResolvers.batchChangesResolver = batchChanges
 		resolver.BatchChangesResolver = batchChanges
+		schemas = append(schemas, BatchesSchema)
+		// Register NodeByID handlers.
+		resolver.nodeByIDFns["Campaign"] = func(ctx context.Context, id graphql.ID) (Node, error) {
+			return batchChanges.CampaignByID(ctx, id)
+		}
+		resolver.nodeByIDFns["BatchChange"] = func(ctx context.Context, id graphql.ID) (Node, error) {
+			return batchChanges.BatchChangeByID(ctx, id)
+		}
+		resolver.nodeByIDFns["CampaignSpec"] = func(ctx context.Context, id graphql.ID) (Node, error) {
+			return batchChanges.CampaignSpecByID(ctx, id)
+		}
+		resolver.nodeByIDFns["BatchSpec"] = func(ctx context.Context, id graphql.ID) (Node, error) {
+			return batchChanges.BatchSpecByID(ctx, id)
+		}
+		resolver.nodeByIDFns["ChangesetSpec"] = func(ctx context.Context, id graphql.ID) (Node, error) {
+			return batchChanges.ChangesetSpecByID(ctx, id)
+		}
+		resolver.nodeByIDFns["Changeset"] = func(ctx context.Context, id graphql.ID) (Node, error) {
+			return batchChanges.ChangesetByID(ctx, id)
+		}
+		resolver.nodeByIDFns["CampaignsCredential"] = func(ctx context.Context, id graphql.ID) (Node, error) {
+			return batchChanges.CampaignsCredentialByID(ctx, id)
+		}
+		resolver.nodeByIDFns["BatchChangesCredential"] = func(ctx context.Context, id graphql.ID) (Node, error) {
+			return batchChanges.BatchChangesCredentialByID(ctx, id)
+		}
 	}
 
 	if codeIntel != nil {
@@ -363,7 +390,7 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 	}
 
 	return graphql.ParseSchema(
-		Schema,
+		strings.Join(schemas, "\n"),
 		resolver,
 		graphql.Tracer(&prometheusTracer{db: db}),
 		graphql.UseStringDescriptions(),
@@ -393,11 +420,10 @@ func newSchemaResolver(db dbutil.DB) *schemaResolver {
 		db:                db,
 		repoupdaterClient: repoupdater.DefaultClient,
 
-		BatchChangesResolver: defaultBatchChangesResolver{},
-		AuthzResolver:        defaultAuthzResolver{},
-		CodeIntelResolver:    defaultCodeIntelResolver{},
-		InsightsResolver:     defaultInsightsResolver{},
-		LicenseResolver:      defaultLicenseResolver{},
+		AuthzResolver:     defaultAuthzResolver{},
+		CodeIntelResolver: defaultCodeIntelResolver{},
+		InsightsResolver:  defaultInsightsResolver{},
+		LicenseResolver:   defaultLicenseResolver{},
 	}
 
 	r.nodeByIDFns = map[string]NodeByIDFunc{
@@ -480,7 +506,6 @@ var EnterpriseResolvers = struct {
 }{
 	codeIntelResolver:    defaultCodeIntelResolver{},
 	authzResolver:        defaultAuthzResolver{},
-	batchChangesResolver: defaultBatchChangesResolver{},
 	codeMonitorsResolver: defaultCodeMonitorsResolver{},
 	licenseResolver:      defaultLicenseResolver{},
 }
