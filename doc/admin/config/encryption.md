@@ -29,7 +29,6 @@ To enable encryption you must specify key config for each of the keys defined in
 
 
 ## Migration
-
 When you first enable encryption two migrations will begin in the UI (https://sourcegraph.example.com/site-admin/migrations) called 'Encrypt auth data' and 'Encrypt configuration'. These jobs watch the site config waiting for a key to be configured and then iterate over all data in the relevant tables & encrypt it. Once these two migrations reach 100% your data will be fully encrypted! You can still use sourcegraph whilst these migrations are progressing, any unencrypted data will be read as normal, and encrypted if you update it.
 
 ## Key Rotation
