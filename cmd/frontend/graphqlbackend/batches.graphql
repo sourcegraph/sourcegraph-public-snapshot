@@ -1335,6 +1335,10 @@ enum ChangesetSpecOperation {
     """
     UNDRAFT
     """
+    Move the existing changeset back to being a draft.
+    """
+    REDRAFT
+    """
     Publish a changeset to the codehost.
     """
     PUBLISH
@@ -1388,6 +1392,18 @@ type ChangesetSpecDelta {
     When run, the changeset will be taken out of draft mode.
     """
     undraft: Boolean!
+    """
+    When run, the changeset will return into draft mode.
+    """
+    redraft: Boolean!
+    """
+    When run, the changeset will be closed.
+    """
+    close: Boolean!
+    """
+    When run, the changeset will be reopened.
+    """
+    reopen: Boolean!
     """
     When run, the target branch of the changeset will be updated.
     """

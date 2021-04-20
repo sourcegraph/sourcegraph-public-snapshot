@@ -91,6 +91,9 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		case btypes.ReconcilerOperationUndraft:
 			err = e.undraftChangeset(ctx)
 
+		case btypes.ReconcilerOperationRedraft:
+			err = e.redraftChangeset(ctx)
+
 		case btypes.ReconcilerOperationClose:
 			err = e.closeChangeset(ctx)
 
@@ -330,6 +333,28 @@ func (e *executor) undraftChangeset(ctx context.Context) (err error) {
 
 	if err := draftCss.UndraftChangeset(ctx, cs); err != nil {
 		return errors.Wrap(err, "undrafting changeset")
+	}
+	return nil
+}
+
+// redraftChangeset marks the given changeset on its code host as not ready for review.
+func (e *executor) redraftChangeset(ctx context.Context) (err error) {
+	draftCss, err := sources.ToDraftChangesetSource(e.css)
+	if err != nil {
+		return err
+	}
+
+	cs := &sources.Changeset{
+		Title:     e.spec.Spec.Title,
+		Body:      e.spec.Spec.Body,
+		BaseRef:   e.spec.Spec.BaseRef,
+		HeadRef:   e.spec.Spec.HeadRef,
+		Repo:      e.repo,
+		Changeset: e.ch,
+	}
+
+	if err := draftCss.RedraftChangeset(ctx, cs); err != nil {
+		return errors.Wrap(err, "redrafting changeset")
 	}
 	return nil
 }
