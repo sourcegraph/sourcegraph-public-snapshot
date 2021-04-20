@@ -23,7 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- A regression where incorrect query highlighting happens for certain quoted values. [#20110](https://github.com/sourcegraph/sourcegraph/pull/20110)
+-
 
 ### Removed
 
@@ -38,6 +38,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Batch Changes now ignore repositories that contain a `.batchignore` file. [#19877](https://github.com/sourcegraph/sourcegraph/pull/19877) and [src-cli#509](https://github.com/sourcegraph/src-cli/pull/509)
 - Side-by-side diff for commit visualization. [#19553](https://github.com/sourcegraph/sourcegraph/pull/19553)
 - The site configuration now supports defining batch change rollout windows, which can be used to slow or disable pushing changesets at particular times of day or days of the week. [#19796](https://github.com/sourcegraph/sourcegraph/pull/19796), [#19797](https://github.com/sourcegraph/sourcegraph/pull/19797), and [#19951](https://github.com/sourcegraph/sourcegraph/pull/19951).
+- Search functionality via built-in `contains` predicate: `repo:contains(...)`, `repo:contains.file(...)`, `repo:contains.content(...)`, repo:contains.commit.after(...)`. [#18584](https://github.com/sourcegraph/sourcegraph/issues/18584)
 
 ### Changed
 
@@ -57,6 +58,7 @@ All notable changes to Sourcegraph are documented in this file.
 - New changes of a Perforce depot will now be reflected in `master` branch after the initial clone. [#19718](https://github.com/sourcegraph/sourcegraph/pull/19718)
 - Gitolite and Other type code host connection configuration can be correctly displayed. [#19976](https://github.com/sourcegraph/sourcegraph/pull/19976)
 - Fixed a regression that caused user and code host limits to be ignored. [#20089](https://github.com/sourcegraph/sourcegraph/pull/20089)
+- A regression where incorrect query highlighting happens for certain quoted values. [#20110](https://github.com/sourcegraph/sourcegraph/pull/20110)
 
 ## 3.26.3
 
