@@ -111,8 +111,8 @@ export const config: webpack.Configuration = {
                     loader: 'css-loader',
                     options: {
                         sourceMap: false,
-                        localsConvention: 'camelCase',
                         modules: {
+                            exportLocalsConvention: 'camelCase',
                             localIdentName: '[name]__[local]_[hash:base64:5]',
                         },
                     },

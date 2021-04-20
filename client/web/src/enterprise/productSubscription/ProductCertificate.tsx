@@ -43,7 +43,12 @@ export const ProductCertificate: React.FunctionComponent<Props> = ({
                 {detail && <p className="text-muted mb-0">{detail}</p>}
             </div>
         </div>
-        <div className="product-certificate__bg" />
+        <div
+            className="product-certificate__bg"
+            // We don't want css-loader to process this URL, so we're adding it here.
+            // eslint-disable-next-line react/forbid-dom-props
+            style={{ backgroundImage: 'url(/.assets/img/bg-sprinkles-2x.png)' }}
+        />
         {footer}
     </div>
 )
