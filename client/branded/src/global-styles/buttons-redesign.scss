@@ -82,11 +82,6 @@
 }
 
 .theme-redesign {
-    // Ensure Bootstrap does not create any variants, we will use our own theme-colors
-    $theme-colors: map-remove($theme-colors, 'primary', 'secondary', 'success', 'info', 'danger', 'warning', 'merged');
-    @import 'bootstrap/scss/buttons';
-    @import 'bootstrap/scss/button-group';
-
     @include redesign-button-variant(
         $name: 'primary',
         $base-color: var(--primary),
