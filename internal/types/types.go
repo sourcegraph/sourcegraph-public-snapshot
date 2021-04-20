@@ -1447,11 +1447,11 @@ type ExtensionUsageStatistics struct {
 }
 
 type CodeInsightsUsageStatistics struct {
-	UsageStatisticsByInsight       []*InsightUsageStatistics
-	InsightsPageViews              *int32
-	InsightsUniquePageViews        *int32
-	InsightConfigureClick          *int32
-	InsightAddMoreClick            *int32
+	WeeklyUsageStatisticsByInsight []*InsightUsageStatistics
+	WeeklyInsightsPageViews        *int32
+	WeeklyInsightsUniquePageViews  *int32
+	WeeklyInsightConfigureClick    *int32
+	WeeklyInsightAddMoreClick      *int32
 	WeekStart                      time.Time
 	WeeklyInsightCreators          *int32
 	WeeklyFirstTimeInsightCreators *int32
