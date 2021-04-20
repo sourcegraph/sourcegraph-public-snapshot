@@ -56,6 +56,21 @@ export const TextStory: React.FunctionComponent<TextStoryProps> = ({ semanticCol
         </p>
 
         <p>
+            Text can be <i>idiomatic</i> with <code>{'<i>'}</code>. See{' '}
+            <a
+                target="__blank"
+                href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/em#%3Ci%3E_vs._%3Cem%3E"
+            >
+                {'<i>'} vs. {'<em>'}
+            </a>{' '}
+            for more info.
+        </p>
+
+        <p>
+            You can bring attention to the <b>element</b> with <code>{'<b>'}</code>.
+        </p>
+
+        <p>
             Text can have superscripts<sup>sup</sup> with <code>{'<sup>'}</code>.
         </p>
 
