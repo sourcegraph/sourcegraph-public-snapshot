@@ -39,18 +39,18 @@ func TestRepo(t *testing.T, store *database.ExternalServiceStore, serviceKind st
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 
-	return TestRepoWithService(t, store, &svc)
+	return TestRepoWithService(t, store, fmt.Sprintf("repo-%d", svc.ID), &svc)
 }
 
-func TestRepoWithService(t *testing.T, store *database.ExternalServiceStore, svc *types.ExternalService) *types.Repo {
+func TestRepoWithService(t *testing.T, store *database.ExternalServiceStore, name string, svc *types.ExternalService) *types.Repo {
 	t.Helper()
 
 	return &types.Repo{
-		Name:    api.RepoName(fmt.Sprintf("repo-%d", svc.ID)),
-		URI:     fmt.Sprintf("repo-%d", svc.ID),
+		Name:    api.RepoName(name),
+		URI:     name,
 		Private: true,
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          fmt.Sprintf("external-id-%d", svc.ID),
+			ID:          fmt.Sprintf("external-id-%s", name),
 			ServiceType: extsvc.KindToType(svc.Kind),
 			ServiceID:   fmt.Sprintf("https://%s.com/", strings.ToLower(svc.Kind)),
 		},
@@ -90,7 +90,7 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, count int)
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepoWithService(t, esStore, ext)
+		r := TestRepoWithService(t, esStore, fmt.Sprintf("repo-%d", i+1), ext)
 		r.Metadata = &github.Repository{
 			NameWithOwner: string(r.Name),
 			URL:           fmt.Sprintf("https://github.com/sourcegraph/%s", string(r.Name)),
@@ -127,7 +127,7 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepoWithService(t, esStore, ext)
+		r := TestRepoWithService(t, esStore, fmt.Sprintf("repo-%d", i+1), ext)
 		r.Metadata = &gitlab.Project{
 			ProjectCommon: gitlab.ProjectCommon{
 				HTTPURLToRepo: fmt.Sprintf("https://gitlab.com/sourcegraph/%s", string(r.Name)),
@@ -223,7 +223,7 @@ func createBbsRepos(t *testing.T, ctx context.Context, db dbutil.DB, ext *types.
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepoWithService(t, esStore, ext)
+		r := TestRepoWithService(t, esStore, fmt.Sprintf("repo-%d", i+1), ext)
 		var metadata bitbucketserver.Repo
 		urlType := "http"
 		if strings.HasPrefix(cloneBaseURL, "ssh") {
