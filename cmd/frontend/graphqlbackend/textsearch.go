@@ -208,7 +208,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 		return nil, false, err
 	}
 
-	resolvers := make([]result.FileMatch, 0, len(matches))
+	fileMatches := make([]result.FileMatch, 0, len(matches))
 	for _, fm := range matches {
 		lineMatches := make([]*result.LineMatch, 0, len(fm.LineMatches))
 		for _, lm := range fm.LineMatches {
@@ -224,7 +224,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 			})
 		}
 
-		resolvers = append(resolvers, result.FileMatch{
+		fileMatches = append(fileMatches, result.FileMatch{
 			Path:        fm.Path,
 			LineMatches: lineMatches,
 			LimitHit:    fm.LimitHit,
@@ -234,7 +234,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 		})
 	}
 
-	return resolvers, limitHit, err
+	return fileMatches, limitHit, err
 }
 
 // repoShouldBeSearched determines whether a repository should be searched in, based on whether the repository
