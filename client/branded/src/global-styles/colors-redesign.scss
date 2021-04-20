@@ -59,11 +59,6 @@ $theme-colors-redesign: (
     --logo-blue: #{$logo-blue};
     --logo-purple: #{$redesign-purple};
     --tooltip-bg: #{$redesign-gray-08};
-
-    // TODO: Move out of colors
-    --border-radius: 4px;
-    --border-radius-sm: 4px;
-    --border-radius-lg: 4px;
     // Assumption: Uses light-mode body-color, which matches current behavior
     --box-shadow: 0 0.25rem 0.5rem rgba($redesign-gray-08, 0.07);
 }

@@ -5,6 +5,7 @@ $media-lg: 992px;
 $media-xl: 1200px;
 
 @import './colors.scss';
+@import './border-radius.scss';
 
 // Bootstrap configuration before Bootstrap is imported
 $border-radius: var(--border-radius);
