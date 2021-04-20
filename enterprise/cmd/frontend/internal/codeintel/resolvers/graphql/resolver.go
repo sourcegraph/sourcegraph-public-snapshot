@@ -39,6 +39,17 @@ func NewResolver(db dbutil.DB, resolver resolvers.Resolver) gql.CodeIntelResolve
 	}
 }
 
+func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
+	return map[string]gql.NodeByIDFunc{
+		"LSIFUpload": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
+			return r.LSIFUploadByID(ctx, id)
+		},
+		"LSIFIndex": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
+			return r.LSIFIndexByID(ctx, id)
+		},
+	}
+}
+
 func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (gql.LSIFUploadResolver, error) {
 	uploadID, err := unmarshalLSIFUploadGQLID(id)
 	if err != nil {

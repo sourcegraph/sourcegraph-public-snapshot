@@ -1,0 +1,684 @@
+extend type Mutation {
+    """
+    Updates the indexing configuration associated with a repository.
+    """
+    updateRepositoryIndexConfiguration(repository: ID!, configuration: String!): EmptyResponse
+
+    """
+    Queues the index jobs for a repository for execution.
+    """
+    queueAutoIndexJobForRepo(repository: ID!): EmptyResponse
+
+    """
+    (experimental) The LSIF API may change substantially in the near future as we
+    continue to adjust it for our use cases. Changes will not be documented in the
+    CHANGELOG during this time.
+    Deletes an LSIF upload.
+    """
+    deleteLSIFUpload(id: ID!): EmptyResponse
+
+    """
+    (experimental) The LSIF API may change substantially in the near future as we
+    continue to adjust it for our use cases. Changes will not be documented in the
+    CHANGELOG during this time.
+    Deletes an LSIF index.
+    """
+    deleteLSIFIndex(id: ID!): EmptyResponse
+}
+
+extend type Query {
+    """
+    (experimental) The LSIF API may change substantially in the near future as we
+    continue to adjust it for our use cases. Changes will not be documented in the
+    CHANGELOG during this time.
+    The repository's LSIF uploads.
+    """
+    lsifUploads(
+        """
+        An (optional) search query that searches over the state, repository name,
+        commit, root, and indexer properties.
+        """
+        query: String
+
+        """
+        The state of returned uploads.
+        """
+        state: LSIFUploadState
+
+        """
+        When specified, shows only uploads that are latest for the given repository.
+        """
+        isLatestForRepo: Boolean
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page. It must be in the range of 0-5000.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+
+        A future request can be made for more results by passing in the
+        'LSIFUploadConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+    ): LSIFUploadConnection!
+
+    """
+    (experimental) The LSIF API may change substantially in the near future as we
+    continue to adjust it for our use cases. Changes will not be documented in the
+    CHANGELOG during this time.
+    The repository's LSIF uploads.
+    """
+    lsifIndexes(
+        """
+        An (optional) search query that searches over the state, repository name,
+        and commit properties.
+        """
+        query: String
+
+        """
+        The state of returned uploads.
+        """
+        state: LSIFIndexState
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page. It must be in the range of 0-5000.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LSIFIndexConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+    ): LSIFIndexConnection!
+}
+
+extend type Repository {
+    """
+    Gets the indexing configuration associated with the repository.
+    """
+    indexConfiguration: IndexConfiguration
+
+    """
+    (experimental) The LSIF API may change substantially in the near future as we
+    continue to adjust it for our use cases. Changes will not be documented in the
+    CHANGELOG during this time.
+    The repository's LSIF uploads.
+    """
+    lsifUploads(
+        """
+        An (optional) search query that searches over the state, repository name,
+        commit, root, and indexer properties.
+        """
+        query: String
+
+        """
+        The state of returned uploads.
+        """
+        state: LSIFUploadState
+
+        """
+        When specified, shows only uploads that are latest for the given repository.
+        """
+        isLatestForRepo: Boolean
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page. It must be in the range of 0-5000.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LSIFUploadConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+    ): LSIFUploadConnection!
+
+    """
+    (experimental) The LSIF API may change substantially in the near future as we
+    continue to adjust it for our use cases. Changes will not be documented in the
+    CHANGELOG during this time.
+    The repository's LSIF uploads.
+    """
+    lsifIndexes(
+        """
+        An (optional) search query that searches over the state, repository name,
+        and commit properties.
+        """
+        query: String
+
+        """
+        The state of returned uploads.
+        """
+        state: LSIFIndexState
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page. It must be in the range of 0-5000.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LSIFIndexConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+    ): LSIFIndexConnection!
+}
+
+extend interface TreeEntry {
+    """
+    (experimental) The LSIF API may change substantially in the near future as we
+    continue to adjust it for our use cases. Changes will not be documented in the
+    CHANGELOG during this time.
+    LSIF data for this tree entry.
+    """
+    lsif(
+        """
+        An optional filter for the name of the tool that produced the upload data.
+        """
+        toolName: String
+    ): TreeEntryLSIFData
+}
+
+extend type GitTree {
+    """
+    (experimental) The LSIF API may change substantially in the near future as we
+    continue to adjust it for our use cases. Changes will not be documented in the
+    CHANGELOG during this time.
+    LSIF data for this tree entry.
+    """
+    lsif(
+        """
+        An optional filter for the name of the tool that produced the upload data.
+        """
+        toolName: String
+    ): TreeEntryLSIFData
+}
+
+extend type GitBlob {
+    """
+    (experimental) The LSIF API may change substantially in the near future as we
+    continue to adjust it for our use cases. Changes will not be documented in the
+    CHANGELOG during this time.
+    A wrapper around LSIF query methods. If no LSIF upload can be used to answer code
+    intelligence queries for this path-at-revision, this resolves to null.
+    """
+    lsif(
+        """
+        An optional filter for the name of the tool that produced the upload data.
+        """
+        toolName: String
+    ): GitBlobLSIFData
+}
+
+"""
+LSIF data available for a tree entry.
+"""
+interface TreeEntryLSIFData {
+    """
+    Code diagnostics provided through LSIF.
+    """
+    diagnostics(first: Int): DiagnosticConnection!
+}
+
+"""
+A wrapper object around LSIF query methods for a particular path-at-revision. When this node is
+null, no LSIF data is available for containing git blob.
+"""
+type GitBlobLSIFData implements TreeEntryLSIFData {
+    """
+    (experimental) The LSIF API may change substantially in the near future as we
+    continue to adjust it for our use cases. Changes will not be documented in the
+    CHANGELOG during this time.
+    Get aggregated local code intelligence for all ranges that fall in the window
+    indicated by the given zero-based start (inclusive) and end (exclusive) lines.
+    The associated data for each range is "local", in that the locations and hover
+    must also be defined in the same index as the source range. To get cross-repository
+    and cross-bundle results, you must query the definitions, references, and hovers
+    of that range explicitly.
+    """
+    ranges(startLine: Int!, endLine: Int!): CodeIntelligenceRangeConnection
+
+    """
+    (experimental) The LSIF API may change substantially in the near future as we
+    continue to adjust it for our use cases. Changes will not be documented in the
+    CHANGELOG during this time.
+    A list of definitions of the symbol under the given document position.
+    """
+    definitions(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+    ): LocationConnection!
+
+    """
+    (experimental) The LSIF API may change substantially in the near future as we
+    continue to adjust it for our use cases. Changes will not be documented in the
+    CHANGELOG during this time.
+    A list of references of the symbol under the given document position.
+    """
+    references(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LocationConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+    ): LocationConnection!
+
+    """
+    (experimental) The LSIF API may change substantially in the near future as we
+    continue to adjust it for our use cases. Changes will not be documented in the
+    CHANGELOG during this time.
+    The hover result of the symbol under the given document position.
+    """
+    hover(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+    ): Hover
+
+    """
+    (experimental) The LSIF API may change substantially in the near future as we
+    continue to adjust it for our use cases. Changes will not be documented in the
+    CHANGELOG during this time.
+    Code diagnostics provided through LSIF.
+    """
+    diagnostics(first: Int): DiagnosticConnection!
+}
+
+"""
+The state an LSIF upload can be in.
+"""
+enum LSIFUploadState {
+    """
+    This upload is being processed.
+    """
+    PROCESSING
+
+    """
+    This upload failed to be processed.
+    """
+    ERRORED
+
+    """
+    This upload was processed successfully.
+    """
+    COMPLETED
+
+    """
+    This upload is queued to be processed later.
+    """
+    QUEUED
+
+    """
+    This upload is currently being transferred to Sourcegraph.
+    """
+    UPLOADING
+}
+
+"""
+Metadata and status about an LSIF upload.
+"""
+type LSIFUpload implements Node {
+    """
+    The ID.
+    """
+    id: ID!
+
+    """
+    The project for which this upload provides code intelligence.
+    """
+    projectRoot: GitTree
+
+    """
+    The original 40-character commit commit supplied at upload time.
+    """
+    inputCommit: String!
+
+    """
+    The original root supplied at upload time.
+    """
+    inputRoot: String!
+
+    """
+    The original indexer name supplied at upload time.
+    """
+    inputIndexer: String!
+
+    """
+    The upload's current state.
+    """
+    state: LSIFUploadState!
+
+    """
+    The time the upload was uploaded.
+    """
+    uploadedAt: DateTime!
+
+    """
+    The time the upload was processed.
+    """
+    startedAt: DateTime
+
+    """
+    The time the upload compelted or errored.
+    """
+    finishedAt: DateTime
+
+    """
+    The processing error message (not set if state is not ERRORED).
+    """
+    failure: String
+
+    """
+    Whether or not this upload provides intelligence for the tip of the default branch. Find reference
+    queries will return symbols from remote repositories only when this property is true. This property
+    is updated asynchronously and is eventually consistent with the git data known by the Sourcegraph
+    instance.
+    """
+    isLatestForRepo: Boolean!
+
+    """
+    The rank of this upload in the queue. The value of this field is null if the upload has been processed.
+    """
+    placeInQueue: Int
+}
+
+"""
+A list of LSIF uploads.
+"""
+type LSIFUploadConnection {
+    """
+    A list of LSIF uploads.
+    """
+    nodes: [LSIFUpload!]!
+
+    """
+    The total number of uploads in this result set.
+    """
+    totalCount: Int
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+The state an LSIF index can be in.
+"""
+enum LSIFIndexState {
+    """
+    This index is being processed.
+    """
+    PROCESSING
+
+    """
+    This index failed to be processed.
+    """
+    ERRORED
+
+    """
+    This index was processed successfully.
+    """
+    COMPLETED
+
+    """
+    This index is queued to be processed later.
+    """
+    QUEUED
+}
+
+"""
+Metadata and status about an LSIF index.
+"""
+type LSIFIndex implements Node {
+    """
+    The ID.
+    """
+    id: ID!
+
+    """
+    The project for which this upload provides code intelligence.
+    """
+    projectRoot: GitTree
+
+    """
+    The original 40-character commit commit supplied at index time.
+    """
+    inputCommit: String!
+
+    """
+    The original root supplied at index schedule time.
+    """
+    inputRoot: String!
+
+    """
+    The name of the target indexer Docker image (e.g., sourcegraph/lsif-go@sha256:...).
+    """
+    inputIndexer: String!
+
+    """
+    The index's current state.
+    """
+    state: LSIFIndexState!
+
+    """
+    The time the index was queued.
+    """
+    queuedAt: DateTime!
+
+    """
+    The time the index was processed.
+    """
+    startedAt: DateTime
+
+    """
+    The time the index compelted or errored.
+    """
+    finishedAt: DateTime
+
+    """
+    The processing error message (not set if state is not ERRORED).
+    """
+    failure: String
+
+    """
+    The configuration and execution summary (if completed or errored) of this index job.
+    """
+    steps: IndexSteps!
+
+    """
+    The rank of this index in the queue. The value of this field is null if the index has been processed.
+    """
+    placeInQueue: Int
+}
+
+"""
+Configuration and execution summary of an index job.
+"""
+type IndexSteps {
+    """
+    Execution log entries related to setting up the indexing workspace.
+    """
+    setup: [ExecutionLogEntry!]!
+
+    """
+    Configuration and execution summary (if completed or errored) of steps to be performed prior to indexing.
+    """
+    preIndex: [PreIndexStep!]!
+
+    """
+    Configuration and execution summary (if completed or errored) of the indexer.
+    """
+    index: IndexStep!
+
+    """
+    Execution log entry related to uploading the dump produced by the indexing step.
+    This field be missing if the upload step had not been executed.
+    """
+    upload: ExecutionLogEntry
+
+    """
+    Execution log entries related to tearing down the indexing workspace.
+    """
+    teardown: [ExecutionLogEntry!]!
+}
+
+"""
+The configuration and execution summary of a step to be performed prior to indexing.
+"""
+type PreIndexStep {
+    """
+    The working directory relative to the cloned repository root.
+    """
+    root: String!
+
+    """
+    The name of the Docker image to run.
+    """
+    image: String!
+
+    """
+    The arguments to supply to the Docker container's entrypoint.
+    """
+    commands: [String!]!
+
+    """
+    The execution summary (if completed or errored) of the docker command.
+    """
+    logEntry: ExecutionLogEntry
+}
+
+"""
+The configuration and execution summary of the indexer.
+"""
+type IndexStep {
+    """
+    The arguments to supply to the indexer container.
+    """
+    indexerArgs: [String!]!
+
+    """
+    The path to the index file relative to the root directory (dump.lsif by default).
+    """
+    outfile: String
+
+    """
+    The execution summary (if completed or errored) of the index command.
+    """
+    logEntry: ExecutionLogEntry
+}
+
+"""
+A description of a command run inside the executor to during processing of the parent record.
+"""
+type ExecutionLogEntry {
+    """
+    An internal tag used to correlate this log entry with other records.
+    """
+    key: String!
+
+    """
+    The arguments of the command run inside the executor.
+    """
+    command: [String!]!
+
+    """
+    The date when this command started.
+    """
+    startTime: DateTime!
+
+    """
+    The exit code of the command.
+    """
+    exitCode: Int!
+
+    """
+    The combined stdout and stderr logs of the command.
+    """
+    out: String!
+
+    """
+    The duration in milliseconds of the command.
+    """
+    durationMilliseconds: Int!
+}
+
+"""
+A list of LSIF indexes.
+"""
+type LSIFIndexConnection {
+    """
+    A list of LSIF indexes.
+    """
+    nodes: [LSIFIndex!]!
+
+    """
+    The total number of indexes in this result set.
+    """
+    totalCount: Int
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Explicit configuration for indexing a repository.
+"""
+type IndexConfiguration {
+    """
+    The raw JSON-encoded index configuration.
+    """
+    configuration: String
+}

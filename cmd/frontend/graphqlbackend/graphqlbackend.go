@@ -346,6 +346,11 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 	if codeIntel != nil {
 		EnterpriseResolvers.codeIntelResolver = codeIntel
 		resolver.CodeIntelResolver = codeIntel
+		schemas = append(schemas, CodeIntelSchema)
+		// Register NodeByID handlers.
+		for kind, res := range codeIntel.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
 	}
 
 	if insights != nil {
@@ -399,10 +404,9 @@ func newSchemaResolver(db dbutil.DB) *schemaResolver {
 		db:                db,
 		repoupdaterClient: repoupdater.DefaultClient,
 
-		AuthzResolver:     defaultAuthzResolver{},
-		CodeIntelResolver: defaultCodeIntelResolver{},
-		InsightsResolver:  defaultInsightsResolver{},
-		LicenseResolver:   defaultLicenseResolver{},
+		AuthzResolver:    defaultAuthzResolver{},
+		InsightsResolver: defaultInsightsResolver{},
+		LicenseResolver:  defaultLicenseResolver{},
 	}
 
 	r.nodeByIDFns = map[string]NodeByIDFunc{
@@ -454,12 +458,6 @@ func newSchemaResolver(db dbutil.DB) *schemaResolver {
 		"Site": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.siteByGQLID(ctx, id)
 		},
-		"LSIFUpload": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return r.LSIFUploadByID(ctx, id)
-		},
-		"LSIFIndex": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return r.LSIFIndexByID(ctx, id)
-		},
 		"CodeMonitor": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.MonitorByID(ctx, id)
 		},
@@ -483,7 +481,6 @@ var EnterpriseResolvers = struct {
 	codeMonitorsResolver CodeMonitorsResolver
 	licenseResolver      LicenseResolver
 }{
-	codeIntelResolver:    defaultCodeIntelResolver{},
 	authzResolver:        defaultAuthzResolver{},
 	codeMonitorsResolver: defaultCodeMonitorsResolver{},
 	licenseResolver:      defaultLicenseResolver{},
