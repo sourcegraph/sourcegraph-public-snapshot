@@ -252,6 +252,8 @@ type BatchChangesResolver interface {
 
 	BatchChangesCredentialByID(ctx context.Context, id graphql.ID) (BatchChangesCredentialResolver, error)
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
+
+	NodeResolvers() map[string]NodeByIDFunc
 }
 
 type BatchSpecResolver interface {
