@@ -1,32 +1,30 @@
-:not(.theme-redesign) {
-    &.theme-dark,
-    &.theme-light {
-        @import 'bootstrap/scss/buttons';
-        @import 'bootstrap/scss/button-group';
+@import 'bootstrap/scss/buttons';
+@import 'bootstrap/scss/button-group';
 
-        // btn-outline-secondary uses a different text color for better contrast.
-        // theme classes are necessary because of specifity.
-        .btn-outline-secondary {
-            color: #{var(--body-color)};
-            @include hover() {
-                color: #{var(--body-color)};
-            }
-            &.disabled,
-            &:disabled {
-                color: #{var(--body-color)};
-            }
+// Light theme button variants
+.theme-light {
+    @each $color, $value in $theme-colors-light {
+        .btn-#{$color} {
+            @include button-variant($background: $value, $border: $value);
+        }
+        .btn-outline-#{$color} {
+            @include button-outline-variant($color: $value, $color-hover: $value);
         }
     }
+}
 
-    // Light theme button variants
-    &.theme-light {
-        @each $color, $value in $theme-colors-light {
-            .btn-#{$color} {
-                @include button-variant($background: $value, $border: $value);
-            }
-            .btn-outline-#{$color} {
-                @include button-outline-variant($color: $value, $color-hover: $value);
-            }
+// btn-outline-secondary uses a different text color for better contrast.
+// theme classes are necessary because of specifity.
+.theme-dark,
+.theme-light {
+    .btn-outline-secondary {
+        color: #{var(--body-color)};
+        @include hover() {
+            color: #{var(--body-color)};
+        }
+        &.disabled,
+        &:disabled {
+            color: #{var(--body-color)};
         }
     }
 }
