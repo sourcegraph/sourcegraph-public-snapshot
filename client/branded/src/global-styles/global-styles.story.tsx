@@ -17,9 +17,9 @@ import 'storybook-addon-designs'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
 
-import { BrandedStory } from '../../components/BrandedStory'
-import { CodeSnippet } from '../../components/CodeSnippet'
-import { Form } from '../../components/Form'
+import { BrandedStory } from '../components/BrandedStory'
+import { CodeSnippet } from '../components/CodeSnippet'
+import { Form } from '../components/Form'
 
 const semanticColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'merged'] as const
 
