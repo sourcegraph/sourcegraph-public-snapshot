@@ -46,7 +46,6 @@ func DefaultServices() Services {
 		AuthzResolver:             graphqlbackend.DefaultAuthzResolver,
 		InsightsResolver:          graphqlbackend.DefaultInsightsResolver,
 		CodeMonitorsResolver:      graphqlbackend.DefaultCodeMonitorsResolver,
-		LicenseResolver:           graphqlbackend.DefaultLicenseResolver,
 	}
 }
 

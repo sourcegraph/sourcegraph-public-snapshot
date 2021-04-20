@@ -371,6 +371,8 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 	if license != nil {
 		EnterpriseResolvers.licenseResolver = license
 		resolver.LicenseResolver = license
+		schemas = append(schemas, LicenseSchema)
+		// No NodeByID handlers currently.
 	}
 
 	if dotcom != nil {
@@ -417,7 +419,6 @@ func newSchemaResolver(db dbutil.DB) *schemaResolver {
 
 		AuthzResolver:    defaultAuthzResolver{},
 		InsightsResolver: defaultInsightsResolver{},
-		LicenseResolver:  defaultLicenseResolver{},
 	}
 
 	r.nodeByIDFns = map[string]NodeByIDFunc{
@@ -483,7 +484,6 @@ var EnterpriseResolvers = struct {
 }{
 	authzResolver:        defaultAuthzResolver{},
 	codeMonitorsResolver: defaultCodeMonitorsResolver{},
-	licenseResolver:      defaultLicenseResolver{},
 }
 
 // DEPRECATED

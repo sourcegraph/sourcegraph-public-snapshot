@@ -1,0 +1,6 @@
+extend type Query {
+    """
+    Checks whether the given feature is enabled on Sourcegraph.
+    """
+    enterpriseLicenseHasFeature(feature: String!): Boolean!
+}

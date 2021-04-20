@@ -1526,12 +1526,6 @@ type Query {
     affiliatedRepositories(user: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
 
     """
-    Checks whether the given feature is enabled on Sourcegraph. Open source
-    installations will always return false for any feature.
-    """
-    enterpriseLicenseHasFeature(feature: String!): Boolean!
-
-    """
     Retrieve all registered out-of-band migrations.
     """
     outOfBandMigrations: [OutOfBandMigration!]!
