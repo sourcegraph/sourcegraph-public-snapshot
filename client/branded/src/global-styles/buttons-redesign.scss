@@ -1,67 +1,69 @@
-.theme-redesign {
-    // Ensure Bootstrap does not create any variants, we will use our own theme-colors
-    $theme-colors: map-remove($theme-colors, 'primary', 'secondary', 'success', 'info', 'danger', 'warning', 'merged');
-    @import 'bootstrap/scss/buttons';
-    @import 'bootstrap/scss/button-group';
+@mixin redesign-button-variant(
+    $name,
+    $base-color,
+    $light-color-variant,
+    $dark-color-variant,
+    $text-color: var(--light-text),
+    $disabled-text-color: var(--light-text)
+) {
+    .btn-#{$name} {
+        color: $text-color;
+        border-color: transparent;
+        background-color: $base-color;
 
-    /*
-    * Generate
-    */
-    @each $color, $variants in $theme-colors-redesign-variants {
-        .btn-#{$color} {
-            color: var(--light-text);
-            border-color: transparent;
-            background-color: map-get($variants, 1);
+        &.disabled,
+        &:disabled {
+            opacity: 1;
+            background-color: $light-color-variant;
+            border-color: $light-color-variant;
+            color: $disabled-text-color;
+        }
 
+        &:not(:disabled):not(.disabled) {
             &:hover {
-                color: var(--light-text);
-                background-color: map-get($variants, 3);
+                color: $text-color;
+                background-color: $dark-color-variant;
             }
 
             &:focus,
             &.focus,
             &:active,
             &.active {
-                background-color: map-get($variants, 1);
+                background-color: $base-color;
                 border-color: var(--body-bg);
 
                 @at-root #{selector-append('.theme-light', &)} {
-                    box-shadow: 0 0 0 2px map-get($variants, 2);
+                    box-shadow: 0 0 0 2px $light-color-variant;
                 }
                 @at-root #{selector-append('.theme-dark', &)} {
-                    box-shadow: 0 0 0 2px map-get($variants, 3);
+                    box-shadow: 0 0 0 2px $dark-color-variant;
                 }
             }
+        }
+    }
 
-            &.disabled,
-            &:disabled {
-                opacity: 1;
-                background-color: map-get($variants, 2);
-                border-color: map-get($variants, 2);
-            }
+    .btn-outline-#{$name} {
+        color: var(--body-color);
+        border-color: $base-color;
+        background-color: transparent;
+
+        &.disabled,
+        &:disabled {
+            color: var(--text-muted);
+            background-color: var(--color-bg-1);
         }
 
-        .btn-outline-#{$color} {
-            color: var(--body-color);
-            border-color: map-get($variants, 1);
-            background-color: transparent;
-
+        &:not(:disabled):not(.disabled) {
             &:hover {
                 background-color: var(--body-bg);
                 @at-root #{selector-append('.theme-light', &)} {
-                    color: map-get($variants, 3);
-                    border-color: map-get($variants, 3);
+                    color: $dark-color-variant;
+                    border-color: $dark-color-variant;
                 }
                 @at-root #{selector-append('.theme-dark', &)} {
-                    color: map-get($variants, 1);
-                    border-color: map-get($variants, 1);
+                    color: $base-color;
+                    border-color: $base-color;
                 }
-            }
-
-            &.disabled,
-            &:disabled {
-                color: var(--text-muted);
-                background-color: var(--color-bg-1);
             }
 
             &:focus,
@@ -69,57 +71,97 @@
             &:active,
             &.active {
                 @at-root #{selector-append('.theme-light', &)} {
-                    box-shadow: 0 0 0 2px map-get($variants, 2);
+                    box-shadow: 0 0 0 2px $light-color-variant;
                 }
                 @at-root #{selector-append('.theme-dark', &)} {
-                    box-shadow: 0 0 0 2px map-get($variants, 3);
+                    box-shadow: 0 0 0 2px $dark-color-variant;
                 }
             }
         }
     }
 }
 
-// Overides
-.theme-light.theme-redesign,
-.theme-dark.theme-redesign {
-    // Update text colors to improve contrast
+.theme-redesign {
+    // Ensure Bootstrap does not create any variants, we will use our own theme-colors
+    $theme-colors: map-remove($theme-colors, 'primary', 'secondary', 'success', 'info', 'danger', 'warning', 'merged');
+    @import 'bootstrap/scss/buttons';
+    @import 'bootstrap/scss/button-group';
+
+    @include redesign-button-variant(
+        $name: 'primary',
+        $base-color: var(--primary),
+        $light-color-variant: var(--primary-2),
+        $dark-color-variant: var(--primary-3)
+    );
+
+    @include redesign-button-variant(
+        $name: 'secondary',
+        $base-color: var(--secondary),
+        $light-color-variant: var(--secondary-2),
+        $dark-color-variant: var(--secondary-3),
+        // Use darker text colors for contrast
+        $text-color: var(--body-color),
+        $disabled-text-color: var(--text-muted)
+    );
+
+    @include redesign-button-variant(
+        $name: 'success',
+        $base-color: var(--success),
+        $light-color-variant: var(--success-2),
+        $dark-color-variant: var(--success-3)
+    );
+
+    @include redesign-button-variant(
+        $name: 'danger',
+        $base-color: var(--danger),
+        $light-color-variant: var(--danger-2),
+        $dark-color-variant: var(--danger-3)
+    );
+
+    @include redesign-button-variant(
+        $name: 'warning',
+        $base-color: var(--warning),
+        $light-color-variant: var(--warning-2),
+        $dark-color-variant: var(--warning-3),
+        // Use darker text colors for contrast
+        $text-color: var(--dark-text),
+        $disabled-text-color: var(--text-muted)
+    );
+
+    @include redesign-button-variant(
+        $name: 'info',
+        $base-color: var(--info),
+        $light-color-variant: var(--info-2),
+        $dark-color-variant: var(--info-3),
+        // Use darker text colors for contrast
+        $text-color: var(--dark-text),
+        $disabled-text-color: var(--text-muted)
+    );
+
+    @include redesign-button-variant(
+        $name: 'merged',
+        $base-color: var(--merged),
+        $light-color-variant: var(--merged-2),
+        $dark-color-variant: var(--merged-3)
+    );
+}
+
+.theme-dark.theme-redesign,
+.theme-light.theme-redesign {
+    // btn-secondary needs specific styles to ensure good contrast
     .btn-secondary,
     .btn-outline-secondary {
-        color: var(--body-color);
+        &:not(:disabled):not(.disabled) {
+            &:hover {
+                color: var(--body-color);
+            }
 
-        &:focus,
-        &.focus,
-        &:active,
-        &.active {
-            color: var(--body-color);
-            // Use blue focus outline to improve contrast
-            box-shadow: 0 0 0 2px var(--primary-2);
-        }
-
-        &:hover {
-            color: var(--body-color);
-        }
-
-        &:disabled,
-        &.disabled {
-            color: var(--text-muted);
-        }
-    }
-    .btn-warning,
-    .btn-info {
-        color: var(--dark-text);
-
-        &:hover,
-        &:focus,
-        &.focus,
-        &:active,
-        &.active {
-            color: var(--dark-text);
-        }
-
-        &:disabled,
-        &.disabled {
-            color: var(--text-muted);
+            &:focus,
+            &.focus,
+            &:active,
+            &.active {
+                box-shadow: 0 0 0 2px var(--primary-2);
+            }
         }
     }
 }

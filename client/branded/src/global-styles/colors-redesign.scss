@@ -35,45 +35,6 @@ $theme-colors-redesign: (
     merged: $redesign-purple,
 );
 
-// Core semantic base colors variants.
-$theme-colors-redesign-variants: (
-    primary: (
-        1: map-get($theme-colors-redesign, 'primary'),
-        2: var(--primary-2),
-        3: var(--primary-3),
-    ),
-    secondary: (
-        1: var(--secondary),
-        2: var(--secondary-2),
-        3: var(--secondary-3),
-    ),
-    success: (
-        1: map-get($theme-colors-redesign, 'success'),
-        2: var(--success-2),
-        3: var(--success-3),
-    ),
-    info: (
-        1: map-get($theme-colors-redesign, 'info'),
-        2: var(--info-2),
-        3: var(--info-3),
-    ),
-    warning: (
-        1: map-get($theme-colors-redesign, 'warning'),
-        2: var(--warning-2),
-        3: var(--warning-3),
-    ),
-    danger: (
-        1: map-get($theme-colors-redesign, 'danger'),
-        2: var(--danger-2),
-        3: var(--danger-3),
-    ),
-    merged: (
-        1: map-get($theme-colors-redesign, 'merged'),
-        2: var(--merged-2),
-        3: var(--merged-3),
-    ),
-);
-
 :root.theme-redesign,
 // Descendant selector is required for Storybook `addRedesignVariants` helper.
 :root .theme-redesign {
