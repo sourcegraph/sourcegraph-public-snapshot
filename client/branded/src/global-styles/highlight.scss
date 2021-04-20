@@ -98,7 +98,7 @@
     --hl-gray-4: #586e75;
     --hl-gray-5: #2b3750;
 
-	// bg colors
+    // bg colors
     --hl-bg-red: #f5dbdd;
     --hl-bg-green: #deeade;
 
@@ -439,11 +439,11 @@
             }
         }
 
-		.hl-ts {
-			.hl-keyword.hl-control {
-				color: var(--hl-orange);
-			}
-		}
+        .hl-ts {
+            .hl-keyword.hl-control {
+                color: var(--hl-orange);
+            }
+        }
     }
 }
 
