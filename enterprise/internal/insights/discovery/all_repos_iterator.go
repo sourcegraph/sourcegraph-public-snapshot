@@ -12,7 +12,7 @@ import (
 
 // DefaultRepoStore is a subset of the API exposed by the database.DefaultRepos() store.
 type DefaultRepoStore interface {
-	List(ctx context.Context) ([]*types.RepoName, error)
+	List(ctx context.Context) ([]types.RepoName, error)
 }
 
 // RepoStore is a subset of the API exposed by the database.Repos() store.

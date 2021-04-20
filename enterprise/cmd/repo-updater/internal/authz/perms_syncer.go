@@ -335,7 +335,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	// Get corresponding internal database IDs
-	var repoNames []*types.RepoName
+	var repoNames []types.RepoName
 	if len(repoSpecs) > 0 {
 		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
 			database.ReposListOptions{

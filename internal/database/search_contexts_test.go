@@ -283,8 +283,8 @@ func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	repoAName := &types.RepoName{ID: repoA.ID, Name: repoA.Name}
-	repoBName := &types.RepoName{ID: repoB.ID, Name: repoB.Name}
+	repoAName := types.RepoName{ID: repoA.ID, Name: repoA.Name}
+	repoBName := types.RepoName{ID: repoB.ID, Name: repoB.Name}
 
 	// Create a search context with initial repository revisions
 	initialRepositoryRevisions := []*types.SearchContextRepositoryRevisions{

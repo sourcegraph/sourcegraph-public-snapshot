@@ -54,8 +54,8 @@ func TestRevisionValidation(t *testing.T) {
 	}
 	defer func() { git.Mocks.ResolveRevision = nil }()
 
-	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts database.ReposListOptions) ([]*types.RepoName, error) {
-		return []*types.RepoName{{Name: "repoFoo"}}, nil
+	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts database.ReposListOptions) ([]types.RepoName, error) {
+		return []types.RepoName{{Name: "repoFoo"}}, nil
 	}
 	defer func() { database.Mocks.Repos.List = nil }()
 
@@ -68,7 +68,7 @@ func TestRevisionValidation(t *testing.T) {
 		{
 			repoFilters: []string{"repoFoo@revBar:^revBas"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: &types.RepoName{Name: "repoFoo"},
+				Repo: types.RepoName{Name: "repoFoo"},
 				Revs: []search.RevisionSpecifier{
 					{
 						RevSpec:        "revBar",
@@ -87,7 +87,7 @@ func TestRevisionValidation(t *testing.T) {
 		{
 			repoFilters: []string{"repoFoo@*revBar:*!revBas"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: &types.RepoName{Name: "repoFoo"},
+				Repo: types.RepoName{Name: "repoFoo"},
 				Revs: []search.RevisionSpecifier{
 					{
 						RevSpec:        "",
@@ -106,7 +106,7 @@ func TestRevisionValidation(t *testing.T) {
 		{
 			repoFilters: []string{"repoFoo@revBar:^revQux"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: &types.RepoName{Name: "repoFoo"},
+				Repo: types.RepoName{Name: "repoFoo"},
 				Revs: []search.RevisionSpecifier{
 					{
 						RevSpec:        "revBar",
@@ -117,7 +117,7 @@ func TestRevisionValidation(t *testing.T) {
 				ListRefs: nil,
 			}},
 			wantMissingRepoRevisions: []*search.RepositoryRevisions{{
-				Repo: &types.RepoName{Name: "repoFoo"},
+				Repo: types.RepoName{Name: "repoFoo"},
 				Revs: []search.RevisionSpecifier{
 					{
 						RevSpec:        "^revQux",
@@ -148,7 +148,7 @@ func TestRevisionValidation(t *testing.T) {
 		{
 			repoFilters: []string{"repoFoo"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: &types.RepoName{Name: "repoFoo"},
+				Repo: types.RepoName{Name: "repoFoo"},
 				Revs: []search.RevisionSpecifier{
 					{
 						RevSpec:        "",
@@ -350,15 +350,15 @@ func TestDefaultRepositories(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 
-			var drs []*types.RepoName
+			var drs []types.RepoName
 			for i, name := range tc.defaultsInDb {
-				r := &types.RepoName{
+				r := types.RepoName{
 					ID:   api.RepoID(i),
 					Name: api.RepoName(name),
 				}
 				drs = append(drs, r)
 			}
-			getRawDefaultRepos := func(ctx context.Context) ([]*types.RepoName, error) {
+			getRawDefaultRepos := func(ctx context.Context) ([]types.RepoName, error) {
 				return drs, nil
 			}
 
@@ -402,14 +402,14 @@ func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
 		"default/two",
 		"default/three",
 	}
-	defaultRepos := make([]*types.RepoName, len(wantDefaultRepoNames))
+	defaultRepos := make([]types.RepoName, len(wantDefaultRepoNames))
 	zoektRepoListEntries := make([]*zoekt.RepoListEntry, len(wantDefaultRepoNames))
-	mockDefaultReposFunc := func(_ context.Context) ([]*types.RepoName, error) {
+	mockDefaultReposFunc := func(_ context.Context) ([]types.RepoName, error) {
 		return defaultRepos, nil
 	}
 
 	for idx, name := range wantDefaultRepoNames {
-		defaultRepos[idx] = &types.RepoName{Name: api.RepoName(name)}
+		defaultRepos[idx] = types.RepoName{Name: api.RepoName(name)}
 		zoektRepoListEntries[idx] = &zoekt.RepoListEntry{
 			Repository: zoekt.Repository{
 				Name:     name,
@@ -465,11 +465,11 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, op database.ReposListOptions) ([]*types.RepoName, error) {
+	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
 		if op.UserID != wantUserID {
 			t.Fatalf("got %q, want %q", op.UserID, wantUserID)
 		}
-		return []*types.RepoName{
+		return []types.RepoName{
 			{
 				ID:   1,
 				Name: "example.com/a",
@@ -549,8 +549,8 @@ func stringSliceToRevisionSpecifiers(revisions []string) []search.RevisionSpecif
 func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	db := dbtest.NewDB(t, *dsn)
 	searchContext := &types.SearchContext{ID: 1, Name: "searchcontext"}
-	repoA := &types.RepoName{ID: 1, Name: "example.com/a"}
-	repoB := &types.RepoName{ID: 2, Name: "example.com/b"}
+	repoA := types.RepoName{ID: 1, Name: "example.com/a"}
+	repoB := types.RepoName{ID: 2, Name: "example.com/b"}
 	searchContextRepositoryRevisions := []*types.SearchContextRepositoryRevisions{
 		{Repo: repoA, Revisions: []string{"branch-1", "branch-3"}},
 		{Repo: repoB, Revisions: []string{"branch-2"}},
@@ -559,11 +559,11 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID(spec), nil
 	}
-	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, op database.ReposListOptions) ([]*types.RepoName, error) {
+	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
 		if op.SearchContextID != searchContext.ID {
 			t.Fatalf("got %q, want %q", op.SearchContextID, searchContext.ID)
 		}
-		return []*types.RepoName{repoA, repoB}, nil
+		return []types.RepoName{repoA, repoB}, nil
 	}
 	database.Mocks.Repos.Count = func(ctx context.Context, op database.ReposListOptions) (int, error) { return 2, nil }
 	database.Mocks.SearchContexts.GetSearchContext = func(ctx context.Context, opts database.GetSearchContextOptions) (*types.SearchContext, error) {

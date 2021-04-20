@@ -39,7 +39,7 @@ import (
 func TestSearchFilesInRepos(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -132,7 +132,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 func TestSearchFilesInReposStream(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -212,7 +212,7 @@ func mkStatusMap(m map[string]search.RepoStatus) search.RepoStatusMap {
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
@@ -324,8 +324,8 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	return r
 }
 
-func mkRepos(names ...string) []*types.RepoName {
-	var repos []*types.RepoName
+func mkRepos(names ...string) []types.RepoName {
+	var repos []types.RepoName
 	for _, name := range names {
 		sum := md5.Sum([]byte(name))
 		id := api.RepoID(binary.BigEndian.Uint64(sum[:]))
@@ -335,7 +335,7 @@ func mkRepos(names ...string) []*types.RepoName {
 		if id == 0 {
 			id++
 		}
-		repos = append(repos, &types.RepoName{ID: id, Name: api.RepoName(name)})
+		repos = append(repos, types.RepoName{ID: id, Name: api.RepoName(name)})
 	}
 	return repos
 }
