@@ -262,7 +262,7 @@
         .hl-keyword.hl-operator {
             color: var(--hl-gray-3);
         }
-        .hl-keyword.hl-control {
+        .hl-keyword {
             color: var(--hl-green);
             &.hl-import,
             &.hl-include {
