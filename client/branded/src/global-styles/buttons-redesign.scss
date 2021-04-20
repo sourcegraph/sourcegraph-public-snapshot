@@ -63,12 +63,12 @@
             &:hover {
                 background-color: var(--body-bg);
                 @at-root #{selector-append('.theme-light', &)} {
-                    color: var(--#{$color});
-                    border-color: var(--#{$color});
-                }
-                @at-root #{selector-append('.theme-dark', &)} {
                     color: var(--#{$color}-3);
                     border-color: var(--#{$color}-3);
+                }
+                @at-root #{selector-append('.theme-dark', &)} {
+                    color: var(--#{$color});
+                    border-color: var(--#{$color});
                 }
             }
 
