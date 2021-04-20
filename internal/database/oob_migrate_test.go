@@ -36,9 +36,9 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		}
 	}
 
-	os.Setenv("ALLOW_DECRYPT_MIGRATION", "true")
+	os.Setenv(AllowDecryptMigration, "true")
 	t.Cleanup(func() {
-		os.Setenv("ALLOW_DECRYPT_MIGRATION", "")
+		os.Setenv(AllowDecryptMigration, "")
 	})
 
 	t.Run("Up/Down/Progress", func(t *testing.T) {
@@ -294,7 +294,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 			}
 		}
 
-		os.Setenv("ALLOW_DECRYPT_MIGRATION", "")
+		os.Setenv(AllowDecryptMigration, "")
 
 		// setup key after storing the services
 		defer setupKey()()
@@ -631,7 +631,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 		}
 
 		// disallow decryption
-		os.Setenv("ALLOW_DECRYPT_MIGRATION", "")
+		os.Setenv(AllowDecryptMigration, "")
 
 		// revert the migration
 		if err := migrator.Down(ctx); err != nil {

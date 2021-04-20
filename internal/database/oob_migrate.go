@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+const AllowDecryptMigration = "ALLOW_DECRYPT_MIGRATION"
+
 // ExternalServiceConfigMigrator is a background job that encrypts
 // external services config on startup.
 // It periodically waits until a keyring is configured to determine
@@ -117,7 +119,7 @@ func (m *ExternalServiceConfigMigrator) Down(ctx context.Context) (err error) {
 		return nil
 	}
 
-	if os.Getenv("ALLOW_DECRYPT_MIGRATION") != "true" {
+	if os.Getenv(AllowDecryptMigration) != "true" {
 		return nil
 	}
 
@@ -317,7 +319,7 @@ func (m *ExternalAccountsMigrator) Down(ctx context.Context) (err error) {
 		return nil
 	}
 
-	if os.Getenv("ALLOW_DECRYPT_MIGRATION") != "true" {
+	if os.Getenv(AllowDecryptMigration) != "true" {
 		return nil
 	}
 
