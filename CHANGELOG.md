@@ -16,6 +16,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Database encryption, external service config & user auth data can now be encrypted in the database using the `encryption.keys` config. See [the docs](https://docs.sourcegraph.com/admin/encryption) for more info.
+- Repositories that gitserver fails to clone or fetch are now gradually moved to the back of the background update queue instead of remaining at the front. [#20204](https://github.com/sourcegraph/sourcegraph/pull/20204)
 
 ### Changed
 
