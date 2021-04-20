@@ -15,7 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- Backoff logic when we fail to update repositories.  [#20204](https://github.com/sourcegraph/sourcegraph/pull/20204)
 
 ### Changed
 
