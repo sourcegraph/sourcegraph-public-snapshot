@@ -139,6 +139,8 @@ $theme-colors-redesign-dark: (
     ),
 );
 
+$theme-colors-redesign-tokens: 'primary', 'secondary', 'success', 'info', 'warning', 'danger', 'merged';
+
 :root.theme-redesign,
 // Descendant selector is required for Storybook `addRedesignVariants` helper.
 :root .theme-redesign {
