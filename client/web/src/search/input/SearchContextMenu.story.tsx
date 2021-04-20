@@ -2,7 +2,7 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Observable, of } from 'rxjs'
 
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { Scalars, SearchContextsNamespaceFilterType } from '@sourcegraph/shared/src/graphql-operations'
 
 import { WebStory } from '../../components/WebStory'
 import { ListSearchContextsResult } from '../../graphql-operations'
@@ -46,7 +46,7 @@ const defaultProps: SearchContextMenuProps = {
     ]),
     fetchSearchContexts: ({
         first,
-        includeAll,
+        namespaceFilterType,
         namespace,
         query,
         after,
@@ -54,7 +54,7 @@ const defaultProps: SearchContextMenuProps = {
         first: number
         query?: string
         namespace?: Scalars['ID']
-        includeAll?: boolean
+        namespaceFilterType?: SearchContextsNamespaceFilterType
         after?: string
     }): Observable<ListSearchContextsResult['searchContexts']> =>
         of({

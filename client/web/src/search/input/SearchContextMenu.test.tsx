@@ -5,7 +5,7 @@ import { DropdownItem, DropdownMenu, UncontrolledDropdown } from 'reactstrap'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { Scalars, SearchContextsNamespaceFilterType } from '@sourcegraph/shared/src/graphql-operations'
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 
@@ -35,7 +35,7 @@ const mockFetchAutoDefinedSearchContexts = () =>
 
 const mockFetchSearchContexts = ({
     first,
-    includeAll,
+    namespaceFilterType,
     namespace,
     query,
     after,
@@ -43,7 +43,7 @@ const mockFetchSearchContexts = ({
     first: number
     query?: string
     namespace?: Scalars['ID']
-    includeAll?: boolean
+    namespaceFilterType?: SearchContextsNamespaceFilterType
     after?: string
 }) => {
     const nodes = [
