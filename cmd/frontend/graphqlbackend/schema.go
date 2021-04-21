@@ -19,3 +19,7 @@ var CodeIntelSchema string
 // DotcomSchema is the Dotcom schema extension raw graqhql schema.
 //go:embed dotcom.graphql
 var DotcomSchema string
+
+// LicenseSchema is the Licensing raw graqhql schema.
+//go:embed license.graphql
+var LicenseSchema string
