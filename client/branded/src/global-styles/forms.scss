@@ -11,6 +11,7 @@
     --input-group-addon-color: var(--body-color);
     --input-group-addon-bg: var(--color-bg-4);
     --input-group-addon-border-color: var(--color-bg-4);
+    --input-focus-border-color: var(--primary);
 }
 
 .theme-light {
@@ -22,11 +23,10 @@
     --input-group-addon-color: var(--body-color);
     --input-group-addon-bg: var(--color-bg-4);
     --input-group-addon-border-color: var(--color-bg-4);
+    --input-focus-border-color: var(--primary);
 }
 
-.theme-light.theme-redesign,
-// Descendant selector is required for Storybook `addRedesignVariants` helper.
-.theme-light .theme-redesign {
+.theme-light.theme-redesign {
     --input-bg: #{$white};
     --input-disabled-bg: #{$redesign-gray-04};
     --input-border-color: #{$redesign-gray-04};
@@ -35,10 +35,12 @@
     --input-group-addon-color: #{$redesign-gray-08};
     --input-group-addon-bg: #{$redesign-gray-03};
     --input-group-addon-border-color: #{$redesign-gray-03};
+    // New ones
+    --input-focus-border-color: var(--border-active-color);
+    --input-focus-box-shadow: 0 0 0 2px var(--primary-2);
 }
 
-.theme-dark.theme-redesign,
-.theme-dark .theme-redesign {
+.theme-dark.theme-redesign {
     --input-bg: #{$redesign-gray-10};
     --input-disabled-bg: #{$redesign-gray-08};
     --input-border-color: #{$redesign-gray-08};
@@ -47,6 +49,9 @@
     --input-group-addon-color: #{$redesign-gray-01};
     --input-group-addon-bg: #{$redesign-gray-08};
     --input-group-addon-border-color: #{$redesign-gray-08};
+    // New ones
+    --input-focus-border-color: var(--border-active-color);
+    --input-focus-box-shadow: 0 0 0 2px var(--primary-2);
 }
 
 // Prevent Firefox's default red outline for inputs
@@ -56,3 +61,24 @@
 :not(output):-moz-ui-invalid:-moz-focusring:not(:focus) {
     box-shadow: none;
 }
+
+// Overrides
+.theme-redesign {
+    .valid-feedback {
+        color: var(--text-muted);
+    }
+
+    // Disable icons for selects and textareas
+    select.form-control,
+    textarea.form-control {
+        background-image: none;
+    }
+}
+
+// TODO
+
+// is-invalid:focus box-shadow
+// is-invalid+ color?
+// is-valid message color + font size
+// message class with no color?
+// disabled message?

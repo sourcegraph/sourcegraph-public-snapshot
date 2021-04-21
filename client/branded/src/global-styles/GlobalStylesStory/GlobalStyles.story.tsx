@@ -8,7 +8,7 @@ import { action } from '@storybook/addon-actions'
 import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
-import { flow } from 'lodash'
+import { flow, startCase } from 'lodash'
 import SearchIcon from 'mdi-react/SearchIcon'
 import openColor from 'open-color'
 import React, { useState } from 'react'
@@ -23,6 +23,7 @@ import { Form } from '../../components/Form'
 
 import { ButtonVariants } from './ButtonVariants'
 import { SEMANTIC_COLORS } from './constants'
+import { FormFieldVariants } from './FormFieldVariants'
 import { TextStory } from './TextStory'
 import { preventDefault } from './utils'
 
@@ -768,7 +769,8 @@ add(
                     Bootstrap documentation
                 </a>
             </p>
-            <Form onSubmit={preventDefault}>
+            <FormFieldVariants />
+            {/* <Form onSubmit={preventDefault}>
                 <div className="form-group">
                     <label htmlFor="example-email-input">Email address</label>
                     <input
@@ -807,9 +809,9 @@ add(
                 <button type="submit" className="btn btn-primary">
                     Submit
                 </button>
-            </Form>
+            </Form> */}
 
-            <h2 className="mt-3">Disabled</h2>
+            {/* <h2 className="mt-3">Disabled</h2>
             <Form>
                 <fieldset disabled={true}>
                     <div className="form-group">
@@ -845,6 +847,27 @@ add(
                     </button>
                 </fieldset>
             </Form>
+            <h2 className="mt-3">Invalid Fields</h2>
+            <div className="form-group">
+                <label htmlFor="erredTextInput">Invalid input</label>
+                <input className="form-control is-invalid" id="erredTextInput" type="text" value="Oops, wrong input!" />
+            </div>
+            <div className="form-group">
+                <label htmlFor="erredMessageTextInput">Invalid input with message</label>
+                <input className="form-control is-invalid" type="text" value="Oops, wrong input!" />
+                <small className="invalid-feedback">Please be better.</small>
+            </div>
+
+            <h2 className="mt-3">Valid Fields</h2>
+            <div className="form-group">
+                <label htmlFor="erredTextInput">Valid input</label>
+                <input className="form-control is-valid" id="erredTextInput" type="text" value="Oops, wrong input!" />
+            </div>
+            <div className="form-group">
+                <label htmlFor="erredMessageTextInput">Valid input with message</label>
+                <input className="form-control is-valid" type="text" value="Oops, wrong input!" />
+                <small className="valid-feedback">Please be better.</small>
+            </div>
 
             <h2 className="mt-3">Readonly</h2>
             <input className="form-control" type="text" value="I'm a readonly value" readOnly={true} />
@@ -868,7 +891,7 @@ add(
                         <option>Small select</option>
                     </select>
                 </div>
-            </div>
+            </div> */}
         </>
     ),
     {
