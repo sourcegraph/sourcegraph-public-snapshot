@@ -17,6 +17,7 @@ import { stanford } from './repogroups/Stanford'
 import { StreamingSearchResults } from './search/results/streaming/StreamingSearchResults'
 import { isMacPlatform, UserRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
+import { stackStorm } from './repogroups/StackStorm'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -226,6 +227,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/kubernetes',
         render: props => <RepogroupPage {...props} repogroupMetadata={kubernetes} />,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+    },
+    {
+        path: '/stackstorm',
+        render: props => <RepogroupPage {...props} repogroupMetadata={stackStorm} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {
