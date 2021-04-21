@@ -45,7 +45,6 @@ func DefaultServices() Services {
 		NewExecutorProxyHandler:   func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		AuthzResolver:             graphqlbackend.DefaultAuthzResolver,
 		InsightsResolver:          graphqlbackend.DefaultInsightsResolver,
-		CodeMonitorsResolver:      graphqlbackend.DefaultCodeMonitorsResolver,
 	}
 }
 

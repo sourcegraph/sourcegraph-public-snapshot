@@ -366,6 +366,11 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 	if codeMonitors != nil {
 		EnterpriseResolvers.codeMonitorsResolver = codeMonitors
 		resolver.CodeMonitorsResolver = codeMonitors
+		schemas = append(schemas, CodeMonitorsSchema)
+		// Register NodeByID handlers.
+		for kind, res := range codeMonitors.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
 	}
 
 	if license != nil {
@@ -458,9 +463,6 @@ func newSchemaResolver(db dbutil.DB) *schemaResolver {
 		"Site": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.siteByGQLID(ctx, id)
 		},
-		"CodeMonitor": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return r.MonitorByID(ctx, id)
-		},
 		"OutOfBandMigration": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.OutOfBandMigrationByID(ctx, id)
 		},
@@ -482,8 +484,7 @@ var EnterpriseResolvers = struct {
 	licenseResolver      LicenseResolver
 	dotcomResolver       DotcomRootResolver
 }{
-	authzResolver:        defaultAuthzResolver{},
-	codeMonitorsResolver: defaultCodeMonitorsResolver{},
+	authzResolver: defaultAuthzResolver{},
 }
 
 // DEPRECATED
