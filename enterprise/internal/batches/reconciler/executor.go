@@ -143,7 +143,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	// Figure out which authenticator we should use to modify the changeset.
 	// au is nil if we want to use the global credentials stored in the external
 	// service configuration.
-	pushConf, err := e.css.GitserverPushConfig(e.repo)
+	pushConf, err := e.css.GitserverPushConfig(ctx, e.tx.ExternalServices(), e.repo)
 	if err != nil {
 		return err
 	}
