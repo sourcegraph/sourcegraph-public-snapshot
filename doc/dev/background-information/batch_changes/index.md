@@ -140,7 +140,7 @@ The following is a list of Go packages in the [`sourcegraph/sourcegraph`](https:
 
 1. Read through [`./cmd/frontend/graphqlbackend/batches.go`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/batches.go) to get an overview of the batch changes GraphQL API.
 1. Read through [`./enterprise/internal/batches/types/*.go`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/enterprise/internal/batches/types) to see all batch changes related type definitions.
-1. Compare that with the GraphQL definitions in `./cmd/frontend/graphqlbackend/schema.graphql`.
+1. Compare that with the GraphQL definitions in `./cmd/frontend/graphqlbackend/batches.graphql`.
 1. Start reading through `./enterprise/internal/batches/resolvers/resolver.go` to see how the main mutations are implemented (look at `CreateBatchChange` and `ApplyBatchChange` to see how the two main operations are implemented).
 1. Then start from the other end, `enterprise/cmd/repo-updater/main.go`. `enterpriseInit()` creates two sets of batch change goroutines:
 1. `batches.NewSyncRegistry` creates a pool of _syncers_ to pull changes from code hosts.

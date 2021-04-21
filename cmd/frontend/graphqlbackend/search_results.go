@@ -68,9 +68,8 @@ func (c *SearchResultsResolver) RepositoriesCount() int32 {
 func (c *SearchResultsResolver) repositoryResolvers(mask search.RepoStatus) []*RepositoryResolver {
 	var resolvers []*RepositoryResolver
 	c.Status.Filter(mask, func(id api.RepoID) {
-		r := c.Repos[id]
-		if r != nil {
-			resolvers = append(resolvers, NewRepositoryResolver(c.db, c.Repos[id].ToRepo()))
+		if r, ok := c.Repos[id]; ok {
+			resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
 		}
 	})
 	sort.Slice(resolvers, func(a, b int) bool {
@@ -1437,7 +1436,7 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 	}
 
 	a.Send(SearchEvent{
-		Results: fileMatchResultsToSearchResults(fileResults),
+		Results: fileMatchResolversToSearchResults(fileResults),
 		Stats:   stats,
 	})
 	return err
@@ -1644,7 +1643,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 
 	// Send down our first bit of progress.
 	{
-		repos := make(map[api.RepoID]*types.RepoName, len(resolved.RepoRevs))
+		repos := make(map[api.RepoID]types.RepoName, len(resolved.RepoRevs))
 		for _, repoRev := range resolved.RepoRevs {
 			repos[repoRev.Repo.ID] = repoRev.Repo
 		}

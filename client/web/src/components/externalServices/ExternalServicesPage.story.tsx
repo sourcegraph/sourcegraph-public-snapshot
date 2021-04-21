@@ -16,7 +16,7 @@ const { add } = storiesOf('web/External services/ExternalServicesPage', module).
 
 const queryExternalServices: typeof _queryExternalServices = () =>
     of({
-        totalCount: 1,
+        totalCount: 2,
         pageInfo: {
             endCursor: null,
             hasNextPage: false,
@@ -30,10 +30,29 @@ const queryExternalServices: typeof _queryExternalServices = () =>
                 warning: null,
                 lastSyncError: null,
                 repoCount: 0,
-                lastSyncAt: '0001-01-01T00:00:00Z',
-                nextSyncAt: '0001-01-01T00:00:00Z',
+                lastSyncAt: null,
+                nextSyncAt: null,
                 updatedAt: '2021-03-15T19:39:11Z',
                 createdAt: '2021-03-15T19:39:11Z',
+                namespace: null,
+            },
+            {
+                id: 'service2',
+                kind: ExternalServiceKind.GITHUB,
+                displayName: 'GitHub.com',
+                config: '{"githubconfig":true}',
+                warning: null,
+                lastSyncError: null,
+                repoCount: 0,
+                lastSyncAt: null,
+                nextSyncAt: null,
+                updatedAt: '2021-03-15T19:39:11Z',
+                createdAt: '2021-03-15T19:39:11Z',
+                namespace: {
+                    id: 'someuser-id',
+                    namespaceName: 'johndoe',
+                    url: '/users/johndoe',
+                },
             },
         ],
     })

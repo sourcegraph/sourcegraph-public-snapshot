@@ -1,7 +1,17 @@
 package graphqlbackend
 
-import _ "embed"
+import (
+	_ "embed"
+)
 
-// Schema is the raw graqhql schema.
+// MainSchema is the main raw graqhql schema.
 //go:embed schema.graphql
-var Schema string
+var MainSchema string
+
+// BatchesSchema is the Batch Changes raw graqhql schema.
+//go:embed batches.graphql
+var BatchesSchema string
+
+// CodeIntelSchema is the Code Intel raw graqhql schema.
+//go:embed codeintel.graphql
+var CodeIntelSchema string

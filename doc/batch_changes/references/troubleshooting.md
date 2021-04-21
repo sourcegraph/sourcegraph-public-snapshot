@@ -144,4 +144,4 @@ Make sure that you put your `steps.run` command in `/tmp-script` (or any other l
 
 ### Do you have the right credentials?
 
-When publishing changesets fails, make sure that the credentials you use have the correct credentials to create changesets on the code host: "[Configuring user credentials](../how-tos/configuring_user_credentials.md)"
+When publishing changesets fails, make sure that the credentials you use have the correct credentials to create changesets on the code host: "[Configuring credentials](../how-tos/configuring_credentials.md)"

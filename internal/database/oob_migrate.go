@@ -21,8 +21,9 @@ import (
 // migration package.
 // The migration is non destructive and can be reverted.
 type ExternalServiceConfigMigrator struct {
-	store     *basestore.Store
-	BatchSize int
+	store        *basestore.Store
+	BatchSize    int
+	AllowDecrypt bool
 }
 
 func NewExternalServiceConfigMigrator(store *basestore.Store) *ExternalServiceConfigMigrator {
@@ -116,6 +117,10 @@ func (m *ExternalServiceConfigMigrator) Down(ctx context.Context) (err error) {
 		return nil
 	}
 
+	if !m.AllowDecrypt {
+		return nil
+	}
+
 	// For records that were encrypted, we need to decrypt the configuration,
 	// store it in plain text and remove the encryption_key_id.
 	tx, err := m.store.Transact(ctx)
@@ -188,8 +193,9 @@ func (m *ExternalServiceConfigMigrator) listConfigsForUpdate(ctx context.Context
 // migration package.
 // The migration is non destructive and can be reverted.
 type ExternalAccountsMigrator struct {
-	store     *basestore.Store
-	BatchSize int
+	store        *basestore.Store
+	BatchSize    int
+	AllowDecrypt bool
 }
 
 func NewExternalAccountsMigrator(store *basestore.Store) *ExternalAccountsMigrator {
@@ -309,6 +315,10 @@ func (m *ExternalAccountsMigrator) Up(ctx context.Context) (err error) {
 func (m *ExternalAccountsMigrator) Down(ctx context.Context) (err error) {
 	key := keyring.Default().UserExternalAccountKey
 	if key == nil {
+		return nil
+	}
+
+	if !m.AllowDecrypt {
 		return nil
 	}
 

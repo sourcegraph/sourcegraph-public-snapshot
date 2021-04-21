@@ -408,7 +408,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 return history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
             }
 
-            const syncTimes = new Map<string, string>()
+            const syncTimes = new Map<string, string | null>()
             const codeHostRepoPromises = []
 
             for (const host of codeHosts.hosts) {
@@ -462,7 +462,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             }
 
                             // if the lastSyncAt has changed for all hosts then we're done
-                            if (result.nodes.every(codeHost => codeHost.lastSyncAt !== syncTimes.get(codeHost.id))) {
+                            if (
+                                result.nodes.every(
+                                    codeHost =>
+                                        codeHost.lastSyncAt && codeHost.lastSyncAt !== syncTimes.get(codeHost.id)
+                                )
+                            ) {
                                 const repoCount = result.nodes.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
                                 onUserRepositoriesUpdate(repoCount)
 

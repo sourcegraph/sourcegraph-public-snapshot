@@ -1,3 +1,4 @@
+/* eslint-disable no-template-curly-in-string */
 import * as Monaco from 'monaco-editor'
 import { NEVER, of } from 'rxjs'
 
@@ -474,6 +475,12 @@ describe('getCompletionItems()', () => {
                     false
                 )
             )?.suggestions.map(({ insertText }) => insertText)
-        ).toStrictEqual(['^repo/with\\ a\\ space$ '])
+        ).toStrictEqual([
+            'contains.file(${1:CHANGELOG}) ',
+            'contains.content(${1:TODO}) ',
+            'contains(file:${1:CHANGELOG} content:${2:fix}) ',
+            'contains.commit.after(${1:1 month ago}) ',
+            '^repo/with\\ a\\ space$ ',
+        ])
     })
 })

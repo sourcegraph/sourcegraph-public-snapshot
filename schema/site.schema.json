@@ -303,7 +303,7 @@
               { "type": "number", "minimum": 0, "maximum": 0 },
               {
                 "type": "string",
-                "pattern": "^(?i)(unlimited|[0-9]+/(sec|secs|second|seconds|min|mins|minute|minutes|hr|hrs|hour|hours))$"
+                "pattern": "^(unlimited|[0-9]+\\/(sec|secs|second|seconds|min|mins|minute|minutes|hr|hrs|hour|hours))$"
               }
             ]
           },
@@ -322,7 +322,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "pattern": "^(?i)(mon(day)?|tue(s|sday)?|wed(nesday)?|thu(r|rs|rsday)?|fri(day)?|sat(urday)?|sun(day)?)$"
+              "pattern": "^([mM]on(day)?|[tT]ue(s|sday)?|[wW]ed(nesday)?|[tT]hu(r|rs|rsday)?|[fF]ri(day)?|[sS]at(urday)?|[sS]un(day)?)$"
             }
           }
         },
@@ -359,6 +359,12 @@
     },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
+      "type": "boolean",
+      "default": false,
+      "group": "External services"
+    },
+    "disableAutoCodeHostSyncs": {
+      "description": "Disable periodic syncs of configured code host connections (repository metadata, permissions, batch changes changesets, etc)",
       "type": "boolean",
       "default": false,
       "group": "External services"

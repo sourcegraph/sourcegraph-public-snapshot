@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // dbLicense describes an product license row in the product_licenses DB table.
@@ -25,10 +25,12 @@ type dbLicense struct {
 var errLicenseNotFound = errors.New("product license not found")
 
 // dbLicenses exposes product licenses in the product_licenses DB table.
-type dbLicenses struct{}
+type dbLicenses struct {
+	db dbutil.DB
+}
 
 // Create creates a new product license entry given a license key.
-func (dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey string) (id string, err error) {
+func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey string) (id string, err error) {
 	if mocks.licenses.Create != nil {
 		return mocks.licenses.Create(subscriptionID, licenseKey)
 	}
@@ -37,7 +39,7 @@ func (dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey string)
 	if err != nil {
 		return "", err
 	}
-	if err := dbconn.Global.QueryRowContext(ctx, `
+	if err := s.db.QueryRowContext(ctx, `
 INSERT INTO product_licenses(id, product_subscription_id, license_key) VALUES($1, $2, $3) RETURNING id
 `,
 		uuid, subscriptionID, licenseKey,
@@ -106,7 +108,7 @@ func (s dbLicenses) List(ctx context.Context, opt dbLicensesListOptions) ([]*dbL
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-func (dbLicenses) list(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*dbLicense, error) {
+func (s dbLicenses) list(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*dbLicense, error) {
 	q := sqlf.Sprintf(`
 SELECT id, product_subscription_id, license_key, created_at FROM product_licenses
 WHERE (%s)
@@ -116,7 +118,7 @@ ORDER BY created_at DESC
 		limitOffset.SQL(),
 	)
 
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -134,10 +136,10 @@ ORDER BY created_at DESC
 }
 
 // Count counts all product licenses that satisfy the options (ignoring limit and offset).
-func (dbLicenses) Count(ctx context.Context, opt dbLicensesListOptions) (int, error) {
+func (s dbLicenses) Count(ctx context.Context, opt dbLicensesListOptions) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM product_licenses WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int
-	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+	if err := s.db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil

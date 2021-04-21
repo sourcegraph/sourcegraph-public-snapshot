@@ -3,7 +3,7 @@ import Pie, { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
 import React, { ReactElement, useMemo, useState } from 'react'
 import { PieChartContent } from 'sourcegraph'
 
-import { onDatumClick } from '../types'
+import { MaybeLink } from '../MaybeLink'
 
 import { PieArc } from './components/PieArc'
 import { distributePieArcs } from './distribute-pie-data'
@@ -12,13 +12,17 @@ import { distributePieArcs } from './distribute-pie-data'
 const DEFAULT_FILL_COLOR = 'var(--color-bg-3)'
 const DEFAULT_PADDING = { top: 20, right: 20, bottom: 20, left: 20 }
 
+/** Generate percent value for each part of pie chart */
+const getSubtitle = <Datum extends object>(arc: PieArcDatum<Datum>, total: number): string =>
+    `${((100 * arc.value) / total).toFixed(2)}%`
+
 export interface PieChartProps<Datum extends object> extends PieChartContent<Datum> {
     /** Chart width in px */
     width: number
     /** Chart height in px */
     height: number
-    /** Click handler for pie arc element. */
-    onDatumClick: onDatumClick
+    /** Click handler for pie arc-link element. */
+    onDatumLinkClick: (event: React.MouseEvent) => void
     /** Chart padding in px */
     padding?: typeof DEFAULT_PADDING
 }
@@ -27,7 +31,7 @@ export interface PieChartProps<Datum extends object> extends PieChartContent<Dat
  * Display Pie chart with annotation.
  */
 export function PieChart<Datum extends object>(props: PieChartProps<Datum>): ReactElement | null {
-    const { width, height, padding = DEFAULT_PADDING, pies, onDatumClick } = props
+    const { width, height, padding = DEFAULT_PADDING, pies, onDatumLinkClick } = props
 
     // We have to track which arc is hovered to change order of rendering.
     // Due the fact svg elements don't have css z-index (in svg only order of renderings matters)
@@ -79,7 +83,7 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
 
     return (
         /* eslint-disable react/jsx-no-bind */
-        <svg className="pie-chart" width={width} height={height}>
+        <svg aria-label="Pie chart" className="pie-chart" width={width} height={height}>
             <Group top={centerY + padding.top} left={centerX + padding.left}>
                 <Pie
                     data={sortedData}
@@ -97,18 +101,27 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
 
                         return (
                             <Group>
-                                {arcs.map(arc => (
-                                    <PieArc
+                                {arcs.map((arc, index) => (
+                                    <MaybeLink
                                         key={getKey(arc)}
-                                        arc={arc}
-                                        path={pie.path}
-                                        total={total}
-                                        getColor={getFillColor}
-                                        getKey={getKey}
-                                        getLink={getLink}
-                                        onPointerMove={() => setHoveredArc(arc)}
-                                        onClick={onDatumClick}
-                                    />
+                                        to={getLink(arc)}
+                                        className="pie-chart__link"
+                                        role={getLink(arc) ? 'link' : 'graphics-dataunit'}
+                                        aria-label={`Element ${index + 1} of ${arcs.length}. Name: ${getKey(
+                                            arc
+                                        )}. Value: ${getSubtitle(arc, total)}.`}
+                                        onClick={onDatumLinkClick}
+                                    >
+                                        <PieArc
+                                            arc={arc}
+                                            path={pie.path}
+                                            getColor={getFillColor}
+                                            title={getKey(arc)}
+                                            subtitle={getSubtitle(arc, total)}
+                                            getLink={getLink}
+                                            onPointerMove={() => setHoveredArc(arc)}
+                                        />
+                                    </MaybeLink>
                                 ))}
                             </Group>
                         )

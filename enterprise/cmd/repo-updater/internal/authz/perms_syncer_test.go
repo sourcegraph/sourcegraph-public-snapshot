@@ -123,11 +123,11 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		}
 		return nil
 	}
-	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]*types.RepoName, error) {
+	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
 		}
-		return []*types.RepoName{{ID: 1}}, nil
+		return []types.RepoName{{ID: 1}}, nil
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil
@@ -195,11 +195,11 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
 		return nil
 	}
-	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]*types.RepoName, error) {
+	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
 		}
-		return []*types.RepoName{{ID: 1}}, nil
+		return []types.RepoName{{ID: 1}}, nil
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil
@@ -286,7 +286,7 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
 		return nil
 	}
-	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]*types.RepoName, error) {
+	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
 		} else if len(args.ExternalRepoIncludePrefixes) == 0 {
@@ -294,7 +294,7 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 		} else if len(args.ExternalRepoExcludePrefixes) == 0 {
 			return nil, errors.New("ExternalRepoExcludePrefixes want non-zero but got zero")
 		}
-		return []*types.RepoName{{ID: 1}}, nil
+		return []types.RepoName{{ID: 1}}, nil
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil

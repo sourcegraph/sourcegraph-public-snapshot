@@ -14,6 +14,7 @@ func InitDotcom(db dbutil.DB) {
 		ProductSubscriptionLicensingResolver: productsubscription.ProductSubscriptionLicensingResolver{
 			DB: db,
 		},
+		BillingResolver: billing.BillingResolver{DB: db},
 	}
 }
 

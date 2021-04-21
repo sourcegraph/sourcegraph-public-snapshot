@@ -1,4 +1,5 @@
 module.exports = {
+  schemaPaths: ['cmd/frontend/graphqlbackend/*.graphql'],
   rules: [
     'deprecations-have-a-reason',
     'fields-have-descriptions',

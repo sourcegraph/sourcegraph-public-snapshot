@@ -19,7 +19,7 @@ func TestIntegration(t *testing.T) {
 		t.Run("BatchChanges", storeTest(db, testStoreBatchChanges))
 		t.Run("Changesets", storeTest(db, testStoreChangesets))
 		t.Run("ChangesetEvents", storeTest(db, testStoreChangesetEvents))
-		t.Run("EnqueueNextScheduledChangeset", storeTest(db, testStoreEnqueueNextScheduledChangeset))
+		t.Run("ChangesetScheduling", storeTest(db, testStoreChangesetScheduling))
 		t.Run("ListChangesetSyncData", storeTest(db, testStoreListChangesetSyncData))
 		t.Run("ListChangesetsTextSearch", storeTest(db, testStoreListChangesetsTextSearch))
 		t.Run("BatchSpecs", storeTest(db, testStoreBatchSpecs))
@@ -30,5 +30,6 @@ func TestIntegration(t *testing.T) {
 		t.Run("CodeHosts", storeTest(db, testStoreCodeHost))
 		t.Run("UserDeleteCascades", storeTest(db, testUserDeleteCascades))
 		t.Run("SiteCredentials", storeTest(db, testStoreSiteCredentials))
+		t.Run("ChangesetJobs", storeTest(db, testStoreChangesetJobs))
 	})
 }

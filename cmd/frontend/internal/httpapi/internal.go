@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -191,11 +192,16 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 		}, nil
 	}
 
+	sc := database.SearchContexts(dbconn.Global)
+	getSearchContextRevisions := func(repoID int32) ([]string, error) {
+		return sc.GetAllRevisionsForRepo(ctx, repoID)
+	}
+
 	if err := r.ParseForm(); err != nil {
 		return err
 	}
 
-	b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, r.Form["repo"]...)
+	b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, getSearchContextRevisions, r.Form["repo"]...)
 	_, _ = w.Write(b)
 	return nil
 }
@@ -208,7 +214,7 @@ type reposListServer struct {
 	// interface for testing.
 	Repos interface {
 		// ListDefault returns the repositories to index on Sourcegraph.com
-		ListDefault(context.Context) ([]*types.RepoName, error)
+		ListDefault(context.Context) ([]types.RepoName, error)
 		// List returns a list of repositories
 		List(context.Context, database.ReposListOptions) ([]*types.Repo, error)
 	}

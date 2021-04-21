@@ -8,7 +8,7 @@ import { Accessors } from '../types'
 
 export interface TooltipContentProps<Datum extends object> extends RenderTooltipParams<Datum> {
     /** Accessors map to get information from nearest points. */
-    accessors: Accessors<Datum, string>
+    accessors: Accessors<Datum, keyof Datum>
     /** Dataset of series (lines) on the chart. */
     series: LineChartContent<Datum, keyof Datum>['series']
     /** Possible className for root content element. */
@@ -37,7 +37,7 @@ export function TooltipContent<Datum extends object>(props: TooltipContentProps<
             {/** values */}
             <ul className="line-chart__tooltip-list">
                 {lineKeys.map(lineKey => {
-                    const value = accessors.y[lineKey](datum)
+                    const value = accessors.y[lineKey as keyof Datum](datum)
                     const line = series.find(line => line.dataKey === lineKey)
                     const datumKey = tooltipData?.nearestDatum?.key
 

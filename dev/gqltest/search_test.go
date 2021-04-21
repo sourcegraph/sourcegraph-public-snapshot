@@ -957,8 +957,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `repo contains content default`,
-				query:  `repo:contains(nextFileFirstLine)`,
+				name:   `repo contains content scoped predicate`,
+				query:  `repo:contains.content(nextFileFirstLine)`,
 				counts: counts{Repo: 1},
 			},
 			{
@@ -974,6 +974,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:   `repo contains file then search common`,
 				query:  `repo:contains(file:go.mod) count:100 fmt`,
+				counts: counts{Content: 61},
+			},
+			{
+				name:   `repo contains file scoped predicate`,
+				query:  `repo:contains.file(go.mod) count:100 fmt`,
 				counts: counts{Content: 61},
 			},
 			{
