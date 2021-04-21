@@ -16,7 +16,6 @@ var graphQLQuery = `fragment FileMatchFields on FileMatch {
 					preview
 					lineNumber
 					offsetAndLengths
-					limitHit
 				}
 			}
 

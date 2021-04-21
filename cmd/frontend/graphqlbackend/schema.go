@@ -2,14 +2,16 @@ package graphqlbackend
 
 import (
 	_ "embed"
-	"strings"
 )
 
+// MainSchema is the main raw graqhql schema.
 //go:embed schema.graphql
-var mainSchema string
+var MainSchema string
 
+// BatchesSchema is the Batch Changes raw graqhql schema.
 //go:embed batches.graphql
-var batchesSchema string
+var BatchesSchema string
 
-// Schema is the raw graqhql schema.
-var Schema = strings.Join([]string{mainSchema, batchesSchema}, "\n")
+// CodeIntelSchema is the Code Intel raw graqhql schema.
+//go:embed codeintel.graphql
+var CodeIntelSchema string

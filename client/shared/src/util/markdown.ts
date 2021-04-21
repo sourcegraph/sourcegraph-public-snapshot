@@ -78,6 +78,7 @@ export const renderMarkdown = (
     let sanitizeOptions: Overwrite<sanitize.IOptions, sanitize.IDefaults>
     if (options.plainText) {
         sanitizeOptions = {
+            ...sanitize.defaults,
             allowedAttributes: {},
             allowedSchemes: [],
             allowedSchemesByTag: {},
@@ -92,10 +93,6 @@ export const renderMarkdown = (
 
             allowedTags: [
                 ...without(sanitize.defaults.allowedTags, 'iframe'),
-                'h1',
-                'h2',
-                'span',
-                'small',
                 'img',
                 'picture',
                 'source',

@@ -56,9 +56,9 @@ func TestSearchContexts_Get(t *testing.T) {
 		want    *types.SearchContext
 		wantErr string
 	}{
-		{name: "get instance-level search context", opts: GetSearchContextOptions{}, want: createdSearchContexts[0]},
-		{name: "get user search context", opts: GetSearchContextOptions{NamespaceUserID: user.ID}, want: createdSearchContexts[1]},
-		{name: "get org search context", opts: GetSearchContextOptions{NamespaceOrgID: org.ID}, want: createdSearchContexts[2]},
+		{name: "get instance-level search context", opts: GetSearchContextOptions{Name: "instance"}, want: createdSearchContexts[0]},
+		{name: "get user search context", opts: GetSearchContextOptions{Name: "user", NamespaceUserID: user.ID}, want: createdSearchContexts[1]},
+		{name: "get org search context", opts: GetSearchContextOptions{Name: "org", NamespaceOrgID: org.ID}, want: createdSearchContexts[2]},
 		{name: "get user and org context", opts: GetSearchContextOptions{NamespaceUserID: 1, NamespaceOrgID: 2}, wantErr: "options NamespaceUserID and NamespaceOrgID are mutually exclusive"},
 	}
 
@@ -98,7 +98,7 @@ func TestSearchContexts_List(t *testing.T) {
 	gotInstanceLevelSearchContexts, err := sc.ListSearchContexts(
 		ctx,
 		ListSearchContextsPageOptions{First: 1},
-		ListSearchContextsOptions{},
+		ListSearchContextsOptions{NoNamespace: true},
 	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
@@ -164,7 +164,7 @@ func TestSearchContexts_PaginationAndCount(t *testing.T) {
 		{
 			name:               "instance-level contexts",
 			wantSearchContexts: createdSearchContexts[1:3],
-			options:            ListSearchContextsOptions{Name: "instance-v"},
+			options:            ListSearchContextsOptions{Name: "instance-v", NoNamespace: true},
 			pageOptions:        ListSearchContextsPageOptions{First: 2, AfterID: createdSearchContexts[0].ID},
 			totalCount:         4,
 		},
@@ -185,7 +185,7 @@ func TestSearchContexts_PaginationAndCount(t *testing.T) {
 		{
 			name:               "by name only",
 			wantSearchContexts: []*types.SearchContext{createdSearchContexts[0], createdSearchContexts[4]},
-			options:            ListSearchContextsOptions{Name: "v1", IncludeAll: true},
+			options:            ListSearchContextsOptions{Name: "v1"},
 			pageOptions:        ListSearchContextsPageOptions{First: 2},
 			totalCount:         3,
 		},
@@ -283,8 +283,8 @@ func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	repoAName := &types.RepoName{ID: repoA.ID, Name: repoA.Name}
-	repoBName := &types.RepoName{ID: repoB.ID, Name: repoB.Name}
+	repoAName := types.RepoName{ID: repoA.ID, Name: repoA.Name}
+	repoBName := types.RepoName{ID: repoB.ID, Name: repoB.Name}
 
 	// Create a search context with initial repository revisions
 	initialRepositoryRevisions := []*types.SearchContextRepositoryRevisions{
@@ -411,7 +411,7 @@ func TestSearchContexts_Permissions(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: tt.userID})
 			gotSearchContexts, err := sc.ListSearchContexts(ctx,
 				ListSearchContextsPageOptions{First: int32(len(searchContexts))},
-				ListSearchContextsOptions{IncludeAll: true},
+				ListSearchContextsOptions{},
 			)
 			if err != nil {
 				t.Fatalf("Expected no error, got %s", err)

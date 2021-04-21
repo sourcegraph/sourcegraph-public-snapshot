@@ -23,7 +23,7 @@ func TestListDefaultRepos(t *testing.T) {
 	}
 	tcs := []struct {
 		name  string
-		repos []*types.RepoName
+		repos []types.RepoName
 	}{
 		{
 			name:  "empty case",
@@ -31,7 +31,7 @@ func TestListDefaultRepos(t *testing.T) {
 		},
 		{
 			name: "one repo",
-			repos: []*types.RepoName{
+			repos: []types.RepoName{
 				{
 					ID:   api.RepoID(1),
 					Name: "github.com/foo/bar",
@@ -40,7 +40,7 @@ func TestListDefaultRepos(t *testing.T) {
 		},
 		{
 			name: "a few repos",
-			repos: []*types.RepoName{
+			repos: []types.RepoName{
 				{
 					ID:   api.RepoID(1),
 					Name: "github.com/foo/bar",
@@ -153,7 +153,7 @@ func TestListDefaultRepos(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		want := []*types.RepoName{
+		want := []types.RepoName{
 			{
 				ID:   api.RepoID(10),
 				Name: "github.com/foo/bar10",
@@ -179,7 +179,7 @@ func TestListDefaultReposUncloned(t *testing.T) {
 		t.Skip()
 	}
 
-	reposToAdd := []*types.RepoName{
+	reposToAdd := []types.RepoName{
 		{
 			ID:   api.RepoID(1),
 			Name: "github.com/foo/bar1",

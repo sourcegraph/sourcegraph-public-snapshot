@@ -1,17 +1,27 @@
 import { Observable, of } from 'rxjs'
 
-import { ISearchContext } from '../../../shared/src/graphql/schema'
+import { Scalars, SearchContextsNamespaceFilterType } from '@sourcegraph/shared/src/graphql-operations'
+import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+
 import { ListSearchContextsResult } from '../graphql-operations'
 
 export function mockFetchAutoDefinedSearchContexts(): Observable<ISearchContext[]> {
     return of([] as ISearchContext[])
 }
 
-export function mockFetchSearchContexts(
-    first: number,
-    query?: string,
+export function mockFetchSearchContexts({
+    first,
+    filterType,
+    namespace,
+    query,
+    after,
+}: {
+    first: number
+    query?: string
+    namespace?: Scalars['ID']
+    filterType?: SearchContextsNamespaceFilterType
     after?: string
-): Observable<ListSearchContextsResult['searchContexts']> {
+}): Observable<ListSearchContextsResult['searchContexts']> {
     const result: ListSearchContextsResult['searchContexts'] = {
         nodes: [],
         pageInfo: {

@@ -269,7 +269,6 @@ func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []
 			Preview:          string(fileBuf[:limit]),
 			LineNumber:       lineNumber,
 			OffsetAndLengths: [][2]int{{offset, length}},
-			LimitHit:         false, // We will always return false for this field since we no longer limit the number of offsets per line.
 		})
 
 		if eol >= 0 {

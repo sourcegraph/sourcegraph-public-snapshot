@@ -98,8 +98,11 @@ func (s *Syncer) Run(ctx context.Context, db *sql.DB, store *Store, opts RunOpti
 	defer resetter.Stop()
 
 	for ctx.Err() == nil {
-		if err := store.EnqueueSyncJobs(ctx, opts.IsCloud); err != nil && s.Logger != nil {
-			s.Logger.Error("Enqueuing sync jobs", "error", err)
+		if !conf.Get().DisableAutoCodeHostSyncs {
+			err := store.EnqueueSyncJobs(ctx, opts.IsCloud)
+			if err != nil && s.Logger != nil {
+				s.Logger.Error("Enqueuing sync jobs", "error", err)
+			}
 		}
 		sleep(ctx, opts.EnqueueInterval())
 	}

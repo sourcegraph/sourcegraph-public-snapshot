@@ -18,24 +18,23 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-
-	"github.com/inconshreveable/log15"
 )
 
 const (
-	// repoTTL is how often we should reclone a repository
+	// repoTTL is how often we should re-clone a repository
 	repoTTL = time.Hour * 24 * 45
-	// repoTTLGC is how often we should reclone a repository once it is
+	// repoTTLGC is how often we should re-clone a repository once it is
 	// reporting git gc issues.
 	repoTTLGC = time.Hour * 24 * 2
 )
@@ -52,7 +51,7 @@ var (
 	})
 	reposRecloned = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_recloned",
-		Help: "number of repos removed and recloned due to age",
+		Help: "number of repos removed and re-cloned due to age",
 	})
 	reposRemovedDiskPressure = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_removed_disk_pressure",
@@ -228,6 +227,7 @@ func (s *Server) cleanupRepos(addrs []string) {
 		Do   func(GitDir) (bool, error)
 	}
 	cleanups := []cleanupFn{
+		// Compute the amount of space used by the repo
 		{"compute statistics", computeStats},
 		// Do some sanity checks on the repository.
 		{"maybe remove corrupt", maybeRemoveCorrupt},
@@ -239,17 +239,24 @@ func (s *Server) cleanupRepos(addrs []string) {
 		// 2021-03-01 (tomas,keegan) we used to store an authenticated remote URL on
 		// disk. We no longer need it so we can scrub it.
 		{"scrub remote URL", scrubRemoteURL},
-		// Old git clones accumulate loose git objects that waste space and slow down git
-		// operations. Periodically do a fresh clone to avoid these problems. git gc is
-		// slow and resource intensive. It is cheaper and faster to just reclone the
-		// repository.
-		{"maybe reclone", maybeReclone},
 		// Runs a number of housekeeping tasks within the current repository, such as
 		// compressing file revisions (to reduce disk space and increase performance),
 		// removing unreachable objects which may have been created from prior
 		// invocations of git add, packing refs, pruning reflog, rerere metadata or stale
 		// working trees. May also update ancillary indexes such as the commit-graph.
 		{"garbage collect", performGC},
+	}
+
+	if !conf.Get().DisableAutoGitUpdates {
+		// Old git clones accumulate loose git objects that waste space and slow down git
+		// operations. Periodically do a fresh clone to avoid these problems. git gc is
+		// slow and resource intensive. It is cheaper and faster to just re-clone the
+		// repository. We don't do this if DisableAutoGitUpdates is set as it could
+		// potentially kick off a clone operation.
+		cleanups = append(cleanups, cleanupFn{
+			Name: "maybe reclone",
+			Do:   maybeReclone,
+		})
 	}
 
 	err := bestEffortWalk(s.ReposDir, func(dir string, fi os.FileInfo) error {
@@ -645,7 +652,7 @@ func setRecloneTime(dir GitDir, now time.Time) error {
 // value is not stored in the repository, the reclone time for the repository
 // is set to now.
 func getRecloneTime(dir GitDir) (time.Time, error) {
-	// We store the time we recloned the repository. If the value is missing,
+	// We store the time we re-cloned the repository. If the value is missing,
 	// we store the current time. This decouples this timestamp from the
 	// different ways a clone can appear in gitserver.
 	update := func() (time.Time, error) {

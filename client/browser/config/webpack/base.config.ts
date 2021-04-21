@@ -1,7 +1,8 @@
 import * as path from 'path'
 
+import CssMinimizerWebpackPlugin from 'css-minimizer-webpack-plugin'
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
-import OptimizeCssAssetsPlugin from 'optimize-css-assets-webpack-plugin'
+import TerserPlugin from 'terser-webpack-plugin'
 import * as webpack from 'webpack'
 
 const buildEntry = (...files: string[]): string[] => files.map(file => path.join(__dirname, file))
@@ -65,10 +66,24 @@ export const config: webpack.Configuration = {
         chunkFilename: '[id].chunk.js',
     },
     devtool: 'inline-cheap-module-source-map',
+    optimization: {
+        minimizer: [
+            new TerserPlugin({
+                sourceMap: true,
+                terserOptions: {
+                    compress: {
+                        // // Don't inline functions, which causes name collisions with uglify-es:
+                        // https://github.com/mishoo/UglifyJS2/issues/2842
+                        inline: 1,
+                    },
+                },
+            }),
+            new CssMinimizerWebpackPlugin(),
+        ],
+    },
 
     plugins: [
         new MiniCssExtractPlugin({ filename: '../css/[name].bundle.css' }),
-        new OptimizeCssAssetsPlugin(),
         // Code splitting doesn't make sense/work in the browser extension, but we still want to use dynamic import()
         new webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
     ],
