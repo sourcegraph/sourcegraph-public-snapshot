@@ -50,7 +50,7 @@ module.exports = api => {
       '@babel/preset-react',
     ],
     plugins: [
-      '@babel/plugin-transform-typescript',
+      ['@babel/plugin-transform-typescript', { isTSX: true }],
       'babel-plugin-lodash',
       // Node 12 (released 2019 Apr 23) supports these natively, but there seem to be issues when used with TypeScript.
       ['@babel/plugin-proposal-class-properties', { loose: true }],
