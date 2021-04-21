@@ -18,16 +18,21 @@
     }
 
     h4 {
-        font-size: 1rem;
-        font-weight: 400;
+        font-size: 0.875rem;
+        font-weight: 500;
         letter-spacing: -0.016em;
     }
 
     h5 {
         font-size: 0.625rem;
-        letter-spacing: 0.031em;
         font-weight: 600;
+        letter-spacing: 0.031em;
         text-transform: uppercase;
+    }
+
+    h6 {
+        font-size: 0.625rem;
+        font-weight: 400;
     }
 
     // Body / Base / Medium
