@@ -66,8 +66,10 @@ func (r *productSubscription) ID() graphql.ID {
 	return marshalProductSubscriptionID(r.v.ID)
 }
 
+const ProductSubscriptionIDKind = "ProductSubscription"
+
 func marshalProductSubscriptionID(id string) graphql.ID {
-	return relay.MarshalID("ProductSubscription", id)
+	return relay.MarshalID(ProductSubscriptionIDKind, id)
 }
 
 func unmarshalProductSubscriptionID(id graphql.ID) (productSubscriptionID string, err error) {

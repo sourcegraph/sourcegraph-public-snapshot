@@ -27,10 +27,10 @@ func (d dotcomRootResolver) Dotcom() graphqlbackend.DotcomResolver {
 
 func (d dotcomRootResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	return map[string]graphqlbackend.NodeByIDFunc{
-		"ProductLicense": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+		productsubscription.ProductLicenseIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return d.ProductLicenseByID(ctx, id)
 		},
-		"ProductSubscription": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+		productsubscription.ProductSubscriptionIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return d.ProductSubscriptionByID(ctx, id)
 		},
 	}
