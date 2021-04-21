@@ -81,16 +81,16 @@ func mustCreate(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo,
 	return createdRepos
 }
 
-func repoNamesFromRepos(repos []*types.Repo) []*types.RepoName {
-	rnames := make([]*types.RepoName, 0, len(repos))
+func repoNamesFromRepos(repos []*types.Repo) []types.RepoName {
+	rnames := make([]types.RepoName, 0, len(repos))
 	for _, repo := range repos {
-		rnames = append(rnames, &types.RepoName{ID: repo.ID, Name: repo.Name})
+		rnames = append(rnames, types.RepoName{ID: repo.ID, Name: repo.Name})
 	}
 
 	return rnames
 }
 
-func reposFromRepoNames(names []*types.RepoName) []*types.Repo {
+func reposFromRepoNames(names []types.RepoName) []*types.Repo {
 	repos := make([]*types.Repo, 0, len(names))
 	for _, name := range names {
 		repos = append(repos, &types.Repo{ID: name.ID, Name: name.Name})
@@ -429,7 +429,7 @@ func TestRepos_ListRepoNames_userID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []*types.RepoName{
+	want := []types.RepoName{
 		{ID: repo.ID, Name: repo.Name},
 	}
 
@@ -1166,7 +1166,7 @@ func TestRepos_ListRepoNames(t *testing.T) {
 	repo := mustCreate(ctx, t, db, &types.Repo{
 		Name: "name",
 	}, types.CloneStatusNotCloned)
-	want := []*types.RepoName{{ID: repo[0].ID, Name: repo[0].Name}}
+	want := []types.RepoName{{ID: repo[0].ID, Name: repo[0].Name}}
 
 	repos, err := Repos(db).ListRepoNames(ctx, ReposListOptions{})
 	if err != nil {
@@ -1214,7 +1214,7 @@ func TestRepos_ListRepoNames_fork(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		assertJSONEqual(t, append(append([]*types.RepoName(nil), mine...), yours...), repos)
+		assertJSONEqual(t, append(append([]types.RepoName(nil), mine...), yours...), repos)
 	}
 }
 
@@ -1232,12 +1232,12 @@ func TestRepos_ListRepoNames_cloned(t *testing.T) {
 	tests := []struct {
 		name string
 		opt  ReposListOptions
-		want []*types.RepoName
+		want []types.RepoName
 	}{
 		{"OnlyCloned", ReposListOptions{OnlyCloned: true}, yours},
 		{"NoCloned", ReposListOptions{NoCloned: true}, mine},
 		{"NoCloned && OnlyCloned", ReposListOptions{NoCloned: true, OnlyCloned: true}, nil},
-		{"Default", ReposListOptions{}, append(append([]*types.RepoName(nil), mine...), yours...)},
+		{"Default", ReposListOptions{}, append(append([]types.RepoName(nil), mine...), yours...)},
 	}
 
 	for _, test := range tests {
@@ -1268,7 +1268,7 @@ func TestRepos_ListRepoNames_ids(t *testing.T) {
 	tests := []struct {
 		name string
 		opt  ReposListOptions
-		want []*types.RepoName
+		want []types.RepoName
 	}{
 		{"Subset", ReposListOptions{IDs: mine.IDs()}, repoNamesFromRepos(mine)},
 		{"All", ReposListOptions{IDs: all.IDs()}, repoNamesFromRepos(all)},
@@ -1303,7 +1303,7 @@ func TestRepos_ListRepoNames_serviceTypes(t *testing.T) {
 	tests := []struct {
 		name string
 		opt  ReposListOptions
-		want []*types.RepoName
+		want []types.RepoName
 	}{
 		{"OnlyGithub", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitHub}}, repoNamesFromRepos(mine)},
 		{"OnlyGitlab", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitLab}}, repoNamesFromRepos(yours)},
@@ -1754,7 +1754,7 @@ func TestRepos_ListRepoNames_useOr(t *testing.T) {
 	tests := []struct {
 		name string
 		opt  ReposListOptions
-		want []*types.RepoName
+		want []types.RepoName
 	}{
 		{"Archived or Forks", ReposListOptions{OnlyArchived: true, OnlyForks: true, UseOr: true}, repoNamesFromRepos(archivedAndForks)},
 		{"Archived or Forks Or Cloned", ReposListOptions{OnlyArchived: true, OnlyForks: true, OnlyCloned: true, UseOr: true}, repoNamesFromRepos(all)},
@@ -1806,7 +1806,7 @@ func TestRepos_ListRepoNames_externalServiceID(t *testing.T) {
 	tests := []struct {
 		name string
 		opt  ReposListOptions
-		want []*types.RepoName
+		want []types.RepoName
 	}{
 		{"Some", ReposListOptions{ExternalServiceIDs: []int64{service1.ID}}, repoNamesFromRepos(mine)},
 		{"Default", ReposListOptions{}, repoNamesFromRepos(append(mine, yours...))},
@@ -1896,7 +1896,7 @@ func TestRepos_ListRepoNames_externalRepoPrefixes(t *testing.T) {
 	tests := []struct {
 		name string
 		opt  ReposListOptions
-		want []*types.RepoName
+		want []types.RepoName
 	}{
 		{
 			name: "only apply ExternalRepoIncludePrefixes",
@@ -1990,7 +1990,7 @@ func TestRepos_ListRepos_UserPublicRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []*types.RepoName{
+	want := []types.RepoName{
 		{ID: repo.ID, Name: repo.Name},
 	}
 
@@ -2003,7 +2003,7 @@ func TestRepos_ListRepos_UserPublicRepos(t *testing.T) {
 		t.Fatalf(diff)
 	}
 
-	want = []*types.RepoName{
+	want = []types.RepoName{
 		{ID: repo.ID, Name: repo.Name},
 		{ID: otherRepo.ID, Name: otherRepo.Name},
 	}

@@ -2,10 +2,10 @@
 
 const path = require('path')
 
+const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const logger = require('gulplog')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin')
-const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 const webpack = require('webpack')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
@@ -80,6 +80,7 @@ const config = {
           },
         },
       }),
+      new CssMinimizerWebpackPlugin(),
     ],
     namedModules: false,
 
@@ -123,7 +124,6 @@ const config = {
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
       filename: mode === 'production' ? 'styles/[name].[contenthash].bundle.css' : 'styles/[name].bundle.css',
     }),
-    new OptimizeCssAssetsPlugin(),
     new MonacoWebpackPlugin({
       languages: ['json'],
       features: [

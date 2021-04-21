@@ -22,6 +22,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -194,6 +195,12 @@ func (r *changesetResolver) UpdatedAt() graphqlbackend.DateTime {
 }
 
 func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+	// If code host syncs are disabled, the syncer is not actively syncing
+	// changesets and the next sync time cannot be determined.
+	if conf.Get().DisableAutoCodeHostSyncs {
+		return nil, nil
+	}
+
 	nextSyncAt, err := r.computeNextSyncAt(ctx)
 	if err != nil {
 		return nil, err

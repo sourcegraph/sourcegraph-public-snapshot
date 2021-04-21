@@ -18,7 +18,7 @@ type Stats struct {
 
 	// Repos that were matched by the repo-related filters. This should only
 	// be set once by search, when we have resolved Repos.
-	Repos map[api.RepoID]*types.RepoName
+	Repos map[api.RepoID]types.RepoName
 
 	// Status is a RepoStatusMap of repository search statuses.
 	Status search.RepoStatusMap
@@ -46,7 +46,7 @@ func (c *Stats) Update(other *Stats) {
 	c.IsIndexUnavailable = c.IsIndexUnavailable || other.IsIndexUnavailable
 
 	if c.Repos == nil && len(other.Repos) > 0 {
-		c.Repos = make(map[api.RepoID]*types.RepoName, len(other.Repos))
+		c.Repos = make(map[api.RepoID]types.RepoName, len(other.Repos))
 	}
 	for id, r := range other.Repos {
 		c.Repos[id] = r

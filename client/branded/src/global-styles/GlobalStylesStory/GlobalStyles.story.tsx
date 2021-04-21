@@ -299,12 +299,23 @@ add(
             {semanticColors.map(semantic => (
                 <div key={semantic} className={classNames('alert', `alert-${semantic}`)}>
                     A simple {semantic} alert — check it out! It can also contain{' '}
-                    <a href="/" className="alert-link" onClick={flow(preventDefault, action('alert link clicked'))}>
+                    <a href="/" onClick={flow(preventDefault, action('alert link clicked'))}>
                         links like this
                     </a>
                     .
                 </div>
             ))}
+            <div className="alert alert-info d-flex align-items-center">
+                <div className="flex-grow-1">An alert with a button</div>
+                {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus */}
+                <a
+                    role="button"
+                    className="btn btn-info"
+                    onClick={flow(preventDefault, action('alert button clicked'))}
+                >
+                    Call to action
+                </a>
+            </div>
         </>
     ),
     {

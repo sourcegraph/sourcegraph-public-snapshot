@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -334,7 +335,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	// Get corresponding internal database IDs
-	var repoNames []*types.RepoName
+	var repoNames []types.RepoName
 	if len(repoSpecs) > 0 {
 		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
 			database.ReposListOptions{
@@ -757,13 +758,15 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 
 // isDisabled returns true if the background permissions syncing is not enabled.
 // It is not enabled if:
-// 	- Permissions user mapping is enabled
-// 	- No authz provider is configured
-//	- Not purchased with the current license
+//   - Permissions user mapping is enabled
+//   - No authz provider is configured
+//   - Not purchased with the current license
+//   - `disableAutoCodeHostSyncs` site setting is set to true
 func (s *PermsSyncer) isDisabled() bool {
 	return globals.PermissionsUserMapping().Enabled ||
 		len(s.providersByServiceID()) == 0 ||
-		(licensing.EnforceTiers && licensing.Check(licensing.FeatureACLs) != nil)
+		(licensing.EnforceTiers && licensing.Check(licensing.FeatureACLs) != nil) ||
+		conf.Get().DisableAutoCodeHostSyncs
 }
 
 func (s *PermsSyncer) runSchedule(ctx context.Context) {

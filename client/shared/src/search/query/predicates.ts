@@ -1,3 +1,6 @@
+/* eslint-disable no-template-curly-in-string */
+import { Completion } from './filters'
+
 interface Access {
     name: string
     fields?: Access[]
@@ -116,4 +119,32 @@ export const scanPredicate = (field: string, value: string): Predicate | undefin
     }
 
     return { path, parameters }
+}
+
+export const predicateCompletion = (field: string): Completion[] => {
+    if (field === 'repo') {
+        return [
+            {
+                label: 'contains.file(...)',
+                insertText: 'contains.file(${1:CHANGELOG})',
+                asSnippet: true,
+            },
+            {
+                label: 'contains.content(...)',
+                insertText: 'contains.content(${1:TODO})',
+                asSnippet: true,
+            },
+            {
+                label: 'contains(...)',
+                insertText: 'contains(file:${1:CHANGELOG} content:${2:fix})',
+                asSnippet: true,
+            },
+            {
+                label: 'contains.commit.after(...)',
+                insertText: 'contains.commit.after(${1:1 month ago})',
+                asSnippet: true,
+            },
+        ]
+    }
+    return []
 }

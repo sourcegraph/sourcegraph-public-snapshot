@@ -189,7 +189,9 @@ export enum MetaPredicateKind {
 export interface MetaPredicate {
     type: 'metaPredicate'
     range: CharacterRange
+    groupRange?: CharacterRange
     kind: MetaPredicateKind
+    value: Predicate
 }
 
 /**
@@ -957,12 +959,16 @@ const decoratePredicate = (predicate: Predicate, range: CharacterRange): Decorat
             type: 'metaPredicate',
             kind: MetaPredicateKind.NameAccess,
             range: { start: offset, end: offset + nameAccess.length },
+            groupRange: range,
+            value: predicate,
         })
         offset = offset + nameAccess.length
         decorated.push({
             type: 'metaPredicate',
             kind: MetaPredicateKind.Dot,
             range: { start: offset, end: offset + 1 },
+            groupRange: range,
+            value: predicate,
         })
         offset = offset + 1
     }
@@ -973,6 +979,8 @@ const decoratePredicate = (predicate: Predicate, range: CharacterRange): Decorat
         type: 'metaPredicate',
         kind: MetaPredicateKind.Parenthesis,
         range: { start: offset, end: offset + 1 },
+        groupRange: range,
+        value: predicate,
     })
     offset = offset + 1
     decorated.push(...decoratePredicateBody(predicate.path, body, offset))
@@ -981,6 +989,8 @@ const decoratePredicate = (predicate: Predicate, range: CharacterRange): Decorat
         type: 'metaPredicate',
         kind: MetaPredicateKind.Parenthesis,
         range: { start: offset, end: offset + 1 },
+        groupRange: range,
+        value: predicate,
     })
     return decorated
 }

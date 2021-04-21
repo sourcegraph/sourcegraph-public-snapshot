@@ -23,7 +23,7 @@ Examples of errors that can be fixed by [automatically retrying](#automatic-retr
 
 Examples of errors that requires [manual retrying](#manual-retrying-by-re-applying-the-batch-change-spec):
 
-- No [Batch Changes credentials](configuring_user_credentials.md) have been setup for the affected code host
+- No [Batch Changes credentials](configuring_credentials.md) have been setup for the affected code host
 - The configured code host connection needs a different type of credentials (e.g. with SSH keys)
 - A pull request for the specified branch already exists in another batch change
 - ...

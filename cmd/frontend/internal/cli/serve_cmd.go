@@ -178,11 +178,13 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 
 	// Run a background job to handle encryption of external service configuration.
 	extsvcMigrator := database.NewExternalServiceConfigMigratorWithDB(db)
+	extsvcMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
 	if err := outOfBandMigrationRunner.Register(extsvcMigrator.ID(), extsvcMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
 		log.Fatalf("failed to run external service encryption job: %v", err)
 	}
 	// Run a background job to handle encryption of external service configuration.
 	extAccMigrator := database.NewExternalAccountsMigratorWithDB(db)
+	extAccMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
 	if err := outOfBandMigrationRunner.Register(extAccMigrator.ID(), extAccMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
 		log.Fatalf("failed to run user external account encryption job: %v", err)
 	}

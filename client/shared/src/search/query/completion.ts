@@ -253,7 +253,7 @@ async function completeDefault(
 }
 
 async function completeFilter(
-    dynamicSuggestions: Observable<SearchSuggestion[]>,
+    serverSuggestions: Observable<SearchSuggestion[]>,
     token: Filter,
     column: number,
     globbing: boolean
@@ -273,43 +273,42 @@ async function completeFilter(
     if (!resolvedFilter) {
         return null
     }
+    let staticSuggestions: Monaco.languages.CompletionItem[] = []
+    if (resolvedFilter.definition.discreteValues) {
+        staticSuggestions = resolvedFilter.definition.discreteValues(token.value).map(
+            ({ label, insertText, asSnippet }, index): Monaco.languages.CompletionItem => ({
+                label,
+                sortText: index.toString(), // suggestions sort by order in the list, not alphabetically.
+                kind: Monaco.languages.CompletionItemKind.Value,
+                insertText: `${insertText || label} `,
+                filterText: label,
+                insertTextRules: asSnippet ? Monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet : undefined,
+                range: value ? toMonacoRange(value.range) : defaultRange,
+                command: COMPLETION_ITEM_SELECTED,
+            })
+        )
+    }
+    let dynamicSuggestions: Monaco.languages.CompletionItem[] = []
     if (resolvedFilter.definition.suggestions) {
         // If the filter definition has an associated dynamic suggestion type,
         // use it to retrieve dynamic suggestions from the backend.
-        const suggestions = await dynamicSuggestions.pipe(first()).toPromise()
-        return {
-            suggestions: suggestions
-                .filter(({ __typename }) => __typename === resolvedFilter.definition.suggestions)
-                .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: true, globbing }))
-                .filter(isDefined)
-                .map(partialCompletionItem => ({
-                    ...partialCompletionItem,
-                    // Set the current value as filterText, so that all dynamic suggestions
-                    // returned by the server are displayed. Otherwise, if the current filter value
-                    // is a regex pattern like `repo:^` Monaco's filtering will try match `^` against the
-                    // suggestions, and not display them because they don't match.
-                    filterText: value?.value,
-                    range: value ? toMonacoRange(value.range) : defaultRange,
-                    command: COMPLETION_ITEM_SELECTED,
-                })),
-        }
+        const suggestions = await serverSuggestions.pipe(first()).toPromise()
+        dynamicSuggestions = suggestions
+            .filter(({ __typename }) => __typename === resolvedFilter.definition.suggestions)
+            .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: true, globbing }))
+            .filter(isDefined)
+            .map(partialCompletionItem => ({
+                ...partialCompletionItem,
+                // Set the current value as filterText, so that all dynamic suggestions
+                // returned by the server are displayed. Otherwise, if the current filter value
+                // is a regex pattern like `repo:^` Monaco's filtering will try match `^` against the
+                // suggestions, and not display them because they don't match.
+                filterText: value?.value,
+                range: value ? toMonacoRange(value.range) : defaultRange,
+                command: COMPLETION_ITEM_SELECTED,
+            }))
     }
-    if (resolvedFilter.definition.discreteValues) {
-        return {
-            suggestions: resolvedFilter.definition.discreteValues(token.value).map(
-                (label, index): Monaco.languages.CompletionItem => ({
-                    label,
-                    sortText: index.toString(), // suggestions sort by order in the list, not alphabetically.
-                    kind: Monaco.languages.CompletionItemKind.Value,
-                    insertText: `${label} `,
-                    filterText: label,
-                    range: value ? toMonacoRange(value.range) : defaultRange,
-                    command: COMPLETION_ITEM_SELECTED,
-                })
-            ),
-        }
-    }
-    return null
+    return { suggestions: staticSuggestions.concat(dynamicSuggestions) }
 }
 
 /**

@@ -1,4 +1,3 @@
-import { decode } from 'he'
 import * as H from 'history'
 import React from 'react'
 
@@ -23,7 +22,7 @@ export class SearchResult extends React.Component<Props> {
                 className="test-search-result-label"
                 dangerousInnerHTML={
                     this.props.result.label.html
-                        ? decode(this.props.result.label.html)
+                        ? this.props.result.label.html
                         : renderMarkdown(this.props.result.label.text)
                 }
                 history={this.props.history}
@@ -34,7 +33,7 @@ export class SearchResult extends React.Component<Props> {
                     <Markdown
                         dangerousInnerHTML={
                             this.props.result.detail.html
-                                ? decode(this.props.result.detail.html)
+                                ? this.props.result.detail.html
                                 : renderMarkdown(this.props.result.detail.text)
                         }
                         history={this.props.history}

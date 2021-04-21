@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -282,12 +283,14 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 	// How often to refresh the schedule
 	scheduleTicker := time.NewTicker(scheduleInterval)
 
-	// Get initial schedule
-	if sched, err := s.computeSchedule(ctx); err != nil {
-		// Non fatal as we'll try again later in the main loop
-		log15.Error("Computing schedule", "err", err)
-	} else {
-		s.queue.Upsert(sched...)
+	if !conf.Get().DisableAutoCodeHostSyncs {
+		// Get initial schedule
+		if sched, err := s.computeSchedule(ctx); err != nil {
+			// Non fatal as we'll try again later in the main loop
+			log15.Error("Computing schedule", "err", err)
+		} else {
+			s.queue.Upsert(sched...)
+		}
 	}
 
 	var next scheduledSync
@@ -319,6 +322,11 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 			if timer != nil {
 				timer.Stop()
 			}
+
+			if conf.Get().DisableAutoCodeHostSyncs {
+				continue
+			}
+
 			start := s.syncStore.Clock()()
 			schedule, err := s.computeSchedule(ctx)
 			labelValues := []string{s.codeHostURL, strconv.FormatBool(err == nil)}
