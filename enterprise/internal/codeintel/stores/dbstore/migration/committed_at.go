@@ -88,20 +88,12 @@ func (m *committedAtMigrator) selectBatch(ctx context.Context, tx *dbstore.Store
 
 const committedAtSelectBatchQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/migration/committed_at.go:selectBatch
-WITH candidates AS (
-	SELECT repository_id, commit
-	FROM lsif_uploads
-	WHERE state = 'completed' AND committed_at IS NULL
-	GROUP BY repository_id, commit
-	ORDER BY repository_id, commit
-	LIMIT %s
-)
 SELECT repository_id, commit
 FROM lsif_uploads
-WHERE
-	state = 'completed' AND committed_at IS NULL AND
-	(repository_id, commit) IN (SELECT * FROM candidates)
-FOR UPDATE SKIP LOCKED
+WHERE state = 'completed' AND committed_at IS NULL
+GROUP BY repository_id, commit
+ORDER BY repository_id, commit
+LIMIT %s
 `
 
 func (m *committedAtMigrator) processBatch(ctx context.Context, tx *dbstore.Store, batch map[int][]string) error {
