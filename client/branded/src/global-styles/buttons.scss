@@ -57,3 +57,22 @@
 .btn.btn-sm {
     @extend small;
 }
+
+.theme-redesign {
+    .btn,
+    // Required because `.btn.btn-sm { @extend small }` includes `font-weight: inherit;` that we don't need.
+    .btn.btn-sm {
+        // Use placeholder-selector to extend only styles defined for `.theme-redesign label`.
+        @extend %label-base;
+    }
+
+    // Label / Uppercase / Base
+    .btn.text-uppercase {
+        @extend %label-uppercase;
+
+        // Label / Uppercase / Small
+        &.btn-sm {
+            font-size: 0.6875rem;
+        }
+    }
+}
