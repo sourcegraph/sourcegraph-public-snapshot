@@ -160,15 +160,3 @@ $text-muted: var(--text-muted);
 
 // Load redesign styles
 @import './colors-redesign';
-
-.theme-light.theme-redesign,
-// Descendant selector is required for Storybook `addRedesignVariants` helper.
-.theme-light .theme-redesign {
-    --link-color: #0bdbd1;
-    --web-content-link-color: #0bdbd1;
-}
-.theme-dark.theme-redesign,
-.theme-dark .theme-redesign {
-    --link-color: #edb1ff;
-    --web-content-link-color: #edb1ff;
-}
