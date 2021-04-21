@@ -96,13 +96,22 @@ ORDER BY repository_id, commit
 LIMIT %s
 `
 
+// processBatch will find the commit date of each repository/commit pair in the given batch
+// and issue update statements to the database. Each repository	present in the batch will also
+// be marked as dirty so the commit graph can be recalculated (correctly).
+//
+// Note that we're VERY cautious about the order that we process the batch. We do this so that
+// two frontends performing the same migration will not try to update two of the same records
+// in the opposite order. If we rely on map iteration order we tend to see a lot of Postgres
+// deadlock conditions and very slow migration progress.
 func (m *committedAtMigrator) processBatch(ctx context.Context, tx *dbstore.Store, batch map[int][]string) error {
-	for repositoryID, commits := range batch {
-		// Ensure commits are sorted before we apply a series of update operations
-		// within the transaction. Suppose we update commit A and then B, and another
-		// frontend updates commit B then A - at least one transaction will deadlock.
-		// If we always write A then B, then there is no longer an update order that
-		// can cause the entire migration batch to fail.
+	repositoryIDs := make([]int, 0, len(batch))
+	for repositoryID := range batch {
+		repositoryIDs = append(repositoryIDs, repositoryID)
+	}
+
+	for _, repositoryID := range repositoryIDs {
+		commits := batch[repositoryID]
 		sort.Strings(commits)
 
 	outer:
