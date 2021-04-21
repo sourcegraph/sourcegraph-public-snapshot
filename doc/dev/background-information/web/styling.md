@@ -81,13 +81,14 @@ To use mixins/functions provided by Bootstrap in CSS modules use explicit import
 ```
 
 It's not safe to import all global Bootstrap helpers and variables into the CSS module because we redefine many Bootstrap variables on our side.
-If mixin relies on Bootstrap variables create an entry point for the target mixin which ensures that it uses correct SCSS variables.
+If mixin relies on Bootstrap variables, create a separate SCSS file for the target mixin, ensuring that it uses correct SCSS variables.
+This file should not contain any real CSS rules so that it can be included in multiple CSS modules without additional overhead.
 
 ```scss
 @import 'branded/src/global-styles/breakpoints';
 ```
 
-Do not use SCSS variables in CSS modules. Prefer CSS variables instead.
+If possible, prefer CSS variables to SCSS variables.
 
 #### BEM convention
 

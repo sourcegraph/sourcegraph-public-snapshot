@@ -2,7 +2,8 @@
 // @import 'branded/src/global-styles/breakpoints';
 
 // `$grid-breakpoints` is copied from `~bootstrap/scss/variables` because we cannot import a single variable from SCSS file
-// and we don't want to expose all Bootstrap SCSS variables ('bootstrap/scss/variables') to our CSS modules. CSS variables should be used instead.
+// and we don't want to expose all Bootstrap SCSS variables ('bootstrap/scss/variables') to our CSS modules.
+// If possible, prefer CSS variables to SCSS variables.
 $grid-breakpoints: (
     xs: 0,
     sm: 576px,

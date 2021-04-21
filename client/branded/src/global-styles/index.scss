@@ -99,7 +99,7 @@ $collapsible-expand-btn-width: 1.25rem;
 $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
 
-// Exposes breakpoints mixins to CSS modules
+// './breakpoints' defines $grid-breakpoints for global CSS and exposes breakpoints mixins to CSS modules
 @import './breakpoints';
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
