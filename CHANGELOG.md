@@ -23,7 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Fixed a regression that caused "other" code hosts urls to not be built correctly. [#20258](https://github.com/sourcegraph/sourcegraph/pull/20258)
 
 ### Removed
 
