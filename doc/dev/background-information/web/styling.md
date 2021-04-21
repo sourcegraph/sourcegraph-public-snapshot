@@ -73,6 +73,22 @@ import styles from './PageSelector.module.scss'
 <button className={styles.pageSelectorButton} />
 ```
 
+To use mixins/functions provided by Bootstrap in CSS modules use explicit imports to the required module.
+
+```scss
+@import '~bootstrap/scss/functions';
+@import '~bootstrap/scss/mixins/caret';
+```
+
+It's not safe to import all global Bootstrap helpers and variables into the CSS module because we redefine many Bootstrap variables on our side.
+If mixin relies on Bootstrap variables create an entry point for the target mixin which ensures that it uses correct SCSS variables.
+
+```scss
+@import 'branded/src/global-styles/breakpoints';
+```
+
+Do not use SCSS variables in CSS modules. Prefer CSS variables instead.
+
 #### BEM convention
 
 The older approach is the [BEM convention](http://getbem.com/naming/) (Block - Element - Modifier).
