@@ -3,8 +3,8 @@ package migration
 import (
 	"context"
 	"errors"
+	"sort"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -98,8 +98,16 @@ LIMIT %s
 
 func (m *committedAtMigrator) processBatch(ctx context.Context, tx *dbstore.Store, batch map[int][]string) error {
 	for repositoryID, commits := range batch {
+		// Ensure commits are sorted before we apply a series of update operations
+		// within the transaction. Suppose we update commit A and then B, and another
+		// frontend updates commit B then A - at least one transaction will deadlock.
+		// If we always write A then B, then there is no longer an update order that
+		// can cause the entire migration batch to fail.
+		sort.Strings(commits)
+
 	outer:
 		for _, commit := range commits {
+
 			// Note: this is difficult to combine since if we pass in one bad commit
 			// it destroys the entire request with a fatal: bad object <unknown sha>.
 			// We should at some point come back to this and figure out how to batch
@@ -109,7 +117,6 @@ func (m *committedAtMigrator) processBatch(ctx context.Context, tx *dbstore.Stor
 			if err != nil {
 				for ex := err; ex != nil; ex = errors.Unwrap(ex) {
 					if basegitserver.IsRevisionNotFound(ex) {
-						log15.Warn("Unknown commit", "commit", commit)
 						continue outer
 					}
 				}
