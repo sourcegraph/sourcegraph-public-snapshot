@@ -37,6 +37,7 @@ func IsEnabled() bool {
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
 func Init(ctx context.Context, postgres dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
 	if !IsEnabled() {
+		enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver()
 		return nil
 	}
 	timescale, err := InitializeCodeInsightsDB()
