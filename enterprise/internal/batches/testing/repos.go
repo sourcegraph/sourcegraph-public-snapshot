@@ -39,7 +39,10 @@ func TestRepo(t *testing.T, store *database.ExternalServiceStore, serviceKind st
 		t.Fatalf("failed to insert external services: %v", err)
 	}
 
-	return TestRepoWithService(t, store, fmt.Sprintf("repo-%d", svc.ID), &svc)
+	repo := TestRepoWithService(t, store, fmt.Sprintf("repo-%d", svc.ID), &svc)
+
+	repo.Sources[svc.URN()].CloneURL = "https://secrettoken@github.com/sourcegraph/sourcegraph"
+	return repo
 }
 
 func TestRepoWithService(t *testing.T, store *database.ExternalServiceStore, name string, svc *types.ExternalService) *types.Repo {
