@@ -710,8 +710,9 @@ func (s *GithubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 			done = true
 		}
 		for _, repo := range repos {
-			// the github user repositories API doesn't support query strings, so we'll have to filter here 😬
-			// this does make pagination more awkward though, as we won't paginate futher if you don't match anything
+			// the github user repositories API doesn't support query strings, so we'll have
+			// to filter here 😬 this does make pagination more awkward though, as we won't
+			// paginate further if you don't match anything
 			out = append(out, types.CodeHostRepository{
 				Name:       repo.NameWithOwner,
 				Private:    repo.IsPrivate,
