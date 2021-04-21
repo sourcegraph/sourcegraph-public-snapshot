@@ -90,7 +90,7 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, count int)
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepoWithService(t, esStore, fmt.Sprintf("repo-%d", i+1), ext)
+		r := TestRepoWithService(t, esStore, fmt.Sprintf("repo-%d-%d", ext.ID, i+1), ext)
 		r.Metadata = &github.Repository{
 			NameWithOwner: string(r.Name),
 			URL:           fmt.Sprintf("https://github.com/sourcegraph/%s", string(r.Name)),
@@ -127,7 +127,7 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepoWithService(t, esStore, fmt.Sprintf("repo-%d", i+1), ext)
+		r := TestRepoWithService(t, esStore, fmt.Sprintf("repo-%d-%d", ext.ID, i+1), ext)
 		r.Metadata = &gitlab.Project{
 			ProjectCommon: gitlab.ProjectCommon{
 				HTTPURLToRepo: fmt.Sprintf("https://gitlab.com/sourcegraph/%s", string(r.Name)),
@@ -223,7 +223,7 @@ func createBbsRepos(t *testing.T, ctx context.Context, db dbutil.DB, ext *types.
 
 	var rs []*types.Repo
 	for i := 0; i < count; i++ {
-		r := TestRepoWithService(t, esStore, fmt.Sprintf("repo-%d", i+1), ext)
+		r := TestRepoWithService(t, esStore, fmt.Sprintf("repo-%d-%d", ext.ID, i+1), ext)
 		var metadata bitbucketserver.Repo
 		urlType := "http"
 		if strings.HasPrefix(cloneBaseURL, "ssh") {
