@@ -18,4 +18,9 @@
 
 .alert-link {
     text-decoration: underline;
+    color: inherit;
+}
+
+.alert a:not(.btn) {
+    @extend .alert-link;
 }

@@ -107,7 +107,7 @@ func (s *IndexEnqueuer) queueIndexForCommit(ctx context.Context, repositoryID in
 		}
 		if isQueued {
 			if noisy {
-				log15.Warn("Dependency already queued", "repositoryID", repositoryID, "commit", commit)
+				log15.Warn("Dependency already exists or is queued", "repositoryID", repositoryID, "commit", commit)
 			}
 			return nil
 		}

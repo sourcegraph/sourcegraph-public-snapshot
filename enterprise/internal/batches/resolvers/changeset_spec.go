@@ -15,8 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
+const changesetSpecIDKind = "ChangesetSpec"
+
 func marshalChangesetSpecRandID(id string) graphql.ID {
-	return relay.MarshalID("ChangesetSpec", id)
+	return relay.MarshalID(changesetSpecIDKind, id)
 }
 
 func unmarshalChangesetSpecID(id graphql.ID) (changesetSpecRandID string, err error) {

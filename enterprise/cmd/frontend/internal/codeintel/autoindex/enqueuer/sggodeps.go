@@ -26,7 +26,7 @@ func (s *IndexEnqueuer) enqueueSourcegraphGoRootDependencies(ctx context.Context
 	for _, line := range strings.Split(string(contents), "\n") {
 		repositoryID, commit, ok, err := s.extractTargetFromGoMod(ctx, line)
 		if err != nil {
-			log15.Error("failed to extract dependency", "error", err)
+			log15.Error("Failed to extract dependency", "error", err)
 			continue
 		}
 		if !ok {

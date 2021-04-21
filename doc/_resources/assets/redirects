@@ -225,3 +225,5 @@
 /cli/references/campaigns/repositories /cli/references/batch/repositories 308
 /cli/references/campaigns/validate /cli/references/batch/validate 308
 /cli/references/campaigns /cli/references/batch 308
+
+/batch_changes/how-tos/configuring_user_credentials /batch_changes/how-tos/configuring_credentials 308

@@ -839,8 +839,8 @@ func TestUpdateQueue_setCloned(t *testing.T) {
 }
 
 func TestScheduleInsertNew(t *testing.T) {
-	repo1 := &types.RepoName{ID: 1, Name: "repo1"}
-	repo2 := &types.RepoName{ID: 2, Name: "repo2"}
+	repo1 := types.RepoName{ID: 1, Name: "repo1"}
+	repo2 := types.RepoName{ID: 2, Name: "repo2"}
 
 	_, stop := startRecording()
 	defer stop()
@@ -857,12 +857,12 @@ func TestScheduleInsertNew(t *testing.T) {
 
 	// add everything to the scheduler for the distant future.
 	mockTime(defaultTime.Add(time.Hour))
-	s.schedule.insertNew([]*types.RepoName{repo1})
+	s.schedule.insertNew([]types.RepoName{repo1})
 	assertFront(repo1.Name)
 
 	// Add including old
 	mockTime(defaultTime)
-	s.schedule.insertNew([]*types.RepoName{repo1, repo2})
+	s.schedule.insertNew([]types.RepoName{repo1, repo2})
 	assertFront(repo2.Name)
 }
 

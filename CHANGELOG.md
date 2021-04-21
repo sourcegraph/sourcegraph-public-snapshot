@@ -23,7 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- A regression where incorrect query highlighting happens for certain quoted values. [#20110](https://github.com/sourcegraph/sourcegraph/pull/20110)
+-
 
 ### Removed
 
@@ -38,6 +38,10 @@ All notable changes to Sourcegraph are documented in this file.
 - Batch Changes now ignore repositories that contain a `.batchignore` file. [#19877](https://github.com/sourcegraph/sourcegraph/pull/19877) and [src-cli#509](https://github.com/sourcegraph/src-cli/pull/509)
 - Side-by-side diff for commit visualization. [#19553](https://github.com/sourcegraph/sourcegraph/pull/19553)
 - The site configuration now supports defining batch change rollout windows, which can be used to slow or disable pushing changesets at particular times of day or days of the week. [#19796](https://github.com/sourcegraph/sourcegraph/pull/19796), [#19797](https://github.com/sourcegraph/sourcegraph/pull/19797), and [#19951](https://github.com/sourcegraph/sourcegraph/pull/19951).
+- Search functionality via built-in `contains` predicate: `repo:contains(...)`, `repo:contains.file(...)`, `repo:contains.content(...)`, repo:contains.commit.after(...)`. [#18584](https://github.com/sourcegraph/sourcegraph/issues/18584)
+- Database encryption, external service config & user auth data can now be encrypted in the database using the `encryption.keys` config. See [the docs](https://docs.sourcegraph.com/admin/encryption) for more info.
+- Repositories that gitserver fails to clone or fetch are now gradually moved to the back of the background update queue instead of remaining at the front. [#20204](https://github.com/sourcegraph/sourcegraph/pull/20204)
+- The new `disableAutoCodeHostSyncs` setting allows site admins to disable any periodic background syncing of configured code host connections. That includes syncing of repository metadata (i.e. not git updates, use `disableAutoGitUpdates` for that), permissions and batch changes changesets, but may include other data we'd sync from the code host API in the future.
 
 ### Changed
 
@@ -50,6 +54,7 @@ All notable changes to Sourcegraph are documented in this file.
   - Added a new checklist UI to make it more intuitive to create code monitor trigger queries.
 - Deprecated the GraphQL `icon` field on `GenericSearchResultInterface`. It will be removed in a future release. [#20028](https://github.com/sourcegraph/sourcegraph/pull/20028/files)
 - Creating changesets through Batch Changes as a site-admin without configured Batch Changes credentials has been deprecated. Please configure user or global credentials before Sourcegraph 3.29 to not experience any interruptions in changeset creation. [#20143](https://github.com/sourcegraph/sourcegraph/pull/20143)
+- Deprecated the GraphQL `limitHit` field on `LineMatch`. It will be removed in a future release. [#20164](https://github.com/sourcegraph/sourcegraph/pull/20164)
 
 ### Fixed
 
@@ -57,6 +62,8 @@ All notable changes to Sourcegraph are documented in this file.
 - New changes of a Perforce depot will now be reflected in `master` branch after the initial clone. [#19718](https://github.com/sourcegraph/sourcegraph/pull/19718)
 - Gitolite and Other type code host connection configuration can be correctly displayed. [#19976](https://github.com/sourcegraph/sourcegraph/pull/19976)
 - Fixed a regression that caused user and code host limits to be ignored. [#20089](https://github.com/sourcegraph/sourcegraph/pull/20089)
+- A regression where incorrect query highlighting happens for certain quoted values. [#20110](https://github.com/sourcegraph/sourcegraph/pull/20110)
+- We now respect the `disableAutoGitUpdates` setting when cloning or fetching repos on demand and during cleanup tasks that may re-clone old repos. [#20194](https://github.com/sourcegraph/sourcegraph/pull/20194)
 
 ## 3.26.3
 

@@ -10,7 +10,7 @@ assignees: ''
 <!-- 
     This template to be used for customer feedback GitHub issues as explained in the handbook: http://localhost:5082/handbook/product/surfacing_product_feedback#when-to-create-a-github-issue . It will x-post this issue to #feedback on creation. 
 
-    *IMPORTANT*: Make sure that you don't include any private customer information in this public issue. 
+    *IMPORTANT*: Make sure that you don't include any private customer information in this public issue – so don't post the customer's name. 
 
     If you feel you need to include private customer information, you should instead create a private issue in Sourcegraph/Customer https://github.com/sourcegraph/customer/issues/new/choose 
 -->
@@ -23,4 +23,4 @@ assignees: ''
 
 #### Customer
 
-<!-- A Salesforce link to the customer's account. -->
+<!-- A Salesforce link to the customer's account – not the customer's actual name. -->
