@@ -64,7 +64,9 @@ extend type Query {
     The returned list can be used to query authorizedUserRepositories for pending permissions.
     """
     usersWithPendingPermissions: [String!]!
+}
 
+extend type Repository {
     """
     A list of authorized users to access this repository with the given permission.
     This API currently only returns permissions from the Sourcegraph provider, i.e.
@@ -84,9 +86,7 @@ extend type Query {
         """
         after: String
     ): UserConnection!
-}
 
-extend type Repository {
     """
     The permissions information of the repository for the authenticated user.
     It is null when there is no permissions data stored for the repository.

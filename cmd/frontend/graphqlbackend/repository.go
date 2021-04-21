@@ -382,10 +382,10 @@ type AuthorizedUserArgs struct {
 
 type RepoAuthorizedUserArgs struct {
 	RepositoryID graphql.ID
-	*AuthorizedUserArgs
+	AuthorizedUserArgs
 }
 
-func (r *RepositoryResolver) AuthorizedUsers(ctx context.Context, args *AuthorizedUserArgs) (UserConnectionResolver, error) {
+func (r *RepositoryResolver) AuthorizedUsers(ctx context.Context, args AuthorizedUserArgs) (UserConnectionResolver, error) {
 	return EnterpriseResolvers.authzResolver.AuthorizedUsers(ctx, &RepoAuthorizedUserArgs{
 		RepositoryID:       r.ID(),
 		AuthorizedUserArgs: args,
