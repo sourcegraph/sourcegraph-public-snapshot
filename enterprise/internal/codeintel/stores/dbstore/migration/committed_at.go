@@ -109,6 +109,7 @@ func (m *committedAtMigrator) processBatch(ctx context.Context, tx *dbstore.Stor
 	for repositoryID := range batch {
 		repositoryIDs = append(repositoryIDs, repositoryID)
 	}
+	sort.Ints(repositoryIDs)
 
 	for _, repositoryID := range repositoryIDs {
 		commits := batch[repositoryID]
