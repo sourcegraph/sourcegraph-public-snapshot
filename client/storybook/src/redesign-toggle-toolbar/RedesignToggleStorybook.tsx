@@ -31,8 +31,8 @@ export const RedesignToggleStorybook = (): ReactElement => {
 
     const handleRedesignToggle = (): void => {
         setIsRedesignEnabled(!isRedesignEnabled)
-        updatePreview(!!isRedesignEnabled)
-        updateManager(!!isRedesignEnabled)
+        updatePreview(isRedesignEnabled)
+        updateManager(isRedesignEnabled)
     }
 
     return (
