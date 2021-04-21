@@ -38,7 +38,7 @@ func IsEnabled() bool {
 func Init(ctx context.Context, postgres dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
 	if !IsEnabled() {
 		if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
-			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("code insights is not available on single-container deployments")
+			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("backend-run code insights are not available on single-container deployments")
 		} else {
 			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("code insights has been disabled")
 		}
