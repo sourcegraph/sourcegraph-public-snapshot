@@ -78,13 +78,13 @@ func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFReposito
 	return NewUploadConnectionResolver(r.resolver.UploadConnectionResolver(opts), r.locationResolver), nil
 }
 
-func (r *Resolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*gql.EmptyResponse, error) {
+func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*gql.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may delete LSIF data for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	uploadID, err := unmarshalLSIFUploadGQLID(id)
+	uploadID, err := unmarshalLSIFUploadGQLID(args.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFReposito
 	return NewIndexConnectionResolver(r.resolver.IndexConnectionResolver(opts), r.locationResolver), nil
 }
 
-func (r *Resolver) DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*gql.EmptyResponse, error) {
+func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*gql.EmptyResponse, error) {
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
 	}
@@ -148,7 +148,7 @@ func (r *Resolver) DeleteLSIFIndex(ctx context.Context, id graphql.ID) (*gql.Emp
 		return nil, err
 	}
 
-	indexID, err := unmarshalLSIFIndexGQLID(id)
+	indexID, err := unmarshalLSIFIndexGQLID(args.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -209,12 +209,12 @@ func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (gql.CodeInte
 	return r.resolver.CommitGraph(ctx, int(repositoryID))
 }
 
-func (r *Resolver) QueueAutoIndexJobForRepo(ctx context.Context, id graphql.ID) (*gql.EmptyResponse, error) {
+func (r *Resolver) QueueAutoIndexJobForRepo(ctx context.Context, args *struct{ Repository graphql.ID }) (*gql.EmptyResponse, error) {
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
 	}
 
-	repositoryID, err := gql.UnmarshalRepositoryID(id)
+	repositoryID, err := gql.UnmarshalRepositoryID(args.Repository)
 	if err != nil {
 		return nil, err
 	}

@@ -21,8 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
+const batchSpecIDKind = "BatchSpec"
+
 func marshalBatchSpecRandID(id string) graphql.ID {
-	return relay.MarshalID("BatchSpec", id)
+	return relay.MarshalID(batchSpecIDKind, id)
 }
 
 func unmarshalBatchSpecID(id graphql.ID) (batchSpecRandID string, err error) {
