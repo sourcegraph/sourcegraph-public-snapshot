@@ -69,7 +69,7 @@ const ExtensionStatus: React.FunctionComponent<Props> = props => {
                 </span>
             )}
             <div className="card-body border-top">
-                <h6>Sideload extension</h6>
+                <h4>Sideload extension</h4>
                 {sideloadedExtensionURL ? (
                     <div>
                         <p>
