@@ -55,8 +55,8 @@ func TestSearchContexts(t *testing.T) {
 	userID := int32(1)
 	graphqlUserID := MarshalUserID(userID)
 
-	namespaceFilter := "NAMESPACE"
-	instanceFilter := "INSTANCE"
+	namespaceFilter := namespaceFilterType("NAMESPACE")
+	instanceFilter := namespaceFilterType("INSTANCE")
 	query := "ctx"
 	tests := []struct {
 		name     string

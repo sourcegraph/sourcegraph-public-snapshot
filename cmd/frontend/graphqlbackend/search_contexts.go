@@ -18,9 +18,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+type namespaceFilterType string
+
 const (
-	namespaceFilterTypeInstance  = "INSTANCE"
-	namespaceFilterTypeNamespace = "NAMESPACE"
+	namespaceFilterTypeInstance  namespaceFilterType = "INSTANCE"
+	namespaceFilterTypeNamespace namespaceFilterType = "NAMESPACE"
 )
 
 type searchContextResolver struct {
@@ -45,7 +47,7 @@ type listSearchContextsArgs struct {
 	First               int32
 	After               *string
 	Query               *string
-	NamespaceFilterType *string
+	NamespaceFilterType *namespaceFilterType
 	Namespace           *graphql.ID
 }
 
@@ -142,15 +144,15 @@ func (r *schemaResolver) AutoDefinedSearchContexts(ctx context.Context) ([]*sear
 }
 
 func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchContextsArgs) (*searchContextConnection, error) {
-	var namespaceFilterType string
+	var namespaceFilter namespaceFilterType
 	if args.NamespaceFilterType != nil {
-		namespaceFilterType = *args.NamespaceFilterType
+		namespaceFilter = namespaceFilterType(*args.NamespaceFilterType)
 	}
 
-	if args.Namespace != nil && namespaceFilterType != namespaceFilterTypeNamespace {
+	if args.Namespace != nil && namespaceFilter != namespaceFilterTypeNamespace {
 		return nil, errors.New("namespace can only be used if namespaceFilterType is NAMESPACE")
 	}
-	if args.Namespace == nil && namespaceFilterType == namespaceFilterTypeNamespace {
+	if args.Namespace == nil && namespaceFilter == namespaceFilterTypeNamespace {
 		return nil, errors.New("namespace has to be non-nil if namespaceFilterType is NAMESPACE")
 	}
 
@@ -169,7 +171,7 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 		return nil, err
 	}
 
-	opts := database.ListSearchContextsOptions{Name: searchContextName, NoNamespace: namespaceFilterType == namespaceFilterTypeInstance}
+	opts := database.ListSearchContextsOptions{Name: searchContextName, NoNamespace: namespaceFilter == namespaceFilterTypeInstance}
 	if newArgs.Namespace != nil {
 		err := UnmarshalNamespaceID(*newArgs.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
 		if err != nil {
