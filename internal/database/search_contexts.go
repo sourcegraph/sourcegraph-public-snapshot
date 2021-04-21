@@ -15,6 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+var ErrSearchContextNotFound = errors.New("search context not found")
+
 func SearchContexts(db dbutil.DB) *SearchContextsStore {
 	store := basestore.NewWithDB(db, sql.TxOptions{})
 	return &SearchContextsStore{store}
@@ -297,7 +299,7 @@ func scanSingleSearchContext(rows *sql.Rows) (*types.SearchContext, error) {
 		return nil, err
 	}
 	if len(searchContexts) != 1 {
-		return nil, errors.New("search context not found")
+		return nil, ErrSearchContextNotFound
 	}
 	return searchContexts[0], nil
 }
