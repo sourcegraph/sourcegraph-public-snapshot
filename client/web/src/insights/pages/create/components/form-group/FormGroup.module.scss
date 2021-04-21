@@ -5,11 +5,8 @@
 
     $self: &;
 
-    &--with-subtitle {
-
-        #{$self}__name {
-            margin-bottom: 0.25rem;
-        }
+    &--with-subtitle > &__name{
+        margin-bottom: 0.25rem;
     }
 
     &__name {

@@ -13,4 +13,8 @@
     &__description {
         font-size: 0.875em;
     }
+
+    &__error {
+        color: var(--danger);
+    }
 }

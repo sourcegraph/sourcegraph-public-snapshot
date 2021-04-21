@@ -21,10 +21,12 @@
     &__radio-group-content {
         display: flex;
         flex-wrap: wrap;
+        margin-bottom: -1rem;
     }
 
-    &__radio + &__radio {
-        margin-left: 1rem;
+    &__radio {
+        margin-bottom: 1rem;
+        margin-right: 1rem;
     }
 
     &__separator {

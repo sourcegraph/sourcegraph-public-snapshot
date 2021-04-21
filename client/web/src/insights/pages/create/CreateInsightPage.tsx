@@ -8,7 +8,7 @@ import { PageTitle } from '../../../components/PageTitle';
 import { InputField } from './components/form-field/FormField';
 import { FormGroup } from './components/form-group/FormGroup';
 import { FormRadioInput } from './components/form-radio-input/FormRadioInput';
-import { FormSeries } from './components/form-series/FormSeries';
+import { FormSeriesInput } from './components/form-series/FormSeriesInput';
 import styles from './CreateinsightPage.module.scss'
 
 interface CreateInsightPageProps {}
@@ -36,12 +36,6 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
             </div>
 
             <Form className={styles.createInsightForm}>
-
-                <InputField
-                    title='Name'
-                    description='Chose a unique for your insights'
-                    placeholder='Enter the unique name for your insight'
-                    className={styles.createInsightFormField}/>
 
                 <InputField
                     title='Title'
@@ -80,7 +74,7 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
                     name='Data series'
                     subtitle='Add any number of data series to your chart'>
 
-                    <FormSeries className={styles.createInsightSeries}/>
+                    <FormSeriesInput className={styles.createInsightSeries}/>
                 </FormGroup>
 
                 <hr className={styles.createInsightSeparator}/>

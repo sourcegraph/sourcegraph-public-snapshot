@@ -7,10 +7,11 @@ interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement>{
     title: string;
     description?: string;
     className?: string
+    error?: string;
 }
 
 export function InputField(props: InputFieldProps): ReactElement {
-    const { title, placeholder, description, className, ...otherProps } = props;
+    const { title, description, className, error, ...otherProps } = props;
 
     return (
         <label className={classnames(styles.formField, className)}>
@@ -18,10 +19,11 @@ export function InputField(props: InputFieldProps): ReactElement {
 
             <input
                 type="text"
-                className={classnames(styles.formFieldInput, 'form-control')}
+                className={classnames(styles.formFieldInput, 'form-control', { 'is-invalid': !!error } )}
                 {...otherProps}
             />
 
+            { error && <span className={styles.formFieldError}>{ error }</span> }
             <span className={classnames(styles.formFieldDescription, 'text-muted')}>
                 {description}
             </span>
