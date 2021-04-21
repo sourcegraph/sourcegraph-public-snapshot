@@ -38,9 +38,22 @@ func (r *Resolver) Now() time.Time {
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	return map[string]graphqlbackend.NodeByIDFunc{
-		"CodeMonitor": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+		MonitorKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.MonitorByID(ctx, id)
 		},
+		// TODO: These kinds are currently not implemented, but need a node resolver.
+		// monitorTriggerQueryKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+		// 	return r.MonitorTriggerQueryByID(ctx, id)
+		// },
+		// monitorTriggerEventKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+		// 	return r.MonitorTriggerEventByID(ctx, id)
+		// },
+		// monitorActionEmailKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+		// 	return r.MonitorActionEmailByID(ctx, id)
+		// },
+		// monitorActionEventKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+		// 	return r.MonitorActionEventByID(ctx, id)
+		// },
 	}
 }
 
