@@ -107,7 +107,6 @@ func (m *committedAtMigrator) processBatch(ctx context.Context, tx *dbstore.Stor
 
 	outer:
 		for _, commit := range commits {
-
 			// Note: this is difficult to combine since if we pass in one bad commit
 			// it destroys the entire request with a fatal: bad object <unknown sha>.
 			// We should at some point come back to this and figure out how to batch
