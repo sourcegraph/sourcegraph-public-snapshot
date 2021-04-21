@@ -98,7 +98,7 @@ func TestSearchContexts_List(t *testing.T) {
 	gotInstanceLevelSearchContexts, err := sc.ListSearchContexts(
 		ctx,
 		ListSearchContextsPageOptions{First: 1},
-		ListSearchContextsOptions{},
+		ListSearchContextsOptions{NoNamespace: true},
 	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
@@ -164,7 +164,7 @@ func TestSearchContexts_PaginationAndCount(t *testing.T) {
 		{
 			name:               "instance-level contexts",
 			wantSearchContexts: createdSearchContexts[1:3],
-			options:            ListSearchContextsOptions{Name: "instance-v"},
+			options:            ListSearchContextsOptions{Name: "instance-v", NoNamespace: true},
 			pageOptions:        ListSearchContextsPageOptions{First: 2, AfterID: createdSearchContexts[0].ID},
 			totalCount:         4,
 		},
