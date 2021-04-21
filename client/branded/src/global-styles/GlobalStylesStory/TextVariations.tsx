@@ -64,10 +64,23 @@ export const TextVariations: React.FunctionComponent = () => (
             <tr>
                 <td>Body Text</td>
                 <td>
-                    <TextVariants component="p" name="Body" weights={['Regular', 'Medium', 'Strong']} />
-                    <p className={styles.textVariant}>
-                        <TextLabel size="Base" weight="Strong" name="Input" className="font-weight-bold" />
-                    </p>
+                    {WEIGHT_VARIANTS.map(weight => (
+                        <p className={styles.textVariant}>
+                            <TextLabel size="Base" name="Body" weight={weight} />
+                        </p>
+                    ))}
+                    {WEIGHT_VARIANTS.map(weight => (
+                        <p className={styles.textVariant}>
+                            <small>
+                                <TextLabel
+                                    size="Base"
+                                    name="Body"
+                                    weight={weight}
+                                    className={classNames({ 'font-weight-bold': weight === 'Strong' })}
+                                />
+                            </small>
+                        </p>
+                    ))}
                 </td>
             </tr>
             <tr>
