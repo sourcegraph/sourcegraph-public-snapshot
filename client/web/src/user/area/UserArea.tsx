@@ -56,10 +56,6 @@ export const UserAreaGQLFragment = gql`
                 name
             }
         }
-        permissionsInfo @include(if: $siteAdmin) {
-            syncedAt
-            updatedAt
-        }
         tags @include(if: $siteAdmin)
         ...EditUserProfilePage
     }
