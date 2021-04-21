@@ -127,7 +127,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
 
     return (
         <div className={classNames(props.className, 'search-results-info-bar')} data-testid="results-info-bar">
-            <small className="search-results-info-bar__row">
+            <div className="search-results-info-bar__row">
                 {props.stats}
                 <QuotesInterpretedLiterallyNotice {...props} />
 
@@ -167,7 +167,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         </>
                     )}
                 </ul>
-            </small>
+            </div>
         </div>
     )
 }

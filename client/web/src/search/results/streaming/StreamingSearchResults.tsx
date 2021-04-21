@@ -38,6 +38,7 @@ import { VersionContextWarning } from '../VersionContextWarning'
 
 import { StreamingProgress } from './progress/StreamingProgress'
 import { SearchSidebar } from './SearchSidebar'
+import styles from './StreamingSearchResults.module.scss'
 import { StreamingSearchResultsFilterBars } from './StreamingSearchResultsFilterBars'
 import { StreamingSearchResultsList } from './StreamingSearchResultsList'
 
@@ -196,12 +197,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const [isRedesignEnabled] = useRedesignToggle()
 
     return (
-        <div
-            className={classNames(
-                'test-search-results search-results d-flex w-100',
-                isRedesignEnabled ? 'flex-row' : 'flex-column'
-            )}
-        >
+        <div className={classNames('test-search-results search-results', styles.streamingSearchResults)}>
             <PageTitle key="page-title" title={query} />
 
             {isRedesignEnabled ? <SearchSidebar /> : <StreamingSearchResultsFilterBars {...props} results={results} />}
@@ -219,7 +215,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         {...props}
                         query={query}
                         resultsFound={results ? results.results.length > 0 : false}
-                        className="border-bottom flex-grow-1"
+                        className={classNames('flex-grow-1', { 'border-bottom': !isRedesignEnabled })}
                         allExpanded={allExpanded}
                         onExpandAllResultsToggle={onExpandAllResultsToggle}
                         onSaveQueryClick={onSaveQueryClick}
