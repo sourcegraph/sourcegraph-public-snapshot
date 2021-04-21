@@ -57,7 +57,7 @@ func ExternalServices(db dbutil.DB) *ExternalServiceStore {
 	return &ExternalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
-// NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
+// ExternalServicesWith instantiates and returns a new ExternalServicesStore with prepared statements.
 func ExternalServicesWith(other basestore.ShareableStore) *ExternalServiceStore {
 	return &ExternalServiceStore{Store: basestore.NewWithHandle(other.Handle())}
 }
@@ -501,8 +501,8 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	}
 
 	// NOTE: For GitHub and GitLab user code host connections on Sourcegraph Cloud,
-	//  we always want to enforce repository permissions using OAuth to prevent
-	//  unexpected resource leaking.
+	// we always want to enforce repository permissions using OAuth to prevent
+	// unexpected resource leaking.
 	if envvar.SourcegraphDotComMode() && es.NamespaceUserID != 0 {
 		switch es.Kind {
 		case extsvc.KindGitHub:
