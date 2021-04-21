@@ -25,6 +25,7 @@ All notable changes to `src-cli` are documented in this file.
 
 - Extension publishing will now add a `gitHead` property to the extension's manifest. [#500](https://github.com/sourcegraph/src-cli/pull/500)
 - `src batch [apply|preview]` now ignore repositories in which a `.batchignore` file exists. The `-force-override-ignore` flag can be used to turn that behaviour off. [#509](https://github.com/sourcegraph/src-cli/pull/509)
+- `src search` now supports streaming search. If `src search` is called with the flag `-stream`, `src-cli` will stream back search results as they are found. In conjunction with `-stream` you can also specify `-display <integer>` to limit the number of results that will be displayed. For example, use `-display 0` if you are interested in the search statistics, such as number of results, but don't need to see the actual matches.
 
 ## 3.26.3
 
