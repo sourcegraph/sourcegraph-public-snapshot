@@ -82,8 +82,8 @@ const toggleRedesign = async (page: Page, enabled: boolean): Promise<void> => {
     await page.evaluate(
         (className: string, storageKey: string, enabled: boolean) => {
             document.documentElement.classList.toggle(className, enabled)
-            localStorage.setItem(storageKey, enabled ? 'true' : 'false')
-            window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: enabled ? 'true' : 'false' }))
+            localStorage.setItem(storageKey, String(enabled))
+            window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: String(enabled) }))
         },
         REDESIGN_CLASS_NAME,
         REDESIGN_TOGGLE_KEY,
