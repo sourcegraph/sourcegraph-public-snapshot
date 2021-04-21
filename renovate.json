@@ -6,7 +6,7 @@
     {
       "matchDepTypes": ["engines"],
       "matchPackageNames": ["node"],
-      "rangeStrategy": "bump"
+      "rangeStrategy": "bump" 
     },
     {
       "packageNames": ["@octokit/rest", "@slack/web-api", "googleapis"],
