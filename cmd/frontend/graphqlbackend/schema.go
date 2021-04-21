@@ -15,3 +15,7 @@ var BatchesSchema string
 // CodeIntelSchema is the Code Intel raw graqhql schema.
 //go:embed codeintel.graphql
 var CodeIntelSchema string
+
+// DotcomSchema is the Dotcom schema extension raw graqhql schema.
+//go:embed dotcom.graphql
+var DotcomSchema string

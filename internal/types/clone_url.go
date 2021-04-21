@@ -3,11 +3,12 @@ package types
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -64,7 +65,7 @@ func RepoCloneURL(kind, config string, repo *Repo) (string, error) {
 			return phabricatorCloneURL(r, t), nil
 		}
 	case *schema.OtherExternalServiceConnection:
-		return otherCloneURL(repo, t)
+		return otherCloneURL(&repo.ExternalRepo), nil
 	default:
 		return "", errors.Errorf("unknown external service kind %q for repo %d", kind, repo.ID)
 	}
@@ -242,38 +243,14 @@ func phabricatorCloneURL(repo *phabricator.Repo, _ *schema.PhabricatorConnection
 	return cloneURL
 }
 
-func otherCloneURL(repo *Repo, cfg *schema.OtherExternalServiceConnection) (string, error) {
-	if cfg.Url == "" {
-		return repo.URI, nil
+func otherCloneURL(spec *api.ExternalRepoSpec) string {
+	base, path := spec.ServiceID, spec.ID
+	base = strings.TrimRight(base, "/")
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
 	}
 
-	pattern := cfg.RepositoryPathPattern
-	if pattern == "" {
-		pattern = "{base}/{repo}"
-	}
-
-	base, err := url.Parse(cfg.Url)
-	if err != nil {
-		return "", err
-	}
-
-	for _, name := range cfg.Repos {
-		// normalize the repo name for comparison with the unescaped repo.Name
-		uName, err := url.Parse(name)
-		if err != nil {
-			return "", err
-		}
-
-		if reposource.OtherRepoName(pattern, cfg.Url, uName.Path) == string(repo.Name) {
-			u, err := base.Parse(uName.Path)
-			if err != nil {
-				return "", err
-			}
-			return u.String(), nil
-		}
-	}
-
-	return repo.URI, nil
+	return base + path
 }
 
 // setUserinfoBestEffort adds the username and password to rawurl. If user is
