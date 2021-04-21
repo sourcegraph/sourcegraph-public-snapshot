@@ -65,15 +65,15 @@ export const TextVariations: React.FunctionComponent = () => (
                 <td>Body Text</td>
                 <td>
                     {WEIGHT_VARIANTS.map(weight => (
-                        <p className={styles.textVariant}>
+                        <p key={`Base/${weight}`} className={styles.textVariant}>
                             <TextLabel size="Base" name="Body" weight={weight} />
                         </p>
                     ))}
                     {WEIGHT_VARIANTS.map(weight => (
-                        <p className={styles.textVariant}>
+                        <p key={`Small/${weight}`} className={styles.textVariant}>
                             <small>
                                 <TextLabel
-                                    size="Base"
+                                    size="Small"
                                     name="Body"
                                     weight={weight}
                                     className={classNames({ 'font-weight-bold': weight === 'Strong' })}
