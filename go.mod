@@ -238,7 +238,7 @@ replace (
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1
-	github.com/sourcegraph/gosyntect => github.com/sourcegraph/gosyntect v0.0.0-20210420181630-7d028595ff2a
+	github.com/sourcegraph/gosyntect => github.com/sourcegraph/gosyntect v0.0.0-20210421211451-39f5748b8967
 )
 
 // Status unclear replace directives

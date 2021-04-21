@@ -162,20 +162,20 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		stabilizeTimeout = 30 * time.Second
 	}
 
-	var maxLineLength *int
+	maxLineLength := 0 // defaults to no length limit
 	if !p.HighlightLongLines {
-		i := 2000
-		maxLineLength = &i
+		maxLineLength = 2000
 	}
 
 	p.Filepath = normalizeFilepath(p.Filepath)
 
-	resp, err := client.HighlightCSSTable(ctx, &gosyntect.CSSTableQuery{
+	resp, err := client.Highlight(ctx, &gosyntect.Query{
 		Code:             code,
 		Filepath:         p.Filepath,
 		StabilizeTimeout: stabilizeTimeout,
 		Tracer:           ot.GetTracer(ctx),
-		MaxLineLength:    maxLineLength,
+		LineLengthLimit:  maxLineLength,
+		CSS:              true,
 	})
 
 	if ctx.Err() == context.DeadlineExceeded {
