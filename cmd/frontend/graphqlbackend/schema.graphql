@@ -1420,6 +1420,16 @@ type Query {
         Query to filter the search contexts by spec.
         """
         query: String
+        """
+        Specifies the filter type used to narrow down the search contexts using their namespaces. If not set,
+        search contexts are not filtered by namespace.
+        """
+        namespaceFilterType: SearchContextsNamespaceFilterType
+        """
+        Limit search contexts to a specific namespace (user or org). Namespace parameter has to be set if namespaceFilterType is set to NAMESPACE.
+        If namespaceFilterType is INSTANCE or not set, namespace should not be set.
+        """
+        namespace: ID
     ): SearchContextConnection!
     """
     (experimental) Determines whether the search context is within the set of search contexts available to the current user.
@@ -3098,6 +3108,20 @@ type VersionContext {
     The description of the version context.
     """
     description: String!
+}
+
+"""
+(experimental) Search context namespace filter types available to narrow down contexts when querying.
+"""
+enum SearchContextsNamespaceFilterType {
+    """
+    Limits available search contexts to instance-level contexts (without a namespace).
+    """
+    INSTANCE
+    """
+    Limits available search contexts to a specific namespace (user or org).
+    """
+    NAMESPACE
 }
 
 """
