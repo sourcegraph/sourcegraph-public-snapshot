@@ -199,30 +199,22 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
-				CloneURL: s.authenticatedRemoteURL(proj),
+				CloneURL: s.remoteURL(proj),
 			},
 		},
 		Metadata: proj,
 	}
 }
 
-// authenticatedRemoteURL returns the GitLab projects's Git remote URL with the
-// configured GitLab personal access token inserted in the URL userinfo.
-func (s *GitLabSource) authenticatedRemoteURL(proj *gitlab.Project) string {
+// remoteURL returns the GitLab projects's Git remote URL
+//
+// note: this used to contain credentials but that is no longer the case
+// if you need to get an authenticated clone url use types.RepoCloneURL
+func (s *GitLabSource) remoteURL(proj *gitlab.Project) string {
 	if s.config.GitURLType == "ssh" {
 		return proj.SSHURLToRepo // SSH authentication must be provided out-of-band
 	}
-	if s.config.Token == "" {
-		return proj.HTTPURLToRepo
-	}
-	u, err := url.Parse(proj.HTTPURLToRepo)
-	if err != nil {
-		log15.Warn("Error adding authentication to GitLab repository Git remote URL.", "url", proj.HTTPURLToRepo, "error", err)
-		return proj.HTTPURLToRepo
-	}
-	// Any username works; "git" is not special.
-	u.User = url.UserPassword("git", s.config.Token)
-	return u.String()
+	return proj.HTTPURLToRepo
 }
 
 func (s *GitLabSource) excludes(p *gitlab.Project) bool {
