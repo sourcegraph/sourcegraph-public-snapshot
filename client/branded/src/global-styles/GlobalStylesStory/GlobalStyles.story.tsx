@@ -43,10 +43,20 @@ add(
         </>
     ),
     {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/HWLuLefEdev5KYtoEGHjFj/Sourcegraph-Components-Contractor?node-id=771%3A0',
-        },
+        design: [
+            {
+                name: 'Figma',
+                type: 'figma',
+                url:
+                    'https://www.figma.com/file/HWLuLefEdev5KYtoEGHjFj/Sourcegraph-Components-Contractor?node-id=771%3A0',
+            },
+            {
+                name: 'Figma Redesign',
+                type: 'figma',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
+            },
+        ],
     }
 )
 
@@ -65,11 +75,20 @@ add(
         </div>
     ),
     {
-        design: {
-            type: 'figma',
-            url:
-                'https://www.figma.com/file/HWLuLefEdev5KYtoEGHjFj/Sourcegraph-Components-Contractor?node-id=742%3A532',
-        },
+        design: [
+            {
+                name: 'Figma',
+                type: 'figma',
+                url:
+                    'https://www.figma.com/file/HWLuLefEdev5KYtoEGHjFj/Sourcegraph-Components-Contractor?node-id=742%3A532',
+            },
+            {
+                name: 'Figma Redesign',
+                type: 'figma',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
+            },
+        ],
     }
 )
 
