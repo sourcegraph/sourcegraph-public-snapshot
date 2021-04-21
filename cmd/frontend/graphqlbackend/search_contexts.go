@@ -146,7 +146,7 @@ func (r *schemaResolver) AutoDefinedSearchContexts(ctx context.Context) ([]*sear
 func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchContextsArgs) (*searchContextConnection, error) {
 	var namespaceFilter namespaceFilterType
 	if args.NamespaceFilterType != nil {
-		namespaceFilter = namespaceFilterType(*args.NamespaceFilterType)
+		namespaceFilter = *args.NamespaceFilterType
 	}
 
 	if args.Namespace != nil && namespaceFilter != namespaceFilterTypeNamespace {
