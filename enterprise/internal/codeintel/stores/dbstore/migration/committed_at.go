@@ -92,7 +92,6 @@ SELECT repository_id, commit
 FROM lsif_uploads
 WHERE state = 'completed' AND committed_at IS NULL
 GROUP BY repository_id, commit
-ORDER BY repository_id, commit
 LIMIT %s
 `
 
@@ -150,7 +149,7 @@ func (m *committedAtMigrator) processBatch(ctx context.Context, tx *dbstore.Stor
 
 const committedAtProcessBatchQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/migration/committed_at.go:ProcessBatch
-UPDATE lsif_uploads SET committed_at = %s WHERE repository_id = %s AND commit = %s
+UPDATE lsif_uploads SET committed_at = %s WHERE state = 'completed' AND repository_id = %s AND commit = %s AND committed_at IS NULL
 `
 
 // Down runs a batch of the migration in reverse. This method simply sets the committed_at column
