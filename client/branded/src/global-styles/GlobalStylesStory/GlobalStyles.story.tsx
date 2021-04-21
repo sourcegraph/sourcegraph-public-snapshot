@@ -8,8 +8,7 @@ import { action } from '@storybook/addon-actions'
 import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
-import { flow, startCase } from 'lodash'
-import SearchIcon from 'mdi-react/SearchIcon'
+import { flow } from 'lodash'
 import openColor from 'open-color'
 import React, { useState } from 'react'
 import 'storybook-addon-designs'
@@ -17,16 +16,14 @@ import 'storybook-addon-designs'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
 
-import { BrandedStory } from '../components/BrandedStory'
-import { CodeSnippet } from '../components/CodeSnippet'
-import { Form } from '../components/Form'
+import { BrandedStory } from '../../components/BrandedStory'
+import { CodeSnippet } from '../../components/CodeSnippet'
+import { Form } from '../../components/Form'
+
+import { ButtonVariants } from './ButtonVariants'
+import { preventDefault } from './utils'
 
 const semanticColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'merged'] as const
-
-const preventDefault = <E extends React.SyntheticEvent>(event: E): E => {
-    event.preventDefault()
-    return event
-}
 
 const { add } = storiesOf('branded/Global styles', module).addDecorator(story => (
     <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>
@@ -614,59 +611,6 @@ add(
     }
 )
 
-interface ButtonVariantsProps {
-    variantType?: 'btn' | 'btn-outline'
-    variants: readonly string[]
-}
-
-const ButtonVariants: React.FunctionComponent<ButtonVariantsProps> = ({ variantType = 'btn', variants }) => (
-    <div
-        style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, max-content)',
-            gridAutoRows: 'max-content',
-            gridGap: '1rem',
-            marginBottom: '1rem',
-        }}
-    >
-        {variants.map(variant => (
-            <React.Fragment key={variant}>
-                <button
-                    type="button"
-                    key={variant}
-                    className={classNames('btn', `${variantType}-${variant}`)}
-                    onClick={flow(preventDefault, action('button clicked'))}
-                >
-                    {startCase(variant)}
-                </button>
-                <button
-                    type="button"
-                    key={`${variantType} - ${variant} - focus`}
-                    className={classNames('btn', `${variantType}-${variant}`, 'focus')}
-                >
-                    Focus
-                </button>
-                <button
-                    type="button"
-                    key={`${variantType} - ${variant} - disabled`}
-                    className={classNames('btn', `${variantType}-${variant}`)}
-                    disabled={true}
-                >
-                    Disabled
-                </button>
-                <button
-                    type="button"
-                    key={`${variantType} - ${variant} - icon`}
-                    className={classNames('btn', `${variantType}-${variant}`)}
-                >
-                    <SearchIcon className="icon-inline mr-1" />
-                    With icon
-                </button>
-            </React.Fragment>
-        ))}
-    </div>
-)
-
 add(
     'Buttons',
     () => (
@@ -678,9 +622,9 @@ add(
                 <a href="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</a>
             </p>
             <h2>Semantic variants</h2>
-            <ButtonVariants variants={semanticColors} />
+            <ButtonVariants />
             <h2>Outline variants</h2>
-            <ButtonVariants variants={['primary', 'secondary', 'danger']} variantType="btn-outline" />
+            <ButtonVariants variantType="btn-outline" />
             <h2>Links</h2>
             <p>Links can be made to look like buttons too.</p>
             <a href="https://example.com" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
