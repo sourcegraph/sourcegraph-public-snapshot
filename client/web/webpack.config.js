@@ -23,8 +23,8 @@ if (shouldAnalyze) {
   logger.info('Running bundle analyzer')
 }
 
-const rootDirectory = path.resolve(__dirname, '..', '..')
-const nodeModulesPath = path.resolve(rootDirectory, 'node_modules')
+const rootPath = path.resolve(__dirname, '..', '..')
+const nodeModulesPath = path.resolve(rootPath, 'node_modules')
 const monacoEditorPaths = [path.resolve(nodeModulesPath, 'monaco-editor')]
 
 const isEnterpriseBuild = !!process.env.ENTERPRISE
@@ -45,7 +45,7 @@ const extensionHostWorker = /main\.worker\.ts$/
  * Useful to ensure that we use the same configuration for shared loaders: postcss-loader, sass-loader, etc.
  *
  * @param {import('webpack').RuleSetUseItem[]} loaders additional CSS loaders
- * @returns {import('webpack').RuleSetUse} array of CSS loaders
+ * @returns {import('webpack').RuleSetUseItem[]} array of CSS loaders
  */
 const getCSSLoaders = (...loaders) => [
   // Use style-loader for local development as it is significantly faster.
@@ -57,7 +57,7 @@ const getCSSLoaders = (...loaders) => [
     options: {
       sassOptions: {
         implementation: require('sass'),
-        includePaths: [nodeModulesPath],
+        includePaths: [nodeModulesPath, path.resolve(rootPath, 'client')],
       },
     },
   },
@@ -103,7 +103,7 @@ const config = {
     'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
   },
   output: {
-    path: path.join(rootDirectory, 'ui', 'assets'),
+    path: path.join(rootPath, 'ui', 'assets'),
     // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
     filename: mode === 'production' ? 'scripts/[name].[contenthash].bundle.js' : 'scripts/[name].bundle.js',
     chunkFilename: mode === 'production' ? 'scripts/[id]-[contenthash].chunk.js' : 'scripts/[id].chunk.js',
@@ -155,10 +155,7 @@ const config = {
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
       // https://github.com/joshwnj/react-visibility-sensor/issues/148
-      'react-visibility-sensor': path.resolve(
-        rootDirectory,
-        'node_modules/react-visibility-sensor/visibility-sensor.js'
-      ),
+      'react-visibility-sensor': path.resolve(rootPath, 'node_modules/react-visibility-sensor/visibility-sensor.js'),
     },
   },
   module: {
