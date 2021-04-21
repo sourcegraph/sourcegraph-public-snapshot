@@ -712,9 +712,7 @@ This panel indicates percentage pods available.
 
 This panel indicates mean successful sentinel search duration over 5m.
 
-- Look at the breakdown by query to determine if a specific query type is being affected
-- Check for high CPU usage on zoekt-webserver
-- Check Honeycomb for unusual activity
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-mean-successful-sentinel-duration-5m).
 
 <sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
@@ -724,9 +722,7 @@ This panel indicates mean successful sentinel search duration over 5m.
 
 This panel indicates mean sentinel stream latency over 5m.
 
-- Look at the breakdown by query to determine if a specific query type is being affected
-- Check for high CPU usage on zoekt-webserver
-- Check Honeycomb for unusual activity
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-mean-sentinel-stream-latency-5m).
 
 <sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
@@ -736,9 +732,7 @@ This panel indicates mean sentinel stream latency over 5m.
 
 This panel indicates 90th percentile successful sentinel search duration over 5m.
 
-- Look at the breakdown by query to determine if a specific query type is being affected
-- Check for high CPU usage on zoekt-webserver
-- Check Honeycomb for unusual activity
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-successful-sentinel-duration-5m).
 
 <sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
@@ -748,9 +742,7 @@ This panel indicates 90th percentile successful sentinel search duration over 5m
 
 This panel indicates 90th percentile sentinel stream latency over 5m.
 
-- Look at the breakdown by query to determine if a specific query type is being affected
-- Check for high CPU usage on zoekt-webserver
-- Check Honeycomb for unusual activity
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-sentinel-stream-latency-5m).
 
 <sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 

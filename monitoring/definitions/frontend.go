@@ -756,10 +756,11 @@ func Frontend() *monitoring.Container {
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
 							Query:    `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[5m])) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[5m]))`,
-							NoAlert: true,
+							Warning:  monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
+							Critical: monitoring.Alert().GreaterOrEqual(8, nil).For(30 * time.Minute),
 							Panel:    monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
 							Owner:    monitoring.ObservableOwnerSearch,
-							Interpretation: `
+							PossibleSolutions: `
 								- Look at the breakdown by query to determine if a specific query type is being affected
 								- Check for high CPU usage on zoekt-webserver
 								- Check Honeycomb for unusual activity
@@ -771,13 +772,14 @@ func Frontend() *monitoring.Container {
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
 							Query:    `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[5m])) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[5m]))`,
-							NoAlert: true,
+							Warning:  monitoring.Alert().GreaterOrEqual(2, nil).For(15 * time.Minute),
+							Critical: monitoring.Alert().GreaterOrEqual(3, nil).For(30 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.NoLegend(),
 								monitoring.PanelOptions.ColorOverride("latency", "#8AB8FF"),
 							),
 							Owner: monitoring.ObservableOwnerSearch,
-							Interpretation: `
+							PossibleSolutions: `
 								- Look at the breakdown by query to determine if a specific query type is being affected
 								- Check for high CPU usage on zoekt-webserver
 								- Check Honeycomb for unusual activity
@@ -791,10 +793,11 @@ func Frontend() *monitoring.Container {
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
 							Query:    `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[5m]), "source", "$1", "source", "searchblitz_(.*)")))`,
-							NoAlert: true,
+							Warning:  monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
+							Critical: monitoring.Alert().GreaterOrEqual(10, nil).For(30 * time.Minute),
 							Panel:    monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
 							Owner:    monitoring.ObservableOwnerSearch,
-							Interpretation: `
+							PossibleSolutions: `
 								- Look at the breakdown by query to determine if a specific query type is being affected
 								- Check for high CPU usage on zoekt-webserver
 								- Check Honeycomb for unusual activity
@@ -806,13 +809,14 @@ func Frontend() *monitoring.Container {
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
 							Query:    `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[5m]), "source", "$1", "source", "searchblitz_(.*)")))`,
-							NoAlert: true,
+							Warning:  monitoring.Alert().GreaterOrEqual(4, nil).For(15 * time.Minute),
+							Critical: monitoring.Alert().GreaterOrEqual(6, nil).For(30 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.NoLegend(),
 								monitoring.PanelOptions.ColorOverride("latency", "#8AB8FF"),
 							),
 							Owner: monitoring.ObservableOwnerSearch,
-							Interpretation: `
+							PossibleSolutions: `
 								- Look at the breakdown by query to determine if a specific query type is being affected
 								- Check for high CPU usage on zoekt-webserver
 								- Check Honeycomb for unusual activity
