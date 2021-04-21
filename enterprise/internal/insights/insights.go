@@ -37,7 +37,11 @@ func IsEnabled() bool {
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
 func Init(ctx context.Context, postgres dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
 	if !IsEnabled() {
-		enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver()
+		if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
+			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("code insights is not available on single-container deployments")
+		} else {
+			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("code insights has been disabled")
+		}
 		return nil
 	}
 	timescale, err := InitializeCodeInsightsDB()
