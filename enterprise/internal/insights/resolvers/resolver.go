@@ -46,14 +46,14 @@ func (r *Resolver) Insights(ctx context.Context) (graphqlbackend.InsightConnecti
 	}, nil
 }
 
-type disabledResolver struct{}
-
-func NewDisabledResolver() graphqlbackend.InsightsResolver {
-	return &disabledResolver{}
+type disabledResolver struct {
+	reason string
 }
 
-var ErrCodeInsightsDisabled = errors.New("code insights has been disabled")
+func NewDisabledResolver(reason string) graphqlbackend.InsightsResolver {
+	return &disabledResolver{reason}
+}
 
 func (r *disabledResolver) Insights(ctx context.Context) (graphqlbackend.InsightConnectionResolver, error) {
-	return nil, ErrCodeInsightsDisabled
+	return nil, errors.New(r.reason)
 }
