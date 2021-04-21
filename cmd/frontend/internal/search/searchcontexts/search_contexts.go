@@ -81,7 +81,7 @@ func validateSearchContextNamespaceForCurrentUser(ctx context.Context, db dbutil
 	if user.SiteAdmin {
 		return nil
 	} else if namespaceUserID == 0 && namespaceOrgID == 0 {
-		return errors.New("current user must be site-admin to create instance-level search context")
+		return errors.New("current user must be site-admin")
 	}
 
 	if namespaceUserID != 0 && namespaceUserID != user.ID {

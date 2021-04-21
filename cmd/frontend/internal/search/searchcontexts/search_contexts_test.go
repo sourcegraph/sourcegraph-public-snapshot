@@ -333,7 +333,7 @@ func TestCreatingSearchContexts(t *testing.T) {
 			name:          "cannot create instance-level search context if not site-admin",
 			searchContext: &types.SearchContext{Name: "ctx"},
 			userID:        user3.ID,
-			wantErr:       "current user must be site-admin to create instance-level search context",
+			wantErr:       "current user must be site-admin",
 		},
 		{
 			name:          "cannot create search context with invalid name",
