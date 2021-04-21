@@ -1,4 +1,4 @@
-package billing
+package stripeutil
 
 import (
 	"log"
@@ -15,7 +15,10 @@ var (
 	stripePublishableKey = env.Get("STRIPE_PUBLISHABLE_KEY", "", "billing: Stripe API publishable key")
 )
 
-func init() {
+// ValidateAndPublishConfig check for and validates config for Stripe and exposes the
+// publishable key through the jscontext. It exists the process, if the variables
+// don't pass validation. It returns true if Stripe was configured.
+func ValidateAndPublishConfig() bool {
 	// Sanity-check the Stripe keys (to help prevent mistakes where they got switched and the secret
 	// key is published).
 	if stripeSecretKey != "" && !strings.HasPrefix(stripeSecretKey, "sk_") {
@@ -28,12 +31,17 @@ func init() {
 		log.Fatalf("Either zero or both of STRIPE_SECRET_KEY (set=%v) and STRIPE_PUBLISHABLE_KEY (set=%v) must be set.", stripeSecretKey != "", stripePublishableKey != "")
 	}
 
+	if stripeSecretKey == "" && stripePublishableKey == "" {
+		return false
+	}
+
 	stripe.Key = stripeSecretKey
 	app.SetBillingPublishableKey(stripePublishableKey)
 
 	if env.InsecureDev && stripe.Key != "" && !isTest() {
 		log.Fatal("Refusing to use Stripe live (non-test) API key in Sourcegraph dev mode. (Sourcegraphers: Update your local dev-private checkout if you're getting this unexpectedly.)")
 	}
+	return true
 }
 
 func isTest() bool {

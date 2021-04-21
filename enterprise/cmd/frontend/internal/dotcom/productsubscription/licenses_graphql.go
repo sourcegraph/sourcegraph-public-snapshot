@@ -16,17 +16,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func init() {
-	// TODO(efritz) - de-globalize assignments in this function
-	graphqlbackend.ProductLicenseByID = func(ctx context.Context, db dbutil.DB, id graphql.ID) (graphqlbackend.ProductLicense, error) {
-		return productLicenseByID(ctx, db, id)
-	}
-}
-
 // productLicense implements the GraphQL type ProductLicense.
 type productLicense struct {
 	db dbutil.DB
 	v  *dbLicense
+}
+
+// ProductLicenseByID looks up and returns the ProductLicense with the given GraphQL ID. If no such
+// ProductLicense exists, it returns a non-nil error.
+func (p ProductSubscriptionLicensingResolver) ProductLicenseByID(ctx context.Context, id graphql.ID) (graphqlbackend.ProductLicense, error) {
+	return productLicenseByID(ctx, p.DB, id)
 }
 
 // productLicenseByID looks up and returns the ProductLicense with the given GraphQL ID. If no such
@@ -64,8 +63,10 @@ func (r *productLicense) ID() graphql.ID {
 	return marshalProductLicenseID(r.v.ID)
 }
 
+const ProductLicenseIDKind = "ProductLicense"
+
 func marshalProductLicenseID(id string) graphql.ID {
-	return relay.MarshalID("ProductLicense", id)
+	return relay.MarshalID(ProductLicenseIDKind, id)
 }
 
 func unmarshalProductLicenseID(id graphql.ID) (productLicenseID string, err error) {
