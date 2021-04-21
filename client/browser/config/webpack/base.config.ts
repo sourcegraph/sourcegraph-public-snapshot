@@ -22,6 +22,7 @@ const babelLoader = {
 }
 
 const extensionHostWorker = /main\.worker\.ts$/
+const rootPath = path.resolve(__dirname, '../../../../')
 
 const getCSSLoaders = (...loaders: webpack.RuleSetUseItem[]): webpack.RuleSetUse => [
     MiniCssExtractPlugin.loader,
@@ -33,7 +34,7 @@ const getCSSLoaders = (...loaders: webpack.RuleSetUseItem[]): webpack.RuleSetUse
         loader: 'sass-loader',
         options: {
             sassOptions: {
-                includePaths: [path.resolve(__dirname, '../../../node_modules')],
+                includePaths: [path.resolve(rootPath, 'node_modules'), path.resolve(rootPath, 'client')],
             },
         },
     },

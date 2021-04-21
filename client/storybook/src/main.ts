@@ -19,7 +19,7 @@ const getCSSLoaders = (...loaders: RuleSetUseItem[]): RuleSetUse => [
         loader: 'sass-loader',
         options: {
             sassOptions: {
-                includePaths: [path.resolve(rootPath, 'node_modules')],
+                includePaths: [path.resolve(rootPath, 'node_modules'), path.resolve(rootPath, 'client')],
             },
         },
     },
