@@ -5,6 +5,7 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 import 'storybook-addon-designs'
 
+import styles from './ButtonVariants.module.scss'
 import { SEMANTIC_COLORS } from './constants'
 import { preventDefault } from './utils'
 
@@ -20,16 +21,7 @@ interface ButtonVariantsProps {
 }
 
 export const ButtonVariants: React.FunctionComponent<ButtonVariantsProps> = ({ variantType = 'btn' }) => (
-    <div
-        // eslint-disable-next-line react/forbid-dom-props
-        style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, max-content)',
-            gridAutoRows: 'max-content',
-            gridGap: '1rem',
-            marginBottom: '1rem',
-        }}
-    >
+    <div className={styles.grid}>
         {variants[variantType].map(variant => (
             <React.Fragment key={variant}>
                 <button
