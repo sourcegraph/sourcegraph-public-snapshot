@@ -210,7 +210,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!hoveredDatumLink })
 
     return (
-        <div className={rootClasses}>
+        <div className={rootClasses} data-testid="line-chart__content">
             {/*
                 Because XYChart wraps itself with context providers in case if consumer didn't add them
                 But this recursive wrapping leads to problem with event emitter context - double subscription all event
