@@ -38,14 +38,14 @@ func TestRequestedScopes(t *testing.T) {
 			schema: &schema.GitHubAuthProvider{
 				AllowOrgs: nil,
 			},
-			expScopes: []string{"user:email"},
+			expScopes: []string{"repo", "user:email"},
 		},
 		{
 			dotComMode: true,
 			schema: &schema.GitHubAuthProvider{
 				AllowOrgs: []string{"myorg"},
 			},
-			expScopes: []string{"read:org", "user:email"},
+			expScopes: []string{"read:org", "repo", "user:email"},
 		},
 	}
 	for _, test := range tests {
