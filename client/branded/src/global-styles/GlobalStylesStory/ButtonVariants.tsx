@@ -5,12 +5,13 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 import 'storybook-addon-designs'
 
+import { SEMANTIC_COLORS } from './constants'
 import { preventDefault } from './utils'
 
 type VariantType = 'btn' | 'btn-outline'
 
-const variants: Record<VariantType, string[]> = {
-    btn: ['primary', 'secondary', 'success', 'danger', 'warning', 'info'],
+const variants: Record<VariantType, readonly string[]> = {
+    btn: SEMANTIC_COLORS,
     'btn-outline': ['primary', 'secondary', 'danger'],
 }
 

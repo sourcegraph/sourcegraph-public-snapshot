@@ -21,9 +21,8 @@ import { CodeSnippet } from '../../components/CodeSnippet'
 import { Form } from '../../components/Form'
 
 import { ButtonVariants } from './ButtonVariants'
+import { SEMANTIC_COLORS } from './constants'
 import { preventDefault } from './utils'
-
-const semanticColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'merged'] as const
 
 const { add } = storiesOf('branded/Global styles', module).addDecorator(story => (
     <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>
@@ -93,7 +92,7 @@ const TextStory: React.FunctionComponent = () => (
             <code>text-*</code> classes can be used to apply semantic coloring to text.
         </p>
         <div className="mb-3">
-            {['muted', ...semanticColors].map(color => (
+            {['muted', ...SEMANTIC_COLORS].map(color => (
                 <div key={color} className={'text-' + color}>
                     This is text-{color}
                 </div>
@@ -282,7 +281,7 @@ add(
                 available on most CSS components and the <code>border-</code> and <code>bg-</code> utility classes.
             </p>
             <div className="d-flex flex-wrap">
-                {semanticColors.map(semantic => (
+                {SEMANTIC_COLORS.map(semantic => (
                     <div className="m-2 text-center" key={semantic}>
                         <div className={`bg-${semantic} rounded`} style={{ width: '5rem', height: '5rem' }} />
                         {semantic}
@@ -426,7 +425,7 @@ add(
                 Provide contextual feedback messages for typical user actions with the handful of available and flexible
                 alert messages.
             </p>
-            {semanticColors.map(semantic => (
+            {SEMANTIC_COLORS.map(semantic => (
                 <div key={semantic} className={classNames('alert', `alert-${semantic}`)}>
                     A simple {semantic} alert — check it out! It can also contain{' '}
                     <a href="/" className="alert-link" onClick={flow(preventDefault, action('alert link clicked'))}>
@@ -523,7 +522,7 @@ add(
             <h2>Semantic variations</h2>
             <p>Change the appearance of any badge with modifier classes for semantic colors.</p>
             <p>
-                {semanticColors.map(semantic => (
+                {SEMANTIC_COLORS.map(semantic => (
                     <React.Fragment key={semantic}>
                         <span className={classNames('badge', `badge-${semantic}`)}>{semantic}</span>{' '}
                     </React.Fragment>
