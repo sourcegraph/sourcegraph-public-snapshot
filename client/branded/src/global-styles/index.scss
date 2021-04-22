@@ -58,6 +58,7 @@ $input-focus-border-color: $primary;
 // We only show the focus ring when using the keyboard, when the focus ring
 // should be clearly visible.
 $btn-focus-box-shadow: var(--btn-focus-box-shadow);
+$btn-link-disabled-color: var(--btn-link-disabled-color);
 
 // Forms don't manipulate the colors at compile time,
 // which is why we can use CSS variables for theming here

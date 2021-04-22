@@ -535,14 +535,14 @@ add(
                 I am a link
             </a>
             <p>Buttons can be made to look like links:</p>
-            <button type="button" className="btn btn-link">
+            <button type="button" className="btn btn-link mr-3">
                 Link button
             </button>
-            <button type="button" className="btn btn-link focus">
-                Focused link button
+            <button type="button" className="btn btn-link mr-3 focus">
+                Focused
             </button>
-            <button type="button" className="btn btn-link" disabled={true}>
-                Disabled link button
+            <button type="button" className="btn btn-link mr-3" disabled={true}>
+                Disabled
             </button>
         </>
     ),
