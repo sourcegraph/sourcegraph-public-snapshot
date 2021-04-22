@@ -23,6 +23,7 @@ import { Form } from '../../components/Form'
 import { ButtonVariants } from './ButtonVariants'
 import { SEMANTIC_COLORS } from './constants'
 import { preventDefault } from './utils'
+import SearchIcon from 'mdi-react/SearchIcon'
 
 const { add } = storiesOf('branded/Global styles', module).addDecorator(story => (
     <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>
@@ -632,14 +633,31 @@ add(
                 <a href="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</a>
             </p>
             <h2>Semantic variants</h2>
-            <ButtonVariants />
+            <ButtonVariants variants={SEMANTIC_COLORS} />
             <h2>Outline variants</h2>
-            <ButtonVariants variantType="btn-outline" />
+            <ButtonVariants variants={['primary', 'secondary', 'danger']} variantType="btn-outline" />
+            <h2>Icons</h2>
+            <p>We can use icons with our buttons</p>
+            <ButtonVariants variants={['primary']} icon={SearchIcon} />
+            <ButtonVariants variants={['primary']} variantType="btn-outline" icon={SearchIcon} />
+            <h2>Size</h2>
+            <p>We can make our buttons smaller</p>
+            <ButtonVariants variants={['primary']} variantType="btn-outline" small={true} />
             <h2>Links</h2>
-            <p>Links can be made to look like buttons too.</p>
-            <a href="https://example.com" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+            <p>Links can be made to look like buttons:</p>
+            <a href="https://example.com" className="btn btn-secondary mb-3" target="_blank" rel="noopener noreferrer">
                 I am a link
             </a>
+            <p>Buttons can be made to look like links:</p>
+            <button type="button" className="btn btn-link">
+                Link button
+            </button>
+            <button type="button" className="btn btn-link focus">
+                Focused link button
+            </button>
+            <button type="button" className="btn btn-link" disabled={true}>
+                Disabled link button
+            </button>
         </>
     ),
     {
@@ -650,6 +668,7 @@ add(
             },
             {
                 type: 'figma',
+                name: 'Figma Redesign',
                 url:
                     'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2513',
             },
