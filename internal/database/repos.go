@@ -824,6 +824,8 @@ SELECT repo_id as id FROM user_public_repos WHERE user_id = %d
 type ListDefaultReposOptions struct {
 	// If true, will only include uncloned default repos
 	OnlyUncloned bool
+	// If true, we include private repos
+	IncludePrivate bool
 }
 
 // ListDefaultRepos returns a list of default repos. Default repos are a union of
@@ -836,10 +838,16 @@ func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposO
 	}()
 	s.ensureStore()
 
+	var filters []*sqlf.Query
 	cloneClause := sqlf.Sprintf("TRUE")
 	if opts.OnlyUncloned {
 		cloneClause = sqlf.Sprintf("gr.clone_status = %s", types.CloneStatusNotCloned)
 	}
+	filters = append(filters, cloneClause)
+	if !opts.IncludePrivate {
+		filters = append(filters, sqlf.Sprintf("NOT repo.private"))
+	}
+	filterClause := sqlf.Join(filters, "AND")
 
 	q := sqlf.Sprintf(`
 -- source: internal/database/repos.go:RepoStore.ListDefaultRepos
@@ -871,7 +879,7 @@ FROM repo
 WHERE EXISTS(SELECT 1 FROM user_public_repos WHERE repo_id = repo.id)
   AND repo.deleted_at IS NULL
   AND %s
-`, cloneClause, cloneClause, cloneClause)
+`, filterClause, filterClause, filterClause)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
