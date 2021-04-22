@@ -191,7 +191,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 			ServiceType: extsvc.TypeOther,
 			ServiceID:   s.conn.Url,
 		}
-		cloneURL := clonePrefix + strings.TrimPrefix(r.URI, "/")
+		cloneURL := clonePrefix + strings.TrimPrefix(r.URI, "/") + "/.git"
 		r.Sources = map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
