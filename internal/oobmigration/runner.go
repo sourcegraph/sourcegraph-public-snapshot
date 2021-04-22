@@ -216,7 +216,12 @@ func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migra
 	for {
 		select {
 		case migration = <-migrations:
-			// Refreshed our migration state
+			// We just got a new version of the migration from the database. We need to check
+			// the actual progress based on the migrator in case the progress as stored in the
+			// migrations table has been de-synchronized from the actual progress.
+			if err := updateProgress(ctx, store, &migration, migrator); err != nil {
+				log15.Error("Failed migration action", "id", migration.ID, "error", err)
+			}
 
 		case <-options.ticker.Chan():
 			if !migration.Complete() {

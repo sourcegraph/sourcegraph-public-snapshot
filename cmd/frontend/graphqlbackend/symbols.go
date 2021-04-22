@@ -28,19 +28,33 @@ type symbolsArgs struct {
 }
 
 func (r *GitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := computeSymbols(ctx, r.db, r.commit, args.Query, args.First, args.IncludePatterns)
+	symbols, err := computeSymbols(ctx, r.commit, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
-	return &symbolConnectionResolver{symbols: symbols, first: args.First}, nil
+	return &symbolConnectionResolver{
+		symbols: symbolResultsToResolvers(r.db, r.commit, symbols),
+		first:   args.First,
+	}, nil
 }
 
 func (r *GitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := computeSymbols(ctx, r.db, r, args.Query, args.First, args.IncludePatterns)
+	symbols, err := computeSymbols(ctx, r, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
-	return &symbolConnectionResolver{symbols: symbols, first: args.First}, nil
+	return &symbolConnectionResolver{
+		symbols: symbolResultsToResolvers(r.db, r, symbols),
+		first:   args.First,
+	}, nil
+}
+
+func symbolResultsToResolvers(db dbutil.DB, commit *GitCommitResolver, symbols []*result.SymbolMatch) []symbolResolver {
+	symbolResolvers := make([]symbolResolver, 0, len(symbols))
+	for _, symbol := range symbols {
+		symbolResolvers = append(symbolResolvers, toSymbolResolver(db, commit, symbol))
+	}
+	return symbolResolvers
 }
 
 type symbolConnectionResolver struct {
@@ -85,7 +99,7 @@ func indexedSymbolsBranch(ctx context.Context, repository, commit string) string
 	return ""
 }
 
-func searchZoektSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitResolver, branch string, queryString *string, first *int32, includePatterns *[]string) (res []symbolResolver, err error) {
+func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	raw := *queryString
 	if raw == "" {
 		raw = ".*"
@@ -150,33 +164,29 @@ func searchZoektSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitReso
 					continue
 				}
 
-				res = append(res, toSymbolResolver(
-					db,
-					commit,
-					&result.SymbolMatch{
-						Symbol: result.Symbol{
-							Name:       m.SymbolInfo.Sym,
-							Kind:       m.SymbolInfo.Kind,
-							Parent:     m.SymbolInfo.Parent,
-							ParentKind: m.SymbolInfo.ParentKind,
-							Path:       file.FileName,
-							Line:       l.LineNumber,
-							Language:   file.Language,
-						},
-						BaseURI: baseURI,
+				res = append(res, &result.SymbolMatch{
+					Symbol: result.Symbol{
+						Name:       m.SymbolInfo.Sym,
+						Kind:       m.SymbolInfo.Kind,
+						Parent:     m.SymbolInfo.Parent,
+						ParentKind: m.SymbolInfo.ParentKind,
+						Path:       file.FileName,
+						Line:       l.LineNumber,
+						Language:   file.Language,
 					},
-				))
+					BaseURI: baseURI,
+				})
 			}
 		}
 	}
 	return
 }
 
-func computeSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []symbolResolver, err error) {
+func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
 	if branch := indexedSymbolsBranch(ctx, commit.repoResolver.Name(), string(commit.oid)); branch != "" {
-		return searchZoektSymbols(ctx, db, commit, branch, query, first, includePatterns)
+		return searchZoektSymbols(ctx, commit, branch, query, first, includePatterns)
 	}
 
 	ctx, done := context.WithTimeout(ctx, 5*time.Second)
@@ -208,16 +218,14 @@ func computeSymbols(ctx context.Context, db dbutil.DB, commit *GitCommitResolver
 	if baseURI == nil {
 		return
 	}
-	resolvers := make([]symbolResolver, 0, len(symbols))
+	matches := make([]*result.SymbolMatch, 0, len(symbols))
 	for _, symbol := range symbols {
-		sr := result.SymbolMatch{
+		matches = append(matches, &result.SymbolMatch{
 			Symbol:  symbol,
 			BaseURI: baseURI,
-		}
-		resolver := toSymbolResolver(db, commit, &sr)
-		resolvers = append(resolvers, resolver)
+		})
 	}
-	return resolvers, err
+	return matches, err
 }
 
 func toSymbolResolver(db dbutil.DB, commit *GitCommitResolver, sr *result.SymbolMatch) symbolResolver {

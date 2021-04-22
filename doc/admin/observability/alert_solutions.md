@@ -1419,8 +1419,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 5s+ mean successful sentinel search duration over 5m for 10m0s
-- <span class="badge badge-critical">critical</span> frontend: 8s+ mean successful sentinel search duration over 5m for 15m0s
+- <span class="badge badge-warning">warning</span> frontend: 5s+ mean successful sentinel search duration over 5m for 15m0s
+- <span class="badge badge-critical">critical</span> frontend: 8s+ mean successful sentinel search duration over 5m for 30m0s
 
 **Possible solutions**
 
@@ -1446,8 +1446,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 2s+ mean sentinel stream latency over 5m for 5m0s
-- <span class="badge badge-critical">critical</span> frontend: 3s+ mean sentinel stream latency over 5m for 10m0s
+- <span class="badge badge-warning">warning</span> frontend: 2s+ mean sentinel stream latency over 5m for 15m0s
+- <span class="badge badge-critical">critical</span> frontend: 3s+ mean sentinel stream latency over 5m for 30m0s
 
 **Possible solutions**
 
@@ -1473,8 +1473,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 5s+ 90th percentile successful sentinel search duration over 5m for 10m0s
-- <span class="badge badge-critical">critical</span> frontend: 10s+ 90th percentile successful sentinel search duration over 5m for 15m0s
+- <span class="badge badge-warning">warning</span> frontend: 5s+ 90th percentile successful sentinel search duration over 5m for 15m0s
+- <span class="badge badge-critical">critical</span> frontend: 10s+ 90th percentile successful sentinel search duration over 5m for 30m0s
 
 **Possible solutions**
 
@@ -1500,8 +1500,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 4s+ 90th percentile sentinel stream latency over 5m for 5m0s
-- <span class="badge badge-critical">critical</span> frontend: 6s+ 90th percentile sentinel stream latency over 5m for 10m0s
+- <span class="badge badge-warning">warning</span> frontend: 4s+ 90th percentile sentinel stream latency over 5m for 15m0s
+- <span class="badge badge-critical">critical</span> frontend: 6s+ 90th percentile sentinel stream latency over 5m for 30m0s
 
 **Possible solutions**
 

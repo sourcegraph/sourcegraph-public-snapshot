@@ -8,12 +8,6 @@ $border-radius-lg: var(--border-radius-lg);
 $font-size-base: 0.875rem;
 $line-height-base: (20/14);
 
-// Media breakpoints
-$media-sm: 576px;
-$media-md: 768px;
-$media-lg: 992px;
-$media-xl: 1200px;
-
 :root {
     --border-color: rgba(0, 0, 0, 0.125);
     --mark-bg: #{$mark-bg-light};

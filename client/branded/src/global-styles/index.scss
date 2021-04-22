@@ -1,9 +1,3 @@
-// Media breakpoints
-$media-sm: 576px;
-$media-md: 768px;
-$media-lg: 992px;
-$media-xl: 1200px;
-
 @import './colors.scss';
 @import './border-radius.scss';
 
@@ -107,6 +101,8 @@ $collapsible-expand-btn-width: 1.25rem;
 $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
 
+// './breakpoints' defines $grid-breakpoints for global CSS and exposes breakpoints mixins to CSS modules
+@import './breakpoints';
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
@@ -125,7 +121,7 @@ $hr-margin-y: 0.25rem;
 @import './meter';
 @import './popover';
 @import './nav';
-@import './type';
+@import './typography';
 @import './list-group';
 @import './tables';
 @import './code';

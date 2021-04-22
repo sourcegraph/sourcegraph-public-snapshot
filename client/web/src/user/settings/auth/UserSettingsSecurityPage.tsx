@@ -69,7 +69,6 @@ const fetchUserExternalAccountsByType = async (username: string): Promise<MinExt
                                 id
                                 serviceID
                                 serviceType
-                                accountData
                             }
                         }
                     }

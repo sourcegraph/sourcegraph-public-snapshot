@@ -3,8 +3,8 @@ package migration
 import (
 	"context"
 	"errors"
+	"sort"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -88,24 +88,32 @@ func (m *committedAtMigrator) selectBatch(ctx context.Context, tx *dbstore.Store
 
 const committedAtSelectBatchQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/migration/committed_at.go:selectBatch
-WITH candidates AS (
-	SELECT repository_id, commit
-	FROM lsif_uploads
-	WHERE state = 'completed' AND committed_at IS NULL
-	GROUP BY repository_id, commit
-	ORDER BY repository_id, commit
-	LIMIT %s
-)
 SELECT repository_id, commit
 FROM lsif_uploads
-WHERE
-	state = 'completed' AND committed_at IS NULL AND
-	(repository_id, commit) IN (SELECT * FROM candidates)
-FOR UPDATE SKIP LOCKED
+WHERE state = 'completed' AND committed_at IS NULL
+GROUP BY repository_id, commit
+LIMIT %s
 `
 
+// processBatch will find the commit date of each repository/commit pair in the given batch
+// and issue update statements to the database. Each repository	present in the batch will also
+// be marked as dirty so the commit graph can be recalculated (correctly).
+//
+// Note that we're VERY cautious about the order that we process the batch. We do this so that
+// two frontends performing the same migration will not try to update two of the same records
+// in the opposite order. If we rely on map iteration order we tend to see a lot of Postgres
+// deadlock conditions and very slow migration progress.
 func (m *committedAtMigrator) processBatch(ctx context.Context, tx *dbstore.Store, batch map[int][]string) error {
-	for repositoryID, commits := range batch {
+	repositoryIDs := make([]int, 0, len(batch))
+	for repositoryID := range batch {
+		repositoryIDs = append(repositoryIDs, repositoryID)
+	}
+	sort.Ints(repositoryIDs)
+
+	for _, repositoryID := range repositoryIDs {
+		commits := batch[repositoryID]
+		sort.Strings(commits)
+
 	outer:
 		for _, commit := range commits {
 			// Note: this is difficult to combine since if we pass in one bad commit
@@ -117,7 +125,6 @@ func (m *committedAtMigrator) processBatch(ctx context.Context, tx *dbstore.Stor
 			if err != nil {
 				for ex := err; ex != nil; ex = errors.Unwrap(ex) {
 					if basegitserver.IsRevisionNotFound(ex) {
-						log15.Warn("Unknown commit", "commit", commit)
 						continue outer
 					}
 				}
@@ -142,7 +149,7 @@ func (m *committedAtMigrator) processBatch(ctx context.Context, tx *dbstore.Stor
 
 const committedAtProcessBatchQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/migration/committed_at.go:ProcessBatch
-UPDATE lsif_uploads SET committed_at = %s WHERE repository_id = %s AND commit = %s
+UPDATE lsif_uploads SET committed_at = %s WHERE state = 'completed' AND repository_id = %s AND commit = %s AND committed_at IS NULL
 `
 
 // Down runs a batch of the migration in reverse. This method simply sets the committed_at column

@@ -516,12 +516,6 @@ type Mutation {
     """
     extensionRegistry: ExtensionRegistryMutation!
     """
-    Mutations that are only used on Sourcegraph.com.
-
-    FOR INTERNAL USE ONLY.
-    """
-    dotcom: DotcomMutation!
-    """
     Creates a saved search.
     """
     createSavedSearch(
@@ -590,88 +584,11 @@ type Mutation {
         """
         level: String!
     ): EmptyResponse!
-    """
-    Create a code monitor.
-    """
-    createCodeMonitor(
-        """
-        A monitor.
-        """
-        monitor: MonitorInput!
-        """
-        A trigger.
-        """
-        trigger: MonitorTriggerInput!
-        """
-        A list of actions.
-        """
-        actions: [MonitorActionInput!]!
-    ): Monitor!
-    """
-    Set a code monitor to active/inactive.
-    """
-    toggleCodeMonitor(
-        """
-        The id of a code monitor.
-        """
-        id: ID!
-        """
-        Whether the code monitor should be enabled or not.
-        """
-        enabled: Boolean!
-    ): Monitor!
-    """
-    Delete a code monitor.
-    """
-    deleteCodeMonitor(
-        """
-        The id of a code monitor.
-        """
-        id: ID!
-    ): EmptyResponse!
-    """
-    Update a code monitor. We assume that the request contains a complete code monitor,
-    including its trigger and all actions. Actions which are stored in the database,
-    but are missing from the request will be deleted from the database. Actions with id=null
-    will be created.
-    """
-    updateCodeMonitor(
-        """
-        The input required to edit a monitor.
-        """
-        monitor: MonitorEditInput!
-        """
-        The input required to edit the trigger of a monitor. You can only edit triggers that are
-        associated with the monitor (value of field monitor).
-        """
-        trigger: MonitorEditTriggerInput!
-        """
-        The input required to edit the actions of a monitor. You can only edit actions that are
-        associated with the monitor (value of field monitor).
-        """
-        actions: [MonitorEditActionInput!]!
-    ): Monitor!
 
     """
     Set the repos synced by an external service
     """
     setExternalServiceRepos(id: ID!, repos: [String!], allRepos: Boolean!): EmptyResponse!
-
-    """
-    Reset the timestamps of a trigger query. The query will be queued immediately and return
-    all results without a limit on the timeframe. Only site admins may perform this mutation.
-    """
-    resetTriggerQueryTimestamps(
-        """
-        The id of the trigger query.
-        """
-        id: ID!
-    ): EmptyResponse!
-
-    """
-    Triggers a test email for a code monitor action.
-    """
-    triggerTestEmailAction(namespace: ID!, description: String!, email: MonitorEmailInput!): EmptyResponse!
 
     """
     Updates an out-of-band migration to run in a particular direction.
@@ -696,6 +613,20 @@ type Mutation {
     Converts a version context to an equivalent instance-level search context. Only available to site admins.
     """
     convertVersionContextToSearchContext(name: String!): SearchContext!
+
+    """
+    (experimental) Create search context.
+    """
+    createSearchContext(
+        """
+        Search context input.
+        """
+        searchContext: SearchContextInput!
+        """
+        List of search context repository revisions.
+        """
+        repositories: [SearchContextRepositoryRevisionsInput!]!
+    ): SearchContext!
 }
 
 """
@@ -712,137 +643,6 @@ input UserPermission {
     The highest level of repository permission.
     """
     permission: RepositoryPermission = READ
-}
-
-"""
-A list of insights.
-"""
-type InsightConnection {
-    """
-    A list of insights.
-    """
-    nodes: [Insight!]!
-
-    """
-    The total number of insights in the connection.
-    """
-    totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-An insight about code.
-"""
-type Insight {
-    """
-    The short title of the insight.
-    """
-    title: String!
-
-    """
-    The description of the insight.
-    """
-    description: String!
-
-    """
-    Data points over a time range (inclusive)
-    """
-    series: [InsightsSeries!]!
-}
-
-"""
-A series of data about a code insight.
-"""
-type InsightsSeries {
-    """
-    The label used to describe this series of data points.
-    """
-    label: String!
-
-    """
-    Data points over a time range (inclusive)
-
-    If no 'from' time range is specified, the last 90 days of data is assumed.
-
-    If no 'to' time range is specified, the current point in time is assumed.
-    """
-    points(from: DateTime, to: DateTime): [InsightDataPoint!]!
-
-    """
-    The status of this series of data, e.g. progress collecting it.
-    """
-    status: InsightSeriesStatus!
-}
-
-"""
-A code insight data point.
-"""
-type InsightDataPoint {
-    """
-    The time of this data point.
-    """
-    dateTime: DateTime!
-
-    """
-    The value of the insight at this point in time.
-    """
-    value: Float!
-}
-
-"""
-Status indicators for a specific series of insight data.
-"""
-type InsightSeriesStatus {
-    """
-    The total number of points stored for this series, at the finest level
-    (e.g. per repository, or per-repository-per-language) Has no strict relation
-    to the data points shown in the web UI or returned by `points()`, because those
-    are aggregated and this number _can_ report some duplicates points which get
-    stored but removed at query time for the web UI.
-
-    Why its useful: an insight may look like "it is doing nothing" but in reality
-    this number will be increasing by e.g. several thousands of points rapidly.
-    """
-    totalPoints: Int!
-
-    """
-    The total number of jobs currently pending to add new data points for this series.
-
-    Each job may create multiple data points (e.g. a job may create one data point per
-    repo, or language, etc.) This number will go up and down over time until all work
-    is completed (discovering work takes almost as long as doing the work.)
-
-    Why its useful: signals "amount of work still to be done."
-    """
-    pendingJobs: Int!
-
-    """
-    The total number of jobs completed for this series. Note that since pendingJobs will
-    go up/down over time, you CANNOT divide these two numbers to get a percentage as it
-    would be nonsense ("it says 90% complete but has been like that for a really long
-    time!").
-
-    Does not include 'failedJobs'.
-
-    Why its useful: gives an indication of "how much work has been done?"
-    """
-    completedJobs: Int!
-
-    """
-    The total number of jobs that were tried multiple times and outright failed. They will
-    not be retried again, and indicates the series has incomplete data.
-
-    Use ((failedJobs / completedJobs) * 100.0) to get an approximate percentage of how
-    much data the series data may be missing (e.g. ((30 / 150)*100.0) == 20% of the series
-    data is incomplete (rough approximation, not precise).
-
-    Why its useful: signals if there are problems, and how severe they are.
-    """
-    failedJobs: Int!
 }
 
 """
@@ -1133,11 +933,6 @@ type Query {
     Looks up a node by ID.
     """
     node(id: ID!): Node
-
-    """
-    EXPERIMENTAL: Queries code insights
-    """
-    insights: InsightConnection
 
     """
     Looks up a repository by either name or cloneURL.
@@ -1467,12 +1262,6 @@ type Query {
     """
     extensionRegistry: ExtensionRegistry!
     """
-    Queries that are only used on Sourcegraph.com.
-
-    FOR INTERNAL USE ONLY.
-    """
-    dotcom: DotcomQuery!
-    """
     FOR INTERNAL USE ONLY: Lists all status messages
     """
     statusMessages: [StatusMessage!]!
@@ -1536,12 +1325,6 @@ type Query {
     the configured code hosts are able to see.
     """
     affiliatedRepositories(user: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
-
-    """
-    Checks whether the given feature is enabled on Sourcegraph. Open source
-    installations will always return false for any feature.
-    """
-    enterpriseLicenseHasFeature(feature: String!): Boolean!
 
     """
     Retrieve all registered out-of-band migrations.
@@ -1997,418 +1780,6 @@ type SavedSearch implements Node {
     The Slack webhook URL associated with this saved search, if any.
     """
     slackWebhookURL: String
-}
-
-"""
-A list of code monitors
-"""
-type MonitorConnection {
-    """
-    A list of monitors.
-    """
-    nodes: [Monitor!]!
-
-    """
-    The total number of monitors in the connection.
-    """
-    totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-A code monitor with one trigger and possibly many actions.
-"""
-type Monitor implements Node {
-    """
-    The code monitor's unique ID.
-    """
-    id: ID!
-    """
-    The user who created the code monitor.
-    """
-    createdBy: User!
-    """
-    The time at which the code monitor was created.
-    """
-    createdAt: DateTime!
-    """
-    A meaningful description of the code monitor.
-    """
-    description: String!
-    """
-    Owners can edit the code monitor.
-    """
-    owner: Namespace!
-    """
-    Whether the code monitor is currently enabled.
-    """
-    enabled: Boolean!
-    """
-    Triggers trigger actions. There can only be one trigger per monitor.
-    """
-    trigger: MonitorTrigger!
-    """
-    One or more actions that are triggered by the trigger.
-    """
-    actions(
-        """
-        Returns the first n actions from the list.
-        """
-        first: Int = 50
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-    ): MonitorActionConnection!
-}
-
-"""
-A query that can serve as a trigger for code monitors.
-"""
-type MonitorQuery implements Node {
-    """
-    The unique id of a trigger query.
-    """
-    id: ID!
-    """
-    A query.
-    """
-    query: String!
-    """
-    A list of events.
-    """
-    events(
-        """
-        Returns the first n events from the list.
-        """
-        first: Int = 50
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-    ): MonitorTriggerEventConnection!
-}
-
-"""
-A list of trigger events.
-"""
-type MonitorTriggerEventConnection {
-    """
-    A list of events.
-    """
-    nodes: [MonitorTriggerEvent!]!
-    """
-    The total number of events in the connection.
-    """
-    totalCount: Int!
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-A trigger event is an event together with a list of associated actions.
-"""
-type MonitorTriggerEvent implements Node {
-    """
-    The unique id of an event.
-    """
-    id: ID!
-    """
-    The status of an event.
-    """
-    status: EventStatus!
-    """
-    A message with details regarding the status of the event.
-    """
-    message: String
-    """
-    The time and date of the event.
-    """
-    timestamp: DateTime!
-    """
-    A list of actions.
-    """
-    actions(
-        """
-        Returns the first n events from the list.
-        """
-        first: Int = 50
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-    ): MonitorActionConnection!
-}
-
-"""
-Supported triggers for code monitors.
-"""
-union MonitorTrigger = MonitorQuery
-
-"""
-A list of actions.
-"""
-type MonitorActionConnection {
-    """
-    A list of actions.
-    """
-    nodes: [MonitorAction!]!
-
-    """
-    The total number of actions in the connection.
-    """
-    totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-Supported actions for code monitors.
-"""
-union MonitorAction = MonitorEmail
-
-"""
-Email is one of the supported actions of code monitors.
-"""
-type MonitorEmail implements Node {
-    """
-    The unique id of an email action.
-    """
-    id: ID!
-    """
-    Whether the email action is enabled or not.
-    """
-    enabled: Boolean!
-    """
-    The priority of the email action.
-    """
-    priority: MonitorEmailPriority!
-    """
-    Use header to automatically approve the message in a read-only or moderated mailing list.
-    """
-    header: String!
-    """
-    A list of recipients of the email.
-    """
-    recipients(
-        """
-        Returns the first n recipients from the list.
-        """
-        first: Int = 50
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-    ): MonitorActionEmailRecipientsConnection!
-    """
-    A list of events.
-    """
-    events(
-        """
-        Returns the first n events from the list.
-        """
-        first: Int = 50
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-    ): MonitorActionEventConnection!
-}
-
-"""
-The priority of an email action.
-"""
-enum MonitorEmailPriority {
-    NORMAL
-    CRITICAL
-}
-
-"""
-A list of events.
-"""
-type MonitorActionEmailRecipientsConnection {
-    """
-    A list of recipients.
-    """
-    nodes: [Namespace!]!
-    """
-    The total number of recipients in the connection.
-    """
-    totalCount: Int!
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-A list of events.
-"""
-type MonitorActionEventConnection {
-    """
-    A list of events.
-    """
-    nodes: [MonitorActionEvent!]!
-    """
-    The total number of events in the connection.
-    """
-    totalCount: Int!
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-An event documents the result of a trigger or an execution of an action.
-"""
-type MonitorActionEvent implements Node {
-    """
-    The unique id of an event.
-    """
-    id: ID!
-    """
-    The status of an event.
-    """
-    status: EventStatus!
-    """
-    A message with details regarding the status of the event.
-    """
-    message: String
-    """
-    The time and date of the event.
-    """
-    timestamp: DateTime!
-}
-
-"""
-Supported status of monitor events.
-"""
-enum EventStatus {
-    PENDING
-    SUCCESS
-    ERROR
-}
-
-"""
-The input required to create a code monitor.
-"""
-input MonitorInput {
-    """
-    The namespace represents the owner of the code monitor.
-    Owners can either be users or organizations.
-    """
-    namespace: ID!
-    """
-    A meaningful description of the code monitor.
-    """
-    description: String!
-    """
-    Whether the code monitor is enabled or not.
-    """
-    enabled: Boolean!
-}
-
-"""
-The input required to edit a code monitor.
-"""
-input MonitorEditInput {
-    """
-    The id of the monitor.
-    """
-    id: ID!
-    """
-    The desired state after the udpate.
-    """
-    update: MonitorInput!
-}
-
-"""
-The input required to create a trigger.
-"""
-input MonitorTriggerInput {
-    """
-    The query string.
-    """
-    query: String!
-}
-
-"""
-The input required to edit a trigger.
-"""
-input MonitorEditTriggerInput {
-    """
-    The id of the Trigger.
-    """
-    id: ID!
-    """
-    The desired state after the udpate.
-    """
-    update: MonitorTriggerInput!
-}
-
-"""
-The input required to create an action.
-"""
-input MonitorActionInput {
-    """
-    An email action.
-    """
-    email: MonitorEmailInput
-}
-
-"""
-The input required to create an email action.
-"""
-input MonitorEmailInput {
-    """
-    Whether the email action is enabled or not.
-    """
-    enabled: Boolean!
-    """
-    The priority of the email.
-    """
-    priority: MonitorEmailPriority!
-    """
-    A list of users or orgs which will receive the email.
-    """
-    recipients: [ID!]!
-    """
-    Use header to automatically approve the message in a read-only or moderated mailing list.
-    """
-    header: String!
-}
-"""
-The input required to edit an action.
-"""
-input MonitorEditActionInput {
-    """
-    An email action.
-    """
-    email: MonitorEditEmailInput
-}
-
-"""
-The input required to edit an email action.
-"""
-input MonitorEditEmailInput {
-    """
-    The id of an email action.
-    """
-    id: ID
-    """
-    The desired state after the update.
-    """
-    update: MonitorEmailInput!
 }
 
 """
@@ -3185,6 +2556,49 @@ type SearchContextConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+Input for a new search context.
+"""
+input SearchContextInput {
+    """
+    Search context name. Not the same as the search context spec. Search context namespace and search context name
+    are used to construct the fully-qualified search context spec.
+    Example mappings from search context spec to search context name: global -> global, @user -> user, @org -> org,
+    @user/ctx1 -> ctx1, @org/ctxs/ctx -> ctxs/ctx.
+    """
+    name: String!
+    """
+    Search context description.
+    """
+    description: String!
+    """
+    Public property controls the visibility of the search context. Public search context is available to
+    any user on the instance. If a public search context contains private repositories, those are filtered out
+    for unauthorized users. Private search contexts are only available to their owners. Private user search context
+    is available only to the user, private org search context is available only to the members of the org, and private
+    instance-level search contexts are available only to site-admins.
+    """
+    public: Boolean!
+    """
+    Namespace of the search context (user or org). If not set, search context is considered instance-level.
+    """
+    namespace: ID
+}
+
+"""
+Input for a set of revisions to be searched within a repository.
+"""
+input SearchContextRepositoryRevisionsInput {
+    """
+    ID of the repository to be searched.
+    """
+    repositoryID: ID!
+    """
+    Revisions in the repository to be searched.
+    """
+    revisions: [String!]!
 }
 
 """
@@ -5031,12 +4445,6 @@ type User implements Node & SettingsSubject & Namespace {
     """
     surveyResponses: [SurveyResponse!]!
     """
-    The URL to view this user's customer information (for Sourcegraph.com site admins).
-    Only Sourcegraph.com site admins may query this field.
-    FOR INTERNAL USE ONLY.
-    """
-    urlForSiteAdminBilling: String
-    """
     The unique numeric ID for the user.
     FOR INTERNAL USE ONLY.
     """
@@ -5052,20 +4460,6 @@ type User implements Node & SettingsSubject & Namespace {
     It is null when there is no permissions data stored for the user.
     """
     permissionsInfo: PermissionsInfo
-
-    """
-    A list of monitors owned by the user or her organization.
-    """
-    monitors(
-        """
-        Returns the first n monitors from the list.
-        """
-        first: Int = 50
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-    ): MonitorConnection!
 
     """
     Repositories from external services owned by this user.
@@ -6594,542 +5988,6 @@ type Hover {
     The range to highlight.
     """
     range: Range!
-}
-
-"""
-Mutations that are only used on Sourcegraph.com.
-FOR INTERNAL USE ONLY.
-"""
-type DotcomMutation {
-    """
-    Set or unset a user's associated billing information.
-    Only Sourcegraph.com site admins may perform this mutation.
-    FOR INTERNAL USE ONLY.
-    """
-    setUserBilling(
-        """
-        The user to update.
-        """
-        user: ID!
-        """
-        The billing customer ID (on the billing system) to associate this user with. If null, the association is
-        removed (i.e., the user is unlinked from the billing customer record).
-        """
-        billingCustomerID: String
-    ): EmptyResponse!
-    """
-    Creates new product subscription for an account.
-    Only Sourcegraph.com site admins may perform this mutation.
-    FOR INTERNAL USE ONLY.
-    """
-    createProductSubscription(
-        """
-        The ID of the user (i.e., customer) to whom this product subscription is assigned.
-        """
-        accountID: ID!
-    ): ProductSubscription!
-    """
-    Set or unset a product subscription's associated billing system subscription.
-    Only Sourcegraph.com site admins may perform this mutation.
-    FOR INTERNAL USE ONLY.
-    """
-    setProductSubscriptionBilling(
-        """
-        The product subscription to update.
-        """
-        id: ID!
-        """
-        The billing subscription ID (on the billing system) to associate this product subscription with. If null,
-        the association is removed (i.e., the subscription is unlinked from billing).
-        """
-        billingSubscriptionID: String
-    ): EmptyResponse!
-    """
-    Generates and signs a new product license and associates it with an existing product subscription. The
-    product license key is signed with Sourcegraph.com's private key and is verifiable with the corresponding
-    public key.
-    Only Sourcegraph.com site admins may perform this mutation.
-    FOR INTERNAL USE ONLY.
-    """
-    generateProductLicenseForSubscription(
-        """
-        The product subscription to associate with the license.
-        """
-        productSubscriptionID: ID!
-        """
-        The license to generate.
-        """
-        license: ProductLicenseInput!
-    ): ProductLicense!
-    """
-    Creates a new product subscription and bills the associated payment method.
-    Only Sourcegraph.com authenticated users may perform this mutation.
-    FOR INTERNAL USE ONLY.
-    """
-    createPaidProductSubscription(
-        """
-        The ID of the user (i.e., customer) to whom the product subscription is assigned.
-        Only Sourcegraph.com site admins may perform this mutation for an accountID != the user ID of the
-        authenticated user.
-        """
-        accountID: ID!
-        """
-        The details of the product subscription.
-        """
-        productSubscription: ProductSubscriptionInput!
-        """
-        The token that represents the payment method used to purchase this product subscription,
-        or null if no payment is required.
-        """
-        paymentToken: String
-    ): CreatePaidProductSubscriptionResult!
-    """
-    Updates a new product subscription and credits or debits the associated payment method.
-    Only Sourcegraph.com site admins and the subscription's account owner may perform this
-    mutation.
-    FOR INTERNAL USE ONLY.
-    """
-    updatePaidProductSubscription(
-        """
-        The subscription to update.
-        """
-        subscriptionID: ID!
-        """
-        The updated details of the product subscription. All fields of the input type must be set
-        (i.e., it does not support passing a null value to mean "do not update this field's
-        value").
-        """
-        update: ProductSubscriptionInput!
-        """
-        The token that represents the payment method used to pay for (or receive credit for) this
-        product subscription update, or null if no payment is required.
-        """
-        paymentToken: String
-    ): UpdatePaidProductSubscriptionResult!
-    """
-    Archives an existing product subscription.
-    Only Sourcegraph.com site admins may perform this mutation.
-    FOR INTERNAL USE ONLY.
-    """
-    archiveProductSubscription(id: ID!): EmptyResponse!
-}
-
-"""
-Mutations that are only used on Sourcegraph.com.
-FOR INTERNAL USE ONLY.
-"""
-type DotcomQuery {
-    """
-    The product subscription with the given UUID. An error is returned if no such product
-    subscription exists.
-    Only Sourcegraph.com site admins and the account owners of the product subscription may
-    perform this query.
-    FOR INTERNAL USE ONLY.
-    """
-    productSubscription(uuid: String!): ProductSubscription!
-    """
-    A list of product subscriptions.
-    FOR INTERNAL USE ONLY.
-    """
-    productSubscriptions(
-        """
-        Returns the first n product subscriptions from the list.
-        """
-        first: Int
-        """
-        Returns only product subscriptions for the given account.
-        Only Sourcegraph.com site admins may perform this query with account == null.
-        """
-        account: ID
-        """
-        Returns product subscriptions from users with usernames or email addresses that match the query.
-        """
-        query: String
-    ): ProductSubscriptionConnection!
-    """
-    The invoice that would be generated for a new or updated subscription. This is used to show
-    users a preview of the credits, debits, and other billing information before creating or
-    updating a subscription.
-    Performing this query does not mutate any data or cause any billing changes to be made.
-    """
-    previewProductSubscriptionInvoice(
-        """
-        The customer account (user) for whom this preview invoice will be generated, or null if there is none.
-        """
-        account: ID
-        """
-        If non-null, preview the invoice for an update to the existing product subscription. The
-        product subscription's billing customer must match the account parameter. If null, preview
-        the invoice for a new subscription.
-        """
-        subscriptionToUpdate: ID
-        """
-        The parameters for the product subscription to preview. All fields of the input type must
-        be set (i.e., it does not support passing a null value to mean "do not update this field's
-        value" when updating an existing subscription).
-        """
-        productSubscription: ProductSubscriptionInput!
-    ): ProductSubscriptionPreviewInvoice!
-    """
-    A list of product licenses.
-    Only Sourcegraph.com site admins may perform this query.
-    FOR INTERNAL USE ONLY.
-    """
-    productLicenses(
-        """
-        Returns the first n product subscriptions from the list.
-        """
-        first: Int
-        """
-        Returns only product subscriptions whose license key contains this substring.
-        """
-        licenseKeySubstring: String
-        """
-        Returns only product licenses associated with the given subscription
-        """
-        productSubscriptionID: ID
-    ): ProductLicenseConnection!
-    """
-    A list of product pricing plans for Sourcegraph.
-    """
-    productPlans: [ProductPlan!]!
-}
-
-"""
-A product subscription that was created on Sourcegraph.com.
-FOR INTERNAL USE ONLY.
-"""
-type ProductSubscription implements Node {
-    """
-    The unique ID of this product subscription.
-    """
-    id: ID!
-    """
-    The unique UUID of this product subscription. Unlike ProductSubscription.id, this does not
-    encode the type and is not a GraphQL node ID.
-    """
-    uuid: String!
-    """
-    A name for the product subscription derived from its ID. The name is not guaranteed to be unique.
-    """
-    name: String!
-    """
-    The user (i.e., customer) to whom this subscription is granted, or null if the account has been deleted.
-    """
-    account: User
-    """
-    The information that determines the price of this subscription, or null if there is no billing
-    information associated with this subscription.
-    """
-    invoiceItem: ProductSubscriptionInvoiceItem
-    """
-    A list of billing-related events related to this product subscription.
-    """
-    events: [ProductSubscriptionEvent!]!
-    """
-    The currently active product license associated with this product subscription, if any.
-    """
-    activeLicense: ProductLicense
-    """
-    A list of product licenses associated with this product subscription.
-    Only Sourcegraph.com site admins may list inactive product licenses (other viewers should use
-    ProductSubscription.activeLicense).
-    """
-    productLicenses(
-        """
-        Returns the first n product licenses from the list.
-        """
-        first: Int
-    ): ProductLicenseConnection!
-    """
-    The date when this product subscription was created.
-    """
-    createdAt: DateTime!
-    """
-    Whether this product subscription was archived.
-    """
-    isArchived: Boolean!
-    """
-    The URL to view this product subscription.
-    """
-    url: String!
-    """
-    The URL to view this product subscription in the site admin area.
-    Only Sourcegraph.com site admins may query this field.
-    """
-    urlForSiteAdmin: String
-    """
-    The URL to view this product subscription's billing information (for site admins).
-    Only Sourcegraph.com site admins may query this field.
-    """
-    urlForSiteAdminBilling: String
-}
-
-"""
-A list of product subscriptions.
-FOR INTERNAL USE ONLY.
-"""
-type ProductSubscriptionConnection {
-    """
-    A list of product subscriptions.
-    """
-    nodes: [ProductSubscription!]!
-    """
-    The total count of product subscriptions in the connection. This total count may be larger than the number of
-    nodes in this object when the result is paginated.
-    """
-    totalCount: Int!
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-A preview of an invoice that would be generated for a new or updated product subscription.
-FOR INTERNAL USE ONLY.
-"""
-type ProductSubscriptionPreviewInvoice {
-    """
-    The net price for this invoice, in USD cents. If this invoice represents an update to a
-    subscription, this is the difference between the existing price and the updated price.
-    """
-    price: Int!
-    """
-    For updates to existing subscriptions, the effective date for which this preview invoice was
-    calculated, expressed as the number of seconds since the epoch. For new subscriptions, this is
-    null.
-    """
-    prorationDate: String
-    """
-    Whether this invoice requires manual intervention.
-    """
-    isDowngradeRequiringManualIntervention: Boolean!
-    """
-    The "before" state of the product subscription (i.e., the existing subscription), prior to the update that this preview
-    represents, or null if the preview is for a new subscription.
-    """
-    beforeInvoiceItem: ProductSubscriptionInvoiceItem
-    """
-    The "after" state of the product subscription, with the update applied to the subscription.
-    For new subscriptions, this is just the invoice item for the subscription that will be
-    created.
-    """
-    afterInvoiceItem: ProductSubscriptionInvoiceItem!
-}
-
-"""
-An input type that describes a product license to be generated and signed.
-FOR INTERNAL USE ONLY.
-"""
-input ProductLicenseInput {
-    """
-    The tags that indicate which features are activated by this license.
-    """
-    tags: [String!]!
-    """
-    The number of users for which this product subscription is valid.
-    """
-    userCount: Int!
-    """
-    The expiration date of this product license, expressed as the number of seconds since the epoch.
-    """
-    expiresAt: Int!
-}
-
-"""
-A product license that was created on Sourcegraph.com.
-FOR INTERNAL USE ONLY.
-"""
-type ProductLicense implements Node {
-    """
-    The unique ID of this product license.
-    """
-    id: ID!
-    """
-    The product subscription associated with this product license.
-    """
-    subscription: ProductSubscription!
-    """
-    Information about this product license.
-    """
-    info: ProductLicenseInfo
-    """
-    The license key.
-    """
-    licenseKey: String!
-    """
-    The date when this product license was created.
-    """
-    createdAt: DateTime!
-}
-
-"""
-A list of product licenses.
-FOR INTERNAL USE ONLY.
-"""
-type ProductLicenseConnection {
-    """
-    A list of product licenses.
-    """
-    nodes: [ProductLicense!]!
-    """
-    The total count of product licenses in the connection. This total count may be larger than the number of
-    nodes in this object when the result is paginated.
-    """
-    totalCount: Int!
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-A product pricing plan for Sourcegraph.
-FOR INTERNAL USE ONLY.
-"""
-type ProductPlan {
-    """
-    The billing system's unique ID for the plan.
-    """
-    billingPlanID: String!
-    """
-    The unique ID for the product.
-    """
-    productPlanID: String!
-    """
-    The name of the product plan (e.g., "Enterprise Starter"). This is displayed to the user and
-    should be human-readable.
-    """
-    name: String!
-    """
-    The name with the brand (e.g., "Sourcegraph Enterprise Starter").
-    """
-    nameWithBrand: String!
-    """
-    The price (in USD cents) for one user for a year.
-    """
-    pricePerUserPerYear: Int!
-    """
-    The minimum quantity (user count) that can be purchased. Only applies when using tiered pricing.
-    """
-    minQuantity: Int
-    """
-    The maximum quantity (user count) that can be purchased. Only applies when using tiered pricing.
-    """
-    maxQuantity: Int
-    """
-    Defines if the tiering price should be graduated or volume based.
-    """
-    tiersMode: String!
-    """
-    The tiered pricing for the plan.
-    """
-    planTiers: [PlanTier!]!
-}
-
-"""
-The information about a plan's tier.
-FOR INTERNAL USE ONLY.
-"""
-type PlanTier {
-    """
-    The per-user amount for this tier.
-    """
-    unitAmount: Int!
-    """
-    The maximum number of users that this tier applies to.
-    """
-    upTo: Int!
-    """
-    The flat fee for this tier.
-    """
-    flatAmount: Int!
-}
-
-"""
-The information about a product subscription that determines its price.
-FOR INTERNAL USE ONLY.
-"""
-type ProductSubscriptionInvoiceItem {
-    """
-    The product plan for the subscription.
-    """
-    plan: ProductPlan!
-    """
-    This subscription's user count.
-    """
-    userCount: Int!
-    """
-    The date when the subscription expires.
-    """
-    expiresAt: DateTime!
-}
-
-"""
-An input type that describes a product subscription to be purchased. Corresponds to
-ProductSubscriptionInvoiceItem.
-FOR INTERNAL USE ONLY.
-"""
-input ProductSubscriptionInput {
-    """
-    The billing plan ID for the subscription (ProductPlan.billingPlanID). This also specifies the
-    billing product, because a plan is associated with its product in the billing system.
-    """
-    billingPlanID: String!
-    """
-    This subscription's user count.
-    """
-    userCount: Int!
-}
-
-"""
-The result of Mutation.dotcom.createPaidProductSubscription.
-FOR INTERNAL USE ONLY.
-"""
-type CreatePaidProductSubscriptionResult {
-    """
-    The newly created product subscription.
-    """
-    productSubscription: ProductSubscription!
-}
-
-"""
-The result of Mutation.dotcom.updatePaidProductSubscription.
-FOR INTERNAL USE ONLY.
-"""
-type UpdatePaidProductSubscriptionResult {
-    """
-    The updated product subscription.
-    """
-    productSubscription: ProductSubscription!
-}
-
-"""
-An event related to a product subscription.
-FOR INTERNAL USE ONLY.
-"""
-type ProductSubscriptionEvent {
-    """
-    The unique ID of the event.
-    """
-    id: String!
-    """
-    The date when the event occurred.
-    """
-    date: String!
-    """
-    The title of the event.
-    """
-    title: String!
-    """
-    A description of the event.
-    """
-    description: String
-    """
-    A URL where the user can see more information about the event.
-    """
-    url: String
 }
 
 """

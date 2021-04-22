@@ -329,7 +329,7 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver) (*graphql.Schema, error) {
+func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver, dotcom DotcomRootResolver) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{MainSchema}
 
@@ -356,6 +356,7 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 	if insights != nil {
 		EnterpriseResolvers.insightsResolver = insights
 		resolver.InsightsResolver = insights
+		schemas = append(schemas, InsightsSchema)
 	}
 
 	if authz != nil {
@@ -366,11 +367,28 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 	if codeMonitors != nil {
 		EnterpriseResolvers.codeMonitorsResolver = codeMonitors
 		resolver.CodeMonitorsResolver = codeMonitors
+		schemas = append(schemas, CodeMonitorsSchema)
+		// Register NodeByID handlers.
+		for kind, res := range codeMonitors.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
 	}
 
 	if license != nil {
 		EnterpriseResolvers.licenseResolver = license
 		resolver.LicenseResolver = license
+		schemas = append(schemas, LicenseSchema)
+		// No NodeByID handlers currently.
+	}
+
+	if dotcom != nil {
+		EnterpriseResolvers.dotcomResolver = dotcom
+		resolver.DotcomRootResolver = dotcom
+		schemas = append(schemas, DotcomSchema)
+		// Register NodeByID handlers.
+		for kind, res := range dotcom.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
 	}
 
 	return graphql.ParseSchema(
@@ -391,6 +409,7 @@ type schemaResolver struct {
 	InsightsResolver
 	CodeMonitorsResolver
 	LicenseResolver
+	DotcomRootResolver
 
 	db                dbutil.DB
 	repoupdaterClient *repoupdater.Client
@@ -404,26 +423,12 @@ func newSchemaResolver(db dbutil.DB) *schemaResolver {
 		db:                db,
 		repoupdaterClient: repoupdater.DefaultClient,
 
-		AuthzResolver:    defaultAuthzResolver{},
-		InsightsResolver: defaultInsightsResolver{},
-		LicenseResolver:  defaultLicenseResolver{},
+		AuthzResolver: defaultAuthzResolver{},
 	}
 
 	r.nodeByIDFns = map[string]NodeByIDFunc{
 		"AccessToken": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return accessTokenByID(ctx, db, id)
-		},
-		"ProductLicense": func(ctx context.Context, id graphql.ID) (Node, error) {
-			if f := ProductLicenseByID; f != nil {
-				return f(ctx, db, id)
-			}
-			return nil, errors.New("not implemented")
-		},
-		"ProductSubscription": func(ctx context.Context, id graphql.ID) (Node, error) {
-			if f := ProductSubscriptionByID; f != nil {
-				return f(ctx, db, id)
-			}
-			return nil, errors.New("not implemented")
 		},
 		"ExternalAccount": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return externalAccountByID(ctx, db, id)
@@ -458,9 +463,6 @@ func newSchemaResolver(db dbutil.DB) *schemaResolver {
 		"Site": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.siteByGQLID(ctx, id)
 		},
-		"CodeMonitor": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return r.MonitorByID(ctx, id)
-		},
 		"OutOfBandMigration": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.OutOfBandMigrationByID(ctx, id)
 		},
@@ -480,10 +482,9 @@ var EnterpriseResolvers = struct {
 	batchChangesResolver BatchChangesResolver
 	codeMonitorsResolver CodeMonitorsResolver
 	licenseResolver      LicenseResolver
+	dotcomResolver       DotcomRootResolver
 }{
-	authzResolver:        defaultAuthzResolver{},
-	codeMonitorsResolver: defaultCodeMonitorsResolver{},
-	licenseResolver:      defaultLicenseResolver{},
+	authzResolver: defaultAuthzResolver{},
 }
 
 // DEPRECATED

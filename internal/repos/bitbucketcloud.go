@@ -121,16 +121,18 @@ func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *types.Repo {
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
-				CloneURL: s.authenticatedRemoteURL(r),
+				CloneURL: s.remoteURL(r),
 			},
 		},
 		Metadata: r,
 	}
 }
 
-// authenticatedRemoteURL returns the repository's Git remote URL with the configured
-// Bitbucket Cloud app password inserted in the URL userinfo.
-func (s *BitbucketCloudSource) authenticatedRemoteURL(repo *bitbucketcloud.Repo) string {
+// remoteURL returns the repository's Git remote URL
+//
+// note: this used to contain credentials but that is no longer the case
+// if you need to get an authenticated clone url use types.RepoCloneURL
+func (s *BitbucketCloudSource) remoteURL(repo *bitbucketcloud.Repo) string {
 	if s.config.GitURLType == "ssh" {
 		return fmt.Sprintf("git@%s:%s.git", s.config.Url, repo.FullName)
 	}
@@ -146,14 +148,7 @@ func (s *BitbucketCloudSource) authenticatedRemoteURL(repo *bitbucketcloud.Repo)
 		log15.Warn("Error adding authentication to Bitbucket Cloud repository Git remote URL.", "url", repo.Links.Clone, "error", err)
 		return fallbackURL
 	}
-	u, err := url.Parse(httpsURL)
-	if err != nil {
-		log15.Warn("Error adding authentication to Bitbucket Cloud repository Git remote URL.", "url", httpsURL, "error", err)
-		return fallbackURL
-	}
-
-	u.User = url.UserPassword(s.config.Username, s.config.AppPassword)
-	return u.String()
+	return httpsURL
 }
 
 func (s *BitbucketCloudSource) excludes(r *bitbucketcloud.Repo) bool {

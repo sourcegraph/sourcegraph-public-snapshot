@@ -18,7 +18,7 @@
    "Sources": {
     "extsvc:perforce:1": {
      "ID": "extsvc:perforce:1",
-     "CloneURL": "perforce://admin:pa$$word@ssl:111.222.333.444:1666//Sourcegraph/"
+     "CloneURL": "perforce://ssl:111.222.333.444:1666//Sourcegraph/"
     }
    },
    "Metadata": {
@@ -44,7 +44,7 @@
    "Sources": {
     "extsvc:perforce:1": {
      "ID": "extsvc:perforce:1",
-     "CloneURL": "perforce://admin:pa$$word@ssl:111.222.333.444:1666//Engineering/Cloud/"
+     "CloneURL": "perforce://ssl:111.222.333.444:1666//Engineering/Cloud/"
     }
    },
    "Metadata": {

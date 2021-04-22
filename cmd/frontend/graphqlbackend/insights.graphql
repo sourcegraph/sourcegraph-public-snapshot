@@ -1,0 +1,137 @@
+extend type Query {
+    """
+    EXPERIMENTAL: Queries code insights
+    """
+    insights: InsightConnection
+}
+
+"""
+A list of insights.
+"""
+type InsightConnection {
+    """
+    A list of insights.
+    """
+    nodes: [Insight!]!
+
+    """
+    The total number of insights in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An insight about code.
+"""
+type Insight {
+    """
+    The short title of the insight.
+    """
+    title: String!
+
+    """
+    The description of the insight.
+    """
+    description: String!
+
+    """
+    Data points over a time range (inclusive)
+    """
+    series: [InsightsSeries!]!
+}
+
+"""
+A series of data about a code insight.
+"""
+type InsightsSeries {
+    """
+    The label used to describe this series of data points.
+    """
+    label: String!
+
+    """
+    Data points over a time range (inclusive)
+
+    If no 'from' time range is specified, the last 90 days of data is assumed.
+
+    If no 'to' time range is specified, the current point in time is assumed.
+    """
+    points(from: DateTime, to: DateTime): [InsightDataPoint!]!
+
+    """
+    The status of this series of data, e.g. progress collecting it.
+    """
+    status: InsightSeriesStatus!
+}
+
+"""
+A code insight data point.
+"""
+type InsightDataPoint {
+    """
+    The time of this data point.
+    """
+    dateTime: DateTime!
+
+    """
+    The value of the insight at this point in time.
+    """
+    value: Float!
+}
+
+"""
+Status indicators for a specific series of insight data.
+"""
+type InsightSeriesStatus {
+    """
+    The total number of points stored for this series, at the finest level
+    (e.g. per repository, or per-repository-per-language) Has no strict relation
+    to the data points shown in the web UI or returned by `points()`, because those
+    are aggregated and this number _can_ report some duplicates points which get
+    stored but removed at query time for the web UI.
+
+    Why its useful: an insight may look like "it is doing nothing" but in reality
+    this number will be increasing by e.g. several thousands of points rapidly.
+    """
+    totalPoints: Int!
+
+    """
+    The total number of jobs currently pending to add new data points for this series.
+
+    Each job may create multiple data points (e.g. a job may create one data point per
+    repo, or language, etc.) This number will go up and down over time until all work
+    is completed (discovering work takes almost as long as doing the work.)
+
+    Why its useful: signals "amount of work still to be done."
+    """
+    pendingJobs: Int!
+
+    """
+    The total number of jobs completed for this series. Note that since pendingJobs will
+    go up/down over time, you CANNOT divide these two numbers to get a percentage as it
+    would be nonsense ("it says 90% complete but has been like that for a really long
+    time!").
+
+    Does not include 'failedJobs'.
+
+    Why its useful: gives an indication of "how much work has been done?"
+    """
+    completedJobs: Int!
+
+    """
+    The total number of jobs that were tried multiple times and outright failed. They will
+    not be retried again, and indicates the series has incomplete data.
+
+    Use ((failedJobs / completedJobs) * 100.0) to get an approximate percentage of how
+    much data the series data may be missing (e.g. ((30 / 150)*100.0) == 20% of the series
+    data is incomplete (rough approximation, not precise).
+
+    Why its useful: signals if there are problems, and how severe they are.
+    """
+    failedJobs: Int!
+}

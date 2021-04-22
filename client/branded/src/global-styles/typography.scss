@@ -46,7 +46,7 @@ sup {
     top: -1em;
 }
 
-.font-weight-semibold {
+.font-weight-medium {
     font-weight: 600;
 }
 
@@ -77,3 +77,5 @@ sup {
         text-align: right;
     }
 }
+
+@import './typography-redesign';
