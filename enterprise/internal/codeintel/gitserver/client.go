@@ -286,7 +286,7 @@ func (c *Client) execResolveRevGitCommand(ctx context.Context, repositoryID int,
 	}
 
 	// If the repo doesn't exist don't bother trying to resolve the commit. Otherwise,
-	// if we're returning an error, try to resolve revision that  was the target of the
+	// if we're returning an error, try to resolve revision that was the target of the
 	// command (if any). If the revision fails to resolve, we return an instance of a
 	// RevisionNotFoundError error instead of an "exit 128".
 	if revision != "" && !vcs.IsRepoNotExist(err) {
