@@ -1,19 +1,13 @@
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import React from 'react'
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../../..'
 import { toggleSearchType } from '../../../helpers'
 import { SearchType } from '../../SearchResults'
+import { SearchSidebarProps } from './SearchSidebar'
 import styles from './SearchSidebar.module.scss'
 
-interface ResultTypeLinkProps
-    extends Omit<PatternTypeProps, 'setPatternType'>,
-        Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
-        VersionContextProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
+interface ResultTypeLinkProps extends SearchSidebarProps {
     type: SearchType
-    query: string
 }
 
 const ResultTypeLink: React.FunctionComponent<ResultTypeLinkProps> = ({
@@ -43,7 +37,7 @@ const ResultTypeLink: React.FunctionComponent<ResultTypeLinkProps> = ({
     )
 }
 
-export const SidebarResultTypeSection: React.FunctionComponent<Omit<ResultTypeLinkProps, 'type'>> = props => {
+export const SidebarResultTypeSection: React.FunctionComponent<SearchSidebarProps> = props => {
     const types: SearchType[] = ['file', 'repo', 'path', 'symbol', 'diff', 'commit']
 
     return (

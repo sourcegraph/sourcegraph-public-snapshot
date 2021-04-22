@@ -2,8 +2,9 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 
 import { WebStory } from '../../../../components/WebStory'
+import { SearchPatternType } from '../../../../graphql-operations'
 
-import { SearchSidebar } from './SearchSidebar'
+import { SearchSidebar, SearchSidebarProps } from './SearchSidebar'
 
 const { add } = storiesOf('web/search/results/streaming/SearchSidebar', module).addParameters({
     design: {
@@ -12,4 +13,12 @@ const { add } = storiesOf('web/search/results/streaming/SearchSidebar', module).
     },
 })
 
-add('empty sidebar', () => <WebStory>{() => <SearchSidebar />}</WebStory>)
+const defaultProps: SearchSidebarProps = {
+    caseSensitive: false,
+    patternType: SearchPatternType.literal,
+    versionContext: undefined,
+    selectedSearchContextSpec: 'global',
+    query: '',
+}
+
+add('empty sidebar', () => <WebStory>{() => <SearchSidebar {...defaultProps} />}</WebStory>)

@@ -12,7 +12,7 @@ const SearchSidebarSection: React.FunctionComponent<{ header: string }> = ({ hea
     </div>
 )
 
-interface SearchSidebarProps
+export interface SearchSidebarProps
     extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
         VersionContextProps,
