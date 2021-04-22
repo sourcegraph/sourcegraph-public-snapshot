@@ -1,8 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`SidebarResultTypeSection should have correct links when type already exists in query 1`] = `
+exports[`SearchTypeLink should have correct links when type already exists in query 1`] = `
 Array [
-  <ResultTypeLink
+  <SearchTypeLink
     caseSensitive={false}
     key="file"
     patternType="literal"
@@ -35,8 +35,8 @@ Array [
         </span>
       </a>
     </AnchorLink>
-  </ResultTypeLink>,
-  <ResultTypeLink
+  </SearchTypeLink>,
+  <SearchTypeLink
     caseSensitive={false}
     key="repo"
     patternType="literal"
@@ -69,8 +69,8 @@ Array [
         </span>
       </a>
     </AnchorLink>
-  </ResultTypeLink>,
-  <ResultTypeLink
+  </SearchTypeLink>,
+  <SearchTypeLink
     caseSensitive={false}
     key="path"
     patternType="literal"
@@ -103,8 +103,8 @@ Array [
         </span>
       </a>
     </AnchorLink>
-  </ResultTypeLink>,
-  <ResultTypeLink
+  </SearchTypeLink>,
+  <SearchTypeLink
     caseSensitive={false}
     key="symbol"
     patternType="literal"
@@ -137,8 +137,8 @@ Array [
         </span>
       </a>
     </AnchorLink>
-  </ResultTypeLink>,
-  <ResultTypeLink
+  </SearchTypeLink>,
+  <SearchTypeLink
     caseSensitive={false}
     key="diff"
     patternType="literal"
@@ -171,8 +171,8 @@ Array [
         </span>
       </a>
     </AnchorLink>
-  </ResultTypeLink>,
-  <ResultTypeLink
+  </SearchTypeLink>,
+  <SearchTypeLink
     caseSensitive={false}
     key="commit"
     patternType="literal"
@@ -205,13 +205,13 @@ Array [
         </span>
       </a>
     </AnchorLink>
-  </ResultTypeLink>,
+  </SearchTypeLink>,
 ]
 `;
 
-exports[`SidebarResultTypeSection should have correct links when type not apresent 1`] = `
+exports[`SearchTypeLink should have correct links when type not apresent 1`] = `
 Array [
-  <ResultTypeLink
+  <SearchTypeLink
     caseSensitive={false}
     key="file"
     patternType="literal"
@@ -244,8 +244,8 @@ Array [
         </span>
       </a>
     </AnchorLink>
-  </ResultTypeLink>,
-  <ResultTypeLink
+  </SearchTypeLink>,
+  <SearchTypeLink
     caseSensitive={false}
     key="repo"
     patternType="literal"
@@ -278,8 +278,8 @@ Array [
         </span>
       </a>
     </AnchorLink>
-  </ResultTypeLink>,
-  <ResultTypeLink
+  </SearchTypeLink>,
+  <SearchTypeLink
     caseSensitive={false}
     key="path"
     patternType="literal"
@@ -312,8 +312,8 @@ Array [
         </span>
       </a>
     </AnchorLink>
-  </ResultTypeLink>,
-  <ResultTypeLink
+  </SearchTypeLink>,
+  <SearchTypeLink
     caseSensitive={false}
     key="symbol"
     patternType="literal"
@@ -346,8 +346,8 @@ Array [
         </span>
       </a>
     </AnchorLink>
-  </ResultTypeLink>,
-  <ResultTypeLink
+  </SearchTypeLink>,
+  <SearchTypeLink
     caseSensitive={false}
     key="diff"
     patternType="literal"
@@ -380,8 +380,8 @@ Array [
         </span>
       </a>
     </AnchorLink>
-  </ResultTypeLink>,
-  <ResultTypeLink
+  </SearchTypeLink>,
+  <SearchTypeLink
     caseSensitive={false}
     key="commit"
     patternType="literal"
@@ -414,6 +414,6 @@ Array [
         </span>
       </a>
     </AnchorLink>
-  </ResultTypeLink>,
+  </SearchTypeLink>,
 ]
 `;

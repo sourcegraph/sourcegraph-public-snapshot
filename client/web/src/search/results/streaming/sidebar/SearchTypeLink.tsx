@@ -9,11 +9,11 @@ import { SearchType } from '../../SearchResults'
 import { SearchSidebarProps } from './SearchSidebar'
 import styles from './SearchSidebarSection.module.scss'
 
-interface ResultTypeLinkProps extends SearchSidebarProps {
+interface SearchTypeLinkProps extends SearchSidebarProps {
     type: SearchType
 }
 
-const ResultTypeLink: React.FunctionComponent<ResultTypeLinkProps> = ({
+const SearchTypeLink: React.FunctionComponent<SearchTypeLinkProps> = ({
     type,
     query,
     patternType,
@@ -40,7 +40,7 @@ const ResultTypeLink: React.FunctionComponent<ResultTypeLinkProps> = ({
     )
 }
 
-export const getResultTypeLinks = (props: SearchSidebarProps): ReactElement[] => {
+export const getSearchTypeLinks = (props: SearchSidebarProps): ReactElement[] => {
     const types: Exclude<SearchType, null>[] = ['file', 'repo', 'path', 'symbol', 'diff', 'commit']
-    return types.map(type => <ResultTypeLink {...props} type={type} key={type} />)
+    return types.map(type => <SearchTypeLink {...props} type={type} key={type} />)
 }

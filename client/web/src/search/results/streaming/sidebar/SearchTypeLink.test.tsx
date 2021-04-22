@@ -3,8 +3,8 @@ import React from 'react'
 
 import { SearchPatternType } from '../../../../graphql-operations'
 
-import { getResultTypeLinks } from './ResultTypeLink'
 import { SearchSidebarProps } from './SearchSidebar'
+import { getSearchTypeLinks } from './SearchTypeLink'
 
 const defaultProps: SearchSidebarProps = {
     caseSensitive: false,
@@ -14,14 +14,14 @@ const defaultProps: SearchSidebarProps = {
     query: 'test',
 }
 
-describe('SidebarResultTypeSection', () => {
+describe('SearchTypeLink', () => {
     it('should have correct links when type not apresent', () => {
-        const links = getResultTypeLinks(defaultProps)
+        const links = getSearchTypeLinks(defaultProps)
         expect(mount(<>{links}</>)).toMatchSnapshot()
     })
 
     it('should have correct links when type already exists in query', () => {
-        const links = getResultTypeLinks({ ...defaultProps, query: 'test type:repo' })
+        const links = getSearchTypeLinks({ ...defaultProps, query: 'test type:repo' })
         expect(mount(<>{links}</>)).toMatchSnapshot()
     })
 })
