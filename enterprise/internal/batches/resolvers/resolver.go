@@ -33,11 +33,12 @@ import (
 // Resolver is the GraphQL resolver of all things related to batch changes.
 type Resolver struct {
 	store *store.Store
+	key   encryption.Key
 }
 
 // New returns a new Resolver whose store uses the given database
-func New(store *store.Store) graphqlbackend.BatchChangesResolver {
-	return &Resolver{store: store}
+func New(store *store.Store, key encryption.Key) graphqlbackend.BatchChangesResolver {
+	return &Resolver{store: store, key: key}
 }
 
 func batchChangesEnabled(ctx context.Context) error {
@@ -308,7 +309,7 @@ func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64)
 		return nil, err
 	}
 
-	return &batchChangesUserCredentialResolver{credential: cred}, nil
+	return &batchChangesUserCredentialResolver{credential: cred, key: r.key}, nil
 }
 
 func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64) (graphqlbackend.BatchChangesCredentialResolver, error) {
@@ -962,7 +963,7 @@ func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externa
 	if err != nil {
 		return nil, err
 	}
-	cred, err := r.store.UserCredentials().Create(ctx, userCredentialScope, a)
+	cred, err := r.store.UserCredentials().Create(ctx, r.key, userCredentialScope, a)
 	if err != nil {
 		return nil, err
 	}

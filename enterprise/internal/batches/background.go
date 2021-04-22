@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
@@ -18,6 +19,7 @@ import (
 func InitBackgroundJobs(
 	ctx context.Context,
 	db dbutil.DB,
+	key encryption.Key,
 	cf *httpcli.Factory,
 ) interface {
 	// EnqueueChangesetSyncs will queue the supplied changesets to sync ASAP.
@@ -37,7 +39,7 @@ func InitBackgroundJobs(
 
 	syncRegistry := syncer.NewSyncRegistry(ctx, cstore, cf)
 
-	go goroutine.MonitorBackgroundRoutines(ctx, background.Routines(ctx, cstore, cf)...)
+	go goroutine.MonitorBackgroundRoutines(ctx, background.Routines(ctx, cstore, key, cf)...)
 
 	return syncRegistry
 }

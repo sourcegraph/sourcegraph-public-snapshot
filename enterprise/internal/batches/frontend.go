@@ -31,7 +31,7 @@ func InitFrontend(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *o
 	cstore := store.New(db)
 	key := keyring.Default().BatchChangesCredentialKey
 
-	enterpriseServices.BatchChangesResolver = resolvers.New(cstore)
+	enterpriseServices.BatchChangesResolver = resolvers.New(cstore, key)
 	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(cstore)
 	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(cstore)
 	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(cstore)

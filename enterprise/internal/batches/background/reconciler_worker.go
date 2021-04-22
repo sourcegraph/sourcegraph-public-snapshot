@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/reconciler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -29,11 +30,12 @@ const reconcilerMaxNumResets = 60
 func newReconcilerWorker(
 	ctx context.Context,
 	s *store.Store,
+	key encryption.Key,
 	gitClient reconciler.GitserverClient,
 	sourcer sources.Sourcer,
 	metrics batchChangesMetrics,
 ) *workerutil.Worker {
-	r := reconciler.New(gitClient, sourcer, s)
+	r := reconciler.New(gitClient, sourcer, s, key)
 
 	options := workerutil.WorkerOptions{
 		Name:        "batches_reconciler_worker",

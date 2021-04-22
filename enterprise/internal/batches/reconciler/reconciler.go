@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -25,17 +26,19 @@ type Reconciler struct {
 	gitserverClient GitserverClient
 	sourcer         sources.Sourcer
 	store           *store.Store
+	key             encryption.Key
 
 	// This is used to disable a time.Sleep for operationSleep so that the
 	// tests don't run slower.
 	noSleepBeforeSync bool
 }
 
-func New(gitClient GitserverClient, sourcer sources.Sourcer, store *store.Store) *Reconciler {
+func New(gitClient GitserverClient, sourcer sources.Sourcer, store *store.Store, key encryption.Key) *Reconciler {
 	return &Reconciler{
 		gitserverClient: gitClient,
 		sourcer:         sourcer,
 		store:           store,
+		key:             key,
 	}
 }
 
@@ -83,6 +86,7 @@ func (r *Reconciler) process(ctx context.Context, tx *store.Store, ch *btypes.Ch
 		r.sourcer,
 		r.noSleepBeforeSync,
 		tx,
+		r.key,
 		plan,
 	)
 }

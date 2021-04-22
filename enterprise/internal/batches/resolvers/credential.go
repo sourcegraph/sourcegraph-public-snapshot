@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
@@ -59,6 +61,7 @@ func unmarshalBatchChangesCredentialID(id graphql.ID) (credentialID int64, isSit
 
 type batchChangesUserCredentialResolver struct {
 	credential *database.UserCredential
+	key        encryption.Key
 }
 
 var _ graphqlbackend.BatchChangesCredentialResolver = &batchChangesUserCredentialResolver{}
@@ -76,12 +79,17 @@ func (c *batchChangesUserCredentialResolver) ExternalServiceURL() string {
 	return c.credential.ExternalServiceID
 }
 
-func (c *batchChangesUserCredentialResolver) SSHPublicKey() *string {
-	if a, ok := c.credential.Credential.(auth.AuthenticatorWithSSH); ok {
-		publicKey := a.SSHPublicKey()
-		return &publicKey
+func (c *batchChangesUserCredentialResolver) SSHPublicKey(ctx context.Context) (*string, error) {
+	a, err := c.credential.Authenticator(ctx, c.key)
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving authenticator")
 	}
-	return nil
+
+	if a, ok := a.(auth.AuthenticatorWithSSH); ok {
+		publicKey := a.SSHPublicKey()
+		return &publicKey, nil
+	}
+	return nil, nil
 }
 
 func (c *batchChangesUserCredentialResolver) CreatedAt() graphqlbackend.DateTime {
@@ -111,12 +119,12 @@ func (c *batchChangesSiteCredentialResolver) ExternalServiceURL() string {
 	return c.credential.ExternalServiceID
 }
 
-func (c *batchChangesSiteCredentialResolver) SSHPublicKey() *string {
+func (c *batchChangesSiteCredentialResolver) SSHPublicKey(ctx context.Context) (*string, error) {
 	if a, ok := c.credential.Credential.(auth.AuthenticatorWithSSH); ok {
 		publicKey := a.SSHPublicKey()
-		return &publicKey
+		return &publicKey, nil
 	}
-	return nil
+	return nil, nil
 }
 
 func (c *batchChangesSiteCredentialResolver) CreatedAt() graphqlbackend.DateTime {
