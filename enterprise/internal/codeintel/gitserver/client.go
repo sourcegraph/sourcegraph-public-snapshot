@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -284,10 +285,11 @@ func (c *Client) execResolveRevGitCommand(ctx context.Context, repositoryID int,
 		return string(bytes.TrimSpace(out)), nil
 	}
 
-	if revision != "" {
-		// If we're returning an error, try to resolve revision that was the
-		// target of the command (if any). If the revision fails to resolve,
-		// we return a RevisionNotFoundError error instead of an "exit 128".
+	// If the repo doesn't exist don't bother trying to resolve the commit. Otherwise,
+	// if we're returning an error, try to resolve revision that  was the target of the
+	// command (if any). If the revision fails to resolve, we return an instance of a
+	// RevisionNotFoundError error instead of an "exit 128".
+	if revision != "" && !vcs.IsRepoNotExist(err) {
 		if _, err := git.ResolveRevision(ctx, repo, revision, git.ResolveRevisionOptions{}); err != nil {
 			return "", errors.Wrap(err, "git.ResolveRevision")
 		}
