@@ -290,18 +290,13 @@ func unmarshalHoverPart(raw json.RawMessage) (*string, error) {
 
 	// now check if MarkupContent
 	if m.Kind != "" {
-		markup := strings.TrimSpace(protocol.MarkupContent{
-			Kind:  protocol.MarkupKind(m.Kind), // TODO: validate possible values
-			Value: m.Value,
-		}.String())
+		// TODO: validate possible values
+		markup := strings.TrimSpace(protocol.NewMarkupContent(m.Value, protocol.MarkupKind(m.Kind)).String())
 		return &markup, nil
 	}
 
 	// else assume MarkedString
-	marked := strings.TrimSpace(protocol.MarkedString{
-		Language: m.Language,
-		Value:    m.Value,
-	}.String())
+	marked := strings.TrimSpace(protocol.NewMarkedString(m.Value, m.Language).String())
 
 	return &marked, nil
 }

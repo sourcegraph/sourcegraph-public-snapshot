@@ -41,6 +41,13 @@ type MarkupContent struct {
 	Value string     `json:"value"`
 }
 
+func NewMarkupContent(s string, kind MarkupKind) MarkupContent {
+	return MarkupContent{
+		Kind:  kind,
+		Value: s,
+	}
+}
+
 func (mc MarkupContent) String() string {
 	return mc.Value
 }
