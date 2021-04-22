@@ -78,7 +78,7 @@ func parseScheme(rawurl string) (*url.URL, error) {
 }
 
 // scpSyntax was modified from https://golang.org/src/cmd/go/vcs.go.
-var scpSyntax = regexp.MustCompile(`^([a-zA-Z0-9-._~]+@)?([a-zA-Z0-9._-]+):([a-zA-Z0-9./._-]+)(?:\?||$)(.*)$`)
+var scpSyntax = regexp.MustCompile(`^([a-zA-Z0-9-._~]+@)?([a-zA-Z0-9._-]+):([a-zA-Z0-9\@./._-]+)(?:\?||$)(.*)$`)
 
 // parseScp parses rawurl into a URL object. The rawurl must be
 // an SCP-like URL, otherwise ParseScp returns an error.

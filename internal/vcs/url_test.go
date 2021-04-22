@@ -188,6 +188,11 @@ func TestParseURL(t *testing.T) {
 			"ssh://user-1234@host.xz/path/to/repo.git/", "",
 		),
 		newParseURLTest(
+			"user@host.xz:path/to/repo@domain.git/",
+			"ssh", "user", "host.xz", "path/to/repo@domain.git/",
+			"ssh://user@host.xz/path/to/repo@domain.git/", "",
+		),
+		newParseURLTest(
 			"/path/to/repo.git/",
 			"file", "", "", "/path/to/repo.git/",
 			"file:///path/to/repo.git/", "",
