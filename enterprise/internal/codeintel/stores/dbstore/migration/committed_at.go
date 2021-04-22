@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -114,26 +115,28 @@ func (m *committedAtMigrator) processBatch(ctx context.Context, tx *dbstore.Stor
 		commits := batch[repositoryID]
 		sort.Strings(commits)
 
-	outer:
+		// Note: this is difficult to combine since if we pass in one bad commit it destroys
+		// the entire request with a fatal: bad object <unknown sha>. We should at some point
+		// come back to this and figure out how to batch these so we're not doing so many
+		// gitserver roundtrips on these kind of background tasks for code intelligence.
 		for _, commit := range commits {
-			// Note: this is difficult to combine since if we pass in one bad commit
-			// it destroys the entire request with a fatal: bad object <unknown sha>.
-			// We should at some point come back to this and figure out how to batch
-			// these so we're not doing so many gitserver roundtrips on these kind
-			// of background tasks for code intelligence.
-			commitDate, err := m.gitserverClient.CommitDate(ctx, repositoryID, commit)
-			if err != nil {
-				for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-					if basegitserver.IsRevisionNotFound(ex) {
-						continue outer
-					}
+			var commitDateString string
+			if commitDate, err := m.gitserverClient.CommitDate(ctx, repositoryID, commit); err != nil {
+				if !isRevisionNotFound(err) {
+					return err
 				}
 
-				return err
+				// Set a value here that we'll filter out on the query side so that we don't
+				// reprocess the same failing batch infinitely. We could alternative soft
+				// delete the record, but it would be better to keep record deletion behavior
+				// together in the same place (so we have unified metrics on that event).
+				commitDateString = "-infinity"
+			} else {
+				commitDateString = commitDate.Format(time.RFC3339)
 			}
 
 			// Update commit date of all uploads attached to this this repository and commit
-			if err := tx.Exec(ctx, sqlf.Sprintf(committedAtProcessBatchQuery, commitDate, repositoryID, commit)); err != nil {
+			if err := tx.Exec(ctx, sqlf.Sprintf(committedAtProcessBatchUpdateCommitDateQuery, commitDateString, repositoryID, commit)); err != nil {
 				return err
 			}
 		}
@@ -147,8 +150,8 @@ func (m *committedAtMigrator) processBatch(ctx context.Context, tx *dbstore.Stor
 	return nil
 }
 
-const committedAtProcessBatchQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/migration/committed_at.go:ProcessBatch
+const committedAtProcessBatchUpdateCommitDateQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/migration/committed_at.go:processBatch
 UPDATE lsif_uploads SET committed_at = %s WHERE state = 'completed' AND repository_id = %s AND commit = %s AND committed_at IS NULL
 `
 
@@ -162,3 +165,13 @@ const committedAtDownQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/migration/committed_at.go:Down
 UPDATE lsif_uploads SET committed_at = NULL WHERE id IN (SELECT id FROM lsif_uploads WHERE state = 'completed' AND committed_at IS NOT NULL LIMIT %s)
 `
+
+func isRevisionNotFound(err error) bool {
+	for ex := err; ex != nil; ex = errors.Unwrap(ex) {
+		if basegitserver.IsRevisionNotFound(ex) {
+			return true
+		}
+	}
+
+	return false
+}
