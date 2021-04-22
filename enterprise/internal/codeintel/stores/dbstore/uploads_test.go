@@ -773,6 +773,10 @@ func TestGetOldestCommitDate(t *testing.T) {
 		Upload{ID: 8, State: "completed", RepositoryID: 51},
 	)
 
+	if _, err := dbconn.Global.Exec("UPDATE lsif_uploads SET committed_at = '-infinity' WHERE id = 3"); err != nil {
+		t.Fatalf("unexpected error updating commit date %s", err)
+	}
+
 	for uploadID, commitDate := range map[int]time.Time{
 		1: t3,
 		2: t4,

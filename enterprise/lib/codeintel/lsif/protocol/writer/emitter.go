@@ -69,7 +69,7 @@ func (e *Emitter) EmitDocumentSymbolEdge(resultV, docV uint64) uint64 {
 
 func (e *Emitter) EmitHoverResult(contents []protocol.MarkedString) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewHoverResult(id, contents))
+	e.writer.Write(protocol.NewHoverResult(id, protocol.MarkedStrings(contents)))
 	return id
 }
 

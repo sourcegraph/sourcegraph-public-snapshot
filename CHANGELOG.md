@@ -23,11 +23,18 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Indexed search failed when the `master` branch needed indexing but was not the default. [#20260](https://github.com/sourcegraph/sourcegraph/pull/20260)
+-
 
 ### Removed
 
 -
+
+## 3.27.1
+
+### Fixed
+
+- Indexed search failed when the `master` branch needed indexing but was not the default. [#20260](https://github.com/sourcegraph/sourcegraph/pull/20260)
+- Fixed a regression that caused "other" code hosts urls to not be built correctly which prevents code to be cloned / updated in 3.27.0. This change will provoke some cloning errors on repositories that are already sync'ed, until the next code host sync. [#20258](https://github.com/sourcegraph/sourcegraph/pull/20258)
 
 ## 3.27.0
 
