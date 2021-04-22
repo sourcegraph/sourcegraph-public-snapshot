@@ -27,6 +27,7 @@ const typeToProse: Record<Exclude<SearchType, null>, string> = {
     symbol: 'Symbols',
     repo: 'Repositories',
     path: 'Filenames',
+    file: 'File contents',
 }
 
 export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
