@@ -37,7 +37,7 @@ import { SearchResultTypeTabs } from '../SearchResultTypeTabs'
 import { VersionContextWarning } from '../VersionContextWarning'
 
 import { StreamingProgress } from './progress/StreamingProgress'
-import { SearchSidebar } from './SearchSidebar'
+import { SearchSidebar } from './sidebar/SearchSidebar'
 import styles from './StreamingSearchResults.module.scss'
 import { StreamingSearchResultsFilterBars } from './StreamingSearchResultsFilterBars'
 import { StreamingSearchResultsList } from './StreamingSearchResultsList'
@@ -200,7 +200,11 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         <div className={classNames('test-search-results search-results', styles.streamingSearchResults)}>
             <PageTitle key="page-title" title={query} />
 
-            {isRedesignEnabled ? <SearchSidebar /> : <StreamingSearchResultsFilterBars {...props} results={results} />}
+            {isRedesignEnabled ? (
+                <SearchSidebar {...props} query={props.navbarSearchQueryState.query} />
+            ) : (
+                <StreamingSearchResultsFilterBars {...props} results={results} />
+            )}
             <div className="search-results-list">
                 <div className="d-lg-flex mb-2 align-items-end flex-wrap">
                     {!isRedesignEnabled && (
