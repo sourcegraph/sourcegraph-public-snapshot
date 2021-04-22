@@ -619,6 +619,50 @@ func Frontend() *monitoring.Container {
 				},
 			},
 			{
+				Title:  "Out of band migrations",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:           "out_of_band_migrations_up_99th_percentile_duration",
+							Description:    "99th percentile successful out-of-band up migration operations duration over 5m",
+							Query:          `histogram_quantile(0.99, sum by (le, migration)(rate(src_oobmigration_duration_seconds_bucket{op="up"}[5m])))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("migration {{migration}}").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: "none",
+						},
+						{
+							Name:              "out_of_band_migrations_up_errors",
+							Description:       "out-of-band up migration errors every 5m",
+							Query:             `sum by (migration)(increase(src_oobmigration_errors_total{op="up"}[5m]))`,
+							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
+							Panel:             monitoring.Panel().LegendFormat("migration {{migration}}"),
+							Owner:             monitoring.ObservableOwnerCoreApplication,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:           "out_of_band_migrations_down_99th_percentile_duration",
+							Description:    "99th percentile successful out-of-band down migration operations duration over 5m",
+							Query:          `histogram_quantile(0.99, sum by (le, migration)(rate(src_oobmigration_duration_seconds_bucket{op="down"}[5m])))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("migration {{migration}}").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: "none",
+						},
+						{
+							Name:              "out_of_band_migrations_down_errors",
+							Description:       "out-of-band down migration errors every 5m",
+							Query:             `sum by (migration)(increase(src_oobmigration_errors_total{op="down"}[5m]))`,
+							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
+							Panel:             monitoring.Panel().LegendFormat("migration {{migration}}"),
+							Owner:             monitoring.ObservableOwnerCoreApplication,
+							PossibleSolutions: "none",
+						},
+					},
+				},
+			},
+			{
 				Title:  "Internal service requests",
 				Hidden: true,
 				Rows: []monitoring.Row{
