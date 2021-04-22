@@ -12,6 +12,7 @@ import { flow } from 'lodash'
 import openColor from 'open-color'
 import React, { useState } from 'react'
 import 'storybook-addon-designs'
+import SearchIcon from 'mdi-react/SearchIcon'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
@@ -23,7 +24,6 @@ import { Form } from '../../components/Form'
 import { ButtonVariants } from './ButtonVariants'
 import { SEMANTIC_COLORS } from './constants'
 import { preventDefault } from './utils'
-import SearchIcon from 'mdi-react/SearchIcon'
 
 const { add } = storiesOf('branded/Global styles', module).addDecorator(story => (
     <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>

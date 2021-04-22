@@ -4,9 +4,7 @@
     --border-radius-lg: 4px;
 }
 
-:root.theme-redesign,
-// Descendant selector is required for Storybook `addRedesignVariants` helper.
-:root .theme-redesign {
+.theme-redesign {
     --border-radius: 4px;
     --border-radius-sm: 4px;
     --border-radius-lg: 4px;
