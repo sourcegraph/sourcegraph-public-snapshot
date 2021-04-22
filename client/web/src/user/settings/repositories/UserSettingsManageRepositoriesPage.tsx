@@ -791,7 +791,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         )}
                         {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
 
-                        {ALLOW_PRIVATE_CODE && !codeHosts.loaded && modeSelectShimmer}
+                        {!codeHosts.loaded && modeSelectShimmer}
 
                         {/* display radio button for 'all' or 'selected' repos */}
                         {codeHosts.loaded && codeHosts.hosts.length !== 0 && modeSelect}
