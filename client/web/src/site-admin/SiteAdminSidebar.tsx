@@ -5,11 +5,16 @@ import { ListGroup, ListGroupItem } from 'reactstrap'
 import { SidebarCollapseItems, SidebarGroupItems, SidebarNavItem } from '../components/Sidebar'
 import { NavGroupDescriptor } from '../util/contributions'
 
-export interface SiteAdminSideBarGroup extends NavGroupDescriptor {}
+export interface SiteAdminSideBarGroupContext {
+    isSourcegraphDotCom: boolean
+}
+
+export interface SiteAdminSideBarGroup extends NavGroupDescriptor<SiteAdminSideBarGroupContext> {}
 
 export type SiteAdminSideBarGroups = readonly SiteAdminSideBarGroup[]
 
 export interface SiteAdminSidebarProps {
+    isSourcegraphDotCom: boolean
     /** The items for the side bar, by group */
     groups: SiteAdminSideBarGroups
     className: string
@@ -18,19 +23,23 @@ export interface SiteAdminSidebarProps {
 /**
  * Sidebar for the site admin area.
  */
-export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = ({ className, groups }) => (
+export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = ({
+    className,
+    groups,
+    isSourcegraphDotCom,
+}) => (
     <div className={`site-admin-sidebar ${className}`}>
         <ListGroup>
             {groups.map(
                 ({ header, items, condition = () => true }, index) =>
-                    condition({}) &&
+                    condition({ isSourcegraphDotCom }) &&
                     (items.length > 1 ? (
                         <ListGroupItem className="p-0" key={index}>
                             <SidebarCollapseItems icon={header?.icon} label={header?.label} openByDefault={true}>
                                 <SidebarGroupItems>
                                     {items.map(
                                         ({ label, to, source = 'client', condition = () => true }) =>
-                                            condition({}) && (
+                                            condition({ isSourcegraphDotCom }) && (
                                                 <SidebarNavItem to={to} exact={true} key={label} source={source}>
                                                     {label}
                                                 </SidebarNavItem>

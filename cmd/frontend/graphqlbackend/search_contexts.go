@@ -30,6 +30,23 @@ type searchContextResolver struct {
 	db dbutil.DB
 }
 
+type searchContextInputArgs struct {
+	Name        string
+	Description string
+	Public      bool
+	Namespace   *graphql.ID
+}
+
+type searchContextRepositoryRevisionsInputArgs struct {
+	RepositoryID graphql.ID
+	Revisions    []string
+}
+
+type createSearchContextArgs struct {
+	SearchContext searchContextInputArgs
+	Repositories  []searchContextRepositoryRevisionsInputArgs
+}
+
 type searchContextRepositoryRevisionsResolver struct {
 	repository *RepositoryResolver
 	revisions  []string
@@ -141,6 +158,48 @@ func (r *schemaResolver) AutoDefinedSearchContexts(ctx context.Context) ([]*sear
 		return nil, err
 	}
 	return searchContextsToResolvers(searchContexts, r.db), nil
+}
+
+func (r *schemaResolver) CreateSearchContext(ctx context.Context, args createSearchContextArgs) (*searchContextResolver, error) {
+	var namespaceUserID, namespaceOrgID int32
+	if args.SearchContext.Namespace != nil {
+		err := UnmarshalNamespaceID(*args.SearchContext.Namespace, &namespaceUserID, &namespaceOrgID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, 0, len(args.Repositories))
+	for _, repository := range args.Repositories {
+		repoResolver, err := r.repositoryByID(ctx, repository.RepositoryID)
+		if err != nil {
+			return nil, err
+		}
+		repositoryRevisions = append(repositoryRevisions, &types.SearchContextRepositoryRevisions{
+			Repo: types.RepoName{
+				ID:   repoResolver.IDInt32(),
+				Name: repoResolver.RepoName(),
+			},
+			Revisions: repository.Revisions,
+		})
+	}
+
+	searchContext, err := searchcontexts.CreateSearchContextWithRepositoryRevisions(
+		ctx,
+		r.db,
+		&types.SearchContext{
+			Name:            args.SearchContext.Name,
+			Description:     args.SearchContext.Description,
+			Public:          args.SearchContext.Public,
+			NamespaceUserID: namespaceUserID,
+			NamespaceOrgID:  namespaceOrgID,
+		},
+		repositoryRevisions,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &searchContextResolver{searchContext, r.db}, nil
 }
 
 func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchContextsArgs) (*searchContextConnection, error) {

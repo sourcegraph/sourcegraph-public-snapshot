@@ -44,9 +44,6 @@ func DefaultServices() Services {
 		NewCodeIntelUploadHandler: func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
 		NewExecutorProxyHandler:   func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		AuthzResolver:             graphqlbackend.DefaultAuthzResolver,
-		InsightsResolver:          graphqlbackend.DefaultInsightsResolver,
-		CodeMonitorsResolver:      graphqlbackend.DefaultCodeMonitorsResolver,
-		LicenseResolver:           graphqlbackend.DefaultLicenseResolver,
 	}
 }
 

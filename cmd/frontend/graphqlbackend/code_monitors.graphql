@@ -1,0 +1,510 @@
+extend type Mutation {
+    """
+    Create a code monitor.
+    """
+    createCodeMonitor(
+        """
+        A monitor.
+        """
+        monitor: MonitorInput!
+        """
+        A trigger.
+        """
+        trigger: MonitorTriggerInput!
+        """
+        A list of actions.
+        """
+        actions: [MonitorActionInput!]!
+    ): Monitor!
+
+    """
+    Set a code monitor to active/inactive.
+    """
+    toggleCodeMonitor(
+        """
+        The id of a code monitor.
+        """
+        id: ID!
+        """
+        Whether the code monitor should be enabled or not.
+        """
+        enabled: Boolean!
+    ): Monitor!
+
+    """
+    Delete a code monitor.
+    """
+    deleteCodeMonitor(
+        """
+        The id of a code monitor.
+        """
+        id: ID!
+    ): EmptyResponse!
+
+    """
+    Update a code monitor. We assume that the request contains a complete code monitor,
+    including its trigger and all actions. Actions which are stored in the database,
+    but are missing from the request will be deleted from the database. Actions with id=null
+    will be created.
+    """
+    updateCodeMonitor(
+        """
+        The input required to edit a monitor.
+        """
+        monitor: MonitorEditInput!
+        """
+        The input required to edit the trigger of a monitor. You can only edit triggers that are
+        associated with the monitor (value of field monitor).
+        """
+        trigger: MonitorEditTriggerInput!
+        """
+        The input required to edit the actions of a monitor. You can only edit actions that are
+        associated with the monitor (value of field monitor).
+        """
+        actions: [MonitorEditActionInput!]!
+    ): Monitor!
+
+    """
+    Reset the timestamps of a trigger query. The query will be queued immediately and return
+    all results without a limit on the timeframe. Only site admins may perform this mutation.
+    """
+    resetTriggerQueryTimestamps(
+        """
+        The id of the trigger query.
+        """
+        id: ID!
+    ): EmptyResponse!
+
+    """
+    Triggers a test email for a code monitor action.
+    """
+    triggerTestEmailAction(namespace: ID!, description: String!, email: MonitorEmailInput!): EmptyResponse!
+}
+
+extend type User {
+    """
+    A list of monitors owned by the user or her organization.
+    """
+    monitors(
+        """
+        Returns the first n monitors from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorConnection!
+}
+
+"""
+A list of code monitors
+"""
+type MonitorConnection {
+    """
+    A list of monitors.
+    """
+    nodes: [Monitor!]!
+
+    """
+    The total number of monitors in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A code monitor with one trigger and possibly many actions.
+"""
+type Monitor implements Node {
+    """
+    The code monitor's unique ID.
+    """
+    id: ID!
+    """
+    The user who created the code monitor.
+    """
+    createdBy: User!
+    """
+    The time at which the code monitor was created.
+    """
+    createdAt: DateTime!
+    """
+    A meaningful description of the code monitor.
+    """
+    description: String!
+    """
+    Owners can edit the code monitor.
+    """
+    owner: Namespace!
+    """
+    Whether the code monitor is currently enabled.
+    """
+    enabled: Boolean!
+    """
+    Triggers trigger actions. There can only be one trigger per monitor.
+    """
+    trigger: MonitorTrigger!
+    """
+    One or more actions that are triggered by the trigger.
+    """
+    actions(
+        """
+        Returns the first n actions from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionConnection!
+}
+
+"""
+A query that can serve as a trigger for code monitors.
+"""
+type MonitorQuery implements Node {
+    """
+    The unique id of a trigger query.
+    """
+    id: ID!
+    """
+    A query.
+    """
+    query: String!
+    """
+    A list of events.
+    """
+    events(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorTriggerEventConnection!
+}
+
+"""
+A list of trigger events.
+"""
+type MonitorTriggerEventConnection {
+    """
+    A list of events.
+    """
+    nodes: [MonitorTriggerEvent!]!
+    """
+    The total number of events in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A trigger event is an event together with a list of associated actions.
+"""
+type MonitorTriggerEvent implements Node {
+    """
+    The unique id of an event.
+    """
+    id: ID!
+    """
+    The status of an event.
+    """
+    status: EventStatus!
+    """
+    A message with details regarding the status of the event.
+    """
+    message: String
+    """
+    The time and date of the event.
+    """
+    timestamp: DateTime!
+    """
+    A list of actions.
+    """
+    actions(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionConnection!
+}
+
+"""
+Supported triggers for code monitors.
+"""
+union MonitorTrigger = MonitorQuery
+
+"""
+A list of actions.
+"""
+type MonitorActionConnection {
+    """
+    A list of actions.
+    """
+    nodes: [MonitorAction!]!
+
+    """
+    The total number of actions in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Supported actions for code monitors.
+"""
+union MonitorAction = MonitorEmail
+
+"""
+Email is one of the supported actions of code monitors.
+"""
+type MonitorEmail implements Node {
+    """
+    The unique id of an email action.
+    """
+    id: ID!
+    """
+    Whether the email action is enabled or not.
+    """
+    enabled: Boolean!
+    """
+    The priority of the email action.
+    """
+    priority: MonitorEmailPriority!
+    """
+    Use header to automatically approve the message in a read-only or moderated mailing list.
+    """
+    header: String!
+    """
+    A list of recipients of the email.
+    """
+    recipients(
+        """
+        Returns the first n recipients from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionEmailRecipientsConnection!
+    """
+    A list of events.
+    """
+    events(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionEventConnection!
+}
+
+"""
+The priority of an email action.
+"""
+enum MonitorEmailPriority {
+    NORMAL
+    CRITICAL
+}
+
+"""
+A list of events.
+"""
+type MonitorActionEmailRecipientsConnection {
+    """
+    A list of recipients.
+    """
+    nodes: [Namespace!]!
+    """
+    The total number of recipients in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A list of events.
+"""
+type MonitorActionEventConnection {
+    """
+    A list of events.
+    """
+    nodes: [MonitorActionEvent!]!
+    """
+    The total number of events in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An event documents the result of a trigger or an execution of an action.
+"""
+type MonitorActionEvent implements Node {
+    """
+    The unique id of an event.
+    """
+    id: ID!
+    """
+    The status of an event.
+    """
+    status: EventStatus!
+    """
+    A message with details regarding the status of the event.
+    """
+    message: String
+    """
+    The time and date of the event.
+    """
+    timestamp: DateTime!
+}
+
+"""
+Supported status of monitor events.
+"""
+enum EventStatus {
+    PENDING
+    SUCCESS
+    ERROR
+}
+
+"""
+The input required to create a code monitor.
+"""
+input MonitorInput {
+    """
+    The namespace represents the owner of the code monitor.
+    Owners can either be users or organizations.
+    """
+    namespace: ID!
+    """
+    A meaningful description of the code monitor.
+    """
+    description: String!
+    """
+    Whether the code monitor is enabled or not.
+    """
+    enabled: Boolean!
+}
+
+"""
+The input required to edit a code monitor.
+"""
+input MonitorEditInput {
+    """
+    The id of the monitor.
+    """
+    id: ID!
+    """
+    The desired state after the udpate.
+    """
+    update: MonitorInput!
+}
+
+"""
+The input required to create a trigger.
+"""
+input MonitorTriggerInput {
+    """
+    The query string.
+    """
+    query: String!
+}
+
+"""
+The input required to edit a trigger.
+"""
+input MonitorEditTriggerInput {
+    """
+    The id of the Trigger.
+    """
+    id: ID!
+    """
+    The desired state after the udpate.
+    """
+    update: MonitorTriggerInput!
+}
+
+"""
+The input required to create an action.
+"""
+input MonitorActionInput {
+    """
+    An email action.
+    """
+    email: MonitorEmailInput
+}
+
+"""
+The input required to create an email action.
+"""
+input MonitorEmailInput {
+    """
+    Whether the email action is enabled or not.
+    """
+    enabled: Boolean!
+    """
+    The priority of the email.
+    """
+    priority: MonitorEmailPriority!
+    """
+    A list of users or orgs which will receive the email.
+    """
+    recipients: [ID!]!
+    """
+    Use header to automatically approve the message in a read-only or moderated mailing list.
+    """
+    header: String!
+}
+"""
+The input required to edit an action.
+"""
+input MonitorEditActionInput {
+    """
+    An email action.
+    """
+    email: MonitorEditEmailInput
+}
+
+"""
+The input required to edit an email action.
+"""
+input MonitorEditEmailInput {
+    """
+    The id of an email action.
+    """
+    id: ID
+    """
+    The desired state after the update.
+    """
+    update: MonitorEmailInput!
+}

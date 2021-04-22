@@ -93,7 +93,11 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
         <Page>
             <PageHeader path={[{ text: 'Site Admin' }]} />
             <div className="site-admin-area d-flex my-3" ref={reference}>
-                <SiteAdminSidebar className="sidebar flex-0 mr-3" groups={props.sideBarGroups} />
+                <SiteAdminSidebar
+                    className="sidebar flex-0 mr-3"
+                    groups={props.sideBarGroups}
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
+                />
                 <div className="flex-bounded">
                     <ErrorBoundary location={props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>

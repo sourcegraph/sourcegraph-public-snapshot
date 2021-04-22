@@ -15,7 +15,12 @@ add(
     () => (
         <WebStory>
             {webProps => (
-                <SiteAdminSidebar {...webProps} className="site-admin-sidebar" groups={siteAdminSidebarGroups} />
+                <SiteAdminSidebar
+                    {...webProps}
+                    className="site-admin-sidebar"
+                    groups={siteAdminSidebarGroups}
+                    isSourcegraphDotCom={false}
+                />
             )}
         </WebStory>
     ),
