@@ -216,6 +216,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             return
         }
 
+        // loaded code hosts
+        setCodeHosts({
+            loaded: true,
+            hosts: externalServices,
+        })
+
         // list of the repos user selected
         const selectedAffiliatedRepos: string[] = []
 
@@ -310,12 +316,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 : selectedAffiliatedRepos.length > 0
                 ? 'selected'
                 : ''
-
-        // loaded code hosts
-        setCodeHosts({
-            loaded: true,
-            hosts: externalServices,
-        })
 
         // set sorted repos and mark as loaded
         setRepoState(previousRepoState => ({
@@ -567,7 +567,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     </p>
                 </div>
             </label>
-            <label className="d-flex flex-row align-items-baseline">
+            <label className="d-flex flex-row align-items-baseline mb-0">
                 <input
                     type="radio"
                     value="selected"
@@ -705,24 +705,23 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     }
 
     const modeSelectShimmer: JSX.Element = (
-        <div className="container">
+        <div className="container mt-4">
             <div className="mt-2 row">
-                <div className="user-settings-repos__shimmer p-4 mb-3 border-top-0 col-sm-12" />
+                <div className="user-settings-repos__shimmer-circle mr-2" />
+                <div className="user-settings-repos__shimmer mb-1 p-2 border-top-0 col-sm-2" />
+            </div>
+            <div className="mt-1 ml-2 row">
+                <div className="user-settings-repos__shimmer mb-3 p-2 ml-1 border-top-0 col-sm-6" />
             </div>
             <div className="mt-2 row">
-                <div className="user-settings-repos__shimmer-circle mr-3" />
-                <div className="user-settings-repos__shimmer p-3 mb-3 border-top-0 col-sm-8" />
-            </div>
-            <div className="mt-2 row">
-                <div className="user-settings-repos__shimmer-circle mr-3" />
-                <div className="user-settings-repos__shimmer p-3 mb-3 border-top-0 col-sm-4" />
-            </div>
-            <div className="mt-2 row">
-                <div className="user-settings-repos__shimmer-circle mr-3" />
-                <div className="user-settings-repos__shimmer mb-2 p-3 border-top-0 col-sm-5" />
+                <div className="user-settings-repos__shimmer-circle mr-2" />
+                <div className="user-settings-repos__shimmer p-2 mb-1 border-top-0 col-sm-3" />
             </div>
         </div>
     )
+
+    // code hosts were loaded and some were configured
+    const hasCodeHosts = codeHosts.loaded && codeHosts.hosts.length !== 0
 
     return (
         <div className="user-settings-repos">
@@ -741,7 +740,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 connected code hosts
                             </Link>
                         </p>
-                        {codeHosts.loaded && codeHosts.hosts.length !== 0 && (
+                        {hasCodeHosts && (
                             <div className="alert alert-primary">
                                 Coming soon: search private repositories with Sourcegraph Cloud.{' '}
                                 <Link
@@ -761,10 +760,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         )}
                         {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
 
-                        {!codeHosts.loaded && modeSelectShimmer}
+                        {/* display radio buttons shimmer only when user has code hosts */}
+                        {hasCodeHosts && !selectionState.loaded && modeSelectShimmer}
 
-                        {/* display radio button for 'all' or 'selected' repos */}
-                        {codeHosts.loaded && codeHosts.hosts.length !== 0 && modeSelect}
+                        {/* display type of repo sync radio buttons */}
+                        {hasCodeHosts && selectionState.loaded && modeSelect}
+
                         {
                             // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
                             selectionState.radio === 'selected' && (
