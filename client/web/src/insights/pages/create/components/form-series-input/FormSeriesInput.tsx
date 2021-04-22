@@ -1,5 +1,5 @@
 import classnames from 'classnames';
-import React, { ReactElement, Ref, useImperativeHandle, useRef } from 'react';
+import React, { ReactElement, Ref, useCallback, useImperativeHandle, useRef } from 'react';
 import { useField, useForm } from 'react-final-form-hooks';
 import { noop } from 'rxjs';
 
@@ -34,20 +34,20 @@ const validQuery = composeValidators(
 export function FormSeriesInput(props: FormSeriesProps): ReactElement {
     const { name, query, color, className, onSubmit = noop, innerRef } = props;
 
-    const form = useForm<DataSeries>({
+    const { handleSubmit, form, values} = useForm<DataSeries>({
         initialValues: {
             name,
             query,
             color: color ?? DEFAULT_ACTIVE_COLOR,
         },
         onSubmit: () => {
-            onSubmit(form.values)
+            onSubmit(values)
         }
     });
 
-    const nameField = useField('name', form.form, requiredNameField);
-    const queryField = useField('query', form.form, validQuery)
-    const colorField = useField('color', form.form,)
+    const nameField = useField('name', form, requiredNameField);
+    const queryField = useField('query', form, validQuery)
+    const colorField = useField('color', form,)
 
     const nameReference = useRef<HTMLInputElement>(null);
     const queryReference = useRef<HTMLInputElement>(null);
@@ -69,9 +69,15 @@ export function FormSeriesInput(props: FormSeriesProps): ReactElement {
         }
     }));
 
+    const handleSubmitButton = useCallback(
+        // @ts-ignore
+        (event: React.MouseEvent) => handleSubmit(event),
+        [handleSubmit]
+    )
+
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form onSubmit={form.handleSubmit} className={classnames(styles.formSeriesInput, className)}>
+        <div className={classnames(styles.formSeriesInput, className)}>
 
             <InputField
                 title='Name'
@@ -105,6 +111,7 @@ export function FormSeriesInput(props: FormSeriesProps): ReactElement {
             <div>
                 <button
                     type='submit'
+                    onClick={handleSubmitButton}
                     className={classnames(styles.formSeriesInputButton,'button')}>
 
                     Done
@@ -117,6 +124,6 @@ export function FormSeriesInput(props: FormSeriesProps): ReactElement {
                     Cancel
                 </button>
             </div>
-        </form>
+        </div>
     );
 }

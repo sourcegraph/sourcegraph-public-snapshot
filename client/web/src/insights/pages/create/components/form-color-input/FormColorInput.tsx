@@ -73,8 +73,6 @@ export function FormColorInput(props: FormColorPickerProps): ReactElement {
                     </label>
                 )}
             </div>
-
-            <div>or <span className={styles.formColorPickerCustomColor}>use custom color</span></div>
         </div>
     )
 }
