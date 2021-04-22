@@ -1,8 +1,11 @@
+import React from 'react'
+
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import React from 'react'
+
 import { toggleSearchType } from '../../../helpers'
 import { SearchType } from '../../SearchResults'
+
 import { SearchSidebarProps } from './SearchSidebar'
 import styles from './SearchSidebar.module.scss'
 
@@ -43,7 +46,7 @@ export const SidebarResultTypeSection: React.FunctionComponent<SearchSidebarProp
     return (
         <ul className={styles.sidebarSectionList}>
             {types.map(type => (
-                <li>
+                <li key={type}>
                     <ResultTypeLink {...props} type={type} />
                 </li>
             ))}

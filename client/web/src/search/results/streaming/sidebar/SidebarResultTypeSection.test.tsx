@@ -1,6 +1,8 @@
 import { mount } from 'enzyme'
 import React from 'react'
+
 import { SearchPatternType } from '../../../../graphql-operations'
+
 import { SearchSidebarProps } from './SearchSidebar'
 import { SidebarResultTypeSection } from './SidebarResultTypeSection'
 

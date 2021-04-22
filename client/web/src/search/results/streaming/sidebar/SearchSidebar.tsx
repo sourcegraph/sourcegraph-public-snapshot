@@ -1,5 +1,7 @@
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import React from 'react'
+
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../../..'
 
 import styles from './SearchSidebar.module.scss'
