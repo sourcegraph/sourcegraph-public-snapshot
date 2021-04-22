@@ -64,8 +64,8 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 		wantErr           string
 	}{
 		{name: "invalid format", searchContextSpec: "+user", wantErr: "search context not found"},
-		{name: "user not found", searchContextSpec: "@user", wantErr: "search context '@user' not found"},
-		{name: "empty user not found", searchContextSpec: "@", wantErr: "search context '@' not found"},
+		{name: "user not found", searchContextSpec: "@user", wantErr: "search context \"@user\" not found"},
+		{name: "empty user not found", searchContextSpec: "@", wantErr: "search context \"@\" not found"},
 	}
 
 	db := new(dbtesting.MockDB)
@@ -339,13 +339,13 @@ func TestCreatingSearchContexts(t *testing.T) {
 			name:          "cannot create search context with invalid name",
 			searchContext: &types.SearchContext{Name: "invalid name"},
 			userID:        user1.ID,
-			wantErr:       "'invalid name' is not a valid search context name",
+			wantErr:       "\"invalid name\" is not a valid search context name",
 		},
 		{
 			name:          "cannot create search context with name too long",
 			searchContext: &types.SearchContext{Name: tooLongName},
 			userID:        user1.ID,
-			wantErr:       fmt.Sprintf("search context name '%s' exceeds maximum allowed length (32)", tooLongName),
+			wantErr:       fmt.Sprintf("search context name %q exceeds maximum allowed length (32)", tooLongName),
 		},
 		{
 			name:          "cannot create search context with description too long",
@@ -366,7 +366,7 @@ func TestCreatingSearchContexts(t *testing.T) {
 			repositoryRevisions: []*types.SearchContextRepositoryRevisions{
 				{Repo: repos[0], Revisions: []string{tooLongRevision}},
 			},
-			wantErr: fmt.Sprintf("revision '%s' exceeds maximum allowed length (255)", tooLongRevision),
+			wantErr: fmt.Sprintf("revision %q exceeds maximum allowed length (255)", tooLongRevision),
 		},
 		{
 			name:          "site-admin can create instance-level search context",

@@ -53,7 +53,7 @@ func ResolveSearchContextSpec(ctx context.Context, db dbutil.DB, searchContextSp
 			return nil, err
 		}
 		if namespace.User == 0 {
-			return nil, fmt.Errorf("search context '%s' not found", searchContextSpec)
+			return nil, fmt.Errorf("search context %q not found", searchContextSpec)
 		}
 		return GetUserSearchContext(namespaceName, namespace.User), nil
 	}
@@ -93,13 +93,13 @@ func validateSearchContextNamespaceForCurrentUser(ctx context.Context, db dbutil
 	return nil
 }
 
-func validateSearchContextName(ctx context.Context, name string) error {
+func validateSearchContextName(name string) error {
 	if len(name) > maxSearchContextNameLength {
-		return fmt.Errorf("search context name '%s' exceeds maximum allowed length (%d)", name, maxSearchContextNameLength)
+		return fmt.Errorf("search context name %q exceeds maximum allowed length (%d)", name, maxSearchContextNameLength)
 	}
 
 	if !validateSearchContextNameRegexp.MatchString(name) {
-		return fmt.Errorf("'%s' is not a valid search context name", name)
+		return fmt.Errorf("%q is not a valid search context name", name)
 	}
 
 	return nil
@@ -116,7 +116,7 @@ func validateSearchContextRepositoryRevisions(repositoryRevisions []*types.Searc
 	for _, repository := range repositoryRevisions {
 		for _, revision := range repository.Revisions {
 			if len(revision) > maxRevisionLength {
-				return fmt.Errorf("revision '%s' exceeds maximum allowed length (%d)", revision, maxRevisionLength)
+				return fmt.Errorf("revision %q exceeds maximum allowed length (%d)", revision, maxRevisionLength)
 			}
 		}
 	}
@@ -149,7 +149,7 @@ func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.D
 		return nil, err
 	}
 
-	err = validateSearchContextName(ctx, searchContext.Name)
+	err = validateSearchContextName(searchContext.Name)
 	if err != nil {
 		return nil, err
 	}
