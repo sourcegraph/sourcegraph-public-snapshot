@@ -222,7 +222,7 @@ UPDATE search_contexts
 SET
     -- Soft-delete the search context and update the name to prevent violating the unique constraint in the future
     deleted_at = TRANSACTION_TIMESTAMP(),
-    name = 'DELETED-' || EXTRACT(EPOCH FROM TRANSACTION_TIMESTAMP()) || '-' || name
+    name = soft_deleted_repository_name(name)
 WHERE id = %d AND deleted_at IS NULL
 `
 
