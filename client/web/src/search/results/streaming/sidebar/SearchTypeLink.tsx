@@ -9,7 +9,7 @@ import { SearchType } from '../../SearchResults'
 import { SearchSidebarProps } from './SearchSidebar'
 import styles from './SearchSidebarSection.module.scss'
 
-interface SearchTypeLinkProps extends SearchSidebarProps {
+interface SearchTypeLinkProps extends Omit<SearchSidebarProps, 'settingsCascade'> {
     type: SearchType
 }
 
@@ -40,7 +40,7 @@ const SearchTypeLink: React.FunctionComponent<SearchTypeLinkProps> = ({
     )
 }
 
-export const getSearchTypeLinks = (props: SearchSidebarProps): ReactElement[] => {
+export const getSearchTypeLinks = (props: Omit<SearchSidebarProps, 'settingsCascade'>): ReactElement[] => {
     const types: Exclude<SearchType, null>[] = ['file', 'repo', 'path', 'symbol', 'diff', 'commit']
     return types.map(type => <SearchTypeLink {...props} type={type} key={type} />)
 }

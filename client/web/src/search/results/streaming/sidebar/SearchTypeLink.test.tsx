@@ -6,7 +6,7 @@ import { SearchPatternType } from '../../../../graphql-operations'
 import { SearchSidebarProps } from './SearchSidebar'
 import { getSearchTypeLinks } from './SearchTypeLink'
 
-const defaultProps: SearchSidebarProps = {
+const defaultProps: Omit<SearchSidebarProps, 'settingsCascade'> = {
     caseSensitive: false,
     patternType: SearchPatternType.literal,
     versionContext: undefined,
