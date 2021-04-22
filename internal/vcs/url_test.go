@@ -193,6 +193,12 @@ func TestParseURL(t *testing.T) {
 			"ssh://user@host.xz/path/to/repo@domain.git/", "",
 		),
 		newParseURLTest(
+			"sourcegraph@gitolite.company.internal:service-config/runtime@east-cluster/action@test-5524",
+			"ssh", "sourcegraph", "gitolite.company.internal", "service-config/runtime@east-cluster/action@test-5524",
+			"ssh://sourcegraph@gitolite.company.internal/service-config/runtime@east-cluster/action@test-5524", "",
+		),
+
+		newParseURLTest(
 			"/path/to/repo.git/",
 			"file", "", "", "/path/to/repo.git/",
 			"file:///path/to/repo.git/", "",
