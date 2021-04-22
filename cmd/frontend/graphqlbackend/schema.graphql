@@ -603,6 +603,24 @@ type Mutation {
     (experimental) Delete search context.
     """
     deleteSearchContext(id: ID!): EmptyResponse!
+
+    """
+    (experimental) Update search context.
+    """
+    updateSearchContext(
+        """
+        Search context ID.
+        """
+        id: ID!
+        """
+        Search context input.
+        """
+        searchContext: SearchContextEditInput!
+        """
+        List of search context repository revisions.
+        """
+        repositories: [SearchContextRepositoryRevisionsInput!]!
+    ): SearchContext!
 }
 
 """
@@ -2464,6 +2482,31 @@ input SearchContextInput {
     Namespace of the search context (user or org). If not set, search context is considered instance-level.
     """
     namespace: ID
+}
+
+"""
+Input for editing an existing search context.
+"""
+input SearchContextEditInput {
+    """
+    Search context name. Not the same as the search context spec. Search context namespace and search context name
+    are used to construct the fully-qualified search context spec.
+    Example mappings from search context spec to search context name: global -> global, @user -> user, @org -> org,
+    @user/ctx1 -> ctx1, @org/ctxs/ctx -> ctxs/ctx.
+    """
+    name: String!
+    """
+    Search context description.
+    """
+    description: String!
+    """
+    Public property controls the visibility of the search context. Public search context is available to
+    any user on the instance. If a public search context contains private repositories, those are filtered out
+    for unauthorized users. Private search contexts are only available to their owners. Private user search context
+    is available only to the user, private org search context is available only to the members of the org, and private
+    instance-level search contexts are available only to site-admins.
+    """
+    public: Boolean!
 }
 
 """
