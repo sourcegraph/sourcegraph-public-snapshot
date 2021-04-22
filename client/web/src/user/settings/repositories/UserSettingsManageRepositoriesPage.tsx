@@ -102,13 +102,13 @@ const isLoading = (status: initialFetchingReposState): boolean => {
 }
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
-    <div key={warning} className="alert alert-warning mt-3" role="alert">
+    <div key={warning} className="alert alert-warning mt-3 mb-0" role="alert">
         <AlertCircleIcon className="icon icon-inline" /> {warning}. {hint} {hint ? 'for more details' : null}
     </div>
 )
 
 const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
-    <div key={error.message} className="alert alert-danger mt-3" role="alert">
+    <div key={error.message} className="alert alert-danger mt-3 mb-0" role="alert">
         <AlertCircleIcon className="icon icon-inline" /> {error.message}. {hint} {hint ? 'for more details' : null}
     </div>
 )
@@ -311,7 +311,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
          * 3. no repos selected - empty state
          */
         const radioSelectOption =
-            ALLOW_PRIVATE_CODE && selectedAffiliatedRepos.length === affiliatedRepos.length
+            ALLOW_PRIVATE_CODE &&
+            selectedAffiliatedRepos.length !== 0 &&
+            selectedAffiliatedRepos.length === affiliatedRepos.length
                 ? 'all'
                 : selectedAffiliatedRepos.length > 0
                 ? 'selected'
@@ -536,7 +538,11 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         })
     }
 
-    const noCodeHostsOrErrors = affiliateRepoProblems !== undefined || codeHosts.hosts.length === 0
+    const hasProblems = affiliateRepoProblems !== undefined
+    // code hosts were loaded and some were configured
+    const hasCodeHosts = codeHosts.loaded && codeHosts.hosts.length !== 0
+    const noCodeHostsOrErrors = !hasCodeHosts || hasProblems
+    const hasCodeHostsNoErrors = hasCodeHosts && !hasProblems
 
     const modeSelect: JSX.Element = (
         <Form className="mt-4">
@@ -555,7 +561,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             'user-settings-repos__text-disabled': !ALLOW_PRIVATE_CODE,
                         })}
                     >
-                        Sync all repositories
+                        Sync all repositories {!ALLOW_PRIVATE_CODE && '(coming soon)'}
                     </p>
                     <p
                         className={classNames({
@@ -720,9 +726,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         </div>
     )
 
-    // code hosts were loaded and some were configured
-    const hasCodeHosts = codeHosts.loaded && codeHosts.hosts.length !== 0
-
     return (
         <div className="user-settings-repos">
             <PageTitle title="Manage Repositories" />
@@ -761,14 +764,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
 
                         {/* display radio buttons shimmer only when user has code hosts */}
-                        {hasCodeHosts && !selectionState.loaded && modeSelectShimmer}
+                        {hasCodeHostsNoErrors && !selectionState.loaded && modeSelectShimmer}
 
                         {/* display type of repo sync radio buttons */}
-                        {hasCodeHosts && selectionState.loaded && modeSelect}
+                        {hasCodeHostsNoErrors && selectionState.loaded && modeSelect}
 
                         {
                             // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
-                            selectionState.radio === 'selected' && (
+                            hasCodeHostsNoErrors && selectionState.radio === 'selected' && (
                                 <div className="ml-4">
                                     {filterControls}
                                     <table role="grid" className="table">
