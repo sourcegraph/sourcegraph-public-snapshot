@@ -32,8 +32,14 @@ import { UserRepositoriesUpdateProps } from '../../../util'
 import { AwayPrompt, ALLOW_NAVIGATION } from './AwayPrompt'
 import { CheckboxRepositoryNode } from './RepositoryNode'
 
+interface User {
+    id: string
+    siteAdmin: boolean
+    tags: string[]
+}
+
 interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
-    userID: string
+    user: User
     routingPrefix: string
 }
 
@@ -68,11 +74,10 @@ const initialRepoState = {
 }
 
 const emptyHosts: ExternalServicesResult['externalServices']['nodes'] = []
-const emptyRepoNames: string[] = []
+
 const initialCodeHostState = {
     hosts: emptyHosts,
     loaded: false,
-    configuredRepos: emptyRepoNames,
 }
 const initialPublicRepoState = {
     repos: '',
@@ -134,7 +139,7 @@ const displayAffiliateRepoProblems = (
  */
 export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> = ({
     history,
-    userID,
+    user,
     routingPrefix,
     telemetryService,
     onUserRepositoriesUpdate,
@@ -142,6 +147,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
+
+    const ALLOW_PRIVATE_CODE = user.tags.includes('AllowUserExternalServicePrivate')
 
     // set up state hooks
     const [repoState, setRepoState] = useState(initialRepoState)
@@ -172,130 +179,103 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         [publicRepoState]
     )
 
-    const fetchAndSetExternalServices = useCallback(async (): Promise<void> => {
-        const result = await queryExternalServices({
-            first: null,
-            after: null,
-            namespace: userID,
-        }).toPromise()
+    const fetchExternalServices = useCallback(
+        async (): Promise<ExternalServicesResult['externalServices']['nodes']> =>
+            queryExternalServices({
+                first: null,
+                after: null,
+                namespace: user.id,
+            })
+                .toPromise()
+                .then(({ nodes }) => nodes),
 
-        const selected: string[] = []
-        // if external services may return code hosts with errors or warnings -
-        // we can't safely continue
-        const codeHostProblems = []
-
-        for (const host of result.nodes) {
-            let hostHasProblems = false
-
-            if (host.lastSyncError) {
-                hostHasProblems = true
-                codeHostProblems.push(asError(`${host.displayName} sync error: ${host.lastSyncError}`))
-            }
-
-            if (host.warning) {
-                hostHasProblems = true
-                codeHostProblems.push(asError(`${host.displayName} warning: ${host.warning}`))
-            }
-
-            if (hostHasProblems) {
-                // skip this code hots
-                continue
-            }
-
-            const cfg = JSON.parse(host.config) as GitHubConfig | GitLabConfig
-            switch (host.kind) {
-                case ExternalServiceKind.GITLAB: {
-                    const gitLabCfg = cfg as GitLabConfig
-                    if (gitLabCfg.projects !== undefined) {
-                        gitLabCfg.projects.map(project => {
-                            selected.push(project.name)
-                        })
-                    }
-                    break
-                }
-
-                case ExternalServiceKind.GITHUB: {
-                    const gitHubCfg = cfg as GitHubConfig
-                    if (gitHubCfg.repos !== undefined) {
-                        selected.push(...gitHubCfg.repos)
-                    }
-                    break
-                }
-            }
-        }
-
-        if (codeHostProblems.length > 0) {
-            setAffiliateRepoProblems(codeHostProblems)
-        }
-
-        setCodeHosts({
-            loaded: true,
-            hosts: result.nodes,
-            configuredRepos: selected,
-        })
-
-        if (selected.length !== 0) {
-            // if user's code hosts have repos - collapse affiliated repos
-            // section
-            setSelectionState(previousSelectionState => ({
-                ...previousSelectionState,
-                radio: 'selected',
-            }))
-        }
-    }, [userID, setCodeHosts])
-
-    // fetch public repos for the "other public repositories" textarea
-    const fetchAndSetPublicRepos = useCallback(async (): Promise<void> => {
-        const result = await queryUserPublicRepositories(userID).toPromise()
-
-        if (!result) {
-            setPublicRepoState({ ...initialPublicRepoState, loaded: true })
-        } else {
-            // public repos separated by a new line
-            const publicRepos = result.map(({ name }) => name)
-
-            // safe off initial selection state
-            setOnloadSelectedRepos(previousValue => [...previousValue, ...publicRepos])
-
-            setPublicRepoState({ repos: publicRepos.join('\n'), loaded: true, enabled: result.length > 0 })
-        }
-    }, [userID])
-
-    useEffect(() => {
-        fetchAndSetExternalServices().catch(error => {
-            setAffiliateRepoProblems(asError(error))
-        })
-    }, [fetchAndSetExternalServices])
+        [user.id]
+    )
 
     const fetchAffiliatedRepos = useCallback(
-        async (): Promise<AffiliatedRepositoriesResult> =>
+        async (): Promise<AffiliatedRepositoriesResult['affiliatedRepositories']['nodes']> =>
             listAffiliatedRepositories({
-                user: userID,
+                user: user.id,
                 codeHost: null,
                 query: null,
-            }).toPromise(),
+            })
+                .toPromise()
+                .then(({ affiliatedRepositories: { nodes } }) => nodes),
 
-        [userID]
+        [user.id]
     )
 
     useEffect(() => {
-        // once we've loaded code hosts and the 'selected' panel is visible
-        // load repos and set the loading state
-        if (selectionState.radio === 'selected' && codeHosts.loaded) {
-            // trigger shimmer effect
-            setRepoState(previousRepoState => ({
-                ...previousRepoState,
-                loading: true,
-            }))
+        Promise.all([fetchExternalServices(), fetchAffiliatedRepos()])
+            .then(([externalServices, affiliatedRepos]) => {
+                debugger
+                // list of the repos user selected
+                const selectedAffiliatedRepos: string[] = []
 
-            fetchAffiliatedRepos()
-                .then(result => {
-                    const { nodes: affiliatedRepos } = result.affiliatedRepositories
+                // number of the repos user selected - comes from the code hosts
+                let selectedAffiliatedReposCount = 0
 
+                // if external services may return code hosts with errors or warnings -
+                // we can't safely continue
+                const codeHostProblems = []
+
+                for (const host of externalServices) {
+                    let hostHasProblems = false
+
+                    if (host.lastSyncError) {
+                        hostHasProblems = true
+                        codeHostProblems.push(asError(`${host.displayName} sync error: ${host.lastSyncError}`))
+                    }
+
+                    if (host.warning) {
+                        hostHasProblems = true
+                        codeHostProblems.push(asError(`${host.displayName} warning: ${host.warning}`))
+                    }
+
+                    if (hostHasProblems) {
+                        // skip this code hots
+                        continue
+                    }
+
+                    selectedAffiliatedReposCount += host.repoCount
+
+                    const cfg = JSON.parse(host.config) as GitHubConfig | GitLabConfig
+                    switch (host.kind) {
+                        case ExternalServiceKind.GITLAB: {
+                            const gitLabCfg = cfg as GitLabConfig
+                            if (gitLabCfg.projects !== undefined) {
+                                gitLabCfg.projects.map(project => {
+                                    selectedAffiliatedRepos.push(project.name)
+                                })
+                            }
+                            break
+                        }
+
+                        case ExternalServiceKind.GITHUB: {
+                            const gitHubCfg = cfg as GitHubConfig
+                            if (gitHubCfg.repos !== undefined) {
+                                selectedAffiliatedRepos.push(...gitHubCfg.repos)
+                            }
+                            break
+                        }
+                    }
+                }
+
+                if (codeHostProblems.length > 0) {
+                    setAffiliateRepoProblems(codeHostProblems)
+                }
+
+                setCodeHosts({
+                    loaded: true,
+                    hosts: externalServices,
+                })
+
+                // if user has any number of selected affiliated repos
+                if (selectedAffiliatedRepos.length > 0 || selectedAffiliatedReposCount) {
                     const selectedRepos = new Map<string, Repo>()
 
                     // create a map of user selected affiliated repos
-                    for (const repoName of codeHosts.configuredRepos) {
+                    for (const repoName of selectedAffiliatedRepos) {
                         const affiliatedRepo = affiliatedRepos.find(repo => repo.name === repoName)
                         if (affiliatedRepo) {
                             selectedRepos.set(repoName, affiliatedRepo)
@@ -318,6 +298,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         return 0
                     })
 
+                    // set sorted repos and mark as loaded
                     setRepoState(previousRepoState => ({
                         ...previousRepoState,
                         repos: affiliatedRepos,
@@ -327,22 +308,49 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     // safe off initial selection state
                     setOnloadSelectedRepos(previousValue => [...previousValue, ...selectedRepos.keys()])
 
+                    // if the number of all affiliated repos is equal to the number
+                    // of the repos in all of the code hosts - set "sync all" radio active
+                    const radioSelectOption =
+                        ALLOW_PRIVATE_CODE &&
+                        (selectedAffiliatedRepos.length === affiliatedRepos.length ||
+                            selectedAffiliatedReposCount === affiliatedRepos.length)
+                            ? 'all'
+                            : 'selected'
+
                     setSelectionState({
                         repos: selectedRepos,
-                        radio: selectionState.radio,
+                        radio: radioSelectOption,
                         loaded: true,
                     })
+                }
+            })
+            .catch(error => {
+                // handle different errors here
+                setAffiliateRepoProblems(asError(error))
+                setRepoState({
+                    repos: emptyRepos,
+                    loading: false,
+                    loaded: true,
                 })
-                .catch(error => {
-                    setAffiliateRepoProblems(asError(error))
-                    setRepoState({
-                        repos: emptyRepos,
-                        loading: false,
-                        loaded: true,
-                    })
-                })
+            })
+    }, [fetchExternalServices, fetchAffiliatedRepos, ALLOW_PRIVATE_CODE])
+
+    // fetch public repos for the "other public repositories" textarea
+    const fetchAndSetPublicRepos = useCallback(async (): Promise<void> => {
+        const result = await queryUserPublicRepositories(user.id).toPromise()
+
+        if (!result) {
+            setPublicRepoState({ ...initialPublicRepoState, loaded: true })
+        } else {
+            // public repos separated by a new line
+            const publicRepos = result.map(({ name }) => name)
+
+            // safe off initial selection state
+            setOnloadSelectedRepos(previousValue => [...previousValue, ...publicRepos])
+
+            setPublicRepoState({ repos: publicRepos.join('\n'), loaded: true, enabled: result.length > 0 })
         }
-    }, [selectionState.radio, codeHosts.loaded, codeHosts.configuredRepos, fetchAffiliatedRepos])
+    }, [user.id])
 
     useEffect(() => {
         fetchAndSetPublicRepos().catch(error => setOtherPublicRepoError(asError(error)))
@@ -396,7 +404,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             setFetchingRepos('loading')
 
             try {
-                await setUserPublicRepositories(userID, publicRepos).toPromise()
+                await setUserPublicRepositories(user.id, publicRepos).toPromise()
             } catch (error) {
                 setOtherPublicRepoError(asError(error))
                 setFetchingRepos(undefined)
@@ -442,7 +450,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             externalServiceSubscription.current = queryExternalServices({
                 first: null,
                 after: null,
-                namespace: userID,
+                namespace: user.id,
             })
                 .pipe(
                     repeatUntil(
@@ -495,7 +503,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         [
             publicRepoState.repos,
             publicRepoState.enabled,
-            userID,
+            user.id,
             codeHosts.hosts,
             selectionState.radio,
             selectionState.repos,
@@ -520,33 +528,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         })
     }
 
+    const noCodeHostsOrErrors = affiliateRepoProblems !== undefined || codeHosts.hosts.length === 0
+
     const modeSelect: JSX.Element = (
         <Form className="mt-4">
             <label className="d-flex flex-row align-items-baseline">
-                <input
-                    type="radio"
-                    value="all"
-                    disabled={true}
-                    checked={selectionState.radio === 'all'}
-                    onChange={handleRadioSelect}
-                />
-                <div className="d-flex flex-column ml-2">
-                    <p
-                        className="mb-0 user-settings-repos__text-disabled
-"
-                    >
-                        Sync all repositories (coming soon)
-                    </p>
-                    <p
-                        className="user-settings-repos__text-disabled
-"
-                    >
-                        Will sync all current and future public and private repositories
-                    </p>
-                </div>
-            </label>
-            <label className="d-flex flex-row align-items-baseline">
-                {/* TODO: @artem add this functionality after pe-GA */}
+                {/* TODO: @artem implement when the org support is added */}
                 <input
                     type="radio"
                     value="all"
@@ -572,20 +559,46 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             <label className="d-flex flex-row align-items-baseline">
                 <input
                     type="radio"
+                    value="all"
+                    disabled={!ALLOW_PRIVATE_CODE || noCodeHostsOrErrors}
+                    checked={selectionState.radio === 'all'}
+                    onChange={handleRadioSelect}
+                />
+                <div className="d-flex flex-column ml-2">
+                    <p
+                        className={classNames('mb-0', {
+                            'user-settings-repos__text': ALLOW_PRIVATE_CODE,
+                            'user-settings-repos__text-disabled': !ALLOW_PRIVATE_CODE,
+                        })}
+                    >
+                        Sync all repositories
+                    </p>
+                    <p
+                        className={classNames({
+                            'user-settings-repos__text': ALLOW_PRIVATE_CODE,
+                            'user-settings-repos__text-disabled': !ALLOW_PRIVATE_CODE,
+                        })}
+                    >
+                        Will sync all current and future public and private repositories
+                    </p>
+                </div>
+            </label>
+            <label className="d-flex flex-row align-items-baseline">
+                <input
+                    type="radio"
                     value="selected"
                     checked={selectionState.radio === 'selected'}
-                    disabled={affiliateRepoProblems !== undefined || codeHosts.hosts.length === 0}
+                    disabled={noCodeHostsOrErrors}
                     onChange={handleRadioSelect}
                 />
                 <div className="d-flex flex-column ml-2">
                     <p
                         className={classNames({
-                            'user-settings-repos__text-disabled':
-                                affiliateRepoProblems !== undefined || codeHosts.hosts.length === 0,
+                            'user-settings-repos__text-disabled': noCodeHostsOrErrors,
                             'mb-0': true,
                         })}
                     >
-                        Sync selected repositories
+                        Sync selected {!ALLOW_PRIVATE_CODE && 'public'} repositories
                     </p>
                 </div>
             </label>
@@ -707,7 +720,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         setPublicRepoState({ ...publicRepoState, repos: event.target.value })
     }
 
-    const loadingAnimation: JSX.Element = (
+    const repoListShimmer: JSX.Element = (
         <tbody className="container">
             <tr className="mt-2 align-items-baseline row">
                 <td className="user-settings-repos__shimmer p-3 border-top-0 col-sm-9" />
@@ -720,6 +733,27 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             </tr>
         </tbody>
     )
+
+    const modeSelectShimmer: JSX.Element = (
+        <div className="container">
+            <div className="mt-2 row">
+                <div className="user-settings-repos__shimmer p-4 mb-3 border-top-0 col-sm-12" />
+            </div>
+            <div className="mt-2 row">
+                <div className="user-settings-repos__shimmer-circle mr-3" />
+                <div className="user-settings-repos__shimmer p-3 mb-3 border-top-0 col-sm-8" />
+            </div>
+            <div className="mt-2 row">
+                <div className="user-settings-repos__shimmer-circle mr-3" />
+                <div className="user-settings-repos__shimmer p-3 mb-3 border-top-0 col-sm-4" />
+            </div>
+            <div className="mt-2 row">
+                <div className="user-settings-repos__shimmer-circle mr-3" />
+                <div className="user-settings-repos__shimmer mb-2 p-3 border-top-0 col-sm-5" />
+            </div>
+        </div>
+    )
+
     return (
         <div className="user-settings-repos">
             <PageTitle title="Manage Repositories" />
@@ -749,7 +783,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 </Link>
                             </div>
                         )}
-
                         {codeHosts.loaded && codeHosts.hosts.length === 0 && (
                             <div className="alert alert-warning mb-2">
                                 <Link to={`${routingPrefix}/code-hosts`}>Connect with a code host</Link> to add your own
@@ -757,10 +790,11 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             </div>
                         )}
                         {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
-                        {codeHosts.loaded &&
-                            codeHosts.hosts.length !== 0 &&
-                            // display radio button for 'all' or 'selected' repos
-                            modeSelect}
+
+                        {ALLOW_PRIVATE_CODE && !codeHosts.loaded && modeSelectShimmer}
+
+                        {/* display radio button for 'all' or 'selected' repos */}
+                        {codeHosts.loaded && codeHosts.hosts.length !== 0 && modeSelect}
                         {
                             // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
                             selectionState.radio === 'selected' && (
@@ -772,7 +806,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                             selectionState.radio === 'selected' &&
                                                 repoState.loading &&
                                                 !repoState.loaded &&
-                                                loadingAnimation
+                                                repoListShimmer
                                         }
                                         {
                                             // if the repos are loaded display the rows of repos

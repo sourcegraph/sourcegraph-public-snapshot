@@ -102,7 +102,11 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         render: props => (
             <UserSettingsManageRepositoriesPage
                 {...props}
-                userID={props.user.id}
+                user={{
+                    id: props.user.id,
+                    siteAdmin: props.user.siteAdmin,
+                    tags: props.user.tags,
+                }}
                 routingPrefix={props.user.url + '/settings'}
             />
         ),

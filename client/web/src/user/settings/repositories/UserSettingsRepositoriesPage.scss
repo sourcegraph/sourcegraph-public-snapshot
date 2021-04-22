@@ -1,4 +1,6 @@
 .user-settings-repos {
+    --gradient: linear-gradient(to right, var(--color-bg-2) 4%, var(--color-bg-1) 25%, var(--color-bg-2) 36%);
+    --animation: shimmer 2s infinite linear;
     margin-bottom: 5rem;
 
     &__gitlab {
@@ -12,10 +14,19 @@
     }
 
     &__shimmer {
-        background: linear-gradient(to right, var(--color-bg-2) 4%, var(--color-bg-1) 25%, var(--color-bg-2) 36%);
-        animation: shimmer 2s infinite linear;
+        background: var(--gradient);
+        animation: var(--animation);
         background-size: 1000px 100%;
         border-radius: 5px;
+    }
+
+    &__shimmer-circle {
+        width: 1.5rem;
+        height: 1.5rem;
+        background-image: var(--gradient);
+        animation: var(--animation);
+        background-size: 1000px;
+        border-radius: 50%;
     }
 
     &__repositorynode {
