@@ -625,7 +625,7 @@ func Frontend() *monitoring.Container {
 					{
 						{
 							Name:           "out_of_band_migrations_up_99th_percentile_duration",
-							Description:    "99th percentile successful out-of-band up migration operations duration over 5m",
+							Description:    "99th percentile successful out-of-band up migration invocation (single batch processed) duration over 5m",
 							Query:          `histogram_quantile(0.99, sum by (le, migration)(rate(src_oobmigration_duration_seconds_bucket{op="up"}[5m])))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("migration {{migration}}").Unit(monitoring.Seconds),
@@ -643,7 +643,7 @@ func Frontend() *monitoring.Container {
 						},
 						{
 							Name:           "out_of_band_migrations_down_99th_percentile_duration",
-							Description:    "99th percentile successful out-of-band down migration operations duration over 5m",
+							Description:    "99th percentile successful out-of-band down migration invocation (single batch processed) duration over 5m",
 							Query:          `histogram_quantile(0.99, sum by (le, migration)(rate(src_oobmigration_duration_seconds_bucket{op="down"}[5m])))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("migration {{migration}}").Unit(monitoring.Seconds),

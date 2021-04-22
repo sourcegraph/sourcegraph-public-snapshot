@@ -520,7 +520,7 @@ This panel indicates index enqueuer errors every 5m.
 
 #### frontend: out_of_band_migrations_up_99th_percentile_duration
 
-This panel indicates 99th percentile successful out-of-band up migration operations duration over 5m.
+This panel indicates 99th percentile successful out-of-band up migration invocation (single batch processed) duration over 5m.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -538,7 +538,7 @@ This panel indicates out-of-band up migration errors every 5m.
 
 #### frontend: out_of_band_migrations_down_99th_percentile_duration
 
-This panel indicates 99th percentile successful out-of-band down migration operations duration over 5m.
+This panel indicates 99th percentile successful out-of-band down migration invocation (single batch processed) duration over 5m.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
