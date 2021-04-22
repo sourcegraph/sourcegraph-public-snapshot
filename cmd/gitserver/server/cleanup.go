@@ -32,11 +32,15 @@ import (
 )
 
 const (
-	// repoTTL is how often we should re-clone a repository
+	// repoTTL is how often we should re-clone a repository.
 	repoTTL = time.Hour * 24 * 45
 	// repoTTLGC is how often we should re-clone a repository once it is
 	// reporting git gc issues.
 	repoTTLGC = time.Hour * 24 * 2
+
+	// gitConfigMaybeCorrupt is a key we add to git config to signal that a repo may be
+	// corrupt on disk.
+	gitConfigMaybeCorrupt = "sourcegraph.maybeCorruptRepo"
 )
 
 // EnableGCAuto is a temporary flag that allows us to control whether or not
@@ -131,14 +135,13 @@ func (s *Server) cleanupRepos(addrs []string) {
 			return false, err
 		}
 
-		// Add a jitter to spread out recloning of repos cloned at the same
-		// time.
+		// Add a jitter to spread out re-cloning of repos cloned at the same time.
 		var reason string
 		const maybeCorrupt = "maybeCorrupt"
-		if maybeCorrupt, _ := gitConfigGet(dir, "sourcegraph.maybeCorruptRepo"); maybeCorrupt != "" {
+		if maybeCorrupt, _ := gitConfigGet(dir, gitConfigMaybeCorrupt); maybeCorrupt != "" {
 			reason = maybeCorrupt
-			// unset flag to stop constantly recloning if it fails.
-			_ = gitConfigUnset(dir, "sourcegraph.maybeCorruptRepo")
+			// unset flag to stop constantly re-cloning if it fails.
+			_ = gitConfigUnset(dir, gitConfigMaybeCorrupt)
 		}
 		if time.Since(recloneTime) > repoTTL+jitterDuration(string(dir), repoTTL/4) {
 			reason = "old"
@@ -165,14 +168,13 @@ func (s *Server) cleanupRepos(addrs []string) {
 
 		// name is the relative path to ReposDir, but without the .git suffix.
 		repo := s.name(dir)
-		log15.Info("recloning expired repo", "repo", repo, "cloned", recloneTime, "reason", reason)
+		log15.Info("re-cloning expired repo", "repo", repo, "cloned", recloneTime, "reason", reason)
 
-		// update the reclone time so that we don't constantly reclone if
-		// cloning fails. For example if a repo fails to clone due to being
-		// large, we will constantly be doing a clone which uses up lots of
-		// resources.
+		// update the re-clone time so that we don't constantly re-clone if cloning fails.
+		// For example if a repo fails to clone due to being large, we will constantly be
+		// doing a clone which uses up lots of resources.
 		if err := setRecloneTime(dir, recloneTime.Add(time.Since(recloneTime)/2)); err != nil {
-			log15.Warn("setting backed off reclone time failed", "repo", repo, "cloned", recloneTime, "reason", reason, "error", err)
+			log15.Warn("setting backed off re-clone time failed", "repo", repo, "cloned", recloneTime, "reason", reason, "error", err)
 		}
 
 		if _, err := s.cloneRepo(ctx, repo, &cloneOptions{Block: true, Overwrite: true}); err != nil {
@@ -693,11 +695,11 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 		return
 	}
 
-	log15.Warn("marking repo for recloning due to stderr output indicating repo corruption", "repo", repo, "stderr", stderr)
+	log15.Warn("marking repo for re-cloning due to stderr output indicating repo corruption", "repo", repo, "stderr", stderr)
 
-	// We set a flag in the config for the cleanup janitor job to fix. The
-	// janitor runs every minute.
-	err := gitConfigSet(dir, "sourcegraph.maybeCorruptRepo", strconv.FormatInt(time.Now().Unix(), 10))
+	// We set a flag in the config for the cleanup janitor job to fix. The janitor
+	// runs every minute.
+	err := gitConfigSet(dir, gitConfigMaybeCorrupt, strconv.FormatInt(time.Now().Unix(), 10))
 	if err != nil {
 		log15.Error("failed to set maybeCorruptRepo config", repo, "repo", "error", err)
 	}

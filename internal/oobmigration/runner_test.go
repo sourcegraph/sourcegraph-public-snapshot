@@ -252,6 +252,37 @@ func TestRunMigratorMigrationChangesDirection(t *testing.T) {
 	}
 }
 
+func TestRunMigratorMigrationDesyncedFromData(t *testing.T) {
+	store := NewMockStoreIface()
+	ticker := glock.NewMockTicker(time.Second)
+
+	progressValues := []float64{
+		0.20,                         // inital check
+		0.25, 0.30, 0.35, 0.40, 0.45, // after up (x5)
+		0.45,                         // re-check
+		0.50, 0.55, 0.60, 0.65, 0.70, // after up (x5)
+	}
+
+	migrator := NewMockMigrator()
+	for _, val := range progressValues {
+		migrator.ProgressFunc.PushReturn(val, nil)
+	}
+
+	runMigratorWrapped(store, migrator, ticker, func(migrations chan<- Migration) {
+		migrations <- Migration{ID: 1, Progress: 0.2, ApplyReverse: false}
+		tickN(ticker, 5)
+		migrations <- Migration{ID: 1, Progress: 1.0, ApplyReverse: false}
+		tickN(ticker, 5)
+	})
+
+	if callCount := len(migrator.UpFunc.History()); callCount != 10 {
+		t.Errorf("unexpected number of calls to Up. want=%d have=%d", 10, callCount)
+	}
+	if callCount := len(migrator.DownFunc.History()); callCount != 0 {
+		t.Errorf("unexpected number of calls to Down. want=%d have=%d", 0, callCount)
+	}
+}
+
 // runMigratorWrapped creates a migrations channel, then passes it to both the runMigrator
 // function and the given interact function, which execute concurrently. This channel can
 // control the behavior of the migration controller from within the interact function.

@@ -86,6 +86,7 @@
     "@babel/core": "^7.13.0",
     "@babel/plugin-proposal-class-properties": "^7.13.0",
     "@babel/plugin-proposal-decorators": "^7.13.0",
+    "@babel/plugin-transform-typescript": "^7.13.0",
     "@babel/preset-env": "^7.13.0",
     "@babel/preset-typescript": "^7.13.0",
     "@babel/runtime": "^7.13.0",

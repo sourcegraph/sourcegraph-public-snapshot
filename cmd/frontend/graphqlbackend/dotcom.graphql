@@ -1,0 +1,562 @@
+"""
+Mutations that are only used on Sourcegraph.com.
+FOR INTERNAL USE ONLY.
+"""
+type DotcomMutation {
+    """
+    Set or unset a user's associated billing information.
+    Only Sourcegraph.com site admins may perform this mutation.
+    FOR INTERNAL USE ONLY.
+    """
+    setUserBilling(
+        """
+        The user to update.
+        """
+        user: ID!
+        """
+        The billing customer ID (on the billing system) to associate this user with. If null, the association is
+        removed (i.e., the user is unlinked from the billing customer record).
+        """
+        billingCustomerID: String
+    ): EmptyResponse!
+    """
+    Creates new product subscription for an account.
+    Only Sourcegraph.com site admins may perform this mutation.
+    FOR INTERNAL USE ONLY.
+    """
+    createProductSubscription(
+        """
+        The ID of the user (i.e., customer) to whom this product subscription is assigned.
+        """
+        accountID: ID!
+    ): ProductSubscription!
+    """
+    Set or unset a product subscription's associated billing system subscription.
+    Only Sourcegraph.com site admins may perform this mutation.
+    FOR INTERNAL USE ONLY.
+    """
+    setProductSubscriptionBilling(
+        """
+        The product subscription to update.
+        """
+        id: ID!
+        """
+        The billing subscription ID (on the billing system) to associate this product subscription with. If null,
+        the association is removed (i.e., the subscription is unlinked from billing).
+        """
+        billingSubscriptionID: String
+    ): EmptyResponse!
+    """
+    Generates and signs a new product license and associates it with an existing product subscription. The
+    product license key is signed with Sourcegraph.com's private key and is verifiable with the corresponding
+    public key.
+    Only Sourcegraph.com site admins may perform this mutation.
+    FOR INTERNAL USE ONLY.
+    """
+    generateProductLicenseForSubscription(
+        """
+        The product subscription to associate with the license.
+        """
+        productSubscriptionID: ID!
+        """
+        The license to generate.
+        """
+        license: ProductLicenseInput!
+    ): ProductLicense!
+    """
+    Creates a new product subscription and bills the associated payment method.
+    Only Sourcegraph.com authenticated users may perform this mutation.
+    FOR INTERNAL USE ONLY.
+    """
+    createPaidProductSubscription(
+        """
+        The ID of the user (i.e., customer) to whom the product subscription is assigned.
+        Only Sourcegraph.com site admins may perform this mutation for an accountID != the user ID of the
+        authenticated user.
+        """
+        accountID: ID!
+        """
+        The details of the product subscription.
+        """
+        productSubscription: ProductSubscriptionInput!
+        """
+        The token that represents the payment method used to purchase this product subscription,
+        or null if no payment is required.
+        """
+        paymentToken: String
+    ): CreatePaidProductSubscriptionResult!
+    """
+    Updates a new product subscription and credits or debits the associated payment method.
+    Only Sourcegraph.com site admins and the subscription's account owner may perform this
+    mutation.
+    FOR INTERNAL USE ONLY.
+    """
+    updatePaidProductSubscription(
+        """
+        The subscription to update.
+        """
+        subscriptionID: ID!
+        """
+        The updated details of the product subscription. All fields of the input type must be set
+        (i.e., it does not support passing a null value to mean "do not update this field's
+        value").
+        """
+        update: ProductSubscriptionInput!
+        """
+        The token that represents the payment method used to pay for (or receive credit for) this
+        product subscription update, or null if no payment is required.
+        """
+        paymentToken: String
+    ): UpdatePaidProductSubscriptionResult!
+    """
+    Archives an existing product subscription.
+    Only Sourcegraph.com site admins may perform this mutation.
+    FOR INTERNAL USE ONLY.
+    """
+    archiveProductSubscription(id: ID!): EmptyResponse!
+}
+
+"""
+Mutations that are only used on Sourcegraph.com.
+FOR INTERNAL USE ONLY.
+"""
+type DotcomQuery {
+    """
+    The product subscription with the given UUID. An error is returned if no such product
+    subscription exists.
+    Only Sourcegraph.com site admins and the account owners of the product subscription may
+    perform this query.
+    FOR INTERNAL USE ONLY.
+    """
+    productSubscription(uuid: String!): ProductSubscription!
+    """
+    A list of product subscriptions.
+    FOR INTERNAL USE ONLY.
+    """
+    productSubscriptions(
+        """
+        Returns the first n product subscriptions from the list.
+        """
+        first: Int
+        """
+        Returns only product subscriptions for the given account.
+        Only Sourcegraph.com site admins may perform this query with account == null.
+        """
+        account: ID
+        """
+        Returns product subscriptions from users with usernames or email addresses that match the query.
+        """
+        query: String
+    ): ProductSubscriptionConnection!
+    """
+    The invoice that would be generated for a new or updated subscription. This is used to show
+    users a preview of the credits, debits, and other billing information before creating or
+    updating a subscription.
+    Performing this query does not mutate any data or cause any billing changes to be made.
+    """
+    previewProductSubscriptionInvoice(
+        """
+        The customer account (user) for whom this preview invoice will be generated, or null if there is none.
+        """
+        account: ID
+        """
+        If non-null, preview the invoice for an update to the existing product subscription. The
+        product subscription's billing customer must match the account parameter. If null, preview
+        the invoice for a new subscription.
+        """
+        subscriptionToUpdate: ID
+        """
+        The parameters for the product subscription to preview. All fields of the input type must
+        be set (i.e., it does not support passing a null value to mean "do not update this field's
+        value" when updating an existing subscription).
+        """
+        productSubscription: ProductSubscriptionInput!
+    ): ProductSubscriptionPreviewInvoice!
+    """
+    A list of product licenses.
+    Only Sourcegraph.com site admins may perform this query.
+    FOR INTERNAL USE ONLY.
+    """
+    productLicenses(
+        """
+        Returns the first n product subscriptions from the list.
+        """
+        first: Int
+        """
+        Returns only product subscriptions whose license key contains this substring.
+        """
+        licenseKeySubstring: String
+        """
+        Returns only product licenses associated with the given subscription
+        """
+        productSubscriptionID: ID
+    ): ProductLicenseConnection!
+    """
+    A list of product pricing plans for Sourcegraph.
+    """
+    productPlans: [ProductPlan!]!
+}
+
+extend type Mutation {
+    """
+    Mutations that are only used on Sourcegraph.com.
+
+    FOR INTERNAL USE ONLY.
+    """
+    dotcom: DotcomMutation!
+}
+
+extend type Query {
+    """
+    Queries that are only used on Sourcegraph.com.
+
+    FOR INTERNAL USE ONLY.
+    """
+    dotcom: DotcomQuery!
+}
+
+"""
+A list of product subscriptions.
+FOR INTERNAL USE ONLY.
+"""
+type ProductSubscriptionConnection {
+    """
+    A list of product subscriptions.
+    """
+    nodes: [ProductSubscription!]!
+    """
+    The total count of product subscriptions in the connection. This total count may be larger than the number of
+    nodes in this object when the result is paginated.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A preview of an invoice that would be generated for a new or updated product subscription.
+FOR INTERNAL USE ONLY.
+"""
+type ProductSubscriptionPreviewInvoice {
+    """
+    The net price for this invoice, in USD cents. If this invoice represents an update to a
+    subscription, this is the difference between the existing price and the updated price.
+    """
+    price: Int!
+    """
+    For updates to existing subscriptions, the effective date for which this preview invoice was
+    calculated, expressed as the number of seconds since the epoch. For new subscriptions, this is
+    null.
+    """
+    prorationDate: String
+    """
+    Whether this invoice requires manual intervention.
+    """
+    isDowngradeRequiringManualIntervention: Boolean!
+    """
+    The "before" state of the product subscription (i.e., the existing subscription), prior to the update that this preview
+    represents, or null if the preview is for a new subscription.
+    """
+    beforeInvoiceItem: ProductSubscriptionInvoiceItem
+    """
+    The "after" state of the product subscription, with the update applied to the subscription.
+    For new subscriptions, this is just the invoice item for the subscription that will be
+    created.
+    """
+    afterInvoiceItem: ProductSubscriptionInvoiceItem!
+}
+
+"""
+An input type that describes a product license to be generated and signed.
+FOR INTERNAL USE ONLY.
+"""
+input ProductLicenseInput {
+    """
+    The tags that indicate which features are activated by this license.
+    """
+    tags: [String!]!
+    """
+    The number of users for which this product subscription is valid.
+    """
+    userCount: Int!
+    """
+    The expiration date of this product license, expressed as the number of seconds since the epoch.
+    """
+    expiresAt: Int!
+}
+
+"""
+A product license that was created on Sourcegraph.com.
+FOR INTERNAL USE ONLY.
+"""
+type ProductLicense implements Node {
+    """
+    The unique ID of this product license.
+    """
+    id: ID!
+    """
+    The product subscription associated with this product license.
+    """
+    subscription: ProductSubscription!
+    """
+    Information about this product license.
+    """
+    info: ProductLicenseInfo
+    """
+    The license key.
+    """
+    licenseKey: String!
+    """
+    The date when this product license was created.
+    """
+    createdAt: DateTime!
+}
+
+"""
+A list of product licenses.
+FOR INTERNAL USE ONLY.
+"""
+type ProductLicenseConnection {
+    """
+    A list of product licenses.
+    """
+    nodes: [ProductLicense!]!
+    """
+    The total count of product licenses in the connection. This total count may be larger than the number of
+    nodes in this object when the result is paginated.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A product pricing plan for Sourcegraph.
+FOR INTERNAL USE ONLY.
+"""
+type ProductPlan {
+    """
+    The billing system's unique ID for the plan.
+    """
+    billingPlanID: String!
+    """
+    The unique ID for the product.
+    """
+    productPlanID: String!
+    """
+    The name of the product plan (e.g., "Enterprise Starter"). This is displayed to the user and
+    should be human-readable.
+    """
+    name: String!
+    """
+    The name with the brand (e.g., "Sourcegraph Enterprise Starter").
+    """
+    nameWithBrand: String!
+    """
+    The price (in USD cents) for one user for a year.
+    """
+    pricePerUserPerYear: Int!
+    """
+    The minimum quantity (user count) that can be purchased. Only applies when using tiered pricing.
+    """
+    minQuantity: Int
+    """
+    The maximum quantity (user count) that can be purchased. Only applies when using tiered pricing.
+    """
+    maxQuantity: Int
+    """
+    Defines if the tiering price should be graduated or volume based.
+    """
+    tiersMode: String!
+    """
+    The tiered pricing for the plan.
+    """
+    planTiers: [PlanTier!]!
+}
+
+"""
+The information about a plan's tier.
+FOR INTERNAL USE ONLY.
+"""
+type PlanTier {
+    """
+    The per-user amount for this tier.
+    """
+    unitAmount: Int!
+    """
+    The maximum number of users that this tier applies to.
+    """
+    upTo: Int!
+    """
+    The flat fee for this tier.
+    """
+    flatAmount: Int!
+}
+
+"""
+The information about a product subscription that determines its price.
+FOR INTERNAL USE ONLY.
+"""
+type ProductSubscriptionInvoiceItem {
+    """
+    The product plan for the subscription.
+    """
+    plan: ProductPlan!
+    """
+    This subscription's user count.
+    """
+    userCount: Int!
+    """
+    The date when the subscription expires.
+    """
+    expiresAt: DateTime!
+}
+
+"""
+An input type that describes a product subscription to be purchased. Corresponds to
+ProductSubscriptionInvoiceItem.
+FOR INTERNAL USE ONLY.
+"""
+input ProductSubscriptionInput {
+    """
+    The billing plan ID for the subscription (ProductPlan.billingPlanID). This also specifies the
+    billing product, because a plan is associated with its product in the billing system.
+    """
+    billingPlanID: String!
+    """
+    This subscription's user count.
+    """
+    userCount: Int!
+}
+
+"""
+The result of Mutation.dotcom.createPaidProductSubscription.
+FOR INTERNAL USE ONLY.
+"""
+type CreatePaidProductSubscriptionResult {
+    """
+    The newly created product subscription.
+    """
+    productSubscription: ProductSubscription!
+}
+
+"""
+The result of Mutation.dotcom.updatePaidProductSubscription.
+FOR INTERNAL USE ONLY.
+"""
+type UpdatePaidProductSubscriptionResult {
+    """
+    The updated product subscription.
+    """
+    productSubscription: ProductSubscription!
+}
+
+"""
+An event related to a product subscription.
+FOR INTERNAL USE ONLY.
+"""
+type ProductSubscriptionEvent {
+    """
+    The unique ID of the event.
+    """
+    id: String!
+    """
+    The date when the event occurred.
+    """
+    date: String!
+    """
+    The title of the event.
+    """
+    title: String!
+    """
+    A description of the event.
+    """
+    description: String
+    """
+    A URL where the user can see more information about the event.
+    """
+    url: String
+}
+
+"""
+A product subscription that was created on Sourcegraph.com.
+FOR INTERNAL USE ONLY.
+"""
+type ProductSubscription implements Node {
+    """
+    The unique ID of this product subscription.
+    """
+    id: ID!
+    """
+    The unique UUID of this product subscription. Unlike ProductSubscription.id, this does not
+    encode the type and is not a GraphQL node ID.
+    """
+    uuid: String!
+    """
+    A name for the product subscription derived from its ID. The name is not guaranteed to be unique.
+    """
+    name: String!
+    """
+    The user (i.e., customer) to whom this subscription is granted, or null if the account has been deleted.
+    """
+    account: User
+    """
+    The information that determines the price of this subscription, or null if there is no billing
+    information associated with this subscription.
+    """
+    invoiceItem: ProductSubscriptionInvoiceItem
+    """
+    A list of billing-related events related to this product subscription.
+    """
+    events: [ProductSubscriptionEvent!]!
+    """
+    The currently active product license associated with this product subscription, if any.
+    """
+    activeLicense: ProductLicense
+    """
+    A list of product licenses associated with this product subscription.
+    Only Sourcegraph.com site admins may list inactive product licenses (other viewers should use
+    ProductSubscription.activeLicense).
+    """
+    productLicenses(
+        """
+        Returns the first n product licenses from the list.
+        """
+        first: Int
+    ): ProductLicenseConnection!
+    """
+    The date when this product subscription was created.
+    """
+    createdAt: DateTime!
+    """
+    Whether this product subscription was archived.
+    """
+    isArchived: Boolean!
+    """
+    The URL to view this product subscription.
+    """
+    url: String!
+    """
+    The URL to view this product subscription in the site admin area.
+    Only Sourcegraph.com site admins may query this field.
+    """
+    urlForSiteAdmin: String
+    """
+    The URL to view this product subscription's billing information (for site admins).
+    Only Sourcegraph.com site admins may query this field.
+    """
+    urlForSiteAdminBilling: String
+}
+
+extend type User {
+    """
+    The URL to view this user's customer information (for Sourcegraph.com site admins).
+    Only Sourcegraph.com site admins may query this field.
+    FOR INTERNAL USE ONLY.
+    """
+    urlForSiteAdminBilling: String
+}

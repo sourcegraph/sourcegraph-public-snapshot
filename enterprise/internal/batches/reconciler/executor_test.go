@@ -806,19 +806,15 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 
 	rs, gitHubExtSvc := ct.CreateTestRepos(t, ctx, db, 1)
 	gitHubRepo := rs[0]
-	gitHubRepoCloneURL := gitHubRepo.Sources[gitHubExtSvc.URN()].CloneURL
 
 	gitLabRepos, gitLabExtSvc := ct.CreateGitlabTestRepos(t, ctx, db, 1)
 	gitLabRepo := gitLabRepos[0]
-	gitLabRepoCloneURL := gitLabRepo.Sources[gitLabExtSvc.URN()].CloneURL
 
 	bbsRepos, bbsExtSvc := ct.CreateBbsTestRepos(t, ctx, db, 1)
 	bbsRepo := bbsRepos[0]
-	bbsRepoCloneURL := bbsRepo.Sources[bbsExtSvc.URN()].CloneURL
 
 	bbsSSHRepos, bbsSSHExtsvc := ct.CreateBbsSSHTestRepos(t, ctx, db, 1)
 	bbsSSHRepo := bbsSSHRepos[0]
-	bbsSSHRepoCloneURL := bbsSSHRepo.Sources[bbsSSHExtsvc.URN()].CloneURL
 
 	plan := &Plan{}
 	plan.AddOp(btypes.ReconcilerOperationPush)
@@ -839,7 +835,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			repo:        gitHubRepo,
 			credentials: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://my-secret-github-token@github.com/" + string(gitHubRepo.Name),
+				RemoteURL: "https://my-secret-github-token@github.com/sourcegraph/" + string(gitHubRepo.Name),
 			},
 		},
 		{
@@ -855,7 +851,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			repo:   gitHubRepo,
 			user:   admin,
 			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: gitHubRepoCloneURL,
+				RemoteURL: "https://SECRETTOKEN@github.com/sourcegraph/" + string(gitHubRepo.Name),
 			},
 		},
 		{
@@ -865,7 +861,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			repo:        gitLabRepo,
 			credentials: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
 			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://git:my-secret-gitlab-token@gitlab.com/" + string(gitLabRepo.Name),
+				RemoteURL: "https://git:my-secret-gitlab-token@gitlab.com/sourcegraph/" + string(gitLabRepo.Name),
 			},
 		},
 		{
@@ -881,7 +877,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			extSvc: gitLabExtSvc,
 			repo:   gitLabRepo,
 			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: gitLabRepoCloneURL,
+				RemoteURL: "https://git:SECRETTOKEN@gitlab.com/sourcegraph/" + string(gitLabRepo.Name),
 			},
 		},
 		{
@@ -907,7 +903,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			extSvc: bbsExtSvc,
 			repo:   bbsRepo,
 			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: bbsRepoCloneURL,
+				RemoteURL: "https://bbs-user:bbs-token@bitbucket.sourcegraph.com/scm/" + string(bbsRepo.Name),
 			},
 		},
 		{
@@ -923,7 +919,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			extSvc: bbsSSHExtsvc,
 			repo:   bbsSSHRepo,
 			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: bbsSSHRepoCloneURL,
+				RemoteURL: "ssh://git@bitbucket.sgdev.org:7999/" + string(bbsSSHRepo.Name),
 			},
 		},
 		{
@@ -938,7 +934,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				Passphrase:       "passphrase",
 			},
 			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL:  bbsSSHRepoCloneURL,
+				RemoteURL:  "ssh://git@bitbucket.sgdev.org:7999/" + string(bbsSSHRepo.Name),
 				PrivateKey: "private key",
 				Passphrase: "passphrase",
 			},
