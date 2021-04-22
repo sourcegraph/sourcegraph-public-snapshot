@@ -638,8 +638,8 @@ add(
             <ButtonVariants variants={['primary', 'secondary', 'danger']} variantType="btn-outline" />
             <h2>Icons</h2>
             <p>We can use icons with our buttons</p>
-            <ButtonVariants variants={['primary']} icon={SearchIcon} />
-            <ButtonVariants variants={['primary']} variantType="btn-outline" icon={SearchIcon} />
+            <ButtonVariants variants={['danger']} icon={SearchIcon} />
+            <ButtonVariants variants={['danger']} variantType="btn-outline" icon={SearchIcon} />
             <h2>Size</h2>
             <p>We can make our buttons smaller</p>
             <ButtonVariants variants={['primary']} variantType="btn-outline" small={true} />
