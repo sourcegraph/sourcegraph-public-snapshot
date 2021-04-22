@@ -247,7 +247,7 @@ func TestCleanupExpired(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if err := gitConfigSet(GitDir(repoCorrupt), "sourcegraph.maybeCorruptRepo", "1"); err != nil {
+	if err := gitConfigSet(GitDir(repoCorrupt), gitConfigMaybeCorrupt, "1"); err != nil {
 		t.Fatal(err)
 	}
 	if err := setRepositoryType(GitDir(repoPerforce), "perforce"); err != nil {

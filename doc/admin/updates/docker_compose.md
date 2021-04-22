@@ -25,6 +25,8 @@ If you are using an external database, [upgrade your database](https://docs.sour
 
 Afterwards, please upgrade to the [`v3.27.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.27.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.26).*
+
 ## 3.25 -> 3.26
 
 No manual migration required.

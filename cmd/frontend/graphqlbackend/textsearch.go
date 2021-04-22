@@ -89,12 +89,7 @@ func (fm *FileMatchResolver) Resource() string {
 }
 
 func (fm *FileMatchResolver) Symbols() []symbolResolver {
-	commit := fm.Commit()
-	symbols := make([]symbolResolver, len(fm.FileMatch.Symbols))
-	for i, s := range fm.FileMatch.Symbols {
-		symbols[i] = toSymbolResolver(fm.db, commit, s)
-	}
-	return symbols
+	return symbolResultsToResolvers(fm.db, fm.Commit(), fm.FileMatch.Symbols)
 }
 
 func (fm *FileMatchResolver) LineMatches() []lineMatchResolver {

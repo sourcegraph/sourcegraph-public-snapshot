@@ -15,6 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+var ErrSearchContextNotFound = errors.New("search context not found")
+
 func SearchContexts(db dbutil.DB) *SearchContextsStore {
 	store := basestore.NewWithDB(db, sql.TxOptions{})
 	return &SearchContextsStore{store}
@@ -93,8 +95,9 @@ type ListSearchContextsOptions struct {
 	NamespaceUserID int32
 	// NamespaceOrgID matches search contexts by org. Mutually exclusive with NamespaceUserID.
 	NamespaceOrgID int32
-	// IncludeAll will include all search contexts when true (ignoring namespace options).
-	IncludeAll bool
+	// NoNamespace matches search contexts without a namespace ("instance-level contexts").
+	// It ignores the NamespaceUserID and NamespaceOrgID options.
+	NoNamespace bool
 }
 
 func getSearchContextNamespaceQueryConditions(namespaceUserID, namespaceOrgID int32) ([]*sqlf.Query, error) {
@@ -102,14 +105,10 @@ func getSearchContextNamespaceQueryConditions(namespaceUserID, namespaceOrgID in
 	if namespaceUserID != 0 && namespaceOrgID != 0 {
 		return nil, errors.New("options NamespaceUserID and NamespaceOrgID are mutually exclusive")
 	}
-	if namespaceUserID == 0 {
-		conds = append(conds, sqlf.Sprintf("sc.namespace_user_id IS NULL"))
-	} else {
+	if namespaceUserID > 0 {
 		conds = append(conds, sqlf.Sprintf("sc.namespace_user_id = %s", namespaceUserID))
 	}
-	if namespaceOrgID == 0 {
-		conds = append(conds, sqlf.Sprintf("sc.namespace_org_id IS NULL"))
-	} else {
+	if namespaceOrgID > 0 {
 		conds = append(conds, sqlf.Sprintf("sc.namespace_org_id = %s", namespaceOrgID))
 	}
 	return conds, nil
@@ -117,7 +116,9 @@ func getSearchContextNamespaceQueryConditions(namespaceUserID, namespaceOrgID in
 
 func getSearchContextsQueryConditions(opts ListSearchContextsOptions) ([]*sqlf.Query, error) {
 	conds := []*sqlf.Query{}
-	if !opts.IncludeAll {
+	if opts.NoNamespace {
+		conds = append(conds, sqlf.Sprintf("sc.namespace_user_id IS NULL"), sqlf.Sprintf("sc.namespace_org_id IS NULL"))
+	} else {
 		namespaceConds, err := getSearchContextNamespaceQueryConditions(opts.NamespaceUserID, opts.NamespaceOrgID)
 		if err != nil {
 			return nil, err
@@ -147,6 +148,10 @@ func (s *SearchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf
 }
 
 func (s *SearchContextsStore) ListSearchContexts(ctx context.Context, pageOpts ListSearchContextsPageOptions, opts ListSearchContextsOptions) ([]*types.SearchContext, error) {
+	if Mocks.SearchContexts.ListSearchContexts != nil {
+		return Mocks.SearchContexts.ListSearchContexts(ctx, pageOpts, opts)
+	}
+
 	listSearchContextsConds, err := getSearchContextsQueryConditions(opts)
 	if err != nil {
 		return nil, err
@@ -157,6 +162,10 @@ func (s *SearchContextsStore) ListSearchContexts(ctx context.Context, pageOpts L
 }
 
 func (s *SearchContextsStore) CountSearchContexts(ctx context.Context, opts ListSearchContextsOptions) (int32, error) {
+	if Mocks.SearchContexts.CountSearchContexts != nil {
+		return Mocks.SearchContexts.CountSearchContexts(ctx, opts)
+	}
+
 	conds, err := getSearchContextsQueryConditions(opts)
 	if err != nil {
 		return -1, err
@@ -184,13 +193,17 @@ func (s *SearchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 		return Mocks.SearchContexts.GetSearchContext(ctx, opts)
 	}
 
-	conds, err := getSearchContextNamespaceQueryConditions(opts.NamespaceUserID, opts.NamespaceOrgID)
-	if err != nil {
-		return nil, err
+	conds := []*sqlf.Query{}
+	if opts.NamespaceUserID == 0 && opts.NamespaceOrgID == 0 {
+		conds = append(conds, sqlf.Sprintf("sc.namespace_user_id IS NULL"), sqlf.Sprintf("sc.namespace_org_id IS NULL"))
+	} else {
+		namespaceConds, err := getSearchContextNamespaceQueryConditions(opts.NamespaceUserID, opts.NamespaceOrgID)
+		if err != nil {
+			return nil, err
+		}
+		conds = append(conds, namespaceConds...)
 	}
-	if opts.Name != "" {
-		conds = append(conds, sqlf.Sprintf("sc.name = %s", opts.Name))
-	}
+	conds = append(conds, sqlf.Sprintf("sc.name = %s", opts.Name))
 
 	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
 	if err != nil {
@@ -286,7 +299,7 @@ func scanSingleSearchContext(rows *sql.Rows) (*types.SearchContext, error) {
 		return nil, err
 	}
 	if len(searchContexts) != 1 {
-		return nil, errors.New("search context not found")
+		return nil, ErrSearchContextNotFound
 	}
 	return searchContexts[0], nil
 }

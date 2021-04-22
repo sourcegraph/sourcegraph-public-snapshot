@@ -64,6 +64,7 @@ async function generateGraphQlOperations() {
           GitObjectID: 'string',
           JSONCString: 'string',
           PublishedValue: "boolean | 'draft'",
+          BigInt: 'string',
         },
       },
       generates: {
@@ -72,7 +73,7 @@ async function generateGraphQlOperations() {
           config: {
             onlyOperationTypes: true,
             noExport: false,
-            enumValues: '../../shared/src/graphql-operations',
+            enumValues: '@sourcegraph/shared/src/graphql-operations',
             interfaceNameForOperations: 'BrowserGraphQlOperations',
           },
           plugins,
@@ -83,7 +84,7 @@ async function generateGraphQlOperations() {
           config: {
             onlyOperationTypes: true,
             noExport: false,
-            enumValues: '../../shared/src/graphql-operations',
+            enumValues: '@sourcegraph/shared/src/graphql-operations',
             interfaceNameForOperations: 'WebGraphQlOperations',
           },
           plugins,

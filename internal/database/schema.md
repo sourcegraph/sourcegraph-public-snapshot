@@ -910,9 +910,11 @@ Associates an upload with the set of packages they require within a given packag
  upload_size         | bigint                   |           |          | 
  num_failures        | integer                  |           | not null | 0
  associated_index_id | bigint                   |           |          | 
+ committed_at        | timestamp with time zone |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
+    "lsif_uploads_committed_at" btree (committed_at) WHERE state = 'completed'::text
     "lsif_uploads_state" btree (state)
     "lsif_uploads_uploaded_at" btree (uploaded_at)
 Check constraints:

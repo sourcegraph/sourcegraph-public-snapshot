@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -72,8 +73,8 @@ func newGithubSource(c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Au
 	}, nil
 }
 
-func (s GithubSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
-	return gitserverPushConfig(repo, s.au)
+func (s GithubSource) GitserverPushConfig(ctx context.Context, store *database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
+	return gitserverPushConfig(ctx, store, repo, s.au)
 }
 
 func (s GithubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {

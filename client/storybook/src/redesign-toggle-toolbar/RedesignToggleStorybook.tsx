@@ -27,7 +27,7 @@ const updateManager = (isRedesignEnabled: boolean): void => {
 }
 
 export const RedesignToggleStorybook = (): ReactElement => {
-    const { isRedesignEnabled, setIsRedesignEnabled } = useRedesignToggle()
+    const [isRedesignEnabled, setIsRedesignEnabled] = useRedesignToggle()
 
     const handleRedesignToggle = (): void => {
         setIsRedesignEnabled(!isRedesignEnabled)
