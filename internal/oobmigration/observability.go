@@ -18,7 +18,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		observationContext.Registerer,
 		"oobmigration",
 		metrics.WithLabels("op", "migration"),
-		metrics.WithCountHelp("Total number of resolver invocations."),
+		metrics.WithCountHelp("Total number of migrator invocations."),
 	)
 
 	opForMigration := func(name string) func(migrationID int) *observation.Operation {
