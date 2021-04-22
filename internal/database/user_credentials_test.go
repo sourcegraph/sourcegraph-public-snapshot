@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -508,7 +509,7 @@ func setUpUserCredentialTest(t *testing.T, db *sql.DB) (context.Context, encrypt
 		t.Fatal(err)
 	}
 
-	return ctx, &testKey{}, user
+	return ctx, et.TestKey{}, user
 }
 
 type invalidAuth struct{}
