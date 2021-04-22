@@ -1,10 +1,13 @@
 import { ParentSize } from '@visx/responsive'
 import * as H from 'history'
-import React, { FunctionComponent, useCallback, useMemo } from 'react'
+import React, { FunctionComponent, useMemo } from 'react'
 import { ChartContent } from 'sourcegraph'
 
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { createProgrammaticLinkHandler } from '@sourcegraph/shared/src/util/link-click-handler/linkClickHandler'
+import {
+    createLinkClickHandler,
+    createProgrammaticLinkHandler
+} from '@sourcegraph/shared/src/util/link-click-handler/linkClickHandler'
 
 import { BarChart } from './charts/bar/BarChart'
 import { LineChart } from './charts/line/LineChart'
@@ -32,9 +35,14 @@ export interface ChartViewContentProps {
 export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props => {
     const { content, className = '', history, viewID, telemetryService } = props
 
-    const handleDatumLinkClick = useCallback(() => {
-        telemetryService.log('InsightDataPointClick', { insightType: getInsightTypeByViewId(viewID) })
-    }, [viewID, telemetryService])
+    const handleDatumLinkClick = useMemo(() => {
+        const nativeLinkHandler = createLinkClickHandler(history);
+
+        return (event: React.MouseEvent) => {
+            telemetryService.log('InsightDataPointClick', { insightType: getInsightTypeByViewId(viewID) })
+            nativeLinkHandler(event);
+        }
+    }, [viewID, telemetryService, history])
 
     // Click link-zone handler for line chart only. Catch click around point and redirect user by
     // link which we've got from nearest datum point to user cursor position. This allows user
