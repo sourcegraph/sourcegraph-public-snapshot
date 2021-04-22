@@ -1,5 +1,6 @@
 const shelljs = require('shelljs')
 const signale = require('signale')
+const path = require('path')
 
 /**
  * Purpose of this script: create a source code zip that can be used shared and
@@ -27,7 +28,7 @@ const signale = require('signale')
  * Set the commitId to build from a given revision. Because it will be
  * downloaded from GitHub, this revision needs to exist there.
  */
-const commitId = 'bext/release'
+let commitId = 'cedc530'
 
 /**
  * If true, code intel extensions will be fetched and included in the zip, so
@@ -41,6 +42,14 @@ const includeCodeIntelExtensions = true
  * Inside the zip, this will be the name of the root directory.
  */
 const rootDirectoryNameForZip = 'sourcegraph-source'
+const buildBashFile = 'build-ff.sh'
+
+const revisionParseResult = shelljs.exec(`git rev-parse ${commitId}`, { silent: true })
+if (revisionParseResult.code === 1) {
+  signale.await('There was a problem using this commit id')
+  process.exit(1)
+}
+commitId = revisionParseResult.stdout.trim()
 
 // Clean up
 shelljs.rm('-f', 'sourcegraph.zip')
@@ -62,6 +71,9 @@ if (includeCodeIntelExtensions) {
   shelljs.exec('yarn --cwd client/browser run fetch-code-intel-extensions')
   shelljs.popd()
 }
+
+// Copy build script to main dir
+shelljs.cp({}, buildBashFile, path.join(rootDirectoryNameForZip, buildBashFile))
 
 // Delete all unnecessary directories
 shelljs.pushd(rootDirectoryNameForZip)
