@@ -102,7 +102,7 @@ export const config: webpack.Configuration = {
                 // SCSS rule for our own styles and Bootstrap
                 test: /\.(css|sass|scss)$/,
                 exclude: /\.module\.(sass|scss)$/,
-                use: getCSSLoaders({ loader: 'css-loader' }),
+                use: getCSSLoaders({ loader: 'css-loader', options: { url: false } }),
             },
             {
                 test: /\.(css|sass|scss)$/,
@@ -115,6 +115,7 @@ export const config: webpack.Configuration = {
                             exportLocalsConvention: 'camelCase',
                             localIdentName: '[name]__[local]_[hash:base64:5]',
                         },
+                        url: false,
                     },
                 }),
             },

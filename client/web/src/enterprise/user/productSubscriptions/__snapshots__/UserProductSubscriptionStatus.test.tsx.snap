@@ -38,11 +38,6 @@ exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
   </div>
   <div
     className="product-certificate__bg"
-    style={
-      Object {
-        "backgroundImage": "url(/.assets/img/bg-sprinkles-2x.png)",
-      }
-    }
   />
   <div
     className="card-footer d-flex align-items-center justify-content-between flex-wrap"
@@ -107,11 +102,6 @@ exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
   </div>
   <div
     className="product-certificate__bg"
-    style={
-      Object {
-        "backgroundImage": "url(/.assets/img/bg-sprinkles-2x.png)",
-      }
-    }
   />
   <div
     className="card-footer d-flex align-items-center justify-content-between flex-wrap"
