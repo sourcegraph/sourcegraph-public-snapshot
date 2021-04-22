@@ -349,6 +349,8 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(gitolite.Repo)
 	case extsvc.TypePerforce:
 		r.Metadata = new(perforce.Depot)
+	case extsvc.TypeOther:
+		r.Metadata = new(types.OtherRepoMetadata)
 	default:
 		return nil
 	}

@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -231,25 +230,6 @@ func TestPerforceCloneURL(t *testing.T) {
 
 	got := perforceCloneURL(repo, &cfg)
 	want := "perforce://admin:pa$$word@ssl:111.222.333.444:1666//Sourcegraph/"
-	if got != want {
-		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
-	}
-}
-
-func TestOtherCloneURL(t *testing.T) {
-	got := otherCloneURL(&api.ExternalRepoSpec{
-		ID:        "my/repo",
-		ServiceID: "https://github-enterprise.example.com/",
-	})
-	want := "https://github-enterprise.example.com/my/repo"
-	if got != want {
-		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
-	}
-	got = otherCloneURL(&api.ExternalRepoSpec{
-		ID:        "/my/repo",
-		ServiceID: "https://github-enterprise.example.com/",
-	})
-	want = "https://github-enterprise.example.com/my/repo"
 	if got != want {
 		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
 	}

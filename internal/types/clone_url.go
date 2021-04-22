@@ -3,12 +3,10 @@ package types
 import (
 	"fmt"
 	"net/url"
-	"strings"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -65,7 +63,9 @@ func RepoCloneURL(kind, config string, repo *Repo) (string, error) {
 			return phabricatorCloneURL(r, t), nil
 		}
 	case *schema.OtherExternalServiceConnection:
-		return otherCloneURL(&repo.ExternalRepo), nil
+		if r, ok := repo.Metadata.(*OtherRepoMetadata); ok {
+			return otherCloneURL(repo, r), nil
+		}
 	default:
 		return "", errors.Errorf("unknown external service kind %q for repo %d", kind, repo.ID)
 	}
@@ -243,14 +243,15 @@ func phabricatorCloneURL(repo *phabricator.Repo, _ *schema.PhabricatorConnection
 	return cloneURL
 }
 
-func otherCloneURL(spec *api.ExternalRepoSpec) string {
-	base, path := spec.ServiceID, spec.ID
-	base = strings.TrimRight(base, "/")
-	if !strings.HasPrefix(path, "/") {
-		path = "/" + path
-	}
+// TODO: this will be moved to the right package once we refactor the RepoCloneURL function.
+type OtherRepoMetadata struct {
+	// RelativePath is relative to ServiceID which is usually the host URL.
+	// Joining them gives you the clone url.
+	RelativePath string
+}
 
-	return base + path
+func otherCloneURL(repo *Repo, m *OtherRepoMetadata) string {
+	return repo.ExternalRepo.ServiceID + m.RelativePath
 }
 
 // setUserinfoBestEffort adds the username and password to rawurl. If user is
