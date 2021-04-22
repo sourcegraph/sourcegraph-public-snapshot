@@ -518,6 +518,8 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 					t.Error("cannot coerce Source into bbsSource")
 				} else if gs == nil {
 					t.Error("unexpected nil Source")
+				} else if gs.au != tc {
+					t.Errorf("incorrect authenticator: have=%v want=%v", gs.au, tc)
 				}
 			})
 		}
