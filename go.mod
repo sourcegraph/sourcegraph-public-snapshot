@@ -158,7 +158,7 @@ require (
 	github.com/sourcegraph/go-jsonschema v0.0.0-20200907102109-d14e9f2f3a28
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
-	github.com/sourcegraph/gosyntect v0.0.0-20200429204402-842ed26129d0
+	github.com/sourcegraph/gosyntect v0.0.0-20210422223331-645353f16ddc
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-00010101000000-000000000000
 	github.com/sourcegraph/sourcegraph/enterprise/lib v0.0.0-00010101000000-000000000000
@@ -238,7 +238,6 @@ replace (
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1
-	github.com/sourcegraph/gosyntect => github.com/sourcegraph/gosyntect v0.0.0-20210421211451-39f5748b8967
 )
 
 // Status unclear replace directives
