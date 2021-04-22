@@ -117,6 +117,7 @@ func TestRepository_NameWithSpace(t *testing.T) {
 	}
 
 	want := &gqltestutil.Repository{
+		ID:  got.ID,
 		URL: "/sourcegraph.visualstudio.com/Test%20Repo",
 	}
 	if diff := cmp.Diff(want, got); diff != "" {

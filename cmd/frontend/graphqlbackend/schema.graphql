@@ -627,6 +627,11 @@ type Mutation {
         """
         repositories: [SearchContextRepositoryRevisionsInput!]!
     ): SearchContext!
+
+    """
+    (experimental) Delete search context.
+    """
+    deleteSearchContext(id: ID!): EmptyResponse!
 }
 
 """

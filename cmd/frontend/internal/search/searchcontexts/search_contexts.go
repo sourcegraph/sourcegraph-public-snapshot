@@ -176,6 +176,19 @@ func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.D
 	return searchContext, nil
 }
 
+func DeleteSearchContext(ctx context.Context, db dbutil.DB, searchContext *types.SearchContext) error {
+	if IsAutoDefinedSearchContext(searchContext) {
+		return errors.New("cannot delete auto-defined search context")
+	}
+
+	err := validateSearchContextNamespaceForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID)
+	if err != nil {
+		return err
+	}
+
+	return database.SearchContexts(db).DeleteSearchContext(ctx, searchContext.ID)
+}
+
 func GetAutoDefinedSearchContexts(ctx context.Context, db dbutil.DB) ([]*types.SearchContext, error) {
 	searchContexts := []*types.SearchContext{GetGlobalSearchContext()}
 	a := actor.FromContext(ctx)

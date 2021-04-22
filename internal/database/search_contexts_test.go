@@ -519,3 +519,35 @@ func TestSearchContexts_Permissions(t *testing.T) {
 		})
 	}
 }
+
+func TestSearchContexts_Delete(t *testing.T) {
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+	sc := SearchContexts(db)
+
+	initialSearchContexts, err := createSearchContexts(ctx, sc, []*types.SearchContext{
+		{Name: "ctx", Public: true},
+	})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	err = sc.DeleteSearchContext(ctx, initialSearchContexts[0].ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	// We should not be able to find the search context
+	_, err = sc.GetSearchContext(ctx, GetSearchContextOptions{Name: initialSearchContexts[0].Name})
+	if err != ErrSearchContextNotFound {
+		t.Fatal("Expected not to find the search context")
+	}
+
+	// We should be able to create a search context with the same name
+	_, err = createSearchContexts(ctx, sc, []*types.SearchContext{
+		{Name: "ctx", Public: true},
+	})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+}

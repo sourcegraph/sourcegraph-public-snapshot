@@ -217,12 +217,27 @@ func (s *SearchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 	return scanSingleSearchContext(rows)
 }
 
+const deleteSearchContextFmtStr = `
+UPDATE search_contexts
+SET
+    -- Soft-delete the search context and update the name to prevent violating the unique constraint in the future
+    deleted_at = TRANSACTION_TIMESTAMP(),
+    name = 'DELETED-' || EXTRACT(EPOCH FROM TRANSACTION_TIMESTAMP()) || '-' || name
+WHERE id = %d AND deleted_at IS NULL
+`
+
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin or has permission to delete the search context.
+func (s *SearchContextsStore) DeleteSearchContext(ctx context.Context, searchContextID int64) error {
+	return s.Exec(ctx, sqlf.Sprintf(deleteSearchContextFmtStr, searchContextID))
+}
+
 const insertSearchContextFmtStr = `
 INSERT INTO search_contexts
 (name, description, public, namespace_user_id, namespace_org_id)
 VALUES (%s, %s, %s, %s, %s)
 `
 
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin or has permission to create the search context.
 func (s *SearchContextsStore) CreateSearchContextWithRepositoryRevisions(ctx context.Context, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (createdSearchContext *types.SearchContext, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
