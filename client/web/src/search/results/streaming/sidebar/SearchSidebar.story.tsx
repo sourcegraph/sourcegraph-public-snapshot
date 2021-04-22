@@ -5,7 +5,7 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 
 import { WebStory } from '../../../../components/WebStory'
 import { SearchPatternType } from '../../../../graphql-operations'
-import { QuickLink, SearchScope } from '../../../../schema/settings.schema'
+import { QuickLink } from '../../../../schema/settings.schema'
 
 import { SearchSidebar, SearchSidebarProps } from './SearchSidebar'
 
