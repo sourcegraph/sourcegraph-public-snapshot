@@ -3,10 +3,11 @@ package reader
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"strconv"
+	"strings"
 
 	jsoniter "github.com/json-iterator/go"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol"
 )
 
@@ -14,9 +15,9 @@ var unmarshaller = jsoniter.ConfigFastest
 
 func unmarshalElement(interner *Interner, line []byte) (_ Element, err error) {
 	var payload struct {
-		ID    json.RawMessage `json:"id"`
 		Type  string          `json:"type"`
 		Label string          `json:"label"`
+		ID    json.RawMessage `json:"id"`
 	}
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return Element{}, err
@@ -99,9 +100,9 @@ func unmarshalEdge(interner *Interner, line []byte) (interface{}, error) {
 // do not net the same benefit.
 func unmarshalEdgeFast(line []byte) (Edge, bool) {
 	var payload struct {
+		InVs     []int `json:"inVs"`
 		OutV     int   `json:"outV"`
 		InV      int   `json:"inV"`
-		InVs     []int `json:"inVs"`
 		Document int   `json:"document"`
 	}
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
@@ -173,17 +174,17 @@ func unmarshalRange(line []byte) (interface{}, error) {
 		End   _position `json:"end"`
 	}
 	type _tag struct {
+		FullRange *_range              `json:"fullRange,omitempty"`
 		Type      string               `json:"type"`
 		Text      string               `json:"text"`
-		Kind      int                  `json:"kind"`
-		FullRange *_range              `json:"fullRange,omitempty"`
 		Detail    string               `json:"detail,omitempty"`
 		Tags      []protocol.SymbolTag `json:"tags,omitempty"`
+		Kind      int                  `json:"kind"`
 	}
 	var payload struct {
+		Tag   *_tag     `json:"tag"`
 		Start _position `json:"start"`
 		End   _position `json:"end"`
-		Tag   *_tag     `json:"tag"`
 	}
 
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
@@ -230,10 +231,7 @@ func unmarshalRange(line []byte) (interface{}, error) {
 	}, nil
 }
 
-var (
-	HoverPartSeparator = []byte("\n\n---\n\n")
-	CodeFence          = []byte("```")
-)
+var HoverPartSeparator = "\n\n---\n\n"
 
 func unmarshalHover(line []byte) (interface{}, error) {
 	type _hoverResult struct {
@@ -248,54 +246,59 @@ func unmarshalHover(line []byte) (interface{}, error) {
 
 	var target []json.RawMessage
 	if err := unmarshaller.Unmarshal(payload.Result.Contents, &target); err != nil {
+		// attempt unmarshal into either single MarkedString or MarkupContent
 		v, err := unmarshalHoverPart(payload.Result.Contents)
 		if err != nil {
 			return nil, err
 		}
 
-		return string(v), nil
+		return *v, nil
 	}
 
-	var parts [][]byte
+	var parts []string
 	for _, t := range target {
 		part, err := unmarshalHoverPart(t)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
-		parts = append(parts, part)
+		parts = append(parts, *part)
 	}
 
-	return string(bytes.Join(parts, HoverPartSeparator)), nil
+	return strings.Join(parts, HoverPartSeparator), nil
 }
 
-func unmarshalHoverPart(raw json.RawMessage) ([]byte, error) {
+func unmarshalHoverPart(raw json.RawMessage) (*string, error) {
+	// to handle the first part of the union
+	// type MarkedString = string | { language: string; value: string }
 	var strPayload string
 	if err := unmarshaller.Unmarshal(raw, &strPayload); err == nil {
-		return bytes.TrimSpace([]byte(strPayload)), nil
+		trimmed := strings.TrimSpace(strPayload)
+		return &trimmed, nil
 	}
 
-	var objPayload struct {
-		Language string `json:"language"`
-		Value    string `json:"value"`
-	}
-	if err := unmarshaller.Unmarshal(raw, &objPayload); err != nil {
-		return nil, errors.New("unrecognized hover format")
+	m := make(map[string]string, 2)
+	err := unmarshaller.Unmarshal(raw, &m)
+	if err != nil {
+		return nil, err
 	}
 
-	if len(objPayload.Language) > 0 {
-		v := make([]byte, 0, len(objPayload.Language)+len(objPayload.Value)+len(CodeFence)*2+2)
-		v = append(v, CodeFence...)
-		v = append(v, objPayload.Language...)
-		v = append(v, '\n')
-		v = append(v, objPayload.Value...)
-		v = append(v, '\n')
-		v = append(v, CodeFence...)
-
-		return v, nil
+	// now check if MarkupContent
+	if _, ok := m["kind"]; ok {
+		markup := strings.TrimSpace(protocol.MarkupContent{
+			Kind:  protocol.MarkupKind(m["kind"]), // TODO: validate possible values
+			Value: m["value"],
+		}.String())
+		return &markup, nil
 	}
 
-	return bytes.TrimSpace([]byte(objPayload.Value)), nil
+	// else assume MarkedString
+	marked := strings.TrimSpace(protocol.MarkedString{
+		Language: m["language"],
+		Value:    m["value"],
+	}.String())
+
+	return &marked, nil
 }
 
 func unmarshalMoniker(line []byte) (interface{}, error) {
@@ -344,11 +347,11 @@ func unmarshalDiagnosticResult(line []byte) (interface{}, error) {
 		End   _position `json:"end"`
 	}
 	type _result struct {
-		Severity int         `json:"severity"`
 		Code     StringOrInt `json:"code"`
 		Message  string      `json:"message"`
 		Source   string      `json:"source"`
 		Range    _range      `json:"range"`
+		Severity int         `json:"severity"`
 	}
 	var payload struct {
 		Results []_result `json:"result"`

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol"
 )
 
@@ -179,6 +180,18 @@ func TestUnmarshalHover(t *testing.T) {
 		{
 			contents:      `[{"language": "go", "value": "text"}]`,
 			expectedHover: "```go\ntext\n```",
+		},
+		{
+			contents:      `[{"value": "text"}]`,
+			expectedHover: "text",
+		},
+		{
+			contents:      `[{"kind": "markdown", "value": "text"}]`,
+			expectedHover: "text",
+		},
+		{
+			contents:      "[{\"kind\": \"markdown\", \"value\": \"asdf\\n```java\\ntest\\n```\"}]",
+			expectedHover: "asdf\n```java\ntest\n```",
 		},
 		{
 			contents:      `[{"language": "go", "value": "text"}, {"language": "python", "value": "pext"}]`,
