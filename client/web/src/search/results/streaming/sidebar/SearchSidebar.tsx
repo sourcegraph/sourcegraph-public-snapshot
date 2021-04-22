@@ -4,15 +4,9 @@ import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../../..'
 
+import { getResultTypeLinks } from './ResultTypeLink'
 import styles from './SearchSidebar.module.scss'
-import { SidebarResultTypeSection } from './SidebarResultTypeSection'
-
-const SearchSidebarSection: React.FunctionComponent<{ header: string }> = ({ header, children }) => (
-    <div>
-        <h5>{header}</h5>
-        <div>{children}</div>
-    </div>
-)
+import { SearchSidebarSection } from './SearchSidebarSection'
 
 export interface SearchSidebarProps
     extends Omit<PatternTypeProps, 'setPatternType'>,
@@ -24,9 +18,7 @@ export interface SearchSidebarProps
 
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => (
     <div className={styles.searchSidebar}>
-        <SearchSidebarSection header="Result types">
-            <SidebarResultTypeSection {...props} />
-        </SearchSidebarSection>
+        <SearchSidebarSection header="Result types" items={getResultTypeLinks(props)} />
         <SearchSidebarSection header="Dynamic filters" />
         <SearchSidebarSection header="Repositories" />
         <SearchSidebarSection header="Search snippets" />

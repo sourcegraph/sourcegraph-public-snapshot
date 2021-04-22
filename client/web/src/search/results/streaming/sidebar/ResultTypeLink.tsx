@@ -7,7 +7,8 @@ import { toggleSearchType } from '../../../helpers'
 import { SearchType } from '../../SearchResults'
 
 import { SearchSidebarProps } from './SearchSidebar'
-import styles from './SearchSidebar.module.scss'
+import { SidebarSectionItem } from './SearchSidebarSection'
+import styles from './SearchSidebarSection.module.scss'
 
 interface ResultTypeLinkProps extends SearchSidebarProps {
     type: SearchType
@@ -40,16 +41,8 @@ const ResultTypeLink: React.FunctionComponent<ResultTypeLinkProps> = ({
     )
 }
 
-export const SidebarResultTypeSection: React.FunctionComponent<SearchSidebarProps> = props => {
-    const types: SearchType[] = ['file', 'repo', 'path', 'symbol', 'diff', 'commit']
+export const getResultTypeLinks = (props: SearchSidebarProps): SidebarSectionItem[] => {
+    const types: Exclude<SearchType, null>[] = ['file', 'repo', 'path', 'symbol', 'diff', 'commit']
 
-    return (
-        <ul className={styles.sidebarSectionList}>
-            {types.map(type => (
-                <li key={type}>
-                    <ResultTypeLink {...props} type={type} />
-                </li>
-            ))}
-        </ul>
-    )
+    return types.map(type => ({ key: type, node: <ResultTypeLink {...props} type={type} /> }))
 }
