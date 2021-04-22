@@ -4,8 +4,15 @@ import 'storybook-addon-designs'
 
 import styles from './FormFieldVariants.module.scss'
 
+type FieldVariants = 'standard' | 'invalid' | 'valid' | 'disabled'
+
 interface WithVariantsProps {
-    field: React.ComponentType<{ className?: string; disabled?: boolean; message?: JSX.Element }>
+    field: React.ComponentType<{
+        className?: string
+        disabled?: boolean
+        message?: JSX.Element
+        variant: FieldVariants
+    }>
 }
 
 const FieldMessage: React.FunctionComponent<{ className?: string }> = ({ className }) => (
@@ -14,10 +21,10 @@ const FieldMessage: React.FunctionComponent<{ className?: string }> = ({ classNa
 
 const WithVariants: React.FunctionComponent<WithVariantsProps> = ({ field: Field }) => (
     <>
-        <Field message={<FieldMessage />} />
-        <Field className="is-invalid" message={<FieldMessage className="invalid-feedback" />} />
-        <Field className="is-valid" message={<FieldMessage className="valid-feedback" />} />
-        <Field disabled={true} message={<FieldMessage />} />
+        <Field variant="standard" message={<FieldMessage className="field-message" />} />
+        <Field variant="invalid" className="is-invalid" message={<FieldMessage className="invalid-feedback" />} />
+        <Field variant="valid" className="is-valid" message={<FieldMessage className="valid-feedback" />} />
+        <Field variant="disabled" disabled={true} message={<FieldMessage className="field-message" />} />
     </>
 )
 
@@ -26,7 +33,7 @@ export const FormFieldVariants: React.FunctionComponent = () => {
         <div className={styles.grid}>
             <WithVariants
                 field={({ className, message, ...props }) => (
-                    <div className="form-group">
+                    <fieldset className="form-group">
                         <input
                             type="text"
                             placeholder="Form field"
@@ -34,46 +41,64 @@ export const FormFieldVariants: React.FunctionComponent = () => {
                             {...props}
                         />
                         {message}
-                    </div>
+                    </fieldset>
                 )}
             />
             <WithVariants
                 field={({ className, message, ...props }) => (
-                    <div className="form-group">
+                    <fieldset className="form-group">
                         <select className={classNames('form-control', className)} {...props}>
                             <option>Option A</option>
                             <option>Option B</option>
                             <option>Option C</option>
                         </select>
                         {message}
-                    </div>
+                    </fieldset>
                 )}
             />
             <WithVariants
                 field={({ className, message, ...props }) => (
-                    <div className="form-group">
+                    <fieldset className="form-group">
                         <textarea
-                            placeholder="This is sample content in a text area that spans three lines to see how it fits."
+                            placeholder="This is sample content in a text area that spans four lines to see how it fits."
                             className={classNames('form-control', className)}
+                            rows={4}
                             {...props}
                         />
                         {message}
-                    </div>
+                    </fieldset>
                 )}
             />
             <WithVariants
-                field={({ className, message, ...props }) => (
-                    <div className="form-check">
+                field={({ className, message, variant, ...props }) => (
+                    <fieldset className="form-check">
                         <input
-                            id="inputFieldsetCheck"
+                            id={`inputFieldsetCheck - ${variant}`}
                             type="checkbox"
                             className={classNames('form-check-input', className)}
                             {...props}
-                        />{' '}
-                        <label className={classNames('form-check-label')} htmlFor="inputFieldsetCheck">
+                        />
+                        <label className="form-check-label" htmlFor={`inputFieldsetCheck - ${variant}`}>
                             Checkbox
                         </label>
-                    </div>
+                        {message}
+                    </fieldset>
+                )}
+            />
+            <WithVariants
+                field={({ className, message, variant, ...props }) => (
+                    <fieldset className="form-check">
+                        <input
+                            id={`inputFieldsetRadio - ${variant}`}
+                            type="radio"
+                            className={classNames('form-check-input', className)}
+                            {...props}
+                        />
+                        <label className="form-check-label" htmlFor={`inputFieldsetRadio - ${variant}`}>
+                            Radio button
+                        </label>
+                        {message}
+                    </fieldset>
                 )}
             />
         </div>

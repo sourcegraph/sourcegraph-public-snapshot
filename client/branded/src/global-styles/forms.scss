@@ -62,6 +62,14 @@
     box-shadow: none;
 }
 
+// Add an additional feedback class to add additional context to
+// form controls without requiring them to be valid
+.field-message {
+    @extend .valid-feedback;
+    display: block;
+    color: var(--text-muted);
+}
+
 // Overrides
 .theme-redesign {
     .valid-feedback {
