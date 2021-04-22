@@ -2,22 +2,35 @@
 .form-group {
     display: flex;
     flex-direction: column;
+    padding: 1rem;
+    background-color: var(--oc-gray-0);
+    border-radius: 4px;
 
-    $self: &;
+    &--with-error {
+        background-color: var(--oc-red-0);
+    }
 
     &--with-subtitle > &__name{
         margin-bottom: 0.25rem;
     }
 
-    &__name {
+    &__name-block {
+        display: flex;
+        flex-direction: column;
         margin-bottom: 1rem;
     }
 
-    &__content {
-        margin-bottom: 1rem;
+    &__name {
+        margin-bottom: 0.25rem;
     }
 
     &__description {
+        margin-top: 1rem;
+        font-size: 0.875em;
+    }
+
+    &__error {
+        color: var(--danger);
         font-size: 0.875em;
     }
 }

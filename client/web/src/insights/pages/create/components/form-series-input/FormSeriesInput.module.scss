@@ -7,6 +7,11 @@
         margin-top: 1.5rem;
     }
 
+    &__color {
+        background-color: transparent;
+        padding: 0;
+    }
+
     &__button {
         display: inline-block;
         align-self: flex-start;

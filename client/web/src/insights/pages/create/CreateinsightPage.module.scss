@@ -11,10 +11,10 @@
     }
 
     &__form-field {
-        max-width: 80%;
+        max-width: 100%;
     }
 
-    &__form-field + &__form-field{
+    &__form-field + &__form-field {
         margin-top: 2rem;
     }
 
@@ -44,16 +44,21 @@
         align-self: flex-start;
         padding: 8px 12px;
         border-radius: 4px;
-        border: 1px solid #999999;
+        background-color: transparent;
+        border: 1px solid var(--border-color);
 
         &--active {
-            background-color: #999999;
-            color: white;
+            background-color: var(--primary);
+            color: var(--color-bg-1);
             border: none;
         }
     }
 
     &__button +  &__button {
         margin-left: 0.5rem;
+    }
+
+    &__buttons {
+        margin-top: 2rem;
     }
 }

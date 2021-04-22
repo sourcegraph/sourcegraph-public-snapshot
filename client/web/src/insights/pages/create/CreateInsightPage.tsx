@@ -1,6 +1,8 @@
 import classnames from 'classnames';
-import React  from 'react';
+import createFocusDecorator from 'final-form-focus'
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useField, useForm } from 'react-final-form-hooks';
+import { noop } from 'rxjs';
 
 import { Page } from '../../../components/Page';
 import { PageTitle } from '../../../components/PageTitle';
@@ -8,7 +10,8 @@ import { PageTitle } from '../../../components/PageTitle';
 import { InputField } from './components/form-field/FormField';
 import { FormGroup } from './components/form-group/FormGroup';
 import { FormRadioInput } from './components/form-radio-input/FormRadioInput';
-import { FormSeries } from './components/form-series/FormSeries';
+import { FormSeries, FormSeriesReferenceAPI } from './components/form-series/FormSeries';
+import { createRequiredValidator, composeValidators, ValidationResult } from './components/validators';
 import styles from './CreateinsightPage.module.scss'
 import { DataSeries } from './types';
 
@@ -21,25 +24,59 @@ interface Form {
     visibility: string;
 }
 
-const seriesRequired = (series: DataSeries[]) => series && series.length > 0 ? undefined : 'Required';
+const requiredTitleField = createRequiredValidator('Title is required field for code insight.');
+const repositoriesFieldValidator = composeValidators(
+    createRequiredValidator('Repositories is required field for code insight.'),
+);
+
+const requiredStepValueField = createRequiredValidator('Please specify a step between points.')
+const seriesRequired = (series: DataSeries[]): ValidationResult =>
+    series && series.length > 0 ? undefined : 'Series is empty. You must have at least one series for code insight.';
+
+const INITIAL_VALUES = {
+    visibility: 'personal',
+    series: [],
+    step: 'months',
+}
 
 export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> = props => {
     const {} = props;
 
-    const form = useForm<Form>({
-        validate: values => {
-            return { series: seriesRequired(values.series)}
-        },
-        onSubmit: () => {
-            console.log('Submit');
+    const titleReference = useRef<HTMLInputElement>(null);
+    const repositoriesReference = useRef<HTMLInputElement>(null);
+    const seriesReference = useRef<FormSeriesReferenceAPI>(null);
+    const stepValueReference = useRef<HTMLInputElement>(null);
+
+    const focusOnErrorsDecorator = useMemo(() => {
+        const noopFocus = { focus: noop, name: '' }
+
+        return createFocusDecorator<Form>(
+            () => [
+                titleReference.current ?? noopFocus,
+                repositoriesReference.current ?? noopFocus,
+                seriesReference.current ?? noopFocus,
+                stepValueReference.current ?? noopFocus,
+            ],
+        )
+    }, []);
+
+    const { form, handleSubmit } = useForm<Form>({
+        initialValues: INITIAL_VALUES,
+        onSubmit: (values, form) => {
+            const { errors } = form.getState();
+
+            console.log({errors});
         }
     });
 
-    const title = useField('title', form.form);
-    const repositories = useField('repositories', form.form);
-    const visibility = useField('visibility', form.form);
-    const series = useField<DataSeries[], Form>('series', form.form, seriesRequired);
-    const step = useField('step', form.form);
+    useEffect(() => focusOnErrorsDecorator(form), [form, focusOnErrorsDecorator])
+
+    const title = useField('title', form, requiredTitleField);
+    const repositories = useField('repositories', form, repositoriesFieldValidator);
+    const visibility = useField('visibility', form);
+    const series = useField<DataSeries[], Form>('series', form, seriesRequired);
+    const step = useField('step', form);
+    const stepValue = useField('stepValue', form, requiredStepValueField);
 
     return (
         <Page className='col-8'>
@@ -61,7 +98,7 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
             </div>
 
             {/* eslint-disable-next-line react/forbid-elements */}
-            <form onSubmit={form.handleSubmit} className={styles.createInsightForm}>
+            <form onSubmit={handleSubmit} className={styles.createInsightForm}>
 
                 <InputField
                     title='Title'
@@ -69,6 +106,7 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
                     placeholder='ex. Migration to React function components'
                     error={title.meta.touched && title.meta.error}
                     {...title.input}
+                    ref={titleReference}
                     className={styles.createInsightFormField}/>
 
                 <InputField
@@ -77,6 +115,7 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
                     placeholder='Add or search for repositories'
                     error={repositories.meta.touched && repositories.meta.error}
                     {...repositories.input}
+                    ref={repositoriesReference}
                     className={styles.createInsightFormField}/>
 
                 <FormGroup
@@ -107,61 +146,73 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
                     </div>
                 </FormGroup>
 
-                <hr className={styles.createInsightSeparator}/>
-
                 <FormGroup
                     name='Data series'
-                    subtitle='Add any number of data series to your chart'>
+                    subtitle='Add any number of data series to your chart'
+                    error={series.meta.touched && series.meta.error}
+                    className={styles.createInsightFormField}>
 
                     <FormSeries
+                        name={series.input.name}
+                        ref={seriesReference}
                         series={series.input.value}
                         onChange={series.input.onChange}/>
 
-                    { series.meta.touched && series.meta.error && <div>{series.meta.error}</div> }
-
                 </FormGroup>
-
-                <hr className={styles.createInsightSeparator}/>
 
                 <FormGroup
                     name='Step between data points'
                     description='The distance between two data points on the chart'
+                    error={stepValue.meta.touched && stepValue.meta.error}
                     className={styles.createInsightFormField}>
 
                     <div className={styles.createInsightRadioGroupContent}>
 
-                        <input
-                            type="text"
+                        <InputField
                             placeholder='ex. 2'
-                            className={classnames(styles.createInsightStepInput, 'form-control')}
-                        />
+                            {...stepValue.input}
+                            ref={stepValueReference}
+                            className={classnames(styles.createInsightStepInput)}/>
 
                         <FormRadioInput
                             title='Hours'
                             name='step'
+                            value='hours'
+                            checked={step.input.value === 'hours'}
+                            onChange={step.input.onChange}
                             className={styles.createInsightRadio}/>
                         <FormRadioInput
                             title='Days'
                             name='step'
+                            value='days'
+                            checked={step.input.value === 'days'}
+                            onChange={step.input.onChange}
                             className={styles.createInsightRadio}/>
                         <FormRadioInput
                             title='Weeks'
                             name='step'
+                            value='weeks'
+                            checked={step.input.value === 'weeks'}
+                            onChange={step.input.onChange}
                             className={styles.createInsightRadio}/>
                         <FormRadioInput
                             title='Months'
                             name='step'
+                            value='months'
+                            checked={step.input.value === 'months'}
+                            onChange={step.input.onChange}
                             className={styles.createInsightRadio}/>
                         <FormRadioInput
                             title='Years'
                             name='step'
+                            value='years'
+                            checked={step.input.value === 'years'}
+                            onChange={step.input.onChange}
                             className={styles.createInsightRadio}/>
                     </div>
                 </FormGroup>
 
-                <hr className={styles.createInsightSeparator}/>
-
-                <div>
+                <div className={styles.createInsightButtons}>
                     <button
                         type='submit'
                         className={classnames(styles.createInsightButton, styles.createInsightButtonActive, 'button')}>
@@ -175,9 +226,6 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
                         Cancel
                     </button>
                 </div>
-
-                <pre>{JSON.stringify(form.values, 0, 2)}</pre>
-                <pre>{JSON.stringify(form.errors, 0, 2)}</pre>
             </form>
         </Page>
     )

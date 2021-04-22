@@ -1,84 +1,101 @@
 import classnames from 'classnames';
-import React, { ReactElement, useCallback, useState } from 'react';
+import React, { forwardRef, ReactElement, useCallback, useImperativeHandle, useRef, useState } from 'react';
 
 import { DataSeries } from '../../types';
-import { FormSeriesInput } from '../form-series-input/FormSeriesInput';
+import { FormSeriesInput, FormSeriesInputAPI } from '../form-series-input/FormSeriesInput';
 
 import styles from './FormSeries.module.scss'
 
 export interface FormSeriesProps {
+    name: string;
     series?: DataSeries[];
     onChange: (series: DataSeries[]) => void;
 }
 
-export function FormSeries(props: FormSeriesProps): ReactElement {
-    const { series = [], onChange } = props;
+export interface FormSeriesReferenceAPI {
+    name: string;
+    focus: () => void;
+}
 
-    const [editSeriesIndexes, setEditSeriesIndex] = useState<number[]>([]);
-    const [newSeriesEdit, setNewSeriesEdit] = useState(false);
+export const FormSeries = forwardRef<FormSeriesReferenceAPI, FormSeriesProps>(
+    (props, reference) => {
+        const { name, series = [], onChange } = props;
 
-    const handleAddClick = useCallback(() => {
-        setNewSeriesEdit(true);
-    }, [setNewSeriesEdit])
+        const [editSeriesIndexes, setEditSeriesIndex] = useState<number[]>([]);
+        const [newSeriesEdit, setNewSeriesEdit] = useState(false);
+        const seriesInputReference = useRef<FormSeriesInputAPI>(null);
 
-    const handleSubmitNewSeries = useCallback(
-        (newSeries: DataSeries) => {
-            // Close series input in case if we add another series
-            if (newSeriesEdit) {
-                setNewSeriesEdit(false)
+        const handleAddClick = useCallback(() => {
+            setNewSeriesEdit(true);
+        }, [setNewSeriesEdit])
+
+        const handleSubmitNewSeries = useCallback(
+            (newSeries: DataSeries) => {
+                // Close series input in case if we add another series
+                if (newSeriesEdit) {
+                    setNewSeriesEdit(false)
+                }
+
+                onChange([...series, newSeries])
+            },
+            [series, newSeriesEdit, setNewSeriesEdit, onChange]
+        );
+
+        const handleEditSeries = (index: number, editedSeries:DataSeries): void => {
+            const newSeries = [...series];
+
+            newSeries[index] = editedSeries;
+            setEditSeriesIndex(indexes => indexes.filter(currentIndex => currentIndex !== index))
+            onChange(newSeries);
+        }
+
+        const handleEditSeriesForm = (index: number): void => {
+            setEditSeriesIndex([...editSeriesIndexes, index])
+        }
+
+        useImperativeHandle(reference, () => ({
+            name,
+            focus: () => {
+                seriesInputReference.current?.focus()
             }
+        }))
 
-            onChange([...series, newSeries])
-        },
-        [series, newSeriesEdit, setNewSeriesEdit, onChange]
-    );
-
-    const handleEditSeries = (index: number, editedSeries:DataSeries): void => {
-        const newSeries = [...series];
-
-        newSeries[index] = editedSeries;
-        setEditSeriesIndex(indexes => indexes.filter(currentIndex => currentIndex !== index))
-        onChange(newSeries);
-    }
-
-    const handleEditSeriesForm = (index: number): void => {
-        setEditSeriesIndex([...editSeriesIndexes, index])
-    }
-
-    if (series.length === 0) {
-        return (
-            <FormSeriesInput
-                className={styles.formSeriesInput}
-                onSubmit={handleSubmitNewSeries}/>
-        )
-    }
-
-    return (
-        <div className={classnames(styles.formSeries)}>
-            {
-                series.map((line, index) =>
-                    editSeriesIndexes.includes(index)
-                        ? <FormSeriesInput
-                            /* eslint-disable-next-line react/jsx-no-bind */
-                            onSubmit={series => handleEditSeries(index, series)}
-                            className={classnames(styles.formSeriesInput, styles.formSeriesItem)}
-                            {...line}/>
-                        : <SeriesCard
-                            key={`${line.name}-${index}`}
-                            /* eslint-disable-next-line react/jsx-no-bind */
-                            onEdit={() => handleEditSeriesForm(index)}
-                            className={styles.formSeriesItem}
-                            {...line}/>
-                )
-            }
-
-            { newSeriesEdit &&
+        if (series.length === 0) {
+            return (
                 <FormSeriesInput
+                    innerRef={seriesInputReference}
+                    className={styles.formSeriesInput}
+                    onSubmit={handleSubmitNewSeries}/>
+            )
+        }
+
+        return (
+            <div className={classnames(styles.formSeries)}>
+                {
+                    series.map((line, index) =>
+                        editSeriesIndexes.includes(index)
+                            ? <FormSeriesInput
+                                /* eslint-disable-next-line react/jsx-no-bind */
+                                onSubmit={series => handleEditSeries(index, series)}
+                                className={classnames(styles.formSeriesInput, styles.formSeriesItem)}
+                                {...line}/>
+                            : <SeriesCard
+                                key={`${line.name}-${index}`}
+                                /* eslint-disable-next-line react/jsx-no-bind */
+                                onEdit={() => handleEditSeriesForm(index)}
+                                className={styles.formSeriesItem}
+                                {...line}/>
+                    )
+                }
+
+                { newSeriesEdit &&
+                <FormSeriesInput
+                    innerRef={seriesInputReference}
                     onSubmit={handleSubmitNewSeries}
                     className={classnames(styles.formSeriesInput, styles.formSeriesItem)}/>
-            }
+                }
 
-            { !newSeriesEdit &&
+                { !newSeriesEdit &&
                 <button
                     type='button'
                     onClick={handleAddClick}
@@ -86,10 +103,11 @@ export function FormSeries(props: FormSeriesProps): ReactElement {
 
                     + Add another data series
                 </button>
-            }
-        </div>
-    )
-}
+                }
+            </div>
+        )
+    }
+)
 
 interface SeriesCardProps {
     name: string;
