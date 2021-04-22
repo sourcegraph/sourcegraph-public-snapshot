@@ -302,7 +302,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
         /**
          * 1. if the number of all affiliated repos is equal to the number
-         *    of the repos in all of the code hosts - set radio to 'all'
+         * of the repos in all of the code hosts - set radio to 'all'
          * 2. if some repos were selected - set radio to 'selected'
          * 3. no repos selected - empty state
          */
