@@ -14,16 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-// BatchChangesSSHMigrationID is the ID of row holding the ssh migration. It is defined in
-// `1528395788_campaigns_ssh_key_migration.up`.
-const BatchChangesSSHMigrationID = 2
-
 const sshMigrationCountPerRun = 5
 
 // sshMigrator migrates existing batch changes credentials that have no SSH key stored
 // to a variant that includes it.
 type sshMigrator struct {
 	store *store.Store
+	key   encryption.Key
 }
 
 var _ oobmigration.Migrator = &sshMigrator{}
@@ -72,14 +69,18 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 		LimitOffset: &database.LimitOffset{
 			Limit: sshMigrationCountPerRun,
 		},
-		AuthenticatorType: []database.AuthenticatorType{database.AuthenticatorTypeBasicAuth, database.AuthenticatorTypeOAuthBearerToken},
-		ForUpdate:         true,
+		ForUpdate: true,
 	})
 	if err != nil {
 		return err
 	}
 	for _, cred := range credentials {
-		switch a := cred.Credential.(type) {
+		a, err := cred.Authenticator(ctx, m.key)
+		if err != nil {
+			return err
+		}
+
+		switch a := a.(type) {
 		case *auth.OAuthBearerToken:
 			newCred := &auth.OAuthBearerTokenWithSSH{OAuthBearerToken: *a}
 			keypair, err := encryption.GenerateRSAKey()
@@ -89,7 +90,9 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 			newCred.PrivateKey = keypair.PrivateKey
 			newCred.PublicKey = keypair.PublicKey
 			newCred.Passphrase = keypair.Passphrase
-			cred.Credential = newCred
+			if err := cred.SetAuthenticator(ctx, m.key, newCred); err != nil {
+				return err
+			}
 			if err := tx.UserCredentials().Update(ctx, cred); err != nil {
 				return err
 			}
@@ -102,7 +105,9 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 			newCred.PrivateKey = keypair.PrivateKey
 			newCred.PublicKey = keypair.PublicKey
 			newCred.Passphrase = keypair.Passphrase
-			cred.Credential = newCred
+			if err := cred.SetAuthenticator(ctx, m.key, newCred); err != nil {
+				return err
+			}
 			if err := tx.UserCredentials().Update(ctx, cred); err != nil {
 				return err
 			}
@@ -128,20 +133,28 @@ func (m *sshMigrator) Down(ctx context.Context) error {
 		LimitOffset: &database.LimitOffset{
 			Limit: sshMigrationCountPerRun,
 		},
-		AuthenticatorType: []database.AuthenticatorType{database.AuthenticatorTypeBasicAuthWithSSH, database.AuthenticatorTypeOAuthBearerTokenWithSSH},
-		ForUpdate:         true,
+		ForUpdate: true,
 	})
 	for _, cred := range credentials {
-		switch a := cred.Credential.(type) {
+		a, err := cred.Authenticator(ctx, m.key)
+		if err != nil {
+			return err
+		}
+
+		switch a := a.(type) {
 		case *auth.OAuthBearerTokenWithSSH:
 			newCred := &a.OAuthBearerToken
-			cred.Credential = newCred
+			if err := cred.SetAuthenticator(ctx, m.key, newCred); err != nil {
+				return err
+			}
 			if err := tx.UserCredentials().Update(ctx, cred); err != nil {
 				return err
 			}
 		case *auth.BasicAuthWithSSH:
 			newCred := &a.BasicAuth
-			cred.Credential = newCred
+			if err := cred.SetAuthenticator(ctx, m.key, newCred); err != nil {
+				return err
+			}
 			if err := tx.UserCredentials().Update(ctx, cred); err != nil {
 				return err
 			}

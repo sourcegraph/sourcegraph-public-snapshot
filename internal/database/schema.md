@@ -1478,12 +1478,15 @@ Foreign-key constraints:
  user_id               | integer                  |           | not null | 
  external_service_type | text                     |           | not null | 
  external_service_id   | text                     |           | not null | 
- credential            | text                     |           | not null | 
+ credential            | text                     |           |          | 
  created_at            | timestamp with time zone |           | not null | now()
  updated_at            | timestamp with time zone |           | not null | now()
+ credential_enc        | bytea                    |           |          | 
 Indexes:
     "user_credentials_pkey" PRIMARY KEY, btree (id)
     "user_credentials_domain_user_id_external_service_type_exter_key" UNIQUE CONSTRAINT, btree (domain, user_id, external_service_type, external_service_id)
+Check constraints:
+    "user_credentials_there_can_be_only_one" CHECK (num_nonnulls(credential, credential_enc) = 1)
 Foreign-key constraints:
     "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 

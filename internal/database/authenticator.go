@@ -1,12 +1,14 @@
 package database
 
 import (
+	"context"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -51,6 +53,22 @@ func (n NullAuthenticator) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return marshalAuthenticator(*n.A)
+}
+
+// encryptAuthenticator encodes _and_ encrypts an Authenticator into a byte
+// slice.
+func encryptAuthenticator(ctx context.Context, enc encryption.Encrypter, a auth.Authenticator) ([]byte, error) {
+	raw, err := marshalAuthenticator(a)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling authenticator")
+	}
+
+	secret, err := enc.Encrypt(ctx, []byte(raw))
+	if err != nil {
+		return nil, errors.Wrap(err, "encrypting credential")
+	}
+
+	return secret, nil
 }
 
 // marshalAuthenticator encodes an Authenticator into a JSON string.

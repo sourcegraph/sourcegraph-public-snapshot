@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
@@ -28,11 +29,12 @@ func InitFrontend(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *o
 	})
 
 	cstore := store.New(db)
+	key := keyring.Default().BatchChangesCredentialKey
 
 	enterpriseServices.BatchChangesResolver = resolvers.New(cstore)
 	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(cstore)
 	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(cstore)
 	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(cstore)
 
-	return background.RegisterMigrations(cstore, outOfBandMigrationRunner)
+	return background.RegisterMigrations(cstore, key, outOfBandMigrationRunner)
 }

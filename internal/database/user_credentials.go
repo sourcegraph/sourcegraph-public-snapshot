@@ -8,10 +8,12 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -23,9 +25,44 @@ type UserCredential struct {
 	UserID              int32
 	ExternalServiceType string
 	ExternalServiceID   string
-	Credential          auth.Authenticator
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
+
+	credential          auth.Authenticator
+	encryptedCredential []byte
+}
+
+func (uc *UserCredential) Authenticator(ctx context.Context, dec encryption.Decrypter) (auth.Authenticator, error) {
+	if uc.credential != nil {
+		return uc.credential, nil
+	}
+
+	if uc.encryptedCredential == nil {
+		return nil, errors.New("no unencrypted or encrypted credential found")
+	}
+
+	secret, err := dec.Decrypt(ctx, uc.encryptedCredential)
+	if err != nil {
+		return nil, errors.Wrap(err, "decrypting credential")
+	}
+
+	a, err := unmarshalAuthenticator(secret.Secret())
+	if err != nil {
+		return nil, errors.Wrap(err, "unmarshalling authenticator")
+	}
+
+	return a, nil
+}
+
+func (uc *UserCredential) SetAuthenticator(ctx context.Context, enc encryption.Encrypter, a auth.Authenticator) error {
+	secret, err := encryptAuthenticator(ctx, enc, a)
+	if err != nil {
+		return err
+	}
+
+	uc.credential = nil
+	uc.encryptedCredential = secret
+	return nil
 }
 
 // This const block contains the valid domain values for user credentials.
@@ -95,11 +132,16 @@ type UserCredentialScope struct {
 // Create creates a new user credential based on the given scope and
 // authenticator. If the scope already has a credential, an error will be
 // returned.
-func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error) {
+func (s *UserCredentialsStore) Create(ctx context.Context, enc encryption.Encrypter, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error) {
 	if Mocks.UserCredentials.Create != nil {
-		return Mocks.UserCredentials.Create(ctx, scope, credential)
+		return Mocks.UserCredentials.Create(ctx, enc, scope, credential)
 	}
 	s.ensureStore()
+
+	secret, err := encryptAuthenticator(ctx, enc, credential)
+	if err != nil {
+		return nil, err
+	}
 
 	q := sqlf.Sprintf(
 		userCredentialsCreateQueryFmtstr,
@@ -107,7 +149,7 @@ func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 		scope.UserID,
 		scope.ExternalServiceType,
 		scope.ExternalServiceID,
-		&NullAuthenticator{A: &credential},
+		secret,
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
 
@@ -121,7 +163,7 @@ func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 }
 
 // Update updates a user credential in the database. If the credential cannot be found,
-// an error ist returned
+// an error is returned.
 func (s *UserCredentialsStore) Update(ctx context.Context, credential *UserCredential) error {
 	if Mocks.UserCredentials.Update != nil {
 		return Mocks.UserCredentials.Update(ctx, credential)
@@ -136,7 +178,8 @@ func (s *UserCredentialsStore) Update(ctx context.Context, credential *UserCrede
 		credential.UserID,
 		credential.ExternalServiceType,
 		credential.ExternalServiceID,
-		&NullAuthenticator{A: &credential.Credential},
+		&NullAuthenticator{A: &credential.credential},
+		credential.encryptedCredential,
 		credential.UpdatedAt,
 		credential.ID,
 		sqlf.Join(userCredentialsColumns, ", "),
@@ -231,9 +274,8 @@ func (s *UserCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 // least one field in Scope must be set.
 type UserCredentialsListOpts struct {
 	*LimitOffset
-	Scope             UserCredentialScope
-	AuthenticatorType []AuthenticatorType
-	ForUpdate         bool
+	Scope     UserCredentialScope
+	ForUpdate bool
 }
 
 // sql overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
@@ -265,14 +307,6 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 	}
 	if opts.Scope.ExternalServiceID != "" {
 		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opts.Scope.ExternalServiceID))
-	}
-	if len(opts.AuthenticatorType) > 0 {
-		values := make([]*sqlf.Query, 0, len(opts.AuthenticatorType))
-		for _, t := range opts.AuthenticatorType {
-			// The JSON text fields are quoted, so we need to quote the type here too.
-			values = append(values, sqlf.Sprintf(`%s`, fmt.Sprintf(`"%s"`, t)))
-		}
-		preds = append(preds, sqlf.Sprintf("(credential::json->'Type')::text IN (%s)", sqlf.Join(values, ",")))
 	}
 
 	if len(preds) == 0 {
@@ -329,6 +363,7 @@ var userCredentialsColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_service_type"),
 	sqlf.Sprintf("external_service_id"),
 	sqlf.Sprintf("credential"),
+	sqlf.Sprintf("credential_enc"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
@@ -365,7 +400,7 @@ INSERT INTO
 		user_id,
 		external_service_type,
 		external_service_id,
-		credential,
+		credential_enc,
 		created_at,
 		updated_at
 	)
@@ -390,6 +425,7 @@ SET
 	external_service_type = %s,
 	external_service_id = %s,
 	credential = %s,
+	credential_enc = %s,
 	updated_at = %s
 WHERE
 	id = %s
@@ -410,7 +446,8 @@ func scanUserCredential(cred *UserCredential, s interface {
 		&cred.UserID,
 		&cred.ExternalServiceType,
 		&cred.ExternalServiceID,
-		&NullAuthenticator{A: &cred.Credential},
+		&NullAuthenticator{A: &cred.credential},
+		&cred.encryptedCredential,
 		&cred.CreatedAt,
 		&cred.UpdatedAt,
 	)
