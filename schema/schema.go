@@ -1032,7 +1032,7 @@ type OtherExternalServiceConnection struct {
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	Url                   string `json:"url,omitempty"`
+	Url                   string `json:"url"`
 }
 type Overrides struct {
 	// Key description: The key that we want to override for example a username
