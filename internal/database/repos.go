@@ -824,7 +824,7 @@ SELECT repo_id as id FROM user_public_repos WHERE user_id = %d
 type ListDefaultReposOptions struct {
 	// If true, will only include uncloned default repos
 	OnlyUncloned bool
-	// If true, we include private repos
+	// If true, we include user added private repos
 	IncludePrivate bool
 }
 
@@ -879,7 +879,7 @@ FROM repo
 WHERE EXISTS(SELECT 1 FROM user_public_repos WHERE repo_id = repo.id)
   AND repo.deleted_at IS NULL
   AND %s
-`, filterClause, filterClause, filterClause)
+`, cloneClause, filterClause, cloneClause)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
