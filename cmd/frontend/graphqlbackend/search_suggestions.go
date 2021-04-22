@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -117,9 +116,10 @@ func (s symbolSuggestionResolver) Label() string {
 }
 func (s symbolSuggestionResolver) ToSymbol() (*symbolResolver, bool) { return &s.symbol, true }
 func (s symbolSuggestionResolver) Key() suggestionKey {
+	url, _ := s.symbol.CanonicalURL() // err always nil
 	return suggestionKey{
-		uri:    s.symbol.URI(),
 		symbol: s.symbol.Symbol.Name + s.symbol.Symbol.Parent,
+		url:    url,
 	}
 }
 
@@ -164,7 +164,7 @@ type suggestionKey struct {
 	file     string
 	symbol   string
 	lang     string
-	uri      *gituri.URI
+	url      string
 }
 
 type searchSuggestionsArgs struct {
@@ -401,9 +401,6 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 					score += 2
 				case lsp.SKClass:
 					score += 3
-				}
-				if len(sr.Symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.URI().String()), strings.ToLower(sr.Symbol.Name)) {
-					score++
 				}
 				results = append(results, symbolSuggestionResolver{
 					symbol: sr,

@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"sort"
 	"strings"
 	"unicode/utf8"
@@ -17,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -168,10 +166,6 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		return nil, err
 	}
 	span.SetTag("commit", string(commitID))
-	baseURI, err := gituri.Parse("git://" + string(repoRevs.Repo.Name) + "?" + url.QueryEscape(inputRev))
-	if err != nil {
-		return nil, err
-	}
 
 	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
 		Repo:            repoRevs.Repo.Name,
@@ -190,8 +184,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	symbolMatchesByPath := make(map[string][]*result.SymbolMatch)
 	for _, symbol := range symbols {
 		symbolMatch := &result.SymbolMatch{
-			Symbol:  symbol,
-			BaseURI: baseURI,
+			Symbol: symbol,
 		}
 
 		cur := symbolMatchesByPath[symbol.Path]
@@ -201,12 +194,19 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	// Create file matches from partitioned symbols
 	fileMatches := make([]result.FileMatch, 0, len(symbolMatchesByPath))
 	for path, symbolMatches := range symbolMatchesByPath {
-		fileMatches = append(fileMatches, result.FileMatch{
+		file := result.File{
 			Path:     path,
-			Symbols:  symbolMatches,
 			Repo:     repoRevs.Repo,
 			CommitID: commitID,
 			InputRev: &inputRev,
+		}
+		for _, match := range symbolMatches {
+			match.File = &file
+		}
+
+		fileMatches = append(fileMatches, result.FileMatch{
+			Symbols: symbolMatches,
+			File:    file,
 		})
 	}
 
