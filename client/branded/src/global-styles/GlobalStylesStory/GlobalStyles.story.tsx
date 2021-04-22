@@ -93,6 +93,8 @@ const TextStory: React.FunctionComponent = () => (
             <code>text-*</code> classes can be used to apply semantic coloring to text.
         </p>
         <div className="mb-3">
+            {/* `muted` is an additional text color that we use, it is not used in other parts of our global styles so it is
+            not part of our semantic colors */}
             {['muted', ...SEMANTIC_COLORS].map(color => (
                 <div key={color} className={'text-' + color}>
                     This is text-{color}
