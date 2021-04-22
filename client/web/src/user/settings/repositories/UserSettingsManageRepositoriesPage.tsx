@@ -541,30 +541,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const modeSelect: JSX.Element = (
         <Form className="mt-4">
             <label className="d-flex flex-row align-items-baseline">
-                {/* TODO: @artem implement when the org support is added */}
-                <input
-                    type="radio"
-                    value="all"
-                    disabled={true}
-                    checked={selectionState.radio === 'org'}
-                    onChange={handleRadioSelect}
-                />
-                <div className="d-flex flex-column ml-2">
-                    <p
-                        className="mb-0 user-settings-repos__text-disabled
-"
-                    >
-                        Sync all repositories from selected organizations or users (coming soon)
-                    </p>
-                    <p
-                        className="user-settings-repos__text-disabled
-"
-                    >
-                        Will sync all current and future public and private repositories
-                    </p>
-                </div>
-            </label>
-            <label className="d-flex flex-row align-items-baseline">
                 <input
                     type="radio"
                     value="all"
