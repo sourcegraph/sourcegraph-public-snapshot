@@ -205,134 +205,145 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         [user.id]
     )
 
-    useEffect(() => {
-        Promise.all([fetchExternalServices(), fetchAffiliatedRepos()])
-            .then(([externalServices, affiliatedRepos]) => {
-                // list of the repos user selected
-                const selectedAffiliatedRepos: string[] = []
+    const fetchServicesAndAffiliatedRepos = useCallback(async (): Promise<void> => {
+        const externalServices = await fetchExternalServices()
 
-                // number of the repos user selected - comes from the code hosts
-                let selectedAffiliatedReposCount = 0
-
-                // if external services may return code hosts with errors or warnings -
-                // we can't safely continue
-                const codeHostProblems = []
-
-                for (const host of externalServices) {
-                    let hostHasProblems = false
-
-                    if (host.lastSyncError) {
-                        hostHasProblems = true
-                        codeHostProblems.push(asError(`${host.displayName} sync error: ${host.lastSyncError}`))
-                    }
-
-                    if (host.warning) {
-                        hostHasProblems = true
-                        codeHostProblems.push(asError(`${host.displayName} warning: ${host.warning}`))
-                    }
-
-                    if (hostHasProblems) {
-                        // skip this code hots
-                        continue
-                    }
-
-                    selectedAffiliatedReposCount += host.repoCount
-
-                    const cfg = JSON.parse(host.config) as GitHubConfig | GitLabConfig
-                    switch (host.kind) {
-                        case ExternalServiceKind.GITLAB: {
-                            const gitLabCfg = cfg as GitLabConfig
-                            if (gitLabCfg.projects !== undefined) {
-                                gitLabCfg.projects.map(project => {
-                                    selectedAffiliatedRepos.push(project.name)
-                                })
-                            }
-                            break
-                        }
-
-                        case ExternalServiceKind.GITHUB: {
-                            const gitHubCfg = cfg as GitHubConfig
-                            if (gitHubCfg.repos !== undefined) {
-                                selectedAffiliatedRepos.push(...gitHubCfg.repos)
-                            }
-                            break
-                        }
-                    }
-                }
-
-                if (codeHostProblems.length > 0) {
-                    setAffiliateRepoProblems(codeHostProblems)
-                }
-
-                setCodeHosts({
-                    loaded: true,
-                    hosts: externalServices,
-                })
-
-                // if user has any number of selected affiliated repos
-                if (selectedAffiliatedRepos.length > 0 || selectedAffiliatedReposCount) {
-                    const selectedRepos = new Map<string, Repo>()
-
-                    // create a map of user selected affiliated repos
-                    for (const repoName of selectedAffiliatedRepos) {
-                        const affiliatedRepo = affiliatedRepos.find(repo => repo.name === repoName)
-                        if (affiliatedRepo) {
-                            selectedRepos.set(repoName, affiliatedRepo)
-                        }
-                    }
-
-                    // sort affiliated repos with already selected repos at the top
-                    affiliatedRepos.sort((repoA, repoB): number => {
-                        const isRepoASelected = selectedRepos.has(repoA.name)
-                        const isRepoBSelected = selectedRepos.has(repoB.name)
-
-                        if (!isRepoASelected && isRepoBSelected) {
-                            return 1
-                        }
-
-                        if (isRepoASelected && !isRepoBSelected) {
-                            return -1
-                        }
-
-                        return 0
-                    })
-
-                    // set sorted repos and mark as loaded
-                    setRepoState(previousRepoState => ({
-                        ...previousRepoState,
-                        repos: affiliatedRepos,
-                        loaded: true,
-                    }))
-
-                    // safe off initial selection state
-                    setOnloadSelectedRepos(previousValue => [...previousValue, ...selectedRepos.keys()])
-
-                    // if the number of all affiliated repos is equal to the number
-                    // of the repos in all of the code hosts - set "sync all" radio active
-                    const radioSelectOption =
-                        ALLOW_PRIVATE_CODE &&
-                        (selectedAffiliatedRepos.length === affiliatedRepos.length ||
-                            selectedAffiliatedReposCount === affiliatedRepos.length)
-                            ? 'all'
-                            : 'selected'
-
-                    setSelectionState({
-                        repos: selectedRepos,
-                        radio: radioSelectOption,
-                        loaded: true,
-                    })
-                }
+        // short-circuit if user doesn't code hosts added
+        if (externalServices.length === 0) {
+            setCodeHosts({
+                loaded: true,
+                hosts: [],
             })
-            .catch(error => {
-                // handle different errors here
-                setAffiliateRepoProblems(asError(error))
-                setRepoState({
-                    repos: emptyRepos,
-                    loading: false,
-                    loaded: true,
-                })
-            })
+
+            return
+        }
+
+        // list of the repos user selected
+        const selectedAffiliatedRepos: string[] = []
+
+        // if external services may return code hosts with errors or warnings -
+        // we can't safely continue
+        const codeHostProblems = []
+
+        for (const host of externalServices) {
+            let hostHasProblems = false
+
+            if (host.lastSyncError) {
+                hostHasProblems = true
+                codeHostProblems.push(asError(`${host.displayName} sync error: ${host.lastSyncError}`))
+            }
+
+            if (host.warning) {
+                hostHasProblems = true
+                codeHostProblems.push(asError(`${host.displayName} warning: ${host.warning}`))
+            }
+
+            if (hostHasProblems) {
+                // skip this code hots
+                continue
+            }
+
+            const cfg = JSON.parse(host.config) as GitHubConfig | GitLabConfig
+            switch (host.kind) {
+                case ExternalServiceKind.GITLAB: {
+                    const gitLabCfg = cfg as GitLabConfig
+                    if (gitLabCfg.projects !== undefined) {
+                        gitLabCfg.projects.map(project => {
+                            selectedAffiliatedRepos.push(project.name)
+                        })
+                    }
+                    break
+                }
+
+                case ExternalServiceKind.GITHUB: {
+                    const gitHubCfg = cfg as GitHubConfig
+                    if (gitHubCfg.repos !== undefined) {
+                        selectedAffiliatedRepos.push(...gitHubCfg.repos)
+                    }
+                    break
+                }
+            }
+        }
+
+        if (codeHostProblems.length > 0) {
+            setAffiliateRepoProblems(codeHostProblems)
+        }
+
+        const affiliatedRepos = await fetchAffiliatedRepos()
+
+        const selectedRepos = new Map<string, Repo>()
+
+        // create a map of user selected affiliated repos
+        for (const repoName of selectedAffiliatedRepos) {
+            const affiliatedRepo = affiliatedRepos.find(repo => repo.name === repoName)
+            if (affiliatedRepo) {
+                selectedRepos.set(repoName, affiliatedRepo)
+            }
+        }
+
+        // sort affiliated repos with already selected repos at the top
+        affiliatedRepos.sort((repoA, repoB): number => {
+            const isRepoASelected = selectedRepos.has(repoA.name)
+            const isRepoBSelected = selectedRepos.has(repoB.name)
+
+            if (!isRepoASelected && isRepoBSelected) {
+                return 1
+            }
+
+            if (isRepoASelected && !isRepoBSelected) {
+                return -1
+            }
+
+            return 0
+        })
+
+        // safe off initial selection state
+        setOnloadSelectedRepos(previousValue => [...previousValue, ...selectedRepos.keys()])
+
+        /**
+         * 1. if the number of all affiliated repos is equal to the number
+         *    of the repos in all of the code hosts - set radio to 'all'
+         * 2. if some repos were selected - set radio to 'selected'
+         * 3. no repos selected - empty state
+         */
+        const radioSelectOption =
+            ALLOW_PRIVATE_CODE && selectedAffiliatedRepos.length === affiliatedRepos.length
+                ? 'all'
+                : selectedAffiliatedRepos.length > 0
+                ? 'selected'
+                : ''
+
+        // loaded code hosts
+        setCodeHosts({
+            loaded: true,
+            hosts: externalServices,
+        })
+
+        // set sorted repos and mark as loaded
+        setRepoState(previousRepoState => ({
+            ...previousRepoState,
+            repos: affiliatedRepos,
+            loaded: true,
+        }))
+
+        setSelectionState({
+            repos: selectedRepos,
+            radio: radioSelectOption,
+            loaded: true,
+        })
     }, [fetchExternalServices, fetchAffiliatedRepos, ALLOW_PRIVATE_CODE])
+
+    useEffect(() => {
+        fetchServicesAndAffiliatedRepos().catch(error => {
+            // handle different errors here
+            setAffiliateRepoProblems(asError(error))
+            setRepoState({
+                repos: emptyRepos,
+                loading: false,
+                loaded: true,
+            })
+        })
+    }, [fetchServicesAndAffiliatedRepos])
 
     // fetch public repos for the "other public repositories" textarea
     const fetchAndSetPublicRepos = useCallback(async (): Promise<void> => {
