@@ -31,4 +31,12 @@
         flex-direction: column;
         justify-content: center;
     }
+
+    &__icon {
+        color: var(--header-icon-color);
+    }
+
+    &__sign-up {
+        border: 1px solid var(--brand-secondary) !important;
+    }
 }

@@ -1,0 +1,48 @@
+.link {
+    &:hover {
+        text-decoration: none;
+    }
+    &:focus-visible {
+        outline: none;
+        box-shadow: none;
+        .text {
+            padding: 0.125rem;
+        }
+        .focus-visible {
+            outline: 1px solid transparent;
+            box-shadow: 0 0 0 2px var(--primary-2);
+        }
+        .icon-included {
+            margin: -0.125rem;
+            margin-left: 0.375rem;
+        }
+    }
+
+    outline-offset: -1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.active {
+    border-bottom: 2px solid var(--brand-secondary);
+    margin-bottom: -1px;
+    .link-content {
+        margin-bottom: -2px;
+    }
+}
+
+.icon {
+    color: var(--icon-color);
+    border-radius: 3px;
+}
+
+.icon-included {
+    margin-left: 0.5rem;
+}
+
+.text {
+    color: var(--body-color);
+    display: inline-flex;
+    border-radius: 3px;
+}

@@ -171,8 +171,7 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, history, 
             <DropdownToggle
                 tag="button"
                 caret={false}
-                className="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle"
-                nav={true}
+                className="btn btn-secondary-outline btn-sm text-decoration-none feedback-prompt__toggle"
                 aria-label="Feedback"
             >
                 <MessageDrawIcon className="d-lg-none icon-inline" />

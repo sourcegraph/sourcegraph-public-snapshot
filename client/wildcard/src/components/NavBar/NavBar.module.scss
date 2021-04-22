@@ -1,0 +1,43 @@
+.navbar {
+    display: flex;
+    height: 40px;
+    min-height: 40px;
+    width: 100%;
+    border-bottom: 1px solid var(--color-bg-2);
+    background: var(--color-bg-1);
+    padding: 0 1rem;
+    align-items: center;
+    // justify-content: space-between;
+}
+
+.logo {
+    display: flex;
+    padding-right: 1rem;
+    height: 100%;
+    margin: 0;
+}
+
+.divider {
+    margin: 0;
+    width: 1px;
+    height: 50%;
+    border-left: 1px solid var(--border-color);
+}
+
+.list {
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.item {
+    display: flex;
+    align-items: stretch;
+    margin: 0 0.75rem;
+    &:first-child {
+        margin-left: 1rem;
+    }
+}

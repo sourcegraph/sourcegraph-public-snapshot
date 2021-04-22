@@ -371,7 +371,7 @@ export interface CommandListPopoverButtonProps
 
 export const CommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = ({
     buttonClassName = '',
-    buttonElement: ButtonElement = 'span',
+    buttonElement: ButtonElement = 'button',
     buttonOpenClassName = '',
     showCaret = true,
     popoverClassName,

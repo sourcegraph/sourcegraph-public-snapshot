@@ -1,8 +1,13 @@
 import * as H from 'history'
+import BarChartIcon from 'mdi-react/BarChartIcon'
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import React, { useEffect, useMemo } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
+import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
+import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
@@ -14,11 +19,28 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { WebCommandListPopoverButton } from '@sourcegraph/web/src/components/shared'
+import { FeedbackPrompt } from '@sourcegraph/web/src/nav/Feedback/FeedbackPrompt'
+import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNavItem'
+import {
+    NavGroup,
+    NavItem,
+    NavBar,
+    NavLink,
+    NavActions,
+    NavAction,
+} from '@sourcegraph/wildcard/src/components/NavBar/NavBar'
 
 import { AuthenticatedUser } from '../auth'
+import { BatchChangesIconNav } from '../batches/icons'
 import { CodeMonitoringProps } from '../code-monitoring'
+import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
+import {
+    KeyboardShortcutsProps,
+    KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
+    KEYBOARD_SHORTCUT_SWITCH_THEME,
+} from '../keyboardShortcuts/keyboardShortcuts'
 import { LayoutRouteProps } from '../routes'
 import { VersionContext } from '../schema/site.schema'
 import {
@@ -37,7 +59,7 @@ import { ThemePreferenceProps } from '../theme'
 import { showDotComMarketing } from '../util/features'
 
 import { NavLinks } from './NavLinks'
-import { ExtensionAlertAnimationProps } from './UserNavItem'
+import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
 import { VersionContextDropdown } from './VersionContextDropdown'
 
 interface Props
@@ -187,62 +209,165 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div
-            className={`global-navbar ${
-                variant === 'low-profile' || variant === 'low-profile-with-logo'
-                    ? ''
-                    : 'global-navbar--bg border-bottom'
-            } py-1`}
-        >
-            {variant === 'low-profile' || variant === 'low-profile-with-logo' ? (
-                <>
-                    {variant === 'low-profile-with-logo' && logo}
-                    <div className="flex-1" />
-                    {navLinks}
-                </>
-            ) : variant === 'no-search-input' ? (
-                <>
-                    {logo}
-                    <div className="nav-item flex-1">
-                        <Link to="/search" className="nav-link">
-                            Search
-                        </Link>
-                    </div>
-                    {navLinks}
-                </>
-            ) : (
-                <>
-                    {logo}
-                    {authRequired ? (
-                        <div className="flex-1" />
-                    ) : (
-                        <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
-                            <VersionContextDropdown
-                                history={history}
-                                navbarSearchQuery={navbarSearchQueryState.query}
-                                caseSensitive={caseSensitive}
-                                patternType={patternType}
-                                versionContext={versionContext}
-                                setVersionContext={setVersionContext}
-                                availableVersionContexts={availableVersionContexts}
-                                selectedSearchContextSpec={props.selectedSearchContextSpec}
-                            />
-                            <SearchNavbarItem
-                                {...props}
-                                navbarSearchState={navbarSearchQueryState}
-                                onChange={onNavbarQueryChange}
-                                location={location}
-                                history={history}
-                                versionContext={versionContext}
-                                isLightTheme={isLightTheme}
-                                patternType={patternType}
-                                caseSensitive={caseSensitive}
-                            />
-                        </div>
+        <>
+            <NavBar
+                logo={
+                    <BrandLogo
+                        branding={branding}
+                        isLightTheme={isLightTheme}
+                        variant="symbol"
+                        className="global-navbar__logo"
+                    />
+                }
+            >
+                <NavGroup collapse={true}>
+                    <NavItem icon={MagnifyIcon}>
+                        <NavLink to="/search">Code Search</NavLink>
+                    </NavItem>
+                    <NavItem icon={CodeMonitoringLogo}>
+                        <NavLink to="/code-monitoring">Monitoring</NavLink>
+                    </NavItem>
+                    <NavItem icon={BatchChangesIconNav}>
+                        <NavLink to="/batch-changes">Batch Changes</NavLink>
+                    </NavItem>
+                    <NavItem icon={BarChartIcon}>
+                        <NavLink to="/insights">Insights</NavLink>
+                    </NavItem>
+                    <NavItem icon={PuzzleOutlineIcon}>
+                        <NavLink to="/extensions">Extensions</NavLink>
+                    </NavItem>
+                    {!props.authenticatedUser && (
+                        <>
+                            <NavItem>
+                                <NavLink to="/help">Docs</NavLink>
+                            </NavItem>
+                            <NavItem>
+                                <NavLink to="https://about.sourcegraph.com" external={true}>
+                                    About
+                                </NavLink>
+                            </NavItem>
+                        </>
                     )}
-                    {navLinks}
-                </>
-            )}
-        </div>
+                </NavGroup>
+                <NavActions>
+                    {props.authenticatedUser && (
+                        <NavAction>
+                            <FeedbackPrompt history={history} routes={props.routes} />
+                        </NavAction>
+                    )}
+                    <NavAction>
+                        <WebCommandListPopoverButton
+                            {...props}
+                            location={location}
+                            buttonClassName="nav-link btn btn-link"
+                            menu={ContributableMenu.CommandPalette}
+                            keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
+                        />
+                    </NavAction>
+                    {props.authenticatedUser &&
+                        (window.context?.externalServicesUserModeEnabled ||
+                            props.authenticatedUser?.siteAdmin ||
+                            props.authenticatedUser?.tags?.some(
+                                tag =>
+                                    tag === 'AllowUserExternalServicePublic' ||
+                                    tag === 'AllowUserExternalServicePrivate'
+                            )) && (
+                            <NavAction>
+                                <StatusMessagesNavItem
+                                    isSiteAdmin={props.authenticatedUser?.siteAdmin || false}
+                                    history={history}
+                                />
+                            </NavAction>
+                        )}
+                    {!props.authenticatedUser ? (
+                        <>
+                            <NavAction>
+                                <Link className="btn btn-sm btn-outline-secondary" to="/sign-in">
+                                    Log in
+                                </Link>
+                            </NavAction>
+                            <NavAction>
+                                <Link className="btn btn-sm btn-outline-secondary global-navbar__sign-up" to="/sign-up">
+                                    Sign up
+                                </Link>
+                            </NavAction>
+                        </>
+                    ) : (
+                        <NavAction>
+                            <UserNavItem
+                                {...props}
+                                location={location}
+                                isLightTheme={isLightTheme}
+                                authenticatedUser={props.authenticatedUser}
+                                showDotComMarketing={showDotComMarketing}
+                                codeHostIntegrationMessaging={
+                                    (!isErrorLike(props.settingsCascade.final) &&
+                                        props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
+                                    'browser-extension'
+                                }
+                                keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
+                            />
+                        </NavAction>
+                    )}
+                </NavActions>
+            </NavBar>
+            <div
+                className={`global-navbar ${
+                    variant === 'low-profile' || variant === 'low-profile-with-logo'
+                        ? ''
+                        : 'global-navbar--bg border-bottom'
+                } py-1`}
+            >
+                {variant === 'low-profile' || variant === 'low-profile-with-logo' ? (
+                    <>
+                        {variant === 'low-profile-with-logo' && logo}
+                        <div className="flex-1" />
+                        {navLinks}
+                    </>
+                ) : variant === 'no-search-input' ? (
+                    <>
+                        {logo}
+                        <div className="nav-item flex-1">
+                            <Link to="/search" className="nav-link">
+                                Search
+                            </Link>
+                        </div>
+                        {navLinks}
+                    </>
+                ) : (
+                    <>
+                        {logo}
+                        {authRequired ? (
+                            <div className="flex-1" />
+                        ) : (
+                            <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
+                                <VersionContextDropdown
+                                    history={history}
+                                    navbarSearchQuery={navbarSearchQueryState.query}
+                                    caseSensitive={caseSensitive}
+                                    patternType={patternType}
+                                    versionContext={versionContext}
+                                    setVersionContext={setVersionContext}
+                                    availableVersionContexts={availableVersionContexts}
+                                    selectedSearchContextSpec={props.selectedSearchContextSpec}
+                                />
+                                <SearchNavbarItem
+                                    {...props}
+                                    navbarSearchState={navbarSearchQueryState}
+                                    onChange={onNavbarQueryChange}
+                                    location={location}
+                                    history={history}
+                                    versionContext={versionContext}
+                                    isLightTheme={isLightTheme}
+                                    patternType={patternType}
+                                    caseSensitive={caseSensitive}
+                                />
+                            </div>
+                        )}
+                        {navLinks}
+                    </>
+                )}
+            </div>
+        </>
     )
 }

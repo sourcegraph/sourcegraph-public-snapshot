@@ -1,0 +1,28 @@
+.actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
+    margin: 0 0 0 auto;
+    padding: 0;
+    height: 100%;
+    :first-child {
+        margin-left: 0;
+    }
+    :last-child {
+        margin-right: 0;
+    }
+}
+
+.action {
+    display: flex;
+    align-items: center;
+    margin: 0 0.5rem;
+    padding: 0;
+    height: 100%;
+    :global(.nav-link),
+    :global(.btn-link) {
+        margin: 0;
+        padding: 0;
+    }
+}
