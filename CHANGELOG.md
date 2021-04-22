@@ -23,7 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Pushing batch changes to Bitbucket Server code hosts over SSH was broken in 3.27.0, and has been fixed. [#20324](https://github.com/sourcegraph/sourcegraph/issues/20324)
 
 ### Removed
 
