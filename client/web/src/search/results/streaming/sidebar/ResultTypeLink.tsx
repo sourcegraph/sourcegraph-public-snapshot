@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { ReactElement } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
@@ -7,7 +7,6 @@ import { toggleSearchType } from '../../../helpers'
 import { SearchType } from '../../SearchResults'
 
 import { SearchSidebarProps } from './SearchSidebar'
-import { SidebarSectionItem } from './SearchSidebarSection'
 import styles from './SearchSidebarSection.module.scss'
 
 interface ResultTypeLinkProps extends SearchSidebarProps {
@@ -41,8 +40,7 @@ const ResultTypeLink: React.FunctionComponent<ResultTypeLinkProps> = ({
     )
 }
 
-export const getResultTypeLinks = (props: SearchSidebarProps): SidebarSectionItem[] => {
+export const getResultTypeLinks = (props: SearchSidebarProps): ReactElement[] => {
     const types: Exclude<SearchType, null>[] = ['file', 'repo', 'path', 'symbol', 'diff', 'commit']
-
-    return types.map(type => ({ key: type, node: <ResultTypeLink {...props} type={type} /> }))
+    return types.map(type => <ResultTypeLink {...props} type={type} key={type} />)
 }

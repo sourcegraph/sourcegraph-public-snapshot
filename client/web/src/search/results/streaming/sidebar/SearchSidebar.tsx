@@ -18,7 +18,7 @@ export interface SearchSidebarProps
 
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => (
     <div className={styles.searchSidebar}>
-        <SearchSidebarSection header="Result types" items={getResultTypeLinks(props)} />
+        <SearchSidebarSection header="Result types">{getResultTypeLinks(props)}</SearchSidebarSection>
         <SearchSidebarSection header="Dynamic filters" />
         <SearchSidebarSection header="Repositories" />
         <SearchSidebarSection header="Search snippets" />

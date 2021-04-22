@@ -17,27 +17,11 @@ const defaultProps: SearchSidebarProps = {
 describe('SidebarResultTypeSection', () => {
     it('should have correct links when type not apresent', () => {
         const links = getResultTypeLinks(defaultProps)
-        expect(
-            mount(
-                <>
-                    {links.map(link => (
-                        <span key={link.key}>{link.node}</span>
-                    ))}
-                </>
-            )
-        ).toMatchSnapshot()
+        expect(mount(<>{links}</>)).toMatchSnapshot()
     })
 
     it('should have correct links when type already exists in query', () => {
         const links = getResultTypeLinks({ ...defaultProps, query: 'test type:repo' })
-        expect(
-            mount(
-                <>
-                    {links.map(link => (
-                        <span key={link.key}>{link.node}</span>
-                    ))}
-                </>
-            )
-        ).toMatchSnapshot()
+        expect(mount(<>{links}</>)).toMatchSnapshot()
     })
 })

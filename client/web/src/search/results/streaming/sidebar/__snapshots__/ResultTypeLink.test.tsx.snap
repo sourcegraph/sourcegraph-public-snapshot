@@ -2,454 +2,418 @@
 
 exports[`SidebarResultTypeSection should have correct links when type already exists in query 1`] = `
 Array [
-  <span
+  <ResultTypeLink
+    caseSensitive={false}
     key="file"
+    patternType="literal"
+    query="test type:repo"
+    selectedSearchContextSpec="global"
+    type="file"
   >
-    <ResultTypeLink
-      caseSensitive={false}
-      patternType="literal"
-      query="test type:repo"
-      selectedSearchContextSpec="global"
-      type="file"
-    >
-      <AnchorLink
-        className="sidebarSectionListItem"
-        to={
-          Object {
-            "pathname": "/search",
-            "search": "q=context:global+test+type:file&patternType=literal",
-          }
+    <AnchorLink
+      className="sidebarSectionListItem"
+      to={
+        Object {
+          "pathname": "/search",
+          "search": "q=context:global+test+type:file&patternType=literal",
         }
+      }
+    >
+      <a
+        className="sidebarSectionListItem"
+        href="/search?q=context:global+test+type:file&patternType=literal"
       >
-        <a
-          className="sidebarSectionListItem"
-          href="/search?q=context:global+test+type:file&patternType=literal"
+        <span
+          className="text-monospace search-query-link"
         >
           <span
-            className="text-monospace search-query-link"
+            className="search-filter-keyword"
           >
-            <span
-              className="search-filter-keyword"
-            >
-              type:
-            </span>
-            file
+            type:
           </span>
-        </a>
-      </AnchorLink>
-    </ResultTypeLink>
-  </span>,
-  <span
+          file
+        </span>
+      </a>
+    </AnchorLink>
+  </ResultTypeLink>,
+  <ResultTypeLink
+    caseSensitive={false}
     key="repo"
+    patternType="literal"
+    query="test type:repo"
+    selectedSearchContextSpec="global"
+    type="repo"
   >
-    <ResultTypeLink
-      caseSensitive={false}
-      patternType="literal"
-      query="test type:repo"
-      selectedSearchContextSpec="global"
-      type="repo"
-    >
-      <AnchorLink
-        className="sidebarSectionListItem"
-        to={
-          Object {
-            "pathname": "/search",
-            "search": "q=context:global+test+type:repo&patternType=literal",
-          }
+    <AnchorLink
+      className="sidebarSectionListItem"
+      to={
+        Object {
+          "pathname": "/search",
+          "search": "q=context:global+test+type:repo&patternType=literal",
         }
+      }
+    >
+      <a
+        className="sidebarSectionListItem"
+        href="/search?q=context:global+test+type:repo&patternType=literal"
       >
-        <a
-          className="sidebarSectionListItem"
-          href="/search?q=context:global+test+type:repo&patternType=literal"
+        <span
+          className="text-monospace search-query-link"
         >
           <span
-            className="text-monospace search-query-link"
+            className="search-filter-keyword"
           >
-            <span
-              className="search-filter-keyword"
-            >
-              type:
-            </span>
-            repo
+            type:
           </span>
-        </a>
-      </AnchorLink>
-    </ResultTypeLink>
-  </span>,
-  <span
+          repo
+        </span>
+      </a>
+    </AnchorLink>
+  </ResultTypeLink>,
+  <ResultTypeLink
+    caseSensitive={false}
     key="path"
+    patternType="literal"
+    query="test type:repo"
+    selectedSearchContextSpec="global"
+    type="path"
   >
-    <ResultTypeLink
-      caseSensitive={false}
-      patternType="literal"
-      query="test type:repo"
-      selectedSearchContextSpec="global"
-      type="path"
-    >
-      <AnchorLink
-        className="sidebarSectionListItem"
-        to={
-          Object {
-            "pathname": "/search",
-            "search": "q=context:global+test+type:path&patternType=literal",
-          }
+    <AnchorLink
+      className="sidebarSectionListItem"
+      to={
+        Object {
+          "pathname": "/search",
+          "search": "q=context:global+test+type:path&patternType=literal",
         }
+      }
+    >
+      <a
+        className="sidebarSectionListItem"
+        href="/search?q=context:global+test+type:path&patternType=literal"
       >
-        <a
-          className="sidebarSectionListItem"
-          href="/search?q=context:global+test+type:path&patternType=literal"
+        <span
+          className="text-monospace search-query-link"
         >
           <span
-            className="text-monospace search-query-link"
+            className="search-filter-keyword"
           >
-            <span
-              className="search-filter-keyword"
-            >
-              type:
-            </span>
-            path
+            type:
           </span>
-        </a>
-      </AnchorLink>
-    </ResultTypeLink>
-  </span>,
-  <span
+          path
+        </span>
+      </a>
+    </AnchorLink>
+  </ResultTypeLink>,
+  <ResultTypeLink
+    caseSensitive={false}
     key="symbol"
+    patternType="literal"
+    query="test type:repo"
+    selectedSearchContextSpec="global"
+    type="symbol"
   >
-    <ResultTypeLink
-      caseSensitive={false}
-      patternType="literal"
-      query="test type:repo"
-      selectedSearchContextSpec="global"
-      type="symbol"
-    >
-      <AnchorLink
-        className="sidebarSectionListItem"
-        to={
-          Object {
-            "pathname": "/search",
-            "search": "q=context:global+test+type:symbol&patternType=literal",
-          }
+    <AnchorLink
+      className="sidebarSectionListItem"
+      to={
+        Object {
+          "pathname": "/search",
+          "search": "q=context:global+test+type:symbol&patternType=literal",
         }
+      }
+    >
+      <a
+        className="sidebarSectionListItem"
+        href="/search?q=context:global+test+type:symbol&patternType=literal"
       >
-        <a
-          className="sidebarSectionListItem"
-          href="/search?q=context:global+test+type:symbol&patternType=literal"
+        <span
+          className="text-monospace search-query-link"
         >
           <span
-            className="text-monospace search-query-link"
+            className="search-filter-keyword"
           >
-            <span
-              className="search-filter-keyword"
-            >
-              type:
-            </span>
-            symbol
+            type:
           </span>
-        </a>
-      </AnchorLink>
-    </ResultTypeLink>
-  </span>,
-  <span
+          symbol
+        </span>
+      </a>
+    </AnchorLink>
+  </ResultTypeLink>,
+  <ResultTypeLink
+    caseSensitive={false}
     key="diff"
+    patternType="literal"
+    query="test type:repo"
+    selectedSearchContextSpec="global"
+    type="diff"
   >
-    <ResultTypeLink
-      caseSensitive={false}
-      patternType="literal"
-      query="test type:repo"
-      selectedSearchContextSpec="global"
-      type="diff"
-    >
-      <AnchorLink
-        className="sidebarSectionListItem"
-        to={
-          Object {
-            "pathname": "/search",
-            "search": "q=context:global+test+type:diff&patternType=literal",
-          }
+    <AnchorLink
+      className="sidebarSectionListItem"
+      to={
+        Object {
+          "pathname": "/search",
+          "search": "q=context:global+test+type:diff&patternType=literal",
         }
+      }
+    >
+      <a
+        className="sidebarSectionListItem"
+        href="/search?q=context:global+test+type:diff&patternType=literal"
       >
-        <a
-          className="sidebarSectionListItem"
-          href="/search?q=context:global+test+type:diff&patternType=literal"
+        <span
+          className="text-monospace search-query-link"
         >
           <span
-            className="text-monospace search-query-link"
+            className="search-filter-keyword"
           >
-            <span
-              className="search-filter-keyword"
-            >
-              type:
-            </span>
-            diff
+            type:
           </span>
-        </a>
-      </AnchorLink>
-    </ResultTypeLink>
-  </span>,
-  <span
+          diff
+        </span>
+      </a>
+    </AnchorLink>
+  </ResultTypeLink>,
+  <ResultTypeLink
+    caseSensitive={false}
     key="commit"
+    patternType="literal"
+    query="test type:repo"
+    selectedSearchContextSpec="global"
+    type="commit"
   >
-    <ResultTypeLink
-      caseSensitive={false}
-      patternType="literal"
-      query="test type:repo"
-      selectedSearchContextSpec="global"
-      type="commit"
-    >
-      <AnchorLink
-        className="sidebarSectionListItem"
-        to={
-          Object {
-            "pathname": "/search",
-            "search": "q=context:global+test+type:commit&patternType=literal",
-          }
+    <AnchorLink
+      className="sidebarSectionListItem"
+      to={
+        Object {
+          "pathname": "/search",
+          "search": "q=context:global+test+type:commit&patternType=literal",
         }
+      }
+    >
+      <a
+        className="sidebarSectionListItem"
+        href="/search?q=context:global+test+type:commit&patternType=literal"
       >
-        <a
-          className="sidebarSectionListItem"
-          href="/search?q=context:global+test+type:commit&patternType=literal"
+        <span
+          className="text-monospace search-query-link"
         >
           <span
-            className="text-monospace search-query-link"
+            className="search-filter-keyword"
           >
-            <span
-              className="search-filter-keyword"
-            >
-              type:
-            </span>
-            commit
+            type:
           </span>
-        </a>
-      </AnchorLink>
-    </ResultTypeLink>
-  </span>,
+          commit
+        </span>
+      </a>
+    </AnchorLink>
+  </ResultTypeLink>,
 ]
 `;
 
 exports[`SidebarResultTypeSection should have correct links when type not apresent 1`] = `
 Array [
-  <span
+  <ResultTypeLink
+    caseSensitive={false}
     key="file"
+    patternType="literal"
+    query="test"
+    selectedSearchContextSpec="global"
+    type="file"
   >
-    <ResultTypeLink
-      caseSensitive={false}
-      patternType="literal"
-      query="test"
-      selectedSearchContextSpec="global"
-      type="file"
-    >
-      <AnchorLink
-        className="sidebarSectionListItem"
-        to={
-          Object {
-            "pathname": "/search",
-            "search": "q=context:global+test+type:file&patternType=literal",
-          }
+    <AnchorLink
+      className="sidebarSectionListItem"
+      to={
+        Object {
+          "pathname": "/search",
+          "search": "q=context:global+test+type:file&patternType=literal",
         }
+      }
+    >
+      <a
+        className="sidebarSectionListItem"
+        href="/search?q=context:global+test+type:file&patternType=literal"
       >
-        <a
-          className="sidebarSectionListItem"
-          href="/search?q=context:global+test+type:file&patternType=literal"
+        <span
+          className="text-monospace search-query-link"
         >
           <span
-            className="text-monospace search-query-link"
+            className="search-filter-keyword"
           >
-            <span
-              className="search-filter-keyword"
-            >
-              type:
-            </span>
-            file
+            type:
           </span>
-        </a>
-      </AnchorLink>
-    </ResultTypeLink>
-  </span>,
-  <span
+          file
+        </span>
+      </a>
+    </AnchorLink>
+  </ResultTypeLink>,
+  <ResultTypeLink
+    caseSensitive={false}
     key="repo"
+    patternType="literal"
+    query="test"
+    selectedSearchContextSpec="global"
+    type="repo"
   >
-    <ResultTypeLink
-      caseSensitive={false}
-      patternType="literal"
-      query="test"
-      selectedSearchContextSpec="global"
-      type="repo"
-    >
-      <AnchorLink
-        className="sidebarSectionListItem"
-        to={
-          Object {
-            "pathname": "/search",
-            "search": "q=context:global+test+type:repo&patternType=literal",
-          }
+    <AnchorLink
+      className="sidebarSectionListItem"
+      to={
+        Object {
+          "pathname": "/search",
+          "search": "q=context:global+test+type:repo&patternType=literal",
         }
+      }
+    >
+      <a
+        className="sidebarSectionListItem"
+        href="/search?q=context:global+test+type:repo&patternType=literal"
       >
-        <a
-          className="sidebarSectionListItem"
-          href="/search?q=context:global+test+type:repo&patternType=literal"
+        <span
+          className="text-monospace search-query-link"
         >
           <span
-            className="text-monospace search-query-link"
+            className="search-filter-keyword"
           >
-            <span
-              className="search-filter-keyword"
-            >
-              type:
-            </span>
-            repo
+            type:
           </span>
-        </a>
-      </AnchorLink>
-    </ResultTypeLink>
-  </span>,
-  <span
+          repo
+        </span>
+      </a>
+    </AnchorLink>
+  </ResultTypeLink>,
+  <ResultTypeLink
+    caseSensitive={false}
     key="path"
+    patternType="literal"
+    query="test"
+    selectedSearchContextSpec="global"
+    type="path"
   >
-    <ResultTypeLink
-      caseSensitive={false}
-      patternType="literal"
-      query="test"
-      selectedSearchContextSpec="global"
-      type="path"
-    >
-      <AnchorLink
-        className="sidebarSectionListItem"
-        to={
-          Object {
-            "pathname": "/search",
-            "search": "q=context:global+test+type:path&patternType=literal",
-          }
+    <AnchorLink
+      className="sidebarSectionListItem"
+      to={
+        Object {
+          "pathname": "/search",
+          "search": "q=context:global+test+type:path&patternType=literal",
         }
+      }
+    >
+      <a
+        className="sidebarSectionListItem"
+        href="/search?q=context:global+test+type:path&patternType=literal"
       >
-        <a
-          className="sidebarSectionListItem"
-          href="/search?q=context:global+test+type:path&patternType=literal"
+        <span
+          className="text-monospace search-query-link"
         >
           <span
-            className="text-monospace search-query-link"
+            className="search-filter-keyword"
           >
-            <span
-              className="search-filter-keyword"
-            >
-              type:
-            </span>
-            path
+            type:
           </span>
-        </a>
-      </AnchorLink>
-    </ResultTypeLink>
-  </span>,
-  <span
+          path
+        </span>
+      </a>
+    </AnchorLink>
+  </ResultTypeLink>,
+  <ResultTypeLink
+    caseSensitive={false}
     key="symbol"
+    patternType="literal"
+    query="test"
+    selectedSearchContextSpec="global"
+    type="symbol"
   >
-    <ResultTypeLink
-      caseSensitive={false}
-      patternType="literal"
-      query="test"
-      selectedSearchContextSpec="global"
-      type="symbol"
-    >
-      <AnchorLink
-        className="sidebarSectionListItem"
-        to={
-          Object {
-            "pathname": "/search",
-            "search": "q=context:global+test+type:symbol&patternType=literal",
-          }
+    <AnchorLink
+      className="sidebarSectionListItem"
+      to={
+        Object {
+          "pathname": "/search",
+          "search": "q=context:global+test+type:symbol&patternType=literal",
         }
+      }
+    >
+      <a
+        className="sidebarSectionListItem"
+        href="/search?q=context:global+test+type:symbol&patternType=literal"
       >
-        <a
-          className="sidebarSectionListItem"
-          href="/search?q=context:global+test+type:symbol&patternType=literal"
+        <span
+          className="text-monospace search-query-link"
         >
           <span
-            className="text-monospace search-query-link"
+            className="search-filter-keyword"
           >
-            <span
-              className="search-filter-keyword"
-            >
-              type:
-            </span>
-            symbol
+            type:
           </span>
-        </a>
-      </AnchorLink>
-    </ResultTypeLink>
-  </span>,
-  <span
+          symbol
+        </span>
+      </a>
+    </AnchorLink>
+  </ResultTypeLink>,
+  <ResultTypeLink
+    caseSensitive={false}
     key="diff"
+    patternType="literal"
+    query="test"
+    selectedSearchContextSpec="global"
+    type="diff"
   >
-    <ResultTypeLink
-      caseSensitive={false}
-      patternType="literal"
-      query="test"
-      selectedSearchContextSpec="global"
-      type="diff"
-    >
-      <AnchorLink
-        className="sidebarSectionListItem"
-        to={
-          Object {
-            "pathname": "/search",
-            "search": "q=context:global+test+type:diff&patternType=literal",
-          }
+    <AnchorLink
+      className="sidebarSectionListItem"
+      to={
+        Object {
+          "pathname": "/search",
+          "search": "q=context:global+test+type:diff&patternType=literal",
         }
+      }
+    >
+      <a
+        className="sidebarSectionListItem"
+        href="/search?q=context:global+test+type:diff&patternType=literal"
       >
-        <a
-          className="sidebarSectionListItem"
-          href="/search?q=context:global+test+type:diff&patternType=literal"
+        <span
+          className="text-monospace search-query-link"
         >
           <span
-            className="text-monospace search-query-link"
+            className="search-filter-keyword"
           >
-            <span
-              className="search-filter-keyword"
-            >
-              type:
-            </span>
-            diff
+            type:
           </span>
-        </a>
-      </AnchorLink>
-    </ResultTypeLink>
-  </span>,
-  <span
+          diff
+        </span>
+      </a>
+    </AnchorLink>
+  </ResultTypeLink>,
+  <ResultTypeLink
+    caseSensitive={false}
     key="commit"
+    patternType="literal"
+    query="test"
+    selectedSearchContextSpec="global"
+    type="commit"
   >
-    <ResultTypeLink
-      caseSensitive={false}
-      patternType="literal"
-      query="test"
-      selectedSearchContextSpec="global"
-      type="commit"
-    >
-      <AnchorLink
-        className="sidebarSectionListItem"
-        to={
-          Object {
-            "pathname": "/search",
-            "search": "q=context:global+test+type:commit&patternType=literal",
-          }
+    <AnchorLink
+      className="sidebarSectionListItem"
+      to={
+        Object {
+          "pathname": "/search",
+          "search": "q=context:global+test+type:commit&patternType=literal",
         }
+      }
+    >
+      <a
+        className="sidebarSectionListItem"
+        href="/search?q=context:global+test+type:commit&patternType=literal"
       >
-        <a
-          className="sidebarSectionListItem"
-          href="/search?q=context:global+test+type:commit&patternType=literal"
+        <span
+          className="text-monospace search-query-link"
         >
           <span
-            className="text-monospace search-query-link"
+            className="search-filter-keyword"
           >
-            <span
-              className="search-filter-keyword"
-            >
-              type:
-            </span>
-            commit
+            type:
           </span>
-        </a>
-      </AnchorLink>
-    </ResultTypeLink>
-  </span>,
+          commit
+        </span>
+      </a>
+    </AnchorLink>
+  </ResultTypeLink>,
 ]
 `;

@@ -2,21 +2,16 @@ import React from 'react'
 
 import styles from './SearchSidebarSection.module.scss'
 
-export interface SidebarSectionItem {
-    key: string
-    node: React.ReactNode
-}
-
-export const SearchSidebarSection: React.FunctionComponent<{ header: string; items?: SidebarSectionItem[] }> = ({
+export const SearchSidebarSection: React.FunctionComponent<{ header: string; children?: React.ReactElement[] }> = ({
     header,
-    items = [],
+    children = [],
 }) => (
     <div>
         <h5>{header}</h5>
         <div>
             <ul className={styles.sidebarSectionList}>
-                {items.map(item => (
-                    <li key={item.key}>{item.node}</li>
+                {children.map((child, index) => (
+                    <li key={child.key || index}>{child}</li>
                 ))}
             </ul>
         </div>
