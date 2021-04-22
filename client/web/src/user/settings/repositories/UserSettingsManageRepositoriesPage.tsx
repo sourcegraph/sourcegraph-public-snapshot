@@ -208,7 +208,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     useEffect(() => {
         Promise.all([fetchExternalServices(), fetchAffiliatedRepos()])
             .then(([externalServices, affiliatedRepos]) => {
-                debugger
                 // list of the repos user selected
                 const selectedAffiliatedRepos: string[] = []
 
