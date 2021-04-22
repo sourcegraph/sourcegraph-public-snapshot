@@ -23,6 +23,7 @@ type Services struct {
 	InsightsResolver          graphqlbackend.InsightsResolver
 	CodeMonitorsResolver      graphqlbackend.CodeMonitorsResolver
 	LicenseResolver           graphqlbackend.LicenseResolver
+	DotcomResolver            graphqlbackend.DotcomRootResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
@@ -43,10 +44,6 @@ func DefaultServices() Services {
 		NewCodeIntelUploadHandler: func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
 		NewExecutorProxyHandler:   func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		AuthzResolver:             graphqlbackend.DefaultAuthzResolver,
-		BatchChangesResolver:      graphqlbackend.DefaultBatchChangesResolver,
-		InsightsResolver:          graphqlbackend.DefaultInsightsResolver,
-		CodeMonitorsResolver:      graphqlbackend.DefaultCodeMonitorsResolver,
-		LicenseResolver:           graphqlbackend.DefaultLicenseResolver,
 	}
 }
 

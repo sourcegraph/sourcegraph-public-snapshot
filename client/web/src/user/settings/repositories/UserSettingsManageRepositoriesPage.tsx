@@ -102,16 +102,14 @@ const isLoading = (status: initialFetchingReposState): boolean => {
 }
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
-    <div className="alert alert-warning mt-3" role="alert">
-        <AlertCircleIcon key={warning} className="icon icon-inline" /> {warning}. {hint}{' '}
-        {hint ? 'for more details' : null}
+    <div key={warning} className="alert alert-warning mt-3" role="alert">
+        <AlertCircleIcon className="icon icon-inline" /> {warning}. {hint} {hint ? 'for more details' : null}
     </div>
 )
 
 const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
-    <div className="alert alert-danger mt-3" role="alert">
-        <AlertCircleIcon key={error.message} className="icon icon-inline" /> {error.message}. {hint}{' '}
-        {hint ? 'for more details' : null}
+    <div key={error.message} className="alert alert-danger mt-3" role="alert">
+        <AlertCircleIcon className="icon icon-inline" /> {error.message}. {hint} {hint ? 'for more details' : null}
     </div>
 )
 
@@ -128,7 +126,7 @@ const displayAffiliateRepoProblems = (
     }
 
     if (Array.isArray(problem)) {
-        return displayAffiliateRepoProblems(problem)
+        return <>{problem.map(prob => displayAffiliateRepoProblems(prob, hint))}</>
     }
 
     return null

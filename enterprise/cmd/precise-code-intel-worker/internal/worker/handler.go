@@ -101,6 +101,17 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 		// alter any other data in the database. Rolling back to this savepoint will allow us to discard
 		// any other changes but still commit the transaction as a whole.
 		if err := inTransaction(ctx, dbStore, func(tx DBStore) error {
+			// Find the date of the commit and store that in the upload record. We do this now as we
+			// will need to find the _oldest_ commit with code intelligence data to efficiently update
+			// the commit graph for the repository.
+			commitDate, err := h.gitserverClient.CommitDate(ctx, upload.RepositoryID, upload.Commit)
+			if err != nil {
+				return errors.Wrap(err, "gitserverClient.CommitDate")
+			}
+			if err := tx.UpdateCommitedAt(ctx, upload.ID, commitDate); err != nil {
+				return errors.Wrap(err, "store.CommitDate")
+			}
+
 			// Update package and package reference data to support cross-repo queries.
 			if err := tx.UpdatePackages(ctx, upload.ID, groupedBundleData.Packages); err != nil {
 				return errors.Wrap(err, "store.UpdatePackages")

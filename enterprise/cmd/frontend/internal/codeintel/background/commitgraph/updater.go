@@ -10,8 +10,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	basegitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -124,8 +122,9 @@ func (u *Updater) update(ctx context.Context, repositoryID, dirtyToken int) (err
 }
 
 // getCommitGraph builds a partial commit graph that includes the most recent commits on each branch
-// extending back as as the date of the commit of the oldest upload processed for this repository.
-//i
+// extending back as as the date of the oldest commit for which we have a processed upload for this
+// repository.
+//
 // This optimization is necessary as decorating the commit graph is an operation that scales with
 // the size of both the git graph and the number of uploads (multiplicatively). For repositories with
 // a very large number of commits or distinct roots (most monorepos) this is a necessary optimization.
@@ -134,11 +133,16 @@ func (u *Updater) update(ctx context.Context, repositoryID, dirtyToken int) (err
 // accelerating rate, as we routinely expire old information for active repositories in a janitor
 // process.
 func (u *Updater) getCommitGraph(ctx context.Context, repositoryID int) (*gitserver.CommitGraph, error) {
-	commitDate, ok, err := u.getOldestCommitDate(ctx, repositoryID)
+	commitDate, ok, err := u.dbStore.GetOldestCommitDate(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
+		// We either have no uploads or the committed_at fields for this repository are still being
+		// backfilled. In the first case, we'll return an empty graph to no-op the update. In the
+		// latter case, we'll end up retrying to recalculate the commit graph for this repository
+		// again once the migration fills the commit dates for this repository's uploads.
+		log15.Warn("No oldest commit date found", "repositoryID", repositoryID)
 		return gitserver.ParseCommitGraph(nil), nil
 	}
 
@@ -156,39 +160,4 @@ func (u *Updater) getCommitGraph(ctx context.Context, repositoryID int) (*gitser
 	}
 
 	return commitGraph, nil
-}
-
-// TODO(efritz) - make adjustable
-const commitDateBatchSize = 100
-
-// getOldestCommitDate returns the commit date of the oldest processed upload for the given repository.
-func (u *Updater) getOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error) {
-	uploads, _, err := u.dbStore.GetUploads(ctx, dbstore.GetUploadsOptions{
-		RepositoryID: repositoryID,
-		State:        "completed",
-		OldestFirst:  true,
-		Limit:        commitDateBatchSize,
-	})
-	if err != nil {
-		return time.Time{}, false, errors.Wrap(err, "dbstore.GetUploads")
-	}
-
-outer:
-	for _, upload := range uploads {
-		commitDate, err := u.gitserverClient.CommitDate(ctx, repositoryID, upload.Commit)
-		if err != nil {
-			for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-				if basegitserver.IsRevisionNotFound(ex) {
-					log15.Warn("Unknown commit", "commit", upload.Commit)
-					continue outer
-				}
-			}
-
-			return time.Time{}, false, errors.Wrap(err, "gitserver.CommitDate")
-		}
-
-		return commitDate, true, nil
-	}
-
-	return time.Time{}, false, nil
 }

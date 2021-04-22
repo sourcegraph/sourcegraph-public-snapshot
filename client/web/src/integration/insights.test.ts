@@ -117,8 +117,7 @@ describe('Code insights page', () => {
 
     it('is styled correctly', async () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
-        await driver.page.waitForSelector('[data-testid="insights-view-grid__view-title"]')
-
+        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
         await percySnapshotWithVariants(driver.page, 'Code insights page')
     })
 })

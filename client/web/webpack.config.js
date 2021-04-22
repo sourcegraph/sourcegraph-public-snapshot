@@ -2,10 +2,10 @@
 
 const path = require('path')
 
+const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const logger = require('gulplog')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin')
-const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin')
 const TerserPlugin = require('terser-webpack-plugin')
 const webpack = require('webpack')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
@@ -23,8 +23,8 @@ if (shouldAnalyze) {
   logger.info('Running bundle analyzer')
 }
 
-const rootDirectory = path.resolve(__dirname, '..', '..')
-const nodeModulesPath = path.resolve(rootDirectory, 'node_modules')
+const rootPath = path.resolve(__dirname, '..', '..')
+const nodeModulesPath = path.resolve(rootPath, 'node_modules')
 const monacoEditorPaths = [path.resolve(nodeModulesPath, 'monaco-editor')]
 
 const isEnterpriseBuild = !!process.env.ENTERPRISE
@@ -45,7 +45,7 @@ const extensionHostWorker = /main\.worker\.ts$/
  * Useful to ensure that we use the same configuration for shared loaders: postcss-loader, sass-loader, etc.
  *
  * @param {import('webpack').RuleSetUseItem[]} loaders additional CSS loaders
- * @returns {import('webpack').RuleSetUse} array of CSS loaders
+ * @returns {import('webpack').RuleSetUseItem[]} array of CSS loaders
  */
 const getCSSLoaders = (...loaders) => [
   // Use style-loader for local development as it is significantly faster.
@@ -57,7 +57,7 @@ const getCSSLoaders = (...loaders) => [
     options: {
       sassOptions: {
         implementation: require('sass'),
-        includePaths: [nodeModulesPath],
+        includePaths: [nodeModulesPath, path.resolve(rootPath, 'client')],
       },
     },
   },
@@ -80,6 +80,7 @@ const config = {
           },
         },
       }),
+      new CssMinimizerWebpackPlugin(),
     ],
     namedModules: false,
 
@@ -103,7 +104,7 @@ const config = {
     'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
   },
   output: {
-    path: path.join(rootDirectory, 'ui', 'assets'),
+    path: path.join(rootPath, 'ui', 'assets'),
     // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
     filename: mode === 'production' ? 'scripts/[name].[contenthash].bundle.js' : 'scripts/[name].bundle.js',
     chunkFilename: mode === 'production' ? 'scripts/[id]-[contenthash].chunk.js' : 'scripts/[id].chunk.js',
@@ -123,7 +124,6 @@ const config = {
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
       filename: mode === 'production' ? 'styles/[name].[contenthash].bundle.css' : 'styles/[name].bundle.css',
     }),
-    new OptimizeCssAssetsPlugin(),
     new MonacoWebpackPlugin({
       languages: ['json'],
       features: [
@@ -155,10 +155,7 @@ const config = {
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
       // https://github.com/joshwnj/react-visibility-sensor/issues/148
-      'react-visibility-sensor': path.resolve(
-        rootDirectory,
-        'node_modules/react-visibility-sensor/visibility-sensor.js'
-      ),
+      'react-visibility-sensor': path.resolve(rootPath, 'node_modules/react-visibility-sensor/visibility-sensor.js'),
     },
   },
   module: {
@@ -202,8 +199,9 @@ const config = {
           loader: 'css-loader',
           options: {
             sourceMap: isDevelopment,
-            localsConvention: 'camelCase',
+            url: false,
             modules: {
+              exportLocalsConvention: 'camelCase',
               localIdentName: '[name]__[local]_[hash:base64:5]',
             },
           },
@@ -212,13 +210,13 @@ const config = {
       {
         test: /\.(sass|scss)$/,
         exclude: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders('css-loader'),
+        use: getCSSLoaders({ loader: 'css-loader', options: { url: false } }),
       },
       {
         // CSS rule for monaco-editor and other external plain CSS (skip SASS and PostCSS for build perf)
         test: /\.css$/,
         include: monacoEditorPaths,
-        use: ['style-loader', 'css-loader'],
+        use: ['style-loader', { loader: 'css-loader', options: { url: false } }],
       },
       {
         test: extensionHostWorker,

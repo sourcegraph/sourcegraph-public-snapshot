@@ -38,7 +38,7 @@
         &-example {
             font-weight: bold;
 
-            @media (max-width: $media-md) {
+            @include media-breakpoint-up(md) {
                 display: none;
             }
         }
@@ -63,7 +63,7 @@
             display: flex;
             align-items: center;
 
-            @media (max-width: $media-md) {
+            @include media-breakpoint-up(md) {
                 width: 100%;
             }
         }

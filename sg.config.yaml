@@ -227,6 +227,7 @@ commands:
       go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
     env:
       GOGC: 50
+      CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
 
   zoekt-indexserver-1:
     cmd: |
@@ -248,6 +249,7 @@ commands:
       go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
     env:
       GOGC: 50
+      CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
 
   zoekt-webserver-0:
     cmd: |

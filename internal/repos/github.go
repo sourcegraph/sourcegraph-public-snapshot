@@ -254,31 +254,24 @@ func (s GithubSource) makeRepo(r *github.Repository) *types.Repo {
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
-				CloneURL: s.authenticatedRemoteURL(r),
+				CloneURL: s.remoteURL(r),
 			},
 		},
 		Metadata: r,
 	}
 }
 
-// authenticatedRemoteURL returns the repository's Git remote URL with the configured
-// GitHub personal access token inserted in the URL userinfo.
-func (s *GithubSource) authenticatedRemoteURL(repo *github.Repository) string {
+// remoteURL returns the repository's Git remote URL
+//
+// note: this used to contain credentials but that is no longer the case
+// if you need to get an authenticated clone url use types.RepoCloneURL
+func (s *GithubSource) remoteURL(repo *github.Repository) string {
 	if s.config.GitURLType == "ssh" {
 		url := fmt.Sprintf("git@%s:%s.git", s.originalHostname, repo.NameWithOwner)
 		return url
 	}
 
-	if s.config.Token == "" {
-		return repo.URL
-	}
-	u, err := url.Parse(repo.URL)
-	if err != nil {
-		log15.Warn("Error adding authentication to GitHub repository Git remote URL.", "url", repo.URL, "error", err)
-		return repo.URL
-	}
-	u.User = url.User(s.config.Token)
-	return u.String()
+	return repo.URL
 }
 
 func (s *GithubSource) excludes(r *github.Repository) bool {
@@ -717,8 +710,9 @@ func (s *GithubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 			done = true
 		}
 		for _, repo := range repos {
-			// the github user repositories API doesn't support query strings, so we'll have to filter here 😬
-			// this does make pagination more awkward though, as we won't paginate futher if you don't match anything
+			// the github user repositories API doesn't support query strings, so we'll have
+			// to filter here 😬 this does make pagination more awkward though, as we won't
+			// paginate further if you don't match anything
 			out = append(out, types.CodeHostRepository{
 				Name:       repo.NameWithOwner,
 				Private:    repo.IsPrivate,

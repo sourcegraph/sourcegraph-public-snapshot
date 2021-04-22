@@ -168,7 +168,7 @@ export const Breadcrumbs: React.FunctionComponent<{ breadcrumbs: BreadcrumbAtDep
                             breadcrumb.className
                         )}
                     >
-                        {index !== 0 && <span className="font-weight-semibold">{divider}</span>}
+                        {index !== 0 && <span className="font-weight-medium">{divider}</span>}
                         {isElementBreadcrumb(breadcrumb) ? (
                             breadcrumb.element
                         ) : index === validBreadcrumbs.length - 1 && !location.hash ? (

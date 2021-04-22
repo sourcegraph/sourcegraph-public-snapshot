@@ -619,6 +619,50 @@ func Frontend() *monitoring.Container {
 				},
 			},
 			{
+				Title:  "Out of band migrations",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:           "out_of_band_migrations_up_99th_percentile_duration",
+							Description:    "99th percentile successful out-of-band up migration invocation (single batch processed) duration over 5m",
+							Query:          `histogram_quantile(0.99, sum by (le, migration)(rate(src_oobmigration_duration_seconds_bucket{op="up"}[5m])))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("migration {{migration}}").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: "none",
+						},
+						{
+							Name:              "out_of_band_migrations_up_errors",
+							Description:       "out-of-band up migration errors every 5m",
+							Query:             `sum by (migration)(increase(src_oobmigration_errors_total{op="up"}[5m]))`,
+							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
+							Panel:             monitoring.Panel().LegendFormat("migration {{migration}}"),
+							Owner:             monitoring.ObservableOwnerCoreApplication,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:           "out_of_band_migrations_down_99th_percentile_duration",
+							Description:    "99th percentile successful out-of-band down migration invocation (single batch processed) duration over 5m",
+							Query:          `histogram_quantile(0.99, sum by (le, migration)(rate(src_oobmigration_duration_seconds_bucket{op="down"}[5m])))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("migration {{migration}}").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: "none",
+						},
+						{
+							Name:              "out_of_band_migrations_down_errors",
+							Description:       "out-of-band down migration errors every 5m",
+							Query:             `sum by (migration)(increase(src_oobmigration_errors_total{op="down"}[5m]))`,
+							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
+							Panel:             monitoring.Panel().LegendFormat("migration {{migration}}"),
+							Owner:             monitoring.ObservableOwnerCoreApplication,
+							PossibleSolutions: "none",
+						},
+					},
+				},
+			},
+			{
 				Title:  "Internal service requests",
 				Hidden: true,
 				Rows: []monitoring.Row{
@@ -756,8 +800,8 @@ func Frontend() *monitoring.Container {
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
 							Query:    `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[5m])) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[5m]))`,
-							Warning:  monitoring.Alert().GreaterOrEqual(5, nil).For(10 * time.Minute),
-							Critical: monitoring.Alert().GreaterOrEqual(8, nil).For(15 * time.Minute),
+							Warning:  monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
+							Critical: monitoring.Alert().GreaterOrEqual(8, nil).For(30 * time.Minute),
 							Panel:    monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
 							Owner:    monitoring.ObservableOwnerSearch,
 							PossibleSolutions: `
@@ -772,8 +816,8 @@ func Frontend() *monitoring.Container {
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
 							Query:    `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[5m])) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[5m]))`,
-							Warning:  monitoring.Alert().GreaterOrEqual(2, nil).For(5 * time.Minute),
-							Critical: monitoring.Alert().GreaterOrEqual(3, nil).For(10 * time.Minute),
+							Warning:  monitoring.Alert().GreaterOrEqual(2, nil).For(15 * time.Minute),
+							Critical: monitoring.Alert().GreaterOrEqual(3, nil).For(30 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.NoLegend(),
 								monitoring.PanelOptions.ColorOverride("latency", "#8AB8FF"),
@@ -793,8 +837,8 @@ func Frontend() *monitoring.Container {
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
 							Query:    `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[5m]), "source", "$1", "source", "searchblitz_(.*)")))`,
-							Warning:  monitoring.Alert().GreaterOrEqual(5, nil).For(10 * time.Minute),
-							Critical: monitoring.Alert().GreaterOrEqual(10, nil).For(15 * time.Minute),
+							Warning:  monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
+							Critical: monitoring.Alert().GreaterOrEqual(10, nil).For(30 * time.Minute),
 							Panel:    monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
 							Owner:    monitoring.ObservableOwnerSearch,
 							PossibleSolutions: `
@@ -809,8 +853,8 @@ func Frontend() *monitoring.Container {
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
 							Query:    `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[5m]), "source", "$1", "source", "searchblitz_(.*)")))`,
-							Warning:  monitoring.Alert().GreaterOrEqual(4, nil).For(5 * time.Minute),
-							Critical: monitoring.Alert().GreaterOrEqual(6, nil).For(10 * time.Minute),
+							Warning:  monitoring.Alert().GreaterOrEqual(4, nil).For(15 * time.Minute),
+							Critical: monitoring.Alert().GreaterOrEqual(6, nil).For(30 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.NoLegend(),
 								monitoring.PanelOptions.ColorOverride("latency", "#8AB8FF"),

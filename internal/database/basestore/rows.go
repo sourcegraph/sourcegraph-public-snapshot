@@ -2,6 +2,7 @@ package basestore
 
 import (
 	"database/sql"
+	"time"
 )
 
 // CloseRows closes the given rows object. The resulting error is a multierror
@@ -225,4 +226,44 @@ func ScanFirstBool(rows *sql.Rows, queryErr error) (value bool, exists bool, err
 	}
 
 	return false, false, nil
+}
+
+// ScanTimes reads time values from the given row object.
+func ScanTimes(rows *sql.Rows, queryErr error) (_ []time.Time, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = CloseRows(rows, err) }()
+
+	var values []time.Time
+	for rows.Next() {
+		var value time.Time
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+
+		values = append(values, value)
+	}
+
+	return values, nil
+}
+
+// ScanFirstTime reads time values from the given row object and returns the first one.
+// If no rows match the query, a false-valued flag is returned.
+func ScanFirstTime(rows *sql.Rows, queryErr error) (_ time.Time, _ bool, err error) {
+	if queryErr != nil {
+		return time.Time{}, false, queryErr
+	}
+	defer func() { err = CloseRows(rows, err) }()
+
+	if rows.Next() {
+		var value time.Time
+		if err := rows.Scan(&value); err != nil {
+			return time.Time{}, false, err
+		}
+
+		return value, true, nil
+	}
+
+	return time.Time{}, false, nil
 }
