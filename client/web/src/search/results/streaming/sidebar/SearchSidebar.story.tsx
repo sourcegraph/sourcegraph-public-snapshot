@@ -6,7 +6,7 @@ import { SearchPatternType } from '../../../../graphql-operations'
 
 import { SearchSidebar, SearchSidebarProps } from './SearchSidebar'
 
-const { add } = storiesOf('web/search/results/streaming/SearchSidebar', module).addParameters({
+const { add } = storiesOf('web/search/results/streaming/sidebar/SearchSidebar', module).addParameters({
     design: {
         type: 'figma',
         url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/?node-id=1018%3A13883',
