@@ -6,7 +6,7 @@ import { ChartContent } from 'sourcegraph'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     createLinkClickHandler,
-    createProgrammaticLinkHandler
+    createProgrammaticLinkHandler,
 } from '@sourcegraph/shared/src/util/link-click-handler/linkClickHandler'
 
 import { BarChart } from './charts/bar/BarChart'
@@ -36,11 +36,11 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
     const { content, className = '', history, viewID, telemetryService } = props
 
     const handleDatumLinkClick = useMemo(() => {
-        const nativeLinkHandler = createLinkClickHandler(history);
+        const nativeLinkHandler = createLinkClickHandler(history)
 
         return (event: React.MouseEvent) => {
             telemetryService.log('InsightDataPointClick', { insightType: getInsightTypeByViewId(viewID) })
-            nativeLinkHandler(event);
+            nativeLinkHandler(event)
         }
     }, [viewID, telemetryService, history])
 
