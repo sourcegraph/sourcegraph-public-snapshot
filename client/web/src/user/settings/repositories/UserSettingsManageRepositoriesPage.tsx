@@ -720,20 +720,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         setPublicRepoState({ ...publicRepoState, repos: event.target.value })
     }
 
-    const repoListShimmer: JSX.Element = (
-        <tbody className="container">
-            <tr className="mt-2 align-items-baseline row">
-                <td className="user-settings-repos__shimmer p-3 border-top-0 col-sm-9" />
-            </tr>
-            <tr className="mt-2 align-items-baseline row">
-                <td className="user-settings-repos__shimmer p-3 border-top-0 col-sm-4" />
-            </tr>
-            <tr className="mt-2 align-items-baseline row">
-                <td className="user-settings-repos__shimmer p-3 border-top-0 col-sm-7" />
-            </tr>
-        </tbody>
-    )
-
     const modeSelectShimmer: JSX.Element = (
         <div className="container">
             <div className="mt-2 row">
@@ -801,13 +787,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 <div className="ml-4">
                                     {filterControls}
                                     <table role="grid" className="table">
-                                        {
-                                            // if we're selecting repos, and the repos are still loading, display the loading animation
-                                            selectionState.radio === 'selected' &&
-                                                repoState.loading &&
-                                                !repoState.loaded &&
-                                                repoListShimmer
-                                        }
                                         {
                                             // if the repos are loaded display the rows of repos
                                             repoState.loaded && rows
