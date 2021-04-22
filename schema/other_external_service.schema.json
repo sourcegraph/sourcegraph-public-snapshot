@@ -6,7 +6,7 @@
   "allowComments": true,
   "type": "object",
   "additionalProperties": false,
-  "required": ["repos", "url"],
+  "required": ["repos"],
   "properties": {
     "url": {
       "title": "Git clone base URL",
