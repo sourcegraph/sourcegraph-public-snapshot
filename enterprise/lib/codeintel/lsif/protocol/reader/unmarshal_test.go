@@ -164,6 +164,18 @@ func TestUnmarshalRangeWithTag(t *testing.T) {
 	}
 }
 
+var result interface{}
+
+func BenchmarkUnmarshalHover(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		var err error
+		result, err = unmarshalHover([]byte(`{"id": "16", "type": "vertex", "label": "hoverResult", "result": {"contents": [{"language": "go", "value": "text"}, {"language": "python", "value": "pext"}]}}`))
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
 func TestUnmarshalHover(t *testing.T) {
 	testCases := []struct {
 		contents      string
@@ -183,10 +195,6 @@ func TestUnmarshalHover(t *testing.T) {
 		},
 		{
 			contents:      `[{"value": "text"}]`,
-			expectedHover: "text",
-		},
-		{
-			contents:      `[{"kind": "markdown", "value": "text"}]`,
 			expectedHover: "text",
 		},
 		{

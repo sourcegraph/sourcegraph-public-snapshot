@@ -269,33 +269,38 @@ func unmarshalHover(line []byte) (interface{}, error) {
 }
 
 func unmarshalHoverPart(raw json.RawMessage) (*string, error) {
-	// to handle the first part of the union
-	// type MarkedString = string | { language: string; value: string }
-	var strPayload string
-	if err := unmarshaller.Unmarshal(raw, &strPayload); err == nil {
-		trimmed := strings.TrimSpace(strPayload)
-		return &trimmed, nil
+	// first, assume MarkedString or MarkupContent. This should be more likely
+	var m struct {
+		Kind     string
+		Language string
+		Value    string
 	}
 
-	m := make(map[string]string, 2)
 	err := unmarshaller.Unmarshal(raw, &m)
 	if err != nil {
-		return nil, err
+		// to handle the first part of the union
+		// type MarkedString = string | { language: string; value: string }
+		var strPayload string
+		if err := unmarshaller.Unmarshal(raw, &strPayload); err == nil {
+			trimmed := strings.TrimSpace(strPayload)
+			return &trimmed, nil
+		}
+		return &strPayload, nil
 	}
 
 	// now check if MarkupContent
-	if _, ok := m["kind"]; ok {
+	if m.Kind != "" {
 		markup := strings.TrimSpace(protocol.MarkupContent{
-			Kind:  protocol.MarkupKind(m["kind"]), // TODO: validate possible values
-			Value: m["value"],
+			Kind:  protocol.MarkupKind(m.Kind), // TODO: validate possible values
+			Value: m.Value,
 		}.String())
 		return &markup, nil
 	}
 
 	// else assume MarkedString
 	marked := strings.TrimSpace(protocol.MarkedString{
-		Language: m["language"],
-		Value:    m["value"],
+		Language: m.Language,
+		Value:    m.Value,
 	}.String())
 
 	return &marked, nil
