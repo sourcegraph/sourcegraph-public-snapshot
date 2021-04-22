@@ -27,6 +27,7 @@
         position: relative;
         background-color: currentColor;
         border-radius: 50%;
+        cursor: pointer;
 
         &:before {
             content: "";
@@ -41,6 +42,11 @@
 
             // Hide before element by default
             opacity: 0;
+        }
+
+        &:hover:before {
+            opacity: 1;
+            box-shadow: 0 0 0 0.05em #fff, 0 0 0.15em 0.1em currentColor;
         }
     }
 

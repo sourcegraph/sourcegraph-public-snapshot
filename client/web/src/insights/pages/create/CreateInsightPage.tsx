@@ -1,6 +1,6 @@
 import classnames from 'classnames';
-import React from 'react';
-import { Form } from 'reactstrap';
+import React  from 'react';
+import { useField, useForm } from 'react-final-form-hooks';
 
 import { Page } from '../../../components/Page';
 import { PageTitle } from '../../../components/PageTitle';
@@ -8,13 +8,38 @@ import { PageTitle } from '../../../components/PageTitle';
 import { InputField } from './components/form-field/FormField';
 import { FormGroup } from './components/form-group/FormGroup';
 import { FormRadioInput } from './components/form-radio-input/FormRadioInput';
-import { FormSeriesInput } from './components/form-series/FormSeriesInput';
+import { FormSeries } from './components/form-series/FormSeries';
 import styles from './CreateinsightPage.module.scss'
+import { DataSeries } from './types';
 
 interface CreateInsightPageProps {}
 
+interface Form {
+    series: DataSeries[];
+    title: string;
+    repositories: string;
+    visibility: string;
+}
+
+const seriesRequired = (series: DataSeries[]) => series && series.length > 0 ? undefined : 'Required';
+
 export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> = props => {
     const {} = props;
+
+    const form = useForm<Form>({
+        validate: values => {
+            return { series: seriesRequired(values.series)}
+        },
+        onSubmit: () => {
+            console.log('Submit');
+        }
+    });
+
+    const title = useField('title', form.form);
+    const repositories = useField('repositories', form.form);
+    const visibility = useField('visibility', form.form);
+    const series = useField<DataSeries[], Form>('series', form.form, seriesRequired);
+    const step = useField('step', form.form);
 
     return (
         <Page className='col-8'>
@@ -35,18 +60,23 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
                 </p>
             </div>
 
-            <Form className={styles.createInsightForm}>
+            {/* eslint-disable-next-line react/forbid-elements */}
+            <form onSubmit={form.handleSubmit} className={styles.createInsightForm}>
 
                 <InputField
                     title='Title'
                     description='Shown as title for your insight'
                     placeholder='ex. Migration to React function components'
+                    error={title.meta.touched && title.meta.error}
+                    {...title.input}
                     className={styles.createInsightFormField}/>
 
                 <InputField
                     title='Repositories'
                     description='Create a list of repositories to run your search over. Separate them with comas.'
                     placeholder='Add or search for repositories'
+                    error={repositories.meta.touched && repositories.meta.error}
+                    {...repositories.input}
                     className={styles.createInsightFormField}/>
 
                 <FormGroup
@@ -58,12 +88,21 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
                     <div className={styles.createInsightRadioGroupContent}>
 
                         <FormRadioInput
-                            name='Personal'
+                            name='visibility'
+                            value='personal'
+                            title='Personal'
                             description='only for you'
-                            className={styles.createInsightRadio}/>
+                            checked={visibility.input.value === 'personal'}
+                            className={styles.createInsightRadio}
+                            onChange={visibility.input.onChange}/>
+
                         <FormRadioInput
-                            name='Organization'
+                            name='visibility'
+                            value='organization'
+                            title='Organization'
                             description='to all users in your organization'
+                            checked={visibility.input.value === 'organization'}
+                            onChange={visibility.input.onChange}
                             className={styles.createInsightRadio}/>
                     </div>
                 </FormGroup>
@@ -74,7 +113,12 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
                     name='Data series'
                     subtitle='Add any number of data series to your chart'>
 
-                    <FormSeriesInput className={styles.createInsightSeries}/>
+                    <FormSeries
+                        series={series.input.value}
+                        onChange={series.input.onChange}/>
+
+                    { series.meta.touched && series.meta.error && <div>{series.meta.error}</div> }
+
                 </FormGroup>
 
                 <hr className={styles.createInsightSeparator}/>
@@ -93,19 +137,24 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
                         />
 
                         <FormRadioInput
-                            name='Hours'
+                            title='Hours'
+                            name='step'
                             className={styles.createInsightRadio}/>
                         <FormRadioInput
-                            name='Days'
+                            title='Days'
+                            name='step'
                             className={styles.createInsightRadio}/>
                         <FormRadioInput
-                            name='Weeks'
+                            title='Weeks'
+                            name='step'
                             className={styles.createInsightRadio}/>
                         <FormRadioInput
-                            name='Months'
+                            title='Months'
+                            name='step'
                             className={styles.createInsightRadio}/>
                         <FormRadioInput
-                            name='Years'
+                            title='Years'
+                            name='step'
                             className={styles.createInsightRadio}/>
                     </div>
                 </FormGroup>
@@ -114,7 +163,7 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
 
                 <div>
                     <button
-                        type='button'
+                        type='submit'
                         className={classnames(styles.createInsightButton, styles.createInsightButtonActive, 'button')}>
 
                         Create code insight
@@ -126,7 +175,10 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
                         Cancel
                     </button>
                 </div>
-            </Form>
+
+                <pre>{JSON.stringify(form.values, 0, 2)}</pre>
+                <pre>{JSON.stringify(form.errors, 0, 2)}</pre>
+            </form>
         </Page>
     )
 }

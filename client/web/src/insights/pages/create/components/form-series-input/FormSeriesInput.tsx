@@ -1,7 +1,9 @@
 import classnames from 'classnames';
 import React, { ReactElement } from 'react';
 import { useField, useForm } from 'react-final-form-hooks';
+import { noop } from 'rxjs';
 
+import { DataSeries } from '../../types';
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput';
 import { InputField } from '../form-field/FormField';
 import { FormGroup } from '../form-group/FormGroup';
@@ -14,6 +16,7 @@ interface FormSeriesProps {
     name?: string
     query?: string
     color?: string
+    onSubmit?: (series: DataSeries) => void;
 }
 
 const requiredNameField = createRequiredValidator('Name is required field for data series.');
@@ -24,15 +27,17 @@ const validQuery = composeValidators(
 )
 
 export function FormSeriesInput(props: FormSeriesProps): ReactElement {
-    const { name, query, color, className } = props;
+    const { name, query, color, className, onSubmit = noop } = props;
 
-    const form = useForm({
+    const form = useForm<DataSeries>({
         initialValues: {
             name,
             query,
             color: color ?? DEFAULT_ACTIVE_COLOR,
         },
-        onSubmit: () => console.log('submit')
+        onSubmit: () => {
+            onSubmit(form.values)
+        }
     });
 
     const nameField = useField('name', form.form, requiredNameField);
@@ -69,14 +74,21 @@ export function FormSeriesInput(props: FormSeriesProps): ReactElement {
                 />
             </FormGroup>
 
-            <button
-                type='submit'
-                className={classnames(styles.formSeriesInputButton,'button')}>
+            <div>
+                <button
+                    type='submit'
+                    className={classnames(styles.formSeriesInputButton,'button')}>
 
-                Done
-            </button>
+                    Done
+                </button>
 
-            <pre>{JSON.stringify(form.values,)}</pre>
+                <button
+                    type='button'
+                    className={classnames(styles.formSeriesInputButton, styles.formSeriesInputButtonCancel, 'button')}>
+
+                    Cancel
+                </button>
+            </div>
         </form>
     );
 }
