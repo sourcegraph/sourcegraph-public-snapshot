@@ -1,8 +1,11 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+
 import { WebStory } from '../../../../components/WebStory'
 import { SearchPatternType } from '../../../../graphql-operations'
+import { QuickLink, SearchScope } from '../../../../schema/settings.schema'
 
 import { SearchSidebar, SearchSidebarProps } from './SearchSidebar'
 
@@ -19,6 +22,18 @@ const defaultProps: SearchSidebarProps = {
     versionContext: undefined,
     selectedSearchContextSpec: 'global',
     query: '',
+    settingsCascade: EMPTY_SETTINGS_CASCADE,
 }
 
+const quicklinks: QuickLink[] = [
+    { name: 'Home', url: '/' },
+    { name: 'Example', url: 'http://example.com', description: 'Example QuickLink' },
+]
+
 add('empty sidebar', () => <WebStory>{() => <SearchSidebar {...defaultProps} />}</WebStory>)
+
+add('with quicklinks', () => (
+    <WebStory>
+        {() => <SearchSidebar {...defaultProps} settingsCascade={{ subjects: [], final: { quicklinks } }} />}
+    </WebStory>
+))
