@@ -7,6 +7,8 @@ import (
 	"github.com/dghubble/gologin/github"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -69,7 +71,10 @@ func validateClientIDAndSecret(clientIDOrSecret string) (valid bool) {
 }
 
 func requestedScopes(p *schema.GitHubAuthProvider) []string {
-	scopes := []string{"user:email", "repo"}
+	scopes := []string{"user:email"}
+	if !envvar.SourcegraphDotComMode() {
+		scopes = append(scopes, "repo")
+	}
 
 	// Needs extra scope to check organization membership
 	if len(p.AllowOrgs) > 0 {
