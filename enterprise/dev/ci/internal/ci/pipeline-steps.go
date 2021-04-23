@@ -79,10 +79,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		// Client integration tests
-
-		// TODO: Fix flakiness: https://github.com/sourcegraph/sourcegraph/issues/20359
 		pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests",
-			bk.AutomaticRetry(5),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
 			bk.Env("ENTERPRISE", "1"),
 			bk.Env("PERCY_ON", "true"),
