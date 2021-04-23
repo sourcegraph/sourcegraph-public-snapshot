@@ -47,8 +47,6 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     hideFilters?: boolean
     onlyArchived?: boolean
 
-    enableSelect?: boolean
-
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
     /** For testing only. */
@@ -74,24 +72,30 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     queryExternalChangesetWithFileDiffs,
     expandByDefault,
     onlyArchived,
-    enableSelect,
 }) => {
     const [availableChangesets, setAvailableChangesets] = useState<Set<string>>(new Set())
 
     const [selectedChangesets, setSelectedChangesets] = useState<Set<string>>(new Set())
     const onSelect = useCallback(
         (id: string, selected: boolean): void => {
+            let newSize: number
             if (selected) {
-                setSelectedChangesets(previous => new Set(previous).add(id))
+                setSelectedChangesets(previous => {
+                    const newSet = new Set(previous).add(id)
+                    newSize = newSet.size
+                    return newSet
+                })
             } else {
                 setSelectedChangesets(previous => {
                     const newSet = new Set(previous)
                     newSet.delete(id)
+                    newSize = newSet.size
                     return newSet
                 })
             }
+            setAllSelected(newSize! === availableChangesets.size)
         },
-        [setSelectedChangesets]
+        [availableChangesets.size]
     )
 
     const changesetSelected = useCallback((id: string): boolean => selectedChangesets.has(id), [selectedChangesets])
@@ -164,7 +168,15 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                 search: changesetFilters.search,
                 onlyArchived: !!onlyArchived,
             })
-                .pipe(tap(data => setAvailableChangesets(new Set(data.nodes.map(node => node.id)))))
+                .pipe(
+                    tap(data =>
+                        setAvailableChangesets(
+                            new Set(
+                                data.nodes.filter(node => node.__typename === 'ExternalChangeset').map(node => node.id)
+                            )
+                        )
+                    )
+                )
                 .pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
         [
             batchChangeID,
@@ -230,17 +242,17 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     useEffect(() => {
         componentRerenders.next()
     }, [componentRerenders, hoverState])
-
+    const showSelectRow = viewerCanAdminister && selectedChangesets.size > 0
     return (
         <>
-            {!hideFilters && (
+            {!hideFilters && !showSelectRow && (
                 <ChangesetFilterRow
                     history={history}
                     location={location}
-                    onFiltersChange={enableSelect ? setChangesetFiltersAndDeselectAll : setChangesetFilters}
+                    onFiltersChange={setChangesetFiltersAndDeselectAll}
                 />
             )}
-            {viewerCanAdminister && enableSelect && availableChangesets.size > 0 && (
+            {showSelectRow && (
                 <ChangesetSelectRow
                     selected={selectedChangesets}
                     onSubmit={onSubmitSelected}
@@ -259,7 +271,6 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                         extensionInfo: { extensionsController, hoverifier },
                         expandByDefault,
                         queryExternalChangesetWithFileDiffs,
-                        enableSelect,
                         onSelect,
                         isSelected: changesetSelected,
                     }}
@@ -272,14 +283,9 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     location={location}
                     useURLQuery={true}
                     listComponent="div"
-                    listClassName={classNames(
-                        enableSelect && styles.batchChangeChangesetsGridWithCheckboxes,
-                        !enableSelect && styles.batchChangeChangesetsGrid,
-                        'mb-3'
-                    )}
+                    listClassName={classNames(styles.batchChangeChangesetsGridWithCheckboxes, 'mb-3')}
                     headComponent={BatchChangeChangesetsHeader}
                     headComponentProps={{
-                        enableSelect,
                         allSelected,
                         toggleSelectAll,
                         disabled: !(viewerCanAdminister && !isSubmittingSelected),
