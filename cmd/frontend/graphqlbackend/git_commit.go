@@ -332,6 +332,6 @@ func (r *GitCommitResolver) repoRevURL() (string, error) {
 	return url, nil
 }
 
-func (r *GitCommitResolver) canonicalRepoRevURL() (string, error) {
-	return r.repoResolver.URL() + "@" + string(r.oid), nil
+func (r *GitCommitResolver) canonicalRepoRevURL() string {
+	return r.repoResolver.URL() + "@" + string(r.oid)
 }

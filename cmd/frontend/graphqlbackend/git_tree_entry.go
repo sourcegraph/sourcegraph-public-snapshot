@@ -139,10 +139,7 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 }
 
 func (r *GitTreeEntryResolver) CanonicalURL() (string, error) {
-	url, err := r.commit.canonicalRepoRevURL()
-	if err != nil {
-		return "", err
-	}
+	url := r.commit.canonicalRepoRevURL()
 	return r.urlPath(url)
 }
 
