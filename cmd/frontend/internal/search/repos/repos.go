@@ -441,7 +441,7 @@ func resolveVersionContext(versionContext string) (*schema.VersionContext, error
 // Cf. golang/go/src/regexp/syntax/parse.go.
 const regexpFlags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
 
-// ExcludedRepos s a type that counts how many repos with a certain label were
+// ExcludedRepos is a type that counts how many repos with a certain label were
 // excluded from search results.
 type ExcludedRepos struct {
 	Forks    int
