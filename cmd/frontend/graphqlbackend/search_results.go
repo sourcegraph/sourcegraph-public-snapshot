@@ -1255,8 +1255,8 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceT
 	return rts
 }
 
-func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (resolved searchrepos.Resolved, res *SearchResultsResolver, err error) {
-	resolved, err = r.resolveRepositories(ctx, nil)
+func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (searchrepos.Resolved, *SearchResultsResolver, error) {
+	resolved, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
