@@ -17,12 +17,20 @@ package protocol
 //
 type DocumentationResultEdge struct {
 	Edge
-	
-	// A "project" or "resultSet" vertex ID.
-	InV  uint64 `json:"inV"`
 
-	// The "sourcegraph:documentationResult" vertex ID.
+	// A "project" or "resultSet" vertex ID.
+	InV uint64 `json:"inV"`
+
+	// The "documentationResult" vertex ID.
 	OutV uint64 `json:"outV"`
+
+	// A string that should be used when comparing this item with other items. Useful when a
+	// "documentationResult" vertex has many children documentationResult vertices and they should
+	// have a specific ordering.
+	//
+	// If not present, the "label" "documentationString" vertex attached to the documentation
+	// result will be used as the sort text for this item.
+	SortText *string `json:"sortText,omitempty"`
 }
 
 func NewDocumentationResultEdge(id, inV, outV uint64) DocumentationResultEdge {
@@ -39,13 +47,13 @@ func NewDocumentationResultEdge(id, inV, outV uint64) DocumentationResultEdge {
 	}
 }
 
-// A "documentationResult" vertex 
+// A "documentationResult" vertex
 type DocumentationResult struct {
 	Vertex
 	Result Documentation `json:"result"`
 }
 
-// NewDocumentationResult creates a new "sourcegraph:documentationResult" vertex.
+// NewDocumentationResult creates a new "documentationResult" vertex.
 func NewDocumentationResult(id uint64, result Documentation) DocumentationResult {
 	return DocumentationResult{
 		Vertex: Vertex{
@@ -102,9 +110,9 @@ const (
 // label or detail strings, which are "documentationString" vertices.
 type DocumentationStringEdge struct {
 	Edge
-	
+
 	// The "documentationResult" vertex ID.
-	InV  uint64 `json:"inV"`
+	InV uint64 `json:"inV"`
 
 	// The "documentationString" vertex ID.
 	OutV uint64 `json:"outV"`
