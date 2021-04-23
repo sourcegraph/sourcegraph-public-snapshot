@@ -520,7 +520,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 		return r.paginatedResults(ctx)
 	}
 
-	return r.resultsWithTimeoutSuggestion(ctx)
+	return r.doResults(ctx, result.TypeEmpty)
 }
 
 // unionMerge performs a merge of file match results, merging line matches when
@@ -1007,31 +1007,6 @@ func searchResultsToRepoNodes(matches []result.Match) ([]query.Node, error) {
 	return nodes, nil
 }
 
-// resultsWithTimeoutSuggestion calls doResults, and in case of deadline
-// exceeded returns a search alert with a did-you-mean link for the same
-// query with a longer timeout.
-func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*SearchResultsResolver, error) {
-	start := time.Now()
-	rr, err := r.doResults(ctx, result.TypeEmpty)
-
-	// If we encountered a context timeout, it indicates one of the many result
-	// type searchers (file, diff, symbol, etc) completely timed out and could not
-	// produce even partial results. Other searcher types may have produced results.
-	//
-	// In this case, or if we got a partial timeout where ALL repositories timed out,
-	// we do not return partial results and instead display a timeout alert.
-	shouldShowAlert := err == context.DeadlineExceeded
-	if err == nil && rr.allReposTimedout() {
-		shouldShowAlert = true
-	}
-	if shouldShowAlert {
-		usedTime := time.Since(start)
-		suggestTime := longer(2, usedTime)
-		return alertForTimeout(usedTime, suggestTime, r).wrap(r.db), nil
-	}
-	return rr, err
-}
-
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
 // are expanded using the doExpand function.
 func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*SearchResultsResolver, error)) (query.Plan, error) {
@@ -1305,6 +1280,9 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 		if errors.As(err, &e) {
 			alert := r.alertForInvalidRevision(e.Spec)
 			return nil, alert, nil
+		}
+		if errors.Is(err, context.DeadlineExceeded) {
+			return nil, alertForTimeout(r.SearchInputs), nil
 		}
 		return nil, nil, err
 	}

@@ -79,8 +79,11 @@ func alertForQuery(queryString string, err error) *searchAlert {
 	}
 }
 
-func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searchResolver) *searchAlert {
-	q, err := query.ParseLiteral(r.rawQuery()) // Invariant: query is already validated; guard against error anyway.
+func alertForTimeout(inputs *run.SearchInputs) *searchAlert {
+	usedTime := time.Since(inputs.Start)
+	suggestTime := longer(2, usedTime)
+
+	q, err := query.ParseLiteral(inputs.OriginalQuery) // Invariant: query is already validated; guard against error anyway.
 	if err != nil {
 		return &searchAlert{
 			prometheusType: "timed_out",
@@ -96,7 +99,7 @@ func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searc
 			{
 				description: "query with longer timeout",
 				query:       fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitField(q, query.FieldTimeout)),
-				patternType: r.PatternType,
+				patternType: inputs.PatternType,
 			},
 		},
 	}
@@ -742,6 +745,10 @@ func (o *alertObserver) update(alert *searchAlert) {
 func (o *alertObserver) Done(stats *streaming.Stats) (*searchAlert, error) {
 	if !o.hasResults && o.Inputs.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.Inputs.OriginalQuery) {
 		o.update(alertForStructuralSearchNotSet(o.Inputs.OriginalQuery))
+	}
+
+	if !o.hasResults && stats.Status.All(search.RepoStatusTimedout) && stats.Status.Len() == len(stats.Repos) {
+		return alertForTimeout(o.Inputs), nil
 	}
 
 	if o.hasResults && o.err != nil {

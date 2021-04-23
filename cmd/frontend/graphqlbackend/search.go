@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -67,6 +68,8 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
+	start := time.Now()
 
 	settings := args.Settings
 	if settings == nil {
@@ -134,6 +137,7 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 			Pagination:     pagination,
 			PatternType:    searchType,
 			DefaultLimit:   defaultLimit,
+			Start:          start,
 		},
 
 		stream: args.Stream,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -28,6 +29,9 @@ type SearchInputs struct {
 
 	// DefaultLimit is the default limit to use if not specified in query.
 	DefaultLimit int
+
+	// Start is the time the search started
+	Start time.Time
 }
 
 // MaxResults computes the limit for the query.
