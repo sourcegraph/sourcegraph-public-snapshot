@@ -118,7 +118,7 @@ func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Opt
 	repositoryResolver := &searchrepos.Resolver{
 		DB:               r.db,
 		Zoekt:            r.zoekt,
-		DefaultReposFunc: backend.Repos.ListDefaultPublicAndUser,
+		DefaultReposFunc: backend.Repos.ListDefault,
 	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
