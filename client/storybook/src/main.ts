@@ -7,7 +7,8 @@ import { Configuration, DefinePlugin, ProgressPlugin, RuleSetUseItem, RuleSetUse
 
 const rootPath = path.resolve(__dirname, '../../../')
 const monacoEditorPaths = [path.resolve(rootPath, 'node_modules', 'monaco-editor')]
-const storiesGlob = path.resolve(rootPath, 'client/**/*.story.tsx')
+const storiesGlob = path.resolve(rootPath, 'client/!(storybook)/**/*.story.tsx')
+const chromaticStoriesGlob = path.resolve(rootPath, 'client/storybook/src/chromatic-story/Chromatic.story.tsx')
 
 const shouldMinify = !!process.env.MINIFY
 const isDevelopment = !shouldMinify
@@ -26,7 +27,7 @@ const getCSSLoaders = (...loaders: RuleSetUseItem[]): RuleSetUse => [
 ]
 
 const config = {
-    stories: [storiesGlob],
+    stories: [storiesGlob, chromaticStoriesGlob],
     addons: [
         '@storybook/addon-knobs',
         '@storybook/addon-actions',
