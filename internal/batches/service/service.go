@@ -30,14 +30,12 @@ type Service struct {
 	client           api.Client
 	features         batches.FeatureFlags
 	imageCache       *docker.ImageCache
-	workspace        string
 }
 
 type Opts struct {
 	AllowUnsupported bool
 	AllowIgnored     bool
 	Client           api.Client
-	Workspace        string
 }
 
 var (
@@ -50,7 +48,6 @@ func New(opts *Opts) *Service {
 		allowIgnored:     opts.AllowIgnored,
 		client:           opts.Client,
 		imageCache:       docker.NewImageCache(),
-		workspace:        opts.Workspace,
 	}
 }
 
@@ -152,27 +149,13 @@ func (svc *Service) CreateChangesetSpec(ctx context.Context, spec *batches.Chang
 	return graphql.ChangesetSpecID(result.CreateChangesetSpec.ID), nil
 }
 
-// TODO(mrnugget): This can be removed
-func (svc *Service) NewRepoFetcher(dir string, cleanArchives bool) batches.RepoFetcher {
-	return batches.NewRepoFetcher(
-		svc.client,
-		dir,
-		cleanArchives,
-	)
-}
-
-// TODO(mrnugget): This can be removed
-func (svc *Service) NewWorkspaceCreator(ctx context.Context, cacheDir, tempDir string, steps []batches.Step) workspace.Creator {
-	return workspace.NewCreator(ctx, svc.workspace, cacheDir, tempDir, steps)
-}
-
 // SetDockerImages updates the steps within the batch spec to include the exact
 // content digest to be used when running each step, and ensures that all Docker
 // images are available, including any required by the service itself.
 //
 // Progress information is reported back to the given progress function: perc
 // will be a value between 0.0 and 1.0, inclusive.
-func (svc *Service) SetDockerImages(ctx context.Context, spec *batches.BatchSpec, progress func(perc float64)) error {
+func (svc *Service) SetDockerImages(ctx context.Context, spec *batches.BatchSpec, loadWorkspaceImage bool, progress func(perc float64)) error {
 	total := len(spec.Steps) + 1
 	progress(0)
 
@@ -188,13 +171,11 @@ func (svc *Service) SetDockerImages(ctx context.Context, spec *batches.BatchSpec
 
 	// We also need to ensure we have our own utility images available, if
 	// necessary.
-
-	// TODO(mrnugget): figure out how to check for this, but load it always now
-	// if svc.workspaceCreatorType(ctx, spec.Steps) == workspaceCreatorVolume {
-	if err := svc.imageCache.Get(workspace.DockerVolumeWorkspaceImage).Ensure(ctx); err != nil {
-		return errors.Wrapf(err, "pulling image %q", workspace.DockerVolumeWorkspaceImage)
+	if loadWorkspaceImage {
+		if err := svc.imageCache.Get(workspace.DockerVolumeWorkspaceImage).Ensure(ctx); err != nil {
+			return errors.Wrapf(err, "pulling image %q", workspace.DockerVolumeWorkspaceImage)
+		}
 	}
-	// }
 
 	progress(1)
 	return nil
@@ -293,7 +274,7 @@ func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository,
 	return tasks, nil
 }
 
-func (svc *Service) ExecuteBatchSpec(ctx context.Context, opts executor.Opts, tasks []*executor.Task, spec *batches.BatchSpec, progress func([]*executor.TaskStatus), skipErrors bool) ([]*batches.ChangesetSpec, []string, error) {
+func (svc *Service) RunExecutor(ctx context.Context, opts executor.Opts, tasks []*executor.Task, spec *batches.BatchSpec, progress func([]*executor.TaskStatus), skipErrors bool) ([]*batches.ChangesetSpec, []string, error) {
 	x := executor.New(opts, svc.client, svc.features)
 	for _, t := range tasks {
 		x.AddTask(t)

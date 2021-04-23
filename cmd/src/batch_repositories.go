@@ -39,12 +39,6 @@ Examples:
 			return err
 		}
 
-		specFile, err := batchOpenFileFlag(fileFlag)
-		if err != nil {
-			return err
-		}
-		defer specFile.Close()
-
 		ctx := context.Background()
 		client := cfg.apiClient(apiFlags, flagSet.Output())
 
@@ -55,7 +49,7 @@ Examples:
 		}
 
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
-		spec, _, err := batchParseSpec(out, svc, specFile)
+		spec, _, err := batchParseSpec(out, fileFlag, svc)
 		if err != nil {
 			return err
 		}

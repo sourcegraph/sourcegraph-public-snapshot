@@ -35,16 +35,10 @@ Examples:
 			return &usageError{errors.New("additional arguments not allowed")}
 		}
 
-		specFile, err := batchOpenFileFlag(fileFlag)
-		if err != nil {
-			return err
-		}
-		defer specFile.Close()
-
 		svc := service.New(&service.Opts{})
 
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
-		if _, _, err := batchParseSpec(out, svc, specFile); err != nil {
+		if _, _, err := batchParseSpec(out, fileFlag, svc); err != nil {
 			return err
 		}
 

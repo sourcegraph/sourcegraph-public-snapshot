@@ -25,6 +25,8 @@ type dockerVolumeWorkspaceCreator struct{ tempDir string }
 
 var _ Creator = &dockerVolumeWorkspaceCreator{}
 
+func (wc *dockerVolumeWorkspaceCreator) Type() CreatorType { return CreatorTypeVolume }
+
 func (wc *dockerVolumeWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, steps []batches.Step, archive batches.RepoZip) (Workspace, error) {
 	volume, err := wc.createVolume(ctx)
 	if err != nil {

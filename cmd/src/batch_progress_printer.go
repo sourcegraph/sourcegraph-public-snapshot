@@ -359,3 +359,39 @@ func diffDisplayName(f *diff.FileDiff) string {
 	}
 	return name
 }
+
+func sumDiffStats(fileDiffs []*diff.FileDiff) diff.Stat {
+	sum := diff.Stat{}
+	for _, fileDiff := range fileDiffs {
+		stat := fileDiff.Stat()
+		sum.Added += stat.Added
+		sum.Changed += stat.Changed
+		sum.Deleted += stat.Deleted
+	}
+	return sum
+}
+
+func diffStatDescription(fileDiffs []*diff.FileDiff) string {
+	var plural string
+	if len(fileDiffs) > 1 {
+		plural = "s"
+	}
+
+	return fmt.Sprintf("%d file%s changed", len(fileDiffs), plural)
+}
+
+func diffStatDiagram(stat diff.Stat) string {
+	const maxWidth = 20
+	added := float64(stat.Added + stat.Changed)
+	deleted := float64(stat.Deleted + stat.Changed)
+	if total := added + deleted; total > maxWidth {
+		x := float64(20) / total
+		added *= x
+		deleted *= x
+	}
+	return fmt.Sprintf("%s%s%s%s%s",
+		output.StyleLinesAdded, strings.Repeat("+", int(added)),
+		output.StyleLinesDeleted, strings.Repeat("-", int(deleted)),
+		output.StyleReset,
+	)
+}

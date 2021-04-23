@@ -30,37 +30,37 @@ func TestBestWorkspaceCreator(t *testing.T) {
 	}{
 		"nil steps": {
 			images: nil,
-			want:   CreatorVolume,
+			want:   CreatorTypeVolume,
 		},
 		"no steps": {
 			images: []docker.Image{},
-			want:   CreatorVolume,
+			want:   CreatorTypeVolume,
 		},
 		"root": {
 			images: []docker.Image{
 				&mock.Image{UidGid: uidGid(0, 0)},
 			},
-			want: CreatorVolume,
+			want: CreatorTypeVolume,
 		},
 		"same user": {
 			images: []docker.Image{
 				&mock.Image{UidGid: uidGid(1000, 1000)},
 				&mock.Image{UidGid: uidGid(1000, 1000)},
 			},
-			want: CreatorVolume,
+			want: CreatorTypeVolume,
 		},
 		"different user": {
 			images: []docker.Image{
 				&mock.Image{UidGid: uidGid(1000, 1000)},
 				&mock.Image{UidGid: uidGid(0, 0)},
 			},
-			want: CreatorBind,
+			want: CreatorTypeBind,
 		},
 		"id error": {
 			images: []docker.Image{
 				&mock.Image{UidGidErr: errors.New("foo")},
 			},
-			want: CreatorBind,
+			want: CreatorTypeBind,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -75,7 +75,7 @@ func TestBestWorkspaceCreator(t *testing.T) {
 			if isOverridden {
 				// This is an overridden platform, so the workspace type will
 				// always be bind from bestWorkspaceCreator().
-				if have, want := BestCreatorType(ctx, steps), CreatorBind; have != want {
+				if have, want := BestCreatorType(ctx, steps), CreatorTypeBind; have != want {
 					t.Errorf("unexpected creator type on overridden platform: have=%d want=%d", have, want)
 				}
 			} else {

@@ -414,12 +414,14 @@ output4=integration-test-batch-change`,
 			}
 
 			repoFetcher := batches.NewRepoFetcher(client, testTempDir, false)
+
 			// execute contains the actual logic running the tasks on an
 			// executor. We'll run this multiple times to cover both the cache
 			// and non-cache code paths.
 			execute := func(t *testing.T) {
 				executor := New(opts, client, featuresAllEnabled())
 				executor.cache = cache
+				executor.fetcher = repoFetcher
 
 				for i := range tc.steps {
 					tc.steps[i].SetImage(&mock.Image{
@@ -438,7 +440,6 @@ output4=integration-test-batch-change`,
 					}
 
 					task.Steps = tc.steps
-					task.Archive = repoFetcher.Checkout(task.Repository, task.Path)
 					executor.AddTask(task)
 				}
 

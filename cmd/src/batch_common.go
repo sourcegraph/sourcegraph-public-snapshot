@@ -16,12 +16,12 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/service"
+	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 	"github.com/sourcegraph/src-cli/internal/output"
 )
 
@@ -31,7 +31,7 @@ var (
 	batchSuccessEmoji = output.EmojiSuccess
 )
 
-type batchApplyFlags struct {
+type batchExecuteFlags struct {
 	allowUnsupported bool
 	allowIgnored     bool
 	api              *api.Flags
@@ -49,8 +49,8 @@ type batchApplyFlags struct {
 	skipErrors       bool
 }
 
-func newBatchApplyFlags(flagSet *flag.FlagSet, cacheDir, tempDir string) *batchApplyFlags {
-	caf := &batchApplyFlags{
+func newBatchExecuteFlags(flagSet *flag.FlagSet, cacheDir, tempDir string) *batchExecuteFlags {
+	caf := &batchExecuteFlags{
 		api: api.NewFlags(flagSet),
 	}
 
@@ -188,59 +188,77 @@ func batchOpenFileFlag(flag *string) (io.ReadCloser, error) {
 	return file, nil
 }
 
-// batchExecute performs all the steps required to upload the campaign spec
-// to Sourcegraph, including execution as needed. The return values are the
-// spec ID, spec URL, and error.
-func batchExecute(ctx context.Context, out *output.Output, svc *service.Service, flags *batchApplyFlags) (graphql.BatchSpecID, string, error) {
+type executeBatchSpecOpts struct {
+	flags *batchExecuteFlags
+
+	applyBatchSpec bool
+
+	out    *output.Output
+	client api.Client
+}
+
+// executeBatchSpec performs all the steps required to upload the batch spec to
+// Sourcegraph, including execution as needed and applying the resulting batch
+// spec if specified.
+func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) error {
+	svc := service.New(&service.Opts{
+		AllowUnsupported: opts.flags.allowUnsupported,
+		AllowIgnored:     opts.flags.allowIgnored,
+		Client:           opts.client,
+	})
+
+	if err := svc.DetermineFeatureFlags(ctx); err != nil {
+		return err
+	}
+
 	if err := checkExecutable("git", "version"); err != nil {
-		return "", "", err
+		return err
 	}
 
 	if err := checkExecutable("docker", "version"); err != nil {
-		return "", "", err
+		return err
 	}
 
 	// Parse flags and build up our service and executor options.
-
-	specFile, err := batchOpenFileFlag(&flags.file)
+	pending := batchCreatePending(opts.out, "Parsing batch spec")
+	batchSpec, rawSpec, err := batchParseSpec(opts.out, &opts.flags.file, svc)
 	if err != nil {
-		return "", "", err
-	}
-	defer specFile.Close()
-
-	pending := batchCreatePending(out, "Parsing batch spec")
-	batchSpec, rawSpec, err := batchParseSpec(out, svc, specFile)
-	if err != nil {
-		return "", "", err
+		return err
 	}
 	batchCompletePending(pending, "Parsing batch spec")
 
-	pending = batchCreatePending(out, "Resolving namespace")
-	namespace, err := svc.ResolveNamespace(ctx, flags.namespace)
+	pending = batchCreatePending(opts.out, "Resolving namespace")
+	namespace, err := svc.ResolveNamespace(ctx, opts.flags.namespace)
 	if err != nil {
-		return "", "", err
+		return err
 	}
 	batchCompletePending(pending, "Resolving namespace")
 
-	imageProgress := out.Progress([]output.ProgressBar{{
+	pending = batchCreatePending(opts.out, "Determining workspace type")
+	workspaceCreator := workspace.NewCreator(ctx, opts.flags.workspace, opts.flags.cacheDir, opts.flags.tempDir, batchSpec.Steps)
+	pending.VerboseLine(output.Linef("🚧", output.StyleSuccess, "Workspace creator: %T", workspaceCreator))
+	batchCompletePending(pending, "Set workspace type")
+
+	loadWorkspaceImage := workspaceCreator.Type() == workspace.CreatorTypeVolume
+	imageProgress := opts.out.Progress([]output.ProgressBar{{
 		Label: "Preparing container images",
 		Max:   1.0,
 	}}, nil)
-	err = svc.SetDockerImages(ctx, batchSpec, func(perc float64) {
+	err = svc.SetDockerImages(ctx, batchSpec, loadWorkspaceImage, func(perc float64) {
 		imageProgress.SetValue(0, perc)
 	})
 	if err != nil {
-		return "", "", err
+		return err
 	}
 	imageProgress.Complete()
 
-	pending = batchCreatePending(out, "Resolving repositories")
+	pending = batchCreatePending(opts.out, "Resolving repositories")
 	repos, err := svc.ResolveRepositories(ctx, batchSpec)
 	if err != nil {
 		if repoSet, ok := err.(batches.UnsupportedRepoSet); ok {
 			batchCompletePending(pending, "Resolved repositories")
 
-			block := out.Block(output.Line(" ", output.StyleWarning, "Some repositories are hosted on unsupported code hosts and will be skipped. Use the -allow-unsupported flag to avoid skipping them."))
+			block := opts.out.Block(output.Line(" ", output.StyleWarning, "Some repositories are hosted on unsupported code hosts and will be skipped. Use the -allow-unsupported flag to avoid skipping them."))
 			for repo := range repoSet {
 				block.Write(repo.Name)
 			}
@@ -248,59 +266,49 @@ func batchExecute(ctx context.Context, out *output.Output, svc *service.Service,
 		} else if repoSet, ok := err.(batches.IgnoredRepoSet); ok {
 			batchCompletePending(pending, "Resolved repositories")
 
-			block := out.Block(output.Line(" ", output.StyleWarning, "The repositories listed below contain .batchignore files and will be skipped. Use the -force-override-ignore flag to avoid skipping them."))
+			block := opts.out.Block(output.Line(" ", output.StyleWarning, "The repositories listed below contain .batchignore files and will be skipped. Use the -force-override-ignore flag to avoid skipping them."))
 			for repo := range repoSet {
 				block.Write(repo.Name)
 			}
 			block.Close()
 		} else {
-			return "", "", errors.Wrap(err, "resolving repositories")
+			return errors.Wrap(err, "resolving repositories")
 		}
 	} else {
 		batchCompletePending(pending, fmt.Sprintf("Resolved %d repositories", len(repos)))
 	}
 
-	pending = batchCreatePending(out, "Determining workspaces")
+	pending = batchCreatePending(opts.out, "Determining workspaces")
 	tasks, err := svc.BuildTasks(ctx, repos, batchSpec)
 	if err != nil {
-		return "", "", errors.Wrap(err, "Calculating execution plan")
+		return errors.Wrap(err, "Calculating execution plan")
 	}
 	batchCompletePending(pending, fmt.Sprintf("Found %d workspaces", len(tasks)))
 
-	pending = batchCreatePending(out, "Preparing workspaces")
-	workspaceCreator := svc.NewWorkspaceCreator(ctx, flags.cacheDir, flags.tempDir, batchSpec.Steps)
-	pending.VerboseLine(output.Linef("🚧", output.StyleSuccess, "Workspace creator: %T", workspaceCreator))
-	batchCompletePending(pending, "Prepared workspaces")
-
-	fetcher := svc.NewRepoFetcher(flags.cacheDir, flags.cleanArchives)
-	for _, task := range tasks {
-		task.Archive = fetcher.Checkout(task.Repository, task.ArchivePathToFetch())
-	}
-
-	opts := executor.Opts{
-		CacheDir:    flags.cacheDir,
-		ClearCache:  flags.clearCache,
+	execOpts := executor.Opts{
+		CacheDir:    opts.flags.cacheDir,
+		ClearCache:  opts.flags.clearCache,
 		Creator:     workspaceCreator,
-		Parallelism: flags.parallelism,
-		Timeout:     flags.timeout,
-		KeepLogs:    flags.keepLogs,
-		TempDir:     flags.tempDir,
+		Parallelism: opts.flags.parallelism,
+		Timeout:     opts.flags.timeout,
+		KeepLogs:    opts.flags.keepLogs,
+		TempDir:     opts.flags.tempDir,
 	}
 
-	p := newBatchProgressPrinter(out, *verbose, flags.parallelism)
-	specs, logFiles, err := svc.ExecuteBatchSpec(ctx, opts, tasks, batchSpec, p.PrintStatuses, flags.skipErrors)
-	if err != nil && !flags.skipErrors {
-		return "", "", err
+	p := newBatchProgressPrinter(opts.out, *verbose, opts.flags.parallelism)
+	specs, logFiles, err := svc.RunExecutor(ctx, execOpts, tasks, batchSpec, p.PrintStatuses, opts.flags.skipErrors)
+	if err != nil && !opts.flags.skipErrors {
+		return err
 	}
 	p.Complete()
-	if err != nil && flags.skipErrors {
-		printExecutionError(out, err)
-		out.WriteLine(output.Line(output.EmojiWarning, output.StyleWarning, "Skipping errors because -skip-errors was used."))
+	if err != nil && opts.flags.skipErrors {
+		printExecutionError(opts.out, err)
+		opts.out.WriteLine(output.Line(output.EmojiWarning, output.StyleWarning, "Skipping errors because -skip-errors was used."))
 	}
 
-	if len(logFiles) > 0 && flags.keepLogs {
+	if len(logFiles) > 0 && opts.flags.keepLogs {
 		func() {
-			block := out.Block(output.Line("", batchSuccessColor, "Preserving log files:"))
+			block := opts.out.Block(output.Line("", batchSuccessColor, "Preserving log files:"))
 			defer block.Close()
 
 			for _, file := range logFiles {
@@ -311,7 +319,7 @@ func batchExecute(ctx context.Context, out *output.Output, svc *service.Service,
 
 	err = svc.ValidateChangesetSpecs(repos, specs)
 	if err != nil {
-		return "", "", err
+		return err
 	}
 
 	ids := make([]graphql.ChangesetSpecID, len(specs))
@@ -324,14 +332,14 @@ func batchExecute(ctx context.Context, out *output.Output, svc *service.Service,
 			label = fmt.Sprintf("Sending %d changeset specs", len(specs))
 		}
 
-		progress := out.Progress([]output.ProgressBar{
+		progress := opts.out.Progress([]output.ProgressBar{
 			{Label: label, Max: float64(len(specs))},
 		}, nil)
 
 		for i, spec := range specs {
 			id, err := svc.CreateChangesetSpec(ctx, spec)
 			if err != nil {
-				return "", "", err
+				return err
 			}
 			ids[i] = id
 			progress.SetValue(0, float64(i+1))
@@ -339,25 +347,54 @@ func batchExecute(ctx context.Context, out *output.Output, svc *service.Service,
 		progress.Complete()
 	} else {
 		if len(repos) == 0 {
-			out.WriteLine(output.Linef(output.EmojiWarning, output.StyleWarning, `No changeset specs created`))
+			opts.out.WriteLine(output.Linef(output.EmojiWarning, output.StyleWarning, `No changeset specs created`))
 		}
 	}
 
-	pending = batchCreatePending(out, "Creating batch spec on Sourcegraph")
+	pending = batchCreatePending(opts.out, "Creating batch spec on Sourcegraph")
 	id, url, err := svc.CreateBatchSpec(ctx, namespace, rawSpec, ids)
 	batchCompletePending(pending, "Creating batch spec on Sourcegraph")
 	if err != nil {
-		return "", "", prettyPrintBatchUnlicensedError(out, err)
+		return prettyPrintBatchUnlicensedError(opts.out, err)
 	}
 
-	return id, url, nil
+	if opts.applyBatchSpec {
+		pending = batchCreatePending(opts.out, "Applying batch spec")
+		batch, err := svc.ApplyBatchChange(ctx, id)
+		if err != nil {
+			return err
+		}
+		batchCompletePending(pending, "Applying batch spec")
+
+		opts.out.Write("")
+		block := opts.out.Block(output.Line(batchSuccessEmoji, batchSuccessColor, "Batch change applied!"))
+		defer block.Close()
+
+		block.Write("To view the batch change, go to:")
+		block.Writef("%s%s", cfg.Endpoint, batch.URL)
+
+	} else {
+		opts.out.Write("")
+		block := opts.out.Block(output.Line(batchSuccessEmoji, batchSuccessColor, "To preview or apply the batch spec, go to:"))
+		defer block.Close()
+
+		block.Writef("%s%s", cfg.Endpoint, url)
+	}
+
+	return nil
 }
 
 // batchParseSpec parses and validates the given batch spec. If the spec has
 // validation errors, the errors are output in a human readable form and an
 // exitCodeError is returned.
-func batchParseSpec(out *output.Output, svc *service.Service, input io.ReadCloser) (*batches.BatchSpec, string, error) {
-	spec, raw, err := svc.ParseBatchSpec(input)
+func batchParseSpec(out *output.Output, file *string, svc *service.Service) (*batches.BatchSpec, string, error) {
+	f, err := batchOpenFileFlag(file)
+	if err != nil {
+		return nil, "", err
+	}
+	defer f.Close()
+
+	spec, raw, err := svc.ParseBatchSpec(f)
 	if err != nil {
 		if merr, ok := err.(*multierror.Error); ok {
 			block := out.Block(output.Line("\u274c", output.StyleWarning, "Batch spec failed validation."))
@@ -519,42 +556,6 @@ func prettyPrintBatchUnlicensedError(out *output.Output, err error) error {
 
 	// In all other cases, we'll just return the original error.
 	return err
-}
-
-func sumDiffStats(fileDiffs []*diff.FileDiff) diff.Stat {
-	sum := diff.Stat{}
-	for _, fileDiff := range fileDiffs {
-		stat := fileDiff.Stat()
-		sum.Added += stat.Added
-		sum.Changed += stat.Changed
-		sum.Deleted += stat.Deleted
-	}
-	return sum
-}
-
-func diffStatDescription(fileDiffs []*diff.FileDiff) string {
-	var plural string
-	if len(fileDiffs) > 1 {
-		plural = "s"
-	}
-
-	return fmt.Sprintf("%d file%s changed", len(fileDiffs), plural)
-}
-
-func diffStatDiagram(stat diff.Stat) string {
-	const maxWidth = 20
-	added := float64(stat.Added + stat.Changed)
-	deleted := float64(stat.Deleted + stat.Changed)
-	if total := added + deleted; total > maxWidth {
-		x := float64(20) / total
-		added *= x
-		deleted *= x
-	}
-	return fmt.Sprintf("%s%s%s%s%s",
-		output.StyleLinesAdded, strings.Repeat("+", int(added)),
-		output.StyleLinesDeleted, strings.Repeat("-", int(deleted)),
-		output.StyleReset,
-	)
 }
 
 func checkExecutable(cmd string, args ...string) error {

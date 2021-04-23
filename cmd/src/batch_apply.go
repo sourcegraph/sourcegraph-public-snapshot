@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/sourcegraph/src-cli/internal/batches/service"
 	"github.com/sourcegraph/src-cli/internal/output"
 )
 
@@ -28,30 +27,7 @@ Examples:
 `
 
 	flagSet := flag.NewFlagSet("apply", flag.ExitOnError)
-	flags := newBatchApplyFlags(flagSet, batchDefaultCacheDir(), batchDefaultTempDirPrefix())
-
-	doApply := func(ctx context.Context, out *output.Output, svc *service.Service, flags *batchApplyFlags) error {
-		id, _, err := batchExecute(ctx, out, svc, flags)
-		if err != nil {
-			return err
-		}
-
-		pending := batchCreatePending(out, "Applying batch spec")
-		batch, err := svc.ApplyBatchChange(ctx, id)
-		if err != nil {
-			return err
-		}
-		batchCompletePending(pending, "Applying batch spec")
-
-		out.Write("")
-		block := out.Block(output.Line(batchSuccessEmoji, batchSuccessColor, "Batch change applied!"))
-		defer block.Close()
-
-		block.Write("To view the batch change, go to:")
-		block.Writef("%s%s", cfg.Endpoint, batch.URL)
-
-		return nil
-	}
+	flags := newBatchExecuteFlags(flagSet, batchDefaultCacheDir(), batchDefaultTempDirPrefix())
 
 	handler := func(args []string) error {
 		if err := flagSet.Parse(args); err != nil {
@@ -67,18 +43,14 @@ Examples:
 		ctx, cancel := contextCancelOnInterrupt(context.Background())
 		defer cancel()
 
-		svc := service.New(&service.Opts{
-			AllowUnsupported: flags.allowUnsupported,
-			AllowIgnored:     flags.allowIgnored,
-			Client:           cfg.apiClient(flags.api, flagSet.Output()),
-			Workspace:        flags.workspace,
+		err := executeBatchSpec(ctx, executeBatchSpecOpts{
+			flags:  flags,
+			out:    out,
+			client: cfg.apiClient(flags.api, flagSet.Output()),
+
+			applyBatchSpec: true,
 		})
-
-		if err := svc.DetermineFeatureFlags(ctx); err != nil {
-			return err
-		}
-
-		if err := doApply(ctx, out, svc, flags); err != nil {
+		if err != nil {
 			printExecutionError(out, err)
 			out.Write("")
 			return &exitCodeError{nil, 1}

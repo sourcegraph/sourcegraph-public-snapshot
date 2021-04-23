@@ -15,6 +15,9 @@ import (
 type Creator interface {
 	// Create creates a new workspace for the given repository and archive file.
 	Create(ctx context.Context, repo *graphql.Repository, steps []batches.Step, archive batches.RepoZip) (Workspace, error)
+
+	// Type returns the CreatorType of the Creator.
+	Type() CreatorType
 }
 
 // Workspace implementations manage per-changeset storage when executing batch
@@ -47,21 +50,21 @@ type Workspace interface {
 type CreatorType int
 
 const (
-	CreatorBind CreatorType = iota
-	CreatorVolume
+	CreatorTypeBind CreatorType = iota
+	CreatorTypeVolume
 )
 
 func NewCreator(ctx context.Context, preference, cacheDir, tempDir string, steps []batches.Step) Creator {
 	var workspaceType CreatorType
 	if preference == "volume" {
-		workspaceType = CreatorVolume
+		workspaceType = CreatorTypeVolume
 	} else if preference == "bind" {
-		workspaceType = CreatorBind
+		workspaceType = CreatorTypeBind
 	} else {
 		workspaceType = BestCreatorType(ctx, steps)
 	}
 
-	if workspaceType == CreatorVolume {
+	if workspaceType == CreatorTypeVolume {
 		return &dockerVolumeWorkspaceCreator{tempDir: tempDir}
 	}
 	return &dockerBindWorkspaceCreator{Dir: cacheDir}
@@ -81,7 +84,7 @@ func BestCreatorType(ctx context.Context, steps []batches.Step) CreatorType {
 	// For the time being, we're only going to consider volume mode on Intel
 	// macOS.
 	if runtime.GOOS != "darwin" || runtime.GOARCH != "amd64" {
-		return CreatorBind
+		return CreatorTypeBind
 	}
 
 	return detectBestCreatorType(ctx, steps)
@@ -112,15 +115,15 @@ func detectBestCreatorType(ctx context.Context, steps []batches.Step) CreatorTyp
 			// An error here likely indicates that `id` isn't available on the
 			// path. That's OK: let's not make any assumptions at this point
 			// about the image, and we'll default to the always safe option.
-			return CreatorBind
+			return CreatorTypeBind
 		}
 
 		if uid == nil {
 			uid = &ug.UID
 		} else if *uid != ug.UID {
-			return CreatorBind
+			return CreatorTypeBind
 		}
 	}
 
-	return CreatorVolume
+	return CreatorTypeVolume
 }

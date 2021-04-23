@@ -169,6 +169,8 @@ type Opts struct {
 	CacheDir   string
 	ClearCache bool
 
+	CleanArchives bool
+
 	Creator     workspace.Creator
 	Parallelism int
 	Timeout     time.Duration
@@ -186,6 +188,7 @@ type executor struct {
 	client  api.Client
 	logger  *log.Manager
 	creator workspace.Creator
+	fetcher batches.RepoFetcher
 
 	tasks      []*Task
 	statuses   map[*Task]*TaskStatus
@@ -210,6 +213,8 @@ func New(opts Opts, client api.Client, features batches.FeatureFlags) *executor 
 		logger:  log.NewManager(opts.TempDir, opts.KeepLogs),
 		creator: opts.Creator,
 
+		fetcher: batches.NewRepoFetcher(client, opts.CacheDir, opts.CleanArchives),
+
 		client:   client,
 		features: features,
 
@@ -224,6 +229,7 @@ func New(opts Opts, client api.Client, features batches.FeatureFlags) *executor 
 }
 
 func (x *executor) AddTask(task *Task) {
+	task.Archive = x.fetcher.Checkout(task.Repository, task.ArchivePathToFetch())
 	x.tasks = append(x.tasks, task)
 
 	x.statusesMu.Lock()

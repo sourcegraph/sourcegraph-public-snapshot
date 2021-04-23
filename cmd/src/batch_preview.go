@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/sourcegraph/src-cli/internal/batches/service"
 	"github.com/sourcegraph/src-cli/internal/output"
 )
 
@@ -26,7 +25,7 @@ Examples:
 `
 
 	flagSet := flag.NewFlagSet("preview", flag.ExitOnError)
-	flags := newBatchApplyFlags(flagSet, batchDefaultCacheDir(), batchDefaultTempDirPrefix())
+	flags := newBatchExecuteFlags(flagSet, batchDefaultCacheDir(), batchDefaultTempDirPrefix())
 
 	handler := func(args []string) error {
 		if err := flagSet.Parse(args); err != nil {
@@ -42,28 +41,20 @@ Examples:
 		ctx, cancel := contextCancelOnInterrupt(context.Background())
 		defer cancel()
 
-		svc := service.New(&service.Opts{
-			AllowUnsupported: flags.allowUnsupported,
-			AllowIgnored:     flags.allowIgnored,
-			Client:           cfg.apiClient(flags.api, flagSet.Output()),
-			Workspace:        flags.workspace,
+		err := executeBatchSpec(ctx, executeBatchSpecOpts{
+			flags:  flags,
+			out:    out,
+			client: cfg.apiClient(flags.api, flagSet.Output()),
+
+			// Do not apply the uploaded batch spec
+			applyBatchSpec: false,
 		})
 
-		if err := svc.DetermineFeatureFlags(ctx); err != nil {
-			return err
-		}
-
-		_, url, err := batchExecute(ctx, out, svc, flags)
 		if err != nil {
 			printExecutionError(out, err)
 			out.Write("")
 			return &exitCodeError{nil, 1}
 		}
-
-		out.Write("")
-		block := out.Block(output.Line(batchSuccessEmoji, batchSuccessColor, "To preview or apply the batch spec, go to:"))
-		defer block.Close()
-		block.Writef("%s%s", cfg.Endpoint, url)
 
 		return nil
 	}

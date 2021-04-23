@@ -24,6 +24,8 @@ type dockerBindWorkspaceCreator struct {
 
 var _ Creator = &dockerBindWorkspaceCreator{}
 
+func (wc *dockerBindWorkspaceCreator) Type() CreatorType { return CreatorTypeBind }
+
 func (wc *dockerBindWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, steps []batches.Step, archive batches.RepoZip) (Workspace, error) {
 	w, err := wc.unzipToWorkspace(ctx, repo, archive.Path())
 	if err != nil {
