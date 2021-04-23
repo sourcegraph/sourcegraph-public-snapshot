@@ -70,13 +70,17 @@ func TestCommittedAtMigrator(t *testing.T) {
 		}
 	}
 
+	if err := store.Exec(context.Background(), sqlf.Sprintf("INSERT INTO repo (id, name) VALUES (42, 'foo'), (43, 'bar')")); err != nil {
+		t.Fatalf("unexpected error inserting repo: %s", err)
+	}
+
 	for i := 0; i < n; i++ {
 		if err := store.Exec(context.Background(), sqlf.Sprintf(
 			"INSERT INTO lsif_uploads (repository_id, commit, state, indexer, num_parts, uploaded_parts) VALUES (%s, %s, 'completed', 'lsif-go', 0, '{}')",
 			42+i/(n/2), // 50% id=42, 50% id=43
 			fmt.Sprintf("%040d", i),
 		)); err != nil {
-			t.Fatalf("unexpected error inserting row: %s", err)
+			t.Fatalf("unexpected error inserting upload: %s", err)
 		}
 	}
 
@@ -169,13 +173,17 @@ func TestCommittedAtMigratorUnknownRepository(t *testing.T) {
 		}
 	}
 
+	if err := store.Exec(context.Background(), sqlf.Sprintf("INSERT INTO repo (id, name) VALUES (42, 'foo'), (43, 'bar')")); err != nil {
+		t.Fatalf("unexpected error inserting repo: %s", err)
+	}
+
 	for i := 0; i < n; i++ {
 		if err := store.Exec(context.Background(), sqlf.Sprintf(
 			"INSERT INTO lsif_uploads (repository_id, commit, state, indexer, num_parts, uploaded_parts) VALUES (%s, %s, 'completed', 'lsif-go', 0, '{}')",
 			42+i/(n/2), // 50% id=42, 50% id=43
 			fmt.Sprintf("%040d", i),
 		)); err != nil {
-			t.Fatalf("unexpected error inserting row: %s", err)
+			t.Fatalf("unexpected error inserting upload: %s", err)
 		}
 	}
 
@@ -268,13 +276,17 @@ func TestCommittedAtMigratorUnknownCommits(t *testing.T) {
 		}
 	}
 
+	if err := store.Exec(context.Background(), sqlf.Sprintf("INSERT INTO repo (id, name) VALUES (42, 'foo'), (43, 'bar')")); err != nil {
+		t.Fatalf("unexpected error inserting repo: %s", err)
+	}
+
 	for i := 0; i < n; i++ {
 		if err := store.Exec(context.Background(), sqlf.Sprintf(
 			"INSERT INTO lsif_uploads (repository_id, commit, state, indexer, num_parts, uploaded_parts) VALUES (%s, %s, 'completed', 'lsif-go', 0, '{}')",
 			42+i/(n/2), // 50% id=42, 50% id=43
 			fmt.Sprintf("%040d", i),
 		)); err != nil {
-			t.Fatalf("unexpected error inserting row: %s", err)
+			t.Fatalf("unexpected error inserting upload: %s", err)
 		}
 	}
 
