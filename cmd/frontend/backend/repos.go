@@ -183,20 +183,27 @@ func (s *repos) ListDefaultPublicAndUser(ctx context.Context) (repos []types.Rep
 		done()
 	}()
 
+	span := opentracing.SpanFromContext(ctx)
+	span.LogFields(otlog.String("ListPublic", "start"))
 	repos, err = database.GlobalDefaultRepos.ListPublic(ctx)
 	if err != nil {
+		span.LogFields(otlog.String("ListPublic", "failed"))
 		return nil, errors.Wrap(err, "listing default public repos")
 	}
+	span.LogFields(otlog.String("ListPublic", "done"))
 
 	// For authenticated users we also want to include any private repos they may have added
 	if a := actor.FromContext(ctx); a.IsAuthenticated() {
+		span.LogFields(otlog.String("ListRepoNames", "start"))
 		privateRepos, err := database.GlobalRepos.ListRepoNames(ctx, database.ReposListOptions{
 			UserID:      a.UID,
 			OnlyPrivate: true,
 		})
 		if err != nil {
+			span.LogFields(otlog.String("ListRepoNames", "failed"))
 			return nil, errors.Wrap(err, "getting user private repos")
 		}
+		span.LogFields(otlog.String("ListRepoNames", "done"))
 		repos = append(repos, privateRepos...)
 	}
 
