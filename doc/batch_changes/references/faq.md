@@ -36,5 +36,5 @@ When [executing a batch spec](../explanations/how_src_executes_a_batch_spec.md),
 Batch Changes supports any tool that can run in a container and changes file contents on disk. You can use the tool/script that works for your stack or build your own, but here is a list of [examples](https://github.com/sourcegraph/batch-change-examples) to get started.
 Common language agnostic starting points:
 
-- `sed`, `yq`, `awq` are common utilities for changing text
+- `sed`, `yq`, `awk` are common utilities for changing text
 - [comby](https://comby.dev/docs/overview) is a language-aware structural code search and replace tool. It can match expressions and function blocks, and is great for more complex changes.
