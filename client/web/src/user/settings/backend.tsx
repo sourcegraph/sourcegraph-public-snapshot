@@ -145,6 +145,7 @@ export function logEvent(event: string, eventProperties?: unknown): void {
         {
             event,
             userCookieID: eventLogger.getAnonymousUserID(),
+            firstSourceURL: eventLogger.getFirstSourceURL(),
             url: window.location.href,
             source: EventSource.WEB,
             argument: eventProperties ? JSON.stringify(eventProperties) : null,
