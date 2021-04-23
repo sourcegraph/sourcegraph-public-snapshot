@@ -290,7 +290,7 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["VAGRANT_SERVICE_ACCOUNT"] = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.27.1"
+	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.27.2"
 
 	env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(images.SourcegraphDockerImages)
 
