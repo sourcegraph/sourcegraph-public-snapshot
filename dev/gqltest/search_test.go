@@ -74,6 +74,31 @@ func TestSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	repo1, err := client.Repository("github.com/sgtest/java-langserver")
+	if err != nil {
+		t.Fatal(err)
+	}
+	repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scID, err := client.CreateSearchContext(
+		gqltestutil.CreateSearchContextInput{Name: "TestSearchContext", Public: true},
+		[]gqltestutil.SearchContextRepositoryRevisionsInput{
+			{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
+			{RepositoryID: repo2.ID, Revisions: []string{"HEAD"}},
+		})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err = client.DeleteSearchContext(scID)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
 	t.Run("graphql", func(t *testing.T) {
 		testSearchClient(t, client)
 	})
@@ -1163,6 +1188,7 @@ func testSearchOther(t *testing.T) {
 			suggestionCount int
 		}{
 			{query: `repo:sourcegraph-typescript$ type:file file:deploy`, suggestionCount: 11},
+			{query: `context:TestSearchContext repo:`, suggestionCount: 2},
 		}
 
 		for _, test := range tests {
