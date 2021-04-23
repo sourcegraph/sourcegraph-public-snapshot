@@ -87,20 +87,20 @@ func (s *DefaultRepoStore) ensureStore() {
 // The values are cached for up to defaultReposMaxAge. If the cache has expired, we return
 // stale data and start a background refresh.
 func (s *DefaultRepoStore) List(ctx context.Context) (results []types.RepoName, err error) {
-	return s.list(ctx, true)
+	return s.list(ctx, false)
 }
 
 // ListPublic is similar to List except that it only includes public repos.
 func (s *DefaultRepoStore) ListPublic(ctx context.Context) (results []types.RepoName, err error) {
-	return s.list(ctx, false)
+	return s.list(ctx, true)
 }
 
-func (s *DefaultRepoStore) list(ctx context.Context, all bool) (results []types.RepoName, err error) {
+func (s *DefaultRepoStore) list(ctx context.Context, onlyPublic bool) (results []types.RepoName, err error) {
 	s.ensureStore()
 
-	cache := &(s.cachePublicRepos)
-	if all {
-		cache = &(s.cacheAllRepos)
+	cache := &(s.cacheAllRepos)
+	if onlyPublic {
+		cache = &(s.cachePublicRepos)
 	}
 
 	cached, _ := cache.Load().(*cachedRepos)
@@ -111,7 +111,7 @@ func (s *DefaultRepoStore) list(ctx context.Context, all bool) (results []types.
 
 	// We don't have any repos yet, fetch them
 	if len(repos) == 0 {
-		return s.refreshCache(ctx, all)
+		return s.refreshCache(ctx, onlyPublic)
 	}
 
 	// We have existing repos, return the stale data and start background refresh
@@ -119,7 +119,7 @@ func (s *DefaultRepoStore) list(ctx context.Context, all bool) (results []types.
 		newCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
 
-		_, err := s.refreshCache(newCtx, all)
+		_, err := s.refreshCache(newCtx, onlyPublic)
 		if err != nil {
 			log15.Error("Refreshing default repos cache", "error", err)
 		}
@@ -127,13 +127,13 @@ func (s *DefaultRepoStore) list(ctx context.Context, all bool) (results []types.
 	return repos, nil
 }
 
-func (s *DefaultRepoStore) refreshCache(ctx context.Context, all bool) ([]types.RepoName, error) {
+func (s *DefaultRepoStore) refreshCache(ctx context.Context, onlyPublic bool) ([]types.RepoName, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	cache := &(s.cachePublicRepos)
-	if all {
-		cache = &(s.cacheAllRepos)
+	cache := &(s.cacheAllRepos)
+	if onlyPublic {
+		cache = &(s.cachePublicRepos)
 	}
 
 	// Check whether another routine already did the work
@@ -144,7 +144,7 @@ func (s *DefaultRepoStore) refreshCache(ctx context.Context, all bool) ([]types.
 	}
 
 	opts := ListDefaultReposOptions{}
-	if all {
+	if !onlyPublic {
 		opts.IncludePrivate = true
 	}
 	repos, err := ReposWith(s).ListDefaultRepos(ctx, opts)
