@@ -33,7 +33,7 @@ When [executing a batch spec](../explanations/how_src_executes_a_batch_spec.md),
 
 ### What tool can I use for changing/refactoring `<programming-language>`?
 
-Batch Change supports any tool that can run in a container and produces diffs. You can use the tool/script that works for your stack or build your own, but here is a list of [examples](https://github.com/sourcegraph/batch-change-examples) to get started.
+Batch Changes supports any tool that can run in a container and changes file contents on disk. You can use the tool/script that works for your stack or build your own, but here is a list of [examples](https://github.com/sourcegraph/batch-change-examples) to get started.
 Common language agnostic starting points:
 
 - `sed`, `yq`, `awq` are common utilities for changing text
