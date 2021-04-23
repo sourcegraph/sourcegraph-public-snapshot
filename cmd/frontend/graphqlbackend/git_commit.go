@@ -328,13 +328,13 @@ func (r *GitCommitResolver) repoRevURL() *url.URL {
 		rev = string(r.oid)
 	}
 	if rev != "" {
-		url.RawPath += "@" + escapePathForURL(rev)
+		url.Path += "@" + rev
 	}
 	return url
 }
 
 func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 	url := r.repoResolver.RepoMatch.URL()
-	url.RawPath += "@" + string(r.oid)
+	url.Path += "@" + string(r.oid)
 	return url
 }

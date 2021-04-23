@@ -151,7 +151,7 @@ func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
 		typ = "tree"
 	}
 
-	prefix.RawPath = path.Join(prefix.RawPath, "-", typ, r.Path())
+	prefix.Path = path.Join(prefix.Path, "-", typ, r.Path())
 	return prefix
 }
 
