@@ -47,10 +47,7 @@ func (r *locationResolver) URL(ctx context.Context) (string, error) {
 }
 
 func (r *locationResolver) CanonicalURL() (string, error) {
-	url, err := r.resource.CanonicalURL()
-	if err != nil {
-		return "", err
-	}
+	url := r.resource.CanonicalURL()
 	return r.urlPath(url), nil
 }
 

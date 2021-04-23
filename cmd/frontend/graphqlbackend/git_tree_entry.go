@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"net/url"
 	neturl "net/url"
 	"os"
 	"path"
@@ -132,22 +133,17 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 		return "/" + repoName + "@" + submodule.Commit(), nil
 	}
 	url := r.commit.repoRevURL()
-	return r.urlPath(url.String())
+	return r.urlPath(url).String(), nil
 }
 
-func (r *GitTreeEntryResolver) CanonicalURL() (string, error) {
+func (r *GitTreeEntryResolver) CanonicalURL() string {
 	url := r.commit.canonicalRepoRevURL()
-	return r.urlPath(url.String())
+	return r.urlPath(url).String()
 }
 
-func (r *GitTreeEntryResolver) urlPath(prefix string) (string, error) {
+func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
 	if r.IsRoot() {
-		return prefix, nil
-	}
-
-	u, err := neturl.Parse(prefix)
-	if err != nil {
-		return "", err
+		return prefix
 	}
 
 	typ := "blob"
@@ -155,8 +151,8 @@ func (r *GitTreeEntryResolver) urlPath(prefix string) (string, error) {
 		typ = "tree"
 	}
 
-	u.Path = path.Join(u.Path, "-", typ, r.Path())
-	return u.String(), nil
+	prefix.RawPath = path.Join(prefix.RawPath, "-", typ, r.Path())
+	return prefix
 }
 
 func (r *GitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
