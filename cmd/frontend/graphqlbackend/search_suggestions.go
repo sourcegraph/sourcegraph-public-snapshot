@@ -402,6 +402,12 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				case lsp.SKClass:
 					score += 3
 				}
+				repoName := strings.ToLower(string(sr.File.Repo.Name))
+				fileName := strings.ToLower(string(sr.File.Path))
+				symbolName := strings.ToLower(string(sr.Symbol.Name))
+				if len(sr.Symbol.Name) >= 4 && strings.Contains(repoName+fileName, symbolName) {
+					score++
+				}
 				results = append(results, symbolSuggestionResolver{
 					symbol: sr,
 					score:  score,
