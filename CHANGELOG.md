@@ -34,7 +34,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed an issue with our release tooling that was preventing all images from being tagged with the correct version.
-All sourcegraph images have the proper release version now.
+  All sourcegraph images have the proper release version now.
 
 ## 3.27.1
 
