@@ -40,7 +40,8 @@ const (
 	VertexImplementationResult VertexLabel = "implementationResult"
 
 	// Sourcegraph extensions
-	VertexDocumentation VertexLabel = "documentation"
+	VertexSourcegraphDocumentationResult VertexLabel = "sourcegraph:documentationResult"
+	VertexSourcegraphDocumentationString VertexLabel = "sourcegraph:documentationString"
 )
 
 type Edge struct {
@@ -69,5 +70,6 @@ const (
 	EdgeTextDocumentImplementation EdgeLabel = "textDocument/implementation"
 
 	// Sourcegraph extensions
-	EdgeDocumentation EdgeLabel = "documentation"
+	EdgeSourcegraphDocumentationResult EdgeLabel = "sourcegraph:documentationResult"
+	EdgeSourcegraphDocumentationString EdgeLabel = "sourcegraph:documentationString"
 )
