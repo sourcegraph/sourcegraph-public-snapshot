@@ -116,10 +116,9 @@ func (s symbolSuggestionResolver) Label() string {
 }
 func (s symbolSuggestionResolver) ToSymbol() (*symbolResolver, bool) { return &s.symbol, true }
 func (s symbolSuggestionResolver) Key() suggestionKey {
-	url, _ := s.symbol.CanonicalURL() // err always nil
 	return suggestionKey{
 		symbol: s.symbol.Symbol.Name + s.symbol.Symbol.Parent,
-		url:    url,
+		url:    s.symbol.CanonicalURL(),
 	}
 }
 
