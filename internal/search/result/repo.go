@@ -1,6 +1,9 @@
 package result
 
 import (
+	"net/url"
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -38,4 +41,20 @@ func (r *RepoMatch) Select(path filter.SelectPath) Match {
 	return nil
 }
 
+func (r *RepoMatch) URL() *url.URL {
+	rawPath := "/" + escapePathForURL(string(r.Name))
+	if r.Rev != "" {
+		rawPath += "@" + escapePathForURL(r.Rev)
+	}
+	return &url.URL{RawPath: rawPath}
+}
+
 func (r *RepoMatch) searchResultMarker() {}
+
+// TODO(camdencheek): put this in a proper shared place outside of graphqlbackend
+// escapePathForURL escapes path (e.g. repository name, revspec) for use in a Sourcegraph URL.
+// For niceness/readability, we do NOT escape slashes but we do escape other characters like '#'
+// that are necessary for correctness.
+func escapePathForURL(path string) string {
+	return strings.ReplaceAll(url.PathEscape(path), "%2F", "/")
+}
