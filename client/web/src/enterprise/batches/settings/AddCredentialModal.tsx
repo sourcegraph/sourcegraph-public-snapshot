@@ -9,6 +9,7 @@ import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
 
+import styles from './AddCredentialModal.module.scss'
 import { createBatchChangesCredential as _createBatchChangesCredential } from './backend'
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
 import { ModalHeader } from './ModalHeader'
@@ -147,7 +148,7 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                             <p className={classNames('mb-0 py-2', step === 'get-ssh-key' && 'text-muted')}>
                                 1. Add token
                             </p>
-                            <div className="add-credential-modal__modal-step-ruler add-credential-modal__modal-step-ruler--purple" />
+                            <div className={classNames(styles.modalStepRuler, styles.modalStepRulerPurple)} />
                         </div>
                         <div className="flex-grow-1 ml-2">
                             <p className={classNames('mb-0 py-2', step === 'add-token' && 'text-muted')}>
@@ -155,9 +156,9 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                             </p>
                             <div
                                 className={classNames(
-                                    'add-credential-modal__modal-step-ruler',
-                                    step === 'add-token' && 'add-credential-modal__modal-step-ruler--gray',
-                                    step === 'get-ssh-key' && 'add-credential-modal__modal-step-ruler--blue'
+                                    styles.modalStepRuler,
+                                    step === 'add-token' && styles.modalStepRulerGray,
+                                    step === 'get-ssh-key' && styles.modalStepRulerBlue
                                 )}
                             />
                         </div>

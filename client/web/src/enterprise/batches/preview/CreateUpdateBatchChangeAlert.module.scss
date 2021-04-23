@@ -1,0 +1,13 @@
+@import 'branded/src/global-styles/breakpoints';
+
+@include media-breakpoint-down(sm) {
+    .badge,
+    .copy {
+        // Need to overwrite .m-0.
+        margin-bottom: 1rem !important;
+    }
+    .btn {
+        display: flex;
+        justify-content: flex-end;
+    }
+}
