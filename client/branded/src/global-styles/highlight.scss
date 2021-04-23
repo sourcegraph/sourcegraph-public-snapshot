@@ -1,5 +1,8 @@
 // stylelint-disable selector-max-compound-selectors, selector-class-pattern
 
+// NOTE: This file contains highlighting styles for both client-side highlighted code (hljs-)
+// and server-side highlighted code (hl-).
+
 .hljs {
     display: block;
     overflow-x: auto;
@@ -77,6 +80,8 @@
         background: rgba(255, 0, 0, 0.2);
     }
 
+	// Theme-light styles for syntect-highlighted code start here
+
     // These colors are my description of them.
     // They don't match up with other defined colors.
     --hl-yellow: #b58900;
@@ -111,16 +116,19 @@
             color: var(--hl-gray-0);
         }
 
-        // String constants
+        /* String constants */
+		// contents
         .hl-string {
             color: var(--hl-cyan);
-        } // contents
+        }
+		// surrounding quotes
         .hl-punctuation.hl-definition.hl-string {
             color: var(--hl-gray-1);
-        } // surrounding quotes
+        }
+		// escape sequences
         .hl-constant.hl-character.hl-escape {
             color: var(--hl-red);
-        } // escape sequences
+        }
 
         // Other constants
         .hl-constant {
@@ -146,15 +154,18 @@
         .hl-variable {
             color: var(--hl-blue);
         }
+		// function calls, etc.
         .hl-variable.hl-function {
             color: var(--hl-yellow);
-        } // function calls, etc.
+        }
+		// reserved variables like this or self
         .hl-variable.hl-language {
             color: var(--hl-pink);
-        } // reserved variables like this or self
+        }
+		// punctuation in variable definitions like $ in shell
         .hl-punctuation.hl-definition.hl-variable {
             color: var(--hl-green);
-        } // punctuation in variable definitions like $ in shell
+        }
 
         // Keywords and storage
         .hl-keyword.hl-operator {
@@ -179,12 +190,14 @@
         .hl-storage {
             color: var(--hl-green);
         }
+		// const, public, inline
         .hl-storage.hl-modifier {
             color: var(--hl-gray-4);
-        } // const, public, inline
+        }
+		// int, bool, char
         .hl-storage.hl-type {
             color: var(--hl-blue);
-        } // int, bool, char
+        }
 
         // Entities
         .hl-entity.hl-name {
@@ -214,9 +227,10 @@
         .hl-support.hl-class {
             color: var(--hl-green);
         }
+		// color constants #ababab
         .hl-support.hl-constant.hl-color {
             color: var(--hl-yellow);
-        } // color constants #ababab
+        }
 
         // Braces
         .hl-punctuation.hl-section.hl-braces {
@@ -240,12 +254,14 @@
         }
 
         // Other
+		// line continuation \
         .hl-punctuation.hl-separator.hl-continuation {
             color: var(--hl-red);
-        } // line continuation \
+        }
+		// tag delimiters <>
         .hl-punctuation.hl-definition.hl-tag {
             color: var(--hl-gray-2);
-        } // tag delimiters <>
+        }
         .hl-invalid {
             background: var(--hl-bg-red);
         }
@@ -285,9 +301,10 @@
                 &.hl-pseudo-class {
                     color: var(--hl-blue);
                 }
+				// :hover
                 &.hl-pseudo-element {
                     color: var(--hl-blue);
-                } // :hover
+                }
             }
         }
 
@@ -312,22 +329,23 @@
             }
         }
 
+		// c\2b\2b is escaped c++
         .hl-source.hl-c,
         .hl-source.hl-c\2b\2b {
-            // escaped c++
             .hl-entity.hl-name.hl-function.hl-preprocessor {
                 color: var(--hl-orange);
             }
             .hl-meta.hl-preprocessor.hl-macro {
                 color: var(--hl-orange);
             }
+			// include <> and ""
             .hl-meta.hl-preprocessor.hl-include .hl-punctuation.hl-definition.hl-string {
                 color: var(--hl-cyan);
-            } // include <> and ""
+            }
         }
 
+		// c\2b\2b is escaped c++
         .hl-source.hl-c\2b\2b {
-            // escaped c++
             .hl-storage.hl-modifier {
                 color: var(--hl-green);
             }
@@ -370,18 +388,21 @@
             .hl-support.hl-function.hl-be {
                 color: var(--hl-green);
             }
+			// \subsection
             .hl-support.hl-function.hl-section {
                 color: var(--hl-orange);
-            } // \subsection
+            }
             .hl-support.hl-function.hl-general {
                 color: var(--hl-cyan);
             }
+			// \label
             .hl-storage.hl-type.hl-label {
                 color: var(--hl-cyan);
-            } // \label
+            }
+			// \ref
             .hl-keyword.hl-other.hl-reference {
                 color: var(--hl-cyan);
-            } // \ref
+            }
         }
 
         .hl-source.hl-python {
@@ -400,9 +421,10 @@
         }
 
         .hl-source.hl-shell {
+			// the #* in "${1#*=}"
             .hl-keyword.hl-operator.hl-expansion {
                 color: var(--hl-green);
-            } // the #* in "${1#*=}"
+            }
         }
 
         .hl-source.hl-perl {
@@ -545,6 +567,8 @@
         color: #fecccc;
     }
 
+	// Theme-dark styles for syntect-highlighted code start here
+
     --hl-gray-0: #bdd4e3;
     --hl-gray-1: #8fa1b3;
     --hl-gray-2: #c0c5ce;
@@ -636,12 +660,14 @@
         .hl-constant.hl-other.hl-symbol {
             color: var(--hl-red);
         }
+		// regexp literals
         .hl-string.hl-regexp {
             color: var(--hl-gray-5);
-        } // regexp literals
+        }
+		// escape sequences
         .hl-constant.hl-character.hl-escape {
             color: var(--hl-gray-5);
-        } // escape sequences
+        }
 
         // Constants
         .hl-constant {
@@ -692,16 +718,19 @@
             color: var(--hl-green-2);
         }
 
-        // Links
+		/* Links */
+		// link text
         .hl-string.hl-other.hl-link {
             color: var(--hl-dark-red);
-        } // link text
+        }
+		// link URL
         .hl-meta.hl-link {
             color: var(--hl-orange);
-        } // link URL
+        }
+		// image URL
         .hl-meta.hl-image {
             color: var(--hl-orange);
-        } // image URL
+        }
 
         // Lists
         .hl-markup.hl-list {
