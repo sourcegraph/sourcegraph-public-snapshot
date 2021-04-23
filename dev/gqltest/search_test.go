@@ -1094,6 +1094,16 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:  `repo:go-diff patterntype:literal type:symbol HunkNoChunksize select:symbol`,
 				counts: counts{Symbol: 1},
 			},
+			{
+				name:   `select diffs with added lines containing pattern`,
+				query:  `repo:go-diff patterntype:literal type:diff select:commit.diff.added sample_binary_inline`,
+				counts: counts{Commit: 1},
+			},
+			{
+				name:   `select diffs with removed lines containing pattern`,
+				query:  `repo:go-diff patterntype:literal type:diff select:commit.diff.removed sample_binary_inline`,
+				counts: counts{Commit: 0},
+			},
 		}
 
 		for _, test := range tests {
