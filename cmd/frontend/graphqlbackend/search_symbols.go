@@ -181,27 +181,28 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 
 	// All symbols are from the same repo, so we can just partition them by path
 	// to build fileMatches
-	symbolMatchesByPath := make(map[string][]*result.SymbolMatch)
+	symbolsByPath := make(map[string][]*result.Symbol)
 	for _, symbol := range symbols {
-		symbolMatch := &result.SymbolMatch{
-			Symbol: symbol,
-		}
-
-		cur := symbolMatchesByPath[symbol.Path]
-		symbolMatchesByPath[symbol.Path] = append(cur, symbolMatch)
+		cur := symbolsByPath[symbol.Path]
+		symbolsByPath[symbol.Path] = append(cur, &symbol)
 	}
 
 	// Create file matches from partitioned symbols
-	fileMatches := make([]result.FileMatch, 0, len(symbolMatchesByPath))
-	for path, symbolMatches := range symbolMatchesByPath {
+	fileMatches := make([]result.FileMatch, 0, len(symbolsByPath))
+	for path, symbols := range symbolsByPath {
 		file := result.File{
 			Path:     path,
 			Repo:     repoRevs.Repo,
 			CommitID: commitID,
 			InputRev: &inputRev,
 		}
-		for _, match := range symbolMatches {
-			match.File = &file
+
+		symbolMatches := make([]*result.SymbolMatch, 0, len(symbols))
+		for _, symbol := range symbols {
+			symbolMatches = append(symbolMatches, &result.SymbolMatch{
+				File:   &file,
+				Symbol: *symbol,
+			})
 		}
 
 		fileMatches = append(fileMatches, result.FileMatch{
