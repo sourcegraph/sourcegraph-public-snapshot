@@ -51,6 +51,10 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 		defer save()
 
 		secret := "secret"
+		token := os.Getenv("GITHUB_TOKEN")
+		if token == "" {
+			token = "no-GITHUB_TOKEN-set"
+		}
 		repoStore := database.Repos(db)
 		esStore := database.ExternalServices(db)
 		extSvc := &types.ExternalService{
@@ -58,7 +62,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			DisplayName: "GitHub",
 			Config: ct.MarshalJSON(t, &schema.GitHubConnection{
 				Url:      "https://github.com",
-				Token:    os.Getenv("GITHUB_TOKEN"),
+				Token:    token,
 				Repos:    []string{"sourcegraph/sourcegraph"},
 				Webhooks: []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
 			}),
