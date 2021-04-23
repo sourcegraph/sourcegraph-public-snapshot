@@ -31,7 +31,7 @@ func (r *randomizeUserPasswordResult) ResetPasswordURL(ctx context.Context) (*st
 	return &urlStr, nil
 }
 
-func (*schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct {
+func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct {
 	User graphql.ID
 }) (*randomizeUserPasswordResult, error) {
 	// 🚨 SECURITY: Only site admins can randomize user passwords.
@@ -44,7 +44,7 @@ func (*schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := database.GlobalUsers.RandomizePasswordAndClearPasswordResetRateLimit(ctx, userID); err != nil {
+	if err := database.Users(r.db).RandomizePasswordAndClearPasswordResetRateLimit(ctx, userID); err != nil {
 		return nil, err
 	}
 
