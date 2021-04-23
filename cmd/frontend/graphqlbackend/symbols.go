@@ -222,17 +222,20 @@ func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *strin
 		return nil, err
 	}
 
-	matches := make([]*result.SymbolMatch, 0, len(symbols))
-	for _, symbol := range symbols {
-		file := &result.File{
-			Path:     symbol.Path,
+	fileWithPath := func(path string) *result.File {
+		return &result.File{
+			Path:     path,
 			Repo:     commit.repoResolver.RepoMatch.RepoName(),
 			InputRev: commit.inputRev,
 			CommitID: api.CommitID(commit.oid),
 		}
+	}
+
+	matches := make([]*result.SymbolMatch, 0, len(symbols))
+	for _, symbol := range symbols {
 		matches = append(matches, &result.SymbolMatch{
 			Symbol: symbol,
-			File:   file,
+			File:   fileWithPath(symbol.Path),
 		})
 	}
 	return matches, err
