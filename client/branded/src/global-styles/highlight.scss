@@ -80,7 +80,7 @@
         background: rgba(255, 0, 0, 0.2);
     }
 
-	// Theme-light styles for syntect-highlighted code start here
+    // Theme-light styles for syntect-highlighted code start here
 
     // These colors are my description of them.
     // They don't match up with other defined colors.
@@ -117,15 +117,15 @@
         }
 
         /* String constants */
-		// contents
+        // contents
         .hl-string {
             color: var(--hl-cyan);
         }
-		// surrounding quotes
+        // surrounding quotes
         .hl-punctuation.hl-definition.hl-string {
             color: var(--hl-gray-1);
         }
-		// escape sequences
+        // escape sequences
         .hl-constant.hl-character.hl-escape {
             color: var(--hl-red);
         }
@@ -154,15 +154,15 @@
         .hl-variable {
             color: var(--hl-blue);
         }
-		// function calls, etc.
+        // function calls, etc.
         .hl-variable.hl-function {
             color: var(--hl-yellow);
         }
-		// reserved variables like this or self
+        // reserved variables like this or self
         .hl-variable.hl-language {
             color: var(--hl-pink);
         }
-		// punctuation in variable definitions like $ in shell
+        // punctuation in variable definitions like $ in shell
         .hl-punctuation.hl-definition.hl-variable {
             color: var(--hl-green);
         }
@@ -190,11 +190,11 @@
         .hl-storage {
             color: var(--hl-green);
         }
-		// const, public, inline
+        // const, public, inline
         .hl-storage.hl-modifier {
             color: var(--hl-gray-4);
         }
-		// int, bool, char
+        // int, bool, char
         .hl-storage.hl-type {
             color: var(--hl-blue);
         }
@@ -227,7 +227,7 @@
         .hl-support.hl-class {
             color: var(--hl-green);
         }
-		// color constants #ababab
+        // color constants #ababab
         .hl-support.hl-constant.hl-color {
             color: var(--hl-yellow);
         }
@@ -254,11 +254,11 @@
         }
 
         // Other
-		// line continuation \
+        // line continuation \
         .hl-punctuation.hl-separator.hl-continuation {
             color: var(--hl-red);
         }
-		// tag delimiters <>
+        // tag delimiters <>
         .hl-punctuation.hl-definition.hl-tag {
             color: var(--hl-gray-2);
         }
@@ -301,7 +301,7 @@
                 &.hl-pseudo-class {
                     color: var(--hl-blue);
                 }
-				// :hover
+                // :hover
                 &.hl-pseudo-element {
                     color: var(--hl-blue);
                 }
@@ -329,7 +329,7 @@
             }
         }
 
-		// c\2b\2b is escaped c++
+        // c\2b\2b is escaped c++
         .hl-source.hl-c,
         .hl-source.hl-c\2b\2b {
             .hl-entity.hl-name.hl-function.hl-preprocessor {
@@ -338,13 +338,13 @@
             .hl-meta.hl-preprocessor.hl-macro {
                 color: var(--hl-orange);
             }
-			// include <> and ""
+            // include <> and ""
             .hl-meta.hl-preprocessor.hl-include .hl-punctuation.hl-definition.hl-string {
                 color: var(--hl-cyan);
             }
         }
 
-		// c\2b\2b is escaped c++
+        // c\2b\2b is escaped c++
         .hl-source.hl-c\2b\2b {
             .hl-storage.hl-modifier {
                 color: var(--hl-green);
@@ -388,18 +388,18 @@
             .hl-support.hl-function.hl-be {
                 color: var(--hl-green);
             }
-			// \subsection
+            // \subsection
             .hl-support.hl-function.hl-section {
                 color: var(--hl-orange);
             }
             .hl-support.hl-function.hl-general {
                 color: var(--hl-cyan);
             }
-			// \label
+            // \label
             .hl-storage.hl-type.hl-label {
                 color: var(--hl-cyan);
             }
-			// \ref
+            // \ref
             .hl-keyword.hl-other.hl-reference {
                 color: var(--hl-cyan);
             }
@@ -421,7 +421,7 @@
         }
 
         .hl-source.hl-shell {
-			// the #* in "${1#*=}"
+            // the #* in "${1#*=}"
             .hl-keyword.hl-operator.hl-expansion {
                 color: var(--hl-green);
             }
@@ -567,7 +567,7 @@
         color: #fecccc;
     }
 
-	// Theme-dark styles for syntect-highlighted code start here
+    // Theme-dark styles for syntect-highlighted code start here
 
     --hl-gray-0: #bdd4e3;
     --hl-gray-1: #8fa1b3;
@@ -660,11 +660,11 @@
         .hl-constant.hl-other.hl-symbol {
             color: var(--hl-red);
         }
-		// regexp literals
+        // regexp literals
         .hl-string.hl-regexp {
             color: var(--hl-gray-5);
         }
-		// escape sequences
+        // escape sequences
         .hl-constant.hl-character.hl-escape {
             color: var(--hl-gray-5);
         }
@@ -718,16 +718,16 @@
             color: var(--hl-green-2);
         }
 
-		/* Links */
-		// link text
+        /* Links */
+        // link text
         .hl-string.hl-other.hl-link {
             color: var(--hl-dark-red);
         }
-		// link URL
+        // link URL
         .hl-meta.hl-link {
             color: var(--hl-orange);
         }
-		// image URL
+        // image URL
         .hl-meta.hl-image {
             color: var(--hl-orange);
         }
