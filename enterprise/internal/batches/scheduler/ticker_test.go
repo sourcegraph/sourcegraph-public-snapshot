@@ -47,6 +47,10 @@ func TestTickerGoBrrr(t *testing.T) {
 
 	// Finally, let's stop the ticker and make sure that the channel is closed.
 	ticker.stop()
+	// Also read from the now-closed `done` to synchronize, since closing a
+	// channel is non-blocking.
+	<-ticker.done
+	// Now make sure that the channel is closed.
 	if c := <-ticker.C; c != nil {
 		t.Errorf("unexpected non-nil channel: %v", c)
 	}
@@ -76,8 +80,12 @@ func TestTickerRateLimited(t *testing.T) {
 	}
 	c <- time.Duration(0)
 
-	// Finally, let's stop the ticker and make sure that the channel is closed.
+	// Finally, let's stop the ticker
 	ticker.stop()
+	// Also read from the now-closed `done` to synchronize, since closing a
+	// channel is non-blocking.
+	<-ticker.done
+	// Now make sure that the channel is closed.
 	if c := <-ticker.C; c != nil {
 		t.Errorf("unexpected non-nil channel: %v", c)
 	}
