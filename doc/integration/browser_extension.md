@@ -2,7 +2,7 @@
 
 The [open-source](https://github.com/sourcegraph/sourcegraph/tree/main/client/browser) Sourcegraph
 browser extension adds code intelligence to files and diffs on GitHub, GitHub
-Enterprise, GitLab, Phabricator, and Bitbucket Server.
+Enterprise, GitLab, Phabricator, Gerrit, and Bitbucket Server.
 
 <p>
   <a target="_blank" href="https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack" style="display:flex;align-items:center">
