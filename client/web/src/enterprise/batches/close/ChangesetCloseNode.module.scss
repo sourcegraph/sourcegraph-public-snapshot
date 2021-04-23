@@ -1,4 +1,6 @@
-.changeset-node {
+@import 'branded/src/global-styles/breakpoints';
+
+.changeset-close-node {
     &__separator {
         // Make it full width in the current row.
         grid-column: 1 / -1;

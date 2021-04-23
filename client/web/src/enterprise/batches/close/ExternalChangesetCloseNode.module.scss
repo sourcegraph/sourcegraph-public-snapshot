@@ -1,3 +1,5 @@
+@import 'branded/src/global-styles/breakpoints';
+
 .external-changeset-close-node {
     &__statuses {
         @include media-breakpoint-down(xs) {
@@ -31,7 +33,7 @@
         }
     }
     &__expanded-section {
-        background-color: rgba($oc-blue-0, 0.5);
+        background-color: rgba(var(--oc-blue-0), 0.5);
         // Make it full width in the current row.
         grid-column: 2 / -1;
     }

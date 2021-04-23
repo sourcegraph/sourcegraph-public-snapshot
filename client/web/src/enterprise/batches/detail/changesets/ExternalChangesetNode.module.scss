@@ -1,3 +1,5 @@
+@import 'branded/src/global-styles/breakpoints';
+
 .external-changeset-node {
     &__statuses {
         @include media-breakpoint-down(xs) {
@@ -10,7 +12,7 @@
         }
     }
     &__bg-expanded {
-        background-color: rgba($oc-blue-0, 0.5);
+        background-color: rgba(var(--oc-blue-0), 0.5);
     }
     &__expanded-section {
         // Make it full width in the current row.

@@ -1,4 +1,6 @@
-.empty-preview-list-element {
+@import 'branded/src/global-styles/breakpoints';
+
+.close-changesets-list-empty-element {
     &__body {
         @include media-breakpoint-down(xs) {
             padding: 0 !important;
