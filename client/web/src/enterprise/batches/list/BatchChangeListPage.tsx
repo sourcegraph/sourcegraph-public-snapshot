@@ -26,6 +26,7 @@ import {
     queryBatchChanges as _queryBatchChanges,
     queryBatchChangesByNamespace,
 } from './backend'
+import styles from './BatchChangeListPage.module.scss'
 import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
 import { BatchChangesListEmpty } from './BatchChangesListEmpty'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
@@ -143,7 +144,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                     noun="batch change"
                     pluralNoun="batch changes"
                     listComponent="div"
-                    listClassName="batch-change-list-page__grid mb-3"
+                    listClassName={classNames(styles.grid, 'mb-3')}
                     className="mb-3"
                     cursorPaging={true}
                     noSummaryIfAllNodesVisible={true}
