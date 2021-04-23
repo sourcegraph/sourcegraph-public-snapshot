@@ -42,10 +42,6 @@ export const settingsAreaRepositoryFragment = gql`
                 displayName
             }
         }
-        permissionsInfo {
-            syncedAt
-            updatedAt
-        }
     }
 `
 
