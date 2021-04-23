@@ -1,6 +1,6 @@
+const path = require('path')
 const shelljs = require('shelljs')
 const signale = require('signale')
-const path = require('path')
 
 /**
  * Purpose of this script: create a source code zip that can be used shared and
