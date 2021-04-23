@@ -132,12 +132,12 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 		return "/" + repoName + "@" + submodule.Commit(), nil
 	}
 	url := r.commit.repoRevURL()
-	return r.urlPath(url)
+	return r.urlPath(url.String())
 }
 
 func (r *GitTreeEntryResolver) CanonicalURL() (string, error) {
 	url := r.commit.canonicalRepoRevURL()
-	return r.urlPath(url)
+	return r.urlPath(url.String())
 }
 
 func (r *GitTreeEntryResolver) urlPath(prefix string) (string, error) {
