@@ -251,3 +251,8 @@ replace (
 	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 	golang.org/x/oauth2 => github.com/sourcegraph/oauth2 v0.0.0-20201011192344-605770292164
 )
+
+replace (
+	github.com/sourcegraph/go-ctags => ../go-ctags
+	github.com/sourcegraph/zoekt => ../zoekt
+)
