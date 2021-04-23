@@ -80,15 +80,15 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		// Client integration tests
 
-		// TODO: Disabled because of https://github.com/sourcegraph/sourcegraph/issues/20359
+		// TODO: Fix flakiness: https://github.com/sourcegraph/sourcegraph/issues/20359
 		pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests",
+			bk.AutomaticRetry(5),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
 			bk.Env("ENTERPRISE", "1"),
 			bk.Env("PERCY_ON", "true"),
 			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-web"),
 			bk.Cmd("yarn --cwd client/shared run download-puppeteer-browser"),
 			bk.Cmd("yarn percy exec -- yarn run cover-integration"),
-			bk.AutomaticRetry(5),
 			bk.Cmd("yarn nyc report -r json"),
 			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
