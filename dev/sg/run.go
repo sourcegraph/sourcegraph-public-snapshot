@@ -13,8 +13,8 @@ import (
 	"github.com/rjeczalik/notify"
 
 	// TODO - deduplicate me
-	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 func run(ctx context.Context, cmds ...Command) error {
