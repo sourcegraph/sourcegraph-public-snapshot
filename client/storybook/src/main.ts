@@ -7,7 +7,13 @@ import { Configuration, DefinePlugin, ProgressPlugin, RuleSetUseItem, RuleSetUse
 
 const rootPath = path.resolve(__dirname, '../../../')
 const monacoEditorPaths = [path.resolve(rootPath, 'node_modules', 'monaco-editor')]
-const storiesGlob = path.resolve(rootPath, 'client/**/*.story.tsx')
+// Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
+// we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
+// is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
+const directoriesWithStories = ['branded', 'browser', 'shared', 'web', 'wildcard']
+const storiesGlobs = directoriesWithStories.map(packageDirectory =>
+    path.resolve(rootPath, `client/${packageDirectory}/src/**/*.story.tsx`)
+)
 
 const shouldMinify = !!process.env.MINIFY
 const isDevelopment = !shouldMinify
@@ -26,7 +32,7 @@ const getCSSLoaders = (...loaders: RuleSetUseItem[]): RuleSetUse => [
 ]
 
 const config = {
-    stories: [storiesGlob],
+    stories: storiesGlobs,
     addons: [
         '@storybook/addon-knobs',
         '@storybook/addon-actions',
