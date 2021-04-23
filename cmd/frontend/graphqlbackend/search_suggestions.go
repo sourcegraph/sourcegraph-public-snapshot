@@ -403,8 +403,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 					score += 3
 				}
 				repoName := strings.ToLower(string(sr.File.Repo.Name))
-				fileName := strings.ToLower(string(sr.File.Path))
-				symbolName := strings.ToLower(string(sr.Symbol.Name))
+				fileName := strings.ToLower(sr.File.Path)
+				symbolName := strings.ToLower(sr.Symbol.Name)
 				if len(sr.Symbol.Name) >= 4 && strings.Contains(repoName+fileName, symbolName) {
 					score++
 				}
