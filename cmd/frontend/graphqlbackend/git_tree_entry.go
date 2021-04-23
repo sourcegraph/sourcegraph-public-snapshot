@@ -131,10 +131,7 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 		}
 		return "/" + repoName + "@" + submodule.Commit(), nil
 	}
-	url, err := r.commit.repoRevURL()
-	if err != nil {
-		return "", err
-	}
+	url := r.commit.repoRevURL()
 	return r.urlPath(url)
 }
 
