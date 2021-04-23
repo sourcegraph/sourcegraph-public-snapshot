@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
-	"path"
 	"regexp/syntax"
 	"strings"
 	"time"
@@ -287,21 +286,12 @@ func (r symbolResolver) Kind() string /* enum SymbolKind */ {
 func (r symbolResolver) Language() string { return r.Symbol.Language }
 
 func (r symbolResolver) Location() *locationResolver {
-	stat := CreateFileInfo(cleanPath(r.Symbol.Path), false)
+	stat := CreateFileInfo(r.Symbol.Path, false)
 	sr := symbolRange(r.Symbol)
 	return &locationResolver{
 		resource: NewGitTreeEntryResolver(r.commit, r.db, stat),
 		lspRange: &sr,
 	}
-}
-
-func cleanPath(p string) string {
-	p = path.Clean(p)
-	p = strings.TrimPrefix(p, "/")
-	if p == "." {
-		p = ""
-	}
-	return p
 }
 
 func (r symbolResolver) URL(ctx context.Context) (string, error) { return r.Location().URL(ctx) }
