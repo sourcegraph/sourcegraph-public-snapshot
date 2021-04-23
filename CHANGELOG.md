@@ -23,7 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Timing out on some branches but getting results on others will no longer give an alert that all repos timed out. [#20319](https://github.com/sourcegraph/sourcegraph/issues/20319)
 
 ### Removed
 
