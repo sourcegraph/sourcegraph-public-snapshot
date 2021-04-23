@@ -10613,9 +10613,9 @@ fast-glob@^2.2.6:
     micromatch "^3.1.10"
 
 fast-glob@^3.1.1, fast-glob@^3.2.4:
-  version "3.2.4"
-  resolved "https://registry.npmjs.org/fast-glob/-/fast-glob-3.2.4.tgz#d20aefbf99579383e7f3cc66529158c9b98554d3"
-  integrity sha512-kr/Oo6PX51265qeuCYsyGypiO5uJFgBS0jksyG7FUeCyQzNwYnzrNIMR1NXfkZXsMYXYLRAHgISHBz8gQcxKHQ==
+  version "3.2.5"
+  resolved "https://registry.npmjs.org/fast-glob/-/fast-glob-3.2.5.tgz#7939af2a656de79a4f1901903ee8adcaa7cb9661"
+  integrity sha512-2DtFcgT68wiTTiwZ2hNdJfcHNke9XOfnwmBRWXhmeKM8rF0TGwmC/Qto3S7RoZKp5cilZbxzO5iTNTQsJ+EeDg==
   dependencies:
     "@nodelib/fs.stat" "^2.0.2"
     "@nodelib/fs.walk" "^1.2.3"
@@ -21558,9 +21558,9 @@ tsconfig-paths@^3.9.0:
     strip-bom "^3.0.0"
 
 tslib@^1.0.0, tslib@^1.10.0, tslib@^1.11.1, tslib@^1.11.2, tslib@^1.8.1, tslib@^1.9.0, tslib@^1.9.3:
-  version "1.13.0"
-  resolved "https://registry.npmjs.org/tslib/-/tslib-1.13.0.tgz#c881e13cc7015894ed914862d276436fa9a47043"
-  integrity sha512-i/6DQjL8Xf3be4K/E6Wgpekn5Qasl1usyw++dAA35Ue5orEn65VIxOA+YvNNl9HV3qv70T7CNwjODHZrLwvd1Q==
+  version "1.14.1"
+  resolved "https://registry.npmjs.org/tslib/-/tslib-1.14.1.tgz#cf2d38bdc34a134bcaf1091c41f6619e2f672d00"
+  integrity sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==
 
 tslib@^2, tslib@^2.0.0, tslib@^2.0.1, tslib@^2.0.3, tslib@~2.0.0, tslib@~2.0.1:
   version "2.0.3"

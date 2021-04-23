@@ -1,4 +1,4 @@
-version: 1
+version: 2
 snapshot:
   widths:
     - 960 # Half-width browser window (e.g. docked to the side next to an editor)
