@@ -15,15 +15,26 @@ Known limitations:
 - Manipulating (commenting, notifying users, etc) changesets at that scale can be clumsy. This is a major area of work for future releases.
 
 ### My batch change does not open changesets on all the repositories it should. Why?
-
 - Do you have enough permissions? Batch Changes will error on the repositories you don’t have access to. See [Repository permissions for Batch Changes](../explanations/permissions_in_batch_changes.md).
-
 - Does your `repositoriesMatchingQuery` contain all the necessary flags? If you copied the query from the sourcegraph UI, note that some flags are represented as buttons (case sensitivity, regex, structural search), and do not appear in the query unless the experimental [`copyQueryButton`](https://github.com/sourcegraph/sourcegraph/pull/18317) feature toggle is enabled.
 
 ### Can I create tickets or issues along with Batch Changes?
 Batch Changes does not support a declarative syntax for issues or tickets.
-However, [steps](../references/batch_spec_yaml_reference.md#steps-run) can be used to run any container. Some users have built scripts ([example](https://github.com/sourcegraph/campaign-examples/tree/master/jira-tickets)) to create tickets at each apply.
-<!---TODO update link-->
+However, [steps](../references/batch_spec_yaml_reference.md#steps-run) can be used to run any container. Some users have built scripts to create tickets at each apply:
+
+- [Jira tickets](https://github.com/sourcegraph/campaign-examples/tree/master/jira-tickets)
+- [GitHub issues](https://github.com/sourcegraph/batch-change-examples/tree/main/github-issues)
 
 ### What happens to the preview page if the batch spec is not applied?
 Unapplied batch specs are removed from the database after 7 days.
+
+### Can I pull containers from private container registries in a batch change?
+When [executing a batch spec](../explanations/how_src_executes_a_batch_spec.md), `src` will pull from the current container registry. If you are logged into a private container registry, it will pull from it.
+
+### What tool can I use for changing/refactoring `<programming-language>`?
+
+Batch Change supports any tool that can run in a container and produces diffs. You can use the tool/script that works for your stack or build your own, but here is a list of [examples](https://github.com/sourcegraph/batch-change-examples) to get started.
+Common language agnostic starting points:
+
+- `sed`, `yq`, `awq` are common utilities for changing text
+- [comby](https://comby.dev/docs/overview) is a language-aware structural code search and replace tool. It can match expressions and function blocks, and is great for more complex changes.
