@@ -685,7 +685,7 @@ describe('Search', () => {
                 }),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:%40test+test&patternType=regexp', {
-                waitUntil: 'networkidle2',
+                waitUntil: 'networkidle0',
             })
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@test')
@@ -704,7 +704,7 @@ describe('Search', () => {
         test('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
             await driver.page.goto(
                 driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp',
-                { waitUntil: 'networkidle2' }
+                { waitUntil: 'networkidle0' }
             )
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             await driver.page.waitForSelector('#monaco-query-input')
@@ -736,7 +736,7 @@ describe('Search', () => {
             await driver.page.evaluate(() => localStorage.setItem('sg-last-search-context', 'doesnotexist'))
             // Visit the page again with localStorage initialized
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
-                waitUntil: 'networkidle2',
+                waitUntil: 'networkidle0',
             })
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')

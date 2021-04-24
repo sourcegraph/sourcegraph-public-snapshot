@@ -1255,32 +1255,35 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceT
 	return rts
 }
 
-func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (resolved searchrepos.Resolved, res *SearchResultsResolver, err error) {
-	resolved, err = r.resolveRepositories(ctx, nil)
+// determineRepos wraps resolveRepositories. It interprets the response and
+// error to see if an alert needs to be returned. Only one of the return
+// values will be non-nil.
+func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (*searchrepos.Resolved, *searchAlert, error) {
+	resolved, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
 			alert := alertForStalePermissions()
-			return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert}, nil
+			return nil, alert, nil
 		}
 		e := git.BadCommitError{}
 		if errors.As(err, &e) {
 			alert := r.alertForInvalidRevision(e.Spec)
-			return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert}, nil
+			return nil, alert, nil
 		}
-		return searchrepos.Resolved{}, nil, err
+		return nil, nil, err
 	}
 
 	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
 	if len(resolved.RepoRevs) == 0 {
 		alert := r.alertForNoResolvedRepos(ctx)
-		return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert}, nil
+		return nil, alert, nil
 	}
 	if resolved.OverLimit {
 		alert := r.alertForOverRepoLimit(ctx)
-		return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert}, nil
+		return nil, alert, nil
 	}
-	return resolved, nil, nil
+	return &resolved, nil, nil
 }
 
 type DiffCommitError struct {
@@ -1635,7 +1638,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		return nil, err
 	}
 	if alertResult != nil {
-		return alertResult, nil
+		return &SearchResultsResolver{db: r.db, alert: alertResult}, nil
 	}
 	if len(resolved.MissingRepoRevs) > 0 {
 		agg.error(ctx, &missingRepoRevsError{Missing: resolved.MissingRepoRevs})

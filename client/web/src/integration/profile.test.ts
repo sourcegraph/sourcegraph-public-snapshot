@@ -41,7 +41,6 @@ describe('User profile page', () => {
             createdAt: '2020-04-10T21:11:42Z',
             emails: [{ email: 'test@example.com', verified: true }],
             organizations: { nodes: [] },
-            permissionsInfo: null,
             tags: [],
         }
         testContext.overrideGraphQL({
