@@ -3,6 +3,8 @@ import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import { sortBy, uniq, uniqueId } from 'lodash'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
@@ -34,8 +36,6 @@ import { TelemetryProps } from '../telemetry/telemetryService'
 import { memoizeObservable } from '../util/memoizeObservable'
 
 import { EmptyCommandList } from './EmptyCommandList'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 
 /**
  * Customizable CSS classes for elements of the the command list button.
@@ -43,7 +43,7 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 export interface CommandListPopoverButtonClassProps {
     /** The class name for the root button element of {@link CommandListPopoverButton}. */
     buttonClassName?: string
-    buttonElement?: 'span' | 'a'
+    buttonElement?: 'span' | 'a' | 'button'
     buttonOpenClassName?: string
 
     showCaret?: boolean

@@ -23,14 +23,7 @@ import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggl
 import { WebCommandListPopoverButton } from '@sourcegraph/web/src/components/shared'
 import { FeedbackPrompt } from '@sourcegraph/web/src/nav/Feedback/FeedbackPrompt'
 import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNavItem'
-import {
-    NavGroup,
-    NavItem,
-    NavBar,
-    NavLink,
-    NavActions,
-    NavAction,
-} from '@sourcegraph/wildcard/src/components/NavBar/NavBar'
+import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard/src/components/NavBar'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesIconNav } from '../batches/icons'

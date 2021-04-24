@@ -130,9 +130,11 @@ exports[`UserNavItem simple 1`] = `
                               id="target-user-avatar"
                             />
                           </UserAvatar>
-                          <Memo(MenuDownIcon)
-                            className="icon-inline"
-                          />
+                          <MenuDropdownIcon>
+                            <Memo(MenuDownIcon)
+                              className="icon-inline"
+                            />
+                          </MenuDropdownIcon>
                         </div>
                       </div>
                     </a>
