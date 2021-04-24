@@ -10,7 +10,6 @@ import navActionStyles from './NavAction.module.scss'
 import navBarStyles from './NavBar.module.scss'
 import navItemStyles from './NavItem.module.scss'
 
-const styles = { ...navBarStyles, ...navItemStyles, ...navActionStyles }
 interface NavBarProps {
     children: React.ReactNode
     logo: React.ReactNode
@@ -34,11 +33,11 @@ interface NavLinkProps extends NavItemProps, Pick<LinkProps<H.LocationState>, 't
 }
 
 export const NavBar = ({ children, logo }: NavBarProps): JSX.Element => (
-    <nav aria-label="Main Menu" className={styles.navbar}>
-        <h1 className={styles.logo}>
+    <nav aria-label="Main Menu" className={navBarStyles.navbar}>
+        <h1 className={navBarStyles.logo}>
             <RouterLink to="/search">{logo}</RouterLink>
         </h1>
-        <hr className={styles.divider} />
+        <hr className={navBarStyles.divider} />
         {children}
     </nav>
 )
@@ -49,7 +48,7 @@ export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
     return (
         <>
             <button
-                className={classNames('btn', styles.menuButton)}
+                className={classNames('btn', navBarStyles.menuButton)}
                 type="button"
                 onClick={() => setOpen(!open)}
                 aria-label="Sections Navigation"
@@ -57,19 +56,19 @@ export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
                 <MenuIcon className="icon-inline" />
                 {open ? <ChevronDownIcon className="icon-inline" /> : <ChevronUpIcon className="icon-inline" />}
             </button>
-            <ul className={classNames(styles.list, { [styles.menuClose]: open })}>{children}</ul>
+            <ul className={classNames(navBarStyles.list, { [navBarStyles.menuClose]: open })}>{children}</ul>
         </>
     )
 }
 
 export const NavActions: React.FunctionComponent<NavActionsProps> = ({ children }) => (
-    <ul className={styles.actions}>{children}</ul>
+    <ul className={navActionStyles.actions}>{children}</ul>
 )
 
 export const NavAction: React.FunctionComponent<NavActionsProps> = ({ children }) => (
     <>
         {React.Children.map(children, action => (
-            <li className={styles.action}>{action}</li>
+            <li className={navActionStyles.action}>{action}</li>
         ))}
     </>
 )
@@ -82,7 +81,7 @@ export const NavItem: React.FunctionComponent<NavItemProps> = ({ children, icon 
     return (
         <>
             {React.Children.map(children, child => (
-                <li className={styles.item}>{React.cloneElement(child as React.ReactElement, { icon })}</li>
+                <li className={navItemStyles.item}>{React.cloneElement(child as React.ReactElement, { icon })}</li>
             ))}
         </>
     )
@@ -90,20 +89,24 @@ export const NavItem: React.FunctionComponent<NavItemProps> = ({ children, icon 
 
 export const NavLink: React.FunctionComponent<NavLinkProps> = ({ icon: Icon, children, to, external }) => {
     const content = (
-        <span className={styles.linkContent}>
-            {Icon ? <Icon className={classNames('icon-inline', styles.icon)} /> : null}
-            <span className={classNames(styles.text, styles.focusVisible, { [styles.iconIncluded]: Icon })}>
+        <span className={navItemStyles.linkContent}>
+            {Icon ? <Icon className={classNames('icon-inline', navItemStyles.icon)} /> : null}
+            <span
+                className={classNames(navItemStyles.text, navItemStyles.focusVisible, {
+                    [navItemStyles.iconIncluded]: Icon,
+                })}
+            >
                 {children}
             </span>
         </span>
     )
 
     return external ? (
-        <a href={to as string} className={styles.link}>
+        <a href={to as string} className={navItemStyles.link}>
             {content}
         </a>
     ) : (
-        <RouterLink to={to} className={styles.link} activeClassName={styles.active}>
+        <RouterLink to={to} className={navItemStyles.link} activeClassName={navItemStyles.active}>
             {content}
         </RouterLink>
     )

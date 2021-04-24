@@ -9,7 +9,7 @@ interface Props {
     user: {
         avatarURL: string | null
         displayName?: string
-        username: string
+        username?: string
     }
     className?: string
     ['data-tooltip']?: string
@@ -55,7 +55,7 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
     }
 
     if (isRedesignEnabled) {
-        const name = user?.displayName || user.username
+        const name = user.displayName || user.username || ''
         const [firstName, lastName] = name.split(' ').map((name: string) => name.split('')[0])
 
         return (

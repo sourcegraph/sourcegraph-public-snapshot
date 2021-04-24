@@ -62,9 +62,9 @@
 
 .active {
     border-bottom: 2px solid var(--brand-secondary);
-    margin-bottom: -1px;
+    margin-bottom: -0.0625rem;
     .link-content {
-        margin-bottom: -2px;
+        margin-bottom: -0.125rem;
     }
 }
 
