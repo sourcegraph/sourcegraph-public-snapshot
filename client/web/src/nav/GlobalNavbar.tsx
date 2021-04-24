@@ -19,6 +19,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 import { WebCommandListPopoverButton } from '@sourcegraph/web/src/components/shared'
 import { FeedbackPrompt } from '@sourcegraph/web/src/nav/Feedback/FeedbackPrompt'
 import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNavItem'
@@ -187,6 +188,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         props.showSearchContext,
     ])
 
+    const [isRedesignEnabled] = useRedesignToggle()
+
     const logo = (
         <LinkOrSpan to={authRequired ? undefined : '/search'} className="global-navbar__logo-link">
             <BrandLogo
@@ -208,166 +211,166 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         />
     )
 
-    return (
-        <>
-            <NavBar
-                logo={
-                    <BrandLogo
-                        branding={branding}
-                        isLightTheme={isLightTheme}
-                        variant="symbol"
-                        className="global-navbar__logo"
-                    />
-                }
-            >
-                <NavGroup collapse={true}>
-                    <NavItem icon={MagnifyIcon}>
-                        <NavLink to="/search">Code Search</NavLink>
-                    </NavItem>
-                    <NavItem icon={CodeMonitoringLogo}>
-                        <NavLink to="/code-monitoring">Monitoring</NavLink>
-                    </NavItem>
-                    <NavItem icon={BatchChangesIconNav}>
-                        <NavLink to="/batch-changes">Batch Changes</NavLink>
-                    </NavItem>
-                    <NavItem icon={BarChartIcon}>
-                        <NavLink to="/insights">Insights</NavLink>
-                    </NavItem>
-                    <NavItem icon={PuzzleOutlineIcon}>
-                        <NavLink to="/extensions">Extensions</NavLink>
-                    </NavItem>
-                    {!props.authenticatedUser && (
-                        <>
+    return isRedesignEnabled ? (
+        <NavBar
+            logo={
+                <BrandLogo
+                    branding={branding}
+                    isLightTheme={isLightTheme}
+                    variant="symbol"
+                    className="global-navbar__logo"
+                />
+            }
+        >
+            <NavGroup>
+                <NavItem icon={MagnifyIcon}>
+                    <NavLink to="/search">Code Search</NavLink>
+                </NavItem>
+                <NavItem icon={CodeMonitoringLogo}>
+                    <NavLink to="/code-monitoring">Monitoring</NavLink>
+                </NavItem>
+                <NavItem icon={BatchChangesIconNav}>
+                    <NavLink to="/batch-changes">Batch Changes</NavLink>
+                </NavItem>
+                <NavItem icon={BarChartIcon}>
+                    <NavLink to="/insights">Insights</NavLink>
+                </NavItem>
+                <NavItem icon={PuzzleOutlineIcon}>
+                    <NavLink to="/extensions">Extensions</NavLink>
+                </NavItem>
+                {!props.authenticatedUser && (
+                    <>
+                        {showDotComMarketing && (
                             <NavItem>
                                 <NavLink to="/help">Docs</NavLink>
                             </NavItem>
-                            <NavItem>
-                                <NavLink to="https://about.sourcegraph.com" external={true}>
-                                    About
-                                </NavLink>
-                            </NavItem>
-                        </>
-                    )}
-                </NavGroup>
-                <NavActions>
-                    {props.authenticatedUser && (
-                        <NavAction>
-                            <FeedbackPrompt history={history} routes={props.routes} />
-                        </NavAction>
-                    )}
-                    <NavAction>
-                        <WebCommandListPopoverButton
-                            {...props}
-                            location={location}
-                            buttonClassName="nav-link btn btn-link"
-                            menu={ContributableMenu.CommandPalette}
-                            keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
-                        />
-                    </NavAction>
-                    {props.authenticatedUser &&
-                        (window.context?.externalServicesUserModeEnabled ||
-                            props.authenticatedUser?.siteAdmin ||
-                            props.authenticatedUser?.tags?.some(
-                                tag =>
-                                    tag === 'AllowUserExternalServicePublic' ||
-                                    tag === 'AllowUserExternalServicePrivate'
-                            )) && (
-                            <NavAction>
-                                <StatusMessagesNavItem
-                                    isSiteAdmin={props.authenticatedUser?.siteAdmin || false}
-                                    history={history}
-                                />
-                            </NavAction>
                         )}
-                    {!props.authenticatedUser ? (
-                        <>
-                            <NavAction>
-                                <Link className="btn btn-sm btn-outline-secondary" to="/sign-in">
-                                    Log in
-                                </Link>
-                            </NavAction>
-                            <NavAction>
-                                <Link className="btn btn-sm btn-outline-secondary global-navbar__sign-up" to="/sign-up">
-                                    Sign up
-                                </Link>
-                            </NavAction>
-                        </>
-                    ) : (
+
+                        <NavItem>
+                            <NavLink to="https://about.sourcegraph.com" external={true}>
+                                About
+                            </NavLink>
+                        </NavItem>
+                    </>
+                )}
+            </NavGroup>
+            <NavActions>
+                {props.authenticatedUser && (
+                    <NavAction>
+                        <FeedbackPrompt history={history} routes={props.routes} />
+                    </NavAction>
+                )}
+                <NavAction>
+                    <WebCommandListPopoverButton
+                        {...props}
+                        location={location}
+                        buttonClassName="nav-link btn btn-link"
+                        menu={ContributableMenu.CommandPalette}
+                        keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
+                    />
+                </NavAction>
+                {props.authenticatedUser &&
+                    (window.context?.externalServicesUserModeEnabled ||
+                        props.authenticatedUser?.siteAdmin ||
+                        props.authenticatedUser?.tags?.some(
+                            tag => tag === 'AllowUserExternalServicePublic' || tag === 'AllowUserExternalServicePrivate'
+                        )) && (
                         <NavAction>
-                            <UserNavItem
-                                {...props}
-                                location={location}
-                                isLightTheme={isLightTheme}
-                                authenticatedUser={props.authenticatedUser}
-                                showDotComMarketing={showDotComMarketing}
-                                codeHostIntegrationMessaging={
-                                    (!isErrorLike(props.settingsCascade.final) &&
-                                        props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
-                                    'browser-extension'
-                                }
-                                keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
+                            <StatusMessagesNavItem
+                                isSiteAdmin={props.authenticatedUser?.siteAdmin || false}
+                                history={history}
                             />
                         </NavAction>
                     )}
-                </NavActions>
-            </NavBar>
-            <div
-                className={`global-navbar ${
-                    variant === 'low-profile' || variant === 'low-profile-with-logo'
-                        ? ''
-                        : 'global-navbar--bg border-bottom'
-                } py-1`}
-            >
-                {variant === 'low-profile' || variant === 'low-profile-with-logo' ? (
+                {!props.authenticatedUser ? (
                     <>
-                        {variant === 'low-profile-with-logo' && logo}
-                        <div className="flex-1" />
-                        {navLinks}
-                    </>
-                ) : variant === 'no-search-input' ? (
-                    <>
-                        {logo}
-                        <div className="nav-item flex-1">
-                            <Link to="/search" className="nav-link">
-                                Search
+                        <NavAction>
+                            <Link className="btn btn-sm btn-outline-secondary" to="/sign-in">
+                                Log in
                             </Link>
-                        </div>
-                        {navLinks}
+                        </NavAction>
+                        <NavAction>
+                            <Link className="btn btn-sm btn-outline-secondary global-navbar__sign-up" to="/sign-up">
+                                Sign up
+                            </Link>
+                        </NavAction>
                     </>
                 ) : (
-                    <>
-                        {logo}
-                        {authRequired ? (
-                            <div className="flex-1" />
-                        ) : (
-                            <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
-                                <VersionContextDropdown
-                                    history={history}
-                                    navbarSearchQuery={navbarSearchQueryState.query}
-                                    caseSensitive={caseSensitive}
-                                    patternType={patternType}
-                                    versionContext={versionContext}
-                                    setVersionContext={setVersionContext}
-                                    availableVersionContexts={availableVersionContexts}
-                                    selectedSearchContextSpec={props.selectedSearchContextSpec}
-                                />
-                                <SearchNavbarItem
-                                    {...props}
-                                    navbarSearchState={navbarSearchQueryState}
-                                    onChange={onNavbarQueryChange}
-                                    location={location}
-                                    history={history}
-                                    versionContext={versionContext}
-                                    isLightTheme={isLightTheme}
-                                    patternType={patternType}
-                                    caseSensitive={caseSensitive}
-                                />
-                            </div>
-                        )}
-                        {navLinks}
-                    </>
+                    <NavAction>
+                        <UserNavItem
+                            {...props}
+                            location={location}
+                            isLightTheme={isLightTheme}
+                            authenticatedUser={props.authenticatedUser}
+                            showDotComMarketing={showDotComMarketing}
+                            codeHostIntegrationMessaging={
+                                (!isErrorLike(props.settingsCascade.final) &&
+                                    props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
+                                'browser-extension'
+                            }
+                            keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
+                        />
+                    </NavAction>
                 )}
-            </div>
-        </>
+            </NavActions>
+        </NavBar>
+    ) : (
+        <div
+            className={`global-navbar ${
+                variant === 'low-profile' || variant === 'low-profile-with-logo'
+                    ? ''
+                    : 'global-navbar--bg border-bottom'
+            } py-1`}
+        >
+            {variant === 'low-profile' || variant === 'low-profile-with-logo' ? (
+                <>
+                    {variant === 'low-profile-with-logo' && logo}
+                    <div className="flex-1" />
+                    {navLinks}
+                </>
+            ) : variant === 'no-search-input' ? (
+                <>
+                    {logo}
+                    <div className="nav-item flex-1">
+                        <Link to="/search" className="nav-link">
+                            Search
+                        </Link>
+                    </div>
+                    {navLinks}
+                </>
+            ) : (
+                <>
+                    {logo}
+                    {authRequired ? (
+                        <div className="flex-1" />
+                    ) : (
+                        <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
+                            <VersionContextDropdown
+                                history={history}
+                                navbarSearchQuery={navbarSearchQueryState.query}
+                                caseSensitive={caseSensitive}
+                                patternType={patternType}
+                                versionContext={versionContext}
+                                setVersionContext={setVersionContext}
+                                availableVersionContexts={availableVersionContexts}
+                                selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            />
+                            <SearchNavbarItem
+                                {...props}
+                                navbarSearchState={navbarSearchQueryState}
+                                onChange={onNavbarQueryChange}
+                                location={location}
+                                history={history}
+                                versionContext={versionContext}
+                                isLightTheme={isLightTheme}
+                                patternType={patternType}
+                                caseSensitive={caseSensitive}
+                            />
+                        </div>
+                    )}
+                    {navLinks}
+                </>
+            )}
+        </div>
     )
 }

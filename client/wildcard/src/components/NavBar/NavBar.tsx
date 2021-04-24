@@ -1,6 +1,9 @@
 import classNames from 'classnames'
 import H from 'history'
-import React from 'react'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
+import MenuIcon from 'mdi-react/MenuIcon'
+import React, { useState } from 'react'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
 import navActionStyles from './NavAction.module.scss'
@@ -15,15 +18,14 @@ interface NavBarProps {
 
 interface NavGroupProps {
     children: React.ReactNode
-    collapse?: boolean
 }
 
 interface NavItemProps {
-    icon?: React.ReactNode
+    icon?: React.ComponentType<{ className?: string }>
     children: React.ReactNode
 }
 
-interface NavActions {
+interface NavActionsProps {
     children: React.ReactNode
 }
 
@@ -41,26 +43,55 @@ export const NavBar = ({ children, logo }: NavBarProps): JSX.Element => (
     </nav>
 )
 
-export const NavGroup = ({ children, collapse }: NavGroupProps): JSX.Element => (
-    <ul className={styles.list}>{children}</ul>
+export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
+    const [open, setOpen] = useState(true)
+
+    return (
+        <>
+            <button
+                className={classNames('btn', styles.menuButton)}
+                type="button"
+                onClick={() => setOpen(!open)}
+                aria-label="Sections Navigation"
+            >
+                <MenuIcon className="icon-inline" />
+                {open ? <ChevronDownIcon className="icon-inline" /> : <ChevronUpIcon className="icon-inline" />}
+            </button>
+            <ul className={classNames(styles.list, { [styles.menuClose]: open })}>{children}</ul>
+        </>
+    )
+}
+
+export const NavActions: React.FunctionComponent<NavActionsProps> = ({ children }) => (
+    <ul className={styles.actions}>{children}</ul>
 )
 
-export const NavActions = ({ children }: NavActions): JSX.Element => <ul className={styles.actions}>{children}</ul>
-export const NavAction = ({ children }: NavActions): JSX.Element =>
-    React.Children.map(children, action => <li className={styles.action}>{action}</li>)
+export const NavAction: React.FunctionComponent<NavActionsProps> = ({ children }) => (
+    <>
+        {React.Children.map(children, action => (
+            <li className={styles.action}>{action}</li>
+        ))}
+    </>
+)
 
-export const NavItem = ({ children, icon }: NavItemProps): JSX.Element => {
+export const NavItem: React.FunctionComponent<NavItemProps> = ({ children, icon }) => {
     if (!children) {
         throw new Error('NavItem must be include at least one child')
     }
 
-    return React.Children.map(children, child => <li className={styles.item}>{React.cloneElement(child, { icon })}</li>)
+    return (
+        <>
+            {React.Children.map(children, child => (
+                <li className={styles.item}>{React.cloneElement(child as React.ReactElement, { icon })}</li>
+            ))}
+        </>
+    )
 }
 
-export const NavLink = ({ icon: Icon, children, to, external }: NavLinkProps): JSX.Element => {
+export const NavLink: React.FunctionComponent<NavLinkProps> = ({ icon: Icon, children, to, external }) => {
     const content = (
         <span className={styles.linkContent}>
-            {Icon && <Icon className={classNames('icon-inline', styles.icon)} />}
+            {Icon ? <Icon className={classNames('icon-inline', styles.icon)} /> : null}
             <span className={classNames(styles.text, styles.focusVisible, { [styles.iconIncluded]: Icon })}>
                 {children}
             </span>

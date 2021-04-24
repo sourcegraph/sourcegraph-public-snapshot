@@ -2,10 +2,14 @@ import classNames from 'classnames'
 import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
 import React from 'react'
 
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+
 interface Props {
     size?: number
     user: {
         avatarURL: string | null
+        displayName?: string
+        username: string
     }
     className?: string
     ['data-tooltip']?: string
@@ -25,6 +29,8 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
     children,
     ...otherProps
 }) => {
+    const [isRedesignEnabled] = useRedesignToggle()
+
     if (user?.avatarURL) {
         let url = user.avatarURL
         try {
@@ -38,7 +44,7 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
         }
         return (
             <img
-                className={classNames('user-avatar', className)}
+                className={classNames(isRedesignEnabled ? 'user-avatar-refresh' : 'user-avatar', className)}
                 src={url}
                 id={targetID}
                 alt=""
@@ -47,5 +53,18 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
             />
         )
     }
+
+    if (isRedesignEnabled) {
+        const name = user?.displayName || user.username
+        const [firstName, lastName] = name.split(' ').map((name: string) => name.split('')[0])
+
+        return (
+            <div className={classNames('user-avatar-refresh__placeholder', className)}>
+                {firstName}
+                {lastName}
+            </div>
+        )
+    }
+
     return <AccountCircleIcon className={classNames('user-avatar', className)} id={targetID} {...otherProps} />
 }
