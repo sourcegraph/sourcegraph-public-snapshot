@@ -19,6 +19,14 @@
         }
     }
 
+    &__lines {
+        path {
+            @media (forced-colors: active) {
+                stroke: canvastext;
+            }
+        }
+    }
+
     &__axis-line {
         stroke: var(--border-color);
         stroke-width: 1;
@@ -84,6 +92,10 @@
         &--active {
             stroke-width: 3;
         }
+
+        @media (forced-colors: active) {
+            stroke: currentColor;
+        }
     }
 
     &__legend {
@@ -105,6 +117,10 @@
         height: 0.75rem;
         margin-right: 0.25rem;
         border-radius: 50%;
+
+        @media (forced-colors: active) {
+            background-color: canvastext !important;
+        }
     }
 
     /*

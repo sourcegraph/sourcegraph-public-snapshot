@@ -132,6 +132,7 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
                 margin={[12, 12]}
                 onResizeStart={onResizeOrDragStart}
                 onDragStart={onResizeOrDragStart}
+                useCSSTransforms={false}
             >
                 {props.views.map(({ id, view, source }) => (
                     <div key={id} className={classNames('card insights-view-grid__item')}>

@@ -26,6 +26,10 @@ img.icon-inline,
     height: $icon-inline-size;
     // Match color of the text
     fill: currentColor;
+
+    // In forced colors (high contrast) mode, currentColor does not reflect adjusted colors by default.
+    // For inline icons, we want it to reflect the text color, so it should be adjusted.
+    forced-color-adjust: auto;
 }
 
 // Special case for the loader

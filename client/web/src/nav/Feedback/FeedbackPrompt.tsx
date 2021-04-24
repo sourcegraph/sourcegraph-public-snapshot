@@ -172,7 +172,7 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, history, 
                 tag="button"
                 caret={false}
                 className="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle"
-                nav={true}
+                nav={false}
                 aria-label="Feedback"
             >
                 <MessageDrawIcon className="d-lg-none icon-inline" />

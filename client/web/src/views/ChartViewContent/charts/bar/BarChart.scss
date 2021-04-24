@@ -1,8 +1,19 @@
 .bar-chart {
     position: relative;
 
-    &__bar--with-link {
-        cursor: pointer;
+    &__bar {
+        @media (forced-colors: active) {
+            fill: canvas;
+            stroke: currentColor;
+        }
+
+        &--with-link {
+            cursor: pointer;
+            @media (forced-colors: active) {
+                fill: buttonface;
+                color: linktext; // TODO remove when we use actual <a> tags so it inherits automatically through currentColor.
+            }
+        }
     }
 
     &__grid {

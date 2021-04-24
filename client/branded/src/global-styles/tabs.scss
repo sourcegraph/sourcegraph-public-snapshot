@@ -11,6 +11,7 @@
 }
 
 [data-reach-tab] {
+    forced-color-adjust: none;
     text-transform: uppercase;
     font-size: 0.75rem;
     letter-spacing: 1px;
@@ -25,6 +26,11 @@
     &[data-selected] {
         color: var(--body-color);
         border-bottom: 3px solid var(--primary);
+        @media (forced-colors: active) {
+            background: highlight;
+            color: highlighttext;
+            border-bottom: 3px solid var(--border-color);
+        }
     }
 }
 

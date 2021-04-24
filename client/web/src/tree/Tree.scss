@@ -18,23 +18,45 @@
     &__row {
         color: var(--body-color);
         width: 100%;
+
         &:hover {
             background-color: var(--color-bg-3);
+            @media (forced-colors: active) {
+                text-decoration: underline;
+            }
         }
 
         &--selected {
             background-color: var(--color-bg-3);
             cursor: pointer;
+            forced-color-adjust: none;
 
             &:hover {
                 background-color: var(--color-bg-3);
+            }
+
+            @media (forced-colors: active) {
+                outline: 2px solid highlight; // TODO remove this when selected is represented by proper focus
+                background-color: canvas;
             }
         }
 
         &--active {
             width: 100%;
-            background-color: var(--primary) !important;
-            color: $white !important;
+            background-color: var(--primary);
+            color: $white;
+            forced-color-adjust: none;
+            &,
+            a {
+                @media (forced-colors: active) {
+                    background-color: highlight;
+                    color: highlighttext;
+                    &:hover {
+                        background-color: highlight;
+                        color: highlighttext;
+                    }
+                }
+            }
         }
     }
 
@@ -53,11 +75,14 @@
 
     &__row-contents {
         display: flex;
-        color: inherit;
         align-items: center;
         padding-top: 0.25rem;
         padding-bottom: 0.25rem;
         cursor: pointer;
+
+        @media not all and (forced-colors: active) {
+            color: inherit;
+        }
 
         &-new {
             justify-content: space-between;
@@ -72,11 +97,9 @@
 
     &__row-label {
         margin-left: 0.25rem;
-        color: inherit;
-    }
-
-    a {
-        color: inherit !important;
+        @media not all and (forced-colors: active) {
+            color: inherit;
+        }
     }
 }
 

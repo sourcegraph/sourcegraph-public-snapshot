@@ -3,6 +3,9 @@ import Pie, { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
 import React, { ReactElement, useMemo, useState } from 'react'
 import { PieChartContent } from 'sourcegraph'
 
+import { observeMediaQuery } from '@sourcegraph/shared/src/util/mediaQuery'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { MaybeLink } from '../MaybeLink'
 
 import { PieArc } from './components/PieArc'
@@ -65,6 +68,9 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
         [sortedData, dataKey]
     )
 
+    const forcedColorsIsActive = useObservable(useMemo(() => observeMediaQuery('(forced-colors: active)'), []))
+    console.log(forcedColorsIsActive ? 0 : 3)
+
     // Potential problem, we use title/name of pie arc as key, that's not 100% unique value
     // TODO change this we will have id for each pie
     // Because of nature of PieChartProps<D> we have to cast fields from datum
@@ -89,7 +95,7 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
                     data={sortedData}
                     pieValue={getValue}
                     outerRadius={radius}
-                    cornerRadius={3}
+                    cornerRadius={forcedColorsIsActive ? 0 : 3}
                     pieSort={null}
                     pieSortValues={null}
                     padRadius={40}

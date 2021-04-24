@@ -157,6 +157,19 @@ $text-muted: var(--text-muted);
     --disabled-action-bg-color: #{$oc-gray-8};
     --disabled-action-text-color: #{$oc-gray-9};
 }
+@media (forced-colors: active) {
+    :root,
+    .theme-dark,
+    .theme-light {
+        --body-bg: canvas;
+        --body-color: canvastext;
+        --mark-bg: mark;
+        --border-color: canvastext;
+        --border-color-2: canvastext;
+        --text-muted: canvastext;
+        --link-color: linktext;
+    }
+}
 
 // Load redesign styles
 @import './colors-redesign';

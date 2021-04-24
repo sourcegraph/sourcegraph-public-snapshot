@@ -1,20 +1,32 @@
 .pie-chart {
+    forced-color-adjust: auto;
+
     // Arcs
     &__arc {
         stroke: var(--body-bg);
-    }
 
-    &__arc--with-link {
-        cursor: pointer;
+        &--with-link {
+            cursor: pointer;
+
+            @media (forced-colors: active) {
+                color: linktext; // TODO remove when we use actual <a> tags so it inherits automatically through currentColor.
+            }
+        }
     }
 
     &__arc-path {
         stroke-width: 1;
         stroke: var(--body-bg);
+
+        @media (forced-colors: active) {
+            stroke: currentColor;
+            fill: canvas;
+        }
     }
 
     &__label {
         background-color: var(--body-bg);
+        forced-color-adjust: none;
 
         // We don't have access to this element to add our own class
         // that's why we relay on tag name here.
