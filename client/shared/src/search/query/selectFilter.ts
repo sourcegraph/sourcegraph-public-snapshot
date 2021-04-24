@@ -48,6 +48,7 @@ export const SELECTORS: Access[] = [
     },
     {
         name: 'commit',
+        fields: [{ name: 'diff', fields: [{ name: 'added' }, { name: 'removed' }] }],
     },
 ]
 
@@ -78,7 +79,7 @@ export const selectorCompletion = (value: Literal | undefined): string[] => {
         const kind = value.value.split('.')[0]
         return selectDiscreteValues(
             SELECTORS.filter(value => value.name === kind),
-            1
+            2
         )
     }
     return selectDiscreteValues(SELECTORS, 0)
