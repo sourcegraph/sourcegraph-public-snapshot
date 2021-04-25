@@ -591,8 +591,8 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 
 type defaultReposFunc func(ctx context.Context) ([]types.RepoName, error)
 
-// defaultRepositories returns the intersection of default public repos (db) and
-// indexed repos (zoekt), minus repos matching excludePatterns.
+// defaultRepositories returns the intersection of calling getRawDefaultRepos
+// (db) and indexed repos (zoekt), minus repos matching excludePatterns.
 func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, z *searchbackend.Zoekt, excludePatterns []string) (_ []types.RepoName, err error) {
 	tr, ctx := trace.New(ctx, "defaultRepositories", "")
 	defer func() {
