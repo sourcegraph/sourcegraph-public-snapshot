@@ -331,12 +331,12 @@ func prometheusGraphQLRequestName(requestName string) string {
 
 func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver, dotcom DotcomRootResolver) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
-	schemas := []string{MainSchema}
+	schemas := []string{mainSchema}
 
 	if batchChanges != nil {
 		EnterpriseResolvers.batchChangesResolver = batchChanges
 		resolver.BatchChangesResolver = batchChanges
-		schemas = append(schemas, BatchesSchema)
+		schemas = append(schemas, batchesSchema)
 		// Register NodeByID handlers.
 		for kind, res := range batchChanges.NodeResolvers() {
 			resolver.nodeByIDFns[kind] = res
@@ -346,7 +346,7 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 	if codeIntel != nil {
 		EnterpriseResolvers.codeIntelResolver = codeIntel
 		resolver.CodeIntelResolver = codeIntel
-		schemas = append(schemas, CodeIntelSchema)
+		schemas = append(schemas, codeIntelSchema)
 		// Register NodeByID handlers.
 		for kind, res := range codeIntel.NodeResolvers() {
 			resolver.nodeByIDFns[kind] = res
@@ -356,27 +356,36 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 	if insights != nil {
 		EnterpriseResolvers.insightsResolver = insights
 		resolver.InsightsResolver = insights
+		schemas = append(schemas, insightsSchema)
 	}
 
 	if authz != nil {
 		EnterpriseResolvers.authzResolver = authz
 		resolver.AuthzResolver = authz
+		schemas = append(schemas, authzSchema)
 	}
 
 	if codeMonitors != nil {
 		EnterpriseResolvers.codeMonitorsResolver = codeMonitors
 		resolver.CodeMonitorsResolver = codeMonitors
+		schemas = append(schemas, codeMonitorsSchema)
+		// Register NodeByID handlers.
+		for kind, res := range codeMonitors.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
 	}
 
 	if license != nil {
 		EnterpriseResolvers.licenseResolver = license
 		resolver.LicenseResolver = license
+		schemas = append(schemas, licenseSchema)
+		// No NodeByID handlers currently.
 	}
 
 	if dotcom != nil {
 		EnterpriseResolvers.dotcomResolver = dotcom
 		resolver.DotcomRootResolver = dotcom
-		schemas = append(schemas, DotcomSchema)
+		schemas = append(schemas, dotcomSchema)
 		// Register NodeByID handlers.
 		for kind, res := range dotcom.NodeResolvers() {
 			resolver.nodeByIDFns[kind] = res
@@ -414,10 +423,6 @@ func newSchemaResolver(db dbutil.DB) *schemaResolver {
 	r := &schemaResolver{
 		db:                db,
 		repoupdaterClient: repoupdater.DefaultClient,
-
-		AuthzResolver:    defaultAuthzResolver{},
-		InsightsResolver: defaultInsightsResolver{},
-		LicenseResolver:  defaultLicenseResolver{},
 	}
 
 	r.nodeByIDFns = map[string]NodeByIDFunc{
@@ -457,9 +462,6 @@ func newSchemaResolver(db dbutil.DB) *schemaResolver {
 		"Site": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.siteByGQLID(ctx, id)
 		},
-		"CodeMonitor": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return r.MonitorByID(ctx, id)
-		},
 		"OutOfBandMigration": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.OutOfBandMigrationByID(ctx, id)
 		},
@@ -480,11 +482,7 @@ var EnterpriseResolvers = struct {
 	codeMonitorsResolver CodeMonitorsResolver
 	licenseResolver      LicenseResolver
 	dotcomResolver       DotcomRootResolver
-}{
-	authzResolver:        defaultAuthzResolver{},
-	codeMonitorsResolver: defaultCodeMonitorsResolver{},
-	licenseResolver:      defaultLicenseResolver{},
-}
+}{}
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {

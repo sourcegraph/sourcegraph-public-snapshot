@@ -7,6 +7,7 @@ import { ReactElement } from 'react'
 import { withDesign } from 'storybook-addon-designs'
 
 import { setLinkComponent, AnchorLink } from '@sourcegraph/shared/src/components/Link'
+import { getIsRedesignEnabled, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import * as themes from './themes'
 
@@ -33,6 +34,10 @@ setLinkComponent(AnchorLink)
 // addon-dark-mode will override this if it's running.
 if (!document.body.classList.contains('theme-dark')) {
     document.body.classList.add('theme-light')
+}
+
+if (getIsRedesignEnabled()) {
+    document.body.classList.add(REDESIGN_CLASS_NAME)
 }
 
 if (isChromatic()) {

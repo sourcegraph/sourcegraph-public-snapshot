@@ -818,10 +818,10 @@ func TestCompareSearchResults(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
 	makeResult := func(repo, file string) *FileMatchResolver {
-		return mkFileMatchResolver(db, result.FileMatch{
+		return mkFileMatchResolver(db, result.FileMatch{File: result.File{
 			Repo: types.RepoName{Name: api.RepoName(repo)},
 			Path: file,
-		})
+		}})
 	}
 
 	tests := []struct {
@@ -1148,9 +1148,11 @@ func fileResult(db dbutil.DB, uri string, lineMatches []*result.LineMatch, symbo
 	return &FileMatchResolver{
 		db: db,
 		FileMatch: result.FileMatch{
-			Repo:        types.RepoName{Name: api.RepoName(uri)},
-			LineMatches: lineMatches,
+			File: result.File{
+				Repo: types.RepoName{Name: api.RepoName(uri)},
+			},
 			Symbols:     symbolMatches,
+			LineMatches: lineMatches,
 		},
 	}
 }

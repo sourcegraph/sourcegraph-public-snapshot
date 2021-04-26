@@ -1042,6 +1042,50 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
+## frontend: out_of_band_migrations_up_errors
+
+<p class="subtitle">out-of-band up migration errors every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> frontend: 20+ out-of-band up migration errors every 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_out_of_band_migrations_up_errors"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+## frontend: out_of_band_migrations_down_errors
+
+<p class="subtitle">out-of-band down migration errors every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> frontend: 20+ out-of-band down migration errors every 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_out_of_band_migrations_down_errors"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
 ## frontend: internal_indexed_search_error_responses
 
 <p class="subtitle">internal indexed search error responses every 5m</p>

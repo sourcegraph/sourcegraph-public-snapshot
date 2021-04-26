@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
-	"github.com/sourcegraph/batch-change-utils/output"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var (

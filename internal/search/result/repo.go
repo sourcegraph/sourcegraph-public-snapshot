@@ -3,6 +3,7 @@ package result
 import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type RepoMatch struct {
@@ -11,6 +12,13 @@ type RepoMatch struct {
 
 	// rev optionally specifies a revision to go to for search results.
 	Rev string
+}
+
+func (r RepoMatch) RepoName() types.RepoName {
+	return types.RepoName{
+		Name: r.Name,
+		ID:   r.ID,
+	}
 }
 
 func (r RepoMatch) Limit(limit int) int {

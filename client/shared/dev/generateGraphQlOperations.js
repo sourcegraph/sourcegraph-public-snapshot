@@ -11,7 +11,11 @@ const BROWSER_FOLDER = path.resolve(ROOT_FOLDER, './client/browser')
 const SHARED_FOLDER = path.resolve(ROOT_FOLDER, './client/shared')
 const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/*.graphql')
 
-const SHARED_DOCUMENTS_GLOB = [`${SHARED_FOLDER}/src/**/*.{ts,tsx}`, `!${SHARED_FOLDER}/src/testing/**/*.*`]
+const SHARED_DOCUMENTS_GLOB = [
+  `${SHARED_FOLDER}/src/**/*.{ts,tsx}`,
+  `!${SHARED_FOLDER}/src/testing/**/*.*`,
+  `!${SHARED_FOLDER}/src/graphql/schema.ts`,
+]
 
 const WEB_DOCUMENTS_GLOB = [
   `${WEB_FOLDER}/src/**/*.{ts,tsx}`,

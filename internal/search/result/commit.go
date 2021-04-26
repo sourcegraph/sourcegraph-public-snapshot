@@ -1,6 +1,8 @@
 package result
 
 import (
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -48,9 +50,94 @@ func (r *CommitMatch) Select(path filter.SelectPath) Match {
 			ID:   r.RepoName.ID,
 		}
 	case filter.Commit:
+		if len(path.Fields) > 0 && path.Fields[0] == "diff" {
+			if r.DiffPreview == nil {
+				return nil // Not a diff result.
+			}
+			if len(path.Fields) == 1 {
+				return r
+			}
+			if len(path.Fields) == 2 {
+				return selectCommitDiffKind(r, path.Fields[1])
+			}
+			return nil
+		}
 		return r
 	}
 	return nil
+}
+
+// selectModifiedLines extracts the highlight ranges that correspond to lines
+// that have a `+` or `-` prefix (corresponding to additions resp. removals).
+func selectModifiedLines(lines []string, highlights []HighlightedRange, prefix string, offset int32) []HighlightedRange {
+	if len(lines) == 0 {
+		return highlights
+	}
+	include := make([]HighlightedRange, 0, len(highlights))
+	for _, h := range highlights {
+		if h.Line-offset < 0 {
+			// Skip negative line numbers. See: https://github.com/sourcegraph/sourcegraph/issues/20286.
+			continue
+		}
+		if strings.HasPrefix(lines[h.Line-offset], prefix) {
+			include = append(include, h)
+		}
+	}
+	return include
+}
+
+// modifiedLinesExist checks whether any `line` in lines starts with `prefix`.
+func modifiedLinesExist(lines []string, prefix string) bool {
+	for _, l := range lines {
+		if strings.HasPrefix(l, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+// selectCommitDiffKind returns a commit match `c` if it contains `added` (resp.
+// `removed`) lines set by `field. It ensures that highlight information only
+// applies to the modified lines selected by `field`. If there are no matches
+// (i.e., no highlight information) coresponding to modified lines, it is
+// removed from the result set (returns nil).
+func selectCommitDiffKind(c *CommitMatch, field string) Match {
+	diff := c.DiffPreview
+	if diff == nil {
+		return nil // Not a diff result.
+	}
+	var prefix string
+	if field == "added" {
+		prefix = "+"
+	}
+	if field == "removed" {
+		prefix = "-"
+	}
+	if len(diff.Highlights) == 0 {
+		// No highlights, implying no pattern was specified. Filter by
+		// whether there exists lines corresponding to additions or
+		// removals. Inspect c.Body, which is the diff markdown in the
+		// format ```diff <...>``` and which doesn't contain a unified
+		// diff header with +++ or --- in diff.Value, which would would
+		// otherwise confuse this check.
+		if modifiedLinesExist(strings.Split(c.Body.Value, "\n"), prefix) {
+			return c
+		}
+		return nil
+	}
+	// We have two data structures storing highlight information for diff
+	// results. We must keep these in sync. Additionally the diff highlights
+	// line number is offset by 1.
+	bodyHighlights := selectModifiedLines(strings.Split(c.Body.Value, "\n"), c.Body.Highlights, prefix, 0)
+	diffHighlights := selectModifiedLines(strings.Split(diff.Value, "\n"), diff.Highlights, prefix, 1)
+	if len(bodyHighlights) > 0 {
+		// Only rely on bodyHighlights since the header in diff.Value
+		// will create bogus highlights due to `+++` or `---`.
+		c.Body.Highlights = bodyHighlights
+		c.DiffPreview.Highlights = diffHighlights
+		return c
+	}
+	return nil // No matching lines.
 }
 
 func (r *CommitMatch) searchResultMarker() {}

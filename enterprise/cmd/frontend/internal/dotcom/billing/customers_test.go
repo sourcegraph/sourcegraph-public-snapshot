@@ -10,7 +10,7 @@ import (
 )
 
 func TestGetOrAssignUserCustomerID(t *testing.T) {
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
 	c := 0
@@ -20,7 +20,7 @@ func TestGetOrAssignUserCustomerID(t *testing.T) {
 	}
 	defer func() { mockCreateCustomerID = nil }()
 
-	u, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u"})
+	u, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}

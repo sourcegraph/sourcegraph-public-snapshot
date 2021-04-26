@@ -7,7 +7,13 @@ import { Configuration, DefinePlugin, ProgressPlugin, RuleSetUseItem, RuleSetUse
 
 const rootPath = path.resolve(__dirname, '../../../')
 const monacoEditorPaths = [path.resolve(rootPath, 'node_modules', 'monaco-editor')]
-const storiesGlob = path.resolve(rootPath, 'client/**/*.story.tsx')
+// Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
+// we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
+// is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
+const directoriesWithStories = ['branded', 'browser', 'shared', 'web', 'wildcard']
+const storiesGlobs = directoriesWithStories.map(packageDirectory =>
+    path.resolve(rootPath, `client/${packageDirectory}/src/**/*.story.tsx`)
+)
 
 const shouldMinify = !!process.env.MINIFY
 const isDevelopment = !shouldMinify
@@ -26,7 +32,7 @@ const getCSSLoaders = (...loaders: RuleSetUseItem[]): RuleSetUse => [
 ]
 
 const config = {
-    stories: [storiesGlob],
+    stories: storiesGlobs,
     addons: [
         '@storybook/addon-knobs',
         '@storybook/addon-actions',
@@ -36,6 +42,12 @@ const config = {
         '@storybook/addon-toolbars',
         './redesign-toggle-toolbar/register.ts',
     ],
+
+    features: {
+        // Explicitly disable the deprecated, not used postCSS support,
+        // so no warning is rendered on each start of storybook.
+        postcss: false,
+    },
 
     typescript: {
         check: false,
@@ -63,22 +75,23 @@ const config = {
         )
 
         if (shouldMinify) {
-            config.optimization = {
-                namedModules: false,
-                minimize: true,
-                minimizer: [
-                    new TerserPlugin({
-                        terserOptions: {
-                            sourceMap: true,
-                            compress: {
-                                // Don't inline functions, which causes name collisions with uglify-es:
-                                // https://github.com/mishoo/UglifyJS2/issues/2842
-                                inline: 1,
-                            },
-                        },
-                    }),
-                ],
+            if (!config.optimization) {
+                throw new Error('The structure of the config changed, expected config.optimization to be not-null')
             }
+            config.optimization.namedModules = false
+            config.optimization.minimize = true
+            config.optimization.minimizer = [
+                new TerserPlugin({
+                    terserOptions: {
+                        sourceMap: true,
+                        compress: {
+                            // Don't inline functions, which causes name collisions with uglify-es:
+                            // https://github.com/mishoo/UglifyJS2/issues/2842
+                            inline: 1,
+                        },
+                    },
+                }),
+            ]
         }
 
         if (process.env.CI) {
@@ -122,7 +135,7 @@ const config = {
             test: /\.(sass|scss)$/,
             // Make sure Storybook styles get handled by the Storybook config
             exclude: [/\.module\.(sass|scss)$/, storybookDirectory],
-            use: getCSSLoaders('to-string-loader', 'css-loader'),
+            use: getCSSLoaders('@terminus-term/to-string-loader', { loader: 'css-loader', options: { url: false } }),
         })
 
         config.module?.rules.unshift({
@@ -133,10 +146,11 @@ const config = {
                 loader: 'css-loader',
                 options: {
                     sourceMap: isDevelopment,
-                    localsConvention: 'camelCase',
                     modules: {
+                        exportLocalsConvention: 'camelCase',
                         localIdentName: '[name]__[local]_[hash:base64:5]',
                     },
+                    url: false,
                 },
             }),
         })
@@ -153,7 +167,7 @@ const config = {
             test: /\.css$/,
             // Make sure Storybook styles get handled by the Storybook config
             exclude: [storybookDirectory, ...monacoEditorPaths],
-            use: ['to-string-loader', 'css-loader'],
+            use: ['@terminus-term/to-string-loader', { loader: 'css-loader', options: { url: false } }],
         })
 
         config.module.rules.push({
@@ -162,7 +176,7 @@ const config = {
             include: monacoEditorPaths,
             // Make sure Storybook styles get handled by the Storybook config
             exclude: [storybookDirectory],
-            use: ['style-loader', 'css-loader'],
+            use: ['style-loader', { loader: 'css-loader', options: { url: false } }],
         })
 
         config.module.rules.push({

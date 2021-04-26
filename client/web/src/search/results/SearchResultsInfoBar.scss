@@ -35,4 +35,8 @@
         border-right: 1px solid var(--border-color);
         margin: 0 0.5rem;
     }
+
+    .theme-redesign & {
+        padding-left: 0;
+    }
 }
