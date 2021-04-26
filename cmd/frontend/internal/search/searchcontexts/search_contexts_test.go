@@ -254,7 +254,7 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 	}
 }
 
-func TestCreatingSearchContexts(t *testing.T) {
+func TestSearchContextNamespaceValidation(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -280,6 +280,95 @@ func TestCreatingSearchContexts(t *testing.T) {
 	database.OrgMembers(db).Create(internalCtx, org.ID, user2.ID)
 	// Third user is not a site-admin and is not a member of the org
 	user3, err := u.Create(internalCtx, database.NewUser{Username: "u3", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	tests := []struct {
+		name            string
+		namespaceUserID int32
+		namespaceOrgID  int32
+		userID          int32
+		wantErr         string
+	}{
+		{
+			name:    "current user must be authenticated",
+			userID:  0,
+			wantErr: "current user not found",
+		},
+		{
+			name:            "current user must match the user namespace",
+			namespaceUserID: user2.ID,
+			userID:          user3.ID,
+			wantErr:         "search context user does not match current user",
+		},
+		{
+			name:           "current user must be a member of the org namespace",
+			namespaceOrgID: org.ID,
+			userID:         user3.ID,
+			wantErr:        "current user is not an org member",
+		},
+		{
+			name:    "non site-admin users are not valid for instance-level contexts",
+			userID:  user2.ID,
+			wantErr: "current user must be site-admin",
+		},
+		{
+			name:   "site-admin is valid for any instance-level context",
+			userID: user1.ID,
+		},
+		{
+			name:            "site-admin is valid for any user namespace",
+			namespaceUserID: user2.ID,
+			userID:          user1.ID,
+		},
+		{
+			name:            "site-admin is valid for any org namespace",
+			namespaceUserID: org.ID,
+			userID:          user1.ID,
+		},
+		{
+			name:            "current user is valid if matches the user namespace",
+			namespaceUserID: user2.ID,
+			userID:          user2.ID,
+		},
+		{
+			name:           "current user is valid if a member of the org namespace",
+			namespaceOrgID: org.ID,
+			userID:         user2.ID,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: tt.userID})
+
+			err := validateSearchContextNamespaceForCurrentUser(ctx, db, tt.namespaceUserID, tt.namespaceOrgID)
+
+			expectErr := tt.wantErr != ""
+			if !expectErr && err != nil {
+				t.Fatalf("expected no error, got %s", err)
+			}
+			if expectErr && err == nil {
+				t.Fatalf("wanted error, got none")
+			}
+			if expectErr && err != nil && !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("wanted error containing %s, got %s", tt.wantErr, err)
+			}
+		})
+	}
+}
+
+func TestCreatingSearchContexts(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	internalCtx := actor.WithInternalActor(context.Background())
+	db := dbtesting.GetDB(t)
+	u := database.Users(db)
+
+	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
@@ -310,30 +399,6 @@ func TestCreatingSearchContexts(t *testing.T) {
 			name:          "cannot create search context with global name",
 			searchContext: &types.SearchContext{Name: "global"},
 			wantErr:       "cannot override global search context",
-		},
-		{
-			name:          "cannot create search context if not authenticated",
-			searchContext: &types.SearchContext{Name: "ctx"},
-			userID:        0,
-			wantErr:       "current user not found",
-		},
-		{
-			name:          "cannot create search context for other user",
-			searchContext: &types.SearchContext{Name: "ctx", NamespaceUserID: user2.ID},
-			userID:        user3.ID,
-			wantErr:       "search context user does not match current user",
-		},
-		{
-			name:          "cannot create search context for org if not a member",
-			searchContext: &types.SearchContext{Name: "ctx", NamespaceOrgID: org.ID},
-			userID:        user3.ID,
-			wantErr:       "current user is not an org member",
-		},
-		{
-			name:          "cannot create instance-level search context if not site-admin",
-			searchContext: &types.SearchContext{Name: "ctx"},
-			userID:        user3.ID,
-			wantErr:       "current user must be site-admin",
 		},
 		{
 			name:          "cannot create search context with invalid name",
@@ -368,31 +433,6 @@ func TestCreatingSearchContexts(t *testing.T) {
 			},
 			wantErr: fmt.Sprintf("revision %q exceeds maximum allowed length (255)", tooLongRevision),
 		},
-		{
-			name:          "site-admin can create instance-level search context",
-			searchContext: &types.SearchContext{Name: "instance-level"},
-			userID:        user1.ID,
-		},
-		{
-			name:          "site-admin can create search context for any user",
-			searchContext: &types.SearchContext{Name: "user-level-by-admin", NamespaceUserID: user2.ID},
-			userID:        user1.ID,
-		},
-		{
-			name:          "site-admin can create search context for any org",
-			searchContext: &types.SearchContext{Name: "org-level-by-admin", NamespaceUserID: org.ID},
-			userID:        user1.ID,
-		},
-		{
-			name:          "user can create a search context",
-			searchContext: &types.SearchContext{Name: "user-level-by-user2", NamespaceUserID: user2.ID},
-			userID:        user2.ID,
-		},
-		{
-			name:          "org member can create a search context",
-			searchContext: &types.SearchContext{Name: "org-level-by-user2", NamespaceOrgID: org.ID},
-			userID:        user2.ID,
-		},
 	}
 
 	for _, tt := range tests {
@@ -412,5 +452,32 @@ func TestCreatingSearchContexts(t *testing.T) {
 				t.Fatalf("wanted error containing %s, got %s", tt.wantErr, err)
 			}
 		})
+	}
+}
+
+func TestDeletingAutoDefinedSearchContext(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	internalCtx := actor.WithInternalActor(context.Background())
+	db := dbtesting.GetDB(t)
+	u := database.Users(db)
+
+	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	autoDefinedSearchContext := GetUserSearchContext(user1.Username, user1.ID)
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user1.ID})
+	err = DeleteSearchContext(ctx, db, autoDefinedSearchContext)
+
+	wantErr := "cannot delete auto-defined search context"
+	if err == nil {
+		t.Fatalf("wanted error, got none")
+	}
+	if err != nil && !strings.Contains(err.Error(), wantErr) {
+		t.Fatalf("wanted error containing %s, got %s", wantErr, err)
 	}
 }

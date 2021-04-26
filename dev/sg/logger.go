@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"time"
 
-	"github.com/sourcegraph/batch-change-utils/output"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 // tickDuration is the time to wait before writing the buffer contents

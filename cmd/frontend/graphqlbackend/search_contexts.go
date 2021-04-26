@@ -202,6 +202,27 @@ func (r *schemaResolver) CreateSearchContext(ctx context.Context, args createSea
 	return &searchContextResolver{searchContext, r.db}, nil
 }
 
+func (r *schemaResolver) DeleteSearchContext(ctx context.Context, args struct {
+	ID graphql.ID
+}) (*EmptyResponse, error) {
+	searchContextSpec, err := unmarshalSearchContextID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	err = searchcontexts.DeleteSearchContext(ctx, r.db, searchContext)
+	if err != nil {
+		return nil, err
+	}
+
+	return &EmptyResponse{}, nil
+}
+
 func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchContextsArgs) (*searchContextConnection, error) {
 	var namespaceFilter namespaceFilterType
 	if args.NamespaceFilterType != nil {

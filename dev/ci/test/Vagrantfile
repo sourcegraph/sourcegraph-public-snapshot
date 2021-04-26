@@ -37,7 +37,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       srv.vm.provider :google do |g, o|
         g.service_account = ENV["VAGRANT_SERVICE_ACCOUNT"] || nil
         g.machine_type = server['machine_type']
-        g.image = 'e2e-cd59179f-2020-12-04t18-24-14z'
+        g.image = 'e2e-83b47b020-2021-04-22t20-56-49z'
         g.image_project_id = 'sourcegraph-ci'
         g.google_project_id = project_id
         g.name = "#{server['name']}-"+"#{Time.now.to_i}"
@@ -80,7 +80,6 @@ export TEST_USER_PASSWORD=#{ENV['TEST_USER_PASSWORD']}
 export SLOMO=#{ENV['SLOMO']}
 export DISPLAY=#{ENV['DISPLAY']}
 export CI_DEBUG_PROFILE=#{ENV['CI_DEBUG_PROFILE']}
-export GITHUB_TOKEN=#{ENV['GITHUB_TOKEN']}
 export BITBUCKET_SERVER_URL=#{ENV['BITBUCKET_SERVER_URL']}
 export BITBUCKET_SERVER_TOKEN=#{ENV['BITBUCKET_SERVER_TOKEN']}
 export BITBUCKET_SERVER_USERNAME=#{ENV['BITBUCKET_SERVER_USERNAME']}
@@ -95,7 +94,6 @@ export AWS_CODE_COMMIT_USERNAME=#{ENV['AWS_CODE_COMMIT_USERNAME']}
 export AWS_CODE_COMMIT_PASSWORD=#{ENV['AWS_CODE_COMMIT_PASSWORD']}
 export SOURCEGRAPH_BASE_URL=#{ENV['SOURCEGRAPH_BASE_URL']}
 export SOURCEGRAPH_SUDO_USER=#{ENV['SOURCEGRAPH_SUDO_USER']}
-export GITLAB_TOKEN=#{ENV['GITLAB_TOKEN']}
 export INCLUDE_ADMIN_ONBOARDING=#{ENV['INCLUDE_ADMIN_ONBOARDING']}
 export NO_CLEANUP=#{ENV['NO_CLEANUP']}
 export TEST_USER_PASSWORD=#{ENV['TEST_USER_PASSWORD']}

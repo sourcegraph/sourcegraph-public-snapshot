@@ -64,8 +64,6 @@ func newTicker(schedule *window.Schedule) *ticker {
 			} else if err != nil {
 				log15.Warn("error taking from schedule", "schedule", t.schedule, "err", err)
 				close(t.C)
-				// Ensure we drain done so that there isn't a panic if and when
-				// stop() is called.
 				return
 			}
 

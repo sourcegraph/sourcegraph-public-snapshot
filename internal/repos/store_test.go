@@ -130,6 +130,7 @@ func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 				ServiceID:   "https://git-host.com/",
 				ServiceType: extsvc.TypeOther,
 			},
+			Metadata: &types.OtherRepoMetadata{},
 			Sources: map[string]*types.SourceInfo{
 				servicesPerKind[extsvc.KindOther].URN(): {
 					ID:       servicesPerKind[extsvc.KindOther].URN(),

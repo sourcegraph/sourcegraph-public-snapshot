@@ -98,7 +98,7 @@ func TestSearch(t *testing.T) {
 			db := new(dbtesting.MockDB)
 			database.Mocks.Repos.List = tc.reposListMock
 			sr := &schemaResolver{db: db}
-			schema, err := graphql.ParseSchema(MainSchema, sr, graphql.Tracer(&prometheusTracer{db: db}))
+			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{db: db}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -521,9 +521,11 @@ func mkFileMatch(db dbutil.DB, repo types.RepoName, path string, lineNumbers ...
 		lines = append(lines, &result.LineMatch{LineNumber: n})
 	}
 	return mkFileMatchResolver(db, result.FileMatch{
-		Path:        path,
+		File: result.File{
+			Path: path,
+			Repo: repo,
+		},
 		LineMatches: lines,
-		Repo:        repo,
 	})
 }
 

@@ -3,6 +3,10 @@
 - General Terraform [styleguide](https://www.terraform.io/docs/configuration/style.html)
 - Sourcegraph Terraform [Extended Guide](./extended_guide/terraform.md)
 
+## Terraform versioning
+
+We use [asdf](https://asdf-vm.com/#/) to manage Terraform versions. After installing Asdf into your shell, run `asdf install && asdf reshim` to pickup the Terraform version defined in the `.tool-version` file for the specific Terraform module. 
+
 ## State
 
 State must be stored using a [GCS Terraform state backend](https://www.terraform.io/docs/backends/types/gcs.html).
