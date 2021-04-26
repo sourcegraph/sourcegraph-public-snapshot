@@ -116,33 +116,33 @@ func logBackendEvent(ctx context.Context, db dbutil.DB, name string, args interf
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	return map[string]graphqlbackend.NodeByIDFunc{
 		"Campaign": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.CampaignByID(ctx, id)
+			return r.campaignByID(ctx, id)
 		},
 		batchChangeIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.BatchChangeByID(ctx, id)
+			return r.batchChangeByID(ctx, id)
 		},
 		"CampaignSpec": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.CampaignSpecByID(ctx, id)
+			return r.campaignSpecByID(ctx, id)
 		},
 		batchSpecIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.BatchSpecByID(ctx, id)
+			return r.batchSpecByID(ctx, id)
 		},
 		changesetSpecIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.ChangesetSpecByID(ctx, id)
+			return r.changesetSpecByID(ctx, id)
 		},
 		changesetIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.ChangesetByID(ctx, id)
+			return r.changesetByID(ctx, id)
 		},
 		"CampaignsCredential": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.CampaignsCredentialByID(ctx, id)
+			return r.campaignsCredentialByID(ctx, id)
 		},
 		batchChangesCredentialIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.BatchChangesCredentialByID(ctx, id)
+			return r.batchChangesCredentialByID(ctx, id)
 		},
 	}
 }
 
-func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
+func (r *Resolver) changesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
 	if err := batchChangesEnabled(ctx); err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 	return NewChangesetResolver(r.store, changeset, repo), nil
 }
 
-func (r *Resolver) BatchChangeByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangeResolver, error) {
+func (r *Resolver) batchChangeByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangeResolver, error) {
 	if err := batchChangesEnabled(ctx); err != nil {
 		return nil, err
 	}
@@ -222,7 +222,7 @@ func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchCh
 	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
-func (r *Resolver) BatchSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchSpecResolver, error) {
+func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchSpecResolver, error) {
 	if err := batchChangesEnabled(ctx); err != nil {
 		return nil, err
 	}
@@ -248,7 +248,7 @@ func (r *Resolver) BatchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
-func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
+func (r *Resolver) changesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
 	if err := batchChangesEnabled(ctx); err != nil {
 		return nil, err
 	}
@@ -274,7 +274,7 @@ func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 	return NewChangesetSpecResolver(ctx, r.store, changesetSpec)
 }
 
-func (r *Resolver) BatchChangesCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangesCredentialResolver, error) {
+func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangesCredentialResolver, error) {
 	if err := batchChangesEnabled(ctx); err != nil {
 		return nil, err
 	}
