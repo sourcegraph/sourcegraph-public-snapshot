@@ -19,6 +19,8 @@ ADD COLUMN IF NOT EXISTS
     ssh_migration_applied BOOLEAN NOT NULL DEFAULT FALSE,
 ALTER COLUMN
     credential DROP NOT NULL,
+DROP CONSTRAINT IF EXISTS
+    user_credentials_there_can_be_only_one,
 ADD CONSTRAINT
     user_credentials_there_can_be_only_one
     CHECK
