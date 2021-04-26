@@ -3,6 +3,7 @@ import { RouteComponentProps, Switch, Route } from 'react-router';
 
 import { lazyComponent } from '../util/lazyComponent';
 
+import { CreateInsightPageProps } from './pages/create/CreateInsightPage';
 import { InsightsPageProps } from './pages/dashboard/InsightsPage';
 
 const InsightsLazyPage = lazyComponent<InsightsPageProps, 'InsightsPage'>(
@@ -10,7 +11,7 @@ const InsightsLazyPage = lazyComponent<InsightsPageProps, 'InsightsPage'>(
     'InsightsPage'
 )
 
-const InsightCreateLazyPage = lazyComponent(
+const InsightCreateLazyPage = lazyComponent<CreateInsightPageProps, 'CreateInsightPage'>(
     () => import('./pages/create/CreateInsightPage'),
     'CreateInsightPage'
 )
@@ -20,7 +21,7 @@ const InsightCreateLazyPage = lazyComponent(
  * Because we need to pass all required prop from main Sourcegraph.tsx component to
  * sub-components withing app tree.
  */
-export interface InsightsRouterProps extends RouteComponentProps, InsightsPageProps {}
+export interface InsightsRouterProps extends RouteComponentProps, InsightsPageProps, CreateInsightPageProps {}
 
 /** Main Insight routing component. Main entry point to code insights UI. */
 export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = props => {
@@ -36,10 +37,10 @@ export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = prop
             />
 
             <Route
-                path={`${match.url}/create`}>
+                path={`${match.url}/create`}
+                /* eslint-disable-next-line react/jsx-no-bind */
+                render={(props => <InsightCreateLazyPage {...outerProps} {...props}/>)}/>
 
-                <InsightCreateLazyPage/>
-            </Route>
         </Switch>
     );
 }

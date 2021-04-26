@@ -29,6 +29,35 @@ const CONTEXT = {
     patternType: SearchPatternType.literal,
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     globbing: false,
+    authenticatedUser: {
+        "id": "VXNlcjoyODA5Mw==",
+        "databaseID": 28093,
+        "username": "vovakulikov",
+        "avatarURL": "https://avatars.githubusercontent.com/u/18492575?v=4",
+        "email": "vovakulikov@icloud.com",
+        "displayName": "Vova Kulikov",
+        "siteAdmin": false,
+        "tags": [
+            "AllowUserExternalServicePublic"
+        ],
+        "url": "/users/vovakulikov",
+        "settingsURL": "/users/vovakulikov/settings",
+        "organizations": {
+            "nodes": [
+                {
+                    "id": "T3JnOjE=",
+                    "name": "sourcegraph",
+                    "displayName": "Sourcegraph",
+                    "url": "/organizations/sourcegraph",
+                    "settingsURL": "/organizations/sourcegraph/settings"
+                }
+            ]
+        },
+        "session": {
+            "canSignOut": true
+        },
+        "viewerCanAdminister": true
+    },
     extensionsController: null,
 }
 

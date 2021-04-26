@@ -1,5 +1,5 @@
 import classnames from 'classnames';
-import { FormApi, SubmissionErrors } from 'final-form';
+import { FORM_ERROR, FormApi, SubmissionErrors } from 'final-form';
 import createFocusDecorator from 'final-form-focus'
 import React, { useEffect, useMemo, useRef } from 'react';
 import { useField, useForm } from 'react-final-form-hooks';
@@ -32,7 +32,7 @@ const INITIAL_VALUES: Partial<CreateInsightFormFields> = {
     step: 'months',
 }
 
-interface CreateInsightPageProps {
+export interface CreateInsightFormProps {
     onSubmit: (values: CreateInsightFormFields, form: FormApi<CreateInsightFormFields, Partial<CreateInsightFormFields>>) =>
         | SubmissionErrors
         | Promise<SubmissionErrors>
@@ -43,11 +43,12 @@ export interface CreateInsightFormFields {
     series: DataSeries[];
     title: string;
     repositories: string;
-    visibility: string;
+    visibility: 'personal' | 'organization';
     step: 'hours' | 'days' | 'weeks' | 'months' | 'years';
+    stepValue: number;
 }
 
-export const CreateInsightForm: React.FunctionComponent<CreateInsightPageProps> = props => {
+export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> = props => {
     const { onSubmit } = props;
 
     const titleReference = useRef<HTMLInputElement>(null);
@@ -68,7 +69,7 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightPageProps> 
         )
     }, []);
 
-    const { form, handleSubmit } = useForm<CreateInsightFormFields>({
+    const { form, handleSubmit, submitErrors } = useForm<CreateInsightFormFields>({
         initialValues: INITIAL_VALUES,
         onSubmit
     });
@@ -217,6 +218,13 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightPageProps> 
                 </FormGroup>
 
                 <div className={styles.createInsightFormButtons}>
+                    {
+                        submitErrors?.[FORM_ERROR] &&
+                        <div className='alert alert-danger'>
+                            {submitErrors[FORM_ERROR].toString()}
+                        </div>
+                    }
+
                     <button
                         type='submit'
                         className={classnames(styles.createInsightFormButton, styles.createInsightFormButtonActive, 'button')}>
