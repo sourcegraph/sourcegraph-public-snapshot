@@ -14,9 +14,12 @@ import { PageHeader } from '../../../components/PageHeader'
 import { InsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
 import { InsightsApiContext } from '../../core/backend/api-provider'
 
-export interface InsightsPageProps extends ExtensionsControllerProps, Omit<InsightsViewGridProps, 'views'>, TelemetryProps {}
+export interface InsightsPageProps extends ExtensionsControllerProps, Omit<InsightsViewGridProps, 'views'>, TelemetryProps {
+    isCreationUIEnabled: boolean;
+}
 
 export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
+    const { isCreationUIEnabled } = props;
     const { getInsightCombinedViews } = useContext(InsightsApiContext)
 
     const views = useObservable(
@@ -38,6 +41,10 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
         props.telemetryService.log('InsightAddMoreClick')
     }, [props.telemetryService])
 
+    const configureURL = isCreationUIEnabled
+        ? '/insights/create'
+        : '/user/settings'
+
     return (
         <div className="w-100">
             <Page>
@@ -53,7 +60,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
                             >
                                 <PlusIcon className="icon-inline" /> Add more insights
                             </Link>
-                            <Link to="/user/settings" onClick={logConfigureClick} className="btn btn-secondary">
+                            <Link to={configureURL} onClick={logConfigureClick} className="btn btn-secondary">
                                 <GearIcon className="icon-inline" /> Configure insights
                             </Link>
                         </>
