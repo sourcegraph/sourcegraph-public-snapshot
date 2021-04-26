@@ -27,7 +27,7 @@ func TestEncryptAuthenticator(t *testing.T) {
 				a:   &badAuthenticator{},
 			},
 			"bad encrypter": {
-				enc: &mockEncrypter{err: errors.New("encryption is bad")},
+				enc: &et.BadKey{Err: errors.New("encryption is bad")},
 				a:   &auth.BasicAuth{},
 			},
 		} {
@@ -71,17 +71,12 @@ func TestEncryptAuthenticator(t *testing.T) {
 
 type mockEncrypter struct {
 	called int
-	err    error
 }
 
 var _ encryption.Encrypter = &mockEncrypter{}
 
 func (me *mockEncrypter) Encrypt(ctx context.Context, value []byte) ([]byte, error) {
 	me.called++
-
-	if me.err != nil {
-		return nil, me.err
-	}
 	return value, nil
 }
 

@@ -28,10 +28,14 @@ type UserCredential struct {
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 
+	// TODO(batch-change-credential-encryption): On or after Sourcegraph 3.30,
+	// we should remove credential.
 	credential          auth.Authenticator
 	encryptedCredential []byte
 }
 
+// Authenticator decrypts and creates the authenticator associated with the user
+// credential.
 func (uc *UserCredential) Authenticator(ctx context.Context, dec encryption.Decrypter) (auth.Authenticator, error) {
 	if uc.credential != nil {
 		return uc.credential, nil
@@ -54,12 +58,16 @@ func (uc *UserCredential) Authenticator(ctx context.Context, dec encryption.Decr
 	return a, nil
 }
 
+// SetAuthenticator encrypts and sets the authenticator within the user
+// credential.
 func (uc *UserCredential) SetAuthenticator(ctx context.Context, enc encryption.Encrypter, a auth.Authenticator) error {
 	secret, err := encryptAuthenticator(ctx, enc, a)
 	if err != nil {
 		return err
 	}
 
+	// We must set credential to nil here: if we're in the middle of migrating
+	// when this is called, we don't want the plaintext credential to remain.
 	uc.credential = nil
 	uc.encryptedCredential = secret
 	return nil

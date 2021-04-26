@@ -13,6 +13,7 @@ import (
 	"github.com/gomodule/oauth1/oauth"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -24,6 +25,91 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+func TestUserCredential_Authenticator(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("errors", func(t *testing.T) {
+		for name, tc := range map[string]struct {
+			uc  *UserCredential
+			dec encryption.Decrypter
+		}{
+			"no credential": {
+				uc:  &UserCredential{},
+				dec: &et.TestKey{},
+			},
+			"bad decrypter": {
+				uc:  &UserCredential{encryptedCredential: []byte("foo")},
+				dec: &et.BadKey{Err: errors.New("bad key, bad key, what you gonna do")},
+			},
+			"invalid secret": {
+				uc:  &UserCredential{encryptedCredential: []byte("foo")},
+				dec: et.NewTransparentDecrypter(t),
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				if _, err := tc.uc.Authenticator(ctx, tc.dec); err == nil {
+					t.Error("unexpected nil error")
+				}
+			})
+		}
+	})
+
+	t.Run("plaintext credential", func(t *testing.T) {
+		a := &auth.BasicAuth{}
+		uc := &UserCredential{credential: a}
+
+		have, err := uc.Authenticator(ctx, nil)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		} else if have != a {
+			t.Errorf("unexpected authenticator: have=%q want=%q", have, a)
+		}
+	})
+
+	t.Run("encrypted credential", func(t *testing.T) {
+		key := et.TestKey{}
+		a := &auth.BasicAuth{Username: "foo", Password: "bar"}
+
+		enc, err := encryptAuthenticator(ctx, key, a)
+		if err != nil {
+			t.Fatal(err)
+		}
+		uc := &UserCredential{encryptedCredential: enc}
+
+		have, err := uc.Authenticator(ctx, key)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		} else if diff := cmp.Diff(have, a); diff != "" {
+			t.Errorf("unexpected authenticator (-have +want):\n%s", diff)
+		}
+	})
+}
+
+func TestUserCredential_SetAuthenticator(t *testing.T) {
+	ctx := context.Background()
+	a := &auth.BasicAuth{Username: "foo", Password: "bar"}
+
+	t.Run("error", func(t *testing.T) {
+		key := &et.BadKey{Err: errors.New("error")}
+		uc := &UserCredential{}
+
+		if err := uc.SetAuthenticator(ctx, key, a); err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		key := et.TestKey{}
+		uc := &UserCredential{credential: a}
+
+		if err := uc.SetAuthenticator(ctx, key, a); err != nil {
+			t.Errorf("unexpected error: %v", err)
+		} else if uc.credential != nil {
+			t.Errorf("unencrypted credential is still present: %v", uc.credential)
+		}
+	})
+}
 
 func TestUserCredentials_CreateUpdate(t *testing.T) {
 	db := dbtesting.GetDB(t)
