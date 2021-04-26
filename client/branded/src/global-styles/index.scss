@@ -77,6 +77,20 @@ $input-focus-box-shadow: var(--input-focus-box-shadow);
 // TODO: These will affect current styles
 $form-feedback-font-size: 0.75rem;
 
+// Custom Selects
+$custom-select-bg-size: 16px 16px;
+$custom-select-padding-x: 0.375rem;
+$custom-select-disabled-bg: var(--input-disabled-bg);
+// Icon: mdi-react/ChevronDownIcon
+$custom-select-indicator: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' fill='#{$redesign-gray-06}' viewBox='0 0 24 24'><path d='M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z'/></svg>");
+// Hide feedback icon for custom-select
+$custom-select-feedback-icon-size: 0;
+
+// Custom controls
+$custom-control-indicator-checked-bg: var(--primary);
+$custom-control-indicator-border-color: var(--text-muted);
+$custom-control-indicator-border-width: 2px;
+
 // Dropdown
 $dropdown-bg: var(--dropdown-bg);
 $dropdown-border-color: var(--dropdown-border-color);

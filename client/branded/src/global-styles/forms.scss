@@ -63,7 +63,7 @@
 }
 
 // Add an additional feedback class to add additional context to
-// form controls without requiring them to be valid
+// form controls without requiring a valid state
 .field-message {
     @extend .valid-feedback;
     display: block;
@@ -72,21 +72,81 @@
 
 // Overrides
 .theme-redesign {
+    // Color overrides
     .valid-feedback {
         color: var(--text-muted);
     }
+    .invalid-feedback {
+        color: var(--danger);
+    }
+    .form-control,
+    .custom-select {
+        &:focus {
+            &.is-valid {
+                @at-root #{selector-append('.theme-light', &)} {
+                    box-shadow: 0 0 0 2px var(--success-2);
+                }
+                @at-root #{selector-append('.theme-dark', &)} {
+                    box-shadow: 0 0 0 2px var(--success-3);
+                }
+            }
+            &.is-invalid {
+                @at-root #{selector-append('.theme-light', &)} {
+                    box-shadow: 0 0 0 2px var(--danger-2);
+                }
+                @at-root #{selector-append('.theme-dark', &)} {
+                    box-shadow: 0 0 0 2px var(--danger-3);
+                }
+            }
+        }
+    }
 
-    // Disable icons for selects and textareas
+    // Remove feedback icon for <select> and <textarea>
     select.form-control,
     textarea.form-control {
         background-image: none;
     }
+
+    .custom-control {
+        // Specifc custom control styles
+        .custom-control-input {
+            &:disabled ~ .custom-control-label::before {
+                border-color: var(--input-disabled-bg);
+            }
+
+            &:checked {
+                &.is-valid {
+                    ~ .custom-control-label::before {
+                        border-color: var(--success);
+                        background-color: var(--success);
+                    }
+                }
+
+                &.is-invalid {
+                    ~ .custom-control-label::before {
+                        border-color: var(--danger);
+                        background-color: var(--danger);
+                    }
+                }
+            }
+        }
+
+        // Custom radios use border active colors
+        &.custom-radio .custom-control-input {
+            &:checked {
+                ~ .custom-control-label::after {
+                    // Instead of using an SVG for the checked radio, we use a clipped background-color to ensure we can easily modify for different states
+                    background-image: none;
+                }
+
+                // Typical radios use border-active-color
+                &:not(.is-invalid):not(.is-valid)::before {
+                    border-color: var(--border-active-color);
+                    background-color: var(--border-active-color);
+                    background-clip: content-box;
+                    padding: 0.125rem;
+                }
+            }
+        }
+    }
 }
-
-// TODO
-
-// is-invalid:focus box-shadow
-// is-invalid+ color?
-// is-valid message color + font size
-// message class with no color?
-// disabled message?
