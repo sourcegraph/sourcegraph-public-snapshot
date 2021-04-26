@@ -769,8 +769,7 @@ add(
                     Bootstrap documentation
                 </a>
             </p>
-            <FormFieldVariants />
-            {/* <Form onSubmit={preventDefault}>
+            <Form onSubmit={preventDefault}>
                 <div className="form-group">
                     <label htmlFor="example-email-input">Email address</label>
                     <input
@@ -809,9 +808,9 @@ add(
                 <button type="submit" className="btn btn-primary">
                     Submit
                 </button>
-            </Form> */}
+            </Form>
 
-            {/* <h2 className="mt-3">Disabled</h2>
+            <h2 className="mt-3">Disabled</h2>
             <Form>
                 <fieldset disabled={true}>
                     <div className="form-group">
@@ -847,51 +846,25 @@ add(
                     </button>
                 </fieldset>
             </Form>
-            <h2 className="mt-3">Invalid Fields</h2>
-            <div className="form-group">
-                <label htmlFor="erredTextInput">Invalid input</label>
-                <input className="form-control is-invalid" id="erredTextInput" type="text" value="Oops, wrong input!" />
-            </div>
-            <div className="form-group">
-                <label htmlFor="erredMessageTextInput">Invalid input with message</label>
-                <input className="form-control is-invalid" type="text" value="Oops, wrong input!" />
-                <small className="invalid-feedback">Please be better.</small>
-            </div>
-
-            <h2 className="mt-3">Valid Fields</h2>
-            <div className="form-group">
-                <label htmlFor="erredTextInput">Valid input</label>
-                <input className="form-control is-valid" id="erredTextInput" type="text" value="Oops, wrong input!" />
-            </div>
-            <div className="form-group">
-                <label htmlFor="erredMessageTextInput">Valid input with message</label>
-                <input className="form-control is-valid" type="text" value="Oops, wrong input!" />
-                <small className="valid-feedback">Please be better.</small>
-            </div>
 
             <h2 className="mt-3">Readonly</h2>
             <input className="form-control" type="text" value="I'm a readonly value" readOnly={true} />
 
             <h2 className="mt-3">Sizing</h2>
-            <p>Form controls can be made smaller or larger for rare use cases, like a select inside a dropdown menu.</p>
+            <p>Form fields can be made smaller</p>
             <div className="d-flex">
-                <div>
-                    <input className="form-control form-control-lg mb-1" type="text" placeholder="Large input" />
-                    <input className="form-control mb-1" type="text" placeholder="Default input" />
-                    <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
-                </div>
-                <div className="ml-2">
-                    <select className="form-control form-control-lg mb-1">
-                        <option>Large select</option>
-                    </select>
-                    <select className="form-control mb-1">
-                        <option>Default select</option>
-                    </select>
-                    <select className="form-control form-control-sm mb-1">
-                        <option>Small select</option>
-                    </select>
-                </div>
-            </div> */}
+                <fieldset>
+                    <div className="form-group">
+                        <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
+                        <textarea className="form-control form-control-sm mb-1" placeholder="Small textarea" />
+                        <select className="custom-select custom-select-sm mb-1">
+                            <option>Small select</option>
+                        </select>
+                    </div>
+                </fieldset>
+            </div>
+            <h2 className="mt-3">Field reference</h2>
+            <FormFieldVariants />
         </>
     ),
     {
