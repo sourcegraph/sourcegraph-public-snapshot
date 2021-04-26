@@ -19,7 +19,7 @@ export const createChromaticStory = (options: CreateChromaticStoryOptions): Stor
     // We can safely change its type to remove required props `StoryContext` props check.
     const Story = storyFn as React.ComponentType
 
-    const [_isRedesignEnabledInitially, setRedesignToggle] = useRedesignToggle()
+    const [, setRedesignToggle] = useRedesignToggle()
     const isDarkModeEnabledInitially = useDarkMode()
 
     useEffect(() => {
