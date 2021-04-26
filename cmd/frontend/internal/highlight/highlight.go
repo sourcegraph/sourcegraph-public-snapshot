@@ -134,6 +134,11 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 	}
 	code := string(p.Content)
 
+	themechoice := "Sourcegraph"
+	if p.IsLightTheme {
+		themechoice = "Sourcegraph (light)"
+	}
+
 	// Trim a single newline from the end of the file. This means that a file
 	// "a\n\n\n\n" will show line numbers 1-4 rather than 1-5, i.e. no blank
 	// line will be shown at the end of the file corresponding to the last
@@ -162,20 +167,14 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		stabilizeTimeout = 30 * time.Second
 	}
 
-	maxLineLength := 0 // defaults to no length limit
-	if !p.HighlightLongLines {
-		maxLineLength = 2000
-	}
-
 	p.Filepath = normalizeFilepath(p.Filepath)
 
 	resp, err := client.Highlight(ctx, &gosyntect.Query{
 		Code:             code,
 		Filepath:         p.Filepath,
+		Theme:            themechoice,
 		StabilizeTimeout: stabilizeTimeout,
 		Tracer:           ot.GetTracer(ctx),
-		LineLengthLimit:  maxLineLength,
-		CSS:              true,
 	})
 
 	if ctx.Err() == context.DeadlineExceeded {
@@ -223,8 +222,22 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		}
 		return "", false, err
 	}
-
-	return template.HTML(resp.Data), false, nil
+	// Note: resp.Data is properly HTML escaped by syntect_server
+	table, err := preSpansToTable(resp.Data)
+	if err != nil {
+		return "", false, err
+	}
+	if !p.HighlightLongLines {
+		// This number was arbitrarily chosen. We don't want long lines in general to be unhighlighted,
+		// but if there are super long lines OR many lines of near this length we don't want it to slow
+		// down the browser's rendering.
+		maxLineLength := 2000
+		table, err = unhighlightLongLines(table, maxLineLength)
+		if err != nil {
+			return "", false, err
+		}
+	}
+	return template.HTML(table), false, nil
 }
 
 // TODO (Dax): Determine if Histogram provides value and either use only histogram or counter, not both
@@ -245,6 +258,126 @@ func firstCharacters(s string, n int) string {
 		return string(v)
 	}
 	return string(v[:n])
+}
+
+// preSpansToTable takes the syntect data structure, which looks like:
+//
+// 	<pre>
+// 	<span style="color:#foobar">thecode.line1</span>
+// 	<span style="color:#foobar">thecode.line2</span>
+// 	</pre>
+//
+// And turns it into a table in the format which the frontend expects:
+//
+// 	<table>
+// 	<tr>
+// 		<td class="line" data-line="1"></td>
+// 		<td class="code"><span style="color:#foobar">thecode.line1</span></td>
+// 	</tr>
+// 	<tr>
+// 		<td class="line" data-line="2"></td>
+// 		<td class="code"><span style="color:#foobar">thecode.line2</span></td>
+// 	</tr>
+// 	</table>
+//
+func preSpansToTable(h string) (string, error) {
+	doc, err := html.Parse(strings.NewReader(h))
+	if err != nil {
+		return "", err
+	}
+
+	body := doc.FirstChild.LastChild // html->body
+	pre := body.FirstChild
+	if pre == nil || pre.Type != html.ElementNode || pre.DataAtom != atom.Pre {
+		return "", fmt.Errorf("expected html->body->pre, found %+v", pre)
+	}
+
+	// We will walk over all of the <span> elements and add them to an existing
+	// code cell td, creating a new code cell td each time a newline is
+	// encountered.
+	var (
+		table    = &html.Node{Type: html.ElementNode, DataAtom: atom.Table, Data: atom.Table.String()}
+		next     = pre.FirstChild // span or TextNode
+		rows     int
+		codeCell *html.Node
+	)
+	newRow := func() {
+		// If the previous row did not have any children, then it was a blank
+		// line. Blank lines always need a span with a newline character for
+		// proper whitespace copy+paste support.
+		if codeCell != nil && codeCell.FirstChild == nil {
+			span := &html.Node{Type: html.ElementNode, DataAtom: atom.Span, Data: atom.Span.String()}
+			codeCell.AppendChild(span)
+			spanText := &html.Node{Type: html.TextNode, Data: "\n"}
+			span.AppendChild(spanText)
+		}
+
+		rows++
+		tr := &html.Node{Type: html.ElementNode, DataAtom: atom.Tr, Data: atom.Tr.String()}
+		table.AppendChild(tr)
+
+		tdLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
+		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(rows)})
+		tr.AppendChild(tdLineNumber)
+		codeTd := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		tr.AppendChild(codeTd)
+		codeCell = &html.Node{Type: html.ElementNode, DataAtom: atom.Div, Data: atom.Div.String()}
+		codeTd.AppendChild(codeCell)
+		codeTd.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
+	}
+	addNewRows := func(textNode *html.Node) {
+		// Text node, create a new table row for each newline at the end.
+		nodeData := textNode.Data
+		// Trim the preceding newlines and check if the entire node was *not* made up of newlines.
+		// This prevents us from counting the preceding newlines and appending them as rows at the end.
+		trimmedNodeData := strings.TrimLeft(nodeData, "\n")
+		if len(trimmedNodeData) > 0 {
+			nodeData = trimmedNodeData
+		}
+		newlines := strings.Count(nodeData, "\n")
+		for i := 0; i < newlines; i++ {
+			newRow()
+		}
+	}
+	newRow()
+	for next != nil {
+		nextSibling := next.NextSibling
+		switch {
+		case next.Type == html.ElementNode && next.DataAtom == atom.Span:
+			// Found a span, so add it to our current code cell td.
+			next.Parent = nil
+			next.PrevSibling = nil
+			next.NextSibling = nil
+			codeCell.AppendChild(next)
+
+			// Scan the children for text nodes containing new lines so that we
+			// can create new table rows.
+			if next.FirstChild != nil {
+				nextChild := next.FirstChild
+				for nextChild != nil {
+					switch {
+					case nextChild.Type == html.TextNode:
+						addNewRows(nextChild)
+					default:
+						return "", fmt.Errorf("unexpected HTML child structure (encountered %+v)", nextChild)
+					}
+					nextChild = nextChild.NextSibling
+				}
+			}
+		case next.Type == html.TextNode:
+			addNewRows(next)
+		default:
+			return "", fmt.Errorf("unexpected HTML structure (encountered %+v)", next)
+		}
+		next = nextSibling
+	}
+
+	var buf bytes.Buffer
+	if err := html.Render(&buf, table); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
 func generatePlainTable(code string) (template.HTML, error) {
@@ -278,6 +411,67 @@ func generatePlainTable(code string) (template.HTML, error) {
 		return "", err
 	}
 	return template.HTML(buf.String()), nil
+}
+
+// unhighlightLongLines takes highlighted HTML and unhighlights lines which are
+// longer than N bytes in (plaintext) length, making them easier for some
+// browsers such as Chrome to render.
+//
+// And the returned HTML has all <span> tags removed from lines whose length
+// are > N bytes.
+//
+// See https://github.com/sourcegraph/sourcegraph/issues/6489
+func unhighlightLongLines(h string, n int) (string, error) {
+	doc, err := html.Parse(strings.NewReader(h))
+	if err != nil {
+		return "", err
+	}
+
+	table := doc.FirstChild.LastChild.FirstChild // html > body > table
+	if table == nil || table.Type != html.ElementNode || table.DataAtom != atom.Table {
+		return "", fmt.Errorf("expected html->body->table, found %+v", table)
+	}
+
+	// Iterate over each table row and check length
+	var buf bytes.Buffer
+	tr := table.FirstChild.FirstChild // table > tbody > tr
+	for tr != nil {
+		div := tr.LastChild.FirstChild // tr > td > div
+		span := div.FirstChild         // div > span
+		for span != nil {
+			node := span.FirstChild
+			for node != nil {
+				buf.WriteString(node.Data)
+				node = node.NextSibling
+			}
+			span = span.NextSibling
+		}
+
+		// Length exceeds the limit, replace existing child with plain text
+		if buf.Len() > n {
+			span := &html.Node{
+				Type:     html.ElementNode,
+				DataAtom: atom.Span,
+				Data:     atom.Span.String(),
+			}
+			span.AppendChild(&html.Node{
+				Type: html.TextNode,
+				Data: buf.String(),
+			})
+			div.FirstChild = span
+		}
+
+		buf.Reset()
+		tr = tr.NextSibling
+	}
+
+	buf.Reset()
+	// NOTE: The result of html.Parse has parent nodes like "<html><head><body><table>..."
+	// to be a valid HTML, but what we want to return is just the <table> section.
+	if err := html.Render(&buf, table); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
 // CodeAsLines highlights the file and returns a list of highlighted lines.
