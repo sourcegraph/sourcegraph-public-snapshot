@@ -1436,12 +1436,15 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["cloudkms", "mounted", "noop"]
+          "enum": ["cloudkms", "awskms", "mounted", "noop"]
         }
       },
       "oneOf": [
         {
           "$ref": "#/definitions/CloudKMSEncryptionKey"
+        },
+        {
+          "$ref": "#/definitions/AWSKMSEncryptionKey"
         },
         {
           "$ref": "#/definitions/MountedEncryptionKey"
@@ -1464,6 +1467,26 @@
           "const": "cloudkms"
         },
         "keyname": {
+          "type": "string"
+        },
+        "credentialsFile": {
+          "type": "string"
+        }
+      }
+    },
+    "AWSKMSEncryptionKey": {
+      "description": "AWS KMS Encryption Key, used to encrypt data in AWS environments",
+      "type": "object",
+      "required": ["type", "keyId"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "awskms"
+        },
+        "keyId": {
+          "type": "string"
+        },
+        "region": {
           "type": "string"
         },
         "credentialsFile": {
