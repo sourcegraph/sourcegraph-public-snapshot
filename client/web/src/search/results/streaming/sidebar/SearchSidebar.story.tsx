@@ -2,10 +2,11 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../components/WebStory'
 import { SearchPatternType } from '../../../../graphql-operations'
-import { QuickLink } from '../../../../schema/settings.schema'
+import { QuickLink, SearchScope } from '../../../../schema/settings.schema'
 
 import { SearchSidebar, SearchSidebarProps } from './SearchSidebar'
 
@@ -23,6 +24,7 @@ const defaultProps: SearchSidebarProps = {
     selectedSearchContextSpec: 'global',
     query: '',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
+    telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
 const quicklinks: QuickLink[] = [
@@ -30,10 +32,34 @@ const quicklinks: QuickLink[] = [
     { name: 'Example', url: 'http://example.com', description: 'Example QuickLink' },
 ]
 
+const scopes: SearchScope[] = [
+    { name: 'Sourcegraph repos', value: 'repo:sourcegraph' },
+    { name: 'All results', value: 'count:all' },
+]
+
 add('empty sidebar', () => <WebStory>{() => <SearchSidebar {...defaultProps} />}</WebStory>)
 
 add('with quicklinks', () => (
     <WebStory>
         {() => <SearchSidebar {...defaultProps} settingsCascade={{ subjects: [], final: { quicklinks } }} />}
+    </WebStory>
+))
+
+add('with scopes', () => (
+    <WebStory>
+        {() => (
+            <SearchSidebar {...defaultProps} settingsCascade={{ subjects: [], final: { 'search.scopes': scopes } }} />
+        )}
+    </WebStory>
+))
+
+add('with everything', () => (
+    <WebStory>
+        {() => (
+            <SearchSidebar
+                {...defaultProps}
+                settingsCascade={{ subjects: [], final: { quicklinks, 'search.scopes': scopes } }}
+            />
+        )}
     </WebStory>
 ))

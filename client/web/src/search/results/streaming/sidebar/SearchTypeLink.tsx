@@ -1,15 +1,24 @@
 import React, { ReactElement } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../../..'
 import { toggleSearchType } from '../../../helpers'
 import { SearchType } from '../../SearchResults'
 
-import { SearchSidebarProps } from './SearchSidebar'
 import styles from './SearchSidebarSection.module.scss'
 
-interface SearchTypeLinkProps extends Omit<SearchSidebarProps, 'settingsCascade'> {
+interface SearchTypeLinksProps
+    extends Omit<PatternTypeProps, 'setPatternType'>,
+        Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
+        VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
+    query: string
+}
+
+interface SearchTypeLinkProps extends SearchTypeLinksProps {
     type: SearchType
 }
 
@@ -40,7 +49,7 @@ const SearchTypeLink: React.FunctionComponent<SearchTypeLinkProps> = ({
     )
 }
 
-export const getSearchTypeLinks = (props: Omit<SearchSidebarProps, 'settingsCascade'>): ReactElement[] => {
+export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] => {
     const types: Exclude<SearchType, null>[] = ['file', 'repo', 'path', 'symbol', 'diff', 'commit']
     return types.map(type => <SearchTypeLink {...props} type={type} key={type} />)
 }

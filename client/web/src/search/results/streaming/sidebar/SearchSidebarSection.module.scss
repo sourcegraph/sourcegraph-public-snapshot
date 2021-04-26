@@ -6,10 +6,13 @@
     }
 
     &__list-item {
-        display: block;
+        display: flex;
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
         border-radius: 3px;
+        width: 100%;
+        text-align: left;
+        line-break: anywhere;
 
         &:hover {
             background-color: var(--color-bg-2);
