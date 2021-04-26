@@ -6,7 +6,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/sourcegraph/src-cli/internal/output"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 func init() {

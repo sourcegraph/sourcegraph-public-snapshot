@@ -11,7 +11,7 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/src-cli/internal/output"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 func init() {

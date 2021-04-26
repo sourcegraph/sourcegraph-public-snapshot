@@ -1,6 +1,6 @@
 package batches
 
-import "github.com/sourcegraph/src-cli/internal/output"
+import "github.com/sourcegraph/sourcegraph/lib/output"
 
 // DebugOut can be used to print debug messages in development to the TUI.
 // For that it needs to be set to an actual *output.Output.
