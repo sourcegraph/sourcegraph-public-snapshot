@@ -4,7 +4,6 @@ import createFocusDecorator from 'final-form-focus'
 import React, { useEffect, useMemo, useRef } from 'react';
 import { useField, useForm } from 'react-final-form-hooks';
 import { noop } from 'rxjs';
-// import * as uuid from 'uuid'
 
 import { Page } from '../../../../../components/Page';
 import { PageTitle } from '../../../../../components/PageTitle';
@@ -109,6 +108,7 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                     title='Title'
                     description='Shown as title for your insight'
                     placeholder='ex. Migration to React function components'
+                    valid={title.meta.touched && title.meta.valid}
                     error={title.meta.touched && title.meta.error}
                     {...title.input}
                     ref={titleReference}
@@ -118,6 +118,7 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                     title='Repositories'
                     description='Create a list of repositories to run your search over. Separate them with comas.'
                     placeholder='Add or search for repositories'
+                    valid={repositories.meta.touched && repositories.meta.valid}
                     error={repositories.meta.touched && repositories.meta.error}
                     {...repositories.input}
                     ref={repositoriesReference}
@@ -176,6 +177,7 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                         <InputField
                             placeholder='ex. 2'
                             {...stepValue.input}
+                            valid={stepValue.meta.touched && stepValue.meta.valid}
                             ref={stepValueReference}
                             className={classnames(styles.createInsightFormStepInput)}/>
 

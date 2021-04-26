@@ -82,6 +82,7 @@ export function FormSeriesInput(props: FormSeriesProps): ReactElement {
                 title='Name'
                 placeholder='ex. Function component'
                 description='Name shown in the legend and tooltip'
+                valid={nameField.meta.touched && nameField.meta.valid}
                 error={nameField.meta.touched && nameField.meta.error}
                 className={styles.formSeriesInputField}
                 {...nameField.input}
@@ -92,6 +93,7 @@ export function FormSeriesInput(props: FormSeriesProps): ReactElement {
                 title='Query'
                 placeholder='ex. spatternType:regexp const\\s\\w+:\\s(React\\.)?FunctionComponent'
                 description='Do not include the repo: filter as it will be added automatically for the current repository'
+                valid={queryField.meta.touched && queryField.meta.valid}
                 error={queryField.meta.touched && queryField.meta.error}
                 className={styles.formSeriesInputField}
                 {...queryField.input}

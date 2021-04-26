@@ -8,11 +8,12 @@ interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement>{
     description?: string;
     className?: string
     error?: string;
+    valid?: boolean;
 }
 
 export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
     (props, reference) => {
-        const { title, description, className, error, ...otherProps } = props;
+        const { title, description, className, valid, error, ...otherProps } = props;
 
         return (
             <label className={classnames(styles.formField, className)}>
@@ -20,13 +21,17 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
 
                 <input
                     type="text"
-                    className={classnames(styles.formFieldInput, 'form-control', { 'is-invalid': !!error } )}
+                    className={classnames(
+                        styles.formFieldInput,
+                        'form-control',
+                        { 'is-valid': valid, 'is-invalid': !!error }
+                    )}
                     {...otherProps}
                     ref={reference}
                 />
 
                 { error && <span className={styles.formFieldError}>*{ error }</span> }
-                { description &&
+                { !error && description &&
                 <span className={classnames(styles.formFieldDescription, 'text-muted')}>
                     {description}
                 </span>
