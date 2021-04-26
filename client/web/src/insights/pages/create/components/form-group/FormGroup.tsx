@@ -15,7 +15,9 @@ export function FormGroup(props: PropsWithChildren<FormGroupProps>): ReactElemen
     const { className, name, subtitle, children, description, error } = props;
 
     return (
-        <fieldset className={classnames(styles.formGroup, className, {[styles.formGroupWithSubtitle]: !!subtitle })}>
+        <fieldset className={classnames(styles.formGroup, className, {
+            [styles.formGroupWithSubtitle]: !!subtitle,
+        })}>
 
             <div className={styles.formGroupNameBlock}>
                 <h4 className={styles.formGroupName}>{name}</h4>

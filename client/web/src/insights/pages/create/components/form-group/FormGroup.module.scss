@@ -2,15 +2,8 @@
 .form-group {
     display: flex;
     flex-direction: column;
-    padding: 1rem;
-    background-color: var(--oc-gray-0);
-    border-radius: 4px;
 
-    &--with-error {
-        background-color: var(--oc-red-0);
-    }
-
-    &--with-subtitle > &__name{
+    &--with-subtitle > &__name {
         margin-bottom: 0.25rem;
     }
 
