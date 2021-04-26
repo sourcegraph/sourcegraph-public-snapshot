@@ -47,13 +47,13 @@ func TestParseURL(t *testing.T) {
 	tests := []*parseURLTest{
 		newParseURLTest(
 			"user@host.xz:path/to/repo.git/",
-			"ssh", "user", "host.xz", "path/to/repo.git/",
-			"ssh://user@host.xz/path/to/repo.git/", "",
+			"ssh", "user", "host.xz", "~/path/to/repo.git/",
+			"ssh://user@host.xz/~/path/to/repo.git/", "",
 		),
 		newParseURLTest(
 			"host.xz:path/to/repo.git/",
-			"ssh", "", "host.xz", "path/to/repo.git/",
-			"ssh://host.xz/path/to/repo.git/", "",
+			"ssh", "", "host.xz", "~/path/to/repo.git/",
+			"ssh://host.xz/~/path/to/repo.git/", "",
 		),
 		newParseURLTest(
 			"host.xz:/path/to/repo.git/",
@@ -62,8 +62,8 @@ func TestParseURL(t *testing.T) {
 		),
 		newParseURLTest(
 			"host.xz:path/to/repo-with_specials.git/",
-			"ssh", "", "host.xz", "path/to/repo-with_specials.git/",
-			"ssh://host.xz/path/to/repo-with_specials.git/", "",
+			"ssh", "", "host.xz", "~/path/to/repo-with_specials.git/",
+			"ssh://host.xz/~/path/to/repo-with_specials.git/", "",
 		),
 		newParseURLTest(
 			"git://host.xz/path/to/repo.git/",
@@ -158,13 +158,13 @@ func TestParseURL(t *testing.T) {
 		),
 		newParseURLTest(
 			"git@host.xz:organization/repo.git?ref=test",
-			"ssh", "git", "host.xz", "organization/repo.git",
-			"ssh://git@host.xz/organization/repo.git?ref=test", "ref=test",
+			"ssh", "git", "host.xz", "~/organization/repo.git",
+			"ssh://git@host.xz/~/organization/repo.git?ref=test", "ref=test",
 		),
 		newParseURLTest(
 			"git@host.xz:organization/repo.git?ref=feature/test",
-			"ssh", "git", "host.xz", "organization/repo.git",
-			"ssh://git@host.xz/organization/repo.git?ref=feature/test", "ref=feature/test",
+			"ssh", "git", "host.xz", "~/organization/repo.git",
+			"ssh://git@host.xz/~/organization/repo.git?ref=feature/test", "ref=feature/test",
 		),
 		// Tests with user+password and some with query strings
 		newParseURLTest(
@@ -184,8 +184,8 @@ func TestParseURL(t *testing.T) {
 		),
 		newParseURLTest(
 			"user-1234@host.xz:path/to/repo.git/",
-			"ssh", "user-1234", "host.xz", "path/to/repo.git/",
-			"ssh://user-1234@host.xz/path/to/repo.git/", "",
+			"ssh", "user-1234", "host.xz", "~/path/to/repo.git/",
+			"ssh://user-1234@host.xz/~/path/to/repo.git/", "",
 		),
 		newParseURLTest(
 			"/path/to/repo.git/",
