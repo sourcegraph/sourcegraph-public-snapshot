@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -36,7 +37,7 @@ func TestNullIDResilience(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
 	db := dbtesting.GetDB(t)
-	sr := New(store.New(db))
+	sr := New(store.New(db), et.TestKey{})
 
 	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil)
 	if err != nil {
@@ -848,7 +849,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 
 	cstore := store.New(db)
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: cstore, key: et.TestKey{}}
 	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -979,7 +980,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	cstore := store.New(db)
 
 	authenticator := &auth.OAuthBearerToken{Token: "SOSECRET"}
-	userCred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+	userCred, err := cstore.UserCredentials().Create(ctx, et.TestKey{}, database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainBatches,
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalServiceID:   "https://github.com/",

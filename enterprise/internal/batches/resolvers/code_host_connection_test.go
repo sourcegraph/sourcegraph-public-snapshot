@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
@@ -154,7 +155,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	})
 
 	t.Run("User.BatchChangesCodeHosts", func(t *testing.T) {
-		cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+		cred, err := cstore.UserCredentials().Create(ctx, et.TestKey{}, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainBatches,
 			ExternalServiceID:   ghRepo.ExternalRepo.ServiceID,
 			ExternalServiceType: ghRepo.ExternalRepo.ServiceType,

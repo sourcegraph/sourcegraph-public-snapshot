@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -38,7 +39,8 @@ func TestPermissionLevels(t *testing.T) {
 	db := dbtesting.GetDB(t)
 
 	cstore := store.New(db)
-	sr := New(cstore)
+	key := et.TestKey{}
+	sr := New(cstore, key)
 	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -358,7 +360,7 @@ func TestPermissionLevels(t *testing.T) {
 
 					var graphqlID graphql.ID
 					if tc.user != 0 {
-						cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+						cred, err := cstore.UserCredentials().Create(ctx, key, database.UserCredentialScope{
 							Domain:              database.UserCredentialDomainBatches,
 							ExternalServiceID:   "https://github.com/",
 							ExternalServiceType: extsvc.TypeGitHub,
@@ -547,7 +549,7 @@ func TestPermissionLevels(t *testing.T) {
 
 					var batchChangesCredentialID graphql.ID
 					if tc.user != 0 {
-						cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+						cred, err := cstore.UserCredentials().Create(ctx, key, database.UserCredentialScope{
 							Domain:              database.UserCredentialDomainBatches,
 							ExternalServiceID:   "https://github.com/",
 							ExternalServiceType: extsvc.TypeGitHub,

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -38,6 +39,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(db, clock)
+	key := et.TestKey{}
 
 	admin := ct.CreateTestUser(t, db, true)
 
@@ -504,6 +506,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				// Don't actually sleep for the sake of testing.
 				true,
 				cstore,
+				key,
 				tc.plan,
 			)
 			if err != nil {
@@ -593,6 +596,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	db := dbtesting.GetDB(t)
 
 	cstore := store.New(db)
+	key := et.TestKey{}
 
 	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
 
@@ -618,7 +622,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 	plan.Changeset = ct.BuildChangeset(ct.TestChangesetOpts{Repo: rs[0].ID})
 
-	err := executePlan(ctx, nil, sources.NewFakeSourcer(nil, &sources.FakeChangesetSource{}), true, cstore, plan)
+	err := executePlan(ctx, nil, sources.NewFakeSourcer(nil, &sources.FakeChangesetSource{}), true, cstore, key, plan)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
@@ -635,6 +639,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 	cstore := store.New(db)
+	key := et.TestKey{}
 
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)
@@ -649,7 +654,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	t.Run("imported changeset uses global token when no site-credential exists", func(t *testing.T) {
 		fakeSource := &sources.FakeChangesetSource{}
 		sourcer := sources.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
+		_, err := loadChangesetSource(ctx, cstore, key, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 0,
 		}, repo)
 		if err != nil {
@@ -673,7 +678,7 @@ func TestLoadChangesetSource(t *testing.T) {
 		})
 		fakeSource := &sources.FakeChangesetSource{}
 		sourcer := sources.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
+		_, err := loadChangesetSource(ctx, cstore, key, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 0,
 		}, repo)
 		if err != nil {
@@ -687,7 +692,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	t.Run("owned by missing batch change", func(t *testing.T) {
 		fakeSource := &sources.FakeChangesetSource{}
 		sourcer := sources.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
+		_, err := loadChangesetSource(ctx, cstore, key, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: 1234,
 		}, repo)
 		if err == nil {
@@ -698,7 +703,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	t.Run("owned by admin user without credential", func(t *testing.T) {
 		fakeSource := &sources.FakeChangesetSource{}
 		sourcer := sources.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
+		_, err := loadChangesetSource(ctx, cstore, key, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: adminBatchChange.ID,
 		}, repo)
 		if err != nil {
@@ -712,7 +717,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	t.Run("owned by normal user without credential", func(t *testing.T) {
 		fakeSource := &sources.FakeChangesetSource{}
 		sourcer := sources.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
+		_, err := loadChangesetSource(ctx, cstore, key, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
 		if err == nil {
@@ -721,7 +726,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("owned by admin user with credential", func(t *testing.T) {
-		if _, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+		if _, err := cstore.UserCredentials().Create(ctx, key, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainBatches,
 			UserID:              admin.ID,
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -732,7 +737,7 @@ func TestLoadChangesetSource(t *testing.T) {
 
 		fakeSource := &sources.FakeChangesetSource{}
 		sourcer := sources.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
+		_, err := loadChangesetSource(ctx, cstore, key, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: adminBatchChange.ID,
 		}, repo)
 		if err != nil {
@@ -744,7 +749,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	})
 
 	t.Run("owned by normal user with credential", func(t *testing.T) {
-		if _, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+		if _, err := cstore.UserCredentials().Create(ctx, key, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainBatches,
 			UserID:              user.ID,
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
@@ -758,7 +763,7 @@ func TestLoadChangesetSource(t *testing.T) {
 
 		fakeSource := &sources.FakeChangesetSource{}
 		sourcer := sources.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
+		_, err := loadChangesetSource(ctx, cstore, key, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
 		if err != nil {
@@ -783,7 +788,7 @@ func TestLoadChangesetSource(t *testing.T) {
 
 		fakeSource := &sources.FakeChangesetSource{}
 		sourcer := sources.NewFakeSourcer(nil, fakeSource)
-		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
+		_, err := loadChangesetSource(ctx, cstore, key, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: userBatchChange.ID,
 		}, repo)
 		if err != nil {
@@ -800,6 +805,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	db := dbtesting.GetDB(t)
 
 	cstore := store.New(db)
+	key := et.TestKey{}
 
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)
@@ -952,7 +958,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.credentials != nil {
-				cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+				cred, err := cstore.UserCredentials().Create(ctx, key, database.UserCredentialScope{
 					Domain:              database.UserCredentialDomainBatches,
 					UserID:              tt.user.ID,
 					ExternalServiceType: tt.repo.ExternalRepo.ServiceType,
@@ -987,6 +993,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				sourcer,
 				true,
 				cstore,
+				key,
 				plan,
 			)
 
