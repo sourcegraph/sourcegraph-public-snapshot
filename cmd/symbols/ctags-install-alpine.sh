@@ -5,7 +5,7 @@
 set -eux
 
 # Commit hash of github.com/universal-ctags/ctags
-CTAGS_VERSION=03f933a96d3ef87adbf9d167462d45ce69577edb
+CTAGS_VERSION=681a8d5f5f6fcca9d8cca703c250f4cdf05b45c3
 
 apk --no-cache add \
   autoconf \
