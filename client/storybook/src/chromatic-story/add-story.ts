@@ -1,5 +1,5 @@
-import { toId } from '@storybook/csf'
 import { PublishedStoreItem, StoryStore } from '@storybook/client-api'
+import { toId } from '@storybook/csf'
 
 import { createChromaticStory, CreateChromaticStoryOptions } from './create-chromatic-story'
 
@@ -16,7 +16,7 @@ interface AddStoryOptions extends Pick<CreateChromaticStoryOptions, 'isRedesignE
     storeItem: PublishedStoreItem
 }
 
-export const addStory = (options: AddStoryOptions) => {
+export const addStory = (options: AddStoryOptions): void => {
     const {
         storeItem: { name, kind, storyFn, parameters },
         isDarkModeEnabled,

@@ -1,10 +1,10 @@
-import isChromatic from 'chromatic/isChromatic'
-import { raw } from '@storybook/react'
 import { PublishedStoreItem } from '@storybook/client-api'
+import { raw } from '@storybook/react'
+import isChromatic from 'chromatic/isChromatic'
 
 import { addStory } from './add-story'
 
-if (isChromatic()) {
+if (isChromatic() || true) {
     // Get an array of all stories which are already added to the StoryStore.
     const stories = raw() as PublishedStoreItem[]
 
