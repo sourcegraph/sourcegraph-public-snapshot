@@ -79,10 +79,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		// Client integration tests
-
-		// TODO: Fix flakiness: https://github.com/sourcegraph/sourcegraph/issues/20359
 		pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests",
-			bk.AutomaticRetry(5),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
 			bk.Env("ENTERPRISE", "1"),
 			bk.Env("PERCY_ON", "true"),
@@ -293,7 +290,7 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["VAGRANT_SERVICE_ACCOUNT"] = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.27.1"
+	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.27.2"
 
 	env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(images.SourcegraphDockerImages)
 

@@ -1017,6 +1017,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 0},
 			},
 			{
+				`repo contains respects parameters that affect repo search (fork)`,
+				`repo:sgtest/mux fork:yes repo:contains.file(README)`,
+				counts{Repo: 1},
+			},
+			{
 				name:   `commit results without repo filter`,
 				query:  `type:commit LSIF`,
 				counts: counts{Commit: 9},

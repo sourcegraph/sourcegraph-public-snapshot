@@ -24,6 +24,8 @@ var (
 	password = flag.String("password", "supersecurepassword", "The password of the admin user")
 
 	githubToken = flag.String("github-token", os.Getenv("GITHUB_TOKEN"), "The GitHub personal access token that will be used to authenticate a GitHub external service")
+
+	dotcom = flag.Bool("dotcom", false, "Whether to test dotcom specific constraints")
 )
 
 func TestMain(m *testing.M) {

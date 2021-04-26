@@ -140,19 +140,20 @@ If that still doesn't work, viewing the console and network activity of the exte
 
 If you are still experiencing issues, the next step is to inspect the browser extension console output and network activity, often revealing subtle configuration errors.
 
-In Chrome:
 ![Chrome extension console and network activity](https://sourcegraphstatic.com/ChromeExtensionConsoleNetworkActivity.gif)
 
-1) Right click the Sourcegraph browser extension icon
-2) Select Manage Extensions
-3) Under Inspect Views select background page, this will open a dev console to the extension background page
-4) In the developer console select the network tab
+In Chrome:
+
+1. Right click the Sourcegraph browser extension icon
+2. Select Manage Extensions
+3. Under Inspect Views select background page, this will open a dev console to the extension background page
+4. In the developer console select the network tab
 
 In Safari:
 
-1) Ensure you have access to the develop tab by selecting Safari > Preferences > Advanced, at the bottom of the preference UI check the box labelled `Show Develop menu in menu bar`
-2 ) In Develop select Web Extension Background Pages > Sourcegraph
-3) Select the Network tab
+1. Ensure you have access to the develop tab by selecting Safari > Preferences > Advanced, at the bottom of the preference UI check the box labelled `Show Develop menu in menu bar`
+2. In Develop select Web Extension Background Pages > Sourcegraph
+3. Select the Network tab
 
 If that still doesn't help, take a screenshot of the console and network activity and attach it [to a new issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=Browser%20extension%20-%20) so we can investigate further.
 
