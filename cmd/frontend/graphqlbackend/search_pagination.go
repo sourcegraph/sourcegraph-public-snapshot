@@ -257,7 +257,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search
 		searchBucketMin:     10,
 		searchBucketMax:     1000,
 	}
-	return plan.execute(ctx, db, func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error) {
+	return plan.execute(ctx, database.Repos(db), func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error) {
 		batchArgs := *args
 		batchArgs.RepoPromise = (&search.Promise{}).Resolve(batch)
 		fileResults, fileCommon, err := searchFilesInReposBatch(ctx, db, &batchArgs)
@@ -337,13 +337,13 @@ func repoOfResult(result SearchResultResolver) string {
 //
 // If the executor returns any error, the search will be cancelled and the error
 // returned.
-func (p *repoPaginationPlan) execute(ctx context.Context, db dbutil.DB, exec executor) (c *searchCursor, results []SearchResultResolver, common *streaming.Stats, err error) {
+func (p *repoPaginationPlan) execute(ctx context.Context, repoStore *database.RepoStore, exec executor) (c *searchCursor, results []SearchResultResolver, common *streaming.Stats, err error) {
 	// Determine how large the batches of repositories we will search over will be.
 	var totalRepos int
 	if p.mockNumTotalRepos != nil {
 		totalRepos = p.mockNumTotalRepos()
 	} else {
-		totalRepos = numTotalRepos.get(ctx, db)
+		totalRepos = numTotalRepos.get(ctx, repoStore)
 	}
 	batchSize := clamp(totalRepos/p.searchBucketDivisor, p.searchBucketMin, p.searchBucketMax)
 
@@ -600,7 +600,7 @@ type numTotalReposCache struct {
 	count      int
 }
 
-func (n *numTotalReposCache) get(ctx context.Context, db dbutil.DB) int {
+func (n *numTotalReposCache) get(ctx context.Context, repoStore *database.RepoStore) int {
 	n.RLock()
 	if !n.lastUpdate.IsZero() && time.Since(n.lastUpdate) < 1*time.Minute {
 		defer n.RUnlock()
@@ -609,7 +609,7 @@ func (n *numTotalReposCache) get(ctx context.Context, db dbutil.DB) int {
 	n.RUnlock()
 
 	n.Lock()
-	newCount, err := database.Repos(db).Count(ctx, database.ReposListOptions{})
+	newCount, err := repoStore.Count(ctx, database.ReposListOptions{})
 	if err != nil {
 		defer n.Unlock()
 		log15.Error("failed to determine numTotalRepos", "error", err)
