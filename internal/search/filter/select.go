@@ -30,7 +30,12 @@ type Object map[string]interface{}
 var empty = struct{}{}
 
 var validSelectors = map[SelectType]Object{
-	Commit:     {},
+	Commit: {
+		"diff": Object{
+			"added":   empty,
+			"removed": empty,
+		},
+	},
 	Content:    {},
 	File:       {},
 	Repository: {},

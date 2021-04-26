@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -21,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -362,18 +360,20 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 
 					var symbols []*result.SymbolMatch
 					if typ == symbolRequest {
-						symbols = zoektFileMatchToSymbolResults(repoResolver, inputRev, &file)
+						symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
 					}
 					fm := &FileMatchResolver{
 						db: db,
 						FileMatch: result.FileMatch{
-							Path:        file.FileName,
 							LineMatches: lines,
 							LimitHit:    fileLimitHit,
 							Symbols:     symbols,
-							Repo:        repo,
-							CommitID:    api.CommitID(file.Version),
-							InputRev:    &inputRev,
+							File: result.File{
+								InputRev: &inputRev,
+								CommitID: api.CommitID(file.Version),
+								Repo:     repo,
+								Path:     file.FileName,
+							},
 						},
 						RepoResolver: repoResolver,
 					}
@@ -526,11 +526,13 @@ func escape(s string) string {
 	return string(escaped)
 }
 
-func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
-	// Symbol search returns a resolver so we need to pass in some
-	// extra stuff. This is a sign that we can probably restructure
-	// resolvers to avoid this.
-	baseURI := &gituri.URI{URL: url.URL{Scheme: "git", Host: repo.Name(), RawQuery: url.QueryEscape(inputRev)}}
+func zoektFileMatchToSymbolResults(repoName types.RepoName, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
+	newFile := &result.File{
+		Path:     file.FileName,
+		Repo:     repoName,
+		CommitID: api.CommitID(file.Version),
+		InputRev: &inputRev,
+	}
 
 	symbols := make([]*result.SymbolMatch, 0, len(file.LineMatches))
 	for _, l := range file.LineMatches {
@@ -558,7 +560,7 @@ func zoektFileMatchToSymbolResults(repo *RepositoryResolver, inputRev string, fi
 					Pattern:  fmt.Sprintf("/^%s$/", escape(string(l.Line))),
 					Language: file.Language,
 				},
-				BaseURI: baseURI,
+				File: newFile,
 			})
 		}
 	}

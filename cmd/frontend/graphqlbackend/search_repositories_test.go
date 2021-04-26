@@ -44,19 +44,19 @@ func TestSearchRepositories(t *testing.T) {
 		switch repoName {
 		case "foo/one":
 			return []*FileMatchResolver{
-				mkFileMatchResolver(db, result.FileMatch{
+				mkFileMatchResolver(db, result.FileMatch{File: result.File{
 					Repo:     types.RepoName{ID: 123, Name: repoName},
 					InputRev: &rev,
 					Path:     "f.go",
-				}),
+				}}),
 			}, &streaming.Stats{}, nil
 		case "bar/one":
 			return []*FileMatchResolver{
-				mkFileMatchResolver(db, result.FileMatch{
+				mkFileMatchResolver(db, result.FileMatch{File: result.File{
 					Repo:     types.RepoName{ID: 789, Name: repoName},
 					InputRev: &rev,
 					Path:     "f.go",
-				}),
+				}}),
 			}, &streaming.Stats{}, nil
 		case "foo/no-match":
 			return []*FileMatchResolver{}, &streaming.Stats{}, nil
@@ -146,11 +146,11 @@ func TestRepoShouldBeAdded(t *testing.T) {
 		switch repoName {
 		case "foo/one":
 			return []*FileMatchResolver{
-				mkFileMatchResolver(db, result.FileMatch{
+				mkFileMatchResolver(db, result.FileMatch{File: result.File{
 					Repo:     types.RepoName{ID: 123, Name: repoName},
 					InputRev: &rev,
 					Path:     "foo.go",
-				}),
+				}}),
 			}, &streaming.Stats{}, nil
 		case "foo/no-match":
 			return []*FileMatchResolver{}, &streaming.Stats{}, nil
@@ -166,11 +166,11 @@ func TestRepoShouldBeAdded(t *testing.T) {
 		mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *streaming.Stats, err error) {
 			rev := "1a2b3c"
 			return []*FileMatchResolver{
-				mkFileMatchResolver(db, result.FileMatch{
+				mkFileMatchResolver(db, result.FileMatch{File: result.File{
 					Repo:     types.RepoName{ID: 123, Name: repo.Repo.Name},
 					InputRev: &rev,
 					Path:     "foo.go",
-				}),
+				}}),
 			}, &streaming.Stats{}, nil
 		}
 		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustInclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
@@ -203,11 +203,11 @@ func TestRepoShouldBeAdded(t *testing.T) {
 		mockSearchFilesInRepos = func(args *search.TextParameters) (matches []*FileMatchResolver, common *streaming.Stats, err error) {
 			rev := "1a2b3c"
 			return []*FileMatchResolver{
-				mkFileMatchResolver(db, result.FileMatch{
+				mkFileMatchResolver(db, result.FileMatch{File: result.File{
 					Repo:     types.RepoName{ID: 123, Name: repo.Repo.Name},
 					InputRev: &rev,
 					Path:     "foo.go",
-				}),
+				}}),
 			}, &streaming.Stats{}, nil
 		}
 		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustExclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}

@@ -1,12 +1,16 @@
 import * as H from 'history'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { PageTitle } from '../../../../components/PageTitle'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { UserAreaUserFields } from '../../../../graphql-operations'
 import { ActionContainer } from '../../../../repo/settings/components/ActionContainer'
-import { scheduleUserPermissionsSync } from '../../../../site-admin/backend'
 import { eventLogger } from '../../../../tracking/eventLogger'
+
+import { scheduleUserPermissionsSync, userPermissionsInfo } from './backend'
 
 /**
  * The user settings permissions page.
@@ -16,6 +20,11 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAr
     history,
 }) => {
     useEffect(() => eventLogger.logViewEvent('UserSettingsPermissions'))
+    const permissionsInfo = useObservable(useMemo(() => userPermissionsInfo(user.id), [user.id]))
+
+    if (permissionsInfo === undefined) {
+        return <LoadingSpinner />
+    }
 
     return (
         <div className="w-100">
@@ -25,7 +34,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAr
                 <div className="alert alert-info">
                     Site admin can access all repositories in the Sourcegraph instance.
                 </div>
-            ) : !user.permissionsInfo ? (
+            ) : !permissionsInfo ? (
                 <div className="alert alert-info">
                     This user is queued to sync permissions, it can only access non-private repositories until syncing
                     is finished.
@@ -37,18 +46,14 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAr
                             <tr>
                                 <th>Last complete sync</th>
                                 <td>
-                                    {user.permissionsInfo.syncedAt ? (
-                                        <Timestamp date={user.permissionsInfo.syncedAt} />
-                                    ) : (
-                                        'Never'
-                                    )}
+                                    {permissionsInfo.syncedAt ? <Timestamp date={permissionsInfo.syncedAt} /> : 'Never'}
                                 </td>
                                 <td className="text-muted">Updated by user permissions syncing</td>
                             </tr>
                             <tr>
                                 <th>Last incremental sync</th>
                                 <td>
-                                    <Timestamp date={user.permissionsInfo.updatedAt} />
+                                    <Timestamp date={permissionsInfo.updatedAt} />
                                 </td>
                                 <td className="text-muted">Updated by repository permissions syncing</td>
                             </tr>
@@ -58,7 +63,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAr
                 </div>
             )}
             <a href="/help/admin/repo/permissions#background-permissions-syncing">
-                Learn more about background permissions synching.
+                Learn more about background permissions syncing.
             </a>
         </div>
     )

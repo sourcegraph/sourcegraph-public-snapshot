@@ -20,7 +20,6 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -119,7 +118,7 @@ func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Opt
 	repositoryResolver := &searchrepos.Resolver{
 		DB:               r.db,
 		Zoekt:            r.zoekt,
-		DefaultReposFunc: database.DefaultRepos(r.db).List,
+		DefaultReposFunc: backend.Repos.ListDefault,
 	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
@@ -321,7 +320,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 	case len(repoGroupFilters) == 0 && len(repoFilters) == 1:
 		isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
 		if !envvar.SourcegraphDotComMode() {
-			if needsRepoConfig, err := needsRepositoryConfiguration(ctx); err == nil && needsRepoConfig {
+			if needsRepoConfig, err := needsRepositoryConfiguration(ctx, r.db); err == nil && needsRepoConfig {
 				if isSiteAdmin {
 					return &searchAlert{
 						title:       "No repositories or code hosts configured",

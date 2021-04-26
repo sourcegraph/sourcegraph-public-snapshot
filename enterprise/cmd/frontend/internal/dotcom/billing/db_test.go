@@ -18,7 +18,7 @@ func TestDBUsersBillingCustomerID(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("existing user", func(t *testing.T) {
-		u, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u"})
+		u, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
 		if err != nil {
 			t.Fatal(err)
 		}

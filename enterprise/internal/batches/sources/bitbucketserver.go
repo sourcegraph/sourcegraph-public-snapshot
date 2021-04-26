@@ -80,10 +80,10 @@ func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (Changese
 		return nil, newUnsupportedAuthenticatorError("BitbucketServerSource", a)
 	}
 
-	sc := s
-	sc.client = sc.client.WithAuthenticator(a)
-
-	return &sc, nil
+	return &BitbucketServerSource{
+		client: s.client.WithAuthenticator(a),
+		au:     a,
+	}, nil
 }
 
 // AuthenticatedUsername uses the underlying bitbucketserver.Client to get the

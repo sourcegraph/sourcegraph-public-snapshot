@@ -1,0 +1,23 @@
+.sidebar-section {
+    &__list {
+        list-style-type: none;
+        padding: 0;
+        margin-top: 0.5rem;
+    }
+
+    &__list-item {
+        display: block;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 3px;
+
+        &:hover {
+            background-color: var(--color-bg-2);
+            text-decoration: none;
+        }
+
+        &:active {
+            background-color: var(--color-bg-3);
+        }
+    }
+}
