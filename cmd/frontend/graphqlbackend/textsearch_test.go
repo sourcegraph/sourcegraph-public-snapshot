@@ -44,15 +44,19 @@ func TestSearchFilesInRepos(t *testing.T) {
 		switch repoName {
 		case "foo/one":
 			return []result.FileMatch{{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
 			}}, false, nil
 		case "foo/two":
 			return []result.FileMatch{{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
 			}}, false, nil
 		case "foo/empty":
 			return nil, false, nil
@@ -137,21 +141,27 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		switch repoName {
 		case "foo/one":
 			return []result.FileMatch{{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
 			}}, false, nil
 		case "foo/two":
 			return []result.FileMatch{{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
 			}}, false, nil
 		case "foo/three":
 			return []result.FileMatch{{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
 			}}, false, nil
 		default:
 			return nil, false, errors.New("Unexpected repo")
@@ -217,9 +227,11 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		switch repoName {
 		case "foo":
 			return []result.FileMatch{{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
 			}}, false, nil
 		default:
 			panic("unexpected repo")

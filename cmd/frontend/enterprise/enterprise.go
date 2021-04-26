@@ -43,7 +43,6 @@ func DefaultServices() Services {
 		BitbucketServerWebhook:    makeNotFoundHandler("bitbucket server webhook"),
 		NewCodeIntelUploadHandler: func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
 		NewExecutorProxyHandler:   func() http.Handler { return makeNotFoundHandler("executor proxy") },
-		AuthzResolver:             graphqlbackend.DefaultAuthzResolver,
 	}
 }
 

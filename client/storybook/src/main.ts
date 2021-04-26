@@ -122,7 +122,7 @@ const config = {
             test: /\.(sass|scss)$/,
             // Make sure Storybook styles get handled by the Storybook config
             exclude: [/\.module\.(sass|scss)$/, storybookDirectory],
-            use: getCSSLoaders('to-string-loader', 'css-loader'),
+            use: getCSSLoaders('@terminus-term/to-string-loader', { loader: 'css-loader', options: { url: false } }),
         })
 
         config.module?.rules.unshift({
@@ -133,10 +133,11 @@ const config = {
                 loader: 'css-loader',
                 options: {
                     sourceMap: isDevelopment,
-                    localsConvention: 'camelCase',
                     modules: {
+                        exportLocalsConvention: 'camelCase',
                         localIdentName: '[name]__[local]_[hash:base64:5]',
                     },
+                    url: false,
                 },
             }),
         })
@@ -153,7 +154,7 @@ const config = {
             test: /\.css$/,
             // Make sure Storybook styles get handled by the Storybook config
             exclude: [storybookDirectory, ...monacoEditorPaths],
-            use: ['to-string-loader', 'css-loader'],
+            use: ['@terminus-term/to-string-loader', { loader: 'css-loader', options: { url: false } }],
         })
 
         config.module.rules.push({
@@ -162,7 +163,7 @@ const config = {
             include: monacoEditorPaths,
             // Make sure Storybook styles get handled by the Storybook config
             exclude: [storybookDirectory],
-            use: ['style-loader', 'css-loader'],
+            use: ['style-loader', { loader: 'css-loader', options: { url: false } }],
         })
 
         config.module.rules.push({

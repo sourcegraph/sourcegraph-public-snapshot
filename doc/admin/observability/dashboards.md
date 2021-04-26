@@ -516,6 +516,44 @@ This panel indicates index enqueuer errors every 5m.
 
 <br />
 
+### Frontend: Out of band migrations
+
+#### frontend: out_of_band_migrations_up_99th_percentile_duration
+
+This panel indicates 99th percentile successful out-of-band up migration invocation (single batch processed) duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: out_of_band_migrations_up_errors
+
+This panel indicates out-of-band up migration errors every 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-out-of-band-migrations-up-errors).
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: out_of_band_migrations_down_99th_percentile_duration
+
+This panel indicates 99th percentile successful out-of-band down migration invocation (single batch processed) duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: out_of_band_migrations_down_errors
+
+This panel indicates out-of-band down migration errors every 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-out-of-band-migrations-down-errors).
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
 ### Frontend: Internal service requests
 
 #### frontend: internal_indexed_search_error_responses

@@ -219,12 +219,14 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 		}
 
 		fileMatches = append(fileMatches, result.FileMatch{
-			Path:        fm.Path,
+			File: result.File{
+				Path:     fm.Path,
+				Repo:     repo,
+				CommitID: commit,
+				InputRev: &rev,
+			},
 			LineMatches: lineMatches,
 			LimitHit:    fm.LimitHit,
-			Repo:        repo,
-			CommitID:    commit,
-			InputRev:    &rev,
 		})
 	}
 

@@ -2,8 +2,6 @@ package result
 
 import (
 	"strings"
-
-	"github.com/sourcegraph/sourcegraph/internal/gituri"
 )
 
 // Symbol is a code symbol.
@@ -26,12 +24,8 @@ type Symbols = []Symbol
 
 // SymbolMatch is a symbol search result decorated with extra metadata in the frontend.
 type SymbolMatch struct {
-	Symbol  Symbol
-	BaseURI *gituri.URI
-}
-
-func (s *SymbolMatch) URI() *gituri.URI {
-	return s.BaseURI.WithFilePath(s.Symbol.Path)
+	Symbol Symbol
+	File   *File
 }
 
 // toSelectKind maps an internal symbol kind (cf. ctagsKind) to a corresponding

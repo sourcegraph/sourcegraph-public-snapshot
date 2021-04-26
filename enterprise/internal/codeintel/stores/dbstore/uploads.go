@@ -611,9 +611,12 @@ func (s *Store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ ti
 	return basestore.ScanFirstTime(s.Query(ctx, sqlf.Sprintf(getOldestCommitDateQuery, repositoryID)))
 }
 
+// Note: we check against '-infinity' here, as the backfill operation will use this sentinel value in the case
+// that the commit is no longer know by gitserver. This allows the backfill migration to make progress without
+// having pristine database.
 const getOldestCommitDateQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetOldestCommitDate
-SELECT committed_at FROM lsif_uploads WHERE repository_id = %s AND state = 'completed' AND committed_at IS NOT NULL ORDER BY committed_at LIMIT 1
+SELECT committed_at FROM lsif_uploads WHERE repository_id = %s AND state = 'completed' AND committed_at IS NOT NULL AND committed_at != '-infinity' ORDER BY committed_at LIMIT 1
 `
 
 // UpdateCommitedAt updates the commit date for the given repository.

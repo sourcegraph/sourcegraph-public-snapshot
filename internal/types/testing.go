@@ -75,6 +75,7 @@ func MakeAWSCodeCommitRepo(services ...*ExternalService) *Repo {
 // MakeOtherRepo returns a configured repository from a custom host.
 func MakeOtherRepo(services ...*ExternalService) *Repo {
 	repo := MakeRepo("git-host.com/org/foo", "https://git-host.com/", extsvc.KindOther, services...)
+	repo.Metadata = new(OtherRepoMetadata)
 	return repo
 }
 

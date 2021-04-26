@@ -142,7 +142,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		return nil, err
 	}
 	if alertResult != nil {
-		return alertResult, nil
+		return &SearchResultsResolver{db: r.db, alert: alertResult}, nil
 	}
 
 	q, err := query.ToBasicQuery(r.Query)

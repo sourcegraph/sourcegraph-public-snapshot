@@ -436,15 +436,6 @@ describe('e2e test suite', () => {
 
     describe('Repository component', () => {
         const blobTableSelector = '.test-blob > table'
-        /**
-         * @param line 1-indexed line number
-         * @param spanOffset 1-indexed index of the span that's to be clicked
-         */
-        const clickToken = async (line: number, spanOffset: number): Promise<void> => {
-            const selector = `${blobTableSelector} tr:nth-child(${line}) > td.code > div:nth-child(1) > span:nth-child(${spanOffset})`
-            await driver.page.waitForSelector(selector, { visible: true })
-            await driver.page.click(selector)
-        }
 
         const getHoverContents = async (): Promise<string[]> => {
             // Search for any child of test-tooltip-content: as test-tooltip-content has display: contents,
@@ -935,7 +926,11 @@ describe('e2e test suite', () => {
                             '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go'
                     )
                     await driver.page.waitForSelector(blobTableSelector)
-                    await clickToken(24, 5)
+
+                    const selector = `${blobTableSelector} tr:nth-child(24) > td.code > span:nth-child(1) > span:nth-child(8) > span:nth-child(1) > span:nth-child(1) `
+                    await driver.page.waitForSelector(selector, { visible: true })
+                    await driver.page.click(selector)
+
                     await driver.assertWindowLocation(
                         '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go#L24:19'
                     )
