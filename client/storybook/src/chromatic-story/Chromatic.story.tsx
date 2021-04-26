@@ -4,7 +4,7 @@ import isChromatic from 'chromatic/isChromatic'
 
 import { addStory } from './add-story'
 
-if (isChromatic() || true) {
+if (isChromatic()) {
     // Get an array of all stories which are already added to the StoryStore.
     const stories = raw() as PublishedStoreItem[]
 
