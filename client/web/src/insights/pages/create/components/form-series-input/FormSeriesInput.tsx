@@ -1,63 +1,86 @@
-import classnames from 'classnames';
-import React, { ReactElement, Ref, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
-import { useField, useForm } from 'react-final-form-hooks';
-import { noop } from 'rxjs';
+import classnames from 'classnames'
+import React, { Ref, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
+import { useField, useForm } from 'react-final-form-hooks'
+import { noop } from 'rxjs'
 
-import { DataSeries } from '../../types';
-import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput';
-import { InputField } from '../form-field/FormField';
-import { FormGroup } from '../form-group/FormGroup';
-import { createRequiredValidator, createValidRegExpValidator, composeValidators } from '../validators';
+import { DataSeries } from '../../types'
+import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
+import { InputField } from '../form-field/FormField'
+import { FormGroup } from '../form-group/FormGroup'
+import { createRequiredValidator, createValidRegExpValidator, composeValidators } from '../validators'
 
 import styles from './FormSeriesInput.module.scss'
 
-export interface FormSeriesInputAPI {
-    focus: () => void
-}
-
-interface FormSeriesProps {
-    className?: string
-    name?: string
-    query?: string
-    color?: string
-    onSubmit?: (series: DataSeries) => void;
-    innerRef?: Ref<FormSeriesInputAPI>
-    cancel?: boolean;
-    onCancel?: () => void
-}
-
-const requiredNameField = createRequiredValidator('Name is required field for data series.');
+const requiredNameField = createRequiredValidator('Name is required field for data series.')
 
 const validQuery = composeValidators(
     createValidRegExpValidator('Query must be valid regular expression.'),
     createRequiredValidator('Query is required field for data series.')
 )
 
-export function FormSeriesInput(props: FormSeriesProps): ReactElement {
-    const { name, query, color, className, cancel = false, onCancel = noop, onSubmit = noop, innerRef } = props;
+/** Mimic native input public API. */
+export interface FormSeriesInputAPI {
+    /** Mimic-function to native input focus. */
+    focus: () => void
+}
 
-    const hasNameControlledValue = !!name;
-    const hasQueryControlledValue = !!query;
+interface FormSeriesProps {
+    /** Name of series. */
+    name?: string
+    /** Query value of series. */
+    query?: string
+    /** Color value for line chart. (series) */
+    color?: string
+    /** Enable autofocus behavior of first input of form. */
+    autofocus?: boolean
+    /** Enable cancel button. */
+    cancel?: boolean
+    /** Ref for mimic native behavior (focus function). */
+    innerRef?: Ref<FormSeriesInputAPI>
+    /** Custom class name for root element of form series. */
+    className?: string
+    /** On submit handler of series form. */
+    onSubmit?: (series: DataSeries) => void
+    /** On cancel handler. */
+    onCancel?: () => void
+}
 
-    const { handleSubmit, form, } = useForm<DataSeries>({
+/** Displays form series input (three field - name field, query field and color picker). */
+export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props => {
+    const {
+        name,
+        query,
+        color,
+        className,
+        cancel = false,
+        autofocus = false,
+        onCancel = noop,
+        onSubmit = noop,
+        innerRef,
+    } = props
+
+    const hasNameControlledValue = !!name
+    const hasQueryControlledValue = !!query
+
+    const { handleSubmit, form } = useForm<DataSeries>({
         initialValues: {
             name,
             query,
             color: color ?? DEFAULT_ACTIVE_COLOR,
         },
-        onSubmit
-    });
+        onSubmit,
+    })
 
-    const nameField = useField('name', form, requiredNameField);
+    const nameField = useField('name', form, requiredNameField)
     const queryField = useField('query', form, validQuery)
-    const colorField = useField('color', form,)
+    const colorField = useField('color', form)
 
-    const nameReference = useRef<HTMLInputElement>(null);
-    const queryReference = useRef<HTMLInputElement>(null);
+    const nameReference = useRef<HTMLInputElement>(null)
+    const queryReference = useRef<HTMLInputElement>(null)
 
-    // In case if consumer ask this component to be focused (.focus())
-    // We focus first invalid field. Otherwise we focus first field of
-    // form series - series name field.
+    // In case if consumer asked this component to be focused (call .focus() on ref)
+    // We focus first invalid field. Otherwise we focus first field of form series
+    // - series name field.
     useImperativeHandle(innerRef, () => ({
         focus: () => {
             if (nameField.meta.error) {
@@ -69,15 +92,17 @@ export function FormSeriesInput(props: FormSeriesProps): ReactElement {
             }
 
             nameReference.current?.focus()
-        }
-    }));
+        },
+    }))
 
     useEffect(() => {
-        nameReference.current?.focus()
-    }, []);
+        if (autofocus) {
+            nameReference.current?.focus()
+        }
+    }, [autofocus])
 
     const handleSubmitButton = useCallback(
-        (event: React.MouseEvent): void => {
+        async (event: React.MouseEvent) => {
             if (nameField.meta.error) {
                 event.preventDefault()
                 return nameReference.current?.focus()
@@ -88,21 +113,21 @@ export function FormSeriesInput(props: FormSeriesProps): ReactElement {
                 return queryReference.current?.focus()
             }
 
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            return handleSubmit(event)
+            // handleSubmit work with form element and use form event
+            // but we can't have sub forms for the sake of semantics.
+            // if this case synthetic event of totally comparable with event
+            // from submit button.
+            await handleSubmit((event as unknown) as React.SyntheticEvent<HTMLFormElement>)
         },
         [handleSubmit, nameField.meta.error, queryField.meta.error]
     )
 
     return (
-        // eslint-disable-next-line react/forbid-elements
         <div className={classnames(styles.formSeriesInput, className)}>
-
             <InputField
-                title='Name'
-                placeholder='ex. Function component'
-                description='Name shown in the legend and tooltip'
+                title="Name"
+                placeholder="ex. Function component"
+                description="Name shown in the legend and tooltip"
                 valid={(hasNameControlledValue || nameField.meta.touched) && nameField.meta.valid}
                 error={nameField.meta.touched && nameField.meta.error}
                 className={styles.formSeriesInputField}
@@ -111,45 +136,43 @@ export function FormSeriesInput(props: FormSeriesProps): ReactElement {
             />
 
             <InputField
-                title='Query'
-                placeholder='ex. spatternType:regexp const\\s\\w+:\\s(React\\.)?FunctionComponent'
-                description='Do not include the repo: filter as it will be added automatically for the current repository'
+                title="Query"
+                placeholder="ex. spatternType:regexp const\\s\\w+:\\s(React\\.)?FunctionComponent"
+                description="Do not include the repo: filter as it will be added automatically for the current repository"
                 valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.valid}
                 error={queryField.meta.touched && queryField.meta.error}
                 className={styles.formSeriesInputField}
                 {...queryField.input}
-                ref={queryReference}/>
+                ref={queryReference}
+            />
 
-            <FormGroup
-                name='Color'
-                className={classnames(styles.formSeriesInputField, styles.formSeriesInputColor)}>
-
-                <FormColorInput
-                    value={colorField.input.value}
-                    onChange={colorField.input.onChange}
-                />
+            <FormGroup name="Color" className={classnames(styles.formSeriesInputField, styles.formSeriesInputColor)}>
+                <FormColorInput value={colorField.input.value} onChange={colorField.input.onChange} />
             </FormGroup>
 
             <div>
                 <button
-                    type='submit'
+                    type="submit"
                     onClick={handleSubmitButton}
-                    className={classnames(styles.formSeriesInputButton,'button')}>
-
+                    className={classnames(styles.formSeriesInputButton, 'button')}
+                >
                     Done
                 </button>
 
-                {
-                    cancel &&
+                {cancel && (
                     <button
-                        type='button'
+                        type="button"
                         onClick={onCancel}
-                        className={classnames(styles.formSeriesInputButton, styles.formSeriesInputButtonCancel, 'button')}>
-
+                        className={classnames(
+                            styles.formSeriesInputButton,
+                            styles.formSeriesInputButtonCancel,
+                            'button'
+                        )}
+                    >
                         Cancel
                     </button>
-                }
+                )}
             </div>
         </div>
-    );
+    )
 }

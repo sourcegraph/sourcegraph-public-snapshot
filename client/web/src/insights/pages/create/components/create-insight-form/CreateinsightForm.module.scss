@@ -1,6 +1,4 @@
-
 .create-insight-form {
-
     &__sub-title-container {
         margin-bottom: 2rem;
     }
@@ -40,9 +38,9 @@
         margin-right: 1rem;
     }
 
-    &__button  {
+    &__button {
         align-self: flex-start;
-        padding: 8px 12px;
+        padding: 0.5rem 0.875rem;
         border-radius: 4px;
         background-color: transparent;
         border: 1px solid var(--border-color);
@@ -54,7 +52,7 @@
         }
     }
 
-    &__button +  &__button {
+    &__button + &__button {
         margin-left: 0.5rem;
     }
 

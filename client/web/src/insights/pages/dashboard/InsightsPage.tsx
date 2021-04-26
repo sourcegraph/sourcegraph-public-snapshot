@@ -14,12 +14,15 @@ import { PageHeader } from '../../../components/PageHeader'
 import { InsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
 import { InsightsApiContext } from '../../core/backend/api-provider'
 
-export interface InsightsPageProps extends ExtensionsControllerProps, Omit<InsightsViewGridProps, 'views'>, TelemetryProps {
-    isCreationUIEnabled: boolean;
+export interface InsightsPageProps
+    extends ExtensionsControllerProps,
+        Omit<InsightsViewGridProps, 'views'>,
+        TelemetryProps {
+    isCreationUIEnabled: boolean
 }
 
 export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
-    const { isCreationUIEnabled } = props;
+    const { isCreationUIEnabled } = props
     const { getInsightCombinedViews } = useContext(InsightsApiContext)
 
     const views = useObservable(
@@ -41,9 +44,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
         props.telemetryService.log('InsightAddMoreClick')
     }, [props.telemetryService])
 
-    const configureURL = isCreationUIEnabled
-        ? '/insights/create'
-        : '/user/settings'
+    const configureURL = isCreationUIEnabled ? '/insights/create' : '/user/settings'
 
     return (
         <div className="w-100">

@@ -1,4 +1,3 @@
-
 .form-color-picker {
     display: flex;
     flex-direction: column;
@@ -29,11 +28,11 @@
         border-radius: 50%;
         cursor: pointer;
 
-        &:before {
-            content: "";
+        &::before {
+            content: '';
             display: block;
-            width: calc(2rem + 8px);
-            height: calc(2rem + 8px);
+            width: 2.5rem;
+            height: 2.5rem;
             top: 50%;
             left: 50%;
             position: absolute;
@@ -44,15 +43,15 @@
             opacity: 0;
         }
 
-        &:hover:before {
+        &:hover::before {
             opacity: 1;
-            box-shadow: 0 0 0 0.05em #fff, 0 0 0.15em 0.1em currentColor;
+            box-shadow: 0 0 0 0.05em #ffffff, 0 0 0.15em 0.1em currentColor;
         }
     }
 
     // Checked state
     &__native-radio-control:checked + &__radio-control {
-        &:before {
+        &::before {
             opacity: 1;
             border: solid 2px currentColor;
         }
@@ -60,9 +59,9 @@
 
     // Focus state
     &__native-radio-control:focus + &__radio-control {
-        &:before {
+        &::before {
             opacity: 1;
-            box-shadow: 0 0 0 0.05em #fff, 0 0 0.15em 0.1em currentColor;
+            box-shadow: 0 0 0 0.05em #ffffff, 0 0 0.15em 0.1em currentColor;
         }
     }
 
@@ -71,6 +70,6 @@
     }
 
     &__custom-color {
-        color: var(--link-color)
+        color: var(--link-color);
     }
 }

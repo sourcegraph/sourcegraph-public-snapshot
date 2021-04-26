@@ -1,42 +1,50 @@
-import { FORM_ERROR } from 'final-form';
-import React, { useCallback, useContext } from 'react';
-import { Redirect } from 'react-router';
-import { RouteComponentProps } from 'react-router-dom';
+import { FORM_ERROR } from 'final-form'
+import React, { useCallback, useContext } from 'react'
+import { Redirect } from 'react-router'
+import { RouteComponentProps } from 'react-router-dom'
 import * as uuid from 'uuid'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context';
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
-import { AuthenticatedUser } from '../../../auth';
+import { AuthenticatedUser } from '../../../auth'
 import { InsightsApiContext } from '../../core/backend/api-provider'
 
-import { CreateInsightForm, CreateInsightFormProps } from './components/create-insight-form/CreateInsightForm';
+import { CreateInsightForm, CreateInsightFormProps } from './components/create-insight-form/CreateInsightForm'
 
-export interface CreateInsightPageProps extends PlatformContextProps, RouteComponentProps  {
+export interface CreateInsightPageProps extends PlatformContextProps, RouteComponentProps {
+    /**
+     * Authenticated user info, Used to decide where code insight will appears
+     * in personal dashboard (private) or in organisation dashboard (public)
+     * */
     authenticatedUser: AuthenticatedUser | null
 }
 
+/** Displays create insight page with creation form. */
 export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> = props => {
-    const { platformContext, authenticatedUser, history } = props;
-    const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext);
+    const { platformContext, authenticatedUser, history } = props
+    const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
 
     const handleSubmit = useCallback<CreateInsightFormProps['onSubmit']>(
         async values => {
-
             if (!authenticatedUser) {
                 return
             }
 
-            const { id: userID, organizations: { nodes: orgs } } = authenticatedUser;
-            const subjectID = values.visibility === 'personal'
-                ? userID
-                // TODO [VK] Add orgs picker in creation UI and not just pick first organization
-                : orgs[0].id;
+            const {
+                id: userID,
+                organizations: { nodes: orgs },
+            } = authenticatedUser
+            const subjectID =
+                values.visibility === 'personal'
+                    ? userID
+                    : // TODO [VK] Add orgs picker in creation UI and not just pick first organization
+                      orgs[0].id
 
             try {
-                const settings = await getSubjectSettings(subjectID).toPromise();
-                const content = JSON.parse(settings.contents) as object;
-                const insightID = uuid.v4();
+                const settings = await getSubjectSettings(subjectID).toPromise()
+                const content = JSON.parse(settings.contents) as object
+                const insightID = uuid.v4()
 
                 const newSettings = {
                     ...content,
@@ -50,32 +58,33 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
                             // to prevent this behavior below we replace double escaping
                             // with just one series of escape characters e.g. - //
                             query: line.query.replace(/\\\\/g, '\\'),
-                            stroke: line.color
+                            stroke: line.color,
                         })),
                         step: {
-                            [values.step]: +values.stepValue
-                        }
-                    }
+                            [values.step]: +values.stepValue,
+                        },
+                    },
                 }
 
-                await updateSubjectSettings(platformContext, subjectID, JSON.stringify(newSettings, null, 2)).toPromise()
+                await updateSubjectSettings(
+                    platformContext,
+                    subjectID,
+                    JSON.stringify(newSettings, null, 2)
+                ).toPromise()
 
-                history.push('/insights');
+                history.push('/insights')
             } catch (error) {
-                return { [FORM_ERROR]: asError(error)}
+                return { [FORM_ERROR]: asError(error) }
             }
 
-            return;
+            return
         },
         [history, updateSubjectSettings, getSubjectSettings, platformContext, authenticatedUser]
-    );
+    )
 
     if (authenticatedUser === null) {
-        return <Redirect to='/'/>
+        return <Redirect to="/" />
     }
 
-    return (
-        <CreateInsightForm
-            onSubmit={handleSubmit}/>
-    );
+    return <CreateInsightForm onSubmit={handleSubmit} />
 }

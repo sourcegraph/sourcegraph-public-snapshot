@@ -21,7 +21,7 @@ export class InsightsAPI implements ApiService {
         combineLatest([
             getExtensionsInsights().pipe(
                 map(extensionInsights =>
-                    extensionInsights.map(insight => ({...insight, source: ViewInsightProviderSourceType.Extension}))
+                    extensionInsights.map(insight => ({ ...insight, source: ViewInsightProviderSourceType.Extension }))
                 )
             ),
             fetchBackendInsights().pipe(
@@ -60,10 +60,9 @@ export class InsightsAPI implements ApiService {
         )
 
     public getSubjectSettings = (id: string): Observable<SubjectSettingsResult> =>
-        fetchLatestSubjectSettings(id)
-            .pipe(
-                map(settings => settings.settingsSubject?.latestSettings ?? { id: null, contents: '' }),
-            )
+        fetchLatestSubjectSettings(id).pipe(
+            map(settings => settings.settingsSubject?.latestSettings ?? { id: null, contents: '' })
+        )
 
     public updateSubjectSettings = (context: PlatformContext, subjectId: string, content: string): Observable<void> =>
         from(context.updateSettings(subjectId, content))

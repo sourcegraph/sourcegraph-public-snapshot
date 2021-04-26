@@ -1,6 +1,6 @@
 import { Observable, of, EMPTY } from 'rxjs'
 
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context';
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { InsightsAPI } from '@sourcegraph/web/src/insights/core/backend/insights-api'
 import {
     SubjectSettingsResult,
@@ -163,11 +163,11 @@ export class MockInsightsApi implements InsightsAPI {
     public getSubjectSettings(): Observable<SubjectSettingsResult> {
         return of({
             id: 0,
-            contents: '{}'
-        });
+            contents: '{}',
+        })
     }
 
     public updateSubjectSettings(context: PlatformContext, subjectId: string, content: string): Observable<void> {
-        return EMPTY;
+        return EMPTY
     }
 }

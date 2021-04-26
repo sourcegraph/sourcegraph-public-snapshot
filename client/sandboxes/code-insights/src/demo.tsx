@@ -1,7 +1,7 @@
 import React, { ReactElement, Suspense } from 'react'
 import { render } from 'react-dom'
 import { BrowserRouter } from 'react-router-dom'
-import { noop } from 'rxjs';
+import { noop } from 'rxjs'
 
 import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -14,9 +14,9 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { MockInsightsApi } from './mock-api'
 
 import '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { lazyComponent } from '@sourcegraph/web/src/util/lazyComponent';
-import { Route, Switch } from 'react-router';
-import { LayoutRouteProps } from '@sourcegraph/web/src/routes';
+import { lazyComponent } from '@sourcegraph/web/src/util/lazyComponent'
+import { Route, Switch } from 'react-router'
+import { LayoutRouteProps } from '@sourcegraph/web/src/routes'
 
 const mockAPI = new MockInsightsApi()
 
@@ -30,33 +30,31 @@ const CONTEXT = {
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     globbing: false,
     authenticatedUser: {
-        "id": "VXNlcjoyODA5Mw==",
-        "databaseID": 28093,
-        "username": "vovakulikov",
-        "avatarURL": "https://avatars.githubusercontent.com/u/18492575?v=4",
-        "email": "vovakulikov@icloud.com",
-        "displayName": "Vova Kulikov",
-        "siteAdmin": false,
-        "tags": [
-            "AllowUserExternalServicePublic"
-        ],
-        "url": "/users/vovakulikov",
-        "settingsURL": "/users/vovakulikov/settings",
-        "organizations": {
-            "nodes": [
+        id: 'VXNlcjoyODA5Mw==',
+        databaseID: 28093,
+        username: 'vovakulikov',
+        avatarURL: 'https://avatars.githubusercontent.com/u/18492575?v=4',
+        email: 'vovakulikov@icloud.com',
+        displayName: 'Vova Kulikov',
+        siteAdmin: false,
+        tags: ['AllowUserExternalServicePublic'],
+        url: '/users/vovakulikov',
+        settingsURL: '/users/vovakulikov/settings',
+        organizations: {
+            nodes: [
                 {
-                    "id": "T3JnOjE=",
-                    "name": "sourcegraph",
-                    "displayName": "Sourcegraph",
-                    "url": "/organizations/sourcegraph",
-                    "settingsURL": "/organizations/sourcegraph/settings"
-                }
-            ]
+                    id: 'T3JnOjE=',
+                    name: 'sourcegraph',
+                    displayName: 'Sourcegraph',
+                    url: '/organizations/sourcegraph',
+                    settingsURL: '/organizations/sourcegraph/settings',
+                },
+            ],
         },
-        "session": {
-            "canSignOut": true
+        session: {
+            canSignOut: true,
         },
-        "viewerCanAdminister": true
+        viewerCanAdminister: true,
     },
     extensionsController: null,
 }
@@ -88,20 +86,19 @@ export function App(): ReactElement {
                 >
                     <Switch>
                         {/* eslint-disable react/jsx-no-bind */}
-                        {routes.map(
-                            ({ render, ...route }) =>
-                                <Route
-                                    {...route}
-                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    component={undefined}
-                                    render={routeComponentProps => (
-                                        <div className="layout__app-router-container">
-                                            {/*// @ts-ignore*/}
-                                            {render({ ...CONTEXT, ...routeComponentProps })}
-                                        </div>
-                                    )}
-                                />
-                        )}
+                        {routes.map(({ render, ...route }) => (
+                            <Route
+                                {...route}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                component={undefined}
+                                render={routeComponentProps => (
+                                    <div className="layout__app-router-container">
+                                        {/*// @ts-ignore*/}
+                                        {render({ ...CONTEXT, ...routeComponentProps })}
+                                    </div>
+                                )}
+                            />
+                        ))}
                         {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 </Suspense>

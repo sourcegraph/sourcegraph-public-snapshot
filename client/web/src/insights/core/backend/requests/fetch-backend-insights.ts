@@ -8,7 +8,7 @@ import {
     InsightFields,
     InsightsResult,
     SubjectSettingsResult,
-    SubjectSettingsVariables
+    SubjectSettingsVariables,
 } from '../../../../graphql-operations'
 
 const insightFieldsFragment = gql`
@@ -41,17 +41,17 @@ export function fetchBackendInsights(): Observable<InsightFields[]> {
 }
 
 export function fetchLatestSubjectSettings(id: string): Observable<SubjectSettingsResult> {
-    return requestGraphQL<SubjectSettingsResult, SubjectSettingsVariables>(gql`
-        query SubjectSettings($id: ID!) {
-            settingsSubject(id: $id) {
-                latestSettings {
-                    id,
-                    contents
+    return requestGraphQL<SubjectSettingsResult, SubjectSettingsVariables>(
+        gql`
+            query SubjectSettings($id: ID!) {
+                settingsSubject(id: $id) {
+                    latestSettings {
+                        id
+                        contents
+                    }
                 }
             }
-        }`,
+        `,
         { id }
-    ).pipe(
-        map(dataOrThrowErrors),
-    )
+    ).pipe(map(dataOrThrowErrors))
 }
