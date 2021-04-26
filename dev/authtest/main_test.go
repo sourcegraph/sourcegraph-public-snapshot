@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/inconshreveable/log15"
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
@@ -68,4 +69,12 @@ func TestMain(m *testing.M) {
 		log15.Root().SetHandler(log15.DiscardHandler())
 	}
 	os.Exit(m.Run())
+}
+
+func mustMarshalJSONString(v interface{}) string {
+	str, err := jsoniter.MarshalToString(v)
+	if err != nil {
+		panic(err)
+	}
+	return str
 }
