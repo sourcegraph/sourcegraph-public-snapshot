@@ -34,13 +34,13 @@ const getDiffCodePartLegacy: DOMFunctions['getDiffCodePart'] = codeElement => {
 }
 
 const getDiffCodePart: DOMFunctions['getDiffCodePart'] = codeElement => {
-    const el = codeElement.closest<HTMLElement>('[data-interop-type]')
+    const interopParent = codeElement.closest<HTMLElement>('[data-interop-type]')
 
-    if (!el) {
+    if (!interopParent) {
         return getDiffCodePartLegacy(codeElement)
     }
 
-    return el.dataset.interopType === 'old' ? 'base' : 'head'
+    return interopParent.dataset.interopType === 'old' ? 'base' : 'head'
 }
 
 /**
@@ -76,13 +76,13 @@ const getDiffCodeElementFromLineNumberLegacy = (
 const getDiffCodeElementFromLineNumber = (codeView: HTMLElement, line: number, part?: DiffPart): HTMLElement | null => {
     const type = part === 'base' ? 'old' : 'new'
 
-    const el = codeView.querySelector(`[data-interop-${type}-line="${line}"]`)
+    const interopChild = codeView.querySelector(`[data-interop-${type}-line="${line}"]`)
 
-    if (!el) {
+    if (!interopChild) {
         return getDiffCodeElementFromLineNumberLegacy(codeView, line, part)
     }
 
-    return el.querySelector('span.line')
+    return interopChild.querySelector('span.line')
 }
 
 /**
@@ -111,13 +111,13 @@ const getDiffLineNumberFromCodeElementLegacy: DOMFunctions['getLineNumberFromCod
 }
 
 const getDiffLineNumberFromCodeElement: DOMFunctions['getLineNumberFromCodeElement'] = codeElement => {
-    const el = codeElement.closest<HTMLElement>('[data-interop-line]')
+    const interopParent = codeElement.closest<HTMLElement>('[data-interop-line]')
 
-    if (!el) {
+    if (!interopParent) {
         return getDiffLineNumberFromCodeElementLegacy(codeElement)
     }
 
-    return parseInt(el.dataset.interopLine || '', 10)
+    return parseInt(interopParent.dataset.interopLine || '', 10)
 }
 
 export const diffDOMFunctions: DOMFunctions = {
