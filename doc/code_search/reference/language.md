@@ -318,7 +318,11 @@ ComplexDiagram(
 				Sequence(
 					Terminal("."),
 					Terminal("symbol kind", {href: "#symbol-kind"})),
-				'skip')))).addTo();
+				'skip')),
+		Sequence(
+			Terminal("commit.diff"),
+            Terminal("."),
+            Terminal("modified lines", {href: "#modified-lines"})))).addTo();
 </script>
 
 Selects the specified result type from the set of search results. If a query produces results that aren't of the
@@ -375,6 +379,25 @@ literal `zoektSearch`.
 **Example:**
 `type:symbol zoektSearch select:symbol.function` [↗](https://sourcegraph.com/search?q=type:symbol+zoektSearch+select:symbol.function&patternType=literal)
 
+#### Modified lines
+
+<script>
+ComplexDiagram(
+	Choice(0,
+        Terminal("added"),
+        Terminal("removed"))).addTo();
+</script>
+
+When searching commit diffs, select only diffs where the pattern matches on
+`added` (respsectively, `removed`) lines. For example, search for recent commits
+that removed `TODO`s in your code.
+
+<small>- Note: if _any_ line exists that satisfies the condition, the entire diff is included in the result set.</small><br>
+<small>- Note: `type:diff` must be specified in the query.</small>
+
+**Example:**
+
+`repo:^github\.com/sourcegraph/sourcegraph$ type:diff TODO select:commit.diff.removed` [↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type:diff+TODO+select:commit.diff.removed+&patternType=literal)
 
 ### Type
 

@@ -15,7 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- Added `select:commit.diff.added` and `select:commit.diff.removed` for `type:diff` search queries. These selectors return commit diffs only if a pattern matches in `added` (respespectively, `removed`) lines. [#20328](https://github.com/sourcegraph/sourcegraph/pull/20328)
 
 ### Changed
 
