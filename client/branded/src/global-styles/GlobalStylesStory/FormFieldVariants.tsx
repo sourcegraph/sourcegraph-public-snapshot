@@ -92,6 +92,7 @@ export const FormFieldVariants: React.FunctionComponent = () => (
                         id={`inputFieldsetRadio - ${variant}`}
                         type="radio"
                         className={classNames('form-check-input', className)}
+                        name={`inputFieldsetRadio - ${variant}`}
                         {...props}
                     />
                     <label className="form-check-label" htmlFor={`inputFieldsetRadio - ${variant}`}>

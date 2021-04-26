@@ -72,32 +72,61 @@
 
 // Overrides
 .theme-redesign {
-    // Color overrides
+    // Input feedback color
     .valid-feedback {
         color: var(--text-muted);
     }
     .invalid-feedback {
         color: var(--danger);
     }
-    .form-control,
-    .custom-select {
+
+    // Valid form inputs and selects
+    .was-validated .form-control:valid,
+    .was-validated .custom-select:valid,
+    .form-control.is-valid,
+    .custom-select.is-valid {
+        border-color: var(--success);
+
         &:focus {
-            &.is-valid {
-                @at-root #{selector-append('.theme-light', &)} {
-                    box-shadow: 0 0 0 2px var(--success-2);
-                }
-                @at-root #{selector-append('.theme-dark', &)} {
-                    box-shadow: 0 0 0 2px var(--success-3);
-                }
+            @at-root #{selector-append('.theme-light', &)} {
+                box-shadow: 0 0 0 2px var(--success-2);
             }
-            &.is-invalid {
-                @at-root #{selector-append('.theme-light', &)} {
-                    box-shadow: 0 0 0 2px var(--danger-2);
-                }
-                @at-root #{selector-append('.theme-dark', &)} {
-                    box-shadow: 0 0 0 2px var(--danger-3);
-                }
+            @at-root #{selector-append('.theme-dark', &)} {
+                box-shadow: 0 0 0 2px var(--success-3);
             }
+        }
+    }
+
+    // Invalid form inputs and selects
+    .was-validated .form-control:invalid,
+    .was-validated .custom-select:invalid,
+    .form-control.is-invalid,
+    .custom-select.is-invalid {
+        border-color: var(--danger);
+
+        &:focus {
+            @at-root #{selector-append('.theme-light', &)} {
+                box-shadow: 0 0 0 2px var(--danger-2);
+            }
+            @at-root #{selector-append('.theme-dark', &)} {
+                box-shadow: 0 0 0 2px var(--danger-3);
+            }
+        }
+    }
+
+    // Valid Radio/checkbox labels
+    .was-validated .form-check-input:valid,
+    .form-check-input.is-valid {
+        ~ .form-check-label {
+            color: var(--success);
+        }
+    }
+
+    // Invalid Radio/checkbox labels
+    .was-validated .form-check-input:invalid,
+    .form-check-input.is-invalid {
+        ~ .form-check-label {
+            color: var(--danger);
         }
     }
 
