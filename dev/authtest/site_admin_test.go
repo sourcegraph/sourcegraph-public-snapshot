@@ -2,7 +2,6 @@ package authtest
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -46,12 +45,8 @@ func TestSiteAdminEndpoints(t *testing.T) {
 				}
 				defer func() { _ = resp.Body.Close() }()
 
-				body, err := io.ReadAll(resp.Body)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if !strings.Contains(string(body), "must be site admin") {
-					t.Fatalf(`Want "must be site admin"" error but got %q`, string(body))
+				if resp.StatusCode != http.StatusUnauthorized {
+					t.Fatalf(`Want status code %d error but got %d`, http.StatusUnauthorized, resp.StatusCode)
 				}
 			})
 		}
