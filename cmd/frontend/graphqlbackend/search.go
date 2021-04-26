@@ -424,7 +424,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	repositoryResolver := &searchrepos.Resolver{
 		DB:               r.db,
 		Zoekt:            r.zoekt,
-		DefaultReposFunc: backend.Repos.ListDefaultPublicAndUser,
+		DefaultReposFunc: backend.Repos.ListDefault,
 	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")
