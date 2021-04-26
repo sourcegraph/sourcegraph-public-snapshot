@@ -39,6 +39,7 @@ export const createChromaticStory = (options: CreateChromaticStoryOptions): Stor
             document.body.classList.toggle(THEME_DARK_CLASS, isDarkModeEnabledInitially)
             document.body.classList.toggle(THEME_LIGHT_CLASS, !isDarkModeEnabledInitially)
         }
+        // We need to execute `useEffect` callback once to take snapshot in Chromatic, so we can omit dependencies here.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
