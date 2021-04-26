@@ -46,7 +46,7 @@ export const ButtonVariants: React.FunctionComponent<ButtonVariantsProps> = ({
                     <button
                         type="button"
                         key={`${variantType} - ${variant} - disabled`}
-                        className={classNames(className, 'focus')}
+                        className={className}
                         disabled={true}
                     >
                         {Icon && <Icon className="icon-inline mr-1" />}
