@@ -296,6 +296,6 @@ func (r symbolResolver) Location() *locationResolver {
 
 func (r symbolResolver) URL(ctx context.Context) (string, error) { return r.Location().URL(ctx) }
 
-func (r symbolResolver) CanonicalURL() (string, error) { return r.Location().CanonicalURL() }
+func (r symbolResolver) CanonicalURL() string { return r.Location().CanonicalURL() }
 
 func (r symbolResolver) FileLocal() bool { return r.Symbol.FileLimited }

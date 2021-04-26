@@ -42,9 +42,9 @@ func (r *virtualFileResolver) URL(ctx context.Context) (string, error) {
 	return "", nil
 }
 
-func (r *virtualFileResolver) CanonicalURL() (string, error) {
+func (r *virtualFileResolver) CanonicalURL() string {
 	// Todo: allow viewing arbitrary files in the webapp.
-	return "", nil
+	return ""
 }
 
 func (r *virtualFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {

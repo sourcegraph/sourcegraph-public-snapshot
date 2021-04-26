@@ -18,7 +18,7 @@ type FileResolver interface {
 	Binary(ctx context.Context) (bool, error)
 	RichHTML(ctx context.Context) (string, error)
 	URL(ctx context.Context) (string, error)
-	CanonicalURL() (string, error)
+	CanonicalURL() string
 	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)
 	Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error)
 
