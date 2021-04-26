@@ -1,0 +1,246 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`QuickLink should have correct links for dynamic filters 1`] = `
+Array [
+  <FilterLink
+    count={500}
+    key="lang:go-lang:go"
+    kind="lang"
+    label="lang:go"
+    limitHit={true}
+    onFilterChosen={[Function]}
+    value="lang:go"
+  >
+    <button
+      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      data-placement="right"
+      data-tooltip="lang:go"
+      onClick={[Function]}
+      type="button"
+    >
+      <span
+        className="flex-grow-1"
+      >
+        <SyntaxHighlightedSearchQuery
+          query="lang:go"
+        >
+          <span
+            className="text-monospace search-query-link"
+          >
+            <span
+              className="search-filter-keyword"
+            >
+              lang
+              :
+            </span>
+            go
+          </span>
+        </SyntaxHighlightedSearchQuery>
+      </span>
+      <span
+        className="pl-1 flex-shrink-0"
+      >
+        500
+        +
+      </span>
+    </button>
+  </FilterLink>,
+  <FilterLink
+    count={241}
+    key="lang:typescript-lang:typescript"
+    kind="lang"
+    label="lang:typescript"
+    limitHit={false}
+    onFilterChosen={[Function]}
+    value="lang:typescript"
+  >
+    <button
+      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      data-placement="right"
+      data-tooltip="lang:typescript"
+      onClick={[Function]}
+      type="button"
+    >
+      <span
+        className="flex-grow-1"
+      >
+        <SyntaxHighlightedSearchQuery
+          query="lang:typescript"
+        >
+          <span
+            className="text-monospace search-query-link"
+          >
+            <span
+              className="search-filter-keyword"
+            >
+              lang
+              :
+            </span>
+            typescript
+          </span>
+        </SyntaxHighlightedSearchQuery>
+      </span>
+      <span
+        className="pl-1 flex-shrink-0"
+      >
+        241
+      </span>
+    </button>
+  </FilterLink>,
+  <FilterLink
+    count={1230}
+    key="-file:_test\\\\.go$--file:_test\\\\.go$"
+    kind="file"
+    label="-file:_test\\\\.go$"
+    limitHit={false}
+    onFilterChosen={[Function]}
+    value="-file:_test\\\\.go$"
+  >
+    <button
+      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      data-placement="right"
+      data-tooltip="-file:_test\\\\.go$"
+      onClick={[Function]}
+      type="button"
+    >
+      <span
+        className="flex-grow-1"
+      >
+        <SyntaxHighlightedSearchQuery
+          query="-file:_test\\\\.go$"
+        >
+          <span
+            className="text-monospace search-query-link"
+          >
+            <span
+              className="search-filter-keyword"
+            >
+              -file
+              :
+            </span>
+            _test\\.go$
+          </span>
+        </SyntaxHighlightedSearchQuery>
+      </span>
+      <span
+        className="pl-1 flex-shrink-0"
+      >
+        1230
+      </span>
+    </button>
+  </FilterLink>,
+]
+`;
+
+exports[`QuickLink should have correct links for repos 1`] = `
+Array [
+  <FilterLink
+    count={5}
+    key="sourcegraph/sourcegraph-repo:^sourcegraph/sourcgreaph$"
+    kind="repo"
+    label="sourcegraph/sourcegraph"
+    limitHit={false}
+    onFilterChosen={[Function]}
+    value="repo:^sourcegraph/sourcgreaph$"
+  >
+    <button
+      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      data-placement="right"
+      data-tooltip="repo:^sourcegraph/sourcgreaph$"
+      onClick={[Function]}
+      type="button"
+    >
+      <span
+        className="flex-grow-1"
+      >
+        sourcegraph/sourcegraph
+      </span>
+      <span
+        className="pl-1 flex-shrink-0"
+      >
+        5
+      </span>
+    </button>
+  </FilterLink>,
+  <FilterLink
+    count={201}
+    key="microsoft/vscode-repo:^microsoft/vscode$"
+    kind="repo"
+    label="microsoft/vscode"
+    limitHit={true}
+    onFilterChosen={[Function]}
+    value="repo:^microsoft/vscode$"
+  >
+    <button
+      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      data-placement="right"
+      data-tooltip="repo:^microsoft/vscode$"
+      onClick={[Function]}
+      type="button"
+    >
+      <span
+        className="flex-grow-1"
+      >
+        microsoft/vscode
+      </span>
+      <span
+        className="pl-1 flex-shrink-0"
+      >
+        201
+        +
+      </span>
+    </button>
+  </FilterLink>,
+]
+`;
+
+exports[`QuickLink should have correct links for scopes 1`] = `
+Array [
+  <FilterLink
+    key="This is a search scope with a very long name lorem ipsum dolor sit amet-repo:sourcegraph"
+    label="This is a search scope with a very long name lorem ipsum dolor sit amet"
+    onFilterChosen={[Function]}
+    value="repo:sourcegraph"
+  >
+    <button
+      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      data-placement="right"
+      data-tooltip="repo:sourcegraph"
+      onClick={[Function]}
+      type="button"
+    >
+      <span
+        className="flex-grow-1"
+      >
+        This is a search scope with a very long name lorem ipsum dolor sit amet
+      </span>
+      <span
+        className="pl-1 flex-shrink-0"
+      />
+    </button>
+  </FilterLink>,
+  <FilterLink
+    key="All results-count:all"
+    label="All results"
+    onFilterChosen={[Function]}
+    value="count:all"
+  >
+    <button
+      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      data-placement="right"
+      data-tooltip="count:all"
+      onClick={[Function]}
+      type="button"
+    >
+      <span
+        className="flex-grow-1"
+      >
+        All results
+      </span>
+      <span
+        className="pl-1 flex-shrink-0"
+      />
+    </button>
+  </FilterLink>,
+]
+`;

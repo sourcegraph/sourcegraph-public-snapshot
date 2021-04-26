@@ -20,7 +20,7 @@ interface FilterLinkProps {
 const FilterLink: React.FunctionComponent<FilterLinkProps> = ({ label, value, count, limitHit, onFilterChosen }) => (
     <button
         type="button"
-        className={classNames('btn btn-link', styles.sidebarSectionListItem)}
+        className={classNames('test-sidebar-filter-link btn btn-link', styles.sidebarSectionListItem)}
         data-tooltip={value}
         data-placement="right"
         onClick={() => onFilterChosen(value)}
@@ -53,7 +53,7 @@ export const getDynamicFilterLinks = (
             <FilterLink {...filter} key={`${filter.label}-${filter.value}`} onFilterChosen={onFilterChosen} />
         ))
 
-export const getSnippets = (
+export const getSearchScopeLinks = (
     settingsCascade: SettingsCascadeProps['settingsCascade'],
     onFilterChosen: (value: string) => void
 ): React.ReactElement[] => {

@@ -9,7 +9,7 @@ import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../.
 import { submitSearch, toggleSearchFilter } from '../../../helpers'
 import { Filter } from '../../../stream'
 
-import { getDynamicFilterLinks, getRepoFilterLinks, getSnippets } from './FilterLink'
+import { getDynamicFilterLinks, getRepoFilterLinks, getSearchScopeLinks } from './FilterLink'
 import { getQuickLinks } from './QuickLink'
 import styles from './SearchSidebar.module.scss'
 import { SearchSidebarSection } from './SearchSidebarSection'
@@ -52,7 +52,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                 {getRepoFilterLinks(props.filters, onFilterClicked)}
             </SearchSidebarSection>
             <SearchSidebarSection header="Search snippets">
-                {getSnippets(props.settingsCascade, onFilterClicked)}
+                {getSearchScopeLinks(props.settingsCascade, onFilterClicked)}
             </SearchSidebarSection>
             <SearchSidebarSection header="Quicklinks">{getQuickLinks(props.settingsCascade)}</SearchSidebarSection>
         </div>
