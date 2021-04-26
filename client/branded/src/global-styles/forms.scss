@@ -106,47 +106,4 @@
     textarea.form-control {
         background-image: none;
     }
-
-    .custom-control {
-        // Specifc custom control styles
-        .custom-control-input {
-            &:disabled ~ .custom-control-label::before {
-                border-color: var(--input-disabled-bg);
-            }
-
-            &:checked {
-                &.is-valid {
-                    ~ .custom-control-label::before {
-                        border-color: var(--success);
-                        background-color: var(--success);
-                    }
-                }
-
-                &.is-invalid {
-                    ~ .custom-control-label::before {
-                        border-color: var(--danger);
-                        background-color: var(--danger);
-                    }
-                }
-            }
-        }
-
-        // Custom radios use border active colors
-        &.custom-radio .custom-control-input {
-            &:checked {
-                ~ .custom-control-label::after {
-                    // Instead of using an SVG for the checked radio, we use a clipped background-color to ensure we can easily modify for different states
-                    background-image: none;
-                }
-
-                // Typical radios use border-active-color
-                &:not(.is-invalid):not(.is-valid)::before {
-                    border-color: var(--border-active-color);
-                    background-color: var(--border-active-color);
-                    background-clip: content-box;
-                    padding: 0.125rem;
-                }
-            }
-        }
-    }
 }

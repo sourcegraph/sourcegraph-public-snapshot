@@ -71,14 +71,14 @@ export const FormFieldVariants: React.FunctionComponent = () => (
         />
         <WithVariants
             field={({ className, message, variant, ...props }) => (
-                <fieldset className="custom-control custom-checkbox">
+                <fieldset className="form-check">
                     <input
                         id={`inputFieldsetCheck - ${variant}`}
                         type="checkbox"
-                        className={classNames('custom-control-input', className)}
+                        className={classNames('form-check-input', className)}
                         {...props}
                     />
-                    <label className="custom-control-label" htmlFor={`inputFieldsetCheck - ${variant}`}>
+                    <label className="form-check-label" htmlFor={`inputFieldsetCheck - ${variant}`}>
                         Checkbox
                     </label>
                     {message}
@@ -87,14 +87,14 @@ export const FormFieldVariants: React.FunctionComponent = () => (
         />
         <WithVariants
             field={({ className, message, variant, ...props }) => (
-                <fieldset className="custom-control custom-radio">
+                <fieldset className="form-check">
                     <input
                         id={`inputFieldsetRadio - ${variant}`}
                         type="radio"
-                        className={classNames('custom-control-input', className)}
+                        className={classNames('form-check-input', className)}
                         {...props}
                     />
-                    <label className="custom-control-label" htmlFor={`inputFieldsetRadio - ${variant}`}>
+                    <label className="form-check-label" htmlFor={`inputFieldsetRadio - ${variant}`}>
                         Radio button
                     </label>
                     {message}
