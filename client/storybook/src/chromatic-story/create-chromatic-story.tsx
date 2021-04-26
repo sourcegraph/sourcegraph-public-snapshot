@@ -12,9 +12,11 @@ export interface CreateChromaticStoryOptions {
     isDarkModeEnabled: boolean
 }
 
+// Wrap `storyFn` into a decorator which takes care of CSS classes toggling based on received theme options.
 export const createChromaticStory = (options: CreateChromaticStoryOptions): StoryFn => () => {
     const { storyFn, isRedesignEnabled, isDarkModeEnabled } = options
-    // The storyFn is retrieved from the StoryStore, so it already has a StoryContext.
+    // The `storyFn` is retrieved from the `StoryStore`, so it already has a `StoryContext`.
+    // We can safely change its type to remove required props `StoryContext` props check.
     const Story = storyFn as React.ComponentType
 
     const [_isRedesignEnabledInitially, setRedesignToggle] = useRedesignToggle()
@@ -22,7 +24,8 @@ export const createChromaticStory = (options: CreateChromaticStoryOptions): Stor
 
     useEffect(() => {
         setRedesignToggle(isRedesignEnabled)
-        // 'storybook-dark-mode' doesn't expose any method to toggle dark/light theme properly, so we do it manually.
+
+        // 'storybook-dark-mode' doesn't expose any API to toggle dark/light theme programmatically, so we do it manually.
         document.body.classList.toggle(THEME_DARK_CLASS, isDarkModeEnabled)
         document.body.classList.toggle(THEME_LIGHT_CLASS, !isDarkModeEnabled)
 
@@ -31,6 +34,8 @@ export const createChromaticStory = (options: CreateChromaticStoryOptions): Stor
             if (isRedesignEnabled) {
                 setRedesignToggle(!isRedesignEnabled)
             }
+
+            // Always toggle dark mode back to the previous value because otherwise, it might be out of sync with the toolbar toggle.
             document.body.classList.toggle(THEME_DARK_CLASS, isDarkModeEnabledInitially)
             document.body.classList.toggle(THEME_LIGHT_CLASS, !isDarkModeEnabledInitially)
         }
