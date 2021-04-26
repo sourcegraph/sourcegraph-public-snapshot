@@ -23,11 +23,19 @@ export const FormSeries = forwardRef<FormSeriesReferenceAPI, FormSeriesProps>(
 
         const [editSeriesIndexes, setEditSeriesIndex] = useState<number[]>([]);
         const [newSeriesEdit, setNewSeriesEdit] = useState(false);
+
         const seriesInputReference = useRef<FormSeriesInputAPI>(null);
 
         const handleAddClick = useCallback(() => {
             setNewSeriesEdit(true);
         }, [setNewSeriesEdit])
+
+        const handleCancelNewSeries = useCallback(
+            () => {
+                setNewSeriesEdit(false)
+            },
+            [setNewSeriesEdit]
+        )
 
         const handleSubmitNewSeries = useCallback(
             (newSeries: DataSeries) => {
@@ -41,7 +49,7 @@ export const FormSeries = forwardRef<FormSeriesReferenceAPI, FormSeriesProps>(
             [series, newSeriesEdit, setNewSeriesEdit, onChange]
         );
 
-        const handleEditSeries = (index: number, editedSeries:DataSeries): void => {
+        const handleSubmitSeries = (index: number, editedSeries:DataSeries): void => {
             const newSeries = [...series];
 
             newSeries[index] = editedSeries;
@@ -51,6 +59,10 @@ export const FormSeries = forwardRef<FormSeriesReferenceAPI, FormSeriesProps>(
 
         const handleEditSeriesForm = (index: number): void => {
             setEditSeriesIndex([...editSeriesIndexes, index])
+        }
+
+        const handleCancelEditSeries = (index: number): void => {
+            setEditSeriesIndex(indexes => indexes.filter(currentIndex => currentIndex !== index))
         }
 
         useImperativeHandle(reference, () => ({
@@ -75,8 +87,12 @@ export const FormSeries = forwardRef<FormSeriesReferenceAPI, FormSeriesProps>(
                     series.map((line, index) =>
                         editSeriesIndexes.includes(index)
                             ? <FormSeriesInput
+                                key={`${line.name}-${index}`}
+                                cancel={true}
                                 /* eslint-disable-next-line react/jsx-no-bind */
-                                onSubmit={series => handleEditSeries(index, series)}
+                                onSubmit={series => handleSubmitSeries(index, series)}
+                                /* eslint-disable-next-line react/jsx-no-bind */
+                                onCancel={() => handleCancelEditSeries(index)}
                                 className={classnames(styles.formSeriesInput, styles.formSeriesItem)}
                                 {...line}/>
                             : <SeriesCard
@@ -91,7 +107,9 @@ export const FormSeries = forwardRef<FormSeriesReferenceAPI, FormSeriesProps>(
                 { newSeriesEdit &&
                 <FormSeriesInput
                     innerRef={seriesInputReference}
+                    cancel={true}
                     onSubmit={handleSubmitNewSeries}
+                    onCancel={handleCancelNewSeries}
                     className={classnames(styles.formSeriesInput, styles.formSeriesItem)}/>
                 }
 
@@ -122,11 +140,12 @@ function SeriesCard (props: SeriesCardProps): ReactElement {
     const { name, query, color, className, onEdit } = props;
 
     return (
-        <section
+        <button
+            type='button'
             // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
             tabIndex={0}
-            onPointerUp={onEdit}
-            className={classnames(styles.formSeriesCard, className)}>
+            onClick={onEdit}
+            className={classnames(styles.formSeriesCard, className, 'btn')}>
 
             <div className={styles.formSeriesCardContent}>
 
@@ -136,6 +155,6 @@ function SeriesCard (props: SeriesCardProps): ReactElement {
 
             {/* eslint-disable-next-line react/forbid-dom-props */}
             <div style={{ color }} className={styles.formSeriesCardColor}/>
-        </section>
+        </button>
     )
 }

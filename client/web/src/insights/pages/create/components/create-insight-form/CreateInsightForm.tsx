@@ -229,13 +229,13 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
 
                     <button
                         type='submit'
-                        className={classnames(styles.createInsightFormButton, styles.createInsightFormButtonActive, 'button')}>
+                        className={classnames(styles.createInsightFormButton, styles.createInsightFormButtonActive)}>
 
                         Create code insight
                     </button>
                     <button
                         type='button'
-                        className={classnames(styles.createInsightFormButton, 'button')}>
+                        className={classnames(styles.createInsightFormButton)}>
 
                         Cancel
                     </button>

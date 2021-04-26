@@ -1,5 +1,5 @@
 import classnames from 'classnames';
-import React, { ReactElement, Ref, useCallback, useImperativeHandle, useRef } from 'react';
+import React, { ReactElement, Ref, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
 import { useField, useForm } from 'react-final-form-hooks';
 import { noop } from 'rxjs';
 
@@ -22,6 +22,8 @@ interface FormSeriesProps {
     color?: string
     onSubmit?: (series: DataSeries) => void;
     innerRef?: Ref<FormSeriesInputAPI>
+    cancel?: boolean;
+    onCancel?: () => void
 }
 
 const requiredNameField = createRequiredValidator('Name is required field for data series.');
@@ -32,7 +34,10 @@ const validQuery = composeValidators(
 )
 
 export function FormSeriesInput(props: FormSeriesProps): ReactElement {
-    const { name, query, color, className, onSubmit = noop, innerRef } = props;
+    const { name, query, color, className, cancel = false, onCancel = noop, onSubmit = noop, innerRef } = props;
+
+    const hasNameControlledValue = !!name;
+    const hasQueryControlledValue = !!query;
 
     const { handleSubmit, form, } = useForm<DataSeries>({
         initialValues: {
@@ -67,11 +72,27 @@ export function FormSeriesInput(props: FormSeriesProps): ReactElement {
         }
     }));
 
+    useEffect(() => {
+        nameReference.current?.focus()
+    }, []);
+
     const handleSubmitButton = useCallback(
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        (event: React.MouseEvent) => handleSubmit(event),
-        [handleSubmit]
+        (event: React.MouseEvent): void => {
+            if (nameField.meta.error) {
+                event.preventDefault()
+                return nameReference.current?.focus()
+            }
+
+            if (queryField.meta.error) {
+                event.preventDefault()
+                return queryReference.current?.focus()
+            }
+
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            return handleSubmit(event)
+        },
+        [handleSubmit, nameField.meta.error, queryField.meta.error]
     )
 
     return (
@@ -82,7 +103,7 @@ export function FormSeriesInput(props: FormSeriesProps): ReactElement {
                 title='Name'
                 placeholder='ex. Function component'
                 description='Name shown in the legend and tooltip'
-                valid={nameField.meta.touched && nameField.meta.valid}
+                valid={(hasNameControlledValue || nameField.meta.touched) && nameField.meta.valid}
                 error={nameField.meta.touched && nameField.meta.error}
                 className={styles.formSeriesInputField}
                 {...nameField.input}
@@ -93,7 +114,7 @@ export function FormSeriesInput(props: FormSeriesProps): ReactElement {
                 title='Query'
                 placeholder='ex. spatternType:regexp const\\s\\w+:\\s(React\\.)?FunctionComponent'
                 description='Do not include the repo: filter as it will be added automatically for the current repository'
-                valid={queryField.meta.touched && queryField.meta.valid}
+                valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.valid}
                 error={queryField.meta.touched && queryField.meta.error}
                 className={styles.formSeriesInputField}
                 {...queryField.input}
@@ -118,12 +139,16 @@ export function FormSeriesInput(props: FormSeriesProps): ReactElement {
                     Done
                 </button>
 
-                <button
-                    type='button'
-                    className={classnames(styles.formSeriesInputButton, styles.formSeriesInputButtonCancel, 'button')}>
+                {
+                    cancel &&
+                    <button
+                        type='button'
+                        onClick={onCancel}
+                        className={classnames(styles.formSeriesInputButton, styles.formSeriesInputButtonCancel, 'button')}>
 
-                    Cancel
-                </button>
+                        Cancel
+                    </button>
+                }
             </div>
         </div>
     );
