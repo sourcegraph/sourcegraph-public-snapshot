@@ -142,8 +142,10 @@ func (r *GitTreeEntryResolver) CanonicalURL() string {
 }
 
 func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
+	// Dereference to copy to avoid mutating the input
+	u := *prefix
 	if r.IsRoot() {
-		return prefix
+		return &u
 	}
 
 	typ := "blob"
@@ -151,8 +153,8 @@ func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
 		typ = "tree"
 	}
 
-	prefix.Path = path.Join(prefix.Path, "-", typ, r.Path())
-	return prefix
+	u.Path = path.Join(u.Path, "-", typ, r.Path())
+	return &u
 }
 
 func (r *GitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
