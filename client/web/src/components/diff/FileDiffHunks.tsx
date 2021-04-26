@@ -146,8 +146,16 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                 map(([baseStatusBarItems, headStatusBarItems]) => {
                     if (baseStatusBarItems && headStatusBarItems) {
                         return [
-                            ...baseStatusBarItems.map(({ text, ...rest }) => ({ text: `base: ${text}`, ...rest })),
-                            ...headStatusBarItems.map(({ text, ...rest }) => ({ text: `head: ${text}`, ...rest })),
+                            ...baseStatusBarItems.map(({ text, key, ...rest }) => ({
+                                text: `base: ${text}`,
+                                key: `base-${key}`,
+                                ...rest,
+                            })),
+                            ...headStatusBarItems.map(({ text, key, ...rest }) => ({
+                                text: `head: ${text}`,
+                                key: `head-${key}`,
+                                ...rest,
+                            })),
                         ]
                     }
 

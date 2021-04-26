@@ -172,6 +172,7 @@ query FileExternalLinks($repoName: String!, $revision: String!, $filePath: Strin
 
 // Repository contains basic information of a repository from GraphQL.
 type Repository struct {
+	ID  string `json:"id"`
 	URL string `json:"url"`
 }
 
@@ -180,6 +181,7 @@ func (c *Client) Repository(name string) (*Repository, error) {
 	const query = `
 query Repository($name: String!) {
 	repository(name: $name) {
+		id
 		url
 	}
 }

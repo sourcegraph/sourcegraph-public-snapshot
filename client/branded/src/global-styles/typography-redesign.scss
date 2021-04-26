@@ -1,0 +1,77 @@
+.theme-redesign {
+    h1 {
+        font-size: 1.625rem;
+        font-weight: 600;
+        letter-spacing: -0.031em;
+    }
+
+    h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        letter-spacing: -0.016em;
+    }
+
+    h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        letter-spacing: -0.016em;
+    }
+
+    h4 {
+        font-size: 0.875rem;
+        font-weight: 500;
+        letter-spacing: -0.016em;
+    }
+
+    h5 {
+        font-size: 0.625rem;
+        font-weight: 600;
+        letter-spacing: 0.031em;
+        text-transform: uppercase;
+    }
+
+    h6 {
+        font-size: 0.625rem;
+        font-weight: 400;
+    }
+
+    // Body / Base / Medium
+    .font-weight-medium {
+        font-weight: 500;
+    }
+
+    // Body / Base / Strong
+    strong {
+        font-weight: 600;
+    }
+
+    // Body / Small / Regular
+    small {
+        // Use string interpolation and calc() to avoid using Sass own max() function.
+        // See: https://github.com/sass/node-sass/issues/2815#issuecomment-575926329
+        font-size: calc(min(0.75rem, #{(11/12)}em));
+        // Bootstrap applies `font-weight: 400;` to `small` element,
+        // but we want to control `font-weight` only with `strong` or `.font-weight-medium`.
+        font-weight: inherit;
+    }
+
+    // Input / Small
+    .form-control-sm,
+    %form-control-sm {
+        font-size: (11/14) + em;
+    }
+
+    // Label / Base
+    label,
+    %label-base {
+        font-weight: 500;
+        letter-spacing: -0.016em;
+    }
+
+    // Label / Uppercase
+    label.text-uppercase,
+    %label-uppercase {
+        font-size: 0.75rem;
+        letter-spacing: 0.016em;
+    }
+}

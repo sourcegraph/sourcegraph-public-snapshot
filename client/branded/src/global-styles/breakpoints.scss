@@ -1,0 +1,15 @@
+// To use breakpoints mixins in CSS modules import this file via:
+// @import 'branded/src/global-styles/breakpoints';
+
+// `$grid-breakpoints` is copied from `~bootstrap/scss/variables` because we cannot import a single variable from SCSS file
+// and we don't want to expose all Bootstrap SCSS variables ('bootstrap/scss/variables') to our CSS modules.
+// If possible, prefer CSS variables to SCSS variables.
+$grid-breakpoints: (
+    xs: 0,
+    sm: 576px,
+    md: 768px,
+    lg: 992px,
+    xl: 1200px,
+);
+
+@import '~bootstrap/scss/mixins/breakpoints';

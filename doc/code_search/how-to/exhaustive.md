@@ -34,3 +34,5 @@ This is a specific limitation for Sourcegraph.com and does not apply to customer
 A search is unindexed if you are searching non-indexed branches or using diff/commit search. Using a non-indexed backend and searching all code in a large instance can take 10min+. This is likely much higher than any configured timeouts. See the [Timeouts](#timeouts) section on how to configure this use case.
 
 Currently our non-indexed backends do not use the same scheduling logic as indexed backends. This means concurrent slow non-indexed searches will impact resources of interactive searches.
+
+An unindexed search can under-report result counts. This is due to limits on the number of results reported per file. See [#18298](https://github.com/sourcegraph/sourcegraph/issues/18298).

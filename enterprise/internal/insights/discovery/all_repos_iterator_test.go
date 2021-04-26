@@ -168,12 +168,12 @@ func TestAllReposIterator_DotCom(t *testing.T) {
 		defaultRepoStoreListCalls int // There is no pagination with this store! We'll probably want that, eventually.
 		nextRepoID                api.RepoID
 	)
-	defaultRepoStore.ListFunc.SetDefaultHook(func(ctx context.Context) ([]*types.RepoName, error) {
+	defaultRepoStore.ListFunc.SetDefaultHook(func(ctx context.Context) ([]types.RepoName, error) {
 		defaultRepoStoreListCalls++
-		var result []*types.RepoName
+		var result []types.RepoName
 		for i := 0; i < 9; i++ {
 			nextRepoID++
-			result = append(result, &types.RepoName{ID: nextRepoID, Name: api.RepoName(fmt.Sprint(nextRepoID))})
+			result = append(result, types.RepoName{ID: nextRepoID, Name: api.RepoName(fmt.Sprint(nextRepoID))})
 		}
 		return result, nil
 	})

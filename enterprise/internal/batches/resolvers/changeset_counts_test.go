@@ -82,19 +82,23 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	repoStore := database.Repos(db)
 	esStore := database.ExternalServices(db)
 
+	gitHubToken := os.Getenv("GITHUB_TOKEN")
+	if gitHubToken == "" {
+		gitHubToken = "no-GITHUB_TOKEN-set"
+	}
 	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: ct.MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
-			Token: os.Getenv("GITHUB_TOKEN"),
+			Token: gitHubToken,
 			Repos: []string{"sourcegraph/sourcegraph"},
 		}),
 	}
 
 	err := esStore.Upsert(ctx, githubExtSvc)
 	if err != nil {
-		t.Fatal(t)
+		t.Fatalf("Failed to Upsert external service: %s", err)
 	}
 
 	githubSrc, err := repos.NewGithubSource(githubExtSvc, cf)
@@ -168,14 +172,14 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 
 		src, err := sourcer.ForRepo(ctx, cstore, githubRepo)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("failed to build source for repo: %s", err)
 		}
 		if err := syncer.SyncChangeset(ctx, cstore, src, githubRepo, c); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

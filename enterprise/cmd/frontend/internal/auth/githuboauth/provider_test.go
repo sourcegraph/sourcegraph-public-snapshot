@@ -32,7 +32,6 @@ func TestRequestedScopes(t *testing.T) {
 			},
 			expScopes: []string{"read:org", "repo", "user:email"},
 		},
-
 		{
 			dotComMode: true,
 			schema: &schema.GitHubAuthProvider{

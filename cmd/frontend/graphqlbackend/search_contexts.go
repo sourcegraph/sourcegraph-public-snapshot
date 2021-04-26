@@ -18,9 +18,33 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+type namespaceFilterType string
+
+const (
+	namespaceFilterTypeInstance  namespaceFilterType = "INSTANCE"
+	namespaceFilterTypeNamespace namespaceFilterType = "NAMESPACE"
+)
+
 type searchContextResolver struct {
 	sc *types.SearchContext
 	db dbutil.DB
+}
+
+type searchContextInputArgs struct {
+	Name        string
+	Description string
+	Public      bool
+	Namespace   *graphql.ID
+}
+
+type searchContextRepositoryRevisionsInputArgs struct {
+	RepositoryID graphql.ID
+	Revisions    []string
+}
+
+type createSearchContextArgs struct {
+	SearchContext searchContextInputArgs
+	Repositories  []searchContextRepositoryRevisionsInputArgs
 }
 
 type searchContextRepositoryRevisionsResolver struct {
@@ -37,9 +61,11 @@ func (r *searchContextRepositoryRevisionsResolver) Revisions(ctx context.Context
 }
 
 type listSearchContextsArgs struct {
-	First int32
-	After *string
-	Query *string
+	First               int32
+	After               *string
+	Query               *string
+	NamespaceFilterType *namespaceFilterType
+	Namespace           *graphql.ID
 }
 
 type searchContextConnection struct {
@@ -134,16 +160,90 @@ func (r *schemaResolver) AutoDefinedSearchContexts(ctx context.Context) ([]*sear
 	return searchContextsToResolvers(searchContexts, r.db), nil
 }
 
-// TODO: Create a separate 'UsersSearchContexts' function that returns instance-level search contexts,
-// search contexts owned by the user, and search contexts owned by users organizations (to populate the dropdown).
+func (r *schemaResolver) CreateSearchContext(ctx context.Context, args createSearchContextArgs) (*searchContextResolver, error) {
+	var namespaceUserID, namespaceOrgID int32
+	if args.SearchContext.Namespace != nil {
+		err := UnmarshalNamespaceID(*args.SearchContext.Namespace, &namespaceUserID, &namespaceOrgID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, 0, len(args.Repositories))
+	for _, repository := range args.Repositories {
+		repoResolver, err := r.repositoryByID(ctx, repository.RepositoryID)
+		if err != nil {
+			return nil, err
+		}
+		repositoryRevisions = append(repositoryRevisions, &types.SearchContextRepositoryRevisions{
+			Repo: types.RepoName{
+				ID:   repoResolver.IDInt32(),
+				Name: repoResolver.RepoName(),
+			},
+			Revisions: repository.Revisions,
+		})
+	}
+
+	searchContext, err := searchcontexts.CreateSearchContextWithRepositoryRevisions(
+		ctx,
+		r.db,
+		&types.SearchContext{
+			Name:            args.SearchContext.Name,
+			Description:     args.SearchContext.Description,
+			Public:          args.SearchContext.Public,
+			NamespaceUserID: namespaceUserID,
+			NamespaceOrgID:  namespaceOrgID,
+		},
+		repositoryRevisions,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &searchContextResolver{searchContext, r.db}, nil
+}
+
+func (r *schemaResolver) DeleteSearchContext(ctx context.Context, args struct {
+	ID graphql.ID
+}) (*EmptyResponse, error) {
+	searchContextSpec, err := unmarshalSearchContextID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	err = searchcontexts.DeleteSearchContext(ctx, r.db, searchContext)
+	if err != nil {
+		return nil, err
+	}
+
+	return &EmptyResponse{}, nil
+}
+
 func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchContextsArgs) (*searchContextConnection, error) {
+	var namespaceFilter namespaceFilterType
+	if args.NamespaceFilterType != nil {
+		namespaceFilter = *args.NamespaceFilterType
+	}
+
+	if args.Namespace != nil && namespaceFilter != namespaceFilterTypeNamespace {
+		return nil, errors.New("namespace can only be used if namespaceFilterType is NAMESPACE")
+	}
+	if args.Namespace == nil && namespaceFilter == namespaceFilterTypeNamespace {
+		return nil, errors.New("namespace has to be non-nil if namespaceFilterType is NAMESPACE")
+	}
+
 	// Request one extra to determine if there are more pages
 	newArgs := *args
 	newArgs.First += 1
 
+	// TODO(rok): Parse the query into namespace and search context name components
 	var searchContextName string
-	if args.Query != nil {
-		searchContextName = *args.Query
+	if newArgs.Query != nil {
+		searchContextName = *newArgs.Query
 	}
 
 	afterCursor, err := unmarshalSearchContextCursor(newArgs.After)
@@ -151,8 +251,15 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 		return nil, err
 	}
 
+	opts := database.ListSearchContextsOptions{Name: searchContextName, NoNamespace: namespaceFilter == namespaceFilterTypeInstance}
+	if newArgs.Namespace != nil {
+		err := UnmarshalNamespaceID(*newArgs.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	searchContextsStore := database.SearchContexts(r.db)
-	opts := database.ListSearchContextsOptions{Name: searchContextName, IncludeAll: true}
 	pageOpts := database.ListSearchContextsPageOptions{First: newArgs.First, AfterID: afterCursor}
 	searchContexts, err := searchContextsStore.ListSearchContexts(ctx, pageOpts, opts)
 	if err != nil {

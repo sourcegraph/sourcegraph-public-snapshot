@@ -4,14 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/config"
 	awscredentials "github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/codecommit"
-	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"golang.org/x/net/http2"
 
@@ -123,7 +121,6 @@ func (s *AWSCodeCommitSource) ExternalServices() types.ExternalServices {
 
 func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) (*types.Repo, error) {
 	urn := s.svc.URN()
-	cloneURL := s.authenticatedRemoteURL(r)
 	serviceID := awscodecommit.ServiceID(s.awsPartition, s.awsRegion, r.AccountID)
 
 	return &types.Repo{
@@ -134,28 +131,11 @@ func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) (*types.Repo
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
-				CloneURL: cloneURL,
+				CloneURL: r.HTTPCloneURL,
 			},
 		},
 		Metadata: r,
 	}, nil
-}
-
-// authenticatedRemoteURL returns the repository's Git remote URL with the
-// configured AWS CodeCommit Git credentials inserted in the URL userinfo, for
-// repositories needing authentication.
-func (s *AWSCodeCommitSource) authenticatedRemoteURL(repo *awscodecommit.Repository) string {
-	u, err := url.Parse(repo.HTTPCloneURL)
-	if err != nil {
-		log15.Warn("Error adding authentication to AWS CodeCommit repository Git remote URL.", "url", repo.HTTPCloneURL, "error", err)
-		return repo.HTTPCloneURL
-	}
-
-	username := s.config.GitCredentials.Username
-	password := s.config.GitCredentials.Password
-
-	u.User = url.UserPassword(username, password)
-	return u.String()
 }
 
 func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context, results chan SourceResult) {

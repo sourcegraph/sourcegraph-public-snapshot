@@ -2,12 +2,12 @@
   "$schema": "http://json.schemastore.org/renovate",
   "extends": ["github>sourcegraph/renovate-config"],
   "semanticCommits": false,
-  "engines": {
-    "node": {
-      "rangeStrategy": "bump"
-    }
-  },
   "packageRules": [
+    {
+      "matchDepTypes": ["engines"],
+      "matchPackageNames": ["node"],
+      "rangeStrategy": "bump"
+    },
     {
       "packageNames": ["@octokit/rest", "@slack/web-api", "googleapis"],
       "reviewers": ["beyang"]

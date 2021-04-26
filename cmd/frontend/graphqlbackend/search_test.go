@@ -98,7 +98,7 @@ func TestSearch(t *testing.T) {
 			db := new(dbtesting.MockDB)
 			database.Mocks.Repos.List = tc.reposListMock
 			sr := &schemaResolver{db: db}
-			schema, err := graphql.ParseSchema(Schema, sr, graphql.Tracer(&prometheusTracer{db: db}))
+			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{db: db}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -141,7 +141,6 @@ var testSearchGQLQuery = `
 				preview
 				lineNumber
 				offsetAndLengths
-				limitHit
 			}
 		}
 
@@ -480,13 +479,13 @@ func TestVersionContext(t *testing.T) {
 				resolved: &searchrepos.Resolved{},
 			}
 
-			database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts database.ReposListOptions) ([]*types.RepoName, error) {
+			database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts database.ReposListOptions) ([]types.RepoName, error) {
 				if diff := cmp.Diff(tc.wantReposListOptionsNames, opts.Names, cmpopts.EquateEmpty()); diff != "" {
 					t.Fatalf("database.RepostListOptions.Names mismatch (-want, +got):\n%s", diff)
 				}
-				var repos []*types.RepoName
+				var repos []types.RepoName
 				for _, name := range tc.reposGetListNames {
-					repos = append(repos, &types.RepoName{Name: api.RepoName(name)})
+					repos = append(repos, types.RepoName{Name: api.RepoName(name)})
 				}
 				return repos, nil
 			}
@@ -516,27 +515,23 @@ func TestVersionContext(t *testing.T) {
 	}
 }
 
-func mkFileMatch(db dbutil.DB, repo *types.RepoName, path string, lineNumbers ...int32) *FileMatchResolver {
-	if repo == nil {
-		repo = &types.RepoName{
-			ID:   1,
-			Name: "repo",
-		}
-	}
+func mkFileMatch(db dbutil.DB, repo types.RepoName, path string, lineNumbers ...int32) *FileMatchResolver {
 	var lines []*result.LineMatch
 	for _, n := range lineNumbers {
 		lines = append(lines, &result.LineMatch{LineNumber: n})
 	}
 	return mkFileMatchResolver(db, result.FileMatch{
-		Path:        path,
+		File: result.File{
+			Path: path,
+			Repo: repo,
+		},
 		LineMatches: lines,
-		Repo:        repo,
 	})
 }
 
 func repoRev(revSpec string) *search.RepositoryRevisions {
 	return &search.RepositoryRevisions{
-		Repo: &types.RepoName{ID: api.RepoID(0), Name: "test/repo"},
+		Repo: types.RepoName{ID: api.RepoID(0), Name: "test/repo"},
 		Revs: []search.RevisionSpecifier{
 			{RevSpec: revSpec},
 		},

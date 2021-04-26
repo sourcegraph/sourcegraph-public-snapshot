@@ -164,11 +164,10 @@ func overrideExtSvcConfig(ctx context.Context, db dbutil.DB) error {
 			return errors.Wrap(err, "ExternalServices.List")
 		}
 
-		// Perform delta update for external services. We don't want to
-		// just delete all external services and re-add all of them,
-		// because that would cause repo-updater to need to update
-		// repositories and reassociate them with external services each
-		// time the frontend restarts.
+		// Perform delta update for external services. We don't want to just delete all
+		// external services and re-add all of them, because that would cause
+		// repo-updater to need to update repositories and reassociate them with external
+		// services each time the frontend restarts.
 		//
 		// Start out by assuming we will remove all and re-add all.
 		var (
@@ -186,8 +185,8 @@ func overrideExtSvcConfig(ctx context.Context, db dbutil.DB) error {
 					return errors.Wrap(err, fmt.Sprintf("marshaling extsvc config ([%v][%v])", key, i))
 				}
 
-				// In development we can set the value of the cloud_default column by setting the
-				// CloudDefault value in config.
+				// When overriding external service config from a file we allow setting the value
+				// of the cloud_default column.
 				var cloudDefault bool
 				switch key {
 				case extsvc.KindGitHub:

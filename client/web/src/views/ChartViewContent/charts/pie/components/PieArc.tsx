@@ -3,10 +3,9 @@ import { Group } from '@visx/group'
 import { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
 import classnames from 'classnames'
 import { Arc as ArcType } from 'd3-shape'
-import React, { MouseEvent, PointerEventHandler, ReactElement, useCallback } from 'react'
+import React, { PointerEventHandler, ReactElement } from 'react'
 
 import { Label } from '../../../annotation/Label'
-import { onDatumClick } from '../../types'
 
 // Pie arc visual settings
 const CONNECTION_LINE_LENGTH = 15
@@ -18,8 +17,10 @@ const TITLE_PROPS = { className: 'pie-chart__label-title' }
 const SUBTITLE_PROPS = { className: 'pie-chart__label-sub-title' }
 
 interface PieArcProps<Datum> {
-    /** Getter (accessor) to have a key (name) for current pie arc */
-    getKey: (d: PieArcDatum<Datum>) => string
+    /** Title for current pie arc */
+    title: string
+    /** Sub-title (percent value) for current pie arc*/
+    subtitle: string
     /** Getter (accessor) to have a color for current pie arc */
     getColor: (d: PieArcDatum<Datum>) => string
     /** Getter (accessor) to have a link for current pie arc */
@@ -28,10 +29,6 @@ interface PieArcProps<Datum> {
     path: ArcType<unknown, PieArcDatum<Datum>>
     /** Element of the Arc. The generic refers to the data type of an element in the input array. */
     arc: PieArcDatum<Datum>
-    /** Sum of all arc in pie chart to calculate percent for current part (arc) of chart. */
-    total: number
-    /** On pie arc click handler */
-    onClick: onDatumClick
     /** Callback to handle pointer (mouse, touch) move over arc */
     onPointerMove?: PointerEventHandler
     /** Callback to handle pointer (mouse, touch) out over arc */
@@ -42,12 +39,10 @@ interface PieArcProps<Datum> {
  * Display particular arc and annotation for PieChart.
  * */
 export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
-    const { total, path, arc, getColor, getKey, getLink, onClick, onPointerMove, onPointerOut } = props
+    const { title, subtitle, path, arc, getColor, getLink, onPointerMove, onPointerOut } = props
 
     const pathValue = path(arc) ?? ''
-    const name = getKey(arc)
     const link = getLink(arc)
-    const labelSubtitle = `${((100 * arc.value) / total).toFixed(2)}%`
 
     // Math to put label and connection line in a middle of arc radius surface
     // Find the middle of the arc segment. Here we have polar system of coordinate.
@@ -70,15 +65,12 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
     const labelX = normalX * CONNECTION_LINE_LENGTH
     const labelY = normalY * CONNECTION_LINE_LENGTH
 
-    // Handlers
-    const handleGroupClick = useCallback((event: MouseEvent) => onClick({ originEvent: event, link }), [link, onClick])
-
     const classes = classnames('pie-chart__arc', {
         'pie-chart__arc--with-link': link,
     })
 
     return (
-        <Group className={classes} onClick={handleGroupClick} onPointerMove={onPointerMove} onPointerOut={onPointerOut}>
+        <Group aria-hidden={true} className={classes} onPointerMove={onPointerMove} onPointerOut={onPointerOut}>
             <path className="pie-chart__arc-path" d={pathValue} fill={getColor(arc)} />
 
             <Annotation x={surfaceX} y={surfaceY} dx={labelX} dy={labelY}>
@@ -89,11 +81,13 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
                     backgroundPadding={LABEL_PADDING}
                     showBackground={true}
                     showAnchorLine={false}
-                    title={name}
+                    title={title}
                     subtitleDy={0}
+                    titleFontWeight={200}
+                    subtitleFontWeight={200}
                     titleProps={TITLE_PROPS}
                     subtitleProps={SUBTITLE_PROPS}
-                    subtitle={labelSubtitle}
+                    subtitle={subtitle}
                 />
             </Annotation>
 

@@ -9,7 +9,7 @@
       [
         "anyof",
         ["suffix", "go"],
-        ["name", "cmd/frontend/graphqlbackend/schema.graphql", "wholename"],
+        ["name", "cmd/frontend/graphqlbackend/*.graphql", "wholename"],
         ["dirname", "monitoring"],
         ["match", "schema/*.json", "wholename"]
       ]

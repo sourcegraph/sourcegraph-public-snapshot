@@ -112,7 +112,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		return Resolved{}, err
 	}
 
-	var defaultRepos []*types.RepoName
+	var defaultRepos []types.RepoName
 
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !query.HasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
 		start := time.Now()
@@ -128,7 +128,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		}
 	}
 
-	var repos []*types.RepoName
+	var repos []types.RepoName
 	var excluded ExcludedRepos
 	if len(defaultRepos) > 0 {
 		repos = defaultRepos
@@ -441,7 +441,8 @@ func resolveVersionContext(versionContext string) (*schema.VersionContext, error
 // Cf. golang/go/src/regexp/syntax/parse.go.
 const regexpFlags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
 
-// A type that counts how many repos with a certain label were excluded from search results.
+// ExcludedRepos is a type that counts how many repos with a certain label were
+// excluded from search results.
 type ExcludedRepos struct {
 	Forks    int
 	Archived int
@@ -588,11 +589,11 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 	return
 }
 
-type defaultReposFunc func(ctx context.Context) ([]*types.RepoName, error)
+type defaultReposFunc func(ctx context.Context) ([]types.RepoName, error)
 
-// defaultRepositories returns the intersection of default repos (db) and indexed
-// repos (zoekt), minus repos matching excludePatterns.
-func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, z *searchbackend.Zoekt, excludePatterns []string) (_ []*types.RepoName, err error) {
+// defaultRepositories returns the intersection of calling getRawDefaultRepos
+// (db) and indexed repos (zoekt), minus repos matching excludePatterns.
+func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, z *searchbackend.Zoekt, excludePatterns []string) (_ []types.RepoName, err error) {
 	tr, ctx := trace.New(ctx, "defaultRepositories", "")
 	defer func() {
 		tr.SetError(err)

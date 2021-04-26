@@ -888,7 +888,7 @@ func zoektRPC(s zoekt.Searcher) (zoekt.Searcher, func()) {
 func TestZoektIndexedRepos_single(t *testing.T) {
 	repoRev := func(revSpec string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
-			Repo: &types.RepoName{ID: api.RepoID(0), Name: "test/repo"},
+			Repo: types.RepoName{ID: api.RepoID(0), Name: "test/repo"},
 			Revs: []search.RevisionSpecifier{
 				{RevSpec: revSpec},
 			},
@@ -973,7 +973,6 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 }
 
 func TestZoektFileMatchToSymbolResults(t *testing.T) {
-	db := new(dbtesting.MockDB)
 	symbolInfo := func(sym string) *zoekt.Symbol {
 		return &zoekt.Symbol{
 			Sym:        sym,
@@ -1016,15 +1015,9 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		}},
 	}
 
-	repo := NewRepositoryResolver(db, &types.Repo{Name: "foo"})
-
-	results := zoektFileMatchToSymbolResults(repo, "master", file)
+	results := zoektFileMatchToSymbolResults(types.RepoName{Name: "foo"}, "master", file)
 	var symbols []result.Symbol
 	for _, res := range results {
-		if got, want := res.BaseURI.URL.String(), "git://foo?master"; got != want {
-			t.Fatalf("baseURI: got %q want %q", got, want)
-		}
-
 		symbols = append(symbols, res.Symbol)
 	}
 

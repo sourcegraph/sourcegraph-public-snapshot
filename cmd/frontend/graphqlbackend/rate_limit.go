@@ -382,7 +382,12 @@ func NewBasicLimitWatcher(store throttled.GCRAStore) *BasicLimitWatcher {
 		store: store,
 	}
 	conf.Watch(func() {
-		basic.updateFromConfig(conf.Get().ExperimentalFeatures.RateLimitAnonymous)
+		e := conf.Get().ExperimentalFeatures
+		if e == nil {
+			basic.updateFromConfig(0)
+			return
+		}
+		basic.updateFromConfig(e.RateLimitAnonymous)
 	})
 	return basic
 }
@@ -395,7 +400,13 @@ func (bl *BasicLimitWatcher) updateFromConfig(limit int) {
 		log15.Debug("BasicLimiter disabled")
 		return
 	}
-	l, err := throttled.NewGCRARateLimiter(bl.store, throttled.RateQuota{MaxRate: throttled.PerHour(limit)})
+	maxBurstPercentage := 0.2
+	l, err := throttled.NewGCRARateLimiter(
+		bl.store,
+		throttled.RateQuota{
+			MaxRate:  throttled.PerHour(limit),
+			MaxBurst: int(float64(limit) * maxBurstPercentage)},
+	)
 	if err != nil {
 		log15.Warn("error updating BasicLimiter from config")
 		bl.rl.Store(&BasicLimiter{nil, false})
@@ -421,11 +432,10 @@ type BasicLimiter struct {
 // RateLimit limits unauthenticated requests to the GraphQL API with an equal
 // quantity of 1.
 func (bl *BasicLimiter) RateLimit(_ string, _ int, args LimiterArgs) (bool, throttled.RateLimitResult, error) {
-	if args.Anonymous && args.RequestName == "unknown" && args.RequestSource == trace.SourceOther {
-		return bl.GCRARateLimiter.RateLimit("basic_rl", 1)
+	if args.Anonymous && args.RequestName == "unknown" && args.RequestSource == trace.SourceOther && bl.GCRARateLimiter != nil {
+		return bl.GCRARateLimiter.RateLimit("basic", 1)
 	}
-	// Don't limit but take a peek at the state of the limiter.
-	return bl.GCRARateLimiter.RateLimit("basic_rl", 0)
+	return false, throttled.RateLimitResult{}, nil
 }
 
 // RateLimitWatcher stores the currently configured rate limiter and whether or

@@ -10,7 +10,7 @@ import { range } from 'lodash'
 import React, { ReactElement, useCallback, useMemo } from 'react'
 import { BarChartContent } from 'sourcegraph'
 
-import { onDatumClick } from '../types'
+import { MaybeLink } from '../MaybeLink'
 
 const DEFAULT_PADDING = { top: 20, right: 20, bottom: 25, left: 40 }
 
@@ -31,8 +31,8 @@ interface BarChartProps<Datum extends object> extends Omit<BarChartContent<Datum
     width: number
     /** Chart height in px. */
     height: number
-    /** Callback calls every time when a bar on the chart was clicked */
-    onDatumClick: onDatumClick
+    /** Callback calls every time when a bar-link on the chart was clicked */
+    onDatumLinkClick: (event: React.MouseEvent) => void
 }
 
 /**
@@ -44,7 +44,7 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
         height,
         data,
         series,
-        onDatumClick,
+        onDatumLinkClick,
         xAxis: { dataKey: xDataKey },
     } = props
 
@@ -99,66 +99,89 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
 
     return (
         <div className="bar-chart">
-            <svg width={width} height={height}>
+            <svg aria-label="Bar chart" width={width} height={height}>
                 <Group left={DEFAULT_PADDING.left} top={DEFAULT_PADDING.top}>
-                    <GridRows scale={yScale} width={innerWidth} height={innerHeight} className="bar-chart__grid" />
+                    <Group aria-label="Chart axes">
+                        {/* eslint-disable-next-line jsx-a11y/aria-role */}
+                        <Group role="graphics-axis" aria-label="X axis" aria-orientation="horizontal">
+                            <AxisBottom
+                                top={innerHeight}
+                                scale={xScale}
+                                tickFormat={formatXLabel}
+                                axisClassName="bar-chart__axis"
+                                axisLineClassName="bar-chart__axis-line"
+                                tickClassName="bar-chart__axis-tick"
+                            />
+                        </Group>
 
-                    {data.map((datum, index) => {
-                        const barHeight = innerHeight - (yScale(yAccessor(datum)) ?? 0)
-                        const link = linkURLs?.[index]
-                        const classes = classnames('bar-chart__bar', { 'bar-chart__bar--with-link': link })
+                        {/* eslint-disable-next-line jsx-a11y/aria-role */}
+                        <Group role="graphics-axis" aria-orientation="vertical" aria-label="Y axis">
+                            <AxisLeft
+                                scale={yScale}
+                                axisClassName="bar-chart__axis"
+                                axisLineClassName="bar-chart__axis-line bar-chart__axis-line--vertical"
+                                tickClassName="bar-chart__axis-tick bar-chart__axis-tick--vertical"
+                            />
 
-                        return (
-                            <Group key={`bar-${index}`}>
-                                <Bar
-                                    className={classes}
-                                    x={xScale(index)}
-                                    y={innerHeight - barHeight}
-                                    height={barHeight}
-                                    width={xScale.bandwidth()}
-                                    fill={fill}
-                                    /* eslint-disable-next-line react/jsx-no-bind */
-                                    onClick={event => {
-                                        const link = linkURLs?.[index]
+                            <GridRows
+                                aria-hidden={true}
+                                scale={yScale}
+                                width={innerWidth}
+                                height={innerHeight}
+                                className="bar-chart__grid"
+                            />
+                        </Group>
+                    </Group>
 
-                                        onDatumClick({ originEvent: event, link })
-                                    }}
-                                    /* eslint-disable-next-line react/jsx-no-bind */
-                                    onMouseLeave={handleMouseLeave}
-                                    /* eslint-disable-next-line react/jsx-no-bind */
-                                    onMouseMove={event => {
-                                        if (tooltipTimeout) {
-                                            clearTimeout(tooltipTimeout)
-                                        }
+                    {/* eslint-disable-next-line jsx-a11y/aria-role */}
+                    <Group role="graphics-datagroup" aria-label="Bars">
+                        {data.map((datum, index) => {
+                            const barHeight = innerHeight - (yScale(yAccessor(datum)) ?? 0)
+                            const link = linkURLs?.[index]
+                            const classes = classnames('bar-chart__bar', { 'bar-chart__bar--with-link': link })
+                            const yValue = yAccessor(datum)
+                            const xValue = formatXLabel(index)
+                            const ariaLabel = `Bar ${index + 1} of ${
+                                data.length
+                            }. X value: ${xValue}. Y value: ${yValue}`
 
-                                        const rectangle = localPoint(event)
+                            return (
+                                <MaybeLink
+                                    key={`bar-${index}`}
+                                    to={linkURLs?.[index]}
+                                    onClick={onDatumLinkClick}
+                                    role={linkURLs?.[index] ? 'link' : 'graphics-dataunit'}
+                                    aria-label={ariaLabel}
+                                    className="bar-chart__bar-link"
+                                >
+                                    <Bar
+                                        className={classes}
+                                        x={xScale(index)}
+                                        y={innerHeight - barHeight}
+                                        height={barHeight}
+                                        width={xScale.bandwidth()}
+                                        fill={fill}
+                                        /* eslint-disable-next-line react/jsx-no-bind */
+                                        onMouseLeave={handleMouseLeave}
+                                        /* eslint-disable-next-line react/jsx-no-bind */
+                                        onMouseMove={event => {
+                                            if (tooltipTimeout) {
+                                                clearTimeout(tooltipTimeout)
+                                            }
 
-                                        showTooltip({
-                                            tooltipData: { xLabel: formatXLabel(index), value: yAccessor(datum) },
-                                            tooltipTop: rectangle?.y,
-                                            tooltipLeft: rectangle?.x,
-                                        })
-                                    }}
-                                />
-                            </Group>
-                        )
-                    })}
+                                            const rectangle = localPoint(event)
 
-                    <AxisBottom
-                        top={innerHeight}
-                        scale={xScale}
-                        tickFormat={formatXLabel}
-                        axisClassName="bar-chart__axis"
-                        axisLineClassName="bar-chart__axis-line"
-                        tickClassName="bar-chart__axis-tick"
-                    />
-
-                    <AxisLeft
-                        scale={yScale}
-                        axisClassName="bar-chart__axis"
-                        axisLineClassName="bar-chart__axis-line"
-                        tickClassName="bar-chart__axis-tick"
-                    />
+                                            showTooltip({
+                                                tooltipData: { xLabel: formatXLabel(index), value: yAccessor(datum) },
+                                                tooltipTop: rectangle?.y,
+                                                tooltipLeft: rectangle?.x,
+                                            })
+                                        }}
+                                    />
+                                </MaybeLink>
+                            )
+                        })}
+                    </Group>
                 </Group>
             </svg>
 

@@ -3,9 +3,12 @@ package searchcontexts
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -61,8 +64,8 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 		wantErr           string
 	}{
 		{name: "invalid format", searchContextSpec: "+user", wantErr: "search context not found"},
-		{name: "user not found", searchContextSpec: "@user", wantErr: "search context '@user' not found"},
-		{name: "empty user not found", searchContextSpec: "@", wantErr: "search context '@' not found"},
+		{name: "user not found", searchContextSpec: "@user", wantErr: "search context \"@user\" not found"},
+		{name: "empty user not found", searchContextSpec: "@", wantErr: "search context \"@\" not found"},
 	}
 
 	db := new(dbtesting.MockDB)
@@ -142,7 +145,7 @@ func TestGettingSearchContextFromVersionContext(t *testing.T) {
 	}
 }
 
-func createRepos(ctx context.Context, repoStore *database.RepoStore) ([]*types.RepoName, error) {
+func createRepos(ctx context.Context, repoStore *database.RepoStore) ([]types.RepoName, error) {
 	err := repoStore.Create(ctx, &types.Repo{Name: "github.com/example/a"}, &types.Repo{Name: "github.com/example/b"})
 	if err != nil {
 		return nil, err
@@ -155,15 +158,23 @@ func createRepos(ctx context.Context, repoStore *database.RepoStore) ([]*types.R
 	if err != nil {
 		return nil, err
 	}
-	return []*types.RepoName{{ID: repoA.ID, Name: repoA.Name}, {ID: repoB.ID, Name: repoB.Name}}, nil
+	return []types.RepoName{{ID: repoA.ID, Name: repoA.Name}, {ID: repoB.ID, Name: repoB.Name}}, nil
 }
 
 func TestConvertingVersionContextToSearchContext(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+
+	internalCtx := actor.WithInternalActor(context.Background())
 	db := dbtesting.GetDB(t)
-	ctx := context.Background()
+	u := database.Users(db)
+
+	user, err := u.Create(internalCtx, database.NewUser{Username: "u", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
 	r := database.Repos(db)
 
 	repos, err := createRepos(ctx, r)
@@ -209,11 +220,18 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 		t.Skip()
 	}
 
+	internalCtx := actor.WithInternalActor(context.Background())
 	db := dbtesting.GetDB(t)
-	ctx := context.Background()
+	u := database.Users(db)
 	r := database.Repos(db)
 
-	repos, err := createRepos(ctx, r)
+	user, err := u.Create(internalCtx, database.NewUser{Username: "u", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	repos, err := createRepos(internalCtx, r)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
@@ -233,5 +251,233 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 	}
 	if !reflect.DeepEqual(repos, gotRepos) {
 		t.Fatalf("wanted %+v repositories, got %+v", repos, gotRepos)
+	}
+}
+
+func TestSearchContextNamespaceValidation(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	internalCtx := actor.WithInternalActor(context.Background())
+	db := dbtesting.GetDB(t)
+	u := database.Users(db)
+
+	org, err := database.Orgs(db).Create(internalCtx, "myorg", nil)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	// First user is the site admin
+	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	// Second user is not a site-admin and is a member of the org
+	user2, err := u.Create(internalCtx, database.NewUser{Username: "u2", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	database.OrgMembers(db).Create(internalCtx, org.ID, user2.ID)
+	// Third user is not a site-admin and is not a member of the org
+	user3, err := u.Create(internalCtx, database.NewUser{Username: "u3", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	tests := []struct {
+		name            string
+		namespaceUserID int32
+		namespaceOrgID  int32
+		userID          int32
+		wantErr         string
+	}{
+		{
+			name:    "current user must be authenticated",
+			userID:  0,
+			wantErr: "current user not found",
+		},
+		{
+			name:            "current user must match the user namespace",
+			namespaceUserID: user2.ID,
+			userID:          user3.ID,
+			wantErr:         "search context user does not match current user",
+		},
+		{
+			name:           "current user must be a member of the org namespace",
+			namespaceOrgID: org.ID,
+			userID:         user3.ID,
+			wantErr:        "current user is not an org member",
+		},
+		{
+			name:    "non site-admin users are not valid for instance-level contexts",
+			userID:  user2.ID,
+			wantErr: "current user must be site-admin",
+		},
+		{
+			name:   "site-admin is valid for any instance-level context",
+			userID: user1.ID,
+		},
+		{
+			name:            "site-admin is valid for any user namespace",
+			namespaceUserID: user2.ID,
+			userID:          user1.ID,
+		},
+		{
+			name:            "site-admin is valid for any org namespace",
+			namespaceUserID: org.ID,
+			userID:          user1.ID,
+		},
+		{
+			name:            "current user is valid if matches the user namespace",
+			namespaceUserID: user2.ID,
+			userID:          user2.ID,
+		},
+		{
+			name:           "current user is valid if a member of the org namespace",
+			namespaceOrgID: org.ID,
+			userID:         user2.ID,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: tt.userID})
+
+			err := validateSearchContextNamespaceForCurrentUser(ctx, db, tt.namespaceUserID, tt.namespaceOrgID)
+
+			expectErr := tt.wantErr != ""
+			if !expectErr && err != nil {
+				t.Fatalf("expected no error, got %s", err)
+			}
+			if expectErr && err == nil {
+				t.Fatalf("wanted error, got none")
+			}
+			if expectErr && err != nil && !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("wanted error containing %s, got %s", tt.wantErr, err)
+			}
+		})
+	}
+}
+
+func TestCreatingSearchContexts(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	internalCtx := actor.WithInternalActor(context.Background())
+	db := dbtesting.GetDB(t)
+	u := database.Users(db)
+
+	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	repos, err := createRepos(internalCtx, database.Repos(db))
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	existingSearchContext, err := database.SearchContexts(db).CreateSearchContextWithRepositoryRevisions(
+		internalCtx,
+		&types.SearchContext{Name: "existing"},
+		[]*types.SearchContextRepositoryRevisions{},
+	)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	tooLongName := strings.Repeat("x", 33)
+	tooLongRevision := strings.Repeat("x", 256)
+	tests := []struct {
+		name                string
+		searchContext       *types.SearchContext
+		userID              int32
+		repositoryRevisions []*types.SearchContextRepositoryRevisions
+		wantErr             string
+	}{
+		{
+			name:          "cannot create search context with global name",
+			searchContext: &types.SearchContext{Name: "global"},
+			wantErr:       "cannot override global search context",
+		},
+		{
+			name:          "cannot create search context with invalid name",
+			searchContext: &types.SearchContext{Name: "invalid name"},
+			userID:        user1.ID,
+			wantErr:       "\"invalid name\" is not a valid search context name",
+		},
+		{
+			name:          "cannot create search context with name too long",
+			searchContext: &types.SearchContext{Name: tooLongName},
+			userID:        user1.ID,
+			wantErr:       fmt.Sprintf("search context name %q exceeds maximum allowed length (32)", tooLongName),
+		},
+		{
+			name:          "cannot create search context with description too long",
+			searchContext: &types.SearchContext{Name: "ctx", Description: strings.Repeat("x", 1025)},
+			userID:        user1.ID,
+			wantErr:       "search context description exceeds maximum allowed length (1024)",
+		},
+		{
+			name:          "cannot create search context if it already exists",
+			searchContext: existingSearchContext,
+			userID:        user1.ID,
+			wantErr:       "search context already exists",
+		},
+		{
+			name:          "cannot create search context with revisions too long",
+			searchContext: &types.SearchContext{Name: "ctx"},
+			userID:        user1.ID,
+			repositoryRevisions: []*types.SearchContextRepositoryRevisions{
+				{Repo: repos[0], Revisions: []string{tooLongRevision}},
+			},
+			wantErr: fmt.Sprintf("revision %q exceeds maximum allowed length (255)", tooLongRevision),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: tt.userID})
+
+			_, err := CreateSearchContextWithRepositoryRevisions(ctx, db, tt.searchContext, tt.repositoryRevisions)
+
+			expectErr := tt.wantErr != ""
+			if !expectErr && err != nil {
+				t.Fatalf("expected no error, got %s", err)
+			}
+			if expectErr && err == nil {
+				t.Fatalf("wanted error, got none")
+			}
+			if expectErr && err != nil && !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("wanted error containing %s, got %s", tt.wantErr, err)
+			}
+		})
+	}
+}
+
+func TestDeletingAutoDefinedSearchContext(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	internalCtx := actor.WithInternalActor(context.Background())
+	db := dbtesting.GetDB(t)
+	u := database.Users(db)
+
+	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	autoDefinedSearchContext := GetUserSearchContext(user1.Username, user1.ID)
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user1.ID})
+	err = DeleteSearchContext(ctx, db, autoDefinedSearchContext)
+
+	wantErr := "cannot delete auto-defined search context"
+	if err == nil {
+		t.Fatalf("wanted error, got none")
+	}
+	if err != nil && !strings.Contains(err.Error(), wantErr) {
+		t.Fatalf("wanted error containing %s, got %s", wantErr, err)
 	}
 }

@@ -74,6 +74,31 @@ func TestSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	repo1, err := client.Repository("github.com/sgtest/java-langserver")
+	if err != nil {
+		t.Fatal(err)
+	}
+	repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scID, err := client.CreateSearchContext(
+		gqltestutil.CreateSearchContextInput{Name: "TestSearchContext", Public: true},
+		[]gqltestutil.SearchContextRepositoryRevisionsInput{
+			{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
+			{RepositoryID: repo2.ID, Revisions: []string{"HEAD"}},
+		})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err = client.DeleteSearchContext(scID)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
 	t.Run("graphql", func(t *testing.T) {
 		testSearchClient(t, client)
 	})
@@ -957,8 +982,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `repo contains content default`,
-				query:  `repo:contains(nextFileFirstLine)`,
+				name:   `repo contains content scoped predicate`,
+				query:  `repo:contains.content(nextFileFirstLine)`,
 				counts: counts{Repo: 1},
 			},
 			{
@@ -977,6 +1002,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Content: 61},
 			},
 			{
+				name:   `repo contains file scoped predicate`,
+				query:  `repo:contains.file(go.mod) count:100 fmt`,
+				counts: counts{Content: 61},
+			},
+			{
 				name:   `repo contains with matching repo filter`,
 				query:  `repo:go-diff repo:contains(file:diff.proto)`,
 				counts: counts{Repo: 1},
@@ -985,6 +1015,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:   `repo contains with non-matching repo filter`,
 				query:  `repo:nonexist repo:contains(file:diff.proto)`,
 				counts: counts{Repo: 0},
+			},
+			{
+				`repo contains respects parameters that affect repo search (fork)`,
+				`repo:sgtest/mux fork:yes repo:contains.file(README)`,
+				counts{Repo: 1},
 			},
 			{
 				name:   `commit results without repo filter`,
@@ -1089,6 +1124,16 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:  `repo:go-diff patterntype:literal type:symbol HunkNoChunksize select:symbol`,
 				counts: counts{Symbol: 1},
 			},
+			{
+				name:   `select diffs with added lines containing pattern`,
+				query:  `repo:go-diff patterntype:literal type:diff select:commit.diff.added sample_binary_inline`,
+				counts: counts{Commit: 1},
+			},
+			{
+				name:   `select diffs with removed lines containing pattern`,
+				query:  `repo:go-diff patterntype:literal type:diff select:commit.diff.removed sample_binary_inline`,
+				counts: counts{Commit: 0},
+			},
 		}
 
 		for _, test := range tests {
@@ -1148,6 +1193,7 @@ func testSearchOther(t *testing.T) {
 			suggestionCount int
 		}{
 			{query: `repo:sourcegraph-typescript$ type:file file:deploy`, suggestionCount: 11},
+			{query: `context:TestSearchContext repo:`, suggestionCount: 2},
 		}
 
 		for _, test := range tests {

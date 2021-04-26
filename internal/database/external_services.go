@@ -31,6 +31,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// BeforeCreateExternalService (if set) is invoked as a hook prior to creating a
+// new external service in the database.
+var BeforeCreateExternalService func(context.Context, dbutil.DB) error
+
 // An ExternalServiceStore stores external services and their configuration.
 // Before updating or creating a new external service, validation is performed.
 // The enterprise code registers additional validators at run-time and sets the
@@ -45,10 +49,6 @@ type ExternalServiceStore struct {
 
 	key encryption.Key
 
-	// PreCreateExternalService (if set) is invoked as a hook prior to creating a
-	// new external service in the database.
-	PreCreateExternalService func(context.Context) error
-
 	mu sync.Mutex
 }
 
@@ -57,7 +57,7 @@ func ExternalServices(db dbutil.DB) *ExternalServiceStore {
 	return &ExternalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
-// NewExternalServicesStoreWithDB instantiates and returns a new ExternalServicesStore with prepared statements.
+// ExternalServicesWith instantiates and returns a new ExternalServicesStore with prepared statements.
 func ExternalServicesWith(other basestore.ShareableStore) *ExternalServiceStore {
 	return &ExternalServiceStore{Store: basestore.NewWithHandle(other.Handle())}
 }
@@ -501,8 +501,8 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	}
 
 	// NOTE: For GitHub and GitLab user code host connections on Sourcegraph Cloud,
-	//  we always want to enforce repository permissions using OAuth to prevent
-	//  unexpected resource leaking.
+	// we always want to enforce repository permissions using OAuth to prevent
+	// unexpected resource leaking.
 	if envvar.SourcegraphDotComMode() && es.NamespaceUserID != 0 {
 		switch es.Kind {
 		case extsvc.KindGitHub:
@@ -551,8 +551,8 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	es.UpdatedAt = es.CreatedAt
 
 	// Prior to saving the record, run a validation hook.
-	if e.PreCreateExternalService != nil {
-		if err := e.PreCreateExternalService(ctx); err != nil {
+	if BeforeCreateExternalService != nil {
+		if err := BeforeCreateExternalService(ctx, e.Store.Handle().DB()); err != nil {
 			return err
 		}
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -62,8 +63,8 @@ func newBitbucketServerSource(c *schema.BitbucketServerConnection, cf *httpcli.F
 	}, nil
 }
 
-func (s BitbucketServerSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
-	return gitserverPushConfig(repo, s.au)
+func (s BitbucketServerSource) GitserverPushConfig(ctx context.Context, store *database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
+	return gitserverPushConfig(ctx, store, repo, s.au)
 }
 
 func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
@@ -79,10 +80,10 @@ func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (Changese
 		return nil, newUnsupportedAuthenticatorError("BitbucketServerSource", a)
 	}
 
-	sc := s
-	sc.client = sc.client.WithAuthenticator(a)
-
-	return &sc, nil
+	return &BitbucketServerSource{
+		client: s.client.WithAuthenticator(a),
+		au:     a,
+	}, nil
 }
 
 // AuthenticatedUsername uses the underlying bitbucketserver.Client to get the

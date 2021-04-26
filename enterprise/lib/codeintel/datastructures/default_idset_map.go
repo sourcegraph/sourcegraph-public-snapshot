@@ -172,11 +172,13 @@ func compareDefaultIDSetMaps(x, y *DefaultIDSetMap) bool {
 	m1 := toMap(x)
 	m2 := toMap(y)
 
-	if len(m1) == len(m2) {
-		for k, v := range m1 {
-			if !compareIDSets(v, m2[k]) {
-				return false
-			}
+	if len(m1) != len(m2) {
+		return false
+	}
+
+	for k, v := range m1 {
+		if !compareIDSets(v, m2[k]) {
+			return false
 		}
 	}
 

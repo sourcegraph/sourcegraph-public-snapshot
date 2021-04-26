@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"net/url"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -36,7 +35,7 @@ func searchSymbols(ctx context.Context, db dbutil.DB, args *search.TextParameter
 	if mockSearchSymbols != nil {
 		results, stats, err := mockSearchSymbols(ctx, args, limit)
 		stream.Send(SearchEvent{
-			Results: fileMatchResultsToSearchResults(results),
+			Results: fileMatchResolversToSearchResults(results),
 			Stats:   statsDeref(stats),
 		})
 		return err
@@ -94,10 +93,10 @@ func searchSymbols(ctx context.Context, db dbutil.DB, args *search.TextParameter
 		goroutine.Go(func() {
 			defer run.Release()
 
-			matches, err := searchSymbolsInRepo(ctx, db, repoRevs, args.PatternInfo, limit)
+			matches, err := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, limit)
 			stats, err := handleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
 			stream.Send(SearchEvent{
-				Results: fileMatchResultsToSearchResults(matches),
+				Results: fileMatchesToSearchResults(db, matches),
 				Stats:   stats,
 			})
 			if err != nil {
@@ -145,7 +144,7 @@ func symbolCount(fmrs []*FileMatchResolver) int {
 	return nsym
 }
 
-func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []*FileMatchResolver, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.FileMatch, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
@@ -167,12 +166,6 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 		return nil, err
 	}
 	span.SetTag("commit", string(commitID))
-	baseURI, err := gituri.Parse("git://" + string(repoRevs.Repo.Name) + "?" + url.QueryEscape(inputRev))
-	if err != nil {
-		return nil, err
-	}
-
-	repoResolver := NewRepositoryResolver(db, repoRevs.Repo.ToRepo())
 
 	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
 		Repo:            repoRevs.Repo.Name,
@@ -185,32 +178,43 @@ func searchSymbolsInRepo(ctx context.Context, db dbutil.DB, repoRevs *search.Rep
 		// Ask for limit + 1 so we can detect whether there are more results than the limit.
 		First: limit + 1,
 	})
-	fileMatchesByURI := make(map[string]*FileMatchResolver)
-	fileMatches := make([]*FileMatchResolver, 0)
 
+	// All symbols are from the same repo, so we can just partition them by path
+	// to build fileMatches
+	symbolsByPath := make(map[string][]*result.Symbol)
 	for _, symbol := range symbols {
-		symbolRes := &result.SymbolMatch{
-			Symbol:  symbol,
-			BaseURI: baseURI,
-		}
-		newFileMatchResolver := &FileMatchResolver{
-			db: db,
-			FileMatch: result.FileMatch{
-				Path:     symbolRes.Symbol.Path,
-				Symbols:  []*result.SymbolMatch{symbolRes},
-				Repo:     repoRevs.Repo,
-				CommitID: commitID,
-				InputRev: &inputRev,
-			},
-			RepoResolver: repoResolver,
-		}
-		if oldFileMatchResolver, ok := fileMatchesByURI[newFileMatchResolver.URL()]; ok {
-			oldFileMatchResolver.FileMatch.Symbols = append(oldFileMatchResolver.FileMatch.Symbols, symbolRes)
-		} else {
-			fileMatchesByURI[newFileMatchResolver.URL()] = newFileMatchResolver
-			fileMatches = append(fileMatches, newFileMatchResolver)
-		}
+		cur := symbolsByPath[symbol.Path]
+		symbolsByPath[symbol.Path] = append(cur, &symbol)
 	}
+
+	// Create file matches from partitioned symbols
+	fileMatches := make([]result.FileMatch, 0, len(symbolsByPath))
+	for path, symbols := range symbolsByPath {
+		file := result.File{
+			Path:     path,
+			Repo:     repoRevs.Repo,
+			CommitID: commitID,
+			InputRev: &inputRev,
+		}
+
+		symbolMatches := make([]*result.SymbolMatch, 0, len(symbols))
+		for _, symbol := range symbols {
+			symbolMatches = append(symbolMatches, &result.SymbolMatch{
+				File:   &file,
+				Symbol: *symbol,
+			})
+		}
+
+		fileMatches = append(fileMatches, result.FileMatch{
+			Symbols: symbolMatches,
+			File:    file,
+		})
+	}
+
+	// Make the results deterministic
+	sort.Slice(fileMatches, func(i, j int) bool {
+		return fileMatches[i].Path < fileMatches[j].Path
+	})
 	return fileMatches, err
 }
 

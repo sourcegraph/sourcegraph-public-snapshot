@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // dbSubscription describes an product subscription row in the product_subscriptions DB
@@ -35,10 +35,12 @@ primary_emails AS (
 var errSubscriptionNotFound = errors.New("product subscription not found")
 
 // dbSubscriptions exposes product subscriptions in the product_subscriptions DB table.
-type dbSubscriptions struct{}
+type dbSubscriptions struct {
+	db dbutil.DB
+}
 
 // Create creates a new product subscription entry given a license key.
-func (dbSubscriptions) Create(ctx context.Context, userID int32) (id string, err error) {
+func (s dbSubscriptions) Create(ctx context.Context, userID int32) (id string, err error) {
 	if mocks.subscriptions.Create != nil {
 		return mocks.subscriptions.Create(userID)
 	}
@@ -47,7 +49,7 @@ func (dbSubscriptions) Create(ctx context.Context, userID int32) (id string, err
 	if err != nil {
 		return "", err
 	}
-	if err := dbconn.Global.QueryRowContext(ctx, `
+	if err := s.db.QueryRowContext(ctx, `
 INSERT INTO product_subscriptions(id, user_id) VALUES($1, $2) RETURNING id
 `,
 		uuid, userID,
@@ -105,7 +107,7 @@ func (s dbSubscriptions) List(ctx context.Context, opt dbSubscriptionsListOption
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
 
-func (dbSubscriptions) list(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*dbSubscription, error) {
+func (s dbSubscriptions) list(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*dbSubscription, error) {
 	q := sqlf.Sprintf(`
 WITH %s
 SELECT product_subscriptions.id, product_subscriptions.user_id, billing_subscription_id, product_subscriptions.created_at, product_subscriptions.archived_at
@@ -120,7 +122,7 @@ ORDER BY archived_at DESC NULLS FIRST, created_at DESC
 		limitOffset.SQL(),
 	)
 
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +140,7 @@ ORDER BY archived_at DESC NULLS FIRST, created_at DESC
 }
 
 // Count counts all product subscriptions that satisfy the options (ignoring limit and offset).
-func (dbSubscriptions) Count(ctx context.Context, opt dbSubscriptionsListOptions) (int, error) {
+func (s dbSubscriptions) Count(ctx context.Context, opt dbSubscriptionsListOptions) (int, error) {
 	q := sqlf.Sprintf(`
 WITH %s
 SELECT COUNT(*)
@@ -147,7 +149,7 @@ LEFT OUTER JOIN users ON product_subscriptions.user_id = users.id
 LEFT OUTER JOIN primary_emails ON users.id = primary_emails.user_id
 WHERE (%s)`, emailQueries, sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int
-	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+	if err := s.db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -161,7 +163,7 @@ type dbSubscriptionUpdate struct {
 }
 
 // Update updates a product subscription.
-func (dbSubscriptions) Update(ctx context.Context, id string, update dbSubscriptionUpdate) error {
+func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscriptionUpdate) error {
 	fieldUpdates := []*sqlf.Query{
 		sqlf.Sprintf("updated_at=now()"), // always update updated_at timestamp
 	}
@@ -170,7 +172,7 @@ func (dbSubscriptions) Update(ctx context.Context, id string, update dbSubscript
 	}
 
 	query := sqlf.Sprintf("UPDATE product_subscriptions SET %s WHERE id=%s", sqlf.Join(fieldUpdates, ", "), id)
-	res, err := dbconn.Global.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	res, err := s.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
 		return err
 	}
@@ -187,12 +189,12 @@ func (dbSubscriptions) Update(ctx context.Context, id string, update dbSubscript
 // Archive marks a product subscription as archived given its ID.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to archive the token.
-func (dbSubscriptions) Archive(ctx context.Context, id string) error {
+func (s dbSubscriptions) Archive(ctx context.Context, id string) error {
 	if mocks.subscriptions.Archive != nil {
 		return mocks.subscriptions.Archive(id)
 	}
 	q := sqlf.Sprintf("UPDATE product_subscriptions SET archived_at=now(), updated_at=now() WHERE id=%s AND archived_at IS NULL", id)
-	res, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	res, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
 	}

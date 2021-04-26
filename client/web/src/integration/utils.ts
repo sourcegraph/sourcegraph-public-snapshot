@@ -3,6 +3,7 @@ import { Page } from 'puppeteer'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
+import { REDESIGN_TOGGLE_KEY, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { WebGraphQlOperations } from '../graphql-operations'
 
@@ -67,9 +68,26 @@ export const setColorScheme = async (
 
     // Check Monaco editor is styled correctly
     await page.waitForFunction(
-        expectedClassName => document.querySelector('.monaco-editor')?.classList.contains(expectedClassName),
+        expectedClassName =>
+            document.querySelector('#monaco-query-input .monaco-editor') &&
+            document.querySelector('#monaco-query-input .monaco-editor')?.classList.contains(expectedClassName),
         { timeout: 1000 },
         ColorSchemeToMonacoEditorClassName[scheme]
+    )
+    // Wait a tiny bit for Monaco syntax highlighting to be applied
+    await page.waitForTimeout(500)
+}
+
+const toggleRedesign = async (page: Page, enabled: boolean): Promise<void> => {
+    await page.evaluate(
+        (className: string, storageKey: string, enabled: boolean) => {
+            document.documentElement.classList.toggle(className, enabled)
+            localStorage.setItem(storageKey, String(enabled))
+            window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: String(enabled) }))
+        },
+        REDESIGN_CLASS_NAME,
+        REDESIGN_TOGGLE_KEY,
+        enabled
     )
 }
 
@@ -92,23 +110,26 @@ export const percySnapshotWithVariants = async (
         return
     }
 
+    // Wait for Monaco editor to finish rendering before taking screenshots
+    await page.waitForSelector('#monaco-query-input .monaco-editor', { visible: true })
+
     // Theme-light
     await setColorScheme(page, 'light', config?.waitForCodeHighlighting)
     await percySnapshot(page, `${name} - light theme`)
 
     // Theme-light with redesign
-    await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
+    await toggleRedesign(page, true)
     await percySnapshot(page, `${name} - light theme with redesign enabled`)
-    await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
+    await toggleRedesign(page, false)
 
     // Theme-dark
     await setColorScheme(page, 'dark', config?.waitForCodeHighlighting)
     await percySnapshot(page, `${name} - dark theme`)
 
     // Theme-dark with redesign
-    await page.evaluate(() => document.documentElement.classList.add('theme-redesign'))
+    await toggleRedesign(page, true)
     await percySnapshot(page, `${name} - dark theme with redesign enabled`)
-    await page.evaluate(() => document.documentElement.classList.remove('theme-redesign'))
+    await toggleRedesign(page, false)
 
     // Reset to light theme
     await setColorScheme(page, 'light', config?.waitForCodeHighlighting)

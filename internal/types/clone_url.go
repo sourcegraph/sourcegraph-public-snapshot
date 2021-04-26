@@ -7,7 +7,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -55,7 +55,7 @@ func RepoCloneURL(kind, config string, repo *Repo) (string, error) {
 			return r.URL, nil
 		}
 	case *schema.PerforceConnection:
-		if r, ok := repo.Metadata.(map[string]interface{}); ok {
+		if r, ok := repo.Metadata.(*perforce.Depot); ok {
 			return perforceCloneURL(r, t), nil
 		}
 	case *schema.PhabricatorConnection:
@@ -63,11 +63,13 @@ func RepoCloneURL(kind, config string, repo *Repo) (string, error) {
 			return phabricatorCloneURL(r, t), nil
 		}
 	case *schema.OtherExternalServiceConnection:
-		return otherCloneURL(repo, t)
+		if r, ok := repo.Metadata.(*OtherRepoMetadata); ok {
+			return otherCloneURL(repo, r), nil
+		}
 	default:
-		return "", fmt.Errorf("unknown external service kind %q", kind)
+		return "", errors.Errorf("unknown external service kind %q for repo %d", kind, repo.ID)
 	}
-	return "", fmt.Errorf("unknown repo.Metadata type %T", repo.Metadata)
+	return "", errors.Errorf("unknown repo.Metadata type %T for repo %d", repo.Metadata, repo.ID)
 }
 
 func awsCodeCloneURL(repo *awscodecommit.Repository, cfg *schema.AWSCodeCommitConnection) string {
@@ -181,12 +183,12 @@ func gitlabCloneURL(repo *gitlab.Project, cfg *schema.GitLabConnection) string {
 // perforceCloneURL composes a clone URL for a Perforce depot based on
 // given information. e.g.
 // perforce://admin:password@ssl:111.222.333.444:1666//Sourcegraph/
-func perforceCloneURL(repo map[string]interface{}, cfg *schema.PerforceConnection) string {
+func perforceCloneURL(depot *perforce.Depot, cfg *schema.PerforceConnection) string {
 	cloneURL := url.URL{
 		Scheme: "perforce",
 		User:   url.UserPassword(cfg.P4User, cfg.P4Passwd),
 		Host:   cfg.P4Port,
-		Path:   repo["depot"].(string),
+		Path:   depot.Depot,
 	}
 	return cloneURL.String()
 }
@@ -241,38 +243,15 @@ func phabricatorCloneURL(repo *phabricator.Repo, _ *schema.PhabricatorConnection
 	return cloneURL
 }
 
-func otherCloneURL(repo *Repo, cfg *schema.OtherExternalServiceConnection) (string, error) {
-	if cfg.Url == "" {
-		return repo.URI, nil
-	}
+// TODO: this will be moved to the right package once we refactor the RepoCloneURL function.
+type OtherRepoMetadata struct {
+	// RelativePath is relative to ServiceID which is usually the host URL.
+	// Joining them gives you the clone url.
+	RelativePath string
+}
 
-	pattern := cfg.RepositoryPathPattern
-	if pattern == "" {
-		pattern = "{base}/{repo}"
-	}
-
-	base, err := url.Parse(cfg.Url)
-	if err != nil {
-		return "", err
-	}
-
-	for _, name := range cfg.Repos {
-		// normalize the repo name for comparison with the unescaped repo.Name
-		uName, err := url.Parse(name)
-		if err != nil {
-			return "", err
-		}
-
-		if reposource.OtherRepoName(pattern, cfg.Url, uName.Path) == string(repo.Name) {
-			u, err := base.Parse(uName.Path)
-			if err != nil {
-				return "", err
-			}
-			return u.String(), nil
-		}
-	}
-
-	return repo.URI, nil
+func otherCloneURL(repo *Repo, m *OtherRepoMetadata) string {
+	return repo.ExternalRepo.ServiceID + m.RelativePath
 }
 
 // setUserinfoBestEffort adds the username and password to rawurl. If user is

@@ -684,14 +684,18 @@ describe('Search', () => {
                     isSearchContextAvailable: true,
                 }),
             })
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp', {
-                waitUntil: 'networkidle2',
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:%40test+test&patternType=regexp', {
+                waitUntil: 'networkidle0',
             })
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
+            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@test')
         })
 
-        test('Missing context param should default to global context', async () => {
+        test('Missing context filter should default to global context', async () => {
+            // Initialize localStorage to a valid context, that should not be used
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+            await driver.page.evaluate(() => localStorage.setItem('sg-last-search-context', '@test'))
+            // Visit the search page with a query without a context filter
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
@@ -700,7 +704,7 @@ describe('Search', () => {
         test('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
             await driver.page.goto(
                 driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp',
-                { waitUntil: 'networkidle2' }
+                { waitUntil: 'networkidle0' }
             )
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             await driver.page.waitForSelector('#monaco-query-input')
@@ -724,6 +728,18 @@ describe('Search', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await driver.page.waitForSelector('#monaco-query-input')
             expect(await isSearchContextDropdownVisible()).toBeFalsy()
+        })
+
+        test('Reset unavailable search context from localStorage if query is not present', async () => {
+            // First initialize localStorage on the page
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+            await driver.page.evaluate(() => localStorage.setItem('sg-last-search-context', 'doesnotexist'))
+            // Visit the page again with localStorage initialized
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
+                waitUntil: 'networkidle0',
+            })
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
         })
 
         test('Convert version context', async () => {
@@ -781,13 +797,13 @@ describe('Search', () => {
             expect(convertedContexts).toBe(versionContexts.length)
         })
 
-        test('highlight tour step should be visible with empty local storage', async () => {
+        test('Highlight tour step should be visible with empty local storage', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             expect(await isSearchContextHighlightTourStepVisible()).toBeTruthy()
         })
 
-        test('highlight tour step should not be visible if already seen', async () => {
+        test('Highlight tour step should not be visible if already seen', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
             await driver.page.evaluate(() =>
                 localStorage.setItem('has-seen-search-contexts-dropdown-highlight-tour-step', 'true')

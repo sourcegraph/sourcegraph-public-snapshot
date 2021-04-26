@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -15,14 +16,14 @@ type ExternalServicesStore interface {
 	Count(context.Context, database.ExternalServicesListOptions) (int, error)
 }
 
-// NewPreCreateExternalServiceHook enforces any per-tier validations prior to
+// NewBeforeCreateExternalServiceHook enforces any per-tier validations prior to
 // creating a new external service.
-func NewPreCreateExternalServiceHook(externalServices ExternalServicesStore) func(ctx context.Context) error {
+func NewBeforeCreateExternalServiceHook() func(ctx context.Context, db dbutil.DB) error {
 	if !licensing.EnforceTiers {
 		return nil
 	}
 
-	return func(ctx context.Context) error {
+	return func(ctx context.Context, db dbutil.DB) error {
 		// Licenses are associated with features and resource limits according to
 		// the current plan. We first need to determine the instance license, and then
 		// extract the maximum external service count from it.
@@ -38,7 +39,7 @@ func NewPreCreateExternalServiceHook(externalServices ExternalServicesStore) fun
 		}
 
 		// Next we'll grab the current count of external services.
-		extSvcCount, err := externalServices.Count(ctx, database.ExternalServicesListOptions{})
+		extSvcCount, err := database.ExternalServices(db).Count(ctx, database.ExternalServicesListOptions{})
 		if err != nil {
 			return err
 		}

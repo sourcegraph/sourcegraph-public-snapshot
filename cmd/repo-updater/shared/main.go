@@ -407,7 +407,7 @@ type scheduler interface {
 	SetCloned([]string)
 
 	// EnsureScheduled ensures that all the repos provided are known to the scheduler
-	EnsureScheduled([]*types.RepoName)
+	EnsureScheduled([]types.RepoName)
 }
 
 func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps *repos.GitolitePhabricatorMetadataSyncer) {
@@ -450,9 +450,13 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 			return
 		}
 
-		// Fetch all default repos that are NOT cloned so that we can add them to the
+		// Fetch ALL default repos that are NOT cloned so that we can add them to the
 		// scheduler
-		if u, err := baseRepoStore.ListDefaultRepos(ctx, database.ListDefaultReposOptions{OnlyUncloned: true}); err != nil {
+		opts := database.ListDefaultReposOptions{
+			OnlyUncloned:   true,
+			IncludePrivate: true,
+		}
+		if u, err := baseRepoStore.ListDefaultRepos(ctx, opts); err != nil {
 			log15.Error("Listing default repos", "error", err)
 			return
 		} else {
