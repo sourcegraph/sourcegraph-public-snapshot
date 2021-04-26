@@ -122,6 +122,7 @@
     "@storybook/addons": "^6.1.11",
     "@storybook/components": "^6.1.11",
     "@storybook/core": "^6.1.11",
+    "@storybook/client-api": "6.1.11",
     "@storybook/react": "^6.1.11",
     "@storybook/theming": "^6.1.11",
     "@testing-library/jest-dom": "^5.11.9",
