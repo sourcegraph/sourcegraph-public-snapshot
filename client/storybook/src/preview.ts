@@ -36,10 +36,6 @@ if (!document.body.classList.contains('theme-dark')) {
     document.body.classList.add('theme-light')
 }
 
-if (getIsRedesignEnabled()) {
-    document.body.classList.add(REDESIGN_CLASS_NAME)
-}
-
 if (isChromatic()) {
     const style = document.createElement('style')
     style.innerHTML = `

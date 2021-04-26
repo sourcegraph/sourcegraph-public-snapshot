@@ -1,4 +1,6 @@
+import { addons } from '@storybook/addons'
 import { Icons, IconButton } from '@storybook/components'
+import { SET_STORIES } from '@storybook/core-events'
 import React, { ReactElement, useEffect } from 'react'
 
 import { useRedesignToggle, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
@@ -30,8 +32,21 @@ export const RedesignToggleStorybook = (): ReactElement => {
     const [isRedesignEnabled, setIsRedesignEnabled] = useRedesignToggle()
 
     useEffect(() => {
-        updatePreview(isRedesignEnabled)
-        updateManager(isRedesignEnabled)
+        const handleIsRedesignEnabledChange = (): void => {
+            updatePreview(isRedesignEnabled)
+            updateManager(isRedesignEnabled)
+        }
+
+        handleIsRedesignEnabledChange()
+
+        const channel = addons.getChannel()
+        // Preview iframe is not available on toolbar mount.
+        // Wait for the SET_STORIES event, after which the iframe is accessible, and ensure that the redesign-theme class is in place.
+        channel.on(SET_STORIES, handleIsRedesignEnabledChange)
+
+        return () => {
+            channel.removeListener(SET_STORIES, handleIsRedesignEnabledChange)
+        }
     }, [isRedesignEnabled])
 
     const handleRedesignToggle = (): void => {
