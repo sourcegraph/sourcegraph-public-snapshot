@@ -7,4 +7,5 @@ export * from './core/analytics'
 
 // Public Insights components
 export { InsightsViewGrid } from './components'
+export { InsightsRouter } from './InsightsRouter'
 export type { InsightsViewGridProps } from './components'

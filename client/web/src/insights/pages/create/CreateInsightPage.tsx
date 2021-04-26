@@ -45,16 +45,20 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
                         repositories: values.repositories.split(','),
                         series: values.series.map(line => ({
                             name: line.name,
-                            query: line.query,
+                            // Query field is a reg exp field for code insight query setting
+                            // Native html input element adds escape symbols by himself
+                            // to prevent this behavior below we replace double escaping
+                            // with just one series of escape characters e.g. - //
+                            query: line.query.replace(/\\\\/g, '\\'),
                             stroke: line.color
                         })),
                         step: {
-                            [values.step]: values.stepValue
+                            [values.step]: +values.stepValue
                         }
                     }
                 }
 
-                await updateSubjectSettings(platformContext, subjectID, JSON.stringify(newSettings)).toPromise()
+                await updateSubjectSettings(platformContext, subjectID, JSON.stringify(newSettings, null, 2)).toPromise()
 
                 history.push('/insights');
             } catch (error) {

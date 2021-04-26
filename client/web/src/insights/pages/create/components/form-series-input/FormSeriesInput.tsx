@@ -34,15 +34,13 @@ const validQuery = composeValidators(
 export function FormSeriesInput(props: FormSeriesProps): ReactElement {
     const { name, query, color, className, onSubmit = noop, innerRef } = props;
 
-    const { handleSubmit, form, values} = useForm<DataSeries>({
+    const { handleSubmit, form, } = useForm<DataSeries>({
         initialValues: {
             name,
             query,
             color: color ?? DEFAULT_ACTIVE_COLOR,
         },
-        onSubmit: () => {
-            onSubmit(values)
-        }
+        onSubmit
     });
 
     const nameField = useField('name', form, requiredNameField);
@@ -70,6 +68,7 @@ export function FormSeriesInput(props: FormSeriesProps): ReactElement {
     }));
 
     const handleSubmitButton = useCallback(
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         (event: React.MouseEvent) => handleSubmit(event),
         [handleSubmit]
