@@ -57,6 +57,13 @@ sup {
     }
 }
 
+.theme-light.theme-redesign,
+.theme-dark.theme-redesign {
+    @each $color, $value in $theme-colors-redesign {
+        @include text-emphasis-variant('.text-#{$color}', $value, true);
+    }
+}
+
 .list-dashed {
     list-style: none;
     position: relative;
