@@ -35,7 +35,6 @@
     --input-group-addon-color: #{$redesign-gray-08};
     --input-group-addon-bg: #{$redesign-gray-03};
     --input-group-addon-border-color: #{$redesign-gray-03};
-    // New ones
     --input-focus-border-color: var(--border-active-color);
     --input-focus-box-shadow: 0 0 0 2px var(--primary-2);
 }
@@ -49,7 +48,6 @@
     --input-group-addon-color: #{$redesign-gray-01};
     --input-group-addon-bg: #{$redesign-gray-08};
     --input-group-addon-border-color: #{$redesign-gray-08};
-    // New ones
     --input-focus-border-color: var(--border-active-color);
     --input-focus-box-shadow: 0 0 0 2px var(--primary-2);
 }
@@ -62,8 +60,7 @@
     box-shadow: none;
 }
 
-// Add an additional feedback class to add additional context to
-// form controls without requiring a valid state
+// Add an additional feedback class to add context to form controls without requiring a valid state
 .field-message {
     @extend .valid-feedback;
     display: block;
