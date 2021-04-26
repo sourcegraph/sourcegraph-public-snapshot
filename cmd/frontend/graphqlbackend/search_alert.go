@@ -320,7 +320,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 	case len(repoGroupFilters) == 0 && len(repoFilters) == 1:
 		isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
 		if !envvar.SourcegraphDotComMode() {
-			if needsRepoConfig, err := needsRepositoryConfiguration(ctx); err == nil && needsRepoConfig {
+			if needsRepoConfig, err := needsRepositoryConfiguration(ctx, r.db); err == nil && needsRepoConfig {
 				if isSiteAdmin {
 					return &searchAlert{
 						title:       "No repositories or code hosts configured",

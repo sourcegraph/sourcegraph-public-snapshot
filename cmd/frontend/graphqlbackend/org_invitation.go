@@ -75,7 +75,7 @@ func (r *organizationInvitationResolver) ResponseType() *string {
 
 func (r *organizationInvitationResolver) RespondURL(ctx context.Context) (*string, error) {
 	if r.v.Pending() {
-		org, err := database.GlobalOrgs.GetByID(ctx, r.v.OrgID)
+		org, err := database.Orgs(r.db).GetByID(ctx, r.v.OrgID)
 		if err != nil {
 			return nil, err
 		}

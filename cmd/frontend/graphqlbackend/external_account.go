@@ -22,7 +22,7 @@ func externalAccountByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*ext
 	if err != nil {
 		return nil, err
 	}
-	account, err := database.GlobalExternalAccounts.Get(ctx, externalAccountID)
+	account, err := database.ExternalAccounts(db).Get(ctx, externalAccountID)
 	if err != nil {
 		return nil, err
 	}
