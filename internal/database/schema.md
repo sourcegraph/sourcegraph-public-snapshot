@@ -1482,6 +1482,7 @@ Foreign-key constraints:
  created_at            | timestamp with time zone |           | not null | now()
  updated_at            | timestamp with time zone |           | not null | now()
  credential_enc        | bytea                    |           |          | 
+ ssh_migration_applied | boolean                  |           | not null | false
 Indexes:
     "user_credentials_pkey" PRIMARY KEY, btree (id)
     "user_credentials_domain_user_id_external_service_type_exter_key" UNIQUE CONSTRAINT, btree (domain, user_id, external_service_type, external_service_id)

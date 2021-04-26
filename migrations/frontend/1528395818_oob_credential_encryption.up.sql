@@ -33,7 +33,7 @@ SET
 WHERE
     credential IS NOT NULL
     AND domain = 'batches'
-    AND (credential::json->'Type')::text IN (
+    AND (credential::json->'Type')::text NOT IN (
         'BasicAuth',
         'OAuthBearerToken'
     );
