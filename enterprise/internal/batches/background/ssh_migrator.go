@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -28,15 +27,10 @@ var _ oobmigration.Migrator = &sshMigrator{}
 // Progress returns the ratio of migrated records to total records. Any record with a
 // credential type that ends on WithSSH is considered migrated.
 func (m *sshMigrator) Progress(ctx context.Context) (float64, error) {
-	unmigratedMigratorTypes := []*sqlf.Query{
-		sqlf.Sprintf("%s", strconv.Quote(string(database.AuthenticatorTypeBasicAuth))),
-		sqlf.Sprintf("%s", strconv.Quote(string(database.AuthenticatorTypeOAuthBearerToken))),
-	}
 	progress, _, err := basestore.ScanFirstFloat(
 		m.store.Query(ctx, sqlf.Sprintf(
 			sshMigratorProgressQuery,
 			database.UserCredentialDomainBatches,
-			sqlf.Join(unmigratedMigratorTypes, ","),
 			database.UserCredentialDomainBatches,
 		)))
 	if err != nil {
@@ -49,7 +43,7 @@ func (m *sshMigrator) Progress(ctx context.Context) (float64, error) {
 const sshMigratorProgressQuery = `
 -- source: enterprise/internal/batches/ssh_migrator.go:Progress
 SELECT CASE c2.count WHEN 0 THEN 1 ELSE CAST((c2.count - c1.count) AS float) / CAST(c2.count AS float) END FROM
-	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s AND (credential::json->'Type')::text IN (%s)) c1,
+	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s AND ssh_migration_applied = FALSE) c1,
 	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s) c2
 `
 
@@ -62,6 +56,7 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 	}
 	defer func() { err = tx.Done(err) }()
 
+	f := false
 	credentials, _, err := tx.UserCredentials().List(ctx, database.UserCredentialsListOpts{
 		Scope: database.UserCredentialScope{
 			Domain: database.UserCredentialDomainBatches,
@@ -69,7 +64,8 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 		LimitOffset: &database.LimitOffset{
 			Limit: sshMigrationCountPerRun,
 		},
-		ForUpdate: true,
+		ForUpdate:           true,
+		SSHMigrationApplied: &f,
 	})
 	if err != nil {
 		return err
@@ -93,9 +89,6 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 			if err := cred.SetAuthenticator(ctx, m.key, newCred); err != nil {
 				return err
 			}
-			if err := tx.UserCredentials().Update(ctx, cred); err != nil {
-				return err
-			}
 		case *auth.BasicAuth:
 			newCred := &auth.BasicAuthWithSSH{BasicAuth: *a}
 			keypair, err := encryption.GenerateRSAKey()
@@ -108,9 +101,11 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 			if err := cred.SetAuthenticator(ctx, m.key, newCred); err != nil {
 				return err
 			}
-			if err := tx.UserCredentials().Update(ctx, cred); err != nil {
-				return err
-			}
+		}
+
+		cred.SSHMigrationApplied = true
+		if err := tx.UserCredentials().Update(ctx, cred); err != nil {
+			return err
 		}
 	}
 
@@ -126,6 +121,7 @@ func (m *sshMigrator) Down(ctx context.Context) error {
 	}
 	defer func() { err = tx.Done(err) }()
 
+	t := true
 	credentials, _, err := tx.UserCredentials().List(ctx, database.UserCredentialsListOpts{
 		Scope: database.UserCredentialScope{
 			Domain: database.UserCredentialDomainBatches,
@@ -133,7 +129,8 @@ func (m *sshMigrator) Down(ctx context.Context) error {
 		LimitOffset: &database.LimitOffset{
 			Limit: sshMigrationCountPerRun,
 		},
-		ForUpdate: true,
+		ForUpdate:           true,
+		SSHMigrationApplied: &t,
 	})
 	for _, cred := range credentials {
 		a, err := cred.Authenticator(ctx, m.key)
@@ -147,17 +144,16 @@ func (m *sshMigrator) Down(ctx context.Context) error {
 			if err := cred.SetAuthenticator(ctx, m.key, newCred); err != nil {
 				return err
 			}
-			if err := tx.UserCredentials().Update(ctx, cred); err != nil {
-				return err
-			}
 		case *auth.BasicAuthWithSSH:
 			newCred := &a.BasicAuth
 			if err := cred.SetAuthenticator(ctx, m.key, newCred); err != nil {
 				return err
 			}
-			if err := tx.UserCredentials().Update(ctx, cred); err != nil {
-				return err
-			}
+		}
+
+		cred.SSHMigrationApplied = false
+		if err := tx.UserCredentials().Update(ctx, cred); err != nil {
+			return err
 		}
 	}
 

@@ -13,8 +13,10 @@ ON CONFLICT DO NOTHING;
 
 ALTER TABLE
     user_credentials
-ADD COLUMN
+ADD COLUMN IF NOT EXISTS
     credential_enc BYTEA NULL,
+ADD COLUMN IF NOT EXISTS
+    ssh_migration_applied BOOLEAN NOT NULL DEFAULT FALSE,
 ALTER COLUMN
     credential DROP NOT NULL,
 ADD CONSTRAINT
@@ -22,6 +24,18 @@ ADD CONSTRAINT
     CHECK
     (num_nonnulls(credential, credential_enc) = 1);
 
--- TODO: add another OOB migration for site credentials.
+-- Calculate the ssh_migration_applied field using the same algorithm as the
+-- previous version of the SSH migrator.
+UPDATE
+    user_credentials
+SET
+    ssh_migration_applied = TRUE
+WHERE
+    credential IS NOT NULL
+    AND domain = 'batches'
+    AND (credential::json->'Type')::text IN (
+        'BasicAuth',
+        'OAuthBearerToken'
+    );
 
 COMMIT;

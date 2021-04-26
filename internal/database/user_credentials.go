@@ -29,7 +29,8 @@ type UserCredential struct {
 	UpdatedAt           time.Time
 
 	// TODO(batch-change-credential-encryption): On or after Sourcegraph 3.30,
-	// we should remove credential.
+	// we should remove the credential and SSHMigrationApplied fields.
+	SSHMigrationApplied bool
 	credential          auth.Authenticator
 	encryptedCredential []byte
 }
@@ -67,7 +68,7 @@ func (uc *UserCredential) SetAuthenticator(ctx context.Context, enc encryption.E
 	}
 
 	// We must set credential to nil here: if we're in the middle of migrating
-	// when this is called, we don't want the plaintext credential to remain.
+	// when this is called, we don't want the unencrypted credential to remain.
 	uc.credential = nil
 	uc.encryptedCredential = secret
 	return nil
@@ -189,6 +190,7 @@ func (s *UserCredentialsStore) Update(ctx context.Context, credential *UserCrede
 		&NullAuthenticator{A: &credential.credential},
 		credential.encryptedCredential,
 		credential.UpdatedAt,
+		credential.SSHMigrationApplied,
 		credential.ID,
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
@@ -284,6 +286,10 @@ type UserCredentialsListOpts struct {
 	*LimitOffset
 	Scope     UserCredentialScope
 	ForUpdate bool
+
+	// TODO(batch-change-credential-encryption): this should be removed once the
+	// OOB SSH migration is removed.
+	SSHMigrationApplied *bool
 }
 
 // sql overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
@@ -315,6 +321,11 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 	}
 	if opts.Scope.ExternalServiceID != "" {
 		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opts.Scope.ExternalServiceID))
+	}
+	// TODO(batch-change-credential-encryption): remove once the OOB SSH
+	// migration is removed.
+	if opts.SSHMigrationApplied != nil {
+		preds = append(preds, sqlf.Sprintf("ssh_migration_applied = %s", *opts.SSHMigrationApplied))
 	}
 
 	if len(preds) == 0 {
@@ -374,6 +385,7 @@ var userCredentialsColumns = []*sqlf.Query{
 	sqlf.Sprintf("credential_enc"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
+	sqlf.Sprintf("ssh_migration_applied"),
 }
 
 // The more unwieldy queries are below rather than inline in the above methods
@@ -410,7 +422,8 @@ INSERT INTO
 		external_service_id,
 		credential_enc,
 		created_at,
-		updated_at
+		updated_at,
+		ssh_migration_applied
 	)
 	VALUES (
 		%s,
@@ -419,7 +432,8 @@ INSERT INTO
 		%s,
 		%s,
 		NOW(),
-		NOW()
+		NOW(),
+		TRUE
 	)
 	RETURNING %s
 `
@@ -434,7 +448,8 @@ SET
 	external_service_id = %s,
 	credential = %s,
 	credential_enc = %s,
-	updated_at = %s
+	updated_at = %s,
+	ssh_migration_applied = %s
 WHERE
 	id = %s
 RETURNING %s
@@ -458,5 +473,6 @@ func scanUserCredential(cred *UserCredential, s interface {
 		&cred.encryptedCredential,
 		&cred.CreatedAt,
 		&cred.UpdatedAt,
+		&cred.SSHMigrationApplied,
 	)
 }
