@@ -29,7 +29,11 @@ const defaultProps: SearchSidebarProps = {
 
 const quicklinks: QuickLink[] = [
     { name: 'Home', url: '/' },
-    { name: 'Example', url: 'http://example.com', description: 'Example QuickLink' },
+    {
+        name: 'This is a quicklink with a very long name lorem ipsum dolor sit amet',
+        url: 'http://example.com',
+        description: 'Example QuickLink',
+    },
 ]
 
 const scopes: SearchScope[] = [

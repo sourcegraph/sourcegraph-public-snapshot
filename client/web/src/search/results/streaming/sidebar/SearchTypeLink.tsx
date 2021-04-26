@@ -10,7 +10,7 @@ import { SearchType } from '../../SearchResults'
 
 import styles from './SearchSidebarSection.module.scss'
 
-interface SearchTypeLinksProps
+export interface SearchTypeLinksProps
     extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
         VersionContextProps,

@@ -7,7 +7,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../../..'
 import { submitSearch, toggleSearchFilter } from '../../../helpers'
-import { AggregateStreamingSearchResults } from '../../../stream'
+import { Filter } from '../../../stream'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSnippets } from './FilterLink'
 import { getQuickLinks } from './QuickLink'
@@ -23,7 +23,7 @@ export interface SearchSidebarProps
         SettingsCascadeProps,
         TelemetryProps {
     query: string
-    results?: AggregateStreamingSearchResults
+    filters?: Filter[]
 }
 
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
@@ -46,10 +46,10 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         <div className={styles.searchSidebar}>
             <SearchSidebarSection header="Search types">{getSearchTypeLinks(props)}</SearchSidebarSection>
             <SearchSidebarSection header="Dynamic filters">
-                {getDynamicFilterLinks(props.results, onFilterClicked)}
+                {getDynamicFilterLinks(props.filters, onFilterClicked)}
             </SearchSidebarSection>
             <SearchSidebarSection header="Repositories">
-                {getRepoFilterLinks(props.results, onFilterClicked)}
+                {getRepoFilterLinks(props.filters, onFilterClicked)}
             </SearchSidebarSection>
             <SearchSidebarSection header="Search snippets">
                 {getSnippets(props.settingsCascade, onFilterClicked)}

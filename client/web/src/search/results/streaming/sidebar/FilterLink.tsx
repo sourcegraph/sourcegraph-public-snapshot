@@ -5,7 +5,7 @@ import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/s
 
 import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
 import { Settings } from '../../../../schema/settings.schema'
-import { AggregateStreamingSearchResults } from '../../../stream'
+import { Filter } from '../../../stream'
 
 import styles from './SearchSidebarSection.module.scss'
 
@@ -34,32 +34,24 @@ const FilterLink: React.FunctionComponent<FilterLinkProps> = ({ label, value, co
 )
 
 export const getRepoFilterLinks = (
-    results: AggregateStreamingSearchResults | undefined,
+    filters: Filter[] | undefined,
     onFilterChosen: (value: string) => void
-): React.ReactElement[] => {
-    if (results?.filters) {
-        return results?.filters
-            .filter(filter => filter.kind === 'repo' && filter.value !== '')
-            .map(filter => (
-                <FilterLink {...filter} key={`${filter.label}-${filter.value}`} onFilterChosen={onFilterChosen} />
-            ))
-    }
-    return []
-}
+): React.ReactElement[] =>
+    (filters || [])
+        .filter(filter => filter.kind === 'repo' && filter.value !== '')
+        .map(filter => (
+            <FilterLink {...filter} key={`${filter.label}-${filter.value}`} onFilterChosen={onFilterChosen} />
+        ))
 
 export const getDynamicFilterLinks = (
-    results: AggregateStreamingSearchResults | undefined,
+    filters: Filter[] | undefined,
     onFilterChosen: (value: string) => void
-): React.ReactElement[] => {
-    if (results?.filters) {
-        return results?.filters
-            .filter(filter => filter.kind !== 'repo')
-            .map(filter => (
-                <FilterLink {...filter} key={`${filter.label}-${filter.value}`} onFilterChosen={onFilterChosen} />
-            ))
-    }
-    return []
-}
+): React.ReactElement[] =>
+    (filters || [])
+        .filter(filter => filter.kind !== 'repo')
+        .map(filter => (
+            <FilterLink {...filter} key={`${filter.label}-${filter.value}`} onFilterChosen={onFilterChosen} />
+        ))
 
 export const getSnippets = (
     settingsCascade: SettingsCascadeProps['settingsCascade'],

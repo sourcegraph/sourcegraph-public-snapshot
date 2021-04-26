@@ -201,7 +201,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             <PageTitle key="page-title" title={query} />
 
             {isRedesignEnabled ? (
-                <SearchSidebar {...props} query={props.navbarSearchQueryState.query} results={results} />
+                <SearchSidebar {...props} query={props.navbarSearchQueryState.query} filters={results?.filters} />
             ) : (
                 <StreamingSearchResultsFilterBars {...props} results={results} />
             )}
