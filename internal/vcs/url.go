@@ -93,6 +93,15 @@ func parseScp(rawurl string) (*url.URL, error) {
 	if user != "" {
 		userinfo = url.User(user)
 	}
+
+	// If rawurl is similar to "user@host.xz:path/to/repo.git/", then the parsed Path should have a
+	// leading "~/" to account for the home directory in the absolute path. However if it starts
+	// with a leading "/", then we do nothing on top of it.
+	path := m[3]
+	if !strings.HasPrefix(path, "/") {
+		path = "~/" + path
+	}
+
 	rawquery := ""
 	if len(m) > 3 {
 		rawquery = m[4]
@@ -101,7 +110,7 @@ func parseScp(rawurl string) (*url.URL, error) {
 		Scheme:   "ssh",
 		User:     userinfo,
 		Host:     m[2],
-		Path:     m[3],
+		Path:     path,
 		RawQuery: rawquery,
 	}, nil
 }
