@@ -51,7 +51,7 @@ $tooltip-bg: var(--tooltip-bg);
 
 // Forms
 
-$form-check-input-margin-y: 0.2em;
+$form-check-input-margin-y: 0.3em;
 $form-feedback-font-size: 0.75rem;
 $input-btn-focus-width: 2px;
 // The default focus ring for buttons is very hard to see, raise opacity.
@@ -74,10 +74,10 @@ $input-group-addon-bg: var(--input-group-addon-bg);
 $input-group-addon-border-color: var(--input-group-addon-border-color);
 $input-focus-border-color: var(--input-focus-border-color);
 $input-focus-box-shadow: var(--input-focus-box-shadow);
+$input-padding-x: 0.5rem;
 
 // Custom Selects
 $custom-select-bg-size: 16px 16px;
-$custom-select-padding-x: 0.375rem;
 $custom-select-disabled-bg: var(--input-disabled-bg);
 $custom-select-focus-box-shadow: var(--input-focus-box-shadow);
 // Icon: mdi-react/ChevronDownIcon
@@ -168,6 +168,10 @@ $hr-margin-y: 0.25rem;
     box-shadow: var(--focus-box-shadow);
 }
 
-.cursor-pointer {
-    cursor: pointer;
+.cursor-pointer,
+input[type='radio'],
+input[type='checkbox'] {
+    &:not(:disabled) {
+        cursor: pointer;
+    }
 }

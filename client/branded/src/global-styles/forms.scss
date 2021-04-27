@@ -71,12 +71,20 @@
 
 // Overrides
 .theme-redesign {
-    // Input feedback color
+    // Input feedback messages
     .valid-feedback {
         color: var(--text-muted);
     }
     .invalid-feedback {
         color: var(--danger);
+    }
+    .form-check-input {
+        ~ .field-message,
+        ~ .valid-feedback,
+        ~ .invalid-feedback {
+            // Adjust spacing for radio/checkboxes
+            margin-top: 0;
+        }
     }
 
     // Valid form inputs and selects
