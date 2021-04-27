@@ -44,15 +44,9 @@ export const WebStory: React.FunctionComponent<
     }, [webStyles])
 
     return (
-        <>
-            <MemoryRouter {...memoryRouterProps}>
-                <Tooltip />
-                <Children
-                    {...breadcrumbSetters}
-                    isLightTheme={isLightTheme}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                />
-            </MemoryRouter>
-        </>
+        <MemoryRouter {...memoryRouterProps}>
+            <Tooltip />
+            <Children {...breadcrumbSetters} isLightTheme={isLightTheme} telemetryService={NOOP_TELEMETRY_SERVICE} />
+        </MemoryRouter>
     )
 }
