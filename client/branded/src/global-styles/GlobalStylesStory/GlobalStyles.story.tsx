@@ -789,7 +789,7 @@ add(
                 </div>
                 <div className="form-group">
                     <label htmlFor="example-example-select">Example select</label>
-                    <select id="example-select" className="form-control">
+                    <select id="example-select" className="custom-select">
                         <option>Option A</option>
                         <option>Option B</option>
                         <option>Option C</option>
@@ -824,7 +824,7 @@ add(
                     </div>
                     <div className="form-group">
                         <label htmlFor="disabledSelect">Disabled select menu</label>
-                        <select id="disabledSelect" className="form-control">
+                        <select id="disabledSelect" className="custom-select">
                             <option>Disabled select</option>
                         </select>
                     </div>
