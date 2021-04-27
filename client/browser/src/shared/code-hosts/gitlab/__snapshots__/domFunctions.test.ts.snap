@@ -126,6 +126,20 @@ Object {
 }
 `;
 
+exports[`GitLab DOM functions diffDOMFunctions Unified view line number 733 in head diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
+Object {
+  "content": "defer srv.Close()",
+  "selector": "DIV[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_733_733'].diff-td.line_content.with-coverage.left-side > SPAN > SPAN.line",
+}
+`;
+
+exports[`GitLab DOM functions diffDOMFunctions Unified view line number 733 in head diff part getLineElementFromLineNumber() should return the right line element given the line number 1`] = `
+Object {
+  "content": "defer srv.Close()",
+  "selector": "DIV[id='ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf_733_733'].diff-td.line_content.with-coverage.left-side > SPAN",
+}
+`;
+
 exports[`GitLab DOM functions diffDOMFunctions Unified view line number 735 in base diff part getCodeElementFromLineNumber() should return the right code element given the line number 1`] = `
 Object {
   "content": "u := url.URL{Scheme: \\"ws\\", Host: srv.Listener.Addr().String(), Path: build.Session.Endpoint + \\"/exec\\"}",
