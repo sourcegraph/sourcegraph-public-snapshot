@@ -95,16 +95,11 @@ $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
 
 // Disable transitions
+$btn-transition: none;
 $input-transition: none;
 
-// Spacer
-$spacer: 1rem;
-
-:root {
-    --spacer: #{$spacer};
-}
-
-// Apply static variables before Bootstrap imports.
+// './breakpoints' defines $grid-breakpoints for global CSS and exposes breakpoints mixins to CSS modules
+@import './breakpoints';
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
