@@ -3,13 +3,16 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type operations struct {
