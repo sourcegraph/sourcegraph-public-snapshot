@@ -8,12 +8,12 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../../auth'
-import { Page } from '../../../components/Page';
-import { PageTitle } from '../../../components/PageTitle';
+import { Page } from '../../../components/Page'
+import { PageTitle } from '../../../components/PageTitle'
 import { InsightsApiContext } from '../../core/backend/api-provider'
 
 import { CreateInsightForm, CreateInsightFormProps } from './components/create-insight-form/CreateInsightForm'
-import styles from './CreateInsightPage.module.scss';
+import styles from './CreateInsightPage.module.scss'
 
 export interface CreateInsightPageProps extends PlatformContextProps, RouteComponentProps {
     /**
