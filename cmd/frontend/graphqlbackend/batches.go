@@ -237,20 +237,11 @@ type BatchChangesResolver interface {
 	// TODO(campaigns-deprecation)
 	Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
-	CampaignByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error)
-	CampaignSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error)
-	CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error)
 	CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
 	// New:
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
-	BatchChangeByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error)
 	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
-	BatchSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error)
 
-	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
-	ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error)
-
-	BatchChangesCredentialByID(ctx context.Context, id graphql.ID) (BatchChangesCredentialResolver, error)
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc

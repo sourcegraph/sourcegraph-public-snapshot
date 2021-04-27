@@ -10,8 +10,8 @@ import (
 )
 
 // TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangeResolver, error) {
-	res, err := r.BatchChangeByID(ctx, id)
+func (r *Resolver) campaignByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangeResolver, error) {
+	res, err := r.batchChangeByID(ctx, id)
 	if batchChangeRes, ok := res.(*batchChangeResolver); ok {
 		batchChangeRes.shouldActAsCampaign = true
 		return batchChangeRes, err
@@ -30,8 +30,8 @@ func (r *Resolver) Campaign(ctx context.Context, args *graphqlbackend.BatchChang
 }
 
 // TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *Resolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchSpecResolver, error) {
-	res, err := r.BatchSpecByID(ctx, id)
+func (r *Resolver) campaignSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchSpecResolver, error) {
+	res, err := r.batchSpecByID(ctx, id)
 	if batchSpecRes, ok := res.(*batchSpecResolver); ok {
 		batchSpecRes.shouldActAsCampaignSpec = true
 		return batchSpecRes, err
@@ -101,8 +101,8 @@ func (r *Resolver) DeleteCampaignsCredential(ctx context.Context, args *graphqlb
 }
 
 // TODO(campaigns-deprecation): Remove when campaigns are fully removed
-func (r *Resolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignsCredentialResolver, error) {
-	return r.BatchChangesCredentialByID(ctx, id)
+func (r *Resolver) campaignsCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignsCredentialResolver, error) {
+	return r.batchChangesCredentialByID(ctx, id)
 }
 
 // TODO(campaigns-deprecation): Remove when campaigns are fully removed
