@@ -107,7 +107,7 @@ SELECT
 	-- Keep track of the most recent update of this commit that we know about
 	-- as any earlier dates for the same repository and commit pair carry no
 	-- useful information.
-	max(commit_last_checked_at) as max_last_checked_at
+	MAX(commit_last_checked_at) as max_last_checked_at
 FROM %s
 WHERE
 	-- Ignore records already marked as deleted
