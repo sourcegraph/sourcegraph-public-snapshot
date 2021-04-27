@@ -2073,8 +2073,17 @@ extend type Mutation {
 
     """
     Detach archived changesets from a batch change.
+
+    Experimental: This API is likely to change in the future.
     """
     detachChangesets(batchChange: ID!, changesets: [ID!]!): EmptyResponse!
+
+    """
+    Comment on multiple changesets from a batch change.
+
+    Experimental: This API is likely to change in the future.
+    """
+    createChangesetComments(batchChange: ID!, changesets: [ID!]!, body: String!): BulkJob!
 }
 
 extend type Query {
@@ -2297,6 +2306,96 @@ type BatchChange implements Node {
     The current change spec this change reflects.
     """
     currentSpec: BatchSpec!
+
+    """
+    The bulk jobs that have been run over this batch change.
+    """
+    bulkJobs(
+        """
+        Returns the first n entries from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): BulkJobConnection!
+}
+
+"""
+A list of bulk jobs.
+"""
+type BulkJobConnection {
+    totalCount: Int!
+    pageInfo: PageInfo!
+    nodes: [BulkJob!]!
+}
+
+enum BulkJobType {
+    """
+    Bulk comment over all involved changesets.
+    """
+    COMMENT
+}
+
+enum BulkJobState {
+    """
+    The bulk job is still processing on some changesets.
+    """
+    PROCESSING
+    """
+    No operations are still running and all of them finished without error.
+    """
+    COMPLETED
+    """
+    No operations are still running and at least one of them finished with an error.
+    """
+    FAILED
+}
+
+type BulkJob implements Node {
+    id: ID!
+    """
+    The type of task that is run.
+    """
+    type: BulkJobType!
+    """
+    The current state of the bulk job.
+    """
+    state: BulkJobState!
+    """
+    The progress to completion of all executions involved in this bulk job. Value
+    ranges from 0.0 to 1.0.
+    """
+    progress: Float!
+    """
+    The list of all errors that occured while processing the bulk action.
+    """
+    errors: [ChangesetJobError!]!
+    """
+    The time the bulk job was created at.
+    """
+    createdAt: DateTime!
+    """
+    The time the bulk job finished. Also set, when some operations failed. Null,
+    when some operations are still processing.
+    """
+    finishedAt: DateTime
+}
+
+"""
+A reported error on a changeset in a bulk job.
+"""
+type ChangesetJobError {
+    """
+    The changeset this error is related to.
+    """
+    changeset: Changeset!
+    """
+    The error message. Null, if the changeset is not accessible by the requesting
+    user.
+    """
+    error: String
 }
 
 """

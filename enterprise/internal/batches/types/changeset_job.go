@@ -28,7 +28,7 @@ type ChangesetJob struct {
 
 	// workerutil fields
 
-	State          string
+	State          ReconcilerState
 	FailureMessage *string
 	StartedAt      time.Time
 	FinishedAt     time.Time

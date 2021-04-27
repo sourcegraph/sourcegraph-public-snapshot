@@ -3,8 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"strconv"
 	"time"
 
+	"github.com/dineshappavoo/basex"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -19,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -636,3 +640,78 @@ func (s *Service) DetachChangesets(ctx context.Context, batchChangeID int64, ids
 
 	return nil
 }
+
+// CreateChangesetJobs detaches the given Changeset from the given BatchChange
+// by checking whether the actor in the context has permission to enqueue a
+// reconciler run and then enqueues it by calling ResetReconcilerState.
+func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, ids []int64, jobType btypes.ChangesetJobType, payload interface{}) (bulkGroupID string, err error) {
+	traceTitle := fmt.Sprintf("batchChangeID: %d, changeset: %d", batchChangeID, ids)
+	tr, ctx := trace.New(ctx, "service.CreateChangesetJobs", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// Load the BatchChange to check for admin rights.
+	batchChange, err := s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChangeID})
+	if err != nil {
+		return bulkGroupID, errors.Wrap(err, "loading batch change")
+	}
+
+	// 🚨 SECURITY: Only the Author of the batch change can detach changesets.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, batchChange.InitialApplierID); err != nil {
+		return bulkGroupID, errors.Wrap(err, "checking permissions")
+	}
+
+	// published := btypes.ChangesetPublicationStatePublished
+	cs, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
+		IDs:           ids,
+		BatchChangeID: batchChangeID,
+		// PublicationState: &published,
+		// TODO: Do we want to allow this on imported changesets?
+		// OwnedByBatchChangeID: batchChangeID,
+
+		// We only want to detach the changesets the user has access to
+		EnforceAuthz: true,
+	})
+	if err != nil {
+		return bulkGroupID, errors.Wrap(err, "listing changesets")
+	}
+
+	if len(cs) != len(ids) {
+		return bulkGroupID, ErrChangesetsToDetachNotFound
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return bulkGroupID, errors.Wrap(err, "starting transaction")
+	}
+	defer func() { err = tx.Done(err) }()
+
+	bulkGroupID, err = basex.Encode(strconv.Itoa(seededRand.Int()))
+	if err != nil {
+		return bulkGroupID, errors.Wrap(err, "creating bulkGroupID failed")
+	}
+
+	changesetJobs := make([]*btypes.ChangesetJob, 0, len(cs))
+
+	for _, changeset := range cs {
+		changesetJobs = append(changesetJobs, &btypes.ChangesetJob{
+			BulkGroup:     bulkGroupID,
+			ChangesetID:   changeset.ID,
+			BatchChangeID: batchChangeID,
+			UserID:        actor.FromContext(ctx).UID,
+			State:         btypes.ReconcilerStateQueued,
+			JobType:       jobType,
+			Payload:       payload,
+		})
+	}
+
+	if err := tx.CreateChangesetJob(ctx, changesetJobs...); err != nil {
+		return bulkGroupID, errors.Wrap(err, "creating changeset jobs")
+	}
+
+	return bulkGroupID, nil
+}
+
+var seededRand *rand.Rand = rand.New(rand.NewSource(timeutil.Now().UnixNano()))

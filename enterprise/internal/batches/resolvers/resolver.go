@@ -139,6 +139,9 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 		batchChangesCredentialIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.batchChangesCredentialByID(ctx, id)
 		},
+		bulkJobIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.bulkJobByID(ctx, id)
+		},
 	}
 }
 
@@ -326,6 +329,34 @@ func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64)
 	}
 
 	return &batchChangesSiteCredentialResolver{credential: cred}, nil
+}
+
+func (r *Resolver) bulkJobByID(ctx context.Context, id graphql.ID) (graphqlbackend.BulkJobResolver, error) {
+	if err := batchChangesEnabled(ctx); err != nil {
+		return nil, err
+	}
+
+	dbID, err := unmarshalBulkJobID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if dbID == "" {
+		return nil, nil
+	}
+
+	return r.bulkJobByIDString(ctx, dbID)
+}
+
+func (r *Resolver) bulkJobByIDString(ctx context.Context, id string) (graphqlbackend.BulkJobResolver, error) {
+	bulkJob, err := r.store.GetBulkJob(ctx, store.GetBulkJobOpts{ID: id})
+	if err != nil {
+		if err == store.ErrNoResults {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &bulkJobResolver{store: r.store, bulkJob: bulkJob}, nil
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
@@ -1144,6 +1175,65 @@ func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.De
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) CreateChangesetComments(ctx context.Context, args *graphqlbackend.CreateChangesetCommentsArgs) (_ graphqlbackend.BulkJobResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CreateChangesetComments", fmt.Sprintf("BatchChange: %q, Changesets: %s", args.BatchChange, args.Changesets))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := batchChangesEnabled(ctx); err != nil {
+		return nil, err
+	}
+
+	if args.Body == "" {
+		return nil, errors.New("empty comment body is not allowed")
+	}
+
+	batchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchChangeID == 0 {
+		return nil, ErrIDIsZero{}
+	}
+
+	var changesetIDs []int64
+	for _, raw := range args.Changesets {
+		id, err := unmarshalChangesetID(raw)
+		if err != nil {
+			return nil, err
+		}
+
+		if id == 0 {
+			return nil, ErrIDIsZero{}
+		}
+
+		changesetIDs = append(changesetIDs, id)
+	}
+
+	if len(changesetIDs) == 0 {
+		return nil, errors.New("specify at least one changeset")
+	}
+
+	// 🚨 SECURITY: DetachChangeset checks whether current user is authorized.
+	svc := service.New(r.store)
+	bulkGroupID, err := svc.CreateChangesetJobs(
+		ctx,
+		batchChangeID,
+		changesetIDs,
+		btypes.ChangesetJobTypeComment,
+		&btypes.ChangesetJobCommentPayload{
+			Message: args.Body,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.bulkJobByIDString(ctx, bulkGroupID)
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
