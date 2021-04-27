@@ -35,7 +35,7 @@ $theme-colors-redesign: (
     merged: $redesign-purple,
 );
 
-:root.theme-redesign {
+.theme-redesign {
     --primary: #{map-get($theme-colors-redesign, 'primary')};
     --primary-3: #{$redesign-indigo};
     --brand-secondary: #a305e1;
