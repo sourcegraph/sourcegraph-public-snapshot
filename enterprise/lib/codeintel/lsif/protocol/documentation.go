@@ -110,7 +110,7 @@ type Documentation struct {
 	Slug string `json:"slug"`
 
 	// Whether or not this Documentation is the beginning of a new major section, meaning it and its
-	// its children should be e.g. displayed on their own dedicate page.
+	// its children should be e.g. displayed on their own dedicated page.
 	NewPage bool `json:"newPage"`
 
 	// Tags about the type of content this documentation contains.
