@@ -3,7 +3,7 @@ import 'dotenv/config'
 import chalk from 'chalk'
 import signale from 'signale'
 import createWebpackCompiler, { Configuration } from 'webpack'
-import WebpackDevServer from 'webpack-dev-server'
+import WebpackDevServer, { ProxyConfigArrayItem } from 'webpack-dev-server'
 
 import {
     getCSRFTokenCookieMiddleware,
@@ -27,6 +27,14 @@ export async function startDevelopmentServer(): Promise<void> {
     const { csrfContextValue, csrfCookieValue } = await getCSRFTokenAndCookie(SOURCEGRAPH_API_URL)
     signale.await('Development server', { ...environmentConfig, csrfContextValue, csrfCookieValue })
 
+    const proxyConfig = {
+        context: PROXY_ROUTES,
+        ...getAPIProxySettings({
+            csrfContextValue,
+            apiURL: SOURCEGRAPH_API_URL,
+        }),
+    }
+
     const options: WebpackDevServer.Configuration = {
         hot: IS_HOT_RELOAD_ENABLED,
         // TODO: resolve https://github.com/webpack/webpack-dev-server/issues/2313 and enable HTTPS.
@@ -39,15 +47,7 @@ export async function startDevelopmentServer(): Promise<void> {
         stats: WEBPACK_STATS_OPTIONS,
         noInfo: false,
         disableHostCheck: true,
-        proxy: [
-            {
-                context: PROXY_ROUTES,
-                ...getAPIProxySettings({
-                    csrfContextValue,
-                    apiURL: SOURCEGRAPH_API_URL,
-                }),
-            },
-        ],
+        proxy: [proxyConfig as ProxyConfigArrayItem],
         before(app) {
             app.use(getCSRFTokenCookieMiddleware(csrfCookieValue))
         },

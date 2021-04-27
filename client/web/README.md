@@ -26,5 +26,5 @@ Build artifacts will be served from `<rootRepoPath>/ui/assets`.
 
 ### API proxy
 
-Both servers proxy API requests to `SOURCEGRAPH_API_URL` provided in `.env` file. To avoid `CSRF token is invalid` error
-CSRF token is retrieved from the `SOURCEGRAPH_API_URL` before the server starts. Then this values is used for every subsequent request to the API.
+Both servers proxy API requests to `SOURCEGRAPH_API_URL` provided in the `.env` file. To avoid the `CSRF token is invalid` error
+CSRF token is retrieved from the `SOURCEGRAPH_API_URL` before the server starts. Then this value is used for every subsequent request to the API.

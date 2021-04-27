@@ -2,7 +2,7 @@ import 'dotenv/config'
 
 import chalk from 'chalk'
 import historyApiFallback from 'connect-history-api-fallback'
-import express from 'express'
+import express, { RequestHandler } from 'express'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import signale from 'signale'
 
@@ -26,7 +26,7 @@ async function startProductionServer(): Promise<void> {
     const app = express()
 
     // Serve index.html in place of any 404 responses.
-    app.use(historyApiFallback())
+    app.use(historyApiFallback() as RequestHandler)
     // Attach `CSRF_COOKIE_NAME` cookie to every response to avoid "CSRF token is invalid" API error.
     app.use(getCSRFTokenCookieMiddleware(csrfCookieValue))
 

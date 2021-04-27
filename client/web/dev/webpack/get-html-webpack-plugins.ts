@@ -11,7 +11,7 @@ const { SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_API_URL, NODE_ENV } = environmentCon
 export const getHTMLWebpackPlugins = (): Plugin[] => {
     const jsContext = createJsContext({ sourcegraphBaseUrl: `http://localhost:${SOURCEGRAPH_HTTPS_PORT}` })
 
-    // TODO: use `cmd/frontend/internal/app/ui/app.html` template to be consistent with default production setup.
+    // TODO: use `cmd/frontend/internal/app/ui/app.html` template to be consistent with the default production setup.
     const templateContent = ({ htmlWebpackPlugin }: TemplateParameter): string => `
         <html>
             <head>
