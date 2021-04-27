@@ -105,8 +105,16 @@ func NewDocumentationResult(id uint64, result Documentation) DocumentationResult
 // 1. A "documentationString" vertex with `type: "detail"`, which is a multi-line detailed string
 //    for this section of documentation.
 //
-// Both are attached to the documentationResult via a "documentationString" edge. A strict client
-// should treat the entire LSIF dump as malformed/invalid if one of the two is not present.
+// Both are attached to the documentationResult via a "documentationString" edge.
+//
+// If the label or detail vertex is missing, or the label string is empty (has no content) then a
+// client should consider all "documentationResult" vertices in the entire LSIF dump to be invalid
+// and malformed, and ignore them.
+//
+// If no detail is available (such as a function with no documentation), a `type:"detail"`
+// "documentationString" should still be emitted - but with an empty string for the MarkupContent.
+// This enables validators to ensure the indexer knows how to emit both label and detail strings
+// properly, and just chose to emit none specifically.
 type Documentation struct {
 	// A human-readable URL slug identifier for this documentation. It should be unique relative to
 	// sibling Documentation.
