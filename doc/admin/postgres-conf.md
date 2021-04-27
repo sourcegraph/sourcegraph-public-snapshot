@@ -48,6 +48,8 @@ The setting `max_connections` determines the number of active connections that c
 - repo-updater
 - precise-code-intel-worker
 
+Each of these containers open a pool of connections not exceeding the pool capacity indicated by the `SRC_PGSQL_MAX_OPEN` environment variable. The maximum number of connections for your instance can be determined by summing the connection pool capacity of every container in this list. By default, `SRC_PGSQL_MAX_OPEN` is `30`.
+
 The setting `max_parallel_workers_per_gather` controls how many _additional_ workers to launch for operations such as parallel sequential scan. We see diminishing returns around four workers per query. Also notice that increasing this value will *multiplicatively* increase the amount of memory required for each worker to operate safely; doubling this
 value will effectively half the maximum number of connections. Most workloads should be perfectly fine with only two workers per query.
 
