@@ -66,8 +66,8 @@ func NewDocumentationChildrenEdge(id uint64, inVs []uint64, outV uint64) Documen
 			},
 			Label: EdgeSourcegraphDocumentationChildren,
 		},
-		OutVs: outV,
-		InV:   inVs,
+		OutV: outV,
+		InVs: inVs,
 	}
 }
 
