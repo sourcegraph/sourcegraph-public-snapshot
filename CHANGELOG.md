@@ -25,11 +25,16 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Indexed search failed when the `master` branch needed indexing but was not the default. [#20260](https://github.com/sourcegraph/sourcegraph/pull/20260)
 - `repo:contains(...)` built-in did not respect parameters that affect repo filtering (e.g., `repogroup`, `fork`). It now respects these. [#20339](https://github.com/sourcegraph/sourcegraph/pull/20339)
-- Fixed an issue related to Gitolite repos with `@` being prepended with a `?`. [#20297](https://github.com/sourcegraph/sourcegraph/pull/20297)
 
 ### Removed
 
 -
+
+## 3.27.4
+
+### Fixed
+
+- Fixed an issue related to Gitolite repos with `@` being prepended with a `?`. [#20297](https://github.com/sourcegraph/sourcegraph/pull/20297)
 
 ## 3.27.3
 
