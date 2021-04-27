@@ -927,7 +927,7 @@ describe('e2e test suite', () => {
                     )
                     await driver.page.waitForSelector(blobTableSelector)
 
-                    const selector = `${blobTableSelector} tr:nth-child(24) > td.code > span:nth-child(1) > span:nth-child(8) > span:nth-child(1) > span:nth-child(1) `
+                    const selector = 'td[data-line="24"] + td .hl-storage.hl-type.hl-go:not(.hl-keyword)'
                     await driver.page.waitForSelector(selector, { visible: true })
                     await driver.page.click(selector)
 
