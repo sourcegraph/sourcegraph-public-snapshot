@@ -141,7 +141,7 @@ type DocumentationStringEdge struct {
 	// The "documentationString" vertex ID.
 	OutV uint64 `json:"outV"`
 
-	// Whether this links the "label"" or "detail" string of the documentation.
+	// Whether this links the "label" or "detail" string of the documentation.
 	Type DocumentationStringType `json:"type"`
 }
 
