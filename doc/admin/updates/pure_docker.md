@@ -13,7 +13,7 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 To upgrade, please perform the changes in the following diff:
 
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ab78f2a1036be55da5a9b495d7c9d74624c8cca1](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ab78f2a1036be55da5a9b495d7c9d74624c8cca1)
+[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2493066d09a1558bc11b2cea5be05c5ffccbce57](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/2493066d09a1558bc11b2cea5be05c5ffccbce57)
 
 > Warning: ⚠️ Sourcegraph 3.27 now requires **Postgres 12+**.
 
