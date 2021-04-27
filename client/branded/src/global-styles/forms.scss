@@ -81,10 +81,10 @@
     color: var(--text-muted);
 }
 
-.was-validated .form-control:valid,
-.was-validated .form-control:invalid,
-.form-control.is-valid,
-.form-control.is-invalid,
+.was-validated :valid.form-control,
+.was-validated :invalid.form-control,
+.is-valid.form-control,
+.is-invalid.form-control,
 .custom-select {
     // Adjust icon padding
     background-position: right 0.75rem center;
