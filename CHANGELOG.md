@@ -24,10 +24,31 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Indexed search failed when the `master` branch needed indexing but was not the default. [#20260](https://github.com/sourcegraph/sourcegraph/pull/20260)
+- `repo:contains(...)` built-in did not respect parameters that affect repo filtering (e.g., `repogroup`, `fork`). It now respects these. [#20339](https://github.com/sourcegraph/sourcegraph/pull/20339)
 
 ### Removed
 
 -
+
+## 3.27.3
+
+### Fixed
+
+- Pushing batch changes to Bitbucket Server code hosts over SSH was broken in 3.27.0, and has been fixed. [#20324](https://github.com/sourcegraph/sourcegraph/issues/20324)
+
+## 3.27.2
+
+### Fixed
+
+- Fixed an issue with our release tooling that was preventing all images from being tagged with the correct version.
+  All sourcegraph images have the proper release version now.
+
+## 3.27.1
+
+### Fixed
+
+- Indexed search failed when the `master` branch needed indexing but was not the default. [#20260](https://github.com/sourcegraph/sourcegraph/pull/20260)
+- Fixed a regression that caused "other" code hosts urls to not be built correctly which prevents code to be cloned / updated in 3.27.0. This change will provoke some cloning errors on repositories that are already sync'ed, until the next code host sync. [#20258](https://github.com/sourcegraph/sourcegraph/pull/20258)
 
 ## 3.27.0
 

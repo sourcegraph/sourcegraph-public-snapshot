@@ -86,7 +86,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		externalService.NamespaceUserID = namespaceUserID
 	}
 
-	if err := database.GlobalExternalServices.Create(ctx, conf.Get, externalService); err != nil {
+	if err := database.ExternalServices(r.db).Create(ctx, conf.Get, externalService); err != nil {
 		return nil, err
 	}
 
@@ -118,7 +118,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	es, err := database.GlobalExternalServices.GetByID(ctx, id)
+	es, err := database.ExternalServices(r.db).GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -142,12 +142,12 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
 	}
-	if err := database.GlobalExternalServices.Update(ctx, ps, id, update); err != nil {
+	if err := database.ExternalServices(r.db).Update(ctx, ps, id, update); err != nil {
 		return nil, err
 	}
 
 	// Fetch from database again to get all fields with updated values.
-	es, err = database.GlobalExternalServices.GetByID(ctx, id)
+	es, err = database.ExternalServices(r.db).GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +215,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		return nil, err
 	}
 
-	es, err := database.GlobalExternalServices.GetByID(ctx, id)
+	es, err := database.ExternalServices(r.db).GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -230,7 +230,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		}
 	}
 
-	if err := database.GlobalExternalServices.Delete(ctx, id); err != nil {
+	if err := database.ExternalServices(r.db).Delete(ctx, id); err != nil {
 		return nil, err
 	}
 	now := time.Now()
@@ -309,7 +309,7 @@ type externalServiceConnectionResolver struct {
 
 func (r *externalServiceConnectionResolver) compute(ctx context.Context) ([]*types.ExternalService, error) {
 	r.once.Do(func() {
-		r.externalServices, r.err = database.GlobalExternalServices.List(ctx, r.opt)
+		r.externalServices, r.err = database.ExternalServices(r.db).List(ctx, r.opt)
 	})
 	return r.externalServices, r.err
 }
@@ -330,7 +330,7 @@ func (r *externalServiceConnectionResolver) TotalCount(ctx context.Context) (int
 	// Reset pagination cursor to get correct total count
 	opt := r.opt
 	opt.AfterID = 0
-	count, err := database.GlobalExternalServices.Count(ctx, opt)
+	count, err := database.ExternalServices(r.db).Count(ctx, opt)
 	return int32(count), err
 }
 
@@ -353,7 +353,7 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 	// In case the number of results happens to be the same as the limit,
 	// we need another query to get accurate total count with same cursor
 	// to determine if there are more results than the limit we set.
-	count, err := database.GlobalExternalServices.Count(ctx, r.opt)
+	count, err := database.ExternalServices(r.db).Count(ctx, r.opt)
 	if err != nil {
 		return nil, err
 	}

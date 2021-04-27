@@ -36,7 +36,7 @@ func TestSearch(t *testing.T) {
 				"sgtest/go-diff",
 				"sgtest/appdash",
 				"sgtest/sourcegraph-typescript",
-				"sgtest/private",
+				"sgtest/private",  // Private
 				"sgtest/mux",      // Fork
 				"sgtest/archived", // Archived
 			},
@@ -59,7 +59,7 @@ func TestSearch(t *testing.T) {
 		"github.com/sgtest/go-diff",
 		"github.com/sgtest/appdash",
 		"github.com/sgtest/sourcegraph-typescript",
-		"github.com/sgtest/private",
+		"github.com/sgtest/private",  // Private
 		"github.com/sgtest/mux",      // Fork
 		"github.com/sgtest/archived", // Archived
 	)
@@ -73,6 +73,31 @@ func TestSearch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	repo1, err := client.Repository("github.com/sgtest/java-langserver")
+	if err != nil {
+		t.Fatal(err)
+	}
+	repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scID, err := client.CreateSearchContext(
+		gqltestutil.CreateSearchContextInput{Name: "TestSearchContext", Public: true},
+		[]gqltestutil.SearchContextRepositoryRevisionsInput{
+			{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
+			{RepositoryID: repo2.ID, Revisions: []string{"HEAD"}},
+		})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err = client.DeleteSearchContext(scID)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	t.Run("graphql", func(t *testing.T) {
 		testSearchClient(t, client)
@@ -992,6 +1017,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 0},
 			},
 			{
+				`repo contains respects parameters that affect repo search (fork)`,
+				`repo:sgtest/mux fork:yes repo:contains.file(README)`,
+				counts{Repo: 1},
+			},
+			{
 				name:   `commit results without repo filter`,
 				query:  `type:commit LSIF`,
 				counts: counts{Commit: 9},
@@ -1094,6 +1124,16 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:  `repo:go-diff patterntype:literal type:symbol HunkNoChunksize select:symbol`,
 				counts: counts{Symbol: 1},
 			},
+			{
+				name:   `select diffs with added lines containing pattern`,
+				query:  `repo:go-diff patterntype:literal type:diff select:commit.diff.added sample_binary_inline`,
+				counts: counts{Commit: 1},
+			},
+			{
+				name:   `select diffs with removed lines containing pattern`,
+				query:  `repo:go-diff patterntype:literal type:diff select:commit.diff.removed sample_binary_inline`,
+				counts: counts{Commit: 0},
+			},
 		}
 
 		for _, test := range tests {
@@ -1153,6 +1193,7 @@ func testSearchOther(t *testing.T) {
 			suggestionCount int
 		}{
 			{query: `repo:sourcegraph-typescript$ type:file file:deploy`, suggestionCount: 11},
+			{query: `context:TestSearchContext repo:`, suggestionCount: 2},
 		}
 
 		for _, test := range tests {

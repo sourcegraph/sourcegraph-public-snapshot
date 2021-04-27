@@ -544,35 +544,6 @@ type Mutation {
     deleteSavedSearch(id: ID!): EmptyResponse
 
     """
-    Set the permissions of a repository (i.e., which users may view it on Sourcegraph). This
-    operation overwrites the previous permissions for the repository.
-    """
-    setRepositoryPermissionsForUsers(
-        """
-        The repository whose permissions to set.
-        """
-        repository: ID!
-        """
-        A list of user identifiers and their repository permissions, which defines the set of
-        users who may view the repository. All users not included in the list will not be
-        permitted to view the repository on Sourcegraph.
-        """
-        userPermissions: [UserPermission!]!
-    ): EmptyResponse!
-    """
-    Schedule a permissions sync for given repository. This queries the repository's code host for
-    all users' permissions associated with the repository, so that the current permissions apply
-    to all users' operations on that repository on Sourcegraph.
-    """
-    scheduleRepositoryPermissionsSync(repository: ID!): EmptyResponse!
-    """
-    Schedule a permissions sync for given user. This queries all code hosts for the user's current
-    repository permissions and syncs them to Sourcegraph, so that the current permissions apply to
-    the user's operations on Sourcegraph.
-    """
-    scheduleUserPermissionsSync(user: ID!): EmptyResponse!
-
-    """
     OBSERVABILITY
 
     Set the status of a test alert of the specified parameters - useful for validating
@@ -613,22 +584,25 @@ type Mutation {
     Converts a version context to an equivalent instance-level search context. Only available to site admins.
     """
     convertVersionContextToSearchContext(name: String!): SearchContext!
-}
 
-"""
-A user (identified either by username or email address) with its repository permission.
-"""
-input UserPermission {
     """
-    Depending on the bindID option in the permissions.userMapping site configuration property,
-    the elements of the list are either all usernames (bindID of "username") or all email
-    addresses (bindID of "email").
+    (experimental) Create search context.
     """
-    bindID: String!
+    createSearchContext(
+        """
+        Search context input.
+        """
+        searchContext: SearchContextInput!
+        """
+        List of search context repository revisions.
+        """
+        repositories: [SearchContextRepositoryRevisionsInput!]!
+    ): SearchContext!
+
     """
-    The highest level of repository permission.
+    (experimental) Delete search context.
     """
-    permission: RepositoryPermission = READ
+    deleteSearchContext(id: ID!): EmptyResponse!
 }
 
 """
@@ -1270,41 +1244,6 @@ type Query {
         """
         name: String!
     ): Namespace
-
-    """
-    The repositories a user is authorized to access with the given permission.
-    This isn’t defined in the User type because we store permissions for users
-    that don’t yet exist (i.e. late binding). Only one of "username" or "email"
-    is required to identify a user.
-    """
-    authorizedUserRepositories(
-        """
-        The username.
-        """
-        username: String
-        """
-        One of the email addresses.
-        """
-        email: String
-        """
-        Permission that the user has on the repositories.
-        """
-        perm: RepositoryPermission = READ
-        """
-        Number of repositories to return after the given cursor.
-        """
-        first: Int!
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-    ): RepositoryConnection!
-
-    """
-    Returns a list of usernames or emails that have associated pending permissions.
-    The returned list can be used to query authorizedUserRepositories for pending permissions.
-    """
-    usersWithPendingPermissions: [String!]!
 
     """
     Repos affiliated with the user & code hosts, these repos are not necessarily synced, but ones that
@@ -2246,32 +2185,6 @@ type Repository implements Node & GenericSearchResultInterface {
     for use by code intelligence features.
     """
     codeIntelligenceCommitGraph: CodeIntelligenceCommitGraph!
-
-    """
-    A list of authorized users to access this repository with the given permission.
-    This API currently only returns permissions from the Sourcegraph provider, i.e.
-    "permissions.userMapping" in site configuration.
-    """
-    authorizedUsers(
-        """
-        Permission that the user has on this repository.
-        """
-        permission: RepositoryPermission = READ
-        """
-        Number of users to return after the given cursor.
-        """
-        first: Int!
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-    ): UserConnection!
-
-    """
-    The permissions information of the repository for the authenticated user.
-    It is null when there is no permissions data stored for the repository.
-    """
-    permissionsInfo: PermissionsInfo
 }
 
 """
@@ -2288,26 +2201,6 @@ type CodeIntelligenceCommitGraph {
     When, if ever, the commit graph was last refreshed.
     """
     updatedAt: DateTime
-}
-
-"""
-Permissions information of a repository or a user.
-"""
-type PermissionsInfo {
-    """
-    The permission levels that a user has on the repository.
-    """
-    permissions: [RepositoryPermission!]!
-    """
-    The last complete synced time, the value is updated only after a user- or repo-
-    centric sync of permissions. It is null when the complete sync never happened.
-    """
-    syncedAt: DateTime
-    """
-    The last updated time of permissions, the value is updated whenever there is a
-    change to the database row (i.e. incremental update).
-    """
-    updatedAt: DateTime!
 }
 
 """
@@ -2542,6 +2435,49 @@ type SearchContextConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+Input for a new search context.
+"""
+input SearchContextInput {
+    """
+    Search context name. Not the same as the search context spec. Search context namespace and search context name
+    are used to construct the fully-qualified search context spec.
+    Example mappings from search context spec to search context name: global -> global, @user -> user, @org -> org,
+    @user/ctx1 -> ctx1, @org/ctxs/ctx -> ctxs/ctx.
+    """
+    name: String!
+    """
+    Search context description.
+    """
+    description: String!
+    """
+    Public property controls the visibility of the search context. Public search context is available to
+    any user on the instance. If a public search context contains private repositories, those are filtered out
+    for unauthorized users. Private search contexts are only available to their owners. Private user search context
+    is available only to the user, private org search context is available only to the members of the org, and private
+    instance-level search contexts are available only to site-admins.
+    """
+    public: Boolean!
+    """
+    Namespace of the search context (user or org). If not set, search context is considered instance-level.
+    """
+    namespace: ID
+}
+
+"""
+Input for a set of revisions to be searched within a repository.
+"""
+input SearchContextRepositoryRevisionsInput {
+    """
+    ID of the repository to be searched.
+    """
+    repositoryID: ID!
+    """
+    Revisions in the repository to be searched.
+    """
+    revisions: [String!]!
 }
 
 """
@@ -4399,12 +4335,6 @@ type User implements Node & SettingsSubject & Namespace {
     namespaceName: String!
 
     """
-    The permissions information of the user over repositories.
-    It is null when there is no permissions data stored for the user.
-    """
-    permissionsInfo: PermissionsInfo
-
-    """
     Repositories from external services owned by this user.
     """
     repositories(
@@ -6010,13 +5940,6 @@ JavaScript Date using Date.parse. To produce this value from a JavaScript Date i
 Date#toISOString.
 """
 scalar DateTime
-
-"""
-Different repository permission levels.
-"""
-enum RepositoryPermission {
-    READ
-}
 
 """
 A single user event that has been logged.

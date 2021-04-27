@@ -1,6 +1,9 @@
 package protocol
 
-import jsoniter "github.com/json-iterator/go"
+import (
+	"fmt"
+	"strings"
+)
 
 type HoverResult struct {
 	Vertex
@@ -8,10 +11,10 @@ type HoverResult struct {
 }
 
 type hoverResult struct {
-	Contents []MarkedString `json:"contents"`
+	Contents fmt.Stringer `json:"contents"`
 }
 
-func NewHoverResult(id uint64, contents []MarkedString) HoverResult {
+func NewHoverResult(id uint64, contents fmt.Stringer) HoverResult {
 	return HoverResult{
 		Vertex: Vertex{
 			Element: Element{
@@ -26,12 +29,48 @@ func NewHoverResult(id uint64, contents []MarkedString) HoverResult {
 	}
 }
 
-type MarkedString markedString
+type MarkupKind string
 
-type markedString struct {
-	Language    string `json:"language"`
-	Value       string `json:"value"`
-	isRawString bool
+const (
+	PlainText MarkupKind = "plaintext"
+	Markdown  MarkupKind = "markdown"
+)
+
+type MarkupContent struct {
+	Kind  MarkupKind `json:"kind"` // currently unused
+	Value string     `json:"value"`
+}
+
+func NewMarkupContent(s string, kind MarkupKind) MarkupContent {
+	return MarkupContent{
+		Kind:  kind,
+		Value: s,
+	}
+}
+
+func (mc MarkupContent) String() string {
+	return mc.Value
+}
+
+type MarkedStrings []MarkedString
+
+var (
+	hoverPartSeparator = "\n\n---\n\n"
+	codeFence          = "```"
+)
+
+func (ms MarkedStrings) String() string {
+	markedStrings := make([]string, 0, len(ms))
+	for _, marked := range ms {
+		markedStrings = append(markedStrings, marked.String())
+	}
+
+	return strings.Join(markedStrings, hoverPartSeparator)
+}
+
+type MarkedString struct {
+	Language string `json:"language"`
+	Value    string `json:"value"`
 }
 
 func NewMarkedString(s, languageID string) MarkedString {
@@ -41,20 +80,20 @@ func NewMarkedString(s, languageID string) MarkedString {
 	}
 }
 
-func RawMarkedString(s string) MarkedString {
-	return MarkedString{
-		Value:       s,
-		isRawString: true,
+func (ms MarkedString) String() string {
+	if ms.Language == "" {
+		return ms.Value
 	}
-}
+	var b strings.Builder
+	b.Grow(len(ms.Language) + len(ms.Value) + len(codeFence)*2 + 2)
+	b.WriteString(codeFence)
+	b.WriteString(ms.Language)
+	b.WriteRune('\n')
+	b.WriteString(ms.Value)
+	b.WriteRune('\n')
+	b.WriteString(codeFence)
 
-var marshaller = jsoniter.ConfigFastest
-
-func (m MarkedString) MarshalJSON() ([]byte, error) {
-	if m.isRawString {
-		return marshaller.Marshal(m.Value)
-	}
-	return marshaller.Marshal((markedString)(m))
+	return b.String()
 }
 
 type TextDocumentHover struct {

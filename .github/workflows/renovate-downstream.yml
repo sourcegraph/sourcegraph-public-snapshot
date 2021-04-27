@@ -25,7 +25,7 @@ jobs:
         id: pull_request
         run: |
           NUMBER=$(curl \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Authorization: token ${{ secrets.BUILDKITE_GITHUBDOTCOM_TOKEN }}" \
             -H "Accept: application/vnd.github.groot-preview+json" \
             https://api.github.com/repos/sourcegraph/sourcegraph/commits/${{ github.sha }}/pulls | jq --raw-output '.[0].number' | cat)
           echo "::set-output name=number::$NUMBER"

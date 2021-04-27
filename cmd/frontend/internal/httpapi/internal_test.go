@@ -149,7 +149,7 @@ type mockRepos struct {
 	repos        []string
 }
 
-func (r *mockRepos) ListDefault(context.Context) ([]types.RepoName, error) {
+func (r *mockRepos) ListIndexable(context.Context) ([]types.RepoName, error) {
 	var repos []types.RepoName
 	for _, name := range r.defaultRepos {
 		repos = append(repos, types.RepoName{

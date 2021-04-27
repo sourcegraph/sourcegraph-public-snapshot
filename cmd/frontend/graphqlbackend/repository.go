@@ -76,7 +76,7 @@ func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*Re
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
 		return nil, err
 	}
-	repo, err := database.GlobalRepos.Get(ctx, repoID)
+	repo, err := database.Repos(r.db).Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*Re
 }
 
 func RepositoryByIDInt32(ctx context.Context, db dbutil.DB, repoID api.RepoID) (*RepositoryResolver, error) {
-	repo, err := database.GlobalRepos.Get(ctx, repoID)
+	repo, err := database.Repos(db).Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -275,11 +275,7 @@ func (r *RepositoryResolver) UpdatedAt() *DateTime {
 }
 
 func (r *RepositoryResolver) URL() string {
-	url := "/" + escapePathForURL(r.Name())
-	if r.Rev() != "" {
-		url += "@" + escapePathForURL(r.Rev())
-	}
-	return url
+	return r.RepoMatch.URL().String()
 }
 
 func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
@@ -342,7 +338,7 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 		log15.Debug("RepositoryResolver.hydrate", "repo.ID", r.IDInt32())
 
 		var repo *types.Repo
-		repo, r.err = database.GlobalRepos.Get(ctx, r.IDInt32())
+		repo, r.err = database.Repos(r.db).Get(ctx, r.IDInt32())
 		if r.err == nil {
 			r.innerRepo = repo
 		}
@@ -424,7 +420,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	Description *string
 	Date        *string
 }) (*GitCommitResolver, error) {
-	repo, err := database.GlobalRepos.GetByName(ctx, api.RepoName(args.RepoName))
+	repo, err := database.Repos(r.db).GetByName(ctx, api.RepoName(args.RepoName))
 	if err != nil {
 		return nil, err
 	}
@@ -458,7 +454,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		return nil, errors.New("unable to resolve the origin of the phabricator instance")
 	}
 
-	client, clientErr := makePhabClientForOrigin(ctx, origin)
+	client, clientErr := makePhabClientForOrigin(ctx, r.db, origin)
 
 	patch := ""
 	if args.Patch != nil {
@@ -525,7 +521,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	return getCommit()
 }
 
-func makePhabClientForOrigin(ctx context.Context, origin string) (*phabricator.Client, error) {
+func makePhabClientForOrigin(ctx context.Context, db dbutil.DB, origin string) (*phabricator.Client, error) {
 	opt := database.ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindPhabricator},
 		LimitOffset: &database.LimitOffset{
@@ -533,7 +529,7 @@ func makePhabClientForOrigin(ctx context.Context, origin string) (*phabricator.C
 		},
 	}
 	for {
-		svcs, err := database.GlobalExternalServices.List(ctx, opt)
+		svcs, err := database.ExternalServices(db).List(ctx, opt)
 		if err != nil {
 			return nil, errors.Wrap(err, "list")
 		}

@@ -45,7 +45,7 @@ mutation CreateUser($username: String!, $email: String) {
 func (c *Client) DeleteUser(id string, hard bool) error {
 	const query = `
 mutation DeleteUser($user: ID!, $hard: Boolean) {
-	 deleteUser(user: $user, hard: $hard) {
+	deleteUser(user: $user, hard: $hard) {
 		alwaysNil
 	}
 }

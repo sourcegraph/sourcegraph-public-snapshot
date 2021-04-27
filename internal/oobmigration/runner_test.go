@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestRunner(t *testing.T) {
@@ -19,7 +21,7 @@ func TestRunner(t *testing.T) {
 		{ID: 1, Progress: 0.5},
 	}, nil)
 
-	runner := newRunner(store, refreshTicker)
+	runner := newRunner(store, refreshTicker, &observation.TestContext)
 
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
@@ -49,7 +51,7 @@ func TestRunnerError(t *testing.T) {
 		{ID: 1, Progress: 0.5},
 	}, nil)
 
-	runner := newRunner(store, refreshTicker)
+	runner := newRunner(store, refreshTicker, &observation.TestContext)
 
 	migrator := NewMockMigrator()
 	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
@@ -88,7 +90,7 @@ func TestRunnerRemovesCompleted(t *testing.T) {
 		{ID: 3, Progress: 0.9},
 	}, nil)
 
-	runner := newRunner(store, refreshTicker)
+	runner := newRunner(store, refreshTicker, &observation.TestContext)
 
 	// Makes no progress
 	migrator1 := NewMockMigrator()
@@ -299,9 +301,14 @@ func runMigratorWrapped(store storeIface, migrator Migrator, ticker glock.Ticker
 	go func() {
 		defer wg.Done()
 
-		runMigrator(ctx, store, migrator, migrations, migratorOptions{
-			ticker: ticker,
-		})
+		runMigrator(
+			ctx,
+			store,
+			migrator,
+			migrations,
+			migratorOptions{ticker: ticker},
+			newOperations(&observation.TestContext),
+		)
 	}()
 
 	interact(migrations)

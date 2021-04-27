@@ -148,7 +148,7 @@ func (r *CommitSearchResultResolver) ResultCount() int32 {
 	return 1
 }
 
-func commitParametersToDiffParameters(ctx context.Context, op *search.CommitParameters) (*search.DiffParameters, error) {
+func commitParametersToDiffParameters(ctx context.Context, db dbutil.DB, op *search.CommitParameters) (*search.DiffParameters, error) {
 	args := []string{
 		"--no-prefix",
 		"--max-count=" + strconv.Itoa(int(op.PatternInfo.FileMatchLimit)+1),
@@ -203,11 +203,11 @@ func commitParametersToDiffParameters(ctx context.Context, op *search.CommitPara
 
 		if expandUsernames {
 			var err error
-			values, err = expandUsernamesToEmails(ctx, values)
+			values, err = expandUsernamesToEmails(ctx, db, values)
 			if err != nil {
 				return errors.WithMessage(err, fmt.Sprintf("expanding usernames in field %s", field))
 			}
-			minusValues, err = expandUsernamesToEmails(ctx, minusValues)
+			minusValues, err = expandUsernamesToEmails(ctx, db, minusValues)
 			if err != nil {
 				return errors.WithMessage(err, fmt.Sprintf("expanding usernames in field -%s", field))
 			}
@@ -283,7 +283,7 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 		tr.Finish()
 	}()
 
-	diffParameters, err := commitParametersToDiffParameters(ctx, &op)
+	diffParameters, err := commitParametersToDiffParameters(ctx, db, &op)
 	if err != nil {
 		return err
 	}
@@ -619,19 +619,19 @@ func commitSearchResultsToSearchResults(results []*CommitSearchResultResolver) [
 // For example, given a list ["foo", "@alice"] where the user "alice" has 2 email addresses
 // "alice@example.com" and "alice@example.org", it would return ["foo", "alice@example\\.com",
 // "alice@example\\.org"].
-func expandUsernamesToEmails(ctx context.Context, values []string) (expandedValues []string, err error) {
+func expandUsernamesToEmails(ctx context.Context, db dbutil.DB, values []string) (expandedValues []string, err error) {
 	expandOne := func(ctx context.Context, value string) ([]string, error) {
 		if isPossibleUsernameReference := strings.HasPrefix(value, "@"); !isPossibleUsernameReference {
 			return nil, nil
 		}
 
-		user, err := database.GlobalUsers.GetByUsername(ctx, strings.TrimPrefix(value, "@"))
+		user, err := database.Users(db).GetByUsername(ctx, strings.TrimPrefix(value, "@"))
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		} else if err != nil {
 			return nil, err
 		}
-		emails, err := database.GlobalUserEmails.ListByUser(ctx, database.UserEmailsListOptions{
+		emails, err := database.UserEmails(db).ListByUser(ctx, database.UserEmailsListOptions{
 			UserID: user.ID,
 		})
 		if err != nil {
