@@ -33,6 +33,9 @@ var _ workerutil.Handler = &handler{}
 func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workerutil.Record) error {
 	job := record.(executor.Job)
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	h.idSet.Add(job.ID)
 	defer h.idSet.Remove(job.ID)
 
@@ -46,7 +49,10 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 
 	defer func() {
 		for _, entry := range logger.Entries() {
-			if err := s.AddExecutionLogEntry(ctx, record.RecordID(), entry); err != nil {
+			// Perform this outside of the task execution context. If there is a timeout or
+			// cancellation error we don't want to skip uploading these logs as users will
+			// often want to see how far something progressed prior to a timeout.
+			if err := s.AddExecutionLogEntry(context.Background(), record.RecordID(), entry); err != nil {
 				log15.Warn("Failed to upload executor log entry for job", "id", record.RecordID(), "err", err)
 			}
 		}
@@ -122,7 +128,10 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 		return err
 	}
 	defer func() {
-		if teardownErr := runner.Teardown(ctx); teardownErr != nil {
+		// Perform this outside of the task execution context. If there is a timeout or
+		// cancellation error we don't want to skip cleaning up the resources that we've
+		// allocated for the current task.
+		if teardownErr := runner.Teardown(context.Background()); teardownErr != nil {
 			err = multierror.Append(err, teardownErr)
 		}
 	}()
