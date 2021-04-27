@@ -746,17 +746,18 @@
         // Diff
         .hl-source.hl-diff {
             color: var(--hl-gray-6);
-        }
-        .hl-meta.hl-diff.hl-range {
-            color: var(--hl-dark-blue-2);
-        }
-        .hl-meta.hl-deleted.hl-diff {
-            color: var(--hl-white);
-            background: var(--hl-bg-dark-red);
-        }
-        .hl-meta.hl-inserted.hl-diff {
-            color: var(--hl-white);
-            background: var(--hl-bg-dark-green);
+
+            .hl-meta.hl-range {
+                color: var(--hl-dark-blue-2);
+            }
+            .hl-markup.hl-deleted {
+                color: var(--hl-white);
+                background: var(--hl-bg-dark-red);
+            }
+            .hl-markup.hl-inserted {
+                color: var(--hl-white);
+                background: var(--hl-bg-dark-green);
+            }
         }
     }
 }
