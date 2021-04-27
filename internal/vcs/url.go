@@ -77,19 +77,8 @@ func parseScheme(rawurl string) (*url.URL, error) {
 	return u, nil
 }
 
-const (
-	// usernameRe is the regexp for the username part in a repo URL. Eg: sourcegraph@
-	usernameRe = "([a-zA-Z0-9-._~]+@)"
-
-	// urlRe is the regexp for the url part in a repo URL. Eg: github.com
-	urlRe = "([a-zA-Z0-9._-]+)"
-
-	// repoRe is the regexp for the repo in a repo URL. Eg: sourcegraph/sourcegraph
-	repoRe = `([a-zA-Z0-9\@./._-]+)(?:\?||$)(.*)`
-)
-
 // scpSyntax was modified from https://golang.org/src/cmd/go/vcs.go.
-var scpSyntax = regexp.MustCompile(fmt.Sprintf(`^%s?%s:%s$`, usernameRe, urlRe, repoRe))
+var scpSyntax = regexp.MustCompile(`^([a-zA-Z0-9-._~]+@)?([a-zA-Z0-9._-]+):([a-zA-Z0-9./._-]+)(?:\?||$)(.*)$`)
 
 // parseScp parses rawurl into a URL object. The rawurl must be
 // an SCP-like URL, otherwise ParseScp returns an error.
