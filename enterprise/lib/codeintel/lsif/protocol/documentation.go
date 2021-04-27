@@ -6,15 +6,9 @@ package protocol
 // A "documentationResult" edge connects a "project" or "resultSet" vertex to a
 // "documentationResult" vertex.
 //
-// It allows one to attach extensive documentation to a project, range (via being attached to a
-// "resultSet" vertex) or another "documentationResult" for representing hierarchical documentation
-// like:
-//
-// "project" (e.g. an HTTP library)
-// -> "documentationResult" (e.g. "HTTP library" library documentation)
-//   -> "documentationResult" (e.g. docs for the "Server" class in the HTTP library)
-//     -> "documentationResult" (e.g. docs for the "Listen" method on the "Server" class)
-//
+// It allows one to attach extensive documentation to a project or range (via being attached to a
+// "resultSet" vertex). Combined with the "documentationResultChildren" edge, this can be used to
+// represent hierarchical documentation.
 type DocumentationResultEdge struct {
 	Edge
 
@@ -23,14 +17,6 @@ type DocumentationResultEdge struct {
 
 	// The "documentationResult" vertex ID.
 	OutV uint64 `json:"outV"`
-
-	// A string that should be used when comparing this item with other items. Useful when a
-	// "documentationResult" vertex has many children documentationResult vertices and they should
-	// have a specific ordering.
-	//
-	// If not present, the "label" "documentationString" vertex attached to the documentation
-	// result will be used as the sort text for this item.
-	SortText *string `json:"sortText,omitempty"`
 }
 
 func NewDocumentationResultEdge(id, inV, outV uint64) DocumentationResultEdge {
@@ -44,6 +30,44 @@ func NewDocumentationResultEdge(id, inV, outV uint64) DocumentationResultEdge {
 		},
 		OutV: outV,
 		InV:  inV,
+	}
+}
+
+// A "documentationChildren" edge connects one "documentationResult" vertex (the parent) to its
+// children "documentationResult" vertices.
+//
+// It allows one represent hierarchical documentation like:
+//
+// "project" (e.g. an HTTP library)
+// -> "documentationResult" (e.g. "HTTP library" library documentation)
+//   -> "documentationResult" (e.g. docs for the "Server" class in the HTTP library)
+//     -> "documentationResult" (e.g. docs for the "Listen" method on the "Server" class)
+//     -> "documentationResult" (e.g. docs for the "Shutdown" method on the "Server" class)
+//       -> ...
+//
+// Note: the "project" -> "documentationResult" attachment above is expressed via a
+// "documentationResult" edge, since the parent is not a "documentationResult" vertex.
+type DocumentationResultChildrenEdge struct {
+	Edge
+
+	// The parent "documentationResult" vertex ID.
+	InV uint64 `json:"inV"`
+
+	// The ordered children "documentationResult" vertex IDs.
+	OutVs []uint64 `json:"outVs"`
+}
+
+func NewDocumentationResultChildrenEdge(id, inV uint64, outVs []uint64) DocumentationResultChildrenEdge {
+	return DocumentationResultChildrenEdge{
+		Edge: Edge{
+			Element: Element{
+				ID:   id,
+				Type: ElementEdge,
+			},
+			Label: EdgeSourcegraphDocumentationResultChildren,
+		},
+		OutVs: outVs,
+		InV:   inV,
 	}
 }
 
@@ -153,7 +177,7 @@ func NewDocumentationStringEdge(id, inV, outV uint64) DocumentationStringEdge {
 // label (a one-line string) or detail (a multi-line string).
 //
 // A "documentationString" vertex can itself be linked to "range" vertices (which describe a range
-// in the documentation string's markup content itself) using a ??????WHAT EDGE??????. This enables
+// in the documentation string's markup content itself) using a "contains" edge. This enables
 // ranges within a documentation string to have:
 //
 // * "hoverResult"s (e.g. you can hover over a type signature in the documentation string and get info)
