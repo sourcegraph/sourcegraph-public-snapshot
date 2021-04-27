@@ -12,10 +12,10 @@ package protocol
 type DocumentationResultEdge struct {
 	Edge
 
-	// A "project" or "resultSet" vertex ID.
+	// The "documentationResult" vertex ID.
 	InV uint64 `json:"inV"`
 
-	// The "documentationResult" vertex ID.
+	// A "project" or "resultSet" vertex ID.
 	OutV uint64 `json:"outV"`
 }
 
@@ -50,14 +50,14 @@ func NewDocumentationResultEdge(id, inV, outV uint64) DocumentationResultEdge {
 type DocumentationChildrenEdge struct {
 	Edge
 
-	// The parent "documentationResult" vertex ID.
-	InV uint64 `json:"inV"`
-
 	// The ordered children "documentationResult" vertex IDs.
-	OutVs []uint64 `json:"outVs"`
+	InVs []uint64 `json:"inV"`
+
+	// The parent "documentationResult" vertex ID.
+	OutV uint64 `json:"outVs"`
 }
 
-func NewDocumentationChildrenEdge(id, inV uint64, outVs []uint64) DocumentationChildrenEdge {
+func NewDocumentationChildrenEdge(id uint64, inVs []uint64, outV uint64) DocumentationChildrenEdge {
 	return DocumentationChildrenEdge{
 		Edge: Edge{
 			Element: Element{
@@ -66,8 +66,8 @@ func NewDocumentationChildrenEdge(id, inV uint64, outVs []uint64) DocumentationC
 			},
 			Label: EdgeSourcegraphDocumentationChildren,
 		},
-		OutVs: outVs,
-		InV:   inV,
+		OutVs: outV,
+		InV:   inVs,
 	}
 }
 
@@ -140,18 +140,18 @@ const (
 // 	{id: 53, type:"vertex", label:"documentationResult", result:{slug:"httpserver", ...}}
 // 	{id: 54, type:"vertex", label:"documentationString", result:{kind:"plaintext", "value": "A single-line label for an HTTPServer instance"}}
 // 	{id: 55, type:"vertex", label:"documentationString", result:{kind:"plaintext", "value": "A multi-line\n detailed\n explanation of an HTTPServer instance, what it does, etc."}}
-// 	{id: 54, type:"edge", label:"documentationString", inV: 53, outV: 54, type:"label"}
-// 	{id: 54, type:"edge", label:"documentationString", inV: 53, outV: 55, type:"detail"}
+// 	{id: 54, type:"edge", label:"documentationString", inV: 54, outV: 53, type:"label"}
+// 	{id: 54, type:"edge", label:"documentationString", inV: 55, outV: 53, type:"detail"}
 //
 // Hover, definition, etc. results can then be attached to ranges within the "documentationString"
 // vertices themselves (vertex 54 / 55), see the docs for DocumentationString for more details.
 type DocumentationStringEdge struct {
 	Edge
 
-	// The "documentationResult" vertex ID.
+	// The "documentationString" vertex ID.
 	InV uint64 `json:"inV"`
 
-	// The "documentationString" vertex ID.
+	// The "documentationResult" vertex ID.
 	OutV uint64 `json:"outV"`
 
 	// Whether this links the "label" or "detail" string of the documentation.
