@@ -25,6 +25,7 @@ type IndexJobRecognizer interface {
 
 // Recognizers is a list of registered index job recognizers.
 var Recognizers = map[string]IndexJobRecognizer{
-	"go":  lsifGoJobRecognizer{},
-	"tsc": lsifTscJobRecognizer{},
+	"go":   lsifGoJobRecognizer{},
+	"tsc":  lsifTscJobRecognizer{},
+	"java": lsifJavaJobRecognizer{},
 }
