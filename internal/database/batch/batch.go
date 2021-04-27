@@ -2,6 +2,7 @@ package batch
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"sync"
@@ -9,19 +10,24 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // Inserter allows for bulk updates to a single Postgres table.
 type Inserter struct {
-	db           dbutil.DB
-	numColumns   int
-	maxBatchSize int
-	batch        []interface{}
-	queryPrefix  string
-	querySuffix  string
+	db               dbutil.DB
+	numColumns       int
+	maxBatchSize     int
+	batch            []interface{}
+	queryPrefix      string
+	querySuffix      string
+	returningSuffix  string
+	returningScanner ReturningScanner
 }
+
+type ReturningScanner func(rows *sql.Rows) error
 
 // InsertValues creates a new batch inserter using the given database handle, table name, and
 // column names, then reads from the given channel as if they specify values for a single row.
@@ -69,18 +75,38 @@ func WithInserter(ctx context.Context, db dbutil.DB, tableName string, columnNam
 // NewInserter creates a new batch inserter using the given database handle, table name,
 // and column names. For performance and atomicity, handle should be a transaction.
 func NewInserter(ctx context.Context, db dbutil.DB, tableName string, columnNames ...string) *Inserter {
+	return NewInserterWithReturn(ctx, db, tableName, columnNames, nil, nil)
+}
+
+// NewInserterWithReturn creates a new batch inserter using the given database handle, table
+// name, insert column names, and column names to scan on each inserted row. The given scanner
+// will be called once for each row inserted into the target table. Beware that this function
+// may not be called immediately after a call to Insert as rows are only flushed once the
+// current batch is full (or on explicit flush). For performance and atomicity, handle should
+// be a transaction.
+func NewInserterWithReturn(
+	ctx context.Context,
+	db dbutil.DB,
+	tableName string,
+	columnNames []string,
+	returningColumnNames []string,
+	returningScanner ReturningScanner,
+) *Inserter {
 	numColumns := len(columnNames)
 	maxBatchSize := getMaxBatchSize(numColumns)
 	queryPrefix := makeQueryPrefix(tableName, columnNames)
 	querySuffix := makeQuerySuffix(numColumns)
+	returningSuffix := makeReturningSuffix(returningColumnNames)
 
 	return &Inserter{
-		db:           db,
-		numColumns:   numColumns,
-		maxBatchSize: maxBatchSize,
-		batch:        make([]interface{}, 0, maxBatchSize),
-		queryPrefix:  queryPrefix,
-		querySuffix:  querySuffix,
+		db:               db,
+		numColumns:       numColumns,
+		maxBatchSize:     maxBatchSize,
+		batch:            make([]interface{}, 0, maxBatchSize),
+		queryPrefix:      queryPrefix,
+		querySuffix:      querySuffix,
+		returningSuffix:  returningSuffix,
+		returningScanner: returningScanner,
 	}
 }
 
@@ -102,13 +128,21 @@ func (i *Inserter) Insert(ctx context.Context, values ...interface{}) error {
 
 // Flush ensures that all queued rows are inserted. This method must be invoked at the end
 // of insertion to ensure that all records are flushed to the underlying Execable.
-func (i *Inserter) Flush(ctx context.Context) error {
+func (i *Inserter) Flush(ctx context.Context) (err error) {
 	if batch := i.pop(); len(batch) != 0 {
 		// Create a query with enough placeholders to match the current batch size. This should
 		// generally be the full querySuffix string, except for the last call to Flush which
 		// may be a partial batch.
-		if _, err := i.db.ExecContext(dbconn.WithBulkInsertion(ctx, true), i.makeQuery(len(batch)), batch...); err != nil {
+		rows, err := i.db.QueryContext(dbconn.WithBulkInsertion(ctx, true), i.makeQuery(len(batch)), batch...)
+		if err != nil {
 			return err
+		}
+		defer func() { err = basestore.CloseRows(rows, err) }()
+
+		for rows.Next() {
+			if err := i.returningScanner(rows); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -145,7 +179,7 @@ func (i *Inserter) makeQuery(numValues int) string {
 	suffixLength := numTuples*sizeOfTuple + numTuples - 1
 
 	// Construct the query
-	return i.queryPrefix + i.querySuffix[:suffixLength]
+	return i.queryPrefix + i.querySuffix[:suffixLength] + i.returningSuffix
 }
 
 // maxNumPostgresParameters is the maximum number of placeholder variables allowed by Postgres
@@ -153,7 +187,7 @@ func (i *Inserter) makeQuery(numValues int) string {
 const maxNumParameters = 32767
 
 // getMaxBatchSize returns the number of rows that can be inserted into a single table with the
-// give number of columns via a single insert statement.
+// given number of columns via a single insert statement.
 func getMaxBatchSize(numColumns int) int {
 	return (maxNumParameters / numColumns) * numColumns
 }
@@ -208,4 +242,14 @@ func makeQuerySuffix(numColumns int) string {
 	querySuffix := string(qs[2:])
 	querySuffixCache[numColumns] = querySuffix
 	return querySuffix
+}
+
+// makeReturningSuffix creates a RETURNING ... clause of the batch insert statement, if any
+// returning column names were supplied to the batcher inserter.
+func makeReturningSuffix(columnNames []string) string {
+	if len(columnNames) == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf("RETURNING %s", strings.Join(columnNames, ", "))
 }
