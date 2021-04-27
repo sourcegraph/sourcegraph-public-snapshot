@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
@@ -32,8 +33,7 @@ var _ workerutil.Handler = &handler{}
 // fresh docker container, and uploads the results to the external frontend API.
 func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workerutil.Record) error {
 	job := record.(executor.Job)
-
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(h.options.MaximumRuntimePerJob))
 	defer cancel()
 
 	h.idSet.Add(job.ID)
