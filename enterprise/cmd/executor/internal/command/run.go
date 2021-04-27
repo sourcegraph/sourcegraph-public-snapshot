@@ -86,6 +86,10 @@ func runCommand(ctx context.Context, command command, logger *Logger) (err error
 		return err
 	}
 	if exitCode != 0 {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		return errors.New("command failed")
 	}
 	return nil
