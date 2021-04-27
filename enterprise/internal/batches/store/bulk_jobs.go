@@ -58,8 +58,6 @@ var ChangesetJobColumns = []*sqlf.Query{
 func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJob) error {
 	inserter := func(inserter *batch.Inserter) error {
 		for _, c := range cs {
-			// Capture c, so the scanner callback still reaches the "correct" c.
-			c := c
 			payload, err := jsonbColumn(c.Payload)
 			if err != nil {
 				return err
@@ -73,12 +71,8 @@ func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJ
 				c.UpdatedAt = c.CreatedAt
 			}
 
-			if err := inserter.InsertWithReturn(
+			if err := inserter.Insert(
 				ctx,
-				ChangesetJobColumns,
-				func(sc scanner) error {
-					return scanChangesetJob(c, sc)
-				},
 				c.BulkGroup,
 				c.UserID,
 				c.BatchChangeID,
@@ -101,12 +95,34 @@ func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJ
 
 		return nil
 	}
-
-	return batch.WithInserter(
+	i := -1
+	return batch.WithInserterWithReturn(
 		ctx,
 		s.Handle().DB(),
 		"changeset_jobs",
 		changesetJobInsertColumns,
+		[]string{
+			"changeset_jobs.id",
+			"changeset_jobs.bulk_group",
+			"changeset_jobs.user_id",
+			"changeset_jobs.batch_change_id",
+			"changeset_jobs.changeset_id",
+			"changeset_jobs.job_type",
+			"changeset_jobs.payload",
+			"changeset_jobs.state",
+			"changeset_jobs.failure_message",
+			"changeset_jobs.started_at",
+			"changeset_jobs.finished_at",
+			"changeset_jobs.process_after",
+			"changeset_jobs.num_resets",
+			"changeset_jobs.num_failures",
+			"changeset_jobs.created_at",
+			"changeset_jobs.updated_at",
+		},
+		func(rows *sql.Rows) error {
+			i++
+			return scanChangesetJob(cs[i], rows)
+		},
 		inserter,
 	)
 }
