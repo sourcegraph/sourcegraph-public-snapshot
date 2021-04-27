@@ -1,18 +1,13 @@
 .create-insight-form {
-    &__sub-title-container {
-        margin-bottom: 2rem;
-    }
 
-    &__form {
-        display: flex;
-        flex-direction: column;
-    }
+    display: flex;
+    flex-direction: column;
 
-    &__form-field {
+    &__field {
         max-width: 100%;
     }
 
-    &__form-field + &__form-field {
+    &__field + &__field {
         margin-top: 2rem;
     }
 

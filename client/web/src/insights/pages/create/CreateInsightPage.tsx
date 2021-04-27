@@ -8,9 +8,12 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../../auth'
+import { Page } from '../../../components/Page';
+import { PageTitle } from '../../../components/PageTitle';
 import { InsightsApiContext } from '../../core/backend/api-provider'
 
 import { CreateInsightForm, CreateInsightFormProps } from './components/create-insight-form/CreateInsightForm'
+import styles from './CreateInsightPage.module.scss';
 
 export interface CreateInsightPageProps extends PlatformContextProps, RouteComponentProps {
     /**
@@ -86,5 +89,26 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
         return <Redirect to="/" />
     }
 
-    return <CreateInsightForm onSubmit={handleSubmit} />
+    return (
+        <Page className="col-8">
+            <PageTitle title="Create new code insight" />
+
+            <div className={styles.createInsightPageSubTitleContainer}>
+                <h2>Create new code insight</h2>
+
+                <p className="text-muted">
+                    Search-based code insights analyse your code based on any search query.{' '}
+                    <a
+                        href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        Learn more.
+                    </a>
+                </p>
+            </div>
+
+            <CreateInsightForm onSubmit={handleSubmit} />
+        </Page>
+    )
 }

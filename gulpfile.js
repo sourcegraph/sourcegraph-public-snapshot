@@ -16,7 +16,11 @@ const { webpack: webWebpack, webpackDevServer: webWebpackDevServer } = require('
 /**
  * Generates files needed for builds.
  */
-const generate = gulp.parallel(schema, graphQlSchema, graphQlOperations, cssModulesTypings)
+const generate = gulp.parallel(
+  // schema,
+  // graphQlSchema,
+  // graphQlOperations,
+  cssModulesTypings)
 
 /**
  * Starts all watchers on schema files.
