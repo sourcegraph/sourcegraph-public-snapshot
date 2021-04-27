@@ -95,7 +95,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	actor := actor.FromContext(ctx)
 	if actor.IsAuthenticated() {
 		uid = &actor.UID
-		e, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, actor.UID)
+		e, _, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, actor.UID)
 		if err != nil && !errcode.IsNotFound(err) {
 			return nil, err
 		}

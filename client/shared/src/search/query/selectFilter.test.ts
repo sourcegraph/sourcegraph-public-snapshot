@@ -50,4 +50,13 @@ describe('selectorCompletion', () => {
             symbol.type-parameter
         `)
     })
+
+    test('suggest depth 2 commit.diff completions', () => {
+        expect(selectorCompletion(create('commit.diff.'))).toMatchInlineSnapshot(`
+            commit,
+            commit.diff,
+            commit.diff.added,
+            commit.diff.removed
+        `)
+    })
 })

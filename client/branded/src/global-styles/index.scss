@@ -1,13 +1,15 @@
 @import './colors.scss';
+@import './border-radius.scss';
 
 // Bootstrap configuration before Bootstrap is imported
-$border-radius: 2px;
-$border-radius-sm: 1px;
-$border-radius-lg: 4px;
+$border-radius: var(--border-radius);
+$border-radius-sm: var(--border-radius-sm);
+$border-radius-lg: var(--border-radius-lg);
+
 $font-size-base: 0.875rem;
 $line-height-base: (20/14);
 
-$box-shadow: 0 0.25rem 0.5rem rgba($gray-19, 0.07);
+$box-shadow: var(--box-shadow);
 
 $grid-gutter-width: 1.5rem;
 
@@ -45,7 +47,7 @@ $badge-padding-x: 0.6em;
 
 // Tooltips
 
-$tooltip-bg: $gray-19;
+$tooltip-bg: var(--tooltip-bg);
 
 // Forms
 
@@ -55,7 +57,8 @@ $input-focus-border-color: $primary;
 // The default focus ring for buttons is very hard to see, raise opacity.
 // We only show the focus ring when using the keyboard, when the focus ring
 // should be clearly visible.
-$btn-focus-box-shadow: 0 0 0 $input-btn-focus-width rgba($primary, 0.8);
+$btn-focus-box-shadow: var(--btn-focus-box-shadow);
+$btn-link-disabled-color: var(--btn-link-disabled-color);
 
 // Forms don't manipulate the colors at compile time,
 // which is why we can use CSS variables for theming here

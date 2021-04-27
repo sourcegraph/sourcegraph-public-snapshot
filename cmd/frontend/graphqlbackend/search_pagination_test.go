@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -438,7 +439,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 			if test.executor != nil {
 				executor = test.executor
 			}
-			cursor, results, common, err := plan.execute(ctx, executor)
+			cursor, results, common, err := plan.execute(ctx, database.Repos(db), executor)
 			if !cmp.Equal(test.wantCursor, cursor) {
 				t.Error("wantCursor != cursor", cmp.Diff(test.wantCursor, cursor))
 			}
@@ -561,7 +562,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 				searchBucketMax:     10,
 				mockNumTotalRepos:   func() int { return len(searchRepos) },
 			}
-			cursor, results, _, err := plan.execute(ctx, executor)
+			cursor, results, _, err := plan.execute(ctx, database.Repos(db), executor)
 			if !cmp.Equal(test.wantCursor, cursor) {
 				t.Error("wantCursor != cursor", cmp.Diff(test.wantCursor, cursor))
 			}
@@ -735,7 +736,7 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 				searchBucketMax:     10,
 				mockNumTotalRepos:   func() int { return len(test.searchRepos) },
 			}
-			cursor, results, common, err := plan.execute(ctx, executor)
+			cursor, results, common, err := plan.execute(ctx, database.Repos(db), executor)
 			if !cmp.Equal(test.wantCursor, cursor) {
 				t.Error("wantCursor != cursor", cmp.Diff(test.wantCursor, cursor))
 			}

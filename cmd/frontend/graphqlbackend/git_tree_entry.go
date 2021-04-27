@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"net/url"
 	neturl "net/url"
 	"os"
 	"path"
@@ -131,29 +132,20 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 		}
 		return "/" + repoName + "@" + submodule.Commit(), nil
 	}
-	url, err := r.commit.repoRevURL()
-	if err != nil {
-		return "", err
-	}
-	return r.urlPath(url)
+	url := r.commit.repoRevURL()
+	return r.urlPath(url).String(), nil
 }
 
-func (r *GitTreeEntryResolver) CanonicalURL() (string, error) {
-	url, err := r.commit.canonicalRepoRevURL()
-	if err != nil {
-		return "", err
-	}
-	return r.urlPath(url)
+func (r *GitTreeEntryResolver) CanonicalURL() string {
+	url := r.commit.canonicalRepoRevURL()
+	return r.urlPath(url).String()
 }
 
-func (r *GitTreeEntryResolver) urlPath(prefix string) (string, error) {
+func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
+	// Dereference to copy to avoid mutating the input
+	u := *prefix
 	if r.IsRoot() {
-		return prefix, nil
-	}
-
-	u, err := neturl.Parse(prefix)
-	if err != nil {
-		return "", err
+		return &u
 	}
 
 	typ := "blob"
@@ -162,7 +154,7 @@ func (r *GitTreeEntryResolver) urlPath(prefix string) (string, error) {
 	}
 
 	u.Path = path.Join(u.Path, "-", typ, r.Path())
-	return u.String(), nil
+	return &u
 }
 
 func (r *GitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
