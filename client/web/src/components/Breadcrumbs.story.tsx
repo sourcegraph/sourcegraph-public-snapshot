@@ -30,7 +30,7 @@ add(
                                 key: 'repo',
                                 element: (
                                     <a href="/">
-                                        sourcegraph/<span className="font-weight-semibold">sourcegraph</span>
+                                        sourcegraph/<span className="font-weight-medium">sourcegraph</span>
                                     </a>
                                 ),
                             },

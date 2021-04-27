@@ -12,14 +12,14 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 func TestStoreQueuedCount(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, uploaded_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
@@ -31,7 +31,7 @@ func TestStoreQueuedCount(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	count, err := testStore(defaultTestStoreOptions).QueuedCount(context.Background(), nil)
+	count, err := testStore(db, defaultTestStoreOptions).QueuedCount(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}
@@ -41,9 +41,9 @@ func TestStoreQueuedCount(t *testing.T) {
 }
 
 func TestStoreQueuedCountFailed(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, uploaded_at, num_failures)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval, 0),
@@ -56,7 +56,7 @@ func TestStoreQueuedCountFailed(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	count, err := testStore(defaultTestStoreOptions).QueuedCount(context.Background(), nil)
+	count, err := testStore(db, defaultTestStoreOptions).QueuedCount(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}
@@ -66,9 +66,9 @@ func TestStoreQueuedCountFailed(t *testing.T) {
 }
 
 func TestStoreQueuedCountConditions(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, uploaded_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
@@ -81,7 +81,7 @@ func TestStoreQueuedCountConditions(t *testing.T) {
 	}
 
 	conditions := []*sqlf.Query{sqlf.Sprintf("w.id < 4")}
-	count, err := testStore(defaultTestStoreOptions).QueuedCount(context.Background(), conditions)
+	count, err := testStore(db, defaultTestStoreOptions).QueuedCount(context.Background(), conditions)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}
@@ -91,9 +91,9 @@ func TestStoreQueuedCountConditions(t *testing.T) {
 }
 
 func TestStoreDequeueState(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, uploaded_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
@@ -105,14 +105,14 @@ func TestStoreDequeueState(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	record, tx, ok, err := testStore(defaultTestStoreOptions).Dequeue(context.Background(), nil)
+	record, tx, ok, err := testStore(db, defaultTestStoreOptions).Dequeue(context.Background(), nil)
 	assertDequeueRecordResult(t, 4, record, tx, ok, err)
 }
 
 func TestStoreDequeueOrder(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, uploaded_at)
 		VALUES
 			(1, 'queued', NOW() - '2 minute'::interval),
@@ -124,14 +124,14 @@ func TestStoreDequeueOrder(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	record, tx, ok, err := testStore(defaultTestStoreOptions).Dequeue(context.Background(), nil)
+	record, tx, ok, err := testStore(db, defaultTestStoreOptions).Dequeue(context.Background(), nil)
 	assertDequeueRecordResult(t, 2, record, tx, ok, err)
 }
 
 func TestStoreDequeueConditions(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, uploaded_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
@@ -144,14 +144,14 @@ func TestStoreDequeueConditions(t *testing.T) {
 	}
 
 	conditions := []*sqlf.Query{sqlf.Sprintf("w.id < 4")}
-	record, tx, ok, err := testStore(defaultTestStoreOptions).Dequeue(context.Background(), conditions)
+	record, tx, ok, err := testStore(db, defaultTestStoreOptions).Dequeue(context.Background(), conditions)
 	assertDequeueRecordResult(t, 3, record, tx, ok, err)
 }
 
 func TestStoreDequeueDelay(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, uploaded_at, process_after)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval, NULL),
@@ -163,14 +163,14 @@ func TestStoreDequeueDelay(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	record, tx, ok, err := testStore(defaultTestStoreOptions).Dequeue(context.Background(), nil)
+	record, tx, ok, err := testStore(db, defaultTestStoreOptions).Dequeue(context.Background(), nil)
 	assertDequeueRecordResult(t, 4, record, tx, ok, err)
 }
 
 func TestStoreDequeueView(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, uploaded_at)
 		VALUES
 			(1, 'queued', NOW() - '1 minute'::interval),
@@ -198,14 +198,14 @@ func TestStoreDequeueView(t *testing.T) {
 	}
 
 	conditions := []*sqlf.Query{sqlf.Sprintf("v.new_field < 15")}
-	record, tx, ok, err := testStore(options).Dequeue(context.Background(), conditions)
+	record, tx, ok, err := testStore(db, options).Dequeue(context.Background(), conditions)
 	assertDequeueRecordViewResult(t, 2, 14, record, tx, ok, err)
 }
 
 func TestStoreDequeueConcurrent(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, uploaded_at)
 		VALUES
 			(1, 'queued', NOW() - '2 minute'::interval),
@@ -214,7 +214,7 @@ func TestStoreDequeueConcurrent(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	store := testStore(defaultTestStoreOptions)
+	store := testStore(db, defaultTestStoreOptions)
 
 	// Worker A
 	record1, tx1, ok, err := store.Dequeue(context.Background(), nil)
@@ -254,9 +254,9 @@ func TestStoreDequeueConcurrent(t *testing.T) {
 }
 
 func TestStoreDequeueRetryAfter(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, finished_at, failure_message, num_failures, uploaded_at)
 		VALUES
 			(1, 'errored', NOW() - '6 minute'::interval, 'error', 3, NOW() - '2 minutes'::interval),
@@ -283,7 +283,7 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 		RetryAfter:        5 * time.Minute,
 	}
 
-	store := testStore(options)
+	store := testStore(db, options)
 
 	// Dequeue errored record
 	record1, tx, ok, err := store.Dequeue(context.Background(), nil)
@@ -300,9 +300,9 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 }
 
 func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, finished_at, failure_message, num_failures, uploaded_at)
 		VALUES
 			(1, 'errored', NOW() - '6 minute'::interval, 'error', 3, NOW() - '2 minutes'::interval),
@@ -329,7 +329,7 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 		RetryAfter:        0,
 	}
 
-	store := testStore(options)
+	store := testStore(db, options)
 
 	// Dequeue non-errored record only
 	record2, tx, ok, err := store.Dequeue(context.Background(), nil)
@@ -342,9 +342,9 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 }
 
 func TestStoreRequeue(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state)
 		VALUES
 			(1, 'processing')
@@ -354,11 +354,11 @@ func TestStoreRequeue(t *testing.T) {
 
 	after := testNow().Add(time.Hour)
 
-	if err := testStore(defaultTestStoreOptions).Requeue(context.Background(), 1, after); err != nil {
+	if err := testStore(db, defaultTestStoreOptions).Requeue(context.Background(), 1, after); err != nil {
 		t.Fatalf("unexpected error requeueing record: %s", err)
 	}
 
-	rows, err := dbconn.Global.Query(`SELECT state, process_after FROM workerutil_test WHERE id = 1`)
+	rows, err := db.QueryContext(context.Background(), `SELECT state, process_after FROM workerutil_test WHERE id = 1`)
 	if err != nil {
 		t.Fatalf("unexpected error querying record: %s", err)
 	}
@@ -383,9 +383,9 @@ func TestStoreRequeue(t *testing.T) {
 }
 
 func TestStoreAddExecutionLogEntry(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state)
 		VALUES
 			(1, 'processing')
@@ -403,12 +403,12 @@ func TestStoreAddExecutionLogEntry(t *testing.T) {
 			Command: command,
 			Out:     payload,
 		}
-		if err := testStore(defaultTestStoreOptions).AddExecutionLogEntry(context.Background(), 1, entry); err != nil {
+		if err := testStore(db, defaultTestStoreOptions).AddExecutionLogEntry(context.Background(), 1, entry); err != nil {
 			t.Fatalf("unexpected error adding executor log entry: %s", err)
 		}
 	}
 
-	contents, err := basestore.ScanStrings(dbconn.Global.Query(`SELECT unnest(execution_logs)::text FROM workerutil_test WHERE id = 1`))
+	contents, err := basestore.ScanStrings(db.QueryContext(context.Background(), `SELECT unnest(execution_logs)::text FROM workerutil_test WHERE id = 1`))
 	if err != nil {
 		t.Fatalf("unexpected error scanning record: %s", err)
 	}
@@ -433,9 +433,9 @@ func TestStoreAddExecutionLogEntry(t *testing.T) {
 }
 
 func TestStoreMarkComplete(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state)
 		VALUES
 			(1, 'processing')
@@ -443,7 +443,7 @@ func TestStoreMarkComplete(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(defaultTestStoreOptions).MarkComplete(context.Background(), 1)
+	marked, err := testStore(db, defaultTestStoreOptions).MarkComplete(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("unexpected error marking record as completed: %s", err)
 	}
@@ -451,7 +451,7 @@ func TestStoreMarkComplete(t *testing.T) {
 		t.Fatalf("expected record to be marked")
 	}
 
-	rows, err := dbconn.Global.Query(`SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
+	rows, err := db.QueryContext(context.Background(), `SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
 	if err != nil {
 		t.Fatalf("unexpected error querying record: %s", err)
 	}
@@ -475,9 +475,9 @@ func TestStoreMarkComplete(t *testing.T) {
 }
 
 func TestStoreMarkCompleteNotProcessing(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, failure_message)
 		VALUES
 			(1, 'errored', 'old message')
@@ -485,7 +485,7 @@ func TestStoreMarkCompleteNotProcessing(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(defaultTestStoreOptions).MarkComplete(context.Background(), 1)
+	marked, err := testStore(db, defaultTestStoreOptions).MarkComplete(context.Background(), 1)
 	if err != nil {
 		t.Fatalf("unexpected error marking record as completed: %s", err)
 	}
@@ -493,7 +493,7 @@ func TestStoreMarkCompleteNotProcessing(t *testing.T) {
 		t.Fatalf("expected record not to be marked")
 	}
 
-	rows, err := dbconn.Global.Query(`SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
+	rows, err := db.QueryContext(context.Background(), `SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
 	if err != nil {
 		t.Fatalf("unexpected error querying record: %s", err)
 	}
@@ -517,9 +517,9 @@ func TestStoreMarkCompleteNotProcessing(t *testing.T) {
 }
 
 func TestStoreMarkErrored(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state)
 		VALUES
 			(1, 'processing')
@@ -527,7 +527,7 @@ func TestStoreMarkErrored(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(defaultTestStoreOptions).MarkErrored(context.Background(), 1, "new message")
+	marked, err := testStore(db, defaultTestStoreOptions).MarkErrored(context.Background(), 1, "new message")
 	if err != nil {
 		t.Fatalf("unexpected error marking record as errored: %s", err)
 	}
@@ -535,7 +535,7 @@ func TestStoreMarkErrored(t *testing.T) {
 		t.Fatalf("expected record to be marked")
 	}
 
-	rows, err := dbconn.Global.Query(`SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
+	rows, err := db.QueryContext(context.Background(), `SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
 	if err != nil {
 		t.Fatalf("unexpected error querying record: %s", err)
 	}
@@ -559,9 +559,9 @@ func TestStoreMarkErrored(t *testing.T) {
 }
 
 func TestStoreMarkFailed(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state)
 		VALUES
 			(1, 'processing')
@@ -569,7 +569,7 @@ func TestStoreMarkFailed(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(defaultTestStoreOptions).MarkFailed(context.Background(), 1, "new message")
+	marked, err := testStore(db, defaultTestStoreOptions).MarkFailed(context.Background(), 1, "new message")
 	if err != nil {
 		t.Fatalf("unexpected error marking upload as completed: %s", err)
 	}
@@ -577,7 +577,7 @@ func TestStoreMarkFailed(t *testing.T) {
 		t.Fatalf("expected record to be marked")
 	}
 
-	rows, err := dbconn.Global.Query(`SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
+	rows, err := db.QueryContext(context.Background(), `SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
 	if err != nil {
 		t.Fatalf("unexpected error querying record: %s", err)
 	}
@@ -601,9 +601,9 @@ func TestStoreMarkFailed(t *testing.T) {
 }
 
 func TestStoreMarkErroredAlreadyCompleted(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state)
 		VALUES
 			(1, 'completed')
@@ -611,7 +611,7 @@ func TestStoreMarkErroredAlreadyCompleted(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(defaultTestStoreOptions).MarkErrored(context.Background(), 1, "new message")
+	marked, err := testStore(db, defaultTestStoreOptions).MarkErrored(context.Background(), 1, "new message")
 	if err != nil {
 		t.Fatalf("unexpected error marking record as errored: %s", err)
 	}
@@ -619,7 +619,7 @@ func TestStoreMarkErroredAlreadyCompleted(t *testing.T) {
 		t.Fatalf("expected record to be marked")
 	}
 
-	rows, err := dbconn.Global.Query(`SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
+	rows, err := db.QueryContext(context.Background(), `SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
 	if err != nil {
 		t.Fatalf("unexpected error querying record: %s", err)
 	}
@@ -643,9 +643,9 @@ func TestStoreMarkErroredAlreadyCompleted(t *testing.T) {
 }
 
 func TestStoreMarkErroredAlreadyErrored(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, failure_message)
 		VALUES
 			(1, 'errored', 'old message')
@@ -653,7 +653,7 @@ func TestStoreMarkErroredAlreadyErrored(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(defaultTestStoreOptions).MarkErrored(context.Background(), 1, "new message")
+	marked, err := testStore(db, defaultTestStoreOptions).MarkErrored(context.Background(), 1, "new message")
 	if err != nil {
 		t.Fatalf("unexpected error marking record as errored: %s", err)
 	}
@@ -661,7 +661,7 @@ func TestStoreMarkErroredAlreadyErrored(t *testing.T) {
 		t.Fatalf("expected record not to be marked")
 	}
 
-	rows, err := dbconn.Global.Query(`SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
+	rows, err := db.QueryContext(context.Background(), `SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
 	if err != nil {
 		t.Fatalf("unexpected error querying record: %s", err)
 	}
@@ -685,9 +685,9 @@ func TestStoreMarkErroredAlreadyErrored(t *testing.T) {
 }
 
 func TestStoreMarkErroredRetriesExhausted(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, num_failures)
 		VALUES
 			(1, 'processing', 0),
@@ -699,7 +699,7 @@ func TestStoreMarkErroredRetriesExhausted(t *testing.T) {
 	options := defaultTestStoreOptions
 	options.MaxNumRetries = 2
 
-	store := testStore(options)
+	store := testStore(db, options)
 
 	for i := 1; i < 3; i++ {
 		marked, err := store.MarkErrored(context.Background(), i, "new message")
@@ -713,7 +713,7 @@ func TestStoreMarkErroredRetriesExhausted(t *testing.T) {
 
 	assertState := func(id int, wantState string) {
 		q := fmt.Sprintf(`SELECT state FROM workerutil_test WHERE id = %d`, id)
-		rows, err := dbconn.Global.Query(q)
+		rows, err := db.QueryContext(context.Background(), q)
 		if err != nil {
 			t.Fatalf("unexpected error querying record: %s", err)
 		}
@@ -737,9 +737,9 @@ func TestStoreMarkErroredRetriesExhausted(t *testing.T) {
 }
 
 func TestStoreResetStalled(t *testing.T) {
-	setupStoreTest(t)
+	db := setupStoreTest(t)
 
-	if _, err := dbconn.Global.Exec(`
+	if _, err := db.ExecContext(context.Background(), `
 		INSERT INTO workerutil_test (id, state, started_at, num_resets)
 		VALUES
 			(1, 'processing', NOW() - '6 second'::interval, 1),
@@ -753,7 +753,7 @@ func TestStoreResetStalled(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	tx, err := dbconn.Global.BeginTx(context.Background(), nil)
+	tx, err := db.(dbutil.TxBeginner).BeginTx(context.Background(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -764,7 +764,7 @@ func TestStoreResetStalled(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resetIDs, erroredIDs, err := testStore(defaultTestStoreOptions).ResetStalled(context.Background())
+	resetIDs, erroredIDs, err := testStore(db, defaultTestStoreOptions).ResetStalled(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error resetting stalled records: %s", err)
 	}
@@ -779,7 +779,7 @@ func TestStoreResetStalled(t *testing.T) {
 		t.Errorf("unexpected errored ids (-want +got):\n%s", diff)
 	}
 
-	rows, err := dbconn.Global.Query(`SELECT state, num_resets FROM workerutil_test WHERE id = 1`)
+	rows, err := db.QueryContext(context.Background(), `SELECT state, num_resets FROM workerutil_test WHERE id = 1`)
 	if err != nil {
 		t.Fatalf("unexpected error querying record: %s", err)
 	}
@@ -801,7 +801,7 @@ func TestStoreResetStalled(t *testing.T) {
 		t.Errorf("unexpected num resets. want=%d have=%d", 2, numResets)
 	}
 
-	rows, err = dbconn.Global.Query(`SELECT state FROM workerutil_test WHERE id = 6`)
+	rows, err = db.QueryContext(context.Background(), `SELECT state FROM workerutil_test WHERE id = 6`)
 	if err != nil {
 		t.Fatalf("unexpected error querying record: %s", err)
 	}

@@ -258,14 +258,14 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 			for _, r := range repos {
 				repoRevMap[string(r.Repo.Name)] = r
 			}
-			getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
+			getRepoInputRev = func(file *zoekt.FileMatch) (repo types.RepoName, revs []string, ok bool) {
 				if repoRev, ok := repoRevMap[file.Repository]; ok {
 					return repoRev.Repo, repoRev.RevSpecs(), true
 				}
-				return nil, nil, false
+				return types.RepoName{}, nil, false
 			}
 		} else {
-			getRepoInputRev = func(file *zoekt.FileMatch) (repo *types.RepoName, revs []string, ok bool) {
+			getRepoInputRev = func(file *zoekt.FileMatch) (repo types.RepoName, revs []string, ok bool) {
 				repo, inputRevs := repos.GetRepoInputRev(file)
 				return repo, inputRevs, true
 			}
@@ -789,7 +789,7 @@ func (rb *indexedRepoRevs) Add(reporev *search.RepositoryRevisions, repo *zoekt.
 }
 
 // GetRepoInputRev returns the repo and inputRev associated with file.
-func (rb *indexedRepoRevs) GetRepoInputRev(file *zoekt.FileMatch) (repo *types.RepoName, inputRevs []string) {
+func (rb *indexedRepoRevs) GetRepoInputRev(file *zoekt.FileMatch) (repo types.RepoName, inputRevs []string) {
 	repoRev := rb.repoRevs[file.Repository]
 
 	inputRevs = make([]string, 0, len(file.Branches))

@@ -56,7 +56,7 @@ func (r1 RevisionSpecifier) Less(r2 RevisionSpecifier) bool {
 // globs.  If no revspecs and no ref globs are specified, then the
 // repository's default branch is used.
 type RepositoryRevisions struct {
-	Repo *types.RepoName
+	Repo types.RepoName
 	Revs []RevisionSpecifier
 
 	// resolveOnce protects resolvedRevs
@@ -76,11 +76,11 @@ type RepositoryRevisions struct {
 }
 
 func (r *RepositoryRevisions) Copy() *RepositoryRevisions {
-	repo := *r.Repo
+	repo := r.Repo
 	revs := make([]RevisionSpecifier, len(r.Revs))
 	copy(revs, r.Revs)
 	return &RepositoryRevisions{
-		Repo:     &repo,
+		Repo:     repo,
 		Revs:     revs,
 		ListRefs: r.ListRefs,
 	}

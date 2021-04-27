@@ -20,53 +20,53 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 ## Steps
 
-1. After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/) with `kubectl`.
+1) After meeting all the requirements, make sure you can [access your cluster](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/) with `kubectl`.
 
-    ```
-    # Google Cloud Platform (GCP) users are required to give their user the ability to create roles in Kubernetes.
-    # See the [GCP's documentation: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#prerequisites_for_using_role-based_access_control
-    kubectl create clusterrolebinding cluster-admin-binding \
-      --clusterrole cluster-admin --user $(gcloud config get-value account)
-    ```
+```bash
+# Google Cloud Platform (GCP) users are required to give their user the ability to create roles in Kubernetes.
+# See the [GCP's documentation: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#prerequisites_for_using_role-based_access_control
+kubectl create clusterrolebinding cluster-admin-binding \
+    --clusterrole cluster-admin --user $(gcloud config get-value account)
+```
 
-1. Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository and check out the version tag you wish to deploy:
+2) Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository and check out the version tag you wish to deploy:
 
-    ```
-    # 🚨 The master branch tracks development. 
-    # Use the branch of this repository corresponding to the version of Sourcegraph you wish to deploy, e.g. git checkout 3.24
-    git clone https://github.com/sourcegraph/deploy-sourcegraph
-    cd deploy-sourcegraph
-    SOURCEGRAPH_VERSION="v3.26.3"
-    git checkout $SOURCEGRAPH_VERSION
-    ```
+```bash
+# 🚨 The master branch tracks development.
+# Use the branch of this repository corresponding to the version of Sourcegraph you wish to deploy, e.g. git checkout 3.24
+git clone https://github.com/sourcegraph/deploy-sourcegraph
+cd deploy-sourcegraph
+export SOURCEGRAPH_VERSION="v3.27.0"
+git checkout $SOURCEGRAPH_VERSION
+```
 
-1. Configure the `sourcegraph` storage class for the cluster by following ["Configure a storage class"](./configure.md#configure-a-storage-class).
+3) Configure the `sourcegraph` storage class for the cluster by following ["Configure a storage class"](./configure.md#configure-a-storage-class).
 
-1. (OPTIONAL) By default `sourcegraph` will be deployed in the `default` kubernetes namespace. If you wish to deploy `sourcegraph` in a non-default namespace, it is highly recommended you use the provided overlays to ensure updates are made in all manifests correctly. See the ["Overlays docs"](./overlays.md) for full instructions on how to use overlays with Sourcegraph and learn more about ["Use non-default namespace"](./overlays.md#use-non-default-namespace).
+4) **(OPTIONAL)** By default `sourcegraph` will be deployed in the `default` kubernetes namespace. If you wish to deploy `sourcegraph` in a non-default namespace, it is highly recommended you use the provided overlays to ensure updates are made in all manifests correctly. See the ["Overlays docs"](./overlays.md) for full instructions on how to use overlays with Sourcegraph and learn more about ["Use non-default namespace"](./overlays.md#use-non-default-namespace).
 
-1. (OPTIONAL) If you want to add a large number of repositories to your instance, you should [configure the number of gitserver replicas](configure.md#configure-gitserver-replica-count) and [the number of indexed-search replicas](configure.md#configure-indexed-search-replica-count) _before_ you continue with the next step. (See ["Tuning replica counts for horizontal scalability"](scale.md#tuning-replica-counts-for-horizontal-scalability) for guidelines.)
+5) **(OPTIONAL)** If you want to add a large number of repositories to your instance, you should [configure the number of gitserver replicas](configure.md#configure-gitserver-replica-count) and [the number of indexed-search replicas](configure.md#configure-indexed-search-replica-count) _before_ you continue with the next step. (See ["Tuning replica counts for horizontal scalability"](scale.md#tuning-replica-counts-for-horizontal-scalability) for guidelines.)
 
-1. Deploy the desired version of Sourcegraph to your cluster:
+6) Deploy the desired version of Sourcegraph to your cluster:
 
-    ```
-    ./kubectl-apply-all.sh
-    ```
+```
+./kubectl-apply-all.sh
+```
 
-1. Monitor the status of the deployment:
+7) Monitor the status of the deployment:
 
-    ```
-    kubectl get pods -o wide -w
-    ```
+```
+kubectl get pods -o wide --watch
+```
 
-1. After deployment is completed, verify Sourcegraph is running by temporarily making the frontend port accessible:
+8) After deployment is completed, verify Sourcegraph is running by temporarily making the frontend port accessible:
 
-    ```
-    kubectl port-forward svc/sourcegraph-frontend 3080:30080
-    ```
+```
+kubectl port-forward svc/sourcegraph-frontend 3080:30080
+```
 
-1. Open http://localhost:3080 in your browser and you will see a setup page.
+9) Open http://localhost:3080 in your browser and you will see a setup page.
 
-1. 🎉 Congrats, you have Sourcegraph up and running! Now [configure your deployment](configure.md).
+10) 🎉 Congrats, you have Sourcegraph up and running! Now [configure your deployment](configure.md).
 
 ### Configuration
 
@@ -100,15 +100,15 @@ manifests that cannot be installed otherwise.
 
 - Manifests deployed by cluster-admin
 
-    ```bash
-    ./kubectl-apply-all.sh -l sourcegraph-resource-requires=cluster-admin
-    ```
+```bash
+./kubectl-apply-all.sh -l sourcegraph-resource-requires=cluster-admin
+```
 
 - Manifests deployed by non-cluster-admin
 
-    ```bash
-    ./kubectl-apply-all.sh -l sourcegraph-resource-requires=no-cluster-admin
-    ```
+```bash
+./kubectl-apply-all.sh -l sourcegraph-resource-requires=no-cluster-admin
+```
 
 We also provide an [overlay](overlays.md#non-privileged-overlay) that generates a version of the manifests that does not
 require cluster-admin privileges.

@@ -20,7 +20,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -193,6 +195,12 @@ func (r *changesetResolver) UpdatedAt() graphqlbackend.DateTime {
 }
 
 func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+	// If code host syncs are disabled, the syncer is not actively syncing
+	// changesets and the next sync time cannot be determined.
+	if conf.Get().DisableAutoCodeHostSyncs {
+		return nil, nil
+	}
+
 	nextSyncAt, err := r.computeNextSyncAt(ctx)
 	if err != nil {
 		return nil, err
@@ -379,6 +387,20 @@ func (r *changesetResolver) CheckState() *string {
 func (r *changesetResolver) Error() *string { return r.changeset.FailureMessage }
 
 func (r *changesetResolver) SyncerError() *string { return r.changeset.SyncErrorMessage }
+
+func (r *changesetResolver) ScheduleEstimateAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+	// We need to find out how deep in the queue this changeset is.
+	place, err := r.store.GetChangesetPlaceInSchedulerQueue(ctx, r.changeset.ID)
+	if err == store.ErrNoResults {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	// Now we can ask the scheduler to estimate where this item would fall in
+	// the schedule.
+	return graphqlbackend.DateTimeOrNil(config.ActiveWindow().Estimate(r.store.Clock()(), place)), nil
+}
 
 func (r *changesetResolver) CurrentSpec(ctx context.Context) (graphqlbackend.VisibleChangesetSpecResolver, error) {
 	if r.changeset.CurrentSpecID == 0 {

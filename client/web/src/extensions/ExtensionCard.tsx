@@ -259,13 +259,13 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                 {/* Visual feedback: alert when extension is disabled */}
                 {change === 'disabled' && (
                     <div className="alert alert-secondary px-2 py-1 extension-card__disabled-feedback">
-                        <span className="font-weight-semibold">{name}</span> is disabled
+                        <span className="font-weight-medium">{name}</span> is disabled
                     </div>
                 )}
                 {/* Visual feedback: alert when optimistic update fails */}
                 {optimisticFailure && (
                     <div className="alert alert-danger px-2 py-1 extension-card__disabled-feedback">
-                        <span className="font-weight-semibold">Error:</span>{' '}
+                        <span className="font-weight-medium">Error:</span>{' '}
                         {actionableErrorMessage(optimisticFailure.error)}
                     </div>
                 )}

@@ -3,11 +3,11 @@ package usagestats
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func GetSavedSearches(ctx context.Context) (*types.SavedSearches, error) {
+func GetSavedSearches(ctx context.Context, db dbutil.DB) (*types.SavedSearches, error) {
 	const q = `
 	SELECT
 	(SELECT COUNT(*) FROM saved_searches) AS totalSavedSearches,
@@ -25,7 +25,7 @@ func GetSavedSearches(ctx context.Context) (*types.SavedSearches, error) {
 		uniqueUserPageViews  int
 		orgSavedSearches     int
 	)
-	if err := dbconn.Global.QueryRowContext(ctx, q).Scan(
+	if err := db.QueryRowContext(ctx, q).Scan(
 		&totalSavedSearches,
 		&uniqueUsers,
 		&notificationsSent,

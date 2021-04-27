@@ -1044,6 +1044,34 @@ describe('getMonacoTokens()', () => {
         `)
     })
 
+    test('do not decorate regex syntax when filter value is quoted', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:"^do-not-attempt$" file:\'.*\'')), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 23,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 24,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 29,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
+
     test('decorate repo revision syntax, path with wildcard and negation', () => {
         expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:foo@*refs/heads/*:*!refs/heads/release*')), true))
             .toMatchInlineSnapshot(`
@@ -1283,7 +1311,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('highlight recognized predicate with multiple fields', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:contains(file:README.md content:fix)')), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:contains(file:README.md content:^fix$)')), true))
             .toMatchInlineSnapshot(`
             [
               {
@@ -1324,10 +1352,18 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 37,
+                "scopes": "metaRegexpAssertion"
+              },
+              {
+                "startIndex": 38,
                 "scopes": "identifier"
               },
               {
-                "startIndex": 40,
+                "startIndex": 41,
+                "scopes": "metaRegexpAssertion"
+              },
+              {
+                "startIndex": 42,
                 "scopes": "metaPredicateParenthesis"
               }
             ]

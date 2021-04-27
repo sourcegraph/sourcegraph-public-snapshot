@@ -79,7 +79,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
 		var calledReposListNamesAll, calledReposListFoo bool
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]*types.RepoName, error) {
+		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
 
 			// Validate that the following options are invariant
 			// when calling the DB through Repos.List, no matter how
@@ -89,11 +89,11 @@ func TestSearchSuggestions(t *testing.T) {
 			if reflect.DeepEqual(op.IncludePatterns, []string{"foo"}) {
 				// when treating term as repo: field
 				calledReposListFoo = true
-				return []*types.RepoName{{Name: "foo-repo"}}, nil
+				return []types.RepoName{{Name: "foo-repo"}}, nil
 			} else {
 				// when treating term as text query
 				calledReposListNamesAll = true
-				return []*types.RepoName{{Name: "bar-repo"}}, nil
+				return []types.RepoName{{Name: "bar-repo"}}, nil
 			}
 		}
 		database.Mocks.Repos.Count = mockCount
@@ -112,7 +112,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if want := "foo"; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
-			fm := mkFileMatch(db, &types.RepoName{Name: "repo"}, "dir/file")
+			fm := mkFileMatch(db, types.RepoName{Name: "repo"}, "dir/file")
 			rev := "rev"
 			fm.CommitID = "rev"
 			fm.InputRev = &rev
@@ -141,20 +141,20 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
 		var calledReposListRepoNamesInGroup, calledReposListFooRepo3 bool
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]*types.RepoName, error) {
+		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			wantReposInGroup := database.ReposListOptions{IncludePatterns: []string{`^foo-repo1$|^repo3$`}, LimitOffset: limitOffset}    // when treating term as repo: field
 			wantFooRepo3 := database.ReposListOptions{IncludePatterns: []string{"foo", `^foo-repo1$|^repo3$`}, LimitOffset: limitOffset} // when treating term as repo: field
 			if reflect.DeepEqual(op, wantReposInGroup) {
 				calledReposListRepoNamesInGroup = true
-				return []*types.RepoName{
+				return []types.RepoName{
 					{Name: "foo-repo1"},
 					{Name: "repo3"},
 				}, nil
 			} else if reflect.DeepEqual(op, wantFooRepo3) {
 				calledReposListFooRepo3 = true
-				return []*types.RepoName{{Name: "foo-repo1"}}, nil
+				return []types.RepoName{{Name: "foo-repo1"}}, nil
 			}
 			t.Errorf("got %+v, want %+v or %+v", op, wantReposInGroup, wantFooRepo3)
 			return nil, nil
@@ -173,7 +173,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, `"foo" or "."`)
 			}
 			mk := func(name api.RepoName, path string) *FileMatchResolver {
-				fm := mkFileMatch(db, &types.RepoName{Name: name}, path)
+				fm := mkFileMatch(db, types.RepoName{Name: name}, path)
 				fm.CommitID = "rev"
 				rev := "rev"
 				fm.InputRev = &rev
@@ -225,7 +225,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
 		calledReposListRepoNames := false
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]*types.RepoName, error) {
+		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposListRepoNames = true
@@ -236,7 +236,7 @@ func TestSearchSuggestions(t *testing.T) {
 			assertEqual(t, op.LimitOffset, limitOffset)
 			assertEqual(t, op.IncludePatterns, []string{"foo"})
 
-			return []*types.RepoName{{Name: "foo-repo"}}, nil
+			return []types.RepoName{{Name: "foo-repo"}}, nil
 		}
 		database.Mocks.Repos.Count = mockCount
 		defer func() { database.Mocks.Repos.ListRepoNames = nil }()
@@ -258,7 +258,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", repos, want)
 			}
 			return []*FileMatchResolver{
-				mkFileMatch(db, &types.RepoName{Name: "foo-repo"}, "dir/file"),
+				mkFileMatch(db, types.RepoName{Name: "foo-repo"}, "dir/file"),
 			}, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -290,7 +290,7 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, have database.ReposListOptions) ([]*types.RepoName, error) {
+		database.Mocks.Repos.ListRepoNames = func(_ context.Context, have database.ReposListOptions) ([]types.RepoName, error) {
 			want := database.ReposListOptions{
 				IncludePatterns: []string{"foo"},
 				LimitOffset: &database.LimitOffset{
@@ -300,7 +300,7 @@ func TestSearchSuggestions(t *testing.T) {
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Error(diff)
 			}
-			return []*types.RepoName{{Name: "foo-repo"}}, nil
+			return []types.RepoName{{Name: "foo-repo"}}, nil
 		}
 		database.Mocks.Repos.Count = mockCount
 		defer func() { database.Mocks.Repos.List = nil }()
@@ -346,7 +346,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
 		calledReposListRepoNames := false
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]*types.RepoName, error) {
+		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposListRepoNames = true
@@ -357,7 +357,7 @@ func TestSearchSuggestions(t *testing.T) {
 			assertEqual(t, op.LimitOffset, limitOffset)
 			assertEqual(t, op.IncludePatterns, []string{"foo"})
 
-			return []*types.RepoName{{Name: "foo-repo"}}, nil
+			return []types.RepoName{{Name: "foo-repo"}}, nil
 		}
 		database.Mocks.Repos.Count = mockCount
 		defer func() { database.Mocks.Repos.ListRepoNames = nil }()
@@ -379,7 +379,7 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Errorf("got %q, want %q", repos, want)
 			}
 			return []*FileMatchResolver{
-				mkFileMatch(db, &types.RepoName{Name: "foo-repo"}, "dir/bar-file"),
+				mkFileMatch(db, types.RepoName{Name: "foo-repo"}, "dir/bar-file"),
 			}, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -404,7 +404,7 @@ func TestSearchSuggestions(t *testing.T) {
 
 		contextUserID := int32(1)
 		calledReposListRepoNames := false
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]*types.RepoName, error) {
+		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledReposListRepoNames = true
@@ -416,7 +416,7 @@ func TestSearchSuggestions(t *testing.T) {
 			assertEqual(t, op.IncludePatterns, []string{"foo"})
 			assertEqual(t, op.UserID, contextUserID)
 
-			return []*types.RepoName{{Name: "foo-repo"}}, nil
+			return []types.RepoName{{Name: "foo-repo"}}, nil
 		}
 		database.Mocks.Repos.Count = mockCount
 		database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {

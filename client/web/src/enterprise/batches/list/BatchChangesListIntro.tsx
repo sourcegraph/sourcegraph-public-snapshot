@@ -1,4 +1,6 @@
+import WarningIcon from 'mdi-react/WarningIcon'
 import React from 'react'
+import { Link } from 'react-router-dom'
 
 import { SourcegraphIcon } from '../../../auth/icons'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
@@ -40,18 +42,46 @@ export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntr
 const BatchChangesChangelogAlert: React.FunctionComponent = () => (
     <DismissibleAlert
         className="batch-changes-list-intro__alert"
-        partialStorageKey="batch-changes-list-intro-changelog-3.26"
+        partialStorageKey="batch-changes-list-intro-changelog-3.27"
     >
         <div className="batch-changes-list-intro__card card h-100 p-2">
             <div className="card-body">
-                <h4>New Batch Changes features in version 3.26</h4>
+                <h4>New Batch Changes features in version 3.27</h4>
                 <ul className="text-muted mb-0 pl-3">
-                    <li>Batch Changes now supports SSH cloned repos. Users can configure SSH access in settings.</li>
+                    <li>
+                        <WarningIcon className="icon-inline text-warning" /> <strong>Deprecation:</strong> Starting with
+                        Sourcegraph 3.29, we will stop using code host connection tokens for creating changesets. If a
+                        site-admin on your instance relied on the global configuration, please ask them to go add global
+                        credentials for Batch Changes in the <Link to="/site-admin/batch-changes">admin UI</Link> for
+                        uninterrupted Batch Changes usage.
+                    </li>
                 </ul>
                 <ul className="text-muted mb-0 pl-3">
                     <li>
-                        Burndown charts have been improved: changeset progress is now shown with greater resolution
-                        across the entire lifespan of the batch change.
+                        Site admins can now configure a global service account to be used when creating and updating
+                        changesets on code hosts and the user has no credential configured.
+                    </li>
+                </ul>
+                <ul className="text-muted mb-0 pl-3">
+                    <li>
+                        The site configuration now supports defining batch change rollout windows, which can be used to
+                        slow or disable pushing changesets at particular times of day or days of the week.
+                    </li>
+                </ul>
+                <ul className="text-muted mb-0 pl-3">
+                    <li>Changesets will now be archived by default when not part of a batch change anymore.</li>
+                </ul>
+                <ul className="text-muted mb-0 pl-3">
+                    <li>
+                        Ignore repositories in batch changes with{' '}
+                        <a
+                            href="https://docs.sourcegraph.com/batch_changes/how-tos/opting_out_of_batch_changes"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            <span className="text-monospace">.batchignore</span>
+                        </a>{' '}
+                        files.
                     </li>
                 </ul>
             </div>

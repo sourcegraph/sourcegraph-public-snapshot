@@ -1918,7 +1918,9 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	}
 }
 
-func testStoreEnqueueNextScheduledChangeset(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+// testStoreChangesetScheduling provides tests for schedule-related methods on
+// the Store.
+func testStoreChangesetScheduling(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	// Like testStoreListChangesetsTextSearch(), this is similar to the setup
 	// in testStoreChangesets(), but we need a more fine grained set of
 	// changesets to handle the different scenarios.
@@ -1968,8 +1970,26 @@ func testStoreEnqueueNextScheduledChangeset(t *testing.T, ctx context.Context, s
 	var (
 		second = createChangeset("after", time.Now().Add(1*time.Minute), btypes.ReconcilerStateScheduled)
 		first  = createChangeset("next", time.Now(), btypes.ReconcilerStateScheduled)
-		_      = createChangeset("queued", time.Now().Add(1*time.Minute), btypes.ReconcilerStateQueued)
+		queued = createChangeset("queued", time.Now().Add(1*time.Minute), btypes.ReconcilerStateQueued)
 	)
+
+	// first should be the first in line, and second the second in line.
+	if have, err := s.GetChangesetPlaceInSchedulerQueue(ctx, first.ID); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	} else if want := 0; have != want {
+		t.Errorf("unexpected place: have=%d want=%d", have, want)
+	}
+
+	if have, err := s.GetChangesetPlaceInSchedulerQueue(ctx, second.ID); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	} else if want := 1; have != want {
+		t.Errorf("unexpected place: have=%d want=%d", have, want)
+	}
+
+	// queued should return an error.
+	if _, err := s.GetChangesetPlaceInSchedulerQueue(ctx, queued.ID); err != ErrNoResults {
+		t.Errorf("unexpected error: %v", err)
+	}
 
 	// By definition, the first changeset should be next, since it has the
 	// earliest update time and is in the right state.
@@ -1986,6 +2006,22 @@ func testStoreEnqueueNextScheduledChangeset(t *testing.T, ctx context.Context, s
 	// Let's check that first's state was updated.
 	if want := btypes.ReconcilerStateQueued; have.ReconcilerState != want {
 		t.Errorf("unexpected reconciler state: have=%v want=%v", have.ReconcilerState, want)
+	}
+
+	// Now second should be the first in line. (Confused yet?)
+	if have, err := s.GetChangesetPlaceInSchedulerQueue(ctx, second.ID); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	} else if want := 0; have != want {
+		t.Errorf("unexpected place: have=%d want=%d", have, want)
+	}
+
+	// Both queued and first should return errors, since they are not scheduled.
+	if _, err := s.GetChangesetPlaceInSchedulerQueue(ctx, first.ID); err != ErrNoResults {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	if _, err := s.GetChangesetPlaceInSchedulerQueue(ctx, queued.ID); err != ErrNoResults {
+		t.Errorf("unexpected error: %v", err)
 	}
 
 	// Given the updated state, second should be the next scheduled changeset.
@@ -2008,5 +2044,13 @@ func testStoreEnqueueNextScheduledChangeset(t *testing.T, ctx context.Context, s
 	// enqueue another.
 	if _, err = s.EnqueueNextScheduledChangeset(ctx); err != ErrNoResults {
 		t.Errorf("unexpected error: have=%v want=%v", err, ErrNoResults)
+	}
+
+	// None of our changesets should have a place in the scheduler queue at this
+	// point.
+	for _, cs := range []*btypes.Changeset{first, second, queued} {
+		if _, err := s.GetChangesetPlaceInSchedulerQueue(ctx, cs.ID); err != ErrNoResults {
+			t.Errorf("unexpected error: %v", err)
+		}
 	}
 }

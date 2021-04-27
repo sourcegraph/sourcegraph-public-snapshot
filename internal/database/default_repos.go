@@ -21,20 +21,20 @@ import (
 const defaultReposMaxAge = time.Minute
 
 type cachedRepos struct {
-	repos   []*types.RepoName
+	repos   []types.RepoName
 	fetched time.Time
 }
 
 // Repos returns the current cached repos and boolean value indicating
 // whether an update is required
-func (c *cachedRepos) Repos() ([]*types.RepoName, bool) {
+func (c *cachedRepos) Repos() ([]types.RepoName, bool) {
 	if c == nil {
 		return nil, true
 	}
 	if c.repos == nil {
 		return nil, true
 	}
-	return append([]*types.RepoName{}, c.repos...), time.Since(c.fetched) > defaultReposMaxAge
+	return append([]types.RepoName{}, c.repos...), time.Since(c.fetched) > defaultReposMaxAge
 }
 
 type DefaultRepoStore struct {
@@ -76,7 +76,7 @@ func (s *DefaultRepoStore) ensureStore() {
 	})
 }
 
-func (s *DefaultRepoStore) List(ctx context.Context) (results []*types.RepoName, err error) {
+func (s *DefaultRepoStore) List(ctx context.Context) (results []types.RepoName, err error) {
 	s.ensureStore()
 
 	cached, _ := s.cache.Load().(*cachedRepos)
@@ -103,7 +103,7 @@ func (s *DefaultRepoStore) List(ctx context.Context) (results []*types.RepoName,
 	return repos, nil
 }
 
-func (s *DefaultRepoStore) refreshCache(ctx context.Context) ([]*types.RepoName, error) {
+func (s *DefaultRepoStore) refreshCache(ctx context.Context) ([]types.RepoName, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -121,7 +121,7 @@ func (s *DefaultRepoStore) refreshCache(ctx context.Context) ([]*types.RepoName,
 
 	s.cache.Store(&cachedRepos{
 		// Copy since repos will be mutated by the caller
-		repos:   append([]*types.RepoName{}, repos...),
+		repos:   append([]types.RepoName{}, repos...),
 		fetched: time.Now(),
 	})
 

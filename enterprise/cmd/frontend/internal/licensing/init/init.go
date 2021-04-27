@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
-	enterpriseGraphQL "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
@@ -44,8 +43,6 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 	// Make the Site.productSubscription.productNameWithBrand GraphQL field (and other places) use the
 	// proper product name.
 	graphqlbackend.GetProductNameWithBrand = licensing.ProductNameWithBrand
-
-	enterpriseGraphQL.InitDotcom(db)
 
 	globals.WatchBranding(func() error {
 		if !licensing.EnforceTiers {
@@ -111,7 +108,9 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 		})
 	})
 	if envvar.SourcegraphDotComMode() {
-		goroutine.Go(productsubscription.StartCheckForUpcomingLicenseExpirations)
+		goroutine.Go(func() {
+			productsubscription.StartCheckForUpcomingLicenseExpirations(db)
+		})
 	}
 
 	return nil

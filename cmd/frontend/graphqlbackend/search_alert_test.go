@@ -233,7 +233,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 		j := 0
 		for i := range repoRevs {
 			repoRevs[i] = &search.RepositoryRevisions{
-				Repo: &types.RepoName{
+				Repo: types.RepoName{
 					ID:   api.RepoID(i),
 					Name: api.RepoName(chars[j] + "/repoName" + strconv.Itoa(i)),
 				},

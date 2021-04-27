@@ -7,17 +7,24 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 ## Steps
 
-These steps assume that you followed the [forking instructions in docs/configure.md](configure.md#fork-this-repository)
+**These steps assume that you have created a `release` branch following the [forking instructions in docs/configure.md](configure.md#fork-this-repository)**
+
+1. Merge the corresponding `upstream release` tag into your `release` branch _(created from the [forking instructions](#fork-this-repository) step)_. 
+
+   ```bash
+   # to add the upstream remote.
+   git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph
+   ```
 
 1. Merge the new version of Sourcegraph into your release branch.
 
-   ```
+   ```bash
    cd $DEPLOY_SOURCEGRAPH_FORK
    git fetch
+   # to merge the upstream release tag into your release branch.
    git checkout release
-
    # Choose which version you want to deploy from https://github.com/sourcegraph/deploy-sourcegraph/releases
-   git merge $VERSION
+   git merge $NEW_VERSION
    ```
 
 1. Deploy the updated version of Sourcegraph to your Kubernetes cluster:
@@ -29,7 +36,7 @@ These steps assume that you followed the [forking instructions in docs/configure
 1. Monitor the status of the deployment.
 
    ```
-   watch kubectl get pods -o wide
+   kubectl get pods -o wide --watch
    ```
 
 ## Rollback

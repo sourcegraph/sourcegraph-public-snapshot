@@ -69,64 +69,36 @@ func canonicalizeDocumentsInDefinitionReferences(state *State, definitionReferen
 	}
 }
 
-// canonicalizeReferenceResults determines which reference results are linked together. For each
-// set of linked reference results, we choose one reference result to be the canonical representative
-// and merge the data into the unique canonical result set. All non-canonical results are removed from
-// the correlation state and references to non-canonical results are updated to refer to the canonical
-// choice.
+// canonicalizeReferenceResults determines which reference results refer to another reference result.
+// We denormalize the data so that all ranges reachable from set A are also reachable from set B when
+// B is linked to A via an item edge.
 func canonicalizeReferenceResults(state *State) {
-	// Maintain a map from a reference result to its canonical identifier
-	canonicalIDs := map[int]int{}
+	visited := map[int]struct{}{}
 
-	state.LinkedReferenceResults.Each(func(referenceResultID int, v *datastructures.IDSet) {
-		if _, ok := canonicalIDs[referenceResultID]; ok {
-			// Already processed
+	var visit func(state *State, id int)
+	visit = func(state *State, id int) {
+		if _, ok := visited[id]; ok {
+			return
+		}
+		visited[id] = struct{}{}
+
+		nextIDs, ok := state.LinkedReferenceResults[id]
+		if !ok {
 			return
 		}
 
-		// Find all reachable items in this set
-		linkedIDs := state.LinkedReferenceResults.ExtractSet(referenceResultID)
-		canonicalID, _ := linkedIDs.Min()
-		canonicalReferenceResult := state.ReferenceData[canonicalID]
+		for _, nextID := range nextIDs {
+			visit(state, nextID)
 
-		linkedIDs.Each(func(linkedID int) {
-			// Mark canonical choice
-			canonicalIDs[linkedID] = canonicalID
-
-			if linkedID != canonicalID {
-				state.ReferenceData[linkedID].Each(func(documentID int, rangeIDs *datastructures.IDSet) {
-					// Move range data into the canonical document
-					canonicalReferenceResult.SetUnion(documentID, rangeIDs)
-				})
-			}
-		})
-	})
-
-	for id, item := range state.RangeData {
-		if canonicalID, ok := canonicalIDs[item.ReferenceResultID]; ok {
-			// Update reference result identifier to canonical choice
-			state.RangeData[id] = item.SetReferenceResultID(canonicalID)
+			// Copy data from the referenced to the referencing set
+			state.ReferenceData[nextID].Each(func(documentID int, rangeIDs *datastructures.IDSet) {
+				state.ReferenceData[id].SetUnion(documentID, rangeIDs)
+			})
 		}
 	}
 
-	for id, item := range state.ResultSetData {
-		if canonicalID, ok := canonicalIDs[item.ReferenceResultID]; ok {
-			// Update reference result identifier to canonical choice
-			state.ResultSetData[id] = item.SetReferenceResultID(canonicalID)
-		}
-	}
-
-	// Invert the map to get a set of canonical identifiers
-	inverseMap := datastructures.NewIDSet()
-	for _, canonicalID := range canonicalIDs {
-		inverseMap.Add(canonicalID)
-	}
-
-	for referenceResultID := range canonicalIDs {
-		if !inverseMap.Contains(referenceResultID) {
-			// Remove non-canonical reference result
-			delete(state.ReferenceData, referenceResultID)
-		}
+	for id := range state.ReferenceData {
+		visit(state, id)
 	}
 }
 
