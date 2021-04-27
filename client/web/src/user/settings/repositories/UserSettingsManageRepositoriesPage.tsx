@@ -746,7 +746,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 connected code hosts
                             </Link>
                         </p>
-                        {hasCodeHosts && (
+                        {!ALLOW_PRIVATE_CODE && hasCodeHosts && (
                             <div className="alert alert-primary">
                                 Coming soon: search private repositories with Sourcegraph Cloud.{' '}
                                 <Link
