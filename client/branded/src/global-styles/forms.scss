@@ -13,6 +13,9 @@
     --input-group-addon-border-color: var(--color-bg-4);
     --input-focus-border-color: var(--primary);
     --input-focus-box-shadow: 0 0 0 2px #{rgba($primary, 0.25)};
+
+    // Checkbox margins
+    --form-check-input-margin-y: 0.2rem;
 }
 
 .theme-light {
@@ -26,6 +29,9 @@
     --input-group-addon-border-color: var(--color-bg-4);
     --input-focus-border-color: var(--primary);
     --input-focus-box-shadow: 0 0 0 2px #{rgba($primary, 0.25)};
+
+    // Checkbox margins
+    --form-check-input-margin-y: 0.2rem;
 }
 
 .theme-light.theme-redesign {
@@ -39,6 +45,9 @@
     --input-group-addon-border-color: #{$redesign-gray-03};
     --input-focus-border-color: var(--border-active-color);
     --input-focus-box-shadow: var(--focus-box-shadow);
+
+    // Checkbox margins
+    --form-check-input-margin-y: 0.3rem;
 }
 
 .theme-dark.theme-redesign {
@@ -52,6 +61,9 @@
     --input-group-addon-border-color: #{$redesign-gray-08};
     --input-focus-border-color: var(--border-active-color);
     --input-focus-box-shadow: var(--focus-box-shadow);
+
+    // Checkbox margins
+    --form-check-input-margin-y: 0.3rem;
 }
 
 // Prevent Firefox's default red outline for inputs

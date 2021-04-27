@@ -51,7 +51,7 @@ $tooltip-bg: var(--tooltip-bg);
 
 // Forms
 
-$form-check-input-margin-y: 0.3em;
+$form-check-input-margin-y: var(--form-check-input-margin-y);
 $form-feedback-font-size: 0.75rem;
 $input-btn-focus-width: 2px;
 // The default focus ring for buttons is very hard to see, raise opacity.
