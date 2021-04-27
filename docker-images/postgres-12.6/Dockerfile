@@ -1,12 +1,12 @@
 FROM postgres:12.6@sha256:b42afb080d93c01961e2026e5dd3919d532b14210b4cff147d80b0039b231392
-RUN apt-get update
-
-RUN apt-get install  -y libnss-sss
 
 # Install our previous version of Postgres so we can perform a data upgrade on
 # container startup.
 RUN sed -i 's/$/ 11/' /etc/apt/sources.list.d/pgdg.list
+
+# Libnss-sss is required depedency, see comment on this line in infrastructure
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    libnss-sss=1.16.3-3.2 \
     postgresql-11=11.11-0+deb10u1 \
     postgresql-contrib=11+200+deb10u4 \
     && rm -rf /var/lib/apt/lists/*
