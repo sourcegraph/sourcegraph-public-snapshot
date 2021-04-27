@@ -295,8 +295,19 @@ func (h *hook) Before(ctx context.Context, query string, args ...interface{}) (c
 
 	if !BulkInsertion(ctx) {
 		tr.LogFields(otlog.Lazy(func(fv otlog.Encoder) {
+			emittedChars := 0
 			for i, arg := range args {
-				fv.EmitString(strconv.Itoa(i+1), fmt.Sprintf("%v", arg))
+				k := strconv.Itoa(i + 1)
+				v := fmt.Sprintf("%v", arg)
+				emittedChars += len(k) + len(v)
+				// Limit the amount of characters reported in a span because
+				// a Jaeger span may not exceed 65k. Usually, the arguments are
+				// not super helpful if it's so many of them anyways.
+				if emittedChars > 32768 {
+					fv.EmitString("more omitted", strconv.Itoa(len(args)-i))
+					break
+				}
+				fv.EmitString(k, v)
 			}
 		}))
 	} else {

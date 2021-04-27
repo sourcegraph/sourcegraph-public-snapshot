@@ -36,7 +36,7 @@ func TestSearch(t *testing.T) {
 				"sgtest/go-diff",
 				"sgtest/appdash",
 				"sgtest/sourcegraph-typescript",
-				"sgtest/private",
+				"sgtest/private",  // Private
 				"sgtest/mux",      // Fork
 				"sgtest/archived", // Archived
 			},
@@ -59,7 +59,7 @@ func TestSearch(t *testing.T) {
 		"github.com/sgtest/go-diff",
 		"github.com/sgtest/appdash",
 		"github.com/sgtest/sourcegraph-typescript",
-		"github.com/sgtest/private",
+		"github.com/sgtest/private",  // Private
 		"github.com/sgtest/mux",      // Fork
 		"github.com/sgtest/archived", // Archived
 	)
