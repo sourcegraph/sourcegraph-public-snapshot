@@ -46,6 +46,12 @@ const filters: FilteredConnectionFilter[] = [
                 args: { state: LSIFIndexState.ERRORED },
             },
             {
+                label: 'Processing',
+                value: 'processing',
+                tooltip: 'Show processing indexes only',
+                args: { state: LSIFIndexState.PROCESSING },
+            },
+            {
                 label: 'Queued',
                 value: 'queued',
                 tooltip: 'Show queued indexes only',
