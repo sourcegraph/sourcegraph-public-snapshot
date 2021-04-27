@@ -31,6 +31,52 @@ between major versions.
 
 > NOTE: ⚠️ Upgrading the PostgreSQL database requires stopping your Sourcegraph deployment which will result in **downtime**.
 
+## Upgrading Kubernetes PostgreSQL instances
+
+The upgrade process is different
+for [Sourcegraph cluster deployments](https://github.com/sourcegraph/deploy-sourcegraph)
+because [by default](https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/postgres-12.6/build.sh#L10), it
+uses `sourcegraph/postgres-12.6:21-03-26_5d7084279` which can
+be [customized with environment variables](https://github.com/sourcegraph/deploy-sourcegraph/blob/7edcadb/docs/configure.md#configure-custom-postgresql)
+.
+
+If you have changed `PGUSER`, `PGDATABASE` or `PGDATA`, then the `PG*OLD` and `PG*NEW` environment variables are
+required. Below are the defaults and documentation on what each variable is used for:
+
+- `POSTGRES_PASSWORD=''`: Password of `PGUSERNEW` if it is newly created (i.e when `PGUSERNEW` didn't exist in the old
+  database).
+- `PGUSEROLD=sg`: A user that exists in the old database that can be used to authenticate intermediate upgrade
+  operations.
+- `PGUSERNEW=sg`: A user that must exist in the new database after the upgrade is done (i.e. it'll be created if it
+  didn't exist already).
+- `PGDATABASEOLD=sg`: A database that exists in the old database that can be used to authenticate intermediate upgrade
+  operations. (e.g `psql -d`)
+- `PGDATABASENEW=sg`: A database that must exist in the new database after the upgrade is done (i.e. it'll be created if
+  it didn't exist already).
+- `PGDATAOLD=/data/pgdata-11`: The data directory containing the files of the old PostgreSQL database to be upgraded.
+- `PGDATANEW=/data/pgdata-12`: The data directory containing the upgraded PostgreSQL data files, used by the new version
+  of PostgreSQL.
+
+Additionally, the upgrade process assumes it can write to the parent directory of `PGDATAOLD`.
+
+### (For Sourcegraph version: 3.27) Requirements for upgrading from Postgres 11 to 12 for Kubernetes
+
+The migration to Postgres 12 using the Sourcegraph provided Postgres images is largely automated. However, you should
+take some steps before the migration. For the `3.27` release, these apply to the `pgsql` & `codeintel-db` deployments.
+
+1. Inform your users prior to starting the upgrade that Sourcegraph will take downtime. This downtime scales with the
+   size and resources allocated to the Postgres database instances.
+
+1. Take snapshots of all Sourcegraph Postgres databases. You can find the backing disk in your cloud by describing the
+   relevant `PersistentVolumes`.
+
+1. Ensure that the size of the disks backing the databases are under 50% utilization. (You will need *up-to* 2x the size
+   of your current database to do the migration). In most cases Kubernetes can expand the size of the volume for you,
+   see the relevant kubernetes
+   docs [here](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#expanding-persistent-volumes-claims).
+
+   You can use `kubctl exec -it $DB_POD_NAME -- df -h`. By default, the database will be mounted under `/data/`.
+
 ## Upgrading single node Docker deployments
 
 > NOTE: If you running PostgreSQL externally, see [Upgrading external PostgreSQL instances](postgres.md#upgrading-external-postgresql-instances)
@@ -81,21 +127,7 @@ docker run \
 
 **4.** Start the `sourcegraph/server` container.
 
-## Upgrading Kubernetes PostgreSQL instances
 
-The upgrade process is different for [Sourcegraph cluster deployments](https://github.com/sourcegraph/deploy-sourcegraph) because [by default](https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/postgres-12.6/build.sh#L10), it uses `sourcegraph/postgres-12.6:21-03-26_5d7084279` which can be [customized with environment variables](https://github.com/sourcegraph/deploy-sourcegraph/blob/7edcadb/docs/configure.md#configure-custom-postgresql).
-
-If you have changed `PGUSER`, `PGDATABASE` or `PGDATA`, then the `PG*OLD` and `PG*NEW` environment variables are required. Below are the defaults and documentation on what each variable is used for:
-
-- `POSTGRES_PASSWORD=''`: Password of `PGUSERNEW` if it is newly created (i.e when `PGUSERNEW` didn't exist in the old database).
-- `PGUSEROLD=sg`: A user that exists in the old database that can be used to authenticate intermediate upgrade operations.
-- `PGUSERNEW=sg`: A user that must exist in the new database after the upgrade is done (i.e. it'll be created if it didn't exist already).
-- `PGDATABASEOLD=sg`: A database that exists in the old database that can be used to authenticate intermediate upgrade operations. (e.g `psql -d`)
-- `PGDATABASENEW=sg`: A database that must exist in the new database after the upgrade is done (i.e. it'll be created if it didn't exist already).
-- `PGDATAOLD=/data/pgdata-11`: The data directory containing the files of the old PostgreSQL database to be upgraded.
-- `PGDATANEW=/data/pgdata-12`: The data directory containing the upgraded PostgreSQL data files, used by the new version of PostgreSQL.
-
-Additionally the upgrade process assumes it can write to the parent directory of `PGDATAOLD`.
 
 ## Upgrading external PostgreSQL instances
 
