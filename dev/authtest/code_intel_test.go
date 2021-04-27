@@ -3,6 +3,7 @@ package authtest
 import (
 	"bytes"
 	"io"
+	"net/http"
 	"testing"
 	"time"
 
@@ -71,6 +72,18 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		})
 		if err != nil {
 			t.Fatal(err, "lastBody:", lastBody)
+		}
+	})
+
+	t.Run("executor endpoints", func(t *testing.T) {
+		resp, err := userClient.Get(*baseURL + "/.executors/")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Fatalf(`Want status code %d error but got %d`, http.StatusUnauthorized, resp.StatusCode)
 		}
 	})
 }
