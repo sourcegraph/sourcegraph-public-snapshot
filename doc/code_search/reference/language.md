@@ -389,7 +389,7 @@ ComplexDiagram(
 </script>
 
 When searching commit diffs, select only diffs where the pattern matches on
-`added` (respsectively, `removed`) lines. For example, search for recent commits
+`added` (respectively, `removed`) lines. For example, search for recent commits
 that removed `TODO`s in your code.
 
 <small>- Note: if _any_ line exists that satisfies the condition, the entire diff is included in the result set.</small><br>
@@ -450,7 +450,7 @@ ComplexDiagram(
 </script>
 
 Set to `yes` if repository forks should be included or `only` if only forks
-should be searched. Respository forks are excluded by default.
+should be searched. Repository forks are excluded by default.
 
 **Example:** `fork:yes repo:sourcegraph` [↗](https://sourcegraph.com/search?q=fork:yes+repo:sourcegraph&patternType=regexp)
 
