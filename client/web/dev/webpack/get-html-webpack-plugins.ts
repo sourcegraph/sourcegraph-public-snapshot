@@ -6,7 +6,7 @@ import { Plugin } from 'webpack'
 
 import { createJsContext, environmentConfig, STATIC_ASSETS_PATH } from '../utils'
 
-const { SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_API_URL } = environmentConfig
+const { SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_API_URL, NODE_ENV } = environmentConfig
 
 export const getHTMLWebpackPlugins = (): Plugin[] => {
     const jsContext = createJsContext({ sourcegraphBaseUrl: `http://localhost:${SOURCEGRAPH_HTTPS_PORT}` })
@@ -21,7 +21,10 @@ export const getHTMLWebpackPlugins = (): Plugin[] => {
             <body>
                 <div id="root"></div>
                 <script>
-                    window.isCreatedByWebpack = true
+                    // Optional value useful for checking if index.html is created by HtmlWebpackPlugin with the right NODE_ENV.
+                    window.webpackBuildEnvironment = '${NODE_ENV}'
+
+                    // Required mock of the JS context object.
                     window.context = ${JSON.stringify(jsContext)}
 
                     // On https://k8s.sgdev.org unauthorized user receives 401 error and sees error page.
@@ -43,11 +46,12 @@ export const getHTMLWebpackPlugins = (): Plugin[] => {
       `
 
     const htmlWebpackPlugin = new HtmlWebpackPlugin({
-        // `TemplateParameter` can be mutated that's why we need to tell TS that we didn't touch it.
+        // `TemplateParameter` can be mutated. We need to tell TS that we didn't touch it.
         templateContent: templateContent as Options['templateContent'],
         filename: path.resolve(STATIC_ASSETS_PATH, 'index.html'),
         alwaysWriteToDisk: true,
     })
 
+    // Write index.html to the disk so it can be served by dev/prod servers.
     return [htmlWebpackPlugin, new HtmlWebpackHarddiskPlugin()]
 }

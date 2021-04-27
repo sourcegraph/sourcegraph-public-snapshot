@@ -10,14 +10,19 @@ interface GetAPIProxySettingsOptions {
 
 export const getAPIProxySettings = ({ csrfContextValue, apiURL }: GetAPIProxySettingsOptions): Options => ({
     target: apiURL,
+    // Do not SSL certificate.
     secure: false,
+    // Change the origin of the host header to the target URL.
     changeOrigin: true,
+    // Attach `x-csrf-token` header to every request to avoid "CSRF token is invalid" API error.
     headers: {
         'x-csrf-token': csrfContextValue,
     },
+    // Rewrite domain of `set-cookie` headers for all cookies received.
     cookieDomainRewrite: '',
     onProxyRes: proxyResponse => {
         if (proxyResponse.headers['set-cookie']) {
+            // Remove `Secure` and `SameSite` from `set-cookie` headers.
             const cookies = proxyResponse.headers['set-cookie'].map(cookie =>
                 cookie.replace(/; secure/gi, '').replace(/; samesite=.+/gi, '')
             )

@@ -1,5 +1,7 @@
 // @ts-check
 
+// Pick up configuration from `.env` file.
+require('dotenv/config')
 const path = require('path')
 
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')

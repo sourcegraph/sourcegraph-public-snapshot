@@ -1,9 +1,9 @@
 import fetch from 'node-fetch'
 
-const CSRF_CONTEXT_KEY = 'csrfToken'
+export const CSRF_CONTEXT_KEY = 'csrfToken'
 const CSRF_CONTEXT_VALUE_REGEXP = new RegExp(`${CSRF_CONTEXT_KEY}":"(.*?)"`)
 
-const CSRF_COOKIE_NAME = 'sg_csrf_token'
+export const CSRF_COOKIE_NAME = 'sg_csrf_token'
 const CSRF_COOKIE_VALUE_REGEXP = new RegExp(`${CSRF_COOKIE_NAME}=(.*?);`)
 
 interface CSFRTokenAndCookie {
@@ -11,6 +11,14 @@ interface CSFRTokenAndCookie {
     csrfCookieValue: string
 }
 
+/**
+ *
+ * Fetch `${proxyUrl}/sign-in` and extract two values from the response:
+ *
+ * 1. `set-cookie` value for `CSRF_COOKIE_NAME`.
+ * 2. value from JS context under `CSRF_CONTEXT_KEY` key.
+ *
+ */
 export async function getCSRFTokenAndCookie(proxyUrl: string): Promise<CSFRTokenAndCookie> {
     const response = await fetch(`${proxyUrl}/sign-in`)
 

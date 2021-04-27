@@ -1,5 +1,7 @@
 import 'dotenv/config'
 
+import chalk from 'chalk'
+import signale from 'signale'
 import createWebpackCompiler, { Configuration } from 'webpack'
 import WebpackDevServer from 'webpack-dev-server'
 
@@ -12,16 +14,18 @@ import {
     STATIC_ASSETS_PATH,
     STATIC_ASSETS_URL,
     WEBPACK_STATS_OPTIONS,
+    WEB_SERVER_URL,
 } from '../utils'
 
-// TODO: migrate webpack.config.js to TS to fix this.
+// TODO: migrate webpack.config.js to TS to use `import` in this file.
 // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
 const webpackConfig = require('../../webpack.config') as Configuration
 const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTPS_PORT, IS_HOT_RELOAD_ENABLED } = environmentConfig
 
-export async function webpackDevelopmentServer(): Promise<void> {
+export async function startDevelopmentServer(): Promise<void> {
+    // Get CSRF token value from the `SOURCEGRAPH_API_URL`.
     const { csrfContextValue, csrfCookieValue } = await getCSRFTokenAndCookie(SOURCEGRAPH_API_URL)
-    console.log('Starting development server...', { ...environmentConfig, csrfContextValue, csrfCookieValue })
+    signale.await('Development server', { ...environmentConfig, csrfContextValue, csrfCookieValue })
 
     const options: WebpackDevServer.Configuration = {
         hot: IS_HOT_RELOAD_ENABLED,
@@ -53,7 +57,9 @@ export async function webpackDevelopmentServer(): Promise<void> {
 
     const server = new WebpackDevServer(createWebpackCompiler(webpackConfig), options)
 
-    server.listen(SOURCEGRAPH_HTTPS_PORT, '0.0.0.0')
+    server.listen(SOURCEGRAPH_HTTPS_PORT, '0.0.0.0', () => {
+        signale.success(`Development server is ready at ${chalk.blue.bold(WEB_SERVER_URL)}`)
+    })
 }
 
-webpackDevelopmentServer().catch(error => console.error(error))
+startDevelopmentServer().catch(error => signale.error(error))

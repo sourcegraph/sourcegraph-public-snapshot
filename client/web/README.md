@@ -1,0 +1,30 @@
+# Web Application
+
+## Local development
+
+### Prerequisites
+
+1. Duplicate `client/web/.env.example` as `client/web/.env`.
+2. Make sure that `WEBPACK_SERVE_INDEX` is set to `true`.
+3. Make sure that `SOURCEGRAPH_API_URL` points to the accessible API url.
+
+### Development server
+
+```sh
+yarn serve:dev
+```
+
+### Production server
+
+```sh
+ENTERPRISE=1 NODE_ENV=production DISABLE_TYPECHECKING=true yarn run build
+yarn serve:prod
+```
+
+Web app should be available at `http://${SOURCEGRAPH_HTTPS_DOMAIN}:${SOURCEGRAPH_HTTPS_PORT}`.
+Build artifacts will be served from `<rootRepoPath>/ui/assets`.
+
+### API proxy
+
+Both servers proxy API requests to `SOURCEGRAPH_API_URL` provided in `.env` file. To avoid `CSRF token is invalid` error
+CSRF token is retrieved from the `SOURCEGRAPH_API_URL` before the server starts. Then this values is used for every subsequent request to the API.

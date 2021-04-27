@@ -1,6 +1,8 @@
 // @ts-check
 require('ts-node').register({
   transpileOnly: true,
+  // Use config with "module": "commonjs" because not all modules involved in tasks are esnext modules.
+  project: './dev/tsconfig.json',
 })
 
 const log = require('fancy-log')
