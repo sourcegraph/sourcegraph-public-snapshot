@@ -32,14 +32,14 @@ import { UserRepositoriesUpdateProps } from '../../../util'
 import { AwayPrompt, ALLOW_NAVIGATION } from './AwayPrompt'
 import { CheckboxRepositoryNode } from './RepositoryNode'
 
-interface User {
+interface authenticatedUser {
     id: string
     siteAdmin: boolean
     tags: string[]
 }
 
 interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
-    user: User
+    authenticatedUser: authenticatedUser
     routingPrefix: string
 }
 
@@ -137,7 +137,7 @@ const displayAffiliateRepoProblems = (
  */
 export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> = ({
     history,
-    user,
+    authenticatedUser,
     routingPrefix,
     telemetryService,
     onUserRepositoriesUpdate,
@@ -147,9 +147,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     }, [telemetryService])
 
     // if we should tweak UI messaging and copy
-    const ALLOW_PRIVATE_CODE = user.tags.includes('AllowUserExternalServicePrivate')
+    const ALLOW_PRIVATE_CODE = authenticatedUser.tags.includes('AllowUserExternalServicePrivate')
     // if 'sync all' radio button is enabled and users can sync all repos from code hosts
-    const ALLOW_SYNC_ALL = user.tags.includes('AllowUserExternalServiceSyncAll')
+    const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
 
     // set up state hooks
     const [repoState, setRepoState] = useState(initialRepoState)
@@ -185,25 +185,25 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             queryExternalServices({
                 first: null,
                 after: null,
-                namespace: user.id,
+                namespace: authenticatedUser.id,
             })
                 .toPromise()
                 .then(({ nodes }) => nodes),
 
-        [user.id]
+        [authenticatedUser.id]
     )
 
     const fetchAffiliatedRepos = useCallback(
         async (): Promise<AffiliatedRepositoriesResult['affiliatedRepositories']['nodes']> =>
             listAffiliatedRepositories({
-                user: user.id,
+                user: authenticatedUser.id,
                 codeHost: null,
                 query: null,
             })
                 .toPromise()
                 .then(({ affiliatedRepositories: { nodes } }) => nodes),
 
-        [user.id]
+        [authenticatedUser.id]
     )
 
     const fetchServicesAndAffiliatedRepos = useCallback(async (): Promise<void> => {
@@ -350,7 +350,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     // fetch public repos for the "other public repositories" textarea
     const fetchAndSetPublicRepos = useCallback(async (): Promise<void> => {
-        const result = await queryUserPublicRepositories(user.id).toPromise()
+        const result = await queryUserPublicRepositories(authenticatedUser.id).toPromise()
 
         if (!result) {
             setPublicRepoState({ ...initialPublicRepoState, loaded: true })
@@ -363,7 +363,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
             setPublicRepoState({ repos: publicRepos.join('\n'), loaded: true, enabled: result.length > 0 })
         }
-    }, [user.id])
+    }, [authenticatedUser.id])
 
     useEffect(() => {
         fetchAndSetPublicRepos().catch(error => setOtherPublicRepoError(asError(error)))
@@ -417,7 +417,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             setFetchingRepos('loading')
 
             try {
-                await setUserPublicRepositories(user.id, publicRepos).toPromise()
+                await setUserPublicRepositories(authenticatedUser.id, publicRepos).toPromise()
             } catch (error) {
                 setOtherPublicRepoError(asError(error))
                 setFetchingRepos(undefined)
@@ -463,7 +463,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             externalServiceSubscription.current = queryExternalServices({
                 first: null,
                 after: null,
-                namespace: user.id,
+                namespace: authenticatedUser.id,
             })
                 .pipe(
                     repeatUntil(
@@ -516,7 +516,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         [
             publicRepoState.repos,
             publicRepoState.enabled,
-            user.id,
+            authenticatedUser.id,
             codeHosts.hosts,
             selectionState.radio,
             selectionState.repos,
