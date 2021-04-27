@@ -7,7 +7,7 @@ RUN apt-get install  -y libnss-sss
 # container startup.
 RUN sed -i 's/$/ 11/' /etc/apt/sources.list.d/pgdg.list
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    postgresql-11=11.10-0+deb10u1 \
+    postgresql-11=11.11-0+deb10u1 \
     postgresql-contrib=11+200+deb10u4 \
     && rm -rf /var/lib/apt/lists/*
 
