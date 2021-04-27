@@ -100,10 +100,13 @@ func NewDocumentationResult(id uint64, result Documentation) DocumentationResult
 //
 // Attached to this vertex MUST be two "documentationString" vertices:
 //
-// 1. The {type: "label"} string, a one-line label or this section of documentation.
-// 1. The {type: "detail"} string, a multi-line detailed string for this section of documentation.
+// 1. A "documentationString" vertex with `type: "label"`, which is a one-line label or this section
+//    of documentation.
+// 1. A "documentationString" vertex with `type: "detail"`, which is a multi-line detailed string
+//    for this section of documentation.
 //
-// They can be attached using a "documentationStringEdge".
+// Both are attached to the documentationResult via a "documentationString" edge. A strict client
+// should treat the entire LSIF dump as malformed/invalid if one of the two is not present.
 type Documentation struct {
 	// A human-readable URL slug identifier for this documentation. It should be unique relative to
 	// sibling Documentation.
@@ -130,8 +133,18 @@ const (
 	DocumentationDeprecated DocumentationTag = "deprecated"
 )
 
-// A "documentationStringEdge" is an edge which connects a "documentationResult" vertex to its
-// label or detail strings, which are "documentationString" vertices.
+// A "documentationString" edge connects a "documentationResult" vertex to its label or detail
+// strings, which are "documentationString" vertices. The overall structure looks like the
+// following roughly:
+//
+// 	{id: 53, type:"vertex", label:"documentationResult", result:{slug:"httpserver", ...}}
+// 	{id: 54, type:"vertex", label:"documentationString", result:{kind:"plaintext", "value": "A single-line label for an HTTPServer instance"}}
+// 	{id: 55, type:"vertex", label:"documentationString", result:{kind:"plaintext", "value": "A multi-line\n detailed\n explanation of an HTTPServer instance, what it does, etc."}}
+// 	{id: 54, type:"edge", label:"documentationString", inV: 53, outV: 54, type:"label"}
+// 	{id: 54, type:"edge", label:"documentationString", inV: 53, outV: 55, type:"detail"}
+//
+// Hover, definition, etc. results can then be attached to ranges within the "documentationString"
+// vertices themselves (vertex 54 / 55), see the docs for DocumentationString for more details.
 type DocumentationStringEdge struct {
 	Edge
 
