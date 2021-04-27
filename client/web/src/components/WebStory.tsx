@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
 import { useDarkMode } from 'storybook-dark-mode'
 
@@ -28,11 +28,31 @@ export const WebStory: React.FunctionComponent<
     const isLightTheme = !useDarkMode()
     const breadcrumbSetters = useBreadcrumbs()
     const Children = useMemo(() => withRouter(children), [children])
+
+    useEffect(() => {
+        const webappCss = document.createElement('style')
+        webappCss.textContent = webStyles
+        webappCss.setAttribute('id', 'webapp-css')
+
+        const firstCss = document.head.querySelector('style')
+        document.head.insertBefore(webappCss, firstCss)
+
+        return () => {
+            const webappCss = document.querySelector('#webapp-css')
+            webappCss?.remove()
+        }
+    }, [webStyles])
+
     return (
-        <MemoryRouter {...memoryRouterProps}>
-            <Tooltip />
-            <Children {...breadcrumbSetters} isLightTheme={isLightTheme} telemetryService={NOOP_TELEMETRY_SERVICE} />
-            <style title="Webapp CSS">{webStyles}</style>
-        </MemoryRouter>
+        <>
+            <MemoryRouter {...memoryRouterProps}>
+                <Tooltip />
+                <Children
+                    {...breadcrumbSetters}
+                    isLightTheme={isLightTheme}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                />
+            </MemoryRouter>
+        </>
     )
 }
