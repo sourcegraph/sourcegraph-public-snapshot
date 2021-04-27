@@ -61,8 +61,36 @@ func InsertValues(ctx context.Context, db dbutil.DB, tableName string, columnNam
 // The inserter will be flushed regardless of the error condition of the given function.
 // Any error returned from the given function will be decorated with the inserter's flush
 // error, if one occurs.
-func WithInserter(ctx context.Context, db dbutil.DB, tableName string, columnNames []string, f func(inserter *Inserter) error) (err error) {
+func WithInserter(
+	ctx context.Context,
+	db dbutil.DB,
+	tableName string,
+	columnNames []string,
+	f func(inserter *Inserter) error,
+) (err error) {
 	inserter := NewInserter(ctx, db, tableName, columnNames...)
+	return with(ctx, inserter, f)
+}
+
+// WithInserterWithReturn creates a new batch inserter using the given database handle,
+// table name, column names, returning columns and returning scanner, then calls the given
+// function with the new inserter as a parameter. The inserter will be flushed regardless
+// of the error condition of the given function. Any error returned from the given function
+// will be decorated with the inserter's flush error, if one occurs.
+func WithInserterWithReturn(
+	ctx context.Context,
+	db dbutil.DB,
+	tableName string,
+	columnNames []string,
+	returningColumnNames []string,
+	returningScanner ReturningScanner,
+	f func(inserter *Inserter) error,
+) (err error) {
+	inserter := NewInserterWithReturn(ctx, db, tableName, columnNames, returningColumnNames, returningScanner)
+	return with(ctx, inserter, f)
+}
+
+func with(ctx context.Context, inserter *Inserter, f func(inserter *Inserter) error) (err error) {
 	defer func() {
 		if flushErr := inserter.Flush(ctx); flushErr != nil {
 			err = multierror.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
