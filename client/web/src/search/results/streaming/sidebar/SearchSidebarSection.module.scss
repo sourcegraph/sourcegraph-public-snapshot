@@ -5,8 +5,7 @@
         margin-top: 0.5rem;
     }
 
-    &__list-item,
-    &__list-item:global(.btn) /* required because global CSS is imported after */ {
+    &__list-item {
         display: flex;
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
