@@ -2,6 +2,10 @@
     display: flex;
     flex-direction: column;
 
+    &__title {
+        margin: 0;
+    }
+
     &__colour-content {
         display: flex;
         flex-wrap: wrap;

@@ -78,7 +78,7 @@ export const FormSeries = forwardRef<FormSeriesReferenceAPI, FormSeriesProps>((p
     }
 
     // In some cases consumers of this component may want to call focus or get name field
-    // of native html element.
+    // in a way that would be a native html element.
     useImperativeHandle(reference, () => ({
         name,
         focus: () => seriesInputReference.current?.focus(),

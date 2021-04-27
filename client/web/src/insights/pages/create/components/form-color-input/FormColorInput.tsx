@@ -7,6 +7,8 @@ import styles from './FormColorInput.module.scss'
 interface FormColorPickerProps {
     /** Name of data series color */
     name?: string
+    /** Title of color input. */
+    title?: string
     /** Value of data series color ()*/
     value?: string
     /** Different values of preset color. */
@@ -36,7 +38,7 @@ export const DEFAULT_ACTIVE_COLOR = 'var(--oc-grape-7)'
 
 /** Displays custom radio group for picking color of code insight chart line. */
 export const FormColorInput: React.FunctionComponent<FormColorPickerProps> = props => {
-    const { className, value: propertyValue = null, name, colours = DEFAULT_COLOURS, onChange = noop } = props
+    const { className, value: propertyValue = null, title, name, colours = DEFAULT_COLOURS, onChange = noop } = props
 
     const isControlled = useRef(propertyValue !== null)
     const [internalValue, setInternalValue] = useState(DEFAULT_ACTIVE_COLOR)
@@ -55,7 +57,11 @@ export const FormColorInput: React.FunctionComponent<FormColorPickerProps> = pro
     const value = isControlled.current ? propertyValue : internalValue
 
     return (
-        <div className={classnames(styles.formColorPicker, className)}>
+        <fieldset className={classnames(styles.formColorPicker, className)}>
+            <legend>
+                <h4 className={styles.formColorPickerTitle}>{title}</h4>
+            </legend>
+
             <div className={styles.formColorPickerColourContent}>
                 {colours.map(colorInfo => (
                     <label
@@ -78,6 +84,6 @@ export const FormColorInput: React.FunctionComponent<FormColorPickerProps> = pro
                     </label>
                 ))}
             </div>
-        </div>
+        </fieldset>
     )
 }

@@ -14,7 +14,7 @@ import { FormRadioInput } from '../form-radio-input/FormRadioInput'
 import { FormSeries, FormSeriesReferenceAPI } from '../form-series/FormSeries'
 import { createRequiredValidator, composeValidators, ValidationResult } from '../validators'
 
-import styles from './CreateinsightForm.module.scss'
+import styles from './CreateInsightForm.module.scss'
 
 const requiredTitleField = createRequiredValidator('Title is required field for code insight.')
 const repositoriesFieldValidator = composeValidators(
@@ -112,6 +112,7 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
             <form onSubmit={handleSubmit} className={styles.createInsightFormForm}>
                 <InputField
                     title="Title"
+                    autofocus={true}
                     description="Shown as title for your insight"
                     placeholder="ex. Migration to React function components"
                     valid={title.meta.touched && title.meta.valid}
@@ -133,7 +134,8 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                 />
 
                 <FormGroup
-                    name="Visibility"
+                    name="visibility"
+                    title="Visibility"
                     description="This insigh will be visible only on your personal dashboard. It will not be show to other
                         users in your organisation."
                     className={styles.createInsightFormFormField}
@@ -162,7 +164,8 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                 </FormGroup>
 
                 <FormGroup
-                    name="Data series"
+                    name="data series group"
+                    title="Data series"
                     subtitle="Add any number of data series to your chart"
                     error={series.meta.touched && series.meta.error}
                     className={styles.createInsightFormFormField}
@@ -176,7 +179,8 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                 </FormGroup>
 
                 <FormGroup
-                    name="Step between data points"
+                    name="insight step group"
+                    title="Step between data points"
                     description="The distance between two data points on the chart"
                     error={stepValue.meta.touched && stepValue.meta.error}
                     className={styles.createInsightFormFormField}

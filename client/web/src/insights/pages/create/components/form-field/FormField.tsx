@@ -1,5 +1,6 @@
 import classnames from 'classnames'
-import React, { forwardRef, InputHTMLAttributes } from 'react'
+import React, { forwardRef, InputHTMLAttributes, useEffect, useRef } from 'react'
+import { useMergeRefs } from 'use-callback-ref'
 
 import styles from './FormField.module.scss'
 
@@ -14,11 +15,20 @@ interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement> {
     error?: string
     /** Valid sign to show valid state on input. */
     valid?: boolean
+    /** Turn on or turn off autofocus for input. */
+    autofocus?: boolean
 }
 
 /** Displays input with description, error message, visual invalid and valid states. */
 export const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, reference) => {
-    const { title, description, className, valid, error, ...otherProps } = props
+    const { title, description, className, valid, error, autofocus = false, ...otherProps } = props
+    const localInputReference = useRef<HTMLInputElement>(null)
+
+    useEffect(() => {
+        if (autofocus) {
+            localInputReference.current?.focus()
+        }
+    }, [autofocus])
 
     return (
         <label className={classnames(styles.formField, className)}>
@@ -31,7 +41,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, 
                     'is-invalid': !!error,
                 })}
                 {...otherProps}
-                ref={reference}
+                ref={useMergeRefs([localInputReference, reference])}
             />
 
             {error && <span className={styles.formFieldError}>*{error}</span>}

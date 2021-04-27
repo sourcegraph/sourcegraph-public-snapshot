@@ -6,7 +6,6 @@ import { noop } from 'rxjs'
 import { DataSeries } from '../../types'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
 import { InputField } from '../form-field/FormField'
-import { FormGroup } from '../form-group/FormGroup'
 import { createRequiredValidator, createValidRegExpValidator, composeValidators } from '../validators'
 
 import styles from './FormSeriesInput.module.scss'
@@ -22,6 +21,12 @@ const validQuery = composeValidators(
 export interface FormSeriesInputAPI {
     /** Mimic-function to native input focus. */
     focus: () => void
+}
+
+interface FormSeriesValues {
+    seriesName: string
+    seriesQuery: string
+    seriesColor: string
 }
 
 interface FormSeriesProps {
@@ -62,18 +67,23 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
     const hasNameControlledValue = !!name
     const hasQueryControlledValue = !!query
 
-    const { handleSubmit, form } = useForm<DataSeries>({
+    const { handleSubmit, form } = useForm<FormSeriesValues>({
         initialValues: {
-            name,
-            query,
-            color: color ?? DEFAULT_ACTIVE_COLOR,
+            seriesName: name,
+            seriesQuery: query,
+            seriesColor: color ?? DEFAULT_ACTIVE_COLOR,
         },
-        onSubmit,
+        onSubmit: values =>
+            onSubmit({
+                name: values.seriesName,
+                query: values.seriesQuery,
+                color: values.seriesColor,
+            }),
     })
 
-    const nameField = useField('name', form, requiredNameField)
-    const queryField = useField('query', form, validQuery)
-    const colorField = useField('color', form)
+    const nameField = useField('seriesName', form, requiredNameField)
+    const queryField = useField('seriesQuery', form, validQuery)
+    const colorField = useField('seriesColor', form)
 
     const nameReference = useRef<HTMLInputElement>(null)
     const queryReference = useRef<HTMLInputElement>(null)
@@ -146,9 +156,13 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
                 ref={queryReference}
             />
 
-            <FormGroup name="Color" className={classnames(styles.formSeriesInputField, styles.formSeriesInputColor)}>
-                <FormColorInput value={colorField.input.value} onChange={colorField.input.onChange} />
-            </FormGroup>
+            <FormColorInput
+                name="series color group"
+                title="Color"
+                className={classnames(styles.formSeriesInputField, styles.formSeriesInputColor)}
+                value={colorField.input.value}
+                onChange={colorField.input.onChange}
+            />
 
             <div>
                 <button
