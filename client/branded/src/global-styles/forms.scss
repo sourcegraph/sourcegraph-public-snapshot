@@ -94,6 +94,9 @@
     .custom-select.is-valid {
         border-color: var(--success);
 
+        // Adjust feedback icon padding
+        background-position: right 0.75rem center;
+
         &:focus {
             @at-root #{selector-append('.theme-light', &)} {
                 box-shadow: 0 0 0 2px var(--success-2);
@@ -110,6 +113,9 @@
     .form-control.is-invalid,
     .custom-select.is-invalid {
         border-color: var(--danger);
+
+        // Adjust feedback icon padding
+        background-position: right 0.75rem center;
 
         &:focus {
             @at-root #{selector-append('.theme-light', &)} {
