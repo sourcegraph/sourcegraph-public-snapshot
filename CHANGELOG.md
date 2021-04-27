@@ -35,6 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed an issue related to Gitolite repos with `@` being prepended with a `?`. [#20297](https://github.com/sourcegraph/sourcegraph/pull/20297)
+- Add missing return from handler when DisableAutoGitUpdates is true. [#20451](https://github.com/sourcegraph/sourcegraph/pull/20451)
 
 ## 3.27.3
 
