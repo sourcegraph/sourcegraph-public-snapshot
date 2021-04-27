@@ -30,6 +30,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 3.27.4
+
+### Fixed
+
+- Fixed an issue related to Gitolite repos with `@` being prepended with a `?`. [#20297](https://github.com/sourcegraph/sourcegraph/pull/20297)
+
 ## 3.27.3
 
 ### Fixed
