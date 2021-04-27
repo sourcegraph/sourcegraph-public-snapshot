@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -80,10 +81,7 @@ func observeResolver(
 			lowSlowRequest(name, duration, err, observationArgs)
 		}
 		if honey.Enabled() {
-			_ = honey.EventWithFields("codeintel", codeintelHoneyEventFields(ctx, err, observationArgs, map[string]interface{}{
-				"type":        name,
-				"duration_ms": duration.Milliseconds(),
-			}))
+			_ = createHoneyEvent(ctx, name, observationArgs, err, duration).Send()
 		}
 	}
 }
@@ -101,17 +99,21 @@ func lowSlowRequest(name string, duration time.Duration, err *error, observation
 	log15.Warn("Slow codeintel request", pairs...)
 }
 
-func codeintelHoneyEventFields(ctx context.Context, err *error, observationArgs observation.Args, extra map[string]interface{}) map[string]interface{} {
-	fields := observationArgs.LogFieldMap()
+func createHoneyEvent(ctx context.Context, name string, observationArgs observation.Args, err *error, duration time.Duration) *libhoney.Event {
+	fields := map[string]interface{}{
+		"type":        name,
+		"duration_ms": duration.Milliseconds(),
+	}
+
 	if err != nil && *err != nil {
 		fields["error"] = (*err).Error()
+	}
+	for key, value := range observationArgs.LogFieldMap() {
+		fields[key] = value
 	}
 	if spanURL := trace.SpanURLFromContext(ctx); spanURL != "" {
 		fields["trace"] = spanURL
 	}
-	for key, value := range extra {
-		fields[key] = value
-	}
 
-	return fields
+	return honey.EventWithFields("codeintel", fields)
 }
