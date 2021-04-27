@@ -34,7 +34,7 @@ func TestExtractCloneURL(t *testing.T) {
 		},
 		{
 			name: "ssh",
-			want: "ssh://git@github.com/sourcegraph/sourcegraph.git",
+			want: "ssh://git@github.com/~/sourcegraph/sourcegraph.git",
 			configs: []string{
 				`{"url": "https://github.com", "gitURLType": "ssh", "authorization": {}}`,
 			},
@@ -267,7 +267,7 @@ func TestGitserverPushConfig(t *testing.T) {
 				URL:           "https://github.com/sourcegraph/sourcegraph",
 			},
 			wantPushConfig: &protocol.PushConfig{
-				RemoteURL: "ssh://git@github.com/sourcegraph/sourcegraph.git",
+				RemoteURL: "ssh://git@github.com/~/sourcegraph/sourcegraph.git",
 			},
 		},
 		{
@@ -312,7 +312,7 @@ func TestGitserverPushConfig(t *testing.T) {
 					SSHURLToRepo:      "git@gitlab.com:sourcegraph/sourcegraph.git",
 				}},
 			wantPushConfig: &protocol.PushConfig{
-				RemoteURL: "ssh://git@gitlab.com/sourcegraph/sourcegraph.git",
+				RemoteURL: "ssh://git@gitlab.com/~/sourcegraph/sourcegraph.git",
 			},
 		},
 		{
@@ -448,7 +448,7 @@ func TestGitserverPushConfig(t *testing.T) {
 				URL:           "https://github.com/sourcegraph/sourcegraph",
 			},
 			wantPushConfig: &protocol.PushConfig{
-				RemoteURL:  "ssh://git@github.com/sourcegraph/sourcegraph.git",
+				RemoteURL:  "ssh://git@github.com/~/sourcegraph/sourcegraph.git",
 				PrivateKey: "private-key",
 				Passphrase: "passphrase",
 			},
@@ -498,7 +498,7 @@ func TestGitserverPushConfig(t *testing.T) {
 					SSHURLToRepo:      "git@gitlab.com:sourcegraph/sourcegraph.git",
 				}},
 			wantPushConfig: &protocol.PushConfig{
-				RemoteURL:  "ssh://git@gitlab.com/sourcegraph/sourcegraph.git",
+				RemoteURL:  "ssh://git@gitlab.com/~/sourcegraph/sourcegraph.git",
 				PrivateKey: "private-key",
 				Passphrase: "passphrase",
 			},
