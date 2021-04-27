@@ -863,6 +863,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			status = "repo-not-found"
 			w.WriteHeader(http.StatusNotFound)
 			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{})
+			return
 		}
 
 		cloneProgress, cloneInProgress := s.locker.Status(dir)
