@@ -117,5 +117,12 @@ func sendHoneyEvent(name string, duration time.Duration, err *error, observation
 		ev.AddField("error", (*err).Error())
 	}
 
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		// URLs starting with # don't have a trace. eg "#tracer-not-enabled"
+		if spanURL := trace.SpanURL(span); !strings.HasPrefix(spanURL, "#") {
+			ev.AddField("trace", spanURL)
+		}
+	}
+
 	_ = ev.Send()
 }
