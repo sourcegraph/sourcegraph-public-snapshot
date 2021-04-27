@@ -3,11 +3,9 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -82,14 +80,17 @@ func observeResolver(
 			lowSlowRequest(name, duration, err, observationArgs)
 		}
 		if honey.Enabled() {
-			sendHoneyEvent(name, duration, err, observationArgs)
+			_ = honey.EventWithFields("codeintel", codeintelHoneyEventFields(ctx, err, observationArgs, map[string]interface{}{
+				"type":        name,
+				"duration_ms": duration.Milliseconds(),
+			}))
 		}
 	}
 }
 
 func lowSlowRequest(name string, duration time.Duration, err *error, observationArgs observation.Args) {
 	pairs := append(
-		logFieldToPairs(observationArgs),
+		observationArgs.LogFieldPairs(),
 		"type", name,
 		"duration_ms", duration.Milliseconds(),
 	)
@@ -100,32 +101,17 @@ func lowSlowRequest(name string, duration time.Duration, err *error, observation
 	log15.Warn("Slow codeintel request", pairs...)
 }
 
-func logFieldToPairs(observationArgs observation.Args) []interface{} {
-	pairs := make([]interface{}, 0, len(observationArgs.LogFields)*2)
-	for _, field := range observationArgs.LogFields {
-		pairs = append(pairs, field.Key(), field.Value())
-	}
-
-	return pairs
-}
-
-func sendHoneyEvent(name string, duration time.Duration, err *error, observationArgs observation.Args) {
-	ev := honey.Event("codeintel")
-	for _, field := range observationArgs.LogFields {
-		ev.AddField(field.Key(), field.Value())
-	}
-	ev.AddField("type", name)
-	ev.AddField("duration_ms", duration.Milliseconds())
+func codeintelHoneyEventFields(ctx context.Context, err *error, observationArgs observation.Args, extra map[string]interface{}) map[string]interface{} {
+	fields := observationArgs.LogFieldMap()
 	if err != nil && *err != nil {
-		ev.AddField("error", (*err).Error())
+		fields["error"] = (*err).Error()
+	}
+	if spanURL := trace.SpanURLFromContext(ctx); spanURL != "" {
+		fields["trace"] = spanURL
+	}
+	for key, value := range extra {
+		fields[key] = value
 	}
 
-	if span := opentracing.SpanFromContext(ctx); span != nil {
-		// URLs starting with # don't have a trace. eg "#tracer-not-enabled"
-		if spanURL := trace.SpanURL(span); !strings.HasPrefix(spanURL, "#") {
-			ev.AddField("trace", spanURL)
-		}
-	}
-
-	_ = ev.Send()
+	return fields
 }
