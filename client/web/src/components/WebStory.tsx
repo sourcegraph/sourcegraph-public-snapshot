@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react'
 import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
 import { useDarkMode } from 'storybook-dark-mode'
 
+import { prependCSSToDocumentHead } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -30,16 +31,10 @@ export const WebStory: React.FunctionComponent<
     const Children = useMemo(() => withRouter(children), [children])
 
     useEffect(() => {
-        const webappCss = document.createElement('style')
-        webappCss.textContent = webStyles
-        webappCss.setAttribute('id', 'webapp-css')
-
-        const firstCss = document.head.querySelector('style')
-        document.head.insertBefore(webappCss, firstCss)
+        const styleTag = prependCSSToDocumentHead(webStyles)
 
         return () => {
-            const webappCss = document.querySelector('#webapp-css')
-            webappCss?.remove()
+            styleTag.remove()
         }
     }, [webStyles])
 
