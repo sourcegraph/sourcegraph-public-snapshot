@@ -1,4 +1,5 @@
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+
 import { RepogroupMetadata } from './types'
 
 export const stackStorm: RepogroupMetadata = {

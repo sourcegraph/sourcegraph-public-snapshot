@@ -13,11 +13,11 @@ import { kubernetes } from './repogroups/Kubernetes'
 import { python2To3Metadata } from './repogroups/Python2To3'
 import { reactHooks } from './repogroups/ReactHooks'
 import { RepogroupPage } from './repogroups/RepogroupPage'
+import { stackStorm } from './repogroups/StackStorm'
 import { stanford } from './repogroups/Stanford'
 import { StreamingSearchResults } from './search/results/streaming/StreamingSearchResults'
 import { isMacPlatform, UserRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
-import { stackStorm } from './repogroups/StackStorm'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
