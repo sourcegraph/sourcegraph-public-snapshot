@@ -7,7 +7,7 @@ package protocol
 // "documentationResult" vertex.
 //
 // It allows one to attach extensive documentation to a project or range (via being attached to a
-// "resultSet" vertex). Combined with the "documentationResultChildren" edge, this can be used to
+// "resultSet" vertex). Combined with the "documentationChildren" edge, this can be used to
 // represent hierarchical documentation.
 type DocumentationResultEdge struct {
 	Edge
@@ -47,7 +47,7 @@ func NewDocumentationResultEdge(id, inV, outV uint64) DocumentationResultEdge {
 //
 // Note: the "project" -> "documentationResult" attachment above is expressed via a
 // "documentationResult" edge, since the parent is not a "documentationResult" vertex.
-type DocumentationResultChildrenEdge struct {
+type DocumentationChildrenEdge struct {
 	Edge
 
 	// The parent "documentationResult" vertex ID.
@@ -57,14 +57,14 @@ type DocumentationResultChildrenEdge struct {
 	OutVs []uint64 `json:"outVs"`
 }
 
-func NewDocumentationResultChildrenEdge(id, inV uint64, outVs []uint64) DocumentationResultChildrenEdge {
-	return DocumentationResultChildrenEdge{
+func NewDocumentationChildrenEdge(id, inV uint64, outVs []uint64) DocumentationChildrenEdge {
+	return DocumentationChildrenEdge{
 		Edge: Edge{
 			Element: Element{
 				ID:   id,
 				Type: ElementEdge,
 			},
-			Label: EdgeSourcegraphDocumentationResultChildren,
+			Label: EdgeSourcegraphDocumentationChildren,
 		},
 		OutVs: outVs,
 		InV:   inV,

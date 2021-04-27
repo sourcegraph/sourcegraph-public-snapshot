@@ -70,7 +70,7 @@ const (
 	EdgeTextDocumentImplementation EdgeLabel = "textDocument/implementation"
 
 	// Sourcegraph extensions
-	EdgeSourcegraphDocumentationResult         EdgeLabel = "sourcegraph:documentationResult"
-	EdgeSourcegraphDocumentationResultChildren EdgeLabel = "sourcegraph:documentationResultChildren"
-	EdgeSourcegraphDocumentationString         EdgeLabel = "sourcegraph:documentationString"
+	EdgeSourcegraphDocumentationResult   EdgeLabel = "sourcegraph:documentationResult"
+	EdgeSourcegraphDocumentationChildren EdgeLabel = "sourcegraph:documentationChildren"
+	EdgeSourcegraphDocumentationString   EdgeLabel = "sourcegraph:documentationString"
 )
