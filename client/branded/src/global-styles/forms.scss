@@ -12,6 +12,7 @@
     --input-group-addon-bg: var(--color-bg-4);
     --input-group-addon-border-color: var(--color-bg-4);
     --input-focus-border-color: var(--primary);
+    --input-focus-box-shadow: 0 0 0 2px #{rgba($primary, 0.25)};
 }
 
 .theme-light {
@@ -24,6 +25,7 @@
     --input-group-addon-bg: var(--color-bg-4);
     --input-group-addon-border-color: var(--color-bg-4);
     --input-focus-border-color: var(--primary);
+    --input-focus-box-shadow: 0 0 0 2px #{rgba($primary, 0.25)};
 }
 
 .theme-light.theme-redesign {
@@ -36,7 +38,7 @@
     --input-group-addon-bg: #{$redesign-gray-03};
     --input-group-addon-border-color: #{$redesign-gray-03};
     --input-focus-border-color: var(--border-active-color);
-    --input-focus-box-shadow: 0 0 0 2px var(--primary-2);
+    --input-focus-box-shadow: var(--focus-box-shadow);
 }
 
 .theme-dark.theme-redesign {
@@ -49,7 +51,7 @@
     --input-group-addon-bg: #{$redesign-gray-08};
     --input-group-addon-border-color: #{$redesign-gray-08};
     --input-focus-border-color: var(--border-active-color);
-    --input-focus-box-shadow: 0 0 0 2px var(--primary-2);
+    --input-focus-box-shadow: var(--focus-box-shadow);
 }
 
 // Prevent Firefox's default red outline for inputs
