@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { ExtensionStatusPopover } from '@sourcegraph/shared/src/extensions/ExtensionStatus'
+import { ExtensionDevToolsPopover } from '@sourcegraph/shared/src/extensions/devtools'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {}
@@ -20,7 +20,7 @@ export const GlobalDebug: React.FunctionComponent<Props> = props =>
     SHOW_DEBUG ? (
         <ul className="global-debug nav">
             <li className="nav-item">
-                <ExtensionStatusPopover
+                <ExtensionDevToolsPopover
                     link={ExtensionLink}
                     extensionsController={props.extensionsController}
                     platformContext={props.platformContext}

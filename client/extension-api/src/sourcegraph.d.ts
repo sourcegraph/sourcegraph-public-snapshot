@@ -1160,6 +1160,13 @@ declare module 'sourcegraph' {
          * Register a file decoration provider
          */
         export function registerFileDecorationProvider(provider: FileDecorationProvider): Unsubscribable
+
+        /**
+         * Log a message to the console if logs for the extension are enabled in user settings.
+         *
+         * Messages are automatically prefixed by the extension's ID.
+         */
+        export function log(message?: any, ...optionalParams: any[]): void
     }
 
     /**

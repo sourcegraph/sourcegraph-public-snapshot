@@ -1,6 +1,7 @@
 import { Remote } from 'comlink'
 import { BehaviorSubject, combineLatest, from, Observable, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilChanged, map, tap } from 'rxjs/operators'
+import sourcegraph from 'sourcegraph'
 
 import { ConfiguredExtension, getScriptURLFromExtensionManifest, splitExtensionID } from '../../extensions/extension'
 import { areExtensionsSame, getEnabledExtensionsForSubject } from '../../extensions/extensions'
@@ -52,6 +53,7 @@ export function observeActiveExtensions(
 export function activateExtensions(
     state: Pick<ExtensionHostState, 'activeExtensions' | 'contributions' | 'haveInitialExtensionsLoaded' | 'settings'>,
     mainAPI: Remote<Pick<MainThreadAPI, 'getScriptURLForExtension' | 'logEvent'>>,
+    createExtensionAPI: (extensionID: string) => typeof sourcegraph,
     /**
      * Function that activates an extension.
      * Returns a promise that resolves once the extension is activated.
@@ -169,7 +171,7 @@ export function activateExtensions(
                                             })
                                     }
 
-                                    return activate(id, scriptURL).catch(error =>
+                                    return activate(id, scriptURL, createExtensionAPI).catch(error =>
                                         console.error(`Error activating extension ${id}:`, asError(error))
                                     )
                                 }),
@@ -226,10 +228,18 @@ declare const self: any
 /** Extensions' deactivate functions. */
 const extensionDeactivates = new Map<string, () => void | Promise<void>>()
 
-async function activateExtension(extensionID: string, bundleURL: string): Promise<void> {
+async function activateExtension(
+    extensionID: string,
+    bundleURL: string,
+    createExtensionAPI: (extensionID: string) => typeof sourcegraph
+): Promise<void> {
     // Load the extension bundle and retrieve the extension entrypoint module's exports on
     // the global `module` property.
     try {
+        const extensionAPI = createExtensionAPI(extensionID)
+        // Make `import 'sourcegraph'` or `require('sourcegraph')` return the extension API.
+        replaceAPIRequire(extensionAPI)
+
         const exports = {}
         self.exports = exports
         self.module = { exports }
@@ -339,4 +349,20 @@ export function extensionsWithMatchedActivationEvent(
 export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'manifest'> {
     /** The URL to the JavaScript bundle of the extension. */
     scriptURL: string
+}
+
+/**
+ * Make `import 'sourcegraph'` or `require('sourcegraph')` return the extension API.
+ *
+ * @param extensionAPI The extension API instance for the extension to be activated.
+ */
+export function replaceAPIRequire(extensionAPI: typeof sourcegraph): void {
+    globalThis.require = ((modulePath: string): any => {
+        if (modulePath === 'sourcegraph') {
+            return extensionAPI
+        }
+        // All other requires/imports in the extension's code should not reach here because their JS
+        // bundler should have resolved them locally.
+        throw new Error(`require: module not found: ${modulePath}`)
+    }) as any
 }
