@@ -2,7 +2,7 @@
 
 ## Local development
 
-### Prerequisites
+### Configuration
 
 1. Duplicate `client/web/.env.example` as `client/web/.env`.
 2. Make sure that `WEBPACK_SERVE_INDEX` is set to `true` in the env file.
