@@ -1,14 +1,13 @@
 import fs from 'fs'
-import path from 'path'
 
 import { parse } from '@sqs/jsonc-parser'
 import lodash from 'lodash'
 
 import { SourcegraphContext } from '../../src/jscontext'
 
-import { ROOT_PATH } from './constants'
+import { environmentConfig } from './environment-config'
 
-const SITE_CONFIG_PATH = path.resolve(ROOT_PATH, '../dev-private/enterprise/dev/site-config.json')
+const { SITE_CONFIG_PATH } = environmentConfig
 
 // Get site-config from `SITE_CONFIG_PATH` as an object with camel cased keys.
 export const getSiteConfig = (): Partial<SourcegraphContext> => {
