@@ -254,7 +254,7 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 	}
 }
 
-func TestSearchContextNamespaceValidation(t *testing.T) {
+func TestSearchContextWriteAccessValidation(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -358,7 +358,7 @@ func TestSearchContextNamespaceValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: tt.userID})
 
-			err := validateSearchContextNamespaceForCurrentUser(ctx, db, tt.namespaceUserID, tt.namespaceOrgID, tt.public)
+			err := validateSearchContextWriteAccessForCurrentUser(ctx, db, tt.namespaceUserID, tt.namespaceOrgID, tt.public)
 
 			expectErr := tt.wantErr != ""
 			if !expectErr && err != nil {
