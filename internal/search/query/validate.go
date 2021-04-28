@@ -34,6 +34,26 @@ func IsPatternAtom(b Basic) bool {
 	return false
 }
 
+// IsStreamingCompatible returns whether a plan can be evaluated by the backend
+// using the streaming interface. The prerequisites are that the query is a
+// single basic query, containing a single pattern node.
+func IsStreamingCompatible(p Plan) bool {
+	if len(p) == 1 {
+		switch node := p[0].Pattern.(type) {
+		case Operator:
+			if len(node.Operands) == 1 {
+				return true
+			}
+			return false
+		case Pattern:
+			return true
+		default:
+			return false
+		}
+	}
+	return false
+}
+
 // exists traverses every node in nodes and returns early as soon as fn is satisfied.
 func exists(nodes []Node, fn func(node Node) bool) bool {
 	found := false

@@ -556,36 +556,6 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 	return intersectMerge(left, right)
 }
 
-// evaluateAndStream is a wrapper around evaluateAnd which temporarily suspends
-// streaming and waits for evaluateAnd to return before streaming results back on
-// r.resultChannel.
-func (r *searchResolver) evaluateAndStream(ctx context.Context, q query.Basic) (*SearchResultsResolver, error) {
-	// Streaming disabled.
-	if r.stream == nil {
-		return r.evaluateAnd(ctx, q)
-	}
-	// For streaming search we rely on batch evaluation of
-	// results. Implementing true streaming on AND expressions will require
-	// support in backends (eg directly using Zoekt) or ANDing per repo.
-	r2 := *r
-	r2.stream = nil
-
-	result, err := r2.evaluateAnd(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	// evaluateAnd may return result, err = nil, nil because downstream calls return
-	// nil, nil. See further comments in evaluateAnd.
-	if result == nil {
-		return &SearchResultsResolver{}, nil
-	}
-	r.stream.Send(SearchEvent{
-		Results: result.SearchResults,
-		Stats:   result.Stats,
-	})
-	return result, err
-}
-
 // evaluateAnd performs set intersection on result sets. It collects results for
 // all expressions that are ANDed together by searching for each subexpression
 // and then intersects those results that are in the same repo/file path. To
@@ -748,7 +718,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 
 		switch term.Kind {
 		case query.And:
-			return r.evaluateAndStream(ctx, q)
+			return r.evaluateAnd(ctx, q)
 		case query.Or:
 			return r.evaluateOr(ctx, q)
 		case query.Concat:
@@ -799,7 +769,21 @@ func invalidateRepoCache(plan query.Plan) bool {
 
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
+
+	orig := r.stream
+	if !query.IsStreamingCompatible(r.Plan) {
+		r.stream = nil
+	}
+
 	srr, err := r.resultsRecursive(ctx, r.Plan)
+
+	if !query.IsStreamingCompatible(r.Plan) && orig != nil {
+		orig.Send(SearchEvent{
+			Results: srr.SearchResults,
+			Stats:   srr.Stats,
+		})
+	}
+
 	elapsed := time.Since(start)
 
 	// For streams we write logs in streamHandler.
