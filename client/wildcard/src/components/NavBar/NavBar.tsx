@@ -50,7 +50,7 @@ export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
             <button
                 className={classNames('btn', navBarStyles.menuButton)}
                 type="button"
-                onClick={() => setOpen(!open)}
+                onClick={() => setOpen(() => !open)}
                 aria-label="Sections Navigation"
             >
                 <MenuIcon className="icon-inline" />
@@ -101,11 +101,15 @@ export const NavLink: React.FunctionComponent<NavLinkProps> = ({ icon: Icon, chi
         </span>
     )
 
-    return external ? (
-        <a href={to as string} className={navItemStyles.link}>
-            {content}
-        </a>
-    ) : (
+    if (external) {
+        return (
+            <a href={to as string} className={navItemStyles.link}>
+                {content}
+            </a>
+        )
+    }
+
+    return (
         <RouterLink to={to} className={navItemStyles.link} activeClassName={navItemStyles.active}>
             {content}
         </RouterLink>

@@ -175,7 +175,7 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, history, 
                 tag="button"
                 caret={false}
                 className={classNames('btn btn-sm text-decoration-none feedback-prompt__toggle', {
-                    'btn-secondary-outline': isRedesignEnabled,
+                    'btn-outline-secondary': isRedesignEnabled,
                     'btn-link': !isRedesignEnabled,
                 })}
                 aria-label="Feedback"

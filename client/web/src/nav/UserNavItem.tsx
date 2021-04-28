@@ -129,7 +129,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         <UserAvatar
                             user={props.authenticatedUser}
                             targetID={targetID}
-                            className={classNames({ 'icon-inline': !isRedesignEnabled })}
+                            className="icon-inline user-nav-item__avatar"
                         />
                         <MenuDropdownIcon />
                     </div>

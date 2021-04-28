@@ -44,7 +44,7 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
         }
         return (
             <img
-                className={classNames(isRedesignEnabled ? 'user-avatar-refresh' : 'user-avatar', className)}
+                className={classNames('user-avatar', className)}
                 src={url}
                 id={targetID}
                 alt=""
@@ -56,14 +56,16 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
 
     if (isRedesignEnabled) {
         const name = user.displayName || user.username || ''
-        const [firstName, lastName] = name.split(' ').map((name: string) => name.split('')[0])
+        const getInitials = (fullName: string): string => {
+            const names = fullName.split(' ')
+            const initials = names.map(name => name.charAt(0).toUpperCase())
+            if (initials.length > 1) {
+                return `${initials[0]}${initials[initials.length - 1]}`
+            }
+            return initials[0]
+        }
 
-        return (
-            <div className={classNames('user-avatar-refresh__placeholder', className)}>
-                {firstName}
-                {lastName}
-            </div>
-        )
+        return <div className={classNames('user-avatar', className)}>{getInitials(name)}</div>
     }
 
     return <AccountCircleIcon className={classNames('user-avatar', className)} id={targetID} {...otherProps} />
