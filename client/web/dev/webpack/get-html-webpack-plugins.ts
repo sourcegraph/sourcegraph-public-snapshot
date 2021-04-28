@@ -26,20 +26,6 @@ export const getHTMLWebpackPlugins = (): Plugin[] => {
 
                     // Required mock of the JS context object.
                     window.context = ${JSON.stringify(jsContext)}
-
-                    // On https://k8s.sgdev.org unauthorized user receives 401 error and sees error page.
-                    // This helper is added to redirect to sign-in page automatically.
-                    window.addEventListener('error', function(event) {
-                      const signInRoute = '/sign-in'
-
-                      if (
-                          '${SOURCEGRAPH_API_URL}'.includes('k8s.sgdev.org') &&
-                          event.message.includes('401 Unauthorized') &&
-                           window.location.pathname !== signInRoute
-                        ) {
-                        window.location.href = signInRoute;
-                      }
-                    })
                 </script>
             </body>
         </html>
