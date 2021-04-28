@@ -2,6 +2,7 @@ $toggle-width: 2rem;
 
 .toggle {
     --toggle-bar-bg: var(--text-muted);
+    --toggle-bar-bg-on: var(--primary);
     --toggle-knob-bg: var(--text-muted);
     --toggle-knob-bg-on: var(--primary);
     --toggle-bar-opacity: 0.2;
@@ -11,12 +12,13 @@ $toggle-width: 2rem;
 
     .theme-redesign & {
         --toggle-bar-bg: var(--icon-color);
+        --toggle-bar-bg-on: var(--primary);
         --toggle-knob-bg: var(--body-bg);
         --toggle-knob-bg-on: var(--body-bg);
         --toggle-bar-opacity: 1;
         --toggle-bar-focus-opacity: 1;
         --toggle-knob-disabled-opacity: 1;
-        --toggle-bar-focus-box-shadow: var(--input-focus-box-shadow);
+        --toggle-bar-focus-box-shadow: var(--focus-box-shadow);
     }
 
     background: none;
@@ -27,7 +29,17 @@ $toggle-width: 2rem;
     position: relative;
     width: $toggle-width;
 
+    &:focus-visible {
+        // Move focus to rounded bar
+        box-shadow: none;
+    }
+
+    &:focus-visible &__bar {
+        box-shadow: var(--toggle-bar-focus-box-shadow);
+    }
+
     &__bar {
+        border: 1px solid var(--body-bg);
         border-radius: 1rem;
         left: 0;
         height: 1rem;
@@ -41,7 +53,7 @@ $toggle-width: 2rem;
         transition-property: opacity;
 
         &--on {
-            background-color: var(--primary);
+            background-color: var(--toggle-bar-bg-on);
         }
     }
 
@@ -68,7 +80,18 @@ $toggle-width: 2rem;
         opacity: var(--toggle-bar-focus-opacity);
     }
 
+    .theme-redesign &:disabled {
+        --toggle-knob-bg: var(--icon-color);
+        --toggle-knob-bg-on: var(--icon-color);
+        --toggle-bar-bg: var(--input-disabled-bg);
+        --toggle-bar-bg-on: var(--input-disabled-bg);
+    }
+
     &:disabled &__knob {
-        opacity: var(--toggle-bar-focus-opacity);
+        opacity: var(--toggle-bar-opacity);
+    }
+
+    &:disabled &__bar {
+        opacity: var(--toggle-bar-opacity);
     }
 }
