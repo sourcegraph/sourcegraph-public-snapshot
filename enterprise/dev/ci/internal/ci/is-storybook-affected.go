@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Changes in the files below will be ignored by Storybook workflow.
+// Changes in the files below will be ignored by the Storybook workflow.
 var ignoredRootFiles []string = []string{
 	"jest.config.base.js",
 	"graphql-schema-linter.config.js",
