@@ -20,6 +20,7 @@
     margin: 0 0.5rem;
     padding: 0;
     height: 100%;
+    // Global rule is necessary because the elements used as action items are handling margin/padding as part of their own styles.
     :global(.nav-link),
     :global(.btn-link) {
         margin: 0;

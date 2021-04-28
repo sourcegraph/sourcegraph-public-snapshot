@@ -391,11 +391,10 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
     const [isRedesignEnabled] = useRedesignToggle()
 
     const MenuDropdownIcon = (): JSX.Element => {
-        if (isRedesignEnabled) {
-            return isOpen ? <ChevronUpIcon className="icon-inline" /> : <ChevronDownIcon className="icon-inline" />
-        }
+        const UpIcon = isRedesignEnabled ? ChevronUpIcon : MenuUpIcon
+        const DownIcon = isRedesignEnabled ? ChevronDownIcon : MenuDownIcon
 
-        return isOpen ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />
+        return isOpen ? <UpIcon className="icon-inline" /> : <DownIcon className="icon-inline" />
     }
 
     return (
