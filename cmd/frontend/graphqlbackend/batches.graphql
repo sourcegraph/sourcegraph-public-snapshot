@@ -2326,56 +2326,87 @@ type BatchChange implements Node {
 A list of bulk jobs.
 """
 type BulkJobConnection {
+    """
+    The total number of bulk jobs in the connection.
+    """
     totalCount: Int!
+
+    """
+    Pagination information.
+    """
     pageInfo: PageInfo!
+
+    """
+    A list of bulk jobs.
+    """
     nodes: [BulkJob!]!
 }
 
+"""
+The available types of jobs that can be run over a batch change.
+"""
 enum BulkJobType {
     """
-    Bulk comment over all involved changesets.
+    Bulk post comments over all involved changesets.
     """
     COMMENT
 }
 
+"""
+All valid states a bulk job can be in.
+"""
 enum BulkJobState {
     """
     The bulk job is still processing on some changesets.
     """
     PROCESSING
+
     """
     No operations are still running and all of them finished without error.
     """
     COMPLETED
+
     """
     No operations are still running and at least one of them finished with an error.
     """
     FAILED
 }
 
+"""
+A bulk job represents a group of jobs run over a set of changesets in a batch change.
+"""
 type BulkJob implements Node {
+    """
+    The unique ID for the campaign.
+    """
     id: ID!
+
     """
     The type of task that is run.
     """
     type: BulkJobType!
+
     """
     The current state of the bulk job.
     """
     state: BulkJobState!
+
     """
     The progress to completion of all executions involved in this bulk job. Value
     ranges from 0.0 to 1.0.
     """
     progress: Float!
+
     """
     The list of all errors that occured while processing the bulk action.
     """
     errors: [ChangesetJobError!]!
+
     """
     The time the bulk job was created at.
     """
     createdAt: DateTime!
+
     """
     The time the bulk job finished. Also set, when some operations failed. Null,
     when some operations are still processing.
