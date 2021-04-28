@@ -90,17 +90,19 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 
-		// Upload storybook to Chromatic
-		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
-		if !c.isPR() {
-			chromaticCommand += " --auto-accept-changes"
+		if c.isStorybookAffected() {
+			// Upload storybook to Chromatic
+			chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
+			if !c.isPR() {
+				chromaticCommand += " --auto-accept-changes"
+			}
+			pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
+				bk.AutomaticRetry(5),
+				bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
+				bk.Cmd("yarn gulp generate"),
+				bk.Env("MINIFY", "1"),
+				bk.Cmd(chromaticCommand))
 		}
-		pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
-			bk.AutomaticRetry(5),
-			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn gulp generate"),
-			bk.Env("MINIFY", "1"),
-			bk.Cmd(chromaticCommand))
 
 		// Shared tests
 		pipeline.AddStep(":jest: Test shared client code",
