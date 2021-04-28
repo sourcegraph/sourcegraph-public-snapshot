@@ -12,7 +12,7 @@ import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { InsightsApiContext } from '../../core/backend/api-provider'
 
-import { CreationSearchInsightForm, CreateInsightFormProps } from './components/creation-search-insight-form/CreationSearchInsightForm'
+import { CreationSearchInsightForm, CreationSearchInsightFormProps } from './components/creation-search-insight-form/CreationSearchInsightForm'
 import styles from './CreationSearchInsightPage.module.scss'
 
 export interface CreationSearchInsightPageProps extends PlatformContextProps, RouteComponentProps {
@@ -28,7 +28,7 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
     const { platformContext, authenticatedUser, history } = props
     const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
 
-    const handleSubmit = useCallback<CreateInsightFormProps['onSubmit']>(
+    const handleSubmit = useCallback<CreationSearchInsightFormProps['onSubmit']>(
         async values => {
             if (!authenticatedUser) {
                 return
