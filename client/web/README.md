@@ -11,7 +11,7 @@
 ### Development server
 
 ```sh
-yarn serve:dev
+ENTERPRISE=1 yarn serve:dev
 ```
 
 ### Production server
