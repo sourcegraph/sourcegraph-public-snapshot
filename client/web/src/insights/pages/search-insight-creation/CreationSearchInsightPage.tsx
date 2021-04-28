@@ -12,7 +12,10 @@ import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { InsightsApiContext } from '../../core/backend/api-provider'
 
-import { CreationSearchInsightForm, CreationSearchInsightFormProps } from './components/creation-search-insight-form/CreationSearchInsightForm'
+import {
+    CreationSearchInsightForm,
+    CreationSearchInsightFormProps,
+} from './components/creation-search-insight-form/CreationSearchInsightForm'
 import styles from './CreationSearchInsightPage.module.scss'
 
 export interface CreationSearchInsightPageProps extends PlatformContextProps, RouteComponentProps {

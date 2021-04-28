@@ -8,7 +8,8 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 import { CreationSearchInsightForm, CreationSearchInsightFormProps } from './CreationSearchInsightForm'
 
 describe('CreateInsightForm', () => {
-    const renderWithProps = (props: CreationSearchInsightFormProps): RenderResult => render(<CreationSearchInsightForm {...props} />)
+    const renderWithProps = (props: CreationSearchInsightFormProps): RenderResult =>
+        render(<CreationSearchInsightForm {...props} />)
     const onSubmitMock = sinon.spy()
 
     beforeEach(() => onSubmitMock.resetHistory())
