@@ -208,7 +208,8 @@ func TestCommittedAtMigratorUnknownRepository(t *testing.T) {
 
 func TestCommittedAtMigratorUnknownCommits(t *testing.T) {
 	// if testing.Short() {
-	// TODO: This test was broken on main, to unblock CI, it has been disabled.
+	// TODO: This test was broken on main, to unblock CI, it has been disabled
+	// here: https://github.com/sourcegraph/sourcegraph/pull/20489.
 	t.Skip()
 	// }
 	dbtesting.SetupGlobalTestDB(t)
