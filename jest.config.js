@@ -1,5 +1,6 @@
 // @ts-check
 
+// This change should not trigger Chromatic workflow
 /** @type {jest.InitialOptions} */
 const config = require('./jest.config.base')
 
