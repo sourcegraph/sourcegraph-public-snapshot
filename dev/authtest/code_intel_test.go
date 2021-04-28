@@ -3,7 +3,6 @@ package authtest
 import (
 	"bytes"
 	"io"
-	"net/http"
 	"testing"
 	"time"
 
@@ -121,8 +120,8 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		}
 		defer func() { _ = resp.Body.Close() }()
 
-		if resp.StatusCode != http.StatusUnauthorized {
-			t.Fatalf(`Want status code %d error but got %d`, http.StatusUnauthorized, resp.StatusCode)
+		if resp.StatusCode/100 != 4 {
+			t.Fatalf(`Want status code 4xx error but got %d`, resp.StatusCode)
 		}
 	})
 }

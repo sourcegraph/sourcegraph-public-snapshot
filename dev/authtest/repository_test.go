@@ -62,7 +62,7 @@ func TestRepository(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !permsInfo.SyncedAt.IsZero() {
+		if permsInfo != nil && !permsInfo.SyncedAt.IsZero() {
 			return nil
 		}
 		return gqltestutil.ErrContinueRetry
