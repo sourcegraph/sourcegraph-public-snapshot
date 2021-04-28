@@ -1,6 +1,6 @@
 {
   "private": true,
-  "description": "The Sourcegraph web app",
+  "description": "This change should trigger Chromatic workflow",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
