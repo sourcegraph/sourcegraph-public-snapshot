@@ -115,9 +115,6 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
               className="toggle__bar toggle__bar--on"
             />
             <span
-              className="toggle__bar-shadow toggle__bar-shadow--on"
-            />
-            <span
               className="toggle__knob toggle__knob--on"
             />
           </button>
