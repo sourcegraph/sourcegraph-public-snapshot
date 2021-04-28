@@ -121,6 +121,7 @@
     "@storybook/addon-toolbars": "^6.2.9",
     "@storybook/addons": "^6.2.9",
     "@storybook/components": "^6.2.9",
+    "@storybook/client-api": "^6.2.9",
     "@storybook/core": "^6.2.9",
     "@storybook/react": "^6.2.9",
     "@storybook/theming": "^6.2.9",

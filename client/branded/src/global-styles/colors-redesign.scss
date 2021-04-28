@@ -35,9 +35,7 @@ $theme-colors-redesign: (
     merged: $redesign-purple,
 );
 
-:root.theme-redesign,
-// Descendant selector is required for Storybook `addRedesignVariants` helper.
-:root .theme-redesign {
+.theme-redesign {
     --primary: #{map-get($theme-colors-redesign, 'primary')};
     --primary-3: #{$redesign-indigo};
     --brand-secondary: #a305e1;
