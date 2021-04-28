@@ -1,8 +1,8 @@
 import fs from 'fs'
 import path from 'path'
 
+import { parse } from '@sqs/jsonc-parser'
 import lodash from 'lodash'
-import stripJsonComments from 'strip-json-comments'
 
 import { SourcegraphContext } from '../../src/jscontext'
 
@@ -14,7 +14,7 @@ const SITE_CONFIG_PATH = path.resolve(ROOT_PATH, '../dev-private/enterprise/dev/
 export const getSiteConfig = (): Partial<SourcegraphContext> => {
     try {
         // eslint-disable-next-line no-sync
-        const siteConfig = JSON.parse(stripJsonComments(fs.readFileSync(SITE_CONFIG_PATH, 'utf-8')))
+        const siteConfig = parse(fs.readFileSync(SITE_CONFIG_PATH, 'utf-8'))
 
         return lodash.mapKeys(siteConfig, (_value, key) => lodash.camelCase(key))
     } catch (error) {
