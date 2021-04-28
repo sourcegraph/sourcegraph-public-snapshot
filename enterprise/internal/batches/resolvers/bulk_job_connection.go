@@ -7,9 +7,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
-
-var _ graphqlbackend.BulkJobConnectionResolver = &bulkJobConnectionResolver{}
 
 type bulkJobConnectionResolver struct {
 	store         *store.Store
@@ -18,10 +17,12 @@ type bulkJobConnectionResolver struct {
 
 	// Cache results because they are used by multiple fields
 	once     sync.Once
-	bulkJobs []*store.BulkJob
+	bulkJobs []*btypes.BulkJob
 	next     string
 	err      error
 }
+
+var _ graphqlbackend.BulkJobConnectionResolver = &bulkJobConnectionResolver{}
 
 func (r *bulkJobConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	count, err := r.store.CountBulkJobs(ctx, store.CountBulkJobsOpts{
@@ -40,8 +41,6 @@ func (r *bulkJobConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.
 	}
 
 	if next != "" {
-		// We don't use the RandID for pagination, because we can't paginate database
-		// entries based on the RandID.
 		return graphqlutil.NextPageCursor(next), nil
 	}
 
@@ -62,7 +61,7 @@ func (r *bulkJobConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend
 	return resolvers, nil
 }
 
-func (r *bulkJobConnectionResolver) compute(ctx context.Context) ([]*store.BulkJob, string, error) {
+func (r *bulkJobConnectionResolver) compute(ctx context.Context) ([]*btypes.BulkJob, string, error) {
 	r.once.Do(func() {
 		opts := r.opts
 		opts.BatchChangeID = r.batchChangeID

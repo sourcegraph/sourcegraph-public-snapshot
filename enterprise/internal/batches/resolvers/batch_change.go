@@ -262,6 +262,7 @@ func (r *batchChangeResolver) BulkJobs(
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
+
 	return &bulkJobConnectionResolver{
 		store:         r.store,
 		batchChangeID: r.batchChange.ID,

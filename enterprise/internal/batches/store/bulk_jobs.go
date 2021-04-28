@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"time"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -10,37 +9,43 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-// BulkJobColumns are used by the batch change related Store methods to insert,
-// update and query changeset jobs.
-var BulkJobColumns = []*sqlf.Query{
-	sqlf.Sprintf("changeset_jobs.id"),
-	sqlf.Sprintf("changeset_jobs.bulk_group"),
-	sqlf.Sprintf("changeset_jobs.user_id"),
-	sqlf.Sprintf("changeset_jobs.batch_change_id"),
-	sqlf.Sprintf("changeset_jobs.changeset_id"),
-	sqlf.Sprintf("changeset_jobs.job_type"),
-	sqlf.Sprintf("changeset_jobs.payload"),
-	sqlf.Sprintf("changeset_jobs.state"),
-	sqlf.Sprintf("changeset_jobs.failure_message"),
-	sqlf.Sprintf("changeset_jobs.started_at"),
-	sqlf.Sprintf("changeset_jobs.finished_at"),
-	sqlf.Sprintf("changeset_jobs.process_after"),
-	sqlf.Sprintf("changeset_jobs.num_resets"),
-	sqlf.Sprintf("changeset_jobs.num_failures"),
-	sqlf.Sprintf("changeset_jobs.created_at"),
-	sqlf.Sprintf("changeset_jobs.updated_at"),
+var bulkJobColumns = []*sqlf.Query{
+	sqlf.Sprintf("changeset_jobs.bulk_group AS id"),
+	sqlf.Sprintf("changeset_jobs.job_type AS type"),
+	sqlf.Sprintf(
+		`CASE
+	WHEN COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s, %s)) > 0 THEN 'PROCESSING'
+	WHEN COUNT(*) FILTER (WHERE changeset_jobs.state = %s) > 0 THEN 'FAILED'
+	ELSE 'COMPLETED'
+END AS state`,
+		btypes.ReconcilerStateProcessing.ToDB(),
+		btypes.ReconcilerStateQueued.ToDB(),
+		btypes.ReconcilerStateErrored.ToDB(),
+		btypes.ReconcilerStateFailed.ToDB(),
+	),
+	sqlf.Sprintf(
+		"COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) / COUNT(*) AS progress,",
+		btypes.ReconcilerStateCompleted.ToDB(),
+		btypes.ReconcilerStateFailed.ToDB(),
+	),
+	sqlf.Sprintf("MIN(changeset_jobs.created_at) AS created_at,"),
+	sqlf.Sprintf(
+		"CASE WHEN (COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) / COUNT(*)) = 1.0 THEN MAX(changeset_jobs.finished_at) ELSE null END AS finished_at",
+		btypes.ReconcilerStateCompleted.ToDB(),
+		btypes.ReconcilerStateFailed.ToDB(),
+	),
 }
 
-// GetBulkJobOpts captures the query options needed for getting a ChangesetJob
+// GetBulkJobOpts captures the query options needed for getting a BulkJob.
 type GetBulkJobOpts struct {
 	ID string
 }
 
-// GetBulkJob gets a ChangesetJob matching the given options.
-func (s *Store) GetBulkJob(ctx context.Context, opts GetBulkJobOpts) (*BulkJob, error) {
+// GetBulkJob gets a BulkJob matching the given options.
+func (s *Store) GetBulkJob(ctx context.Context, opts GetBulkJobOpts) (*btypes.BulkJob, error) {
 	q := getBulkJobQuery(&opts)
 
-	var c BulkJob
+	var c btypes.BulkJob
 	err := s.query(ctx, q, func(sc scanner) (err error) {
 		return scanBulkJob(&c, sc)
 	})
@@ -56,18 +61,9 @@ func (s *Store) GetBulkJob(ctx context.Context, opts GetBulkJobOpts) (*BulkJob, 
 }
 
 var getBulkJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changeset_jobs.go:GetBulkJob
+-- source: enterprise/internal/batches/store/bulk_jobs.go:GetBulkJob
 SELECT
-    changeset_jobs.bulk_group AS id,
-    changeset_jobs.job_type AS type,
-    CASE
-    	WHEN COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s, %s)) > 0 THEN 'PROCESSING'
-		WHEN COUNT(*) FILTER (WHERE changeset_jobs.state = %s) > 0 THEN 'FAILED'
-        ELSE 'COMPLETED'
-    END AS state,
-	COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) / COUNT(*) AS progress,
-	MIN(changeset_jobs.created_at) AS created_at,
-	CASE WHEN (COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) / COUNT(*)) = 1.0 THEN MAX(changeset_jobs.finished_at) ELSE null END AS finished_at
+    %s
 FROM changeset_jobs
 INNER JOIN changesets ON changesets.id = changeset_jobs.changeset_id
 INNER JOIN repo ON repo.id = changesets.repo_id
@@ -86,19 +82,12 @@ func getBulkJobQuery(opts *GetBulkJobOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getBulkJobsQueryFmtstr,
-		btypes.ReconcilerStateProcessing.ToDB(),
-		btypes.ReconcilerStateQueued.ToDB(),
-		btypes.ReconcilerStateErrored.ToDB(),
-		btypes.ReconcilerStateFailed.ToDB(),
-		btypes.ReconcilerStateCompleted.ToDB(),
-		btypes.ReconcilerStateFailed.ToDB(),
-		btypes.ReconcilerStateCompleted.ToDB(),
-		btypes.ReconcilerStateFailed.ToDB(),
+		sqlf.Join(bulkJobColumns, ","),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-// ListBulkJobsOpts captures the query options needed for getting a ChangesetJob
+// ListBulkJobsOpts captures the query options needed for getting a list of bulk jobs.
 type ListBulkJobsOpts struct {
 	LimitOpts
 	Cursor *string
@@ -106,50 +95,32 @@ type ListBulkJobsOpts struct {
 	BatchChangeID int64
 }
 
-// ListBulkJobs gets a ChangesetJob matching the given options.
-func (s *Store) ListBulkJobs(ctx context.Context, opts ListBulkJobsOpts) (cs []*BulkJob, next string, err error) {
+// ListBulkJobs gets a list of BulkJobs matching the given options.
+func (s *Store) ListBulkJobs(ctx context.Context, opts ListBulkJobsOpts) (bs []*btypes.BulkJob, next string, err error) {
 	q := listBulkJobsQuery(&opts)
 
-	cs = make([]*BulkJob, 0, opts.DBLimit())
+	bs = make([]*btypes.BulkJob, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) error {
-		var c BulkJob
+		var c btypes.BulkJob
 		if err := scanBulkJob(&c, sc); err != nil {
 			return err
 		}
-		cs = append(cs, &c)
+		bs = append(bs, &c)
 		return nil
 	})
 
-	if opts.Limit != 0 && len(cs) == opts.DBLimit() {
-		next = cs[len(cs)-1].ID
-		cs = cs[:len(cs)-1]
+	if opts.Limit != 0 && len(bs) == opts.DBLimit() {
+		next = bs[len(bs)-1].ID
+		bs = bs[:len(bs)-1]
 	}
 
-	return cs, next, err
-}
-
-type BulkJob struct {
-	ID         string
-	Type       btypes.ChangesetJobType
-	State      btypes.ReconcilerState
-	Progress   float64
-	CreatedAt  time.Time
-	FinishedAt time.Time
+	return bs, next, err
 }
 
 var listBulkJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changeset_jobs.go:ListBulkJobs
+-- source: enterprise/internal/batches/store/bulk_jobs.go:ListBulkJobs
 SELECT
-    changeset_jobs.bulk_group AS id,
-    changeset_jobs.job_type AS type,
-    CASE
-    	WHEN COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s, %s)) > 0 THEN 'PROCESSING'
-		WHEN COUNT(*) FILTER (WHERE changeset_jobs.state = %s) > 0 THEN 'FAILED'
-        ELSE 'COMPLETED'
-    END AS state,
-	COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) / COUNT(*) AS progress,
-	MIN(changeset_jobs.created_at) AS created_at,
-	CASE WHEN (COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) / COUNT(*)) = 1.0 THEN MAX(changeset_jobs.finished_at) ELSE null END AS finished_at
+    %s
 FROM changeset_jobs
 INNER JOIN changesets ON changesets.id = changeset_jobs.changeset_id
 INNER JOIN repo ON repo.id = changesets.repo_id
@@ -172,30 +143,23 @@ func listBulkJobsQuery(opts *ListBulkJobsOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		listBulkJobsQueryFmtstr+opts.LimitOpts.ToDB(),
-		btypes.ReconcilerStateProcessing.ToDB(),
-		btypes.ReconcilerStateQueued.ToDB(),
-		btypes.ReconcilerStateErrored.ToDB(),
-		btypes.ReconcilerStateFailed.ToDB(),
-		btypes.ReconcilerStateCompleted.ToDB(),
-		btypes.ReconcilerStateFailed.ToDB(),
-		btypes.ReconcilerStateCompleted.ToDB(),
-		btypes.ReconcilerStateFailed.ToDB(),
+		sqlf.Join(bulkJobColumns, ","),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-// CountBulkJobsOpts captures the query options needed for getting a ChangesetJob
+// CountBulkJobsOpts captures the query options needed counting BulkJobs.
 type CountBulkJobsOpts struct {
 	BatchChangeID int64
 }
 
-// CountBulkJobs gets a ChangesetJob matching the given options.
+// CountBulkJobs gets the count of BulkJobs in the given batch change.
 func (s *Store) CountBulkJobs(ctx context.Context, opts CountBulkJobsOpts) (int, error) {
 	return s.queryCount(ctx, countBulkJobsQuery(&opts))
 }
 
 var countBulkJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changeset_jobs.go:CountBulkJobs
+-- source: enterprise/internal/batches/store/bulk_jobs.go:CountBulkJobs
 SELECT
     COUNT(DISTINCT(changeset_jobs.bulk_group))
 FROM changeset_jobs
@@ -217,35 +181,31 @@ func countBulkJobsQuery(opts *CountBulkJobsOpts) *sqlf.Query {
 	)
 }
 
-type BulkJobError struct {
-	ChangesetID int64
-	Error       string
-}
-
-// ListBulkJobErrorsOpts captures the query options needed for getting a ChangesetJob
+// ListBulkJobErrorsOpts captures the query options needed for getting a list of
+// BulkJobErrors.
 type ListBulkJobErrorsOpts struct {
 	BulkJobID string
 }
 
-// ListBulkJobErrors gets a ChangesetJob matching the given options.
-func (s *Store) ListBulkJobErrors(ctx context.Context, opts ListBulkJobErrorsOpts) (cs []*BulkJobError, err error) {
+// ListBulkJobErrors gets a list of BulkJobErrors in a given BulkJob.
+func (s *Store) ListBulkJobErrors(ctx context.Context, opts ListBulkJobErrorsOpts) (es []*btypes.BulkJobError, err error) {
 	q := listBulkJobErrorsQuery(&opts)
 
-	cs = make([]*BulkJobError, 0)
+	es = make([]*btypes.BulkJobError, 0)
 	err = s.query(ctx, q, func(sc scanner) error {
-		var c BulkJobError
+		var c btypes.BulkJobError
 		if err := scanBulkJobError(&c, sc); err != nil {
 			return err
 		}
-		cs = append(cs, &c)
+		es = append(es, &c)
 		return nil
 	})
 
-	return cs, err
+	return es, err
 }
 
 var listBulkJobErrorsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changeset_jobs.go:ListBulkJobErrors
+-- source: enterprise/internal/batches/store/bulk_jobs.go:ListBulkJobErrors
 SELECT
     changeset_jobs.changeset_id AS changeset_id,
     changeset_jobs.failure_message AS error
@@ -269,7 +229,7 @@ func listBulkJobErrorsQuery(opts *ListBulkJobErrorsOpts) *sqlf.Query {
 	)
 }
 
-func scanBulkJob(b *BulkJob, s scanner) error {
+func scanBulkJob(b *btypes.BulkJob, s scanner) error {
 	return s.Scan(
 		&b.ID,
 		&b.Type,
@@ -280,7 +240,7 @@ func scanBulkJob(b *BulkJob, s scanner) error {
 	)
 }
 
-func scanBulkJobError(b *BulkJobError, s scanner) error {
+func scanBulkJobError(b *btypes.BulkJobError, s scanner) error {
 	return s.Scan(
 		&b.ChangesetID,
 		&b.Error,

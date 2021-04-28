@@ -14,7 +14,7 @@ import (
 )
 
 // changesetJobInsertColumns is the list of changeset_jobs columns that are
-// modified in CreateChangesetJob and UpdateChangesetJob.
+// modified in CreateChangesetJob.
 var changesetJobInsertColumns = []string{
 	"bulk_group",
 	"user_id",
@@ -33,28 +33,28 @@ var changesetJobInsertColumns = []string{
 	"updated_at",
 }
 
-// ChangesetJobColumns are used by the batch change related Store methods to insert,
-// update and query changeset jobs.
-var ChangesetJobColumns = []*sqlf.Query{
-	sqlf.Sprintf("changeset_jobs.id"),
-	sqlf.Sprintf("changeset_jobs.bulk_group"),
-	sqlf.Sprintf("changeset_jobs.user_id"),
-	sqlf.Sprintf("changeset_jobs.batch_change_id"),
-	sqlf.Sprintf("changeset_jobs.changeset_id"),
-	sqlf.Sprintf("changeset_jobs.job_type"),
-	sqlf.Sprintf("changeset_jobs.payload"),
-	sqlf.Sprintf("changeset_jobs.state"),
-	sqlf.Sprintf("changeset_jobs.failure_message"),
-	sqlf.Sprintf("changeset_jobs.started_at"),
-	sqlf.Sprintf("changeset_jobs.finished_at"),
-	sqlf.Sprintf("changeset_jobs.process_after"),
-	sqlf.Sprintf("changeset_jobs.num_resets"),
-	sqlf.Sprintf("changeset_jobs.num_failures"),
-	sqlf.Sprintf("changeset_jobs.created_at"),
-	sqlf.Sprintf("changeset_jobs.updated_at"),
+// ChangesetJobColumns are used by the changeset job related Store methods to query
+// and create changeset jobs.
+var ChangesetJobColumns = []string{
+	"changeset_jobs.id",
+	"changeset_jobs.bulk_group",
+	"changeset_jobs.user_id",
+	"changeset_jobs.batch_change_id",
+	"changeset_jobs.changeset_id",
+	"changeset_jobs.job_type",
+	"changeset_jobs.payload",
+	"changeset_jobs.state",
+	"changeset_jobs.failure_message",
+	"changeset_jobs.started_at",
+	"changeset_jobs.finished_at",
+	"changeset_jobs.process_after",
+	"changeset_jobs.num_resets",
+	"changeset_jobs.num_failures",
+	"changeset_jobs.created_at",
+	"changeset_jobs.updated_at",
 }
 
-// CreateChangesetJob creates the given changeset job.
+// CreateChangesetJob creates the given changeset jobs.
 func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJob) error {
 	inserter := func(inserter *batch.Inserter) error {
 		for _, c := range cs {
@@ -101,24 +101,7 @@ func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJ
 		s.Handle().DB(),
 		"changeset_jobs",
 		changesetJobInsertColumns,
-		[]string{
-			"changeset_jobs.id",
-			"changeset_jobs.bulk_group",
-			"changeset_jobs.user_id",
-			"changeset_jobs.batch_change_id",
-			"changeset_jobs.changeset_id",
-			"changeset_jobs.job_type",
-			"changeset_jobs.payload",
-			"changeset_jobs.state",
-			"changeset_jobs.failure_message",
-			"changeset_jobs.started_at",
-			"changeset_jobs.finished_at",
-			"changeset_jobs.process_after",
-			"changeset_jobs.num_resets",
-			"changeset_jobs.num_failures",
-			"changeset_jobs.created_at",
-			"changeset_jobs.updated_at",
-		},
+		ChangesetJobColumns,
 		func(rows *sql.Rows) error {
 			i++
 			return scanChangesetJob(cs[i], rows)
@@ -135,7 +118,6 @@ type GetChangesetJobOpts struct {
 // GetChangesetJob gets a ChangesetJob matching the given options.
 func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (*btypes.ChangesetJob, error) {
 	q := getChangesetJobQuery(&opts)
-
 	var c btypes.ChangesetJob
 	err := s.query(ctx, q, func(sc scanner) (err error) {
 		return scanChangesetJob(&c, sc)
@@ -166,9 +148,14 @@ func getChangesetJobQuery(opts *GetChangesetJobOpts) *sqlf.Query {
 		sqlf.Sprintf("changeset_jobs.id = %s", opts.ID),
 	}
 
+	columns := []*sqlf.Query{}
+	for _, col := range ChangesetJobColumns {
+		columns = append(columns, sqlf.Sprintf(col))
+	}
+
 	return sqlf.Sprintf(
 		getChangesetJobsQueryFmtstr,
-		sqlf.Join(ChangesetJobColumns, ", "),
+		sqlf.Join(columns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }

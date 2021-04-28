@@ -1136,7 +1136,7 @@ func (r *Resolver) deleteBatchChangesSiteCredential(ctx context.Context, credent
 }
 
 func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.DetachChangesetsArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.DetachChangesets", fmt.Sprintf("BatchChange: %q, Changesets: %s", args.BatchChange, args.Changesets))
+	tr, ctx := trace.New(ctx, "Resolver.DetachChangesets", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -1178,7 +1178,7 @@ func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.De
 }
 
 func (r *Resolver) CreateChangesetComments(ctx context.Context, args *graphqlbackend.CreateChangesetCommentsArgs) (_ graphqlbackend.BulkJobResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.CreateChangesetComments", fmt.Sprintf("BatchChange: %q, Changesets: %s", args.BatchChange, args.Changesets))
+	tr, ctx := trace.New(ctx, "Resolver.CreateChangesetComments", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -1218,7 +1218,7 @@ func (r *Resolver) CreateChangesetComments(ctx context.Context, args *graphqlbac
 		return nil, errors.New("specify at least one changeset")
 	}
 
-	// 🚨 SECURITY: DetachChangeset checks whether current user is authorized.
+	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
 	svc := service.New(r.store)
 	bulkGroupID, err := svc.CreateChangesetJobs(
 		ctx,

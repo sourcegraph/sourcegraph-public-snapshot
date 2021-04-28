@@ -267,7 +267,7 @@ type BulkJobConnectionResolver interface {
 
 type BulkJobResolver interface {
 	ID() graphql.ID
-	Type() string
+	Type() (string, error)
 	State() string
 	Progress() float64
 	Errors(ctx context.Context) ([]ChangesetJobErrorResolver, error)

@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
+	"github.com/dineshappavoo/basex"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
@@ -24,6 +26,11 @@ var seededRand *rand.Rand = rand.New(rand.NewSource(timeutil.Now().UnixNano()))
 
 // ErrNoResults is returned by Store method calls that found no results.
 var ErrNoResults = errors.New("no results")
+
+// RandomID generates a random ID to be used for identifiers in the database.
+func RandomID() (string, error) {
+	return basex.Encode(strconv.Itoa(seededRand.Int()))
+}
 
 // Store exposes methods to read and write batches domain models
 // from persistent storage.
