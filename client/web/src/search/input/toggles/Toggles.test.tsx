@@ -1,8 +1,10 @@
-import React from 'react'
-import * as H from 'history'
-import { getFullQuery, Toggles } from './Toggles'
 import { mount } from 'enzyme'
+import * as H from 'history'
+import React from 'react'
+
 import { SearchPatternType } from '../../../graphql-operations'
+
+import { getFullQuery, Toggles } from './Toggles'
 
 describe('Toggles', () => {
     describe('getFullQuery', () => {

@@ -1,5 +1,6 @@
 import { from } from 'rxjs'
 import { first } from 'rxjs/operators'
+
 import { PlatformContext } from '../../../platform/context'
 import { isSettingsValid } from '../../../settings/settings'
 

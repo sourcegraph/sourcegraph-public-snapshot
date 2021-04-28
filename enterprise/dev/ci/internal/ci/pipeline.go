@@ -4,9 +4,7 @@ package ci
 
 import (
 	"fmt"
-	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
@@ -28,21 +26,36 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"COMMIT_SHA":                       c.commit,
 		"DATE":                             c.now.Format(time.RFC3339),
 		"VERSION":                          c.version,
-		// For Bundlesize
-		"CI_REPO_OWNER": "sourcegraph",
-		"CI_REPO_NAME":  "sourcegraph",
-		"CI_COMMIT_SHA": os.Getenv("BUILDKITE_COMMIT"),
-		// $ in commit messages must be escaped to not attempt interpolation which will fail.
-		"CI_COMMIT_MESSAGE": strings.ReplaceAll(os.Getenv("BUILDKITE_MESSAGE"), "$", "$$"),
-
 		// Add debug flags for scripts to consume
 		"CI_DEBUG_PROFILE": strconv.FormatBool(c.profilingEnabled),
+
+		// Bump Node.js memory to prevent OOM crashes
+		"NODE_OPTIONS": "--max_old_space_size=4096",
 	}
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.releaseBranch {
 		env["PERCY_TARGET_BRANCH"] = c.branch
 	}
+
+	// Make all command steps timeout after 60 minutes in case a buildkite agent
+	// got stuck / died.
+	bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
+
+		// bk.Step is a union containing fields across all the different step types.
+		// However, "timeout_in_minutes" only applies to the "command" step type.
+		//
+		// Testing the length of the "Command" field seems to be the most reliable way
+		// of differentiating "command" steps from other step types without refactoring
+		// everything.
+		if len(s.Command) > 0 {
+			if s.TimeoutInMinutes == "" {
+
+				// Set the default value iff someone else hasn't set a custom one.
+				s.TimeoutInMinutes = "60"
+			}
+		}
+	})
 
 	if c.profilingEnabled {
 		bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
@@ -146,6 +159,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 			triggerE2EandQA(c, env),  // trigger e2e late so that it can leverage candidate images
 			addDockerImages(c, true), // publish final images
+			wait,
+
+			triggerUpdaterPipeline(c),
 		}
 	}
 

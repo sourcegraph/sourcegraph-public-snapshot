@@ -1,7 +1,9 @@
 import { storiesOf } from '@storybook/react'
-import { PrivateCodeCta } from './PrivateCodeCta'
 import React from 'react'
+
 import { WebStory } from '../../components/WebStory'
+
+import { PrivateCodeCta } from './PrivateCodeCta'
 
 const { add } = storiesOf('web/PrivateCodeCta', module).addDecorator(story => <div className="p-4">{story()}</div>)
 

@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -118,8 +117,8 @@ func (s symbolSuggestionResolver) Label() string {
 func (s symbolSuggestionResolver) ToSymbol() (*symbolResolver, bool) { return &s.symbol, true }
 func (s symbolSuggestionResolver) Key() suggestionKey {
 	return suggestionKey{
-		uri:    s.symbol.URI(),
 		symbol: s.symbol.Symbol.Name + s.symbol.Symbol.Parent,
+		url:    s.symbol.CanonicalURL(),
 	}
 }
 
@@ -164,7 +163,7 @@ type suggestionKey struct {
 	file     string
 	symbol   string
 	lang     string
-	uri      *gituri.URI
+	url      string
 }
 
 type searchSuggestionsArgs struct {
@@ -223,10 +222,14 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// * If query contains only a single term (or 1 repogroup: token and a single term), treat it as a repo field here and ignore the other repo queries.
 		// * If only repo fields (except 1 term in query), show repo suggestions.
 
+		hasSingleField := len(r.Query.Fields()) == 1
+		hasTwoFields := len(r.Query.Fields()) == 2
+		hasSingleContextField := len(r.Query.Values(query.FieldContext)) == 1
+		hasSingleRepoGroupField := len(r.Query.Values(query.FieldRepoGroup)) == 1
 		var effectiveRepoFieldValues []string
-		if len(r.Query.Values(query.FieldDefault)) == 1 && (len(r.Query.Fields()) == 1 || (len(r.Query.Fields()) == 2 && len(r.Query.Values(query.FieldRepoGroup)) == 1)) {
+		if len(r.Query.Values(query.FieldDefault)) == 1 && (hasSingleField || (hasTwoFields && (hasSingleRepoGroupField || hasSingleContextField))) {
 			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.Query.Values(query.FieldDefault)[0].ToString())
-		} else if len(r.Query.Values(query.FieldRepo)) > 0 && ((len(r.Query.Values(query.FieldRepoGroup)) > 0 && len(r.Query.Fields()) == 2) || (len(r.Query.Values(query.FieldRepoGroup)) == 0 && len(r.Query.Fields()) == 1)) {
+		} else if len(r.Query.Values(query.FieldRepo)) > 0 && ((len(r.Query.Values(query.FieldRepoGroup)) > 0 && hasTwoFields) || (len(r.Query.Values(query.FieldRepoGroup)) == 0 && hasSingleField)) {
 			effectiveRepoFieldValues, _ = r.Query.Repositories()
 		}
 
@@ -240,7 +243,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		}
 		effectiveRepoFieldValues = effectiveRepoFieldValues[:i]
 
-		if len(effectiveRepoFieldValues) > 0 {
+		if len(effectiveRepoFieldValues) > 0 || hasSingleContextField {
 			resolved, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
 
 			resolvers := make([]SearchSuggestionResolver, 0, len(resolved.RepoRevs))
@@ -352,10 +355,15 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return nil, err
 		}
 
-		p, err := r.getPatternInfo(nil)
+		q, err := query.ToBasicQuery(r.Query)
 		if err != nil {
 			return nil, err
 		}
+		if !query.IsPatternAtom(q) {
+			// Not an atomic pattern, can't guarantee it will behave well.
+			return nil, nil
+		}
+		p := search.ToTextPatternInfo(q, search.Batch, query.Identity)
 
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
@@ -393,7 +401,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				case lsp.SKClass:
 					score += 3
 				}
-				if len(sr.Symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.URI().String()), strings.ToLower(sr.Symbol.Name)) {
+				repoName := strings.ToLower(string(sr.File.Repo.Name))
+				fileName := strings.ToLower(sr.File.Path)
+				symbolName := strings.ToLower(sr.Symbol.Name)
+				if len(sr.Symbol.Name) >= 4 && strings.Contains(repoName+fileName, symbolName) {
 					score++
 				}
 				results = append(results, symbolSuggestionResolver{

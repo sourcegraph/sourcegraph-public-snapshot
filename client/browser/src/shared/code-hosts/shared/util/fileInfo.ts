@@ -1,8 +1,9 @@
 import { Observable, of, zip } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
-import { isPrivateRepoPublicSourcegraphComErrorLike } from '../../../../../../shared/src/backend/errors'
-import { PlatformContext } from '../../../../../../shared/src/platform/context'
+import { isPrivateRepoPublicSourcegraphComErrorLike } from '@sourcegraph/shared/src/backend/errors'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+
 import { resolveRepo, resolveRevision, retryWhenCloneInProgressError } from '../../../repo/backend'
 import { FileInfo, FileInfoWithRepoName, DiffOrBlobInfo } from '../codeHost'
 

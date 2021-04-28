@@ -1,15 +1,21 @@
+import fs from 'fs'
+import path from 'path'
+
+import html from 'tagged-template-noop'
+
+import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import {
     createSharedIntegrationTestContext,
     IntegrationTestContext,
     IntegrationTestOptions,
-} from '../../../shared/src/testing/integration/context'
-import { createJsContext } from './jscontext'
-import { SourcegraphContext } from '../jscontext'
+} from '@sourcegraph/shared/src/testing/integration/context'
+
 import { WebGraphQlOperations } from '../graphql-operations'
-import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
-import html from 'tagged-template-noop'
-import { commonWebGraphQlResults } from './graphQlResults'
+import { SourcegraphContext } from '../jscontext'
 import { SearchEvent } from '../search/stream'
+
+import { commonWebGraphQlResults } from './graphQlResults'
+import { createJsContext } from './jscontext'
 
 export interface WebIntegrationTestContext
     extends IntegrationTestContext<
@@ -27,6 +33,15 @@ export interface WebIntegrationTestContext
      * @param overrides The array of events to return.
      */
     overrideSearchStreamEvents: (overrides: SearchEvent[]) => void
+}
+
+const rootDirectory = path.resolve(__dirname, '..', '..', '..', '..')
+const manifestFile = path.resolve(rootDirectory, 'ui/assets/webpack.manifest.json')
+
+const getAppBundle = (): string => {
+    // eslint-disable-next-line no-sync
+    const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf-8')) as Record<string, string>
+    return manifest['app.js']
 }
 
 /**
@@ -60,7 +75,7 @@ export const createWebIntegrationTestContext = async ({
                         <script>
                             window.context = ${JSON.stringify(jsContext)}
                         </script>
-                        <script src="/.assets/scripts/app.bundle.js"></script>
+                        <script src=${getAppBundle()}></script>
                     </body>
                 </html>
             `)

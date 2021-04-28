@@ -1,15 +1,18 @@
 import React, { useCallback, useState } from 'react'
 import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
-import { isErrorLike } from '../../../../../shared/src/util/errors'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
 import { UpdateUserResult, UpdateUserVariables, UserAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserProfileFormFields, UserProfileFormFieldsValue } from './UserProfileFormFields'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { UserAreaGQLFragment } from '../../area/UserArea'
-import { Form } from '../../../../../branded/src/components/Form'
-import { AuthenticatedUser } from '../../../auth'
+
+import { UserProfileFormFields, UserProfileFormFieldsValue } from './UserProfileFormFields'
 
 interface Props {
     authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'>

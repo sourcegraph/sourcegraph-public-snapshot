@@ -1,14 +1,16 @@
-import React from 'react'
-import { CodeMonitoringPage } from './CodeMonitoringPage'
 import { storiesOf } from '@storybook/react'
-import { AuthenticatedUser } from '../../auth'
-
-import { ListUserCodeMonitorsVariables } from '../../graphql-operations'
+import React from 'react'
 import { of } from 'rxjs'
-import { mockCodeMonitorNodes } from './testing/util'
 import sinon from 'sinon'
+
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+
+import { AuthenticatedUser } from '../../auth'
+import { ListUserCodeMonitorsVariables } from '../../graphql-operations'
 import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
-import { EMPTY_SETTINGS_CASCADE } from '../../../../shared/src/settings/settings'
+
+import { CodeMonitoringPage } from './CodeMonitoringPage'
+import { mockCodeMonitorNodes } from './testing/util'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/CodeMonitoringPage', module)
 

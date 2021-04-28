@@ -1,8 +1,10 @@
 import * as H from 'history'
 import * as React from 'react'
-import { Controller as ClientController } from '../../../../shared/src/extensions/controller'
-import { ExtensionStatusPopover } from '../../../../shared/src/extensions/ExtensionStatus'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
+
+import { Controller as ClientController } from '@sourcegraph/shared/src/extensions/controller'
+import { ExtensionStatusPopover } from '@sourcegraph/shared/src/extensions/ExtensionStatus'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+
 import { ShortcutProvider } from './ShortcutProvider'
 
 interface Props extends PlatformContextProps<'sideloadedExtensionURL'> {

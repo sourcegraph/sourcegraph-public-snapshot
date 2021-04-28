@@ -1,13 +1,17 @@
+import classNames from 'classnames'
+import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useEffect, useCallback, useState, useMemo } from 'react'
-import {
-    areBatchChangesLicensed as _areBatchChangesLicensed,
-    queryBatchChanges as _queryBatchChanges,
-    queryBatchChangesByNamespace,
-} from './backend'
 import { RouteComponentProps } from 'react-router'
+import { Observable, ReplaySubject } from 'rxjs'
+import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { BatchChangesIcon } from '../../../batches/icons'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
-import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { PageHeader } from '../../../components/PageHeader'
 import {
     ListBatchChange,
     Scalars,
@@ -16,16 +20,15 @@ import {
     BatchChangesResult,
     BatchChangesByNamespaceVariables,
 } from '../../../graphql-operations'
-import PlusIcon from 'mdi-react/PlusIcon'
-import { Link } from '../../../../../shared/src/components/Link'
-import { PageHeader } from '../../../components/PageHeader'
-import { BatchChangesIcon } from '../../../batches/icons'
+
+import {
+    areBatchChangesLicensed as _areBatchChangesLicensed,
+    queryBatchChanges as _queryBatchChanges,
+    queryBatchChangesByNamespace,
+} from './backend'
+import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
 import { BatchChangesListEmpty } from './BatchChangesListEmpty'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
-import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
-import { Observable, ReplaySubject } from 'rxjs'
-import classNames from 'classnames'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
 
 export interface BatchChangeListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
     displayNamespace?: boolean

@@ -1,10 +1,12 @@
+import classNames from 'classnames'
 import React, { useState, useCallback, useEffect } from 'react'
 import { Observable } from 'rxjs'
 import { delay, startWith, tap, mergeMap, catchError } from 'rxjs/operators'
-import classNames from 'classnames'
-import { Toggle } from '../../../../../branded/src/components/Toggle'
-import { useEventObservable } from '../../../../../shared/src/util/useObservable'
-import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
+
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields, MonitorEmailPriority } from '../../../graphql-operations'
 import { triggerTestEmailAction } from '../backend'

@@ -1,4 +1,5 @@
-import { RawRepoSpec } from '../../../../../shared/src/util/url'
+import { RawRepoSpec } from '@sourcegraph/shared/src/util/url'
+
 import { DiffResolvedRevisionSpec } from '../../repo'
 
 /**

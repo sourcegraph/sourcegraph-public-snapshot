@@ -1,7 +1,10 @@
-import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
+
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+
 import { diffStatFields, fileDiffFields } from '../../../backend/diff'
+import { requestGraphQL } from '../../../backend/graphql'
 import {
     BatchChangeChangesetsVariables,
     BatchChangeChangesetsResult,
@@ -26,8 +29,9 @@ import {
     DeleteBatchChangeVariables,
     DetachChangesetsVariables,
     DetachChangesetsResult,
+    ChangesetScheduleEstimateResult,
+    ChangesetScheduleEstimateVariables,
 } from '../../../graphql-operations'
-import { requestGraphQL } from '../../../backend/graphql'
 
 const changesetsStatsFragment = gql`
     fragment ChangesetsStatsFields on ChangesetsStats {
@@ -516,6 +520,43 @@ export async function getChangesetDiff(changeset: Scalars['ID']): Promise<string
                 }
 
                 return commits[0].diff
+            })
+        )
+        .toPromise()
+}
+
+const changesetScheduleEstimateFragment = gql`
+    fragment ChangesetScheduleEstimateFields on ExternalChangeset {
+        scheduleEstimateAt
+    }
+`
+
+export async function getChangesetScheduleEstimate(changeset: Scalars['ID']): Promise<Scalars['DateTime'] | null> {
+    return requestGraphQL<ChangesetScheduleEstimateResult, ChangesetScheduleEstimateVariables>(
+        gql`
+            query ChangesetScheduleEstimate($changeset: ID!) {
+                node(id: $changeset) {
+                    __typename
+                    ...ChangesetScheduleEstimateFields
+                }
+            }
+
+            ${changesetScheduleEstimateFragment}
+        `,
+        { changeset }
+    )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(({ node }) => {
+                if (!node) {
+                    throw new Error(`Changeset with ID ${changeset} does not exist`)
+                } else if (node.__typename === 'HiddenExternalChangeset') {
+                    throw new Error(`You do not have permission to view changeset ${changeset}`)
+                } else if (node.__typename !== 'ExternalChangeset') {
+                    throw new Error(`The given ID is a ${node.__typename}, not an ExternalChangeset`)
+                }
+
+                return node.scheduleEstimateAt
             })
         )
         .toPromise()

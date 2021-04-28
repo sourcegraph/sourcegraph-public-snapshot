@@ -3,7 +3,7 @@ package syncer
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
 var (
@@ -12,7 +12,7 @@ var (
 )
 
 // NextSync computes the time we want the next sync to happen.
-func NextSync(clock func() time.Time, h *batches.ChangesetSyncData) time.Time {
+func NextSync(clock func() time.Time, h *btypes.ChangesetSyncData) time.Time {
 	lastSync := h.UpdatedAt
 
 	if lastSync.IsZero() {

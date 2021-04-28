@@ -4,32 +4,38 @@ Below are examples that search repositories on [Sourcegraph.com](https://sourceg
 
 > See [**search query syntax**](../reference/queries.md) reference.
 
-[Recent security-related changes on all branches](https://sourcegraph.com/search?q=type:diff+repo:github%5C.com/kubernetes/kubernetes%24+repo:%40*refs/heads/+after:"5+days+ago"+%5Cb%28auth%5B%5Eo%5D%5B%5Er%5D%7Csecurity%5Cb%7Ccve%7Cpassword%7Csecure%7Cunsafe%7Cperms%7Cpermissions%29)<br/>
+[Recent security-related changes on all branches](https://sourcegraph.com/search?q=type:diff+repo:github%5C.com/kubernetes/kubernetes%24+repo:%40*refs/heads/+after:"5+days+ago"+%5Cb%28auth%5B%5Eo%5D%5B%5Er%5D%7Csecurity%5Cb%7Ccve%7Cpassword%7Csecure%7Cunsafe%7Cperms%7Cpermissions%29&patternType=regexp)<br/>
 
 ```sgquery
 type:diff repo:@*refs/heads/ after:"5 days ago"
 \b(auth[^o][^r]|security\b|cve|password|secure|unsafe|perms|permissions)
 ```
 
-[Admitted hacks and TODOs in app code](https://sourcegraph.com/search?q=-file:%5C.%28json%7Cmd%7Ctxt%29%24+hack%7Ctodo%7Ckludge%7Cfixme)<br/>
+[Admitted hacks and TODOs in app code](https://sourcegraph.com/search?q=-file:%5C.%28json%7Cmd%7Ctxt%29%24+hack%7Ctodo%7Ckludge%7Cfixme&patternType=regexp)<br/>
 
 ```sgquery
 -file:\.(json|md|txt)$ hack|todo|kludge|fixme
 ```
 
-[New usages of a function](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/+type:diff+after:%221+week+ago%22+%5C.subscribe%5C%28+lang:typescript)<br/>
+[Removal of TODOs in the repository commit log](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type:diff+TODO+select:commit.diff.removed+&patternType=literal)
+
+```sgquery
+repo:^github\.com/sourcegraph/sourcegraph$ type:diff select:commit.diff.removed TODO
+```
+
+[New usages of a function](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/+type:diff+after:%221+week+ago%22+%5C.subscribe%5C%28+lang:typescript&patternType=regexp)<br/>
 
 ```sgquery
 type:diff after:"1 week ago" \.subscribe\( lang:typescript
 ```
 
-[Find multiple terms in the same file, like testing of HTTP components ](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/sourcegraph%24+%28test+AND+http+AND+NewRequest%29+lang:go&patternType=regexp)
+[Find multiple terms in the same file, like testing of HTTP components](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/sourcegraph%24+%28test+AND+http+AND+NewRequest%29+lang:go&patternType=regexp)
 
 ```sgquery
 repo:github\.com/sourcegraph/sourcegraph$ (test AND http AND NewRequest) lang:go
 ```
 
-[Recent quality related changes on all branches (customize for your linters)](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/+repo:%40*refs/heads/:%5Emaster+type:diff+after:"1+week+ago"+%28eslint-disable%29)<br/>
+[Recent quality related changes on all branches (customize for your linters)](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/+repo:%40*refs/heads/:%5Emaster+type:diff+after:"1+week+ago"+%28eslint-disable%29&patternType=regexp)<br/>
 
 ```sgquery
 repo:@*refs/heads/:^master type:diff after:"1 week ago" (eslint-disable)

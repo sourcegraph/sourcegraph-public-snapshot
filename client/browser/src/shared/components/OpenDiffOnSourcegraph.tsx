@@ -1,20 +1,23 @@
+import classNames from 'classnames'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
-import { IFileDiffConnection } from '../../../../shared/src/graphql/schema'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
+
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+
+import { FileDiffConnectionFields } from '../../graphql-operations'
 import { queryRepositoryComparisonFileDiffs } from '../backend/diffs'
 import { OpenDiffInSourcegraphProps } from '../repo'
 import { getPlatformName } from '../util/context'
+
 import { SourcegraphIconButton, SourcegraphIconButtonProps } from './SourcegraphIconButton'
-import classNames from 'classnames'
 
 interface Props extends SourcegraphIconButtonProps, PlatformContextProps<'requestGraphQL'> {
     openProps: OpenDiffInSourcegraphProps
 }
 
 interface State {
-    fileDiff: IFileDiffConnection | undefined
+    fileDiff: FileDiffConnectionFields | undefined
 }
 
 export class OpenDiffOnSourcegraph extends React.Component<Props, State> {

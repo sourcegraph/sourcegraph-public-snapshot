@@ -40,7 +40,7 @@ func addLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":eslint: Lint all Typescript",
 		bk.Cmd("dev/ci/yarn-run.sh build-ts all:eslint")) // eslint depends on build-ts
 	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :graphql:", // TODO: Add header - Similar to the previous step
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:stylelint graphql-lint all:tsgql"))
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:stylelint graphql-lint"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
@@ -90,17 +90,19 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 
-		// Upload storybook to Chromatic
-		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
-		if !c.isPR() {
-			chromaticCommand += " --auto-accept-changes"
+		if c.isMasterDryRun || c.isStorybookAffected() {
+			// Upload storybook to Chromatic
+			chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
+			if !c.isPR() {
+				chromaticCommand += " --auto-accept-changes"
+			}
+			pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
+				bk.AutomaticRetry(5),
+				bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
+				bk.Cmd("yarn gulp generate"),
+				bk.Env("MINIFY", "1"),
+				bk.Cmd(chromaticCommand))
 		}
-		pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
-			bk.AutomaticRetry(5),
-			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn gulp generate"),
-			bk.Env("MINIFY", "1"),
-			bk.Cmd(chromaticCommand))
 
 		// Shared tests
 		pipeline.AddStep(":jest: Test shared client code",
@@ -148,7 +150,7 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // Adds backend integration tests step.
 func addBackendIntegrationTests(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		if !c.isBackendDryRun && !c.isMasterDryRun && c.branch != "master" && c.branch != "main" {
+		if !c.isBackendDryRun && !c.isMasterDryRun && c.branch != "master" && !c.isMainBranch() {
 			return
 		}
 
@@ -239,6 +241,21 @@ func triggerAsync(c Config) func(*bk.Pipeline) {
 	}
 }
 
+func triggerUpdaterPipeline(c Config) func(*bk.Pipeline) {
+	if !c.isMainBranch() {
+		// no-op
+		return func(*bk.Pipeline) {}
+	}
+
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":github: :date: :k8s: Trigger k8s updates if current commit is tip of 'main'",
+			bk.Cmd(".buildkite/updater/trigger-if-tip-of-main.sh"),
+			bk.Concurrency(1),
+			bk.ConcurrencyGroup("sourcegraph/sourcegraph-k8s-update-trigger"),
+		)
+	}
+}
+
 // images used by cluster-qa test
 func clusterDockerImages(images []string) string {
 	var clusterImages []string
@@ -253,7 +270,7 @@ func clusterDockerImages(images []string) string {
 
 func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	var async bool
-	if c.branch == "main" {
+	if c.isMainBranch() {
 		async = true
 	} else {
 		async = false
@@ -275,7 +292,7 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["VAGRANT_SERVICE_ACCOUNT"] = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.26.1"
+	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.27.4"
 
 	env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(images.SourcegraphDockerImages)
 
@@ -346,7 +363,7 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		switch {
 		// build candidate images and deploy `insiders` images
-		case c.branch == "main":
+		case c.isMainBranch():
 			for _, dockerImage := range images.SourcegraphDockerImages {
 				addDockerImage(c, dockerImage, true)(pipeline)
 			}

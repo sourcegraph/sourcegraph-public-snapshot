@@ -1,7 +1,9 @@
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
-import { map } from 'rxjs/operators'
 import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
+
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+
 import { queryGraphQL } from '../../backend/graphql'
 
 /**

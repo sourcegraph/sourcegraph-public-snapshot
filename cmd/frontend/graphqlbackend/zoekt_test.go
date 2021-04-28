@@ -21,7 +21,6 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -779,7 +778,7 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 		sqlf.Join(rows, ","),
 	)
 
-	_, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -888,7 +887,7 @@ func zoektRPC(s zoekt.Searcher) (zoekt.Searcher, func()) {
 func TestZoektIndexedRepos_single(t *testing.T) {
 	repoRev := func(revSpec string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
-			Repo: &types.RepoName{ID: api.RepoID(0), Name: "test/repo"},
+			Repo: types.RepoName{ID: api.RepoID(0), Name: "test/repo"},
 			Revs: []search.RevisionSpecifier{
 				{RevSpec: revSpec},
 			},
@@ -973,7 +972,6 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 }
 
 func TestZoektFileMatchToSymbolResults(t *testing.T) {
-	db := new(dbtesting.MockDB)
 	symbolInfo := func(sym string) *zoekt.Symbol {
 		return &zoekt.Symbol{
 			Sym:        sym,
@@ -1016,19 +1014,9 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		}},
 	}
 
-	repo := NewRepositoryResolver(db, &types.Repo{Name: "foo"})
-
-	results := zoektFileMatchToSymbolResults(repo, "master", file)
+	results := zoektFileMatchToSymbolResults(types.RepoName{Name: "foo"}, "master", file)
 	var symbols []result.Symbol
 	for _, res := range results {
-		// Check the fields which are not specific to the symbol
-		if got, want := res.Lang, "go"; got != want {
-			t.Fatalf("lang: got %q want %q", got, want)
-		}
-		if got, want := res.BaseURI.URL.String(), "git://foo?master"; got != want {
-			t.Fatalf("baseURI: got %q want %q", got, want)
-		}
-
 		symbols = append(symbols, res.Symbol)
 	}
 
@@ -1055,6 +1043,7 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		want[i].Parent = "parent"
 		want[i].ParentKind = "parentkind"
 		want[i].Path = "bar.go"
+		want[i].Language = "go"
 	}
 
 	if diff := cmp.Diff(want, symbols); diff != "" {

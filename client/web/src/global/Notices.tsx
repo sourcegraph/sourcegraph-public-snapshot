@@ -1,10 +1,12 @@
+import * as H from 'history'
 import * as React from 'react'
+
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { isSettingsValid, SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { renderMarkdown } from '../../../shared/src/util/markdown'
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { Notice, Settings } from '../schema/settings.schema'
-import * as H from 'history'
 
 const NoticeAlert: React.FunctionComponent<{ notice: Notice; className?: string; history: H.History }> = ({
     notice,

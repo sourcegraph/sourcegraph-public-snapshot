@@ -97,6 +97,9 @@ cp -r docker-images/grafana/config "$OUTPUT/sg_config_grafana"
 cp -r dev/grafana/linux "$OUTPUT/sg_config_grafana/provisioning/datasources"
 IMAGE=sourcegraph/grafana:server CACHE=true docker-images/grafana/build.sh
 
+echo "--- postgres exporter"
+IMAGE=sourcegraph/postgres_exporter:server CACHE=true docker-images/postgres_exporter/build.sh
+
 echo "--- jaeger-all-in-one binary"
 cmd/server/jaeger.sh
 

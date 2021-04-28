@@ -1,0 +1,39 @@
+---
+version: 1
+interactions:
+- request:
+    body: |
+      {"text":"test_comment"}
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/63/comments?version=2
+    method: POST
+  response:
+    body: '{"properties":{"repositoryId":10070},"id":2790,"version":0,"text":"test_comment","author":{"name":"erik","emailAddress":"erik@sourcegraph.com","id":152,"displayName":"Erik
+      Seliger","active":true,"slug":"erik","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/erik"}]}},"createdDate":1618447968919,"updatedDate":1618447968919,"comments":[],"tasks":[],"severity":"NORMAL","state":"OPEN","permittedOperations":{"editable":true,"transitionable":true,"deletable":true}}'
+    headers:
+      Cache-Control:
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Thu, 15 Apr 2021 00:52:48 GMT
+      Location:
+      - https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/63/comments/2790?version=2
+      Server:
+      - Caddy
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@1MUQQ7Jx52x452530x0'
+      X-Auserid:
+      - "152"
+      X-Ausername:
+      - erik
+      X-Content-Type-Options:
+      - nosniff
+    status: 201 Created
+    code: 201
+    duration: ""

@@ -1,9 +1,12 @@
+/* eslint-disable no-template-curly-in-string */
 import * as Monaco from 'monaco-editor'
+import { NEVER, of } from 'rxjs'
+
+import { SearchSuggestion } from '../../graphql/schema'
+
 import { getCompletionItems, repositoryCompletionItemKind } from './completion'
 import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
 import { Token } from './token'
-import { NEVER, of } from 'rxjs'
-import { SearchSuggestion } from '../../graphql/schema'
 
 const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSuccess<Token[]>).term
 
@@ -472,6 +475,12 @@ describe('getCompletionItems()', () => {
                     false
                 )
             )?.suggestions.map(({ insertText }) => insertText)
-        ).toStrictEqual(['^repo/with\\ a\\ space$ '])
+        ).toStrictEqual([
+            'contains.file(${1:CHANGELOG}) ',
+            'contains.content(${1:TODO}) ',
+            'contains(file:${1:CHANGELOG} content:${2:fix}) ',
+            'contains.commit.after(${1:1 month ago}) ',
+            '^repo/with\\ a\\ space$ ',
+        ])
     })
 })

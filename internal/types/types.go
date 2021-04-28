@@ -371,7 +371,7 @@ func (r *RepoName) ToRepo() *Repo {
 }
 
 // RepoNames is an utility type with convenience methods for operating on lists of repo names
-type RepoNames []*RepoName
+type RepoNames []RepoName
 
 func (rs RepoNames) Len() int           { return len(rs) }
 func (rs RepoNames) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
@@ -422,7 +422,7 @@ type GitserverRepo struct {
 	CloneStatus CloneStatus
 	// The last external service used to sync or clone this repo
 	LastExternalService int64
-	// The last error that occured or empty if the last action was successful
+	// The last error that occurred or empty if the last action was successful
 	LastError string
 	UpdatedAt time.Time
 }
@@ -441,6 +441,19 @@ type ExternalService struct {
 	NamespaceUserID int32
 	Unrestricted    bool // Whether access to repositories belong to this external service is unrestricted.
 	CloudDefault    bool // Whether this external service is our default public service on Cloud
+}
+
+// ExternalServiceSyncJob represents an sync job for an external service
+type ExternalServiceSyncJob struct {
+	ID                int64
+	State             string
+	FailureMessage    string
+	StartedAt         time.Time
+	FinishedAt        time.Time
+	ProcessAfter      time.Time
+	NumResets         int
+	ExternalServiceID int64
+	NumFailures       int
 }
 
 // URN returns a unique resource identifier of this external service,
@@ -1434,11 +1447,11 @@ type ExtensionUsageStatistics struct {
 }
 
 type CodeInsightsUsageStatistics struct {
-	UsageStatisticsByInsight       []*InsightUsageStatistics
-	InsightsPageViews              *int32
-	InsightsUniquePageViews        *int32
-	InsightConfigureClick          *int32
-	InsightAddMoreClick            *int32
+	WeeklyUsageStatisticsByInsight []*InsightUsageStatistics
+	WeeklyInsightsPageViews        *int32
+	WeeklyInsightsUniquePageViews  *int32
+	WeeklyInsightConfigureClick    *int32
+	WeeklyInsightAddMoreClick      *int32
 	WeekStart                      time.Time
 	WeeklyInsightCreators          *int32
 	WeeklyFirstTimeInsightCreators *int32
@@ -1500,6 +1513,13 @@ type SearchContext struct {
 	Public          bool
 	NamespaceUserID int32 // if non-zero, the owner is this user. NamespaceUserID/NamespaceOrgID are mutually exclusive.
 	NamespaceOrgID  int32 // if non-zero, the owner is this organization. NamespaceUserID/NamespaceOrgID are mutually exclusive.
+
+	// We cache namespace names to avoid separate database lookups when constructing the search context spec
+
+	// NamespaceUserName is the name of the user if NamespaceUserID is present.
+	NamespaceUserName string
+	// NamespaceUserName is the name of the org if NamespaceOrgID is present.
+	NamespaceOrgName string
 }
 
 // SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions
@@ -1507,6 +1527,6 @@ type SearchContext struct {
 // converted when needed. We could use search.RepositoryRevisions directly instead, but it
 // introduces an import cycle with `internal/vcs/git` package when used in `internal/database/search_contexts.go`.
 type SearchContextRepositoryRevisions struct {
-	Repo      *RepoName
+	Repo      RepoName
 	Revisions []string
 }

@@ -2,25 +2,27 @@
  * Provides convenience functions for interacting with the Sourcegraph API from tests.
  */
 
+import { zip, timer, concat, throwError, defer, Observable } from 'rxjs'
+import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
+
+import {
+    CloneInProgressError,
+    isCloneInProgressErrorLike,
+    isRepoNotFoundErrorLike,
+} from '@sourcegraph/shared/src/backend/errors'
 import {
     gql,
     dataOrThrowErrors,
     createInvalidGraphQLMutationResponseError,
     isErrorGraphQLResult,
-} from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
+} from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { Config } from '@sourcegraph/shared/src/testing/config'
+import { isErrorLike, createAggregateError } from '@sourcegraph/shared/src/util/errors'
+
 import { GraphQLClient } from './GraphQlClient'
-import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
-import { zip, timer, concat, throwError, defer, Observable } from 'rxjs'
-import {
-    CloneInProgressError,
-    isCloneInProgressErrorLike,
-    isRepoNotFoundErrorLike,
-} from '../../../../shared/src/backend/errors'
-import { isErrorLike, createAggregateError } from '../../../../shared/src/util/errors'
 import { ResourceDestructor } from './TestResourceManager'
-import { Config } from '../../../../shared/src/testing/config'
-import { PlatformContext } from '../../../../shared/src/platform/context'
 
 type WaitForRepoOptions = Partial<
     Pick<Config, 'logStatusMessages'> & {

@@ -1,7 +1,8 @@
+import { SearchPatternType } from '../../graphql-operations'
+
 import { getHoverResult } from './hover'
 import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
 import { Token } from './token'
-import { SearchPatternType } from '../../graphql-operations'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),
@@ -607,6 +608,26 @@ test('returns hover contents for select', () => {
             "endLineNumber": 1,
             "startColumn": 8,
             "endColumn": 12
+          }
+        }
+    `)
+})
+
+test('returns repo:contains hovers', () => {
+    const scannedQuery = toSuccess(scanSearchQuery('repo:contains.file(foo)', false, SearchPatternType.literal))
+
+    expect(getHoverResult(scannedQuery, { column: 8 }, true)).toMatchInlineSnapshot(`
+        {
+          "contents": [
+            {
+              "value": "**Built-in predicate**. Search only inside repositories that contain a **file path** matching the regular expression \`foo\`."
+            }
+          ],
+          "range": {
+            "startLineNumber": 1,
+            "endLineNumber": 1,
+            "startColumn": 6,
+            "endColumn": 24
           }
         }
     `)

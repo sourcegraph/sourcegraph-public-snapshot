@@ -1,18 +1,26 @@
 import * as React from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
-import { gql } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../shared/src/util/errors'
-import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
-import { numberWithCommas } from '../../../shared/src/util/strings'
-import { queryGraphQL } from '../backend/graphql'
+
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
+import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
+
+import { requestGraphQL } from '../backend/graphql'
 import { Timestamp } from '../components/time/Timestamp'
-import { GitRefType, Scalars } from '../graphql-operations'
+import {
+    GitRefConnectionFields,
+    GitRefFields,
+    GitRefType,
+    RepositoryGitRefsResult,
+    RepositoryGitRefsVariables,
+    Scalars,
+} from '../graphql-operations'
 
 interface GitReferenceNodeProps {
-    node: GQL.IGitRef
+    node: GitRefFields
 
     /** Link URL; if undefined, node.url is used. */
     url?: string
@@ -99,8 +107,8 @@ export const queryGitReferences = memoizeObservable(
         query?: string
         type: GitRefType
         withBehindAhead?: boolean
-    }): Observable<GQL.IGitRefConnection> =>
-        queryGraphQL(
+    }): Observable<GitRefConnectionFields> =>
+        requestGraphQL<RepositoryGitRefsResult, RepositoryGitRefsVariables>(
             gql`
                 query RepositoryGitRefs(
                     $repo: ID!
@@ -112,30 +120,38 @@ export const queryGitReferences = memoizeObservable(
                     node(id: $repo) {
                         ... on Repository {
                             gitRefs(first: $first, query: $query, type: $type, orderBy: AUTHORED_OR_COMMITTED_AT) {
-                                nodes {
-                                    ...GitRefFields
-                                }
-                                totalCount
-                                pageInfo {
-                                    hasNextPage
-                                }
+                                ...GitRefConnectionFields
                             }
                         }
                     }
                 }
+
+                fragment GitRefConnectionFields on GitRefConnection {
+                    nodes {
+                        ...GitRefFields
+                    }
+                    totalCount
+                    pageInfo {
+                        hasNextPage
+                    }
+                }
+
                 ${gitReferenceFragments}
             `,
             {
-                ...args,
+                query: args.query ?? null,
+                first: args.first ?? null,
+                repo: args.repo,
+                type: args.type,
                 withBehindAhead:
                     args.withBehindAhead !== undefined ? args.withBehindAhead : args.type === GitRefType.GIT_BRANCH,
             }
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.node || !(data.node as GQL.IRepository).gitRefs) {
+                if (!data || !data.node || !data.node.gitRefs) {
                     throw createAggregateError(errors)
                 }
-                return (data.node as GQL.IRepository).gitRefs
+                return data.node.gitRefs
             })
         ),
     args => `${args.repo}:${String(args.first)}:${String(args.query)}:${args.type}`

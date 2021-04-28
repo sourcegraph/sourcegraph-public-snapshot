@@ -1,13 +1,16 @@
 import { mount } from 'enzyme'
-import * as React from 'react'
 import * as H from 'history'
-import { CodeMonitoringPage } from './CodeMonitoringPage'
+import * as React from 'react'
 import { of } from 'rxjs'
+import sinon from 'sinon'
+
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+
 import { AuthenticatedUser } from '../../auth'
 import { ListCodeMonitors, ListUserCodeMonitorsVariables } from '../../graphql-operations'
-import sinon from 'sinon'
+
+import { CodeMonitoringPage } from './CodeMonitoringPage'
 import { mockCodeMonitorNodes } from './testing/util'
-import { EMPTY_SETTINGS_CASCADE } from '../../../../shared/src/settings/settings'
 
 jest.mock('../../tracking/eventLogger', () => ({
     eventLogger: { logViewEvent: () => undefined },

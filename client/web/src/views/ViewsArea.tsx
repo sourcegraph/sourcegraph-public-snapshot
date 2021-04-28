@@ -1,15 +1,18 @@
 import React, { useCallback } from 'react'
 import { Switch, Route, RouteComponentProps } from 'react-router'
-import { ViewPage } from './ViewPage'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '../search'
-import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { VersionContextProps } from '../../../shared/src/search/util'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 import { from } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
-import { wrapRemoteObservable } from '../../../shared/src/api/client/api/common'
-import { isErrorLike } from '../../../shared/src/util/errors'
+
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '../search'
+
+import { ViewPage } from './ViewPage'
 
 interface Props
     extends RouteComponentProps<{}>,

@@ -1,17 +1,19 @@
+import classNames from 'classnames'
 import { isArray } from 'lodash'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
-import classNames from 'classnames'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { FunctionComponent, useMemo } from 'react'
-import { isDefined } from '../../../../../shared/src/util/types'
+
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
+
 import { Collapsible } from '../../../components/Collapsible'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { Timeline, TimelineStage } from '../../../components/Timeline'
 import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
-import { pluralize } from '../../../../../shared/src/util/strings'
 
 export interface CodeIntelIndexTimelineProps {
     index: LsifIndexFields

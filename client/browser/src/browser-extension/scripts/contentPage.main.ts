@@ -2,11 +2,11 @@ import '../../shared/polyfills'
 
 import { fromEvent, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
-import { setLinkComponent, AnchorLink } from '../../../../shared/src/components/Link'
-import { storage } from '../web-extension-api/storage'
+
+import { setLinkComponent, AnchorLink } from '@sourcegraph/shared/src/components/Link'
+
 import { determineCodeHost } from '../../shared/code-hosts/shared/codeHost'
 import { injectCodeIntelligence } from '../../shared/code-hosts/shared/inject'
-import { initSentry } from '../../shared/sentry'
 import {
     checkIsSourcegraph,
     EXTENSION_MARKER_ID,
@@ -14,9 +14,11 @@ import {
     NATIVE_INTEGRATION_ACTIVATED,
     signalBrowserExtensionInstalled,
 } from '../../shared/code-hosts/sourcegraph/inject'
+import { initSentry } from '../../shared/sentry'
 import { DEFAULT_SOURCEGRAPH_URL, getAssetsURL } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnvironment } from '../environmentAssertion'
+import { storage } from '../web-extension-api/storage'
 
 const subscriptions = new Subscription()
 window.addEventListener('unload', () => subscriptions.unsubscribe(), { once: true })

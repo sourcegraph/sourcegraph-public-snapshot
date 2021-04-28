@@ -12,12 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -81,19 +82,23 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	repoStore := database.Repos(db)
 	esStore := database.ExternalServices(db)
 
+	gitHubToken := os.Getenv("GITHUB_TOKEN")
+	if gitHubToken == "" {
+		gitHubToken = "no-GITHUB_TOKEN-set"
+	}
 	githubExtSvc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: ct.MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
-			Token: os.Getenv("GITHUB_TOKEN"),
+			Token: gitHubToken,
 			Repos: []string{"sourcegraph/sourcegraph"},
 		}),
 	}
 
 	err := esStore.Upsert(ctx, githubExtSvc)
 	if err != nil {
-		t.Fatal(t)
+		t.Fatalf("Failed to Upsert external service: %s", err)
 	}
 
 	githubSrc, err := repos.NewGithubSource(githubExtSvc, cf)
@@ -118,8 +123,9 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	defer mockState.Unmock()
 
 	cstore := store.New(db)
+	sourcer := sources.NewSourcer(cf)
 
-	spec := &batches.BatchSpec{
+	spec := &btypes.BatchSpec{
 		NamespaceUserID: userID,
 		UserID:          userID,
 	}
@@ -127,7 +133,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	batchChange := &batches.BatchChange{
+	batchChange := &btypes.BatchChange{
 		Name:             "Test batch change",
 		Description:      "Testing changeset counts",
 		InitialApplierID: userID,
@@ -142,20 +148,20 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changesets := []*batches.Changeset{
+	changesets := []*btypes.Changeset{
 		{
 			RepoID:              githubRepo.ID,
 			ExternalID:          "5834",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
-			PublicationState:    batches.ChangesetPublicationStatePublished,
+			BatchChanges:        []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
+			PublicationState:    btypes.ChangesetPublicationStatePublished,
 		},
 		{
 			RepoID:              githubRepo.ID,
 			ExternalID:          "5849",
 			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			BatchChanges:        []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
-			PublicationState:    batches.ChangesetPublicationStatePublished,
+			BatchChanges:        []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
+			PublicationState:    btypes.ChangesetPublicationStatePublished,
 		},
 	}
 
@@ -164,12 +170,16 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := syncer.SyncChangeset(ctx, cstore, githubSrc, githubRepo, c); err != nil {
+		src, err := sourcer.ForRepo(ctx, cstore, githubRepo)
+		if err != nil {
+			t.Fatalf("failed to build source for repo: %s", err)
+		}
+		if err := syncer.SyncChangeset(ctx, cstore, src, githubRepo, c); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { TreeEntryFields } from '../graphql-operations'
 
 /** TreeEntryInfo is the information we need to render an entry in the file tree */

@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react'
 import classNames from 'classnames'
 import { formatDistance, isBefore, parseISO } from 'date-fns'
-import { syncChangeset } from '../backend'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import SyncIcon from 'mdi-react/SyncIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
-import { isErrorLike } from '../../../../../../shared/src/util/errors'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
+import SyncIcon from 'mdi-react/SyncIcon'
+import React, { useState, useEffect, useCallback } from 'react'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { ExternalChangesetFields, HiddenExternalChangesetFields } from '../../../../graphql-operations'
+import { syncChangeset } from '../backend'
 
 interface Props {
     changeset:

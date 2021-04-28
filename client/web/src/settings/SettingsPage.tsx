@@ -1,10 +1,12 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { overwriteSettings } from '../../../shared/src/settings/edit'
-import { ThemeProps } from '../../../shared/src/theme'
+
+import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
 import { SettingsAreaPageProps } from './SettingsArea'
 import { SettingsFile } from './SettingsFile'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 interface Props
     extends SettingsAreaPageProps,

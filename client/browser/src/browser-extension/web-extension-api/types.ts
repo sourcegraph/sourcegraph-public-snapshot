@@ -1,4 +1,5 @@
-import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
+import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
+
 import { OptionFlagValues } from '../../shared/util/optionFlags'
 
 export interface PhabricatorMapping {

@@ -3,13 +3,16 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { ConfiguredRegistryExtension } from '../../../../shared/src/extensions/extension'
-import extensionSchemaJSON from '../../../../shared/src/schema/extension.schema.json'
+
+import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
+import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { eventLogger } from '../../tracking/eventLogger'
+
 import { ExtensionAreaRouteContext } from './ExtensionArea'
-import { ThemeProps } from '../../../../shared/src/theme'
 
 export const ExtensionNoManifestAlert: React.FunctionComponent<{
     extension: ConfiguredRegistryExtension

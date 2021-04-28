@@ -8,16 +8,16 @@
  *
  *     yarn run release _test:config
  */
-{
+ {
     // Captain information
-    "captainSlackUsername": "dax",
-    "captainGitHubUsername": "daxmc99",
+    "captainSlackUsername": "dave",
+    "captainGitHubUsername": "davejrt",
     // Release versions
-    "previousRelease": "3.26.1",
-    "upcomingRelease": "3.27.0",
+    "previousRelease": "3.27.3",
+    "upcomingRelease": "3.27.4",
     // Release dates
-    "releaseDate": "20 April 2021 10:00 PST",
-    "oneWorkingDayAfterRelease": "21 April 2021 10:00 PST",
+    "releaseDate": "27 April 2021 10:00 PST",
+    "oneWorkingDayAfterRelease": "28 April 2021 10:00 PST",
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "dev-announce",
     // Email for preparing calendar events

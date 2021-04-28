@@ -1,9 +1,11 @@
 import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { LoaderInput } from './LoaderInput'
+
+import webStyles from '@sourcegraph/web/src/main.scss'
+
 import { BrandedStory } from './BrandedStory'
-import webStyles from '../../../web/src/main.scss'
+import { LoaderInput } from './LoaderInput'
 
 const { add } = storiesOf('branded/LoaderInput', module).addDecorator(story => (
     <div className="container mt-3" style={{ width: 800 }}>

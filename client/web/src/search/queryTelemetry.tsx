@@ -1,7 +1,7 @@
-import { count } from '../../../shared/src/util/strings'
-import { scanSearchQuery, ScanResult } from '../../../shared/src/search/query/scanner'
-import { Token } from '../../../shared/src/search/query/token'
-import { resolveFilter } from '../../../shared/src/search/query/filters'
+import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { scanSearchQuery, ScanResult } from '@sourcegraph/shared/src/search/query/scanner'
+import { Token } from '@sourcegraph/shared/src/search/query/token'
+import { count } from '@sourcegraph/shared/src/util/strings'
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function queryTelemetryData(query: string, caseSensitive: boolean) {

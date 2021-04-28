@@ -1,0 +1,130 @@
+.line-chart {
+    display: flex;
+    flex-direction: column;
+
+    &__content-parent-size {
+        flex-grow: 1;
+        position: relative;
+    }
+
+    &__content {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+
+        &--with-cursor {
+            cursor: pointer;
+        }
+    }
+
+    &__axis-line {
+        stroke: var(--border-color);
+        stroke-width: 1;
+
+        &--vertical {
+            // Hide line axis visually and hide from voice over
+            stroke-width: 0;
+            display: none;
+        }
+    }
+
+    // We are not able to add our own classnames for tick line and text elements
+    // because of that we have to use nested statements below
+    &__axis-tick {
+        // small tick line
+        line {
+            stroke: var(--border-color);
+            stroke-width: 1;
+        }
+
+        // tick label
+        text {
+            fill: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 400;
+        }
+
+        &--vertical {
+            line {
+                // Hide line ticks visually and hide them from voice over
+                stroke-width: 0;
+                display: none;
+            }
+        }
+    }
+
+    &__axis-label {
+        color: var(--body-color);
+    }
+
+    // We are not able to add our own classnames for grid lines elements
+    // because of that we have to use nested statements below
+    &__grid-line {
+        line {
+            stroke: var(--border-color-2);
+            stroke-width: 1;
+        }
+    }
+
+    &__glyph-link:focus &__glyph {
+        stroke-width: 3;
+        // Unfortunately we can't use r styling right now as it's part of SVG 2 spec
+        // and for now we use js to track focus on link and change radius of line point with focus
+        // but when svg 2 will have broad browser support js implementation on focus should
+        // be removed and instead we should control the radius of points using the r attribute styling approach.
+        // r: 6;
+    }
+
+    &__glyph {
+        stroke-width: 2;
+        fill: var(--body-bg);
+
+        &--active {
+            stroke-width: 3;
+        }
+    }
+
+    &__legend {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 0.5rem;
+        list-style: none;
+        margin: 0;
+    }
+
+    &__legend-item {
+        display: flex;
+        margin-right: 0.5rem;
+        align-items: center;
+    }
+
+    &__legend-mark {
+        width: 0.75rem;
+        height: 0.75rem;
+        margin-right: 0.25rem;
+        border-radius: 50%;
+    }
+
+    /*
+       Tooltip element from visx package is adding some inline styles by himself.
+       There is no way to override them from css unless !important statement.
+     */
+    &__tooltip {
+        box-shadow: var(--border-color-2) 0 1px 2px !important;
+        border: 1px solid var(--border-color);
+        color: var(--body-color) !important;
+        background: var(--body-bg) !important;
+    }
+
+    &__tooltip-content {
+        margin: 0.25rem;
+    }
+
+    &__tooltip-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+}

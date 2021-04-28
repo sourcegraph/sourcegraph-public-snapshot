@@ -1,14 +1,17 @@
+import { createMemoryHistory } from 'history'
+import React from 'react'
+import { Router } from 'react-router-dom'
+import renderer from 'react-test-renderer'
+
 import { Range } from '@sourcegraph/extension-api-classes'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-import * as H from 'history'
-import React from 'react'
-import renderer from 'react-test-renderer'
+
+import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
+
 import { DiffHunk } from './DiffHunk'
-import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
 
 describe('DiffHunk', () => {
-    const history = H.createMemoryHistory()
-
+    const history = createMemoryHistory()
     const hunk: FileDiffHunkFields = {
         oldRange: { startLine: 159, lines: 7 },
         oldNoNewlineAt: false,
@@ -58,15 +61,15 @@ describe('DiffHunk', () => {
         expect(
             renderer
                 .create(
-                    <DiffHunk
-                        hunk={hunk}
-                        decorations={{ head: new Map(), base: new Map() }}
-                        lineNumbers={true}
-                        isLightTheme={true}
-                        fileDiffAnchor="anchor_"
-                        history={history}
-                        location={H.createLocation('/testdiff', history.location)}
-                    />
+                    <Router history={history}>
+                        <DiffHunk
+                            hunk={hunk}
+                            decorations={{ head: new Map(), base: new Map() }}
+                            lineNumbers={true}
+                            isLightTheme={true}
+                            fileDiffAnchor="anchor_"
+                        />
+                    </Router>
                 )
                 .toJSON()
         ).toMatchSnapshot()
@@ -115,15 +118,15 @@ describe('DiffHunk', () => {
         expect(
             renderer
                 .create(
-                    <DiffHunk
-                        hunk={hunk}
-                        decorations={decorations}
-                        lineNumbers={true}
-                        isLightTheme={true}
-                        fileDiffAnchor="anchor_"
-                        history={history}
-                        location={H.createLocation('/testdiff', history.location)}
-                    />
+                    <Router history={history}>
+                        <DiffHunk
+                            hunk={hunk}
+                            decorations={decorations}
+                            lineNumbers={true}
+                            isLightTheme={true}
+                            fileDiffAnchor="anchor_"
+                        />
+                    </Router>
                 )
                 .toJSON()
         ).toMatchSnapshot()
@@ -133,15 +136,15 @@ describe('DiffHunk', () => {
         expect(
             renderer
                 .create(
-                    <DiffHunk
-                        hunk={hunk}
-                        decorations={decorations}
-                        lineNumbers={true}
-                        isLightTheme={false}
-                        fileDiffAnchor="anchor_"
-                        history={history}
-                        location={H.createLocation('/testdiff', history.location)}
-                    />
+                    <Router history={history}>
+                        <DiffHunk
+                            hunk={hunk}
+                            decorations={decorations}
+                            lineNumbers={true}
+                            isLightTheme={false}
+                            fileDiffAnchor="anchor_"
+                        />
+                    </Router>
                 )
                 .toJSON()
         ).toMatchSnapshot()

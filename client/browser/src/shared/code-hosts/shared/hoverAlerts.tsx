@@ -1,12 +1,15 @@
-import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { Observable, of } from 'rxjs'
 import { catchError, map, startWith, switchMap } from 'rxjs/operators'
 import type { HoverAlert } from 'sourcegraph'
-import { combineLatestOrDefault } from '../../../../../shared/src/util/rxjs/combineLatestOrDefault'
+
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
+import { combineLatestOrDefault } from '@sourcegraph/shared/src/util/rxjs/combineLatestOrDefault'
+
 import { observeStorageKey, storage } from '../../../browser-extension/web-extension-api/storage'
 import { SyncStorageItems } from '../../../browser-extension/web-extension-api/types'
 import { isInPage } from '../../context'
 import { isDefaultSourcegraphUrl } from '../../util/context'
+
 import { CodeHost } from './codeHost'
 
 /**

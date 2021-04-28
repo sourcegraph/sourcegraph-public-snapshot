@@ -2,14 +2,20 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { requestGraphQL } from '../../../backend/graphql'
-import { Timestamp } from '../../../components/time/Timestamp'
-import { userURL } from '../../../user'
 import { ErrorAlert } from '../../../components/alerts'
-import { DeleteExternalAccountResult, DeleteExternalAccountVariables, Scalars } from '../../../graphql-operations'
+import { Timestamp } from '../../../components/time/Timestamp'
+import {
+    DeleteExternalAccountResult,
+    DeleteExternalAccountVariables,
+    ExternalAccountFields,
+    Scalars,
+} from '../../../graphql-operations'
+import { userURL } from '../../../user'
 
 export const externalAccountFragment = gql`
     fragment ExternalAccountFields on ExternalAccount {
@@ -29,6 +35,20 @@ export const externalAccountFragment = gql`
     }
 `
 
+export const externalAccountsConnectionFragment = gql`
+    fragment ExternalAccountsConnectionFields on ExternalAccountConnection {
+        nodes {
+            ...ExternalAccountFields
+        }
+        totalCount
+        pageInfo {
+            hasNextPage
+        }
+    }
+
+    ${externalAccountFragment}
+`
+
 function deleteExternalAccount(externalAccount: Scalars['ID']): Observable<void> {
     return requestGraphQL<DeleteExternalAccountResult, DeleteExternalAccountVariables>(
         gql`
@@ -43,7 +63,7 @@ function deleteExternalAccount(externalAccount: Scalars['ID']): Observable<void>
 }
 
 export interface ExternalAccountNodeProps {
-    node: GQL.IExternalAccount
+    node: ExternalAccountFields
 
     showUser: boolean
 

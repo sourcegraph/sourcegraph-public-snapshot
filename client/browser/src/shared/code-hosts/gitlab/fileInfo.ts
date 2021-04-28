@@ -1,6 +1,8 @@
 import { Observable, from } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
+import { asObservable } from '@sourcegraph/shared/src/util/rxjs/asObservable'
+
 import { DiffInfo, BlobInfo } from '../shared/codeHost'
 
 import { getBaseCommitIDForCommit, getMergeRequestDetailsFromAPI } from './api'
@@ -13,7 +15,6 @@ import {
     getMergeRequestID,
     getDiffID,
 } from './scrape'
-import { asObservable } from '../../../../../shared/src/util/rxjs/asObservable'
 
 /**
  * Resolves file information for a page with a single file, not including diffs with only one file.

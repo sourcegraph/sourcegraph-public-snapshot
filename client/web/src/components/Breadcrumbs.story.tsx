@@ -1,5 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
+
 import { Breadcrumbs } from './Breadcrumbs'
 import { WebStory } from './WebStory'
 
@@ -29,7 +30,7 @@ add(
                                 key: 'repo',
                                 element: (
                                     <a href="/">
-                                        sourcegraph/<span className="font-weight-semibold">sourcegraph</span>
+                                        sourcegraph/<span className="font-weight-medium">sourcegraph</span>
                                     </a>
                                 ),
                             },

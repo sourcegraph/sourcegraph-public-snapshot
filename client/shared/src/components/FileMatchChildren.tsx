@@ -1,18 +1,20 @@
 import * as H from 'history'
 import * as React from 'react'
 import { Observable } from 'rxjs'
-import { ThemeProps } from '../theme'
+import { map } from 'rxjs/operators'
+
+import { ISymbol, IHighlightLineRange } from '../graphql/schema'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
+import { ThemeProps } from '../theme'
+import { isErrorLike } from '../util/errors'
 import { toPositionOrRangeHash, appendSubtreeQueryParameter } from '../util/url'
+
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import { CodeExcerptUnhighlighted } from './CodeExcerptUnhighlighted'
 import { FileLineMatch, MatchItem } from './FileMatch'
 import { calculateMatchGroups } from './FileMatchContext'
 import { Link } from './Link'
-import { isErrorLike } from '../util/errors'
-import { ISymbol, IHighlightLineRange } from '../graphql/schema'
-import { map } from 'rxjs/operators'
 
 export interface EventLogger {
     log: (eventLabel: string, eventProperties?: any) => void
@@ -76,7 +78,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
 
     const { result, isLightTheme, fetchHighlightedFileLineRanges, eventLogger, onFirstResultLoad } = props
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (isFirst, startLine, endLine) => {
+        (isFirst, startLine, endLine, isLightTheme) => {
             const startTime = Date.now()
             return fetchHighlightedFileLineRanges(
                 {
@@ -109,15 +111,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                 })
             )
         },
-        [
-            result,
-            isLightTheme,
-            fetchHighlightedFileLineRanges,
-            grouped,
-            optimizeHighlighting,
-            eventLogger,
-            onFirstResultLoad,
-        ]
+        [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, eventLogger, onFirstResultLoad]
     )
 
     if (NO_SEARCH_HIGHLIGHTING) {

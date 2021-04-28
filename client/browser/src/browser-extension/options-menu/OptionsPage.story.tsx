@@ -1,13 +1,16 @@
-import React, { useState } from 'react'
-import { storiesOf } from '@storybook/react'
-import { OptionsPage, OptionsPageProps } from './OptionsPage'
-import brandedStyles from '../../branded.scss'
-import { Observable, of } from 'rxjs'
 import { action } from '@storybook/addon-actions'
 import { boolean, text } from '@storybook/addon-knobs'
+import { storiesOf } from '@storybook/react'
 import GithubIcon from 'mdi-react/GithubIcon'
-import { BrandedStory } from '../../../../branded/src/components/BrandedStory'
-import { subtypeOf } from '../../../../shared/src/util/types'
+import React, { useState } from 'react'
+import { Observable, of } from 'rxjs'
+
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import { subtypeOf } from '@sourcegraph/shared/src/util/types'
+
+import brandedStyles from '../../branded.scss'
+
+import { OptionsPage, OptionsPageProps } from './OptionsPage'
 
 const validateSourcegraphUrl = (): Observable<string | undefined> => of(undefined)
 const invalidSourcegraphUrl = (): Observable<string | undefined> => of('Arbitrary error string')

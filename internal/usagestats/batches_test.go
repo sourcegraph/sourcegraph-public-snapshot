@@ -149,7 +149,7 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	have, err := GetBatchChangesUsageStatistics(ctx)
+	have, err := GetBatchChangesUsageStatistics(ctx, db)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,11 +1,16 @@
-import expect from 'expect'
 import assert from 'assert'
-import { commonWebGraphQlResults } from './graphQlResults'
-import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
-import { siteID, siteGQLID } from './jscontext'
+
+import expect from 'expect'
+
+import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+
 import { SearchResult } from '../graphql-operations'
+
+import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { commonWebGraphQlResults } from './graphQlResults'
+import { siteID, siteGQLID } from './jscontext'
+import { percySnapshotWithVariants } from './utils'
 
 describe('Code monitoring', () => {
     let driver: Driver
@@ -49,8 +54,8 @@ describe('Code monitoring', () => {
             RepoGroups: () => ({
                 repoGroups: [],
             }),
-            SearchContexts: () => ({
-                searchContexts: [],
+            AutoDefinedSearchContexts: () => ({
+                autoDefinedSearchContexts: [],
             }),
             ViewerSettings: () => ({
                 viewerSettings: {
@@ -92,6 +97,9 @@ describe('Code monitoring', () => {
         it('validates trigger query input', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring/new')
             await driver.page.waitForSelector('.test-name-input')
+
+            await percySnapshotWithVariants(driver.page, 'Code monitoring - Form')
+
             await driver.page.type('.test-name-input', 'test monitor')
 
             await driver.page.waitForSelector('.test-action-button')
@@ -108,18 +116,13 @@ describe('Code monitoring', () => {
 
             await driver.page.waitForSelector('.test-trigger-input')
             await driver.page.type('.test-trigger-input', 'foobar')
-            await driver.page.waitForSelector('.is-invalid')
-            expect(await driver.page.evaluate(() => document.querySelector('.test-trigger-error')?.textContent)).toBe(
-                'Code monitors require queries to specify either `type:commit` or `type:diff`.'
-            )
+            await driver.page.waitForSelector('.test-is-invalid')
+
             await driver.page.type('.test-trigger-input', ' type:diff')
-            await driver.page.waitForSelector('.is-invalid')
-            await driver.page.waitForSelector('.test-trigger-error')
-            expect(await driver.page.evaluate(() => document.querySelector('.test-trigger-error')?.textContent)).toBe(
-                'Code monitors require queries to specify a `patternType:` of literal or regexp.'
-            )
-            await driver.page.type('.test-trigger-input', ' patterntype:literal')
-            await driver.page.waitForSelector('.is-valid')
+            await driver.page.waitForSelector('.test-is-invalid')
+
+            await driver.page.type('.test-trigger-input', ' repo:test')
+            await driver.page.waitForSelector('.test-is-valid')
             await driver.page.waitForSelector('.test-preview-link')
             expect(
                 await driver.page.evaluate(() => document.querySelectorAll('.test-preview-link').length)
@@ -144,8 +147,8 @@ describe('Code monitoring', () => {
             await driver.page.click('.test-trigger-button')
 
             await driver.page.waitForSelector('.test-trigger-input')
-            await driver.page.type('.test-trigger-input', 'foobar type:diff patterntype:literal')
-            await driver.page.waitForSelector('.is-valid')
+            await driver.page.type('.test-trigger-input', 'foobar type:diff repo:test')
+            await driver.page.waitForSelector('.test-is-valid')
             await driver.page.waitForSelector('.test-preview-link')
             await driver.page.waitForSelector('.test-submit-trigger')
             await driver.page.click('.test-submit-trigger')
@@ -181,8 +184,8 @@ describe('Code monitoring', () => {
             await driver.page.click('.test-trigger-button')
 
             await driver.page.waitForSelector('.test-trigger-input')
-            await driver.page.type('.test-trigger-input', 'foobar type:diff patterntype:literal')
-            await driver.page.waitForSelector('.is-valid')
+            await driver.page.type('.test-trigger-input', 'foobar type:diff repo:test')
+            await driver.page.waitForSelector('.test-is-valid')
             await driver.page.waitForSelector('.test-preview-link')
             await driver.page.waitForSelector('.test-submit-trigger')
             await driver.page.click('.test-submit-trigger')

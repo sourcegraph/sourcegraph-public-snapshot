@@ -1,13 +1,14 @@
+import { Shortcut } from '@slimsag/react-shortcuts'
+import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ClipboardOutlineIcon from 'mdi-react/ClipboardOutlineIcon'
-import { Shortcut } from '@slimsag/react-shortcuts'
-import { Tooltip } from '../../../../../branded/src/components/tooltip/Tooltip'
 import React, { useCallback, useRef, useEffect } from 'react'
-import classNames from 'classnames'
 import { Observable, merge, of } from 'rxjs'
 import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
-import { useEventObservable } from '../../../../../shared/src/util/useObservable'
-import { KeyboardShortcut } from '../../../../../shared/src/keyboardShortcuts'
+
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
+import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 interface Props {
     fullQuery: string

@@ -1,7 +1,9 @@
 import React, { useState, FunctionComponent } from 'react'
 
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { requestGraphQL } from '../../../backend/graphql'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import {
     UserEmailsResult,
     RemoveUserEmailResult,
@@ -11,7 +13,6 @@ import {
     ResendVerificationEmailResult,
     ResendVerificationEmailVariables,
 } from '../../../graphql-operations'
-import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 interface Props {

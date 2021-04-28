@@ -1,13 +1,17 @@
 import * as H from 'history'
-import React, { useCallback, useState } from 'react'
-import { deleteExternalService } from './backend'
-import { asError, isErrorLike } from '../../../../shared/src/util/errors'
-import { refreshSiteFlags } from '../../site/backend'
-import { Link } from '../../../../shared/src/components/Link'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
-import { ErrorAlert } from '../alerts'
+import SettingsIcon from 'mdi-react/SettingsIcon'
+import UserIcon from 'mdi-react/UserIcon'
+import React, { useCallback, useState } from 'react'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { ListExternalServiceFields } from '../../graphql-operations'
+import { refreshSiteFlags } from '../../site/backend'
+import { ErrorAlert } from '../alerts'
+
+import { deleteExternalService } from './backend'
 
 export interface ExternalServiceNodeProps {
     node: ListExternalServiceFields
@@ -45,7 +49,15 @@ export const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodePro
     return (
         <li className="external-service-node list-group-item py-2" data-test-external-service-name={node.displayName}>
             <div className="d-flex align-items-center justify-content-between">
-                <div>{node.displayName}</div>
+                <div>
+                    {node.namespace && (
+                        <>
+                            <UserIcon className="icon-inline" />
+                            <Link to={node.namespace.url}>{node.namespace.namespaceName}</Link>{' '}
+                        </>
+                    )}
+                    {node.displayName}
+                </div>
                 <div>
                     <Link
                         className="btn btn-secondary btn-sm test-edit-external-service-button"

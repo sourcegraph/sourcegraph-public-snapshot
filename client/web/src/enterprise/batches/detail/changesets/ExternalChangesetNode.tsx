@@ -1,31 +1,34 @@
-import { ThemeProps } from '../../../../../../shared/src/theme'
-import { Hoverifier } from '@sourcegraph/codeintellify'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../../shared/src/util/url'
-import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover'
-import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
-import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import classNames from 'classnames'
 import * as H from 'history'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import SyncIcon from 'mdi-react/SyncIcon'
 import React, { useState, useCallback, useEffect } from 'react'
+
+import { Hoverifier } from '@sourcegraph/codeintellify'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+
+import { ErrorAlert, ErrorMessage } from '../../../../components/alerts'
 import { DiffStat } from '../../../../components/diff/DiffStat'
+import { ChangesetSpecType, ExternalChangesetFields } from '../../../../graphql-operations'
 import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     reenqueueChangeset,
 } from '../backend'
-import { ChangesetSpecType, ExternalChangesetFields } from '../../../../graphql-operations'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import { ChangesetStatusCell } from './ChangesetStatusCell'
+
 import { ChangesetCheckStatusCell } from './ChangesetCheckStatusCell'
-import { ChangesetReviewStatusCell } from './ChangesetReviewStatusCell'
-import { ErrorAlert, ErrorMessage } from '../../../../components/alerts'
 import { ChangesetFileDiff } from './ChangesetFileDiff'
-import { ExternalChangesetInfoCell } from './ExternalChangesetInfoCell'
+import { ChangesetReviewStatusCell } from './ChangesetReviewStatusCell'
+import { ChangesetStatusCell } from './ChangesetStatusCell'
 import { DownloadDiffButton } from './DownloadDiffButton'
-import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { ChangesetState } from '../../../../../../shared/src/graphql-operations'
-import { asError, isErrorLike } from '../../../../../../shared/src/util/errors'
-import SyncIcon from 'mdi-react/SyncIcon'
+import { ExternalChangesetInfoCell } from './ExternalChangesetInfoCell'
 
 export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ExternalChangesetFields
@@ -79,6 +82,18 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
 
     return (
         <>
+            <button
+                type="button"
+                className="btn btn-icon test-batches-expand-changeset d-none d-sm-block"
+                aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
+                onClick={toggleIsExpanded}
+            >
+                {isExpanded ? (
+                    <ChevronDownIcon className="icon-inline" aria-label="Close section" />
+                ) : (
+                    <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
+                )}
+            </button>
             {enableSelect && (
                 <div className="p-2">
                     <input
@@ -92,19 +107,8 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                     />
                 </div>
             )}
-            <button
-                type="button"
-                className="btn btn-icon test-batches-expand-changeset d-none d-sm-block"
-                aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
-                onClick={toggleIsExpanded}
-            >
-                {isExpanded ? (
-                    <ChevronDownIcon className="icon-inline" aria-label="Close section" />
-                ) : (
-                    <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
-                )}
-            </button>
             <ChangesetStatusCell
+                id={node.id}
                 state={node.state}
                 className="p-2 align-self-stretch text-muted external-changeset-node__state d-block d-sm-flex"
             />

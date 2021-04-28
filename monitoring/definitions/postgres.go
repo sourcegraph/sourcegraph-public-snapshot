@@ -1,8 +1,6 @@
 package definitions
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -10,6 +8,8 @@ import (
 )
 
 func Postgres() *monitoring.Container {
+	sum := "sum"
+
 	// In docker-compose, codeintel-db container is called pgsql
 	// In Kubernetes, codeintel-db container is called codeintel-db
 	// Because of this, we track all database cAdvisor metrics in a single panel using this
@@ -47,7 +47,8 @@ func Postgres() *monitoring.Container {
 				},
 			},
 			{
-				Title: "Database and collector status", Hidden: true,
+				Title:  "Database and collector status",
+				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						monitoring.Observable{
@@ -60,6 +61,20 @@ func Postgres() *monitoring.Container {
 							PossibleSolutions: "none",
 							Interpretation:    "A non-zero value indicates the database is online.",
 						},
+						monitoring.Observable{
+							Name:        "invalid_indexes",
+							Description: "invalid indexes (unusable by the query planner)",
+							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Query:       "max by (relname)(pg_invalid_index_count)",
+							Panel:       monitoring.Panel().LegendFormat("{{relname}}"),
+							Critical:    monitoring.Alert().GreaterOrEqual(1, &sum).For(0),
+							PossibleSolutions: `
+								- Drop and re-create the invalid trigger - please contact Sourcegraph to supply the trigger definition.
+							`,
+							Interpretation: "A non-zero value indicates the that Postgres failed to build an index. Expect degraded performance until the index is manually rebuilt.",
+						},
+					},
+					{
 						monitoring.Observable{
 							Name:        "pg_exporter_err",
 							Description: "errors scraping postgres exporter",
@@ -100,44 +115,48 @@ func Postgres() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Table bloat (dead tuples / live tuples)",
+				Title:  "Object size and bloat",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						makePostgresTableBloatPanel(
-							"codeintel_commit_graph_db_bloat",
-							"code intelligence commit graph tables",
-							monitoring.ObservableOwnerCodeIntel,
-							50, // Alert on 50x more dead tuples than live tuples
-							[]string{
-								"lsif_nearest_uploads",
-								"lsif_nearest_uploads_links",
-								"lsif_uploads_visible_from_tip",
-							},
-						),
-						makePostgresTableBloatPanel(
-							"codeintel_package_versions_db_bloat",
-							"code intelligence package version tables",
-							monitoring.ObservableOwnerCodeIntel,
-							50, // Alert on 50x more dead tuples than live tuples
-							[]string{
-								"lsif_packages",
-								"lsif_references",
-							},
-						),
-						makePostgresTableBloatPanel(
-							"codeintel_lsif_db_bloat",
-							"code intelligence LSIF data tables (codeintel-db)",
-							monitoring.ObservableOwnerCodeIntel,
-							50, // Alert on 50x more dead tuples than live tuples
-							[]string{
-								"lsif_data_metadata",
-								"lsif_data_documents",
-								"lsif_data_result_chunks",
-								"lsif_data_definitions",
-								"lsif_data_references",
-							},
-						),
+						monitoring.Observable{
+							Name:           "pg_table_size",
+							Description:    "table size",
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Query:          `max by (relname)(pg_table_bloat_size)`,
+							Panel:          monitoring.Panel().LegendFormat("{{relname}}").Unit(monitoring.Bytes),
+							NoAlert:        true,
+							Interpretation: "Total size of this table",
+						},
+						monitoring.Observable{
+							Name:           "pg_table_bloat_ratio",
+							Description:    "table bloat ratio",
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Query:          `max by (relname)(pg_table_bloat_ratio) * 100`,
+							Panel:          monitoring.Panel().LegendFormat("{{relname}}").Unit(monitoring.Percentage),
+							NoAlert:        true,
+							Interpretation: "Estimated bloat ratio of this table (high bloat = high overhead)",
+						},
+					},
+					{
+						monitoring.Observable{
+							Name:           "pg_index_size",
+							Description:    "index size",
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Query:          `max by (relname)(pg_index_bloat_size)`,
+							Panel:          monitoring.Panel().LegendFormat("{{relname}}").Unit(monitoring.Bytes),
+							NoAlert:        true,
+							Interpretation: "Total size of this index",
+						},
+						monitoring.Observable{
+							Name:           "pg_index_bloat_ratio",
+							Description:    "index bloat ratio",
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Query:          `max by (relname)(pg_index_bloat_ratio) * 100`,
+							Panel:          monitoring.Panel().LegendFormat("{{relname}}").Unit(monitoring.Percentage),
+							NoAlert:        true,
+							Interpretation: "Estimated bloat ratio of this index (high bloat = high overhead)",
+						},
 					},
 				},
 			},
@@ -169,36 +188,5 @@ func Postgres() *monitoring.Container {
 
 		// This is third-party service
 		NoSourcegraphDebugServer: true,
-	}
-}
-
-// makePostgresTableBloatPanel returns an observable that tracks the bloat factor of each of the given
-// tables. We define a table's bloat to be the factor by which the table's current overhead exceeds its
-// minimum overhead, e.g., `(live + dead) / live`.
-func makePostgresTableBloatPanel(name, description string, owner monitoring.ObservableOwner, bloatThreshold float64, tableNames []string) monitoring.Observable {
-	query := fmt.Sprintf(
-		`(%[1]s{relname=~"%[3]s"} + %[2]s{relname=~"%[3]s"}) / %[1]s{relname=~"%[3]s"}`,
-		"pg_stat_user_tables_n_live_tup",
-		"pg_stat_user_tables_n_dead_tup",
-		strings.Join(tableNames, "|"),
-	)
-
-	return monitoring.Observable{
-		Name:        name,
-		Description: description,
-		Owner:       owner,
-		Query:       query,
-		Panel:       monitoring.Panel().LegendFormat("{{relname}}"),
-		// TODO(efritz) - re-enable this after we correctly tune autovacuum daemon or have
-		// docs specifying our recommended settings.
-		// Critical:    monitoring.Alert().GreaterOrEqual(bloatThreshold, nil).For(5 * time.Minute),
-		// PossibleSolutions: `
-		// 	- Run ANALYZE on the table to correct its statistics
-		// 	- Run VACUUM on the table manually to remove dead tuples
-		// 	- Run VACUUM FULL on the table manually to remove all dead tuples (requires an exclusive table lock)
-		// 	- Reconfigure the Postgres autovacuum daemon with additional resources
-		// `,
-		NoAlert:        true,
-		Interpretation: "This value indicates the factor by which a table's overhead outweighs its minimum overhead.",
 	}
 }

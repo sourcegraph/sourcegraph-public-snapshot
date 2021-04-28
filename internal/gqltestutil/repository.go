@@ -172,6 +172,7 @@ query FileExternalLinks($repoName: String!, $revision: String!, $filePath: Strin
 
 // Repository contains basic information of a repository from GraphQL.
 type Repository struct {
+	ID  string `json:"id"`
 	URL string `json:"url"`
 }
 
@@ -180,6 +181,7 @@ func (c *Client) Repository(name string) (*Repository, error) {
 	const query = `
 query Repository($name: String!) {
 	repository(name: $name) {
+		id
 		url
 	}
 }
@@ -198,4 +200,44 @@ query Repository($name: String!) {
 	}
 
 	return resp.Data.Repository, nil
+}
+
+// PermissionsInfo contains permissions information of a repository from
+// GraphQL.
+type PermissionsInfo struct {
+	SyncedAt time.Time
+}
+
+// RepositoryPermissionsInfo returns permissions information of the given
+// repository.
+//
+// This method requires the authenticated user to be a site admin.
+func (c *Client) RepositoryPermissionsInfo(name string) (*PermissionsInfo, error) {
+	const query = `
+query RepositoryPermissionsInfo($name: String!) {
+	repository(name: $name) {
+		permissionsInfo {
+			syncedAt
+			updatedAt
+			permissions
+		}
+	}
+}
+`
+	variables := map[string]interface{}{
+		"name": name,
+	}
+	var resp struct {
+		Data struct {
+			Repository struct {
+				*PermissionsInfo `json:"permissionsInfo"`
+			} `json:"repository"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.Repository.PermissionsInfo, nil
 }

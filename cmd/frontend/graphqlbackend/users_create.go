@@ -30,7 +30,7 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 	}
 
 	// The new user will be created with a verified email address.
-	user, err := database.GlobalUsers.Create(ctx, database.NewUser{
+	user, err := database.Users(r.db).Create(ctx, database.NewUser{
 		Username:        args.Username,
 		Email:           email,
 		EmailIsVerified: true,

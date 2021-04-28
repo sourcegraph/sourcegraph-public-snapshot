@@ -1,9 +1,11 @@
-import { ConfiguredRegistryExtension } from '../../../shared/src/extensions/extension'
-import { ExtensionManifest } from '../../../shared/src/extensions/extensionManifest'
-import { ExtensionCategory, EXTENSION_CATEGORIES } from '../../../shared/src/schema/extensionSchema'
-import { Settings } from '../../../shared/src/settings/settings'
-import { createRecord } from '../../../shared/src/util/createRecord'
+import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
+import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
+import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
+
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
+
 import { ConfiguredExtensionCache } from './ExtensionRegistry'
 import { applyCategoryFilter, applyExtensionsEnablement, configureExtensionRegistry } from './extensions'
 

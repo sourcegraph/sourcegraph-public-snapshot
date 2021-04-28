@@ -1,7 +1,8 @@
-import React from 'react'
 import classNames from 'classnames'
-import { pluralize } from '../../../../../shared/src/util/strings'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
+import React from 'react'
+
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 interface UnpublishedNoticeProps {
     unpublished: number

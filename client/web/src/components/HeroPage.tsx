@@ -1,6 +1,6 @@
+import classNames from 'classnames'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import classNames from 'classnames'
 
 interface HeroPageProps {
     icon?: React.ComponentType<any>

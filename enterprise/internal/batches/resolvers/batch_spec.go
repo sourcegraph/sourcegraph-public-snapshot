@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"sync"
 
@@ -14,14 +15,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
+const batchSpecIDKind = "BatchSpec"
+
 func marshalBatchSpecRandID(id string) graphql.ID {
-	return relay.MarshalID("BatchSpec", id)
+	return relay.MarshalID(batchSpecIDKind, id)
 }
 
 func unmarshalBatchSpecID(id graphql.ID) (batchSpecRandID string, err error) {
@@ -34,7 +37,7 @@ var _ graphqlbackend.BatchSpecResolver = &batchSpecResolver{}
 type batchSpecResolver struct {
 	store *store.Store
 
-	batchSpec          *batches.BatchSpec
+	batchSpec          *btypes.BatchSpec
 	preloadedNamespace *graphqlbackend.NamespaceResolver
 
 	// We cache the namespace on the resolver, since it's accessed more than once.
@@ -86,6 +89,11 @@ func (r *batchSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbac
 }
 
 func (r *batchSpecResolver) ApplyPreview(ctx context.Context, args *graphqlbackend.ChangesetApplyPreviewConnectionArgs) (graphqlbackend.ChangesetApplyPreviewConnectionResolver, error) {
+	if args.CurrentState != nil {
+		if !btypes.ChangesetState(*args.CurrentState).Valid() {
+			return nil, fmt.Errorf("invalid currentState %q", *args.CurrentState)
+		}
+	}
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
@@ -93,7 +101,7 @@ func (r *batchSpecResolver) ApplyPreview(ctx context.Context, args *graphqlbacke
 		LimitOffset: &database.LimitOffset{
 			Limit: int(args.First),
 		},
-		CurrentState: args.CurrentState,
+		CurrentState: (*btypes.ChangesetState)(args.CurrentState),
 	}
 	if args.After != nil {
 		id, err := strconv.Atoi(*args.After)
@@ -109,11 +117,16 @@ func (r *batchSpecResolver) ApplyPreview(ctx context.Context, args *graphqlbacke
 			return nil, errors.Wrap(err, "parsing search")
 		}
 	}
+	if args.Action != nil {
+		if !btypes.ReconcilerOperation(*args.Action).Valid() {
+			return nil, fmt.Errorf("invalid action %q", *args.Action)
+		}
+	}
 
 	return &changesetApplyPreviewConnectionResolver{
 		store:       r.store,
 		opts:        opts,
-		action:      args.Action,
+		action:      (*btypes.ReconcilerOperation)(args.Action),
 		batchSpecID: r.batchSpec.ID,
 	}, nil
 }

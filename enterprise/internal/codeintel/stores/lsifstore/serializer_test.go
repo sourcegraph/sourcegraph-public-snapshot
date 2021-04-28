@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 )
 
@@ -57,21 +58,41 @@ func TestDocumentData(t *testing.T) {
 		},
 	}
 
-	serializer := newSerializer()
+	t.Run("current", func(t *testing.T) {
+		serializer := NewSerializer()
 
-	recompressed, err := serializer.MarshalDocumentData(expected)
-	if err != nil {
-		t.Fatalf("unexpected error marshalling document data: %s", err)
-	}
+		recompressed, err := serializer.MarshalDocumentData(expected)
+		if err != nil {
+			t.Fatalf("unexpected error marshalling document data: %s", err)
+		}
 
-	roundtripActual, err := serializer.UnmarshalDocumentData(recompressed)
-	if err != nil {
-		t.Fatalf("unexpected error unmarshalling document data: %s", err)
-	}
+		roundtripActual, err := serializer.UnmarshalDocumentData(recompressed)
+		if err != nil {
+			t.Fatalf("unexpected error unmarshalling document data: %s", err)
+		}
 
-	if diff := cmp.Diff(expected, roundtripActual); diff != "" {
-		t.Errorf("unexpected document data (-want +got):\n%s", diff)
-	}
+		if diff := cmp.Diff(expected, roundtripActual); diff != "" {
+			t.Errorf("unexpected document data (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("legacy", func(t *testing.T) {
+		serializer := NewSerializer()
+
+		recompressed, err := serializer.MarshalLegacyDocumentData(expected)
+		if err != nil {
+			t.Fatalf("unexpected error marshalling document data: %s", err)
+		}
+
+		roundtripActual, err := serializer.UnmarshalLegacyDocumentData(recompressed)
+		if err != nil {
+			t.Fatalf("unexpected error unmarshalling document data: %s", err)
+		}
+
+		if diff := cmp.Diff(expected, roundtripActual); diff != "" {
+			t.Errorf("unexpected document data (-want +got):\n%s", diff)
+		}
+	})
 }
 
 func TestResultChunkData(t *testing.T) {
@@ -97,7 +118,7 @@ func TestResultChunkData(t *testing.T) {
 		},
 	}
 
-	serializer := newSerializer()
+	serializer := NewSerializer()
 
 	recompressed, err := serializer.MarshalResultChunkData(expected)
 	if err != nil {
@@ -188,7 +209,7 @@ func TestLocations(t *testing.T) {
 		},
 	}
 
-	serializer := newSerializer()
+	serializer := NewSerializer()
 
 	recompressed, err := serializer.MarshalLocations(expected)
 	if err != nil {

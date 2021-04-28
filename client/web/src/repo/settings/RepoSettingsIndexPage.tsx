@@ -1,4 +1,3 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import prettyBytes from 'pretty-bytes'
 import * as React from 'react'
@@ -6,17 +5,20 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
-import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
-import { gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../../shared/src/util/errors'
-import { pluralize } from '../../../../shared/src/util/strings'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
+
 import { queryGraphQL } from '../../backend/graphql'
+import { ErrorAlert } from '../../components/alerts'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { eventLogger } from '../../tracking/eventLogger'
-import { ErrorAlert } from '../../components/alerts'
 import { Scalars, SettingsAreaRepositoryFields } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
 /**
  * Fetches a repository's text search index information.

@@ -1,10 +1,13 @@
-import React, { useCallback, useState } from 'react'
 import Dialog from '@reach/dialog'
+import React, { useCallback, useState } from 'react'
+
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { ErrorAlert } from '../../../components/alerts'
-import { deleteBatchChangesCredential } from './backend'
 import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
+
+import { deleteBatchChangesCredential } from './backend'
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
 import { ModalHeader } from './ModalHeader'
 

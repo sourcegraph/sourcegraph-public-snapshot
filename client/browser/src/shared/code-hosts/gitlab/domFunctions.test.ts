@@ -1,10 +1,12 @@
 import { startCase } from 'lodash'
+
 import { testDOMFunctions } from '../shared/codeHostTestUtils'
+
 import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 
-describe('Bitbucket DOM functions', () => {
+describe('GitLab DOM functions', () => {
     describe('diffDOMFunctions', () => {
-        for (const view of ['split', 'unified']) {
+        for (const view of ['legacy_split', 'split', 'legacy_unified', 'unified']) {
             describe(`${startCase(view)} view`, () => {
                 // https://gitlab.com/gitlab-org/gitlab-runner/merge_requests/1058/diffs?view=parallel#diff-content-ca8e0332ce17b2ee630a2ee2c0b56d47a462dadf
                 testDOMFunctions(diffDOMFunctions, {

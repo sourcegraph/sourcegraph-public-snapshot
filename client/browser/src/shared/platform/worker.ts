@@ -1,5 +1,6 @@
+import { checkOk } from '@sourcegraph/shared/src/backend/fetch'
+
 import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
-import { checkOk } from '../../../../shared/src/backend/fetch'
 
 export async function createBlobURLForBundle(bundleURL: string): Promise<string> {
     const { origin, hostname } = new URL(bundleURL)

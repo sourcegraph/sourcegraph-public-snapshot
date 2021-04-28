@@ -1,8 +1,8 @@
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import BrainIcon from 'mdi-react/BrainIcon'
 import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
-import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
-import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
+import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
+
+import { BatchChangesIcon } from '../../batches/icons'
 import {
     apiConsoleGroup,
     configurationGroup as ossConfigurationGroup,
@@ -11,7 +11,8 @@ import {
     repositoriesGroup,
     usersGroup,
 } from '../../site-admin/sidebaritems'
-import { BatchChangesIcon } from '../../batches/icons'
+import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
+import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 
 const configurationGroup: SiteAdminSideBarGroup = {
     ...ossConfigurationGroup,
@@ -48,6 +49,7 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/batch-changes',
         },
     ],
+    condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom && window.context.batchChangesEnabled,
 }
 
 const businessGroup: SiteAdminSideBarGroup = {

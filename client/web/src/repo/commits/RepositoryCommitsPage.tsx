@@ -2,19 +2,22 @@ import * as H from 'history'
 import React, { useEffect, useCallback, useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../../shared/src/util/errors'
+
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+
 import { queryGraphQL } from '../../backend/graphql'
+import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
-import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
-import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
-import { RevisionSpec, ResolvedRevisionSpec } from '../../../../shared/src/util/url'
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { GitCommitFields, RepositoryFields, Scalars } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 import { externalLinkFieldsFragment } from '../backend'
+import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
+
+import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
 
 export const gitCommitFragment = gql`
     fragment GitCommitFields on GitCommit {

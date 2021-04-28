@@ -1,11 +1,14 @@
-import * as H from 'history'
-import { storiesOf } from '@storybook/react'
-import React from 'react'
-import { VersionContextDropdown, VersionContextDropdownProps } from './VersionContextDropdown'
-import { subtypeOf } from '../../../shared/src/util/types'
 import { action } from '@storybook/addon-actions'
-import { SearchPatternType } from '../graphql-operations'
+import { storiesOf } from '@storybook/react'
+import * as H from 'history'
+import React from 'react'
+
+import { subtypeOf } from '@sourcegraph/shared/src/util/types'
+
 import { WebStory } from '../components/WebStory'
+import { SearchPatternType } from '../graphql-operations'
+
+import { VersionContextDropdown, VersionContextDropdownProps } from './VersionContextDropdown'
 
 const { add } = storiesOf('web/VersionContextDropdown', module).addDecorator(story => (
     <WebStory>{() => story()}</WebStory>

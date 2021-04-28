@@ -1,9 +1,13 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import classNames from 'classnames'
 import * as H from 'history'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+
+import { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { ActionContribution, Evaluated } from '../api/protocol'
 import { urlForOpenPanel } from '../commands/commands'
 import { ButtonLink } from '../components/LinkOrButton'
@@ -11,9 +15,7 @@ import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { isExternalLink } from '../util/url'
-import { ExecuteCommandParameters } from '../api/client/mainthread-api'
 
 export interface ActionItemAction {
     /**

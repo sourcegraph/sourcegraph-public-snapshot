@@ -2,15 +2,18 @@ import classNames from 'classnames'
 import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { AuthenticatedUser } from '../../auth'
-import { buildSearchURLQuery } from '../../../../shared/src/util/url'
-import { ISavedSearch, SearchPatternType } from '../../../../shared/src/graphql/schema'
-import { Link } from '../../../../shared/src/components/Link'
-import { LoadingPanelView } from './LoadingPanelView'
 import { Observable } from 'rxjs'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { ISavedSearch, SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { AuthenticatedUser } from '../../auth'
+
+import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { useObservable } from '../../../../shared/src/util/useObservable'
 
 interface Props extends TelemetryProps {
     className?: string

@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -44,10 +45,10 @@ func TestSearchPagination_unmarshalSearchCursor(t *testing.T) {
 
 func TestSearchPagination_sliceSearchResults(t *testing.T) {
 	db := new(dbtesting.MockDB)
-	repoName := func(name string) *types.RepoName {
+	repoName := func(name string) types.RepoName {
 		// Backcompat extract ID from name.
 		id := name[len(name)-1] - '0'
-		return &types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
+		return types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
 	result := mkFileMatch
 	format := func(r slicedSearchResults) string {
@@ -254,12 +255,12 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		}
 		return revs
 	}
-	repoName := func(name string) *types.RepoName {
+	repoName := func(name string) types.RepoName {
 		// Backcompat extract ID from name.
 		id := name[len(name)-1] - '0'
-		return &types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
+		return types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
-	result := func(db dbutil.DB, repo *types.RepoName, path, rev string) *FileMatchResolver {
+	result := func(db dbutil.DB, repo types.RepoName, path, rev string) *FileMatchResolver {
 		fm := mkFileMatch(db, repo, path)
 		fm.InputRev = &rev
 		return fm
@@ -438,7 +439,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 			if test.executor != nil {
 				executor = test.executor
 			}
-			cursor, results, common, err := plan.execute(ctx, executor)
+			cursor, results, common, err := plan.execute(ctx, database.Repos(db), executor)
 			if !cmp.Equal(test.wantCursor, cursor) {
 				t.Error("wantCursor != cursor", cmp.Diff(test.wantCursor, cursor))
 			}
@@ -467,10 +468,10 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 		}
 		return revs
 	}
-	repoName := func(name string) *types.RepoName {
+	repoName := func(name string) types.RepoName {
 		// Backcompat extract ID from name.
 		id := name[len(name)-1] - '0'
-		return &types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
+		return types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
 	result := mkFileMatch
 	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
@@ -561,7 +562,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 				searchBucketMax:     10,
 				mockNumTotalRepos:   func() int { return len(searchRepos) },
 			}
-			cursor, results, _, err := plan.execute(ctx, executor)
+			cursor, results, _, err := plan.execute(ctx, database.Repos(db), executor)
 			if !cmp.Equal(test.wantCursor, cursor) {
 				t.Error("wantCursor != cursor", cmp.Diff(test.wantCursor, cursor))
 			}
@@ -587,10 +588,10 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 		}
 		return revs
 	}
-	repoName := func(name string) *types.RepoName {
+	repoName := func(name string) types.RepoName {
 		// Backcompat extract ID from name.
 		id := name[len(name)-1] - 'a' + 1
-		return &types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
+		return types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
 	result := mkFileMatch
 	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
@@ -735,7 +736,7 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 				searchBucketMax:     10,
 				mockNumTotalRepos:   func() int { return len(test.searchRepos) },
 			}
-			cursor, results, common, err := plan.execute(ctx, executor)
+			cursor, results, common, err := plan.execute(ctx, database.Repos(db), executor)
 			if !cmp.Equal(test.wantCursor, cursor) {
 				t.Error("wantCursor != cursor", cmp.Diff(test.wantCursor, cursor))
 			}
@@ -752,8 +753,8 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 	}
 }
 
-func reposMap(repos ...*types.RepoName) map[api.RepoID]*types.RepoName {
-	m := make(map[api.RepoID]*types.RepoName, len(repos))
+func reposMap(repos ...types.RepoName) map[api.RepoID]types.RepoName {
+	m := make(map[api.RepoID]types.RepoName, len(repos))
 	for _, r := range repos {
 		m[r.ID] = r
 	}

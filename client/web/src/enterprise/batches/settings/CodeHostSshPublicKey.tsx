@@ -2,6 +2,7 @@ import copy from 'copy-to-clipboard'
 import { noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import React, { useCallback, useState } from 'react'
+
 import { ExternalServiceKind } from '../../../graphql-operations'
 
 const configInstructionLinks: Record<ExternalServiceKind, string> = {

@@ -1,43 +1,42 @@
-import { createHoverifier, HoveredToken, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
-import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
-import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { getHoverActions } from '../../../../shared/src/hover/actions'
-import { HoverContext } from '../../../../shared/src/hover/HoverOverlay'
-import { getModeFromPath } from '../../../../shared/src/languages'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
-import { property, isDefined } from '../../../../shared/src/util/types'
+
+import { createHoverifier, HoveredToken, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
+import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
+import { getModeFromPath } from '@sourcegraph/shared/src/languages'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
+import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import {
     FileSpec,
     ModeSpec,
-    UIPositionSpec,
     RepoSpec,
     ResolvedRevisionSpec,
     RevisionSpec,
-} from '../../../../shared/src/util/url'
+    UIPositionSpec,
+} from '@sourcegraph/shared/src/util/url'
+
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { requestGraphQL } from '../../backend/graphql'
-import { PageTitle } from '../../components/PageTitle'
-import { WebHoverOverlay } from '../../components/shared'
-import { GitCommitNode } from '../commits/GitCommitNode'
-import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
+import { ErrorAlert } from '../../components/alerts'
 import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../components/diff/FileDiffNode'
-import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
-import { ThemeProps } from '../../../../shared/src/theme'
-import { ErrorAlert } from '../../components/alerts'
 import { FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { PageTitle } from '../../components/PageTitle'
+import { WebHoverOverlay } from '../../components/shared'
 import {
     ExternalLinkFields,
     GitCommitFields,
@@ -46,6 +45,11 @@ import {
     RepositoryFields,
     Scalars,
 } from '../../graphql-operations'
+import { GitCommitNode } from '../commits/GitCommitNode'
+import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
+import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
+
+import { DiffModeSelector } from './DiffModeSelector'
 
 const queryCommit = memoizeObservable(
     (args: { repo: Scalars['ID']; revspec: string }): Observable<GitCommitFields> =>
@@ -93,10 +97,16 @@ interface Props
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 }
 
+export type DiffMode = 'split' | 'unified'
+
 interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
     /** The commit, undefined while loading, or an error. */
     commitOrError?: GitCommitFields | ErrorLike
+    /** The visualization mode for file diff */
+    diffMode: DiffMode
 }
+
+const DIFF_MODE_VISUALIZER = 'diff-mode-visualizer'
 
 /** Displays a commit. */
 export class RepositoryCommitPage extends React.Component<Props, State> {
@@ -114,7 +124,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
     /** Emits when the close button was clicked */
     private closeButtonClicks = new Subject<MouseEvent>()
     private nextCloseButtonClick = (event: MouseEvent): void => this.closeButtonClicks.next(event)
-
     private subscriptions = new Subscription()
     private hoverifier: Hoverifier<
         RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
@@ -148,7 +157,12 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
             pinningEnabled: true,
         })
         this.subscriptions.add(this.hoverifier)
-        this.state = this.hoverifier.hoverState
+        this.handleDiffMode = this.handleDiffMode.bind(this)
+        this.state = {
+            ...this.hoverifier.hoverState,
+            diffMode: (localStorage.getItem(DIFF_MODE_VISUALIZER) as DiffMode | null) || 'unified',
+        }
+
         this.subscriptions.add(
             this.hoverifier.hoverStateUpdates.subscribe(update => {
                 this.setState(update)
@@ -169,9 +183,13 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
         }
     }
 
+    private handleDiffMode(mode: DiffMode): void {
+        localStorage.setItem(DIFF_MODE_VISUALIZER, mode)
+        this.setState({ diffMode: mode })
+    }
+
     public componentDidMount(): void {
         this.props.telemetryService.logViewEvent('RepositoryCommit')
-
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
@@ -218,7 +236,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="repository-commit-page container mt-3" ref={this.nextRepositoryCommitPageElement}>
+            <div className="repository-commit-page m-3" ref={this.nextRepositoryCommitPageElement}>
                 <PageTitle
                     title={
                         this.state.commitOrError && !isErrorLike(this.state.commitOrError)
@@ -241,7 +259,12 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                 />
                             </div>
                         </div>
-                        <div className="mb-3" />
+                        <DiffModeSelector
+                            className="py-2 text-right"
+                            // eslint-disable-next-line @typescript-eslint/unbound-method
+                            handleDiffMode={this.handleDiffMode}
+                            diffMode={this.state.diffMode}
+                        />
                         <FileDiffConnection
                             listClassName="list-group list-group-flush"
                             noun="changed file"
@@ -267,6 +290,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                     extensionsController: this.props.extensionsController,
                                 },
                                 lineNumbers: true,
+                                diffMode: this.state.diffMode,
                             }}
                             updateOnChange={`${this.props.repo.id}:${this.state.commitOrError.oid}:${String(
                                 this.props.isLightTheme

@@ -1,31 +1,34 @@
+import classNames from 'classnames'
 import * as H from 'history'
+import AccountEditIcon from 'mdi-react/AccountEditIcon'
+import CardTextOutlineIcon from 'mdi-react/CardTextOutlineIcon'
+import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
 import React, { useCallback, useState } from 'react'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
+import { DiffStat } from '../../../../components/diff/DiffStat'
+import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
+import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
+import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import {
     ChangesetState,
     VisibleChangesetApplyPreviewFields,
     VisibleChangesetSpecFields,
 } from '../../../../graphql-operations'
-import { ThemeProps } from '../../../../../../shared/src/theme'
-import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
-import { Link } from '../../../../../../shared/src/components/Link'
-import { DiffStat } from '../../../../components/diff/DiffStat'
-import { PreviewActions } from './PreviewActions'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import CardTextOutlineIcon from 'mdi-react/CardTextOutlineIcon'
-import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
-import AccountEditIcon from 'mdi-react/AccountEditIcon'
-import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
-import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
-import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
-import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
-import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
-import { PreviewNodeIndicator } from './PreviewNodeIndicator'
-import classNames from 'classnames'
 import { PersonLink } from '../../../../person/PersonLink'
-import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 import { Description } from '../../Description'
+import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
+import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
+
+import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
+import { PreviewActions } from './PreviewActions'
+import { PreviewNodeIndicator } from './PreviewNodeIndicator'
 
 export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     node: VisibleChangesetApplyPreviewFields

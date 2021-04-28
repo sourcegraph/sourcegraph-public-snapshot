@@ -1,12 +1,14 @@
+import classNames from 'classnames'
+import { range } from 'lodash'
 import EmoticonIcon from 'mdi-react/EmoticonIcon'
 import React, { useState } from 'react'
 import { useHistory } from 'react-router'
-import classNames from 'classnames'
+
+import { AuthenticatedUser } from '../auth'
 import { eventLogger } from '../tracking/eventLogger'
+
 import { Toast } from './Toast'
 import { daysActiveCount } from './util'
-import { range } from 'lodash'
-import { AuthenticatedUser } from '../auth'
 
 const HAS_DISMISSED_TOAST_KEY = 'has-dismissed-survey-toast'
 

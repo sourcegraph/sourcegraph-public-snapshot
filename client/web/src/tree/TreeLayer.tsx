@@ -1,4 +1,5 @@
 /* eslint jsx-a11y/mouse-events-have-key-events: warn */
+import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 import { EMPTY, merge, of, Subject, Subscription } from 'rxjs'
@@ -13,9 +14,19 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
-import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { AbsoluteRepo } from '../../../shared/src/util/url'
+import { FileDecoration } from 'sourcegraph'
+
+import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
+
+import { getFileDecorations } from '../backend/features'
+import { ErrorAlert } from '../components/alerts'
+import { TreeFields } from '../graphql-operations'
 import { fetchTreeEntries } from '../repo/backend'
+
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { Directory } from './Directory'
 import { File } from './File'
@@ -28,14 +39,6 @@ import {
     TreeEntryInfo,
     treePadding,
 } from './util'
-import { ErrorAlert } from '../components/alerts'
-import classNames from 'classnames'
-import { TreeFields } from '../graphql-operations'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { FileDecoration } from 'sourcegraph'
-import { getFileDecorations } from '../backend/features'
-import { ThemeProps } from '../../../shared/src/theme'
-import { FileDecorationsByPath } from '../../../shared/src/api/extension/extensionHostApi'
 
 export interface TreeLayerProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps {
     location: H.Location

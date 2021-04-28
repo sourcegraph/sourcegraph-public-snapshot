@@ -1,13 +1,14 @@
-import React, { useEffect, useCallback } from 'react'
 import * as H from 'history'
-import * as GQL from '../../../../shared/src/graphql/schema'
+import React, { useCallback, useEffect } from 'react'
+import { Observable } from 'rxjs'
+
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
+import { GitRefType, Scalars, GitRefConnectionFields, GitRefFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { GitReferenceNode, queryGitReferences as queryGitReferencesFromBackend } from '../GitReference'
+
 import { RepositoryReleasesAreaPageProps } from './RepositoryReleasesArea'
-import { Observable } from 'rxjs'
-import { GitRefType, Scalars } from '../../graphql-operations'
 
 interface Props extends RepositoryReleasesAreaPageProps {
     history: H.History
@@ -18,7 +19,7 @@ interface Props extends RepositoryReleasesAreaPageProps {
         query?: string
         type: GitRefType
         withBehindAhead?: boolean
-    }) => Observable<GQL.IGitRefConnection>
+    }) => Observable<GitRefConnectionFields>
 }
 
 /** A page that shows all of a repository's tags. */
@@ -33,7 +34,7 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<Props> = ({
     }, [])
 
     const queryTags = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<GQL.IGitRefConnection> =>
+        (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
             queryGitReferences({ ...args, repo: repo.id, type: GitRefType.GIT_TAG }),
         [repo.id, queryGitReferences]
     )
@@ -41,7 +42,7 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<Props> = ({
     return (
         <div className="repository-releases-page">
             <PageTitle title="Tags" />
-            <FilteredConnection<GQL.IGitRef>
+            <FilteredConnection<GitRefFields>
                 className="my-3"
                 listClassName="list-group list-group-flush"
                 noun="tag"

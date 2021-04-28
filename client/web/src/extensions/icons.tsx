@@ -1,11 +1,12 @@
 import * as React from 'react'
-import { ThemeProps } from '../../../shared/src/theme'
+
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 interface IconProps {
     className?: string
 }
 
-export const ExtensionsNavIcon: React.FC<IconProps> = ({ className }) => (
+export const ExtensionsNavIcon: React.FunctionComponent<IconProps> = ({ className }) => (
     <svg
         className={className}
         width="16"

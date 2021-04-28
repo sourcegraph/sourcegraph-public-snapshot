@@ -1,6 +1,7 @@
 // @ts-check
 const logger = require('gulplog')
 const semver = require('semver')
+const path = require('path')
 
 /** @type {import('@babel/core').ConfigFunction} */
 module.exports = api => {
@@ -19,7 +20,7 @@ module.exports = api => {
   return {
     presets: [
       // Can't put this in plugins because it needs to run as the last plugin.
-      ...(instrument ? [{ plugins: [['babel-plugin-istanbul', { exclude: ['node_modules/**'] }]] }] : []),
+      ...(instrument ? [{ plugins: [['babel-plugin-istanbul', { cwd: path.resolve(__dirname) }]] }] : []),
       [
         '@babel/preset-env',
         {
@@ -49,9 +50,12 @@ module.exports = api => {
       '@babel/preset-react',
     ],
     plugins: [
+      ['@babel/plugin-transform-typescript', { isTSX: true }],
       'babel-plugin-lodash',
       // Node 12 (released 2019 Apr 23) supports these natively, but there seem to be issues when used with TypeScript.
       ['@babel/plugin-proposal-class-properties', { loose: true }],
     ],
+    // Required for d3-array v1.2 (dependency of recharts). See https://github.com/babel/babel/issues/11038
+    ignore: [new RegExp('d3-array/src/cumsum.js')],
   }
 }

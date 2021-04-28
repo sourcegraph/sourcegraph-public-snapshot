@@ -4,24 +4,34 @@ import React, { useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { CircleChevronLeftIcon } from '../../../shared/src/components/icons'
-import { GitRefType, Scalars } from '../../../shared/src/graphql-operations'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
-import { RevisionSpec } from '../../../shared/src/util/url'
-import { useLocalStorage } from '../../../shared/src/util/useLocalStorage'
-import { queryGraphQL } from '../backend/graphql'
+
+import { CircleChevronLeftIcon } from '@sourcegraph/shared/src/components/icons'
+import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
+import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+
+import { requestGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../components/FilteredConnection'
+import {
+    GitCommitAncestorFields,
+    GitCommitAncestorsConnectionFields,
+    GitRefConnectionFields,
+    GitRefFields,
+    RepositoryGitCommitResult,
+    RepositoryGitCommitVariables,
+} from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 import { replaceRevisionInURL } from '../util/url'
+
 import { GitReferenceNode, queryGitReferences } from './GitReference'
 
 const fetchRepositoryCommits = memoizeObservable(
     (
         args: RevisionSpec & { repo: Scalars['ID']; first?: number; query?: string }
-    ): Observable<GQL.IGitCommitConnection> =>
-        queryGraphQL(
+    ): Observable<GitCommitAncestorsConnectionFields> =>
+        requestGraphQL<RepositoryGitCommitResult, RepositoryGitCommitVariables>(
             gql`
                 query RepositoryGitCommit($repo: ID!, $first: Int, $revision: String!, $query: String) {
                     node(id: $repo) {
@@ -29,29 +39,42 @@ const fetchRepositoryCommits = memoizeObservable(
                         ... on Repository {
                             commit(rev: $revision) {
                                 ancestors(first: $first, query: $query) {
-                                    nodes {
-                                        id
-                                        oid
-                                        abbreviatedOID
-                                        author {
-                                            person {
-                                                name
-                                                avatarURL
-                                            }
-                                            date
-                                        }
-                                        subject
-                                    }
-                                    pageInfo {
-                                        hasNextPage
-                                    }
+                                    ...GitCommitAncestorsConnectionFields
                                 }
                             }
                         }
                     }
                 }
+
+                fragment GitCommitAncestorsConnectionFields on GitCommitConnection {
+                    nodes {
+                        ...GitCommitAncestorFields
+                    }
+                    pageInfo {
+                        hasNextPage
+                    }
+                }
+
+                fragment GitCommitAncestorFields on GitCommit {
+                    id
+                    oid
+                    abbreviatedOID
+                    author {
+                        person {
+                            name
+                            avatarURL
+                        }
+                        date
+                    }
+                    subject
+                }
             `,
-            args
+            {
+                first: args.first ?? null,
+                query: args.query ?? null,
+                repo: args.repo,
+                revision: args.revision,
+            }
         ).pipe(
             map(dataOrThrowErrors),
             map(({ node }) => {
@@ -71,7 +94,7 @@ const fetchRepositoryCommits = memoizeObservable(
 )
 
 interface GitReferencePopoverNodeProps {
-    node: GQL.IGitRef
+    node: GitRefFields
 
     defaultBranch: string
     currentRevision: string | undefined
@@ -108,7 +131,7 @@ const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodePr
 }
 
 interface GitCommitNodeProps {
-    node: GQL.IGitCommit
+    node: GitCommitAncestorFields
 
     currentCommitID: string | undefined
 
@@ -128,7 +151,7 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, curr
                 <code className="revisions-popover-git-commit-node__oid" title={node.oid}>
                     {node.abbreviatedOID}
                 </code>
-                <span className="revisions-popover-git-commit-node__message">{(node.subject || '').slice(0, 200)}</span>
+                <span className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</span>
                 {isCurrent && (
                     <CircleChevronLeftIcon
                         className="icon-inline connection-popover__node-link-icon"
@@ -184,13 +207,15 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
 
-    const queryGitBranches = (args: FilteredConnectionQueryArguments): Observable<GQL.IGitRefConnection> =>
+    const queryGitBranches = (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
         queryGitReferences({ ...args, repo: props.repo, type: GitRefType.GIT_BRANCH, withBehindAhead: false })
 
-    const queryGitTags = (args: FilteredConnectionQueryArguments): Observable<GQL.IGitRefConnection> =>
+    const queryGitTags = (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
         queryGitReferences({ ...args, repo: props.repo, type: GitRefType.GIT_TAG, withBehindAhead: false })
 
-    const queryRepositoryCommits = (args: FilteredConnectionQueryArguments): Observable<GQL.IGitCommitConnection> =>
+    const queryRepositoryCommits = (
+        args: FilteredConnectionQueryArguments
+    ): Observable<GitCommitAncestorsConnectionFields> =>
         fetchRepositoryCommits({
             ...args,
             repo: props.repo,
@@ -212,7 +237,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                 {TABS.map(tab => (
                     <TabPanel className="" key={tab.id}>
                         {tab.type ? (
-                            <FilteredConnection<GQL.IGitRef, Omit<GitReferencePopoverNodeProps, 'node'>>
+                            <FilteredConnection<GitRefFields, Omit<GitReferencePopoverNodeProps, 'node'>>
                                 key={tab.id}
                                 className="connection-popover__content"
                                 showMoreClassName="connection-popover__show-more"
@@ -234,7 +259,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                                 location={props.location}
                             />
                         ) : (
-                            <FilteredConnection<GQL.IGitCommit, Omit<GitCommitNodeProps, 'node'>>
+                            <FilteredConnection<GitCommitAncestorFields, Omit<GitCommitNodeProps, 'node'>>
                                 key={tab.id}
                                 className="connection-popover__content"
                                 compact={true}

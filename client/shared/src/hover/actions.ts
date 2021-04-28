@@ -1,5 +1,3 @@
-import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
-import { Location } from '@sourcegraph/extension-api-types'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import { isEqual, uniqWith } from 'lodash'
@@ -17,10 +15,14 @@ import {
     scan,
     mapTo,
 } from 'rxjs/operators'
+
+import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
+import { Location } from '@sourcegraph/extension-api-types'
+
 import { ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
-import { Context } from '../api/extension/api/context/context'
 import { FlatExtensionHostAPI } from '../api/contract'
+import { Context } from '../api/extension/api/context/context'
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { ContributableMenu, TextDocumentPositionParameters } from '../api/protocol'
 import { syncRemoteSubscription } from '../api/util'
@@ -31,6 +33,7 @@ import { Controller, ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContext, PlatformContextProps, URLToFileContext } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision, isExternalLink } from '../util/url'
+
 import { HoverContext } from './HoverOverlay'
 
 const LOADING = 'loading' as const

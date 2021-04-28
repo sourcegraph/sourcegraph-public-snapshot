@@ -1,13 +1,16 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Form } from '../../../branded/src/components/Form'
-import { eventLogger } from '../tracking/eventLogger'
-import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
-import { asError } from '../../../shared/src/util/errors'
-import classNames from 'classnames'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError } from '@sourcegraph/shared/src/util/errors'
+
 import { SourcegraphContext } from '../jscontext'
+import { eventLogger } from '../tracking/eventLogger'
+
+import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
 
 interface Props {
     location: H.Location

@@ -1,21 +1,26 @@
-import React from 'react'
-import { ChangesetFields, ChangesetState } from '../../../../graphql-operations'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import SourcePullIcon from 'mdi-react/SourcePullIcon'
-import SourceMergeIcon from 'mdi-react/SourceMergeIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import AutorenewIcon from 'mdi-react/AutorenewIcon'
-import ErrorIcon from 'mdi-react/ErrorIcon'
-import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import classNames from 'classnames'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
+import AutorenewIcon from 'mdi-react/AutorenewIcon'
+import DeleteIcon from 'mdi-react/DeleteIcon'
+import ErrorIcon from 'mdi-react/ErrorIcon'
+import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
+import SourceMergeIcon from 'mdi-react/SourceMergeIcon'
+import SourcePullIcon from 'mdi-react/SourcePullIcon'
+import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import React from 'react'
+
+import { ChangesetFields, ChangesetState, Scalars } from '../../../../graphql-operations'
+
+import { ChangesetStatusScheduled } from './ChangesetStatusScheduled'
 
 export interface ChangesetStatusCellProps {
     className?: string
+    id?: Scalars['ID']
     state: ChangesetFields['state']
 }
 
 export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellProps> = ({
+    id,
     state,
     className = 'd-flex',
 }) => {
@@ -24,6 +29,8 @@ export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellPro
             return <ChangesetStatusError className={className} />
         case ChangesetState.RETRYING:
             return <ChangesetStatusRetrying className={className} />
+        case ChangesetState.SCHEDULED:
+            return <ChangesetStatusScheduled className={className} id={id} />
         case ChangesetState.PROCESSING:
             return <ChangesetStatusProcessing className={className} />
         case ChangesetState.UNPUBLISHED:
@@ -115,6 +122,7 @@ export const ChangesetStatusRetrying: React.FunctionComponent<{ label?: JSX.Elem
         {label}
     </div>
 )
+
 export const ChangesetStatusProcessing: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
     label = <span>Processing</span>,
     className,

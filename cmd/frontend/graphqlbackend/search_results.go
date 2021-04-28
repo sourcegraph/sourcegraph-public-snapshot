@@ -9,11 +9,9 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/go-enry/go-enry/v2"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -70,9 +68,8 @@ func (c *SearchResultsResolver) RepositoriesCount() int32 {
 func (c *SearchResultsResolver) repositoryResolvers(mask search.RepoStatus) []*RepositoryResolver {
 	var resolvers []*RepositoryResolver
 	c.Status.Filter(mask, func(id api.RepoID) {
-		r := c.Repos[id]
-		if r != nil {
-			resolvers = append(resolvers, NewRepositoryResolver(c.db, c.Repos[id].ToRepo()))
+		if r, ok := c.Repos[id]; ok {
+			resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
 		}
 	})
 	sort.Slice(resolvers, func(a, b int) bool {
@@ -379,27 +376,25 @@ func LogSearchLatency(ctx context.Context, db dbutil.DB, si *SearchInputs, durat
 		return
 	}
 
-	options := &getPatternInfoOptions{}
-	if si.PatternType == query.SearchTypeStructural {
-		options = &getPatternInfoOptions{performStructuralSearch: true}
+	q, err := query.ToBasicQuery(si.Query)
+	if err != nil {
+		// Can't convert to a basic query, can't guarantee accurate reporting.
+		return
 	}
-	if si.PatternType == query.SearchTypeLiteral {
-		options = &getPatternInfoOptions{performLiteralSearch: true}
+	if !query.IsPatternAtom(q) {
+		// Not an atomic pattern, can't guarantee accurate reporting.
+		return
 	}
-	pattern, _, _, _ := processSearchPattern(si.Query, options)
 
 	// If no type: was explicitly specified, infer the result type.
 	if len(types) == 0 {
 		// If a pattern was specified, a content search happened.
-		if pattern != "" {
-			switch {
-			case si.PatternType == query.SearchTypeStructural:
-				types = append(types, "structural")
-			case si.PatternType == query.SearchTypeLiteral:
-				types = append(types, "literal")
-			case si.PatternType == query.SearchTypeRegex:
-				types = append(types, "regexp")
-			}
+		if q.IsLiteral() {
+			types = append(types, "literal")
+		} else if q.IsRegexp() {
+			types = append(types, "regexp")
+		} else if q.IsStructural() {
+			types = append(types, "structural")
 		} else if len(si.Query.Fields()["file"]) > 0 {
 			// No search pattern specified and file: is specified.
 			types = append(types, "file")
@@ -787,18 +782,17 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchRe
 // resolved.
 func invalidateRepoCache(plan query.Plan) bool {
 	var seenRepo, seenRevision, seenRepoGroup, seenContext int
-	q := plan.ToParseTree()
-	query.VisitField(q, query.FieldRepo, func(_ string, _ bool, _ query.Annotation) {
-		seenRepo += 1
-	})
-	query.VisitField(q, query.FieldRev, func(_ string, _ bool, _ query.Annotation) {
-		seenRevision += 1
-	})
-	query.VisitField(q, query.FieldRepoGroup, func(_ string, _ bool, _ query.Annotation) {
-		seenRepoGroup += 1
-	})
-	query.VisitField(q, query.FieldContext, func(_ string, _ bool, _ query.Annotation) {
-		seenContext += 1
+	query.VisitParameter(plan.ToParseTree(), func(field, _ string, _ bool, _ query.Annotation) {
+		switch field {
+		case query.FieldRepo:
+			seenRepo += 1
+		case query.FieldRev:
+			seenRevision += 1
+		case query.FieldRepoGroup:
+			seenRepoGroup += 1
+		case query.FieldContext:
+			seenContext += 1
+		}
 	})
 	return seenRepo+seenRepoGroup > 1 || seenRevision > 1 || seenContext > 1
 }
@@ -1016,27 +1010,17 @@ func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*Search
 			Annotation: ann,
 		}
 
+		if !ann.Labels.IsSet(query.IsPredicate) {
+			return orig
+		}
+
 		if topErr != nil {
 			return orig
 		}
 
-		name, params, err := query.ParseAsPredicate(value)
-		if err != nil {
-			// This doesn't look like a predicate, so skip it
-			return orig
-		}
-
-		predicate, err := query.DefaultPredicateRegistry.Get(field, name, params)
-		if err != nil {
-			topErr = err
-			return orig
-		}
-
-		if neg {
-			topErr = errors.New("predicates do not currently support negation")
-			return nil
-		}
-
+		name, params := query.ParseAsPredicate(value)
+		predicate := query.DefaultPredicateRegistry.Get(field, name)
+		predicate.ParseParams(params)
 		srr, err := evaluate(predicate)
 		if err != nil {
 			topErr = err
@@ -1217,207 +1201,6 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	return stats, nil
 }
 
-type getPatternInfoOptions struct {
-	// forceFileSearch, when true, specifies that the search query should be
-	// treated as if every default term had `file:` before it. This can be used
-	// to allow users to jump to files by just typing their name.
-	forceFileSearch         bool
-	performStructuralSearch bool
-	performLiteralSearch    bool
-
-	fileMatchLimit int32
-}
-
-// getPatternInfo gets the search pattern info for the query in the resolver.
-func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
-	if opts == nil {
-		opts = &getPatternInfoOptions{}
-	}
-
-	if opts.fileMatchLimit == 0 {
-		opts.fileMatchLimit = int32(r.MaxResults())
-	}
-
-	return getPatternInfo(r.Query, opts)
-}
-
-func isPatternNegated(q []query.Node) bool {
-	isNegated := false
-	patternsFound := 0
-	query.VisitPattern(q, func(_ string, negated bool, _ query.Annotation) {
-		patternsFound++
-		if patternsFound > 1 {
-			return
-		}
-		isNegated = negated
-	})
-
-	// we only support negation for queries that contain exactly 1 pattern.
-	if patternsFound > 1 {
-		return false
-	}
-	return isNegated
-}
-
-// processSearchPattern processes the search pattern for a query. It handles the interpretation of search patterns
-// as literal, regex, or structural patterns, and applies fuzzy regex matching if applicable.
-func processSearchPattern(q query.Q, opts *getPatternInfoOptions) (string, bool, bool, bool) {
-	var pattern string
-	var pieces []string
-	var contentFieldSet bool
-	isRegExp := false
-	isStructuralPat := false
-
-	patternValues := q.Values(query.FieldDefault)
-	isNegated := isPatternNegated(q)
-
-	if overridePattern := q.Values(query.FieldContent); len(overridePattern) > 0 {
-		patternValues = overridePattern
-		contentFieldSet = true
-	}
-
-	if opts.performStructuralSearch {
-		isStructuralPat = true
-		for _, v := range patternValues {
-			if piece := v.ToString(); piece != "" {
-				pieces = append(pieces, piece)
-			}
-		}
-		pattern = strings.Join(pieces, " ")
-	} else if !opts.forceFileSearch {
-		isRegExp = true
-		for _, v := range patternValues {
-			var piece string
-			switch {
-			case v.String != nil:
-				if contentFieldSet && !opts.performLiteralSearch {
-					piece = *v.String
-				} else {
-					// Treat quoted strings as literal
-					// strings to match, not regexps.
-					piece = regexp.QuoteMeta(*v.String)
-				}
-			case v.Regexp != nil:
-				piece = v.Regexp.String()
-			}
-			if piece == "" {
-				continue
-			}
-			pieces = append(pieces, piece)
-		}
-		pattern = orderedFuzzyRegexp(pieces)
-	} else {
-		// TODO: We must have some pattern that always matches here, or else
-		// cmd/searcher/search/matcher.go:97 would cause a nil regexp panic
-		// when not using indexed search. I am unsure what the right solution
-		// is here. Would this code path go away when we switch fully to
-		// indexed search @keegan? This workaround is OK for now though.
-		isRegExp = true
-		pattern = "."
-	}
-
-	return pattern, isRegExp, isStructuralPat, isNegated
-}
-
-// getPatternInfo gets the search pattern info for q
-func getPatternInfo(q query.Q, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
-	pattern, isRegExp, isStructuralPat, isNegated := processSearchPattern(q, opts)
-
-	// Handle file: and -file: filters.
-	includePatterns, excludePatterns := q.RegexpPatterns(query.FieldFile)
-	filePatternsReposMustInclude, filePatternsReposMustExclude := q.RegexpPatterns(query.FieldRepoHasFile)
-
-	if opts.forceFileSearch {
-		for _, v := range q.Values(query.FieldDefault) {
-			includePatterns = append(includePatterns, v.ToString())
-		}
-	}
-
-	var combyRule []string
-	for _, v := range q.Values(query.FieldCombyRule) {
-		combyRule = append(combyRule, v.ToString())
-	}
-
-	// Handle lang: and -lang: filters.
-	langIncludePatterns, langExcludePatterns, err := langIncludeExcludePatterns(q.StringValues(query.FieldLang))
-	if err != nil {
-		return nil, err
-	}
-	includePatterns = append(includePatterns, langIncludePatterns...)
-	excludePatterns = append(excludePatterns, langExcludePatterns...)
-
-	languages, _ := q.StringValues(query.FieldLang)
-
-	var sp filter.SelectPath
-	if sf, _ := q.StringValue(query.FieldSelect); sf != "" {
-		sp, err = filter.SelectPathFromString(sf)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	patternInfo := &search.TextPatternInfo{
-		IsRegExp:                     isRegExp,
-		IsStructuralPat:              isStructuralPat,
-		IsCaseSensitive:              q.IsCaseSensitive(),
-		FileMatchLimit:               opts.fileMatchLimit,
-		Pattern:                      pattern,
-		IsNegated:                    isNegated,
-		IncludePatterns:              includePatterns,
-		FilePatternsReposMustInclude: filePatternsReposMustInclude,
-		FilePatternsReposMustExclude: filePatternsReposMustExclude,
-		Languages:                    languages,
-		PathPatternsAreCaseSensitive: q.IsCaseSensitive(),
-		CombyRule:                    strings.Join(combyRule, ""),
-		Index:                        indexValue(q),
-		Select:                       sp,
-	}
-	if len(excludePatterns) > 0 {
-		patternInfo.ExcludePattern = searchrepos.UnionRegExps(excludePatterns)
-	}
-	return patternInfo, nil
-}
-
-// indexValue converts the query index field to one of yes (default), only, or no
-// enum values.
-func indexValue(q query.Q) query.YesNoOnly {
-	indexParam := query.Yes
-	if index := q.Values(query.FieldIndex); len(index) > 0 {
-		indexParam = query.ParseYesNoOnly(index[0].ToString())
-	}
-	return indexParam
-}
-
-// langIncludeExcludePatterns returns regexps for the include/exclude path patterns given the lang:
-// and -lang: filter values in a search query. For example, a query containing "lang:go" should
-// include files whose paths match /\.go$/.
-func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns, excludePatterns []string, err error) {
-	do := func(values []string, patterns *[]string) error {
-		for _, value := range values {
-			lang, ok := enry.GetLanguageByAlias(value)
-			if !ok {
-				return fmt.Errorf("unknown language: %q", value)
-			}
-			exts := enry.GetLanguageExtensions(lang)
-			extPatterns := make([]string, len(exts))
-			for i, ext := range exts {
-				// Add `\.ext$` pattern to match files with the given extension.
-				extPatterns[i] = regexp.QuoteMeta(ext) + "$"
-			}
-			*patterns = append(*patterns, searchrepos.UnionRegExps(extPatterns))
-		}
-		return nil
-	}
-
-	if err := do(values, &includePatterns); err != nil {
-		return nil, nil, err
-	}
-	if err := do(negatedValues, &excludePatterns); err != nil {
-		return nil, nil, err
-	}
-	return includePatterns, excludePatterns, nil
-}
-
 var (
 	// The default timeout to use for queries.
 	defaultTimeout = 20 * time.Second
@@ -1472,32 +1255,35 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceT
 	return rts
 }
 
-func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (resolved searchrepos.Resolved, res *SearchResultsResolver, err error) {
-	resolved, err = r.resolveRepositories(ctx, nil)
+// determineRepos wraps resolveRepositories. It interprets the response and
+// error to see if an alert needs to be returned. Only one of the return
+// values will be non-nil.
+func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (*searchrepos.Resolved, *searchAlert, error) {
+	resolved, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
 			log15.Debug("searchResolver.determineRepos", "err", err)
 			alert := alertForStalePermissions()
-			return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert}, nil
+			return nil, alert, nil
 		}
 		e := git.BadCommitError{}
 		if errors.As(err, &e) {
 			alert := r.alertForInvalidRevision(e.Spec)
-			return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert}, nil
+			return nil, alert, nil
 		}
-		return searchrepos.Resolved{}, nil, err
+		return nil, nil, err
 	}
 
 	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
 	if len(resolved.RepoRevs) == 0 {
 		alert := r.alertForNoResolvedRepos(ctx)
-		return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert}, nil
+		return nil, alert, nil
 	}
 	if resolved.OverLimit {
 		alert := r.alertForOverRepoLimit(ctx)
-		return searchrepos.Resolved{}, &SearchResultsResolver{db: r.db, alert: alert}, nil
+		return nil, alert, nil
 	}
-	return resolved, nil, nil
+	return &resolved, nil, nil
 }
 
 type DiffCommitError struct {
@@ -1653,7 +1439,7 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 	}
 
 	a.Send(SearchEvent{
-		Results: fileMatchResultsToSearchResults(fileResults),
+		Results: fileMatchResolversToSearchResults(fileResults),
 		Stats:   stats,
 	})
 	return err
@@ -1746,20 +1532,16 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 	}
 	defer cancel()
 
-	options := &getPatternInfoOptions{}
 	limit := r.MaxResults()
-	options.fileMatchLimit = int32(limit)
 	if r.PatternType == query.SearchTypeStructural {
-		options = &getPatternInfoOptions{performStructuralSearch: true}
 		forceResultTypes = result.TypeFile
 	}
-	if r.PatternType == query.SearchTypeLiteral {
-		options = &getPatternInfoOptions{performLiteralSearch: true}
-	}
-	p, err := r.getPatternInfo(options)
+
+	q, err := query.ToBasicQuery(r.Query)
 	if err != nil {
 		return nil, err
 	}
+	p := search.ToTextPatternInfo(q, search.Batch, query.Identity)
 
 	// Fallback to literal search for searching repos and files if
 	// the structural search pattern is empty.
@@ -1856,7 +1638,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		return nil, err
 	}
 	if alertResult != nil {
-		return alertResult, nil
+		return &SearchResultsResolver{db: r.db, alert: alertResult}, nil
 	}
 	if len(resolved.MissingRepoRevs) > 0 {
 		agg.error(ctx, &missingRepoRevsError{Missing: resolved.MissingRepoRevs})
@@ -1864,7 +1646,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 
 	// Send down our first bit of progress.
 	{
-		repos := make(map[api.RepoID]*types.RepoName, len(resolved.RepoRevs))
+		repos := make(map[api.RepoID]types.RepoName, len(resolved.RepoRevs))
 		for _, repoRev := range resolved.RepoRevs {
 			repos[repoRev.Repo.ID] = repoRev.Repo
 		}
@@ -2107,16 +1889,4 @@ func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
 			}
 		})
 	return m
-}
-
-// orderedFuzzyRegexp interpolate a lazy 'match everything' regexp pattern
-// to achieve an ordered fuzzy regexp match.
-func orderedFuzzyRegexp(pieces []string) string {
-	if len(pieces) == 0 {
-		return ""
-	}
-	if len(pieces) == 1 {
-		return pieces[0]
-	}
-	return "(" + strings.Join(pieces, ").*?(") + ")"
 }

@@ -57,7 +57,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 	repoRevs := &search.RepositoryRevisions{
-		Repo: &types.RepoName{ID: 1, Name: "repo"},
+		Repo: types.RepoName{ID: 1, Name: "repo"},
 		Revs: []search.RevisionSpecifier{{RevSpec: "rev"}},
 	}
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, db, search.CommitParameters{
@@ -138,7 +138,7 @@ func TestExpandUsernamesToEmails(t *testing.T) {
 		}, nil
 	}
 
-	x, err := expandUsernamesToEmails(context.Background(), []string{"foo", "@alice"})
+	x, err := expandUsernamesToEmails(context.Background(), nil, []string{"foo", "@alice"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -304,11 +304,14 @@ func Benchmark_highlightMatches(b *testing.B) {
 
 // searchCommitsInRepo is a blocking version of searchCommitsInRepoStream.
 func searchCommitsInRepo(ctx context.Context, db dbutil.DB, op search.CommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
-	for event := range searchCommitsInRepoStream(ctx, db, op) {
-		results = append(results, event.Results...)
-		limitHit = event.LimitHit
-		timedOut = event.TimedOut
-		err = event.Error
+	var srr []SearchResultResolver
+	err = searchCommitsInRepoStream(ctx, db, op, StreamFunc(func(event SearchEvent) {
+		srr = append(srr, event.Results...)
+		timedOut = timedOut || event.Stats.Status.Any(search.RepoStatusTimedout)
+		limitHit = limitHit || event.Stats.Status.Any(search.RepoStatusLimitHit)
+	}))
+	for _, s := range srr {
+		results = append(results, s.(*CommitSearchResultResolver))
 	}
 	return results, limitHit, timedOut, err
 }

@@ -1,7 +1,8 @@
 import { Observable, of, throwError } from 'rxjs'
-import { SuccessGraphQLResult } from '../../../../../shared/src/graphql/graphql'
-import { IQuery } from '../../../../../shared/src/graphql/schema'
-import { PlatformContext } from '../../../../../shared/src/platform/context'
+
+import { SuccessGraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
+import { IQuery } from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 export interface GraphQLResponseMap {
     [requestName: string]: (

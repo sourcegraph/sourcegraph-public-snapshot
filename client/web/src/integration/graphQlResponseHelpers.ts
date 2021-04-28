@@ -1,4 +1,5 @@
-import { encodeURIPathComponent } from '../../../shared/src/util/url'
+import { encodeURIPathComponent } from '@sourcegraph/shared/src/util/url'
+
 import {
     TreeEntriesResult,
     BlobResult,

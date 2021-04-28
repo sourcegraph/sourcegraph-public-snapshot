@@ -1,10 +1,12 @@
-import { storiesOf } from '@storybook/react'
 import { boolean } from '@storybook/addon-knobs'
+import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { FileDiffNode } from './FileDiffNode'
-import { DEMO_HUNKS } from './FileDiffHunks.story'
+
 import { FileDiffFields } from '../../graphql-operations'
 import { WebStory } from '../WebStory'
+
+import { DEMO_HUNKS } from './FileDiffHunks.story'
+import { FileDiffNode } from './FileDiffNode'
 
 export const FILE_DIFF_NODES: FileDiffFields[] = [
     {
@@ -186,15 +188,36 @@ const { add } = storiesOf('web/diffs/FileDiffNode', module).addDecorator(story =
     <div className="p-3 container">{story()}</div>
 ))
 
-add('All file node states overview', () => (
+add('All unified file node states overview', () => (
     <WebStory>
         {webProps => (
             <>
                 {FILE_DIFF_NODES.map((node, index) => (
                     <FileDiffNode
                         {...webProps}
+                        diffMode="unified"
                         key={index}
-                        persistLines={boolean('persistLines', false)}
+                        persistLines={boolean('persistLines', true)}
+                        lineNumbers={boolean('lineNumbers', true)}
+                        node={node}
+                        className="abcdef"
+                    />
+                ))}
+            </>
+        )}
+    </WebStory>
+))
+
+add('All split file node states overview', () => (
+    <WebStory>
+        {webProps => (
+            <>
+                {FILE_DIFF_NODES.map((node, index) => (
+                    <FileDiffNode
+                        {...webProps}
+                        diffMode="split"
+                        key={index}
+                        persistLines={boolean('persistLines', true)}
                         lineNumbers={boolean('lineNumbers', true)}
                         node={node}
                         className="abcdef"

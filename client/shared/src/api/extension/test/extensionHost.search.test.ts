@@ -1,9 +1,11 @@
-import { pretendRemote } from '../../util'
-import { MainThreadAPI } from '../../contract'
-import { SettingsCascade } from '../../../settings/settings'
-import { BehaviorSubject, Observer } from 'rxjs'
 import { ProxyMarked, proxyMarker, Remote } from 'comlink'
+import { BehaviorSubject, Observer } from 'rxjs'
+
+import { SettingsCascade } from '../../../settings/settings'
+import { MainThreadAPI } from '../../contract'
+import { pretendRemote } from '../../util'
 import { proxySubscribable } from '../api/common'
+
 import { initializeExtensionHostTest } from './test-helpers'
 
 const noopMain = pretendRemote<MainThreadAPI>({

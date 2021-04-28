@@ -3,11 +3,11 @@ package usagestats
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func GetSearchOnboarding(ctx context.Context) (*types.SearchOnboarding, error) {
+func GetSearchOnboarding(ctx context.Context, db dbutil.DB) (*types.SearchOnboarding, error) {
 	const getSearchOnboardingQuery = `
 SELECT
     viewOnboardingTour AS totalOnboardingTourViews,
@@ -50,7 +50,7 @@ FROM (
 		viewedSearchReferenceStep  *int32
 		closeOnboardingTourClicked *int32
 	)
-	if err := dbconn.Global.QueryRowContext(ctx, getSearchOnboardingQuery).Scan(
+	if err := db.QueryRowContext(ctx, getSearchOnboardingQuery).Scan(
 		&totalOnboardingTourViews,
 		&viewedLangStep,
 		&viewedFilterRepoStep,

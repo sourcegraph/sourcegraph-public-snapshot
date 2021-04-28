@@ -1,5 +1,4 @@
 import * as Monaco from 'monaco-editor'
-import { Token, Pattern, Literal, PatternKind, CharacterRange, createLiteral } from './token'
 import { RegExpParser, visitRegExpAST } from 'regexpp'
 import {
     Alternative,
@@ -12,6 +11,12 @@ import {
     Group,
     Quantifier,
 } from 'regexpp/ast'
+
+import { SearchPatternType } from '../../graphql-operations'
+
+import { Predicate, scanPredicate } from './predicates'
+import { scanSearchQuery } from './scanner'
+import { Token, Pattern, Literal, PatternKind, CharacterRange, createLiteral } from './token'
 
 /* eslint-disable unicorn/better-regex */
 
@@ -35,6 +40,7 @@ export type MetaToken =
     | MetaContextPrefix
     | MetaSelector
     | MetaPath
+    | MetaPredicate
 
 /**
  * Defines common properties for meta tokens.
@@ -169,6 +175,23 @@ export interface MetaPath {
     range: CharacterRange
     kind: MetaPathKind
     value: string
+}
+
+export enum MetaPredicateKind {
+    NameAccess = 'NameAccess',
+    Dot = 'Dot',
+    Parenthesis = 'Parenthesis',
+}
+
+/**
+ * Predicate members for decoration.
+ */
+export interface MetaPredicate {
+    type: 'metaPredicate'
+    range: CharacterRange
+    groupRange?: CharacterRange
+    kind: MetaPredicateKind
+    value: Predicate
 }
 
 /**
@@ -813,6 +836,165 @@ const decorateSelector = (token: Literal): DecoratedToken[] => {
     return [{ type: 'metaSelector', range: token.range, value: token.value, kind }]
 }
 
+/**
+ * Adds offset to the range of a given token and returns that token.
+ * Note that the offset change is side-effecting.
+ */
+const mapOffset = (token: Token, offset: number): Token => {
+    switch (token.type) {
+        case 'filter':
+            token.range = { start: token.range.start + offset, end: token.range.end + offset }
+            token.field.range = token.range = {
+                start: token.field.range.start + offset,
+                end: token.field.range.end + offset,
+            }
+            if (token.value) {
+                token.value.range = token.range = {
+                    start: token.value.range.start + offset,
+                    end: token.value.range.end + offset,
+                }
+            }
+        default:
+            token.range = { start: token.range.start + offset, end: token.range.end + offset }
+    }
+    return token
+}
+
+/**
+ * Returns true if a `contains(...)` predicate is valid. This predicate is currently valid when one of
+ * `file:` or `content:` is specified, or both. Any additional filters or tokens besides whitespace
+ * makes this body invalid.
+ */
+const validContainsBody = (tokens: Token[]): boolean => {
+    const fileIndex = tokens.findIndex(token => token.type === 'filter' && token.field.value === 'file')
+    if (fileIndex !== -1) {
+        tokens.splice(fileIndex, 1)
+    }
+    const contentIndex = tokens.findIndex(token => token.type === 'filter' && token.field.value === 'content')
+    if (contentIndex !== -1) {
+        tokens.splice(contentIndex, 1)
+    }
+    if (tokens.filter(value => value.type !== 'whitespace').length > 0) {
+        return false
+    }
+    return true
+}
+
+/**
+ * Attempts to decorate `contains(file:foo content:bar)` syntax. Fails if
+ * the body contains unsupported syntax. This function takes care to
+ * decorate `content:` values as regular expression syntax.
+ */
+const decorateContainsBody = (body: string, offset: number): DecoratedToken[] | undefined => {
+    const result = scanSearchQuery(body, false, SearchPatternType.regexp)
+    if (result.type === 'error') {
+        return undefined
+    }
+    if (!validContainsBody([...result.term])) {
+        // There are more things in this query than we support.
+        return undefined
+    }
+    const decorated: DecoratedToken[] = result.term.flatMap(token => {
+        if (token.type === 'filter' && token.field.value === 'file') {
+            return decorate(mapOffset(token, offset))
+        }
+        if (token.type === 'filter' && token.field.value === 'content') {
+            return [
+                {
+                    type: 'field',
+                    value: token.field.value,
+                    range: {
+                        start: token.field.range.start + offset,
+                        end: token.field.range.end + offset,
+                    },
+                },
+                ...(token.value
+                    ? token.value.quoted
+                        ? [mapOffset(token.value, offset)]
+                        : mapRegexpMetaSucceed(toPattern(mapOffset(token.value, offset) as Literal))
+                    : []),
+            ]
+        }
+        return [mapOffset(token, offset)]
+    })
+    return decorated
+}
+
+/**
+ * Decorates the body part of predicate syntax `name(body)`.
+ */
+const decoratePredicateBody = (path: string[], body: string, offset: number): DecoratedToken[] => {
+    const decorated: DecoratedToken[] = []
+    switch (path.join('.')) {
+        case 'contains':
+            // eslint-disable-next-line no-case-declarations
+            const result = decorateContainsBody(body, offset)
+            if (result !== undefined) {
+                return result
+            }
+            break
+        case 'contains.file':
+        case 'contains.content':
+            return mapRegexpMetaSucceed({
+                type: 'pattern',
+                range: { start: offset, end: body.length },
+                value: body,
+                kind: PatternKind.Regexp,
+            })
+    }
+    decorated.push({
+        type: 'literal',
+        value: body,
+        range: { start: offset, end: offset + body.length },
+        quoted: false,
+    })
+    return decorated
+}
+
+const decoratePredicate = (predicate: Predicate, range: CharacterRange): DecoratedToken[] => {
+    let offset = range.start
+    const decorated: DecoratedToken[] = []
+    for (const nameAccess of predicate.path) {
+        decorated.push({
+            type: 'metaPredicate',
+            kind: MetaPredicateKind.NameAccess,
+            range: { start: offset, end: offset + nameAccess.length },
+            groupRange: range,
+            value: predicate,
+        })
+        offset = offset + nameAccess.length
+        decorated.push({
+            type: 'metaPredicate',
+            kind: MetaPredicateKind.Dot,
+            range: { start: offset, end: offset + 1 },
+            groupRange: range,
+            value: predicate,
+        })
+        offset = offset + 1
+    }
+    decorated.pop() // Pop trailling '.'
+    offset = offset - 1 // Backtrack offset
+    const body = predicate.parameters.slice(1, -1)
+    decorated.push({
+        type: 'metaPredicate',
+        kind: MetaPredicateKind.Parenthesis,
+        range: { start: offset, end: offset + 1 },
+        groupRange: range,
+        value: predicate,
+    })
+    offset = offset + 1
+    decorated.push(...decoratePredicateBody(predicate.path, body, offset))
+    offset = offset + body.length
+    decorated.push({
+        type: 'metaPredicate',
+        kind: MetaPredicateKind.Parenthesis,
+        range: { start: offset, end: offset + 1 },
+        groupRange: range,
+        value: predicate,
+    })
+    return decorated
+}
+
 export const decorate = (token: Token): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     switch (token.type) {
@@ -835,29 +1017,30 @@ export const decorate = (token: Token): DecoratedToken[] => {
                 range: token.field.range,
                 value: token.field.value,
             })
+            const predicate = scanPredicate(token.field.value, token.value?.value || '')
+            if (predicate && token.value) {
+                decorated.push(...decoratePredicate(predicate, token.value.range))
+                break
+            }
             if (
                 token.value &&
                 token.field.value.toLowerCase().match(/^-?(repo|r)$/i) &&
-                token.value.type === 'literal' &&
+                !token.value.quoted &&
                 specifiesRevision(token.value.value)
             ) {
                 decorated.push(...decorateRepoRevision(token.value))
-            } else if (
-                token.value &&
-                token.field.value.toLowerCase().match(/rev|revision/i) &&
-                token.value.type === 'literal'
-            ) {
+            } else if (token.value && token.field.value.toLowerCase().match(/rev|revision/i) && !token.value.quoted) {
                 decorated.push(...mapRevisionMeta(createLiteral(token.value.value, token.value.range)))
-            } else if (token.value && token.value.type === 'literal' && hasRegexpValue(token.field.value)) {
+            } else if (token.value && !token.value.quoted && hasRegexpValue(token.field.value)) {
                 // Highlight fields with regexp values.
                 if (hasPathLikeValue(token.field.value) && token.value?.type === 'literal') {
                     decorated.push(...mapPathMetaForRegexp(token.value))
                 } else {
                     decorated.push(...mapRegexpMetaSucceed(toPattern(token.value)))
                 }
-            } else if (token.field.value === 'context' && token.value?.type === 'literal') {
+            } else if (token.field.value === 'context' && token.value && !token.value.quoted) {
                 decorated.push(...decorateContext(token.value))
-            } else if (token.field.value === 'select' && token.value?.type === 'literal') {
+            } else if (token.field.value === 'select' && token.value && !token.value.quoted) {
                 decorated.push(...decorateSelector(token.value))
             } else if (token.value) {
                 decorated.push(token.value)
@@ -888,6 +1071,7 @@ const decoratedToMonaco = (token: DecoratedToken): Monaco.languages.IToken => {
         case 'metaRevision':
         case 'metaRegexp':
         case 'metaStructural':
+        case 'metaPredicate':
             // The scopes value is derived from the token type and its kind.
             // E.g., regexpMetaDelimited derives from {@link RegexpMeta} and {@link RegexpMetaKind}.
             return {

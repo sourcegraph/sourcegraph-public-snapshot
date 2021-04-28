@@ -19,7 +19,7 @@ import (
 )
 
 func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name string }) (*OrgResolver, error) {
-	org, err := database.GlobalOrgs.GetByName(ctx, args.Name)
+	org, err := database.Orgs(r.db).GetByName(ctx, args.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func OrgByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*OrgResolver, er
 }
 
 func OrgByIDInt32(ctx context.Context, db dbutil.DB, orgID int32) (*OrgResolver, error) {
-	org, err := database.GlobalOrgs.GetByID(ctx, orgID)
+	org, err := database.Orgs(db).GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolve
 	}
 	users := make([]*types.User, len(memberships))
 	for i, membership := range memberships {
-		user, err := database.GlobalUsers.GetByID(ctx, membership.UserID)
+		user, err := database.Users(o.db).GetByID(ctx, membership.UserID)
 		if err != nil {
 			return nil, err
 		}
@@ -119,7 +119,7 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 		return nil, err
 	}
 
-	settings, err := database.GlobalSettings.GetLatest(ctx, o.settingsSubject())
+	settings, err := database.Settings(o.db).GetLatest(ctx, o.settingsSubject())
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(args.Name); err != nil {
 		return nil, err
 	}
-	newOrg, err := database.GlobalOrgs.Create(ctx, args.Name, args.DisplayName)
+	newOrg, err := database.Orgs(r.db).Create(ctx, args.Name, args.DisplayName)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +231,7 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	updatedOrg, err := database.GlobalOrgs.Update(ctx, orgID, args.DisplayName)
+	updatedOrg, err := database.Orgs(r.db).Update(ctx, orgID, args.DisplayName)
 	if err != nil {
 		return nil, err
 	}

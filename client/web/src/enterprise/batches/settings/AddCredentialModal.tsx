@@ -1,12 +1,15 @@
-import React, { useCallback, useState } from 'react'
 import Dialog from '@reach/dialog'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Form } from '../../../../../branded/src/components/Form'
-import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
-import { ErrorAlert } from '../../../components/alerts'
-import { createBatchChangesCredential as _createBatchChangesCredential } from './backend'
-import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
 import classNames from 'classnames'
+import React, { useCallback, useState } from 'react'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { ErrorAlert } from '../../../components/alerts'
+import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
+
+import { createBatchChangesCredential as _createBatchChangesCredential } from './backend'
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
 import { ModalHeader } from './ModalHeader'
 

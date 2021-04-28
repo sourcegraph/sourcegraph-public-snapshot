@@ -3,18 +3,25 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { Scalars } from '../../../../shared/src/graphql-operations'
-import { gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../../shared/src/util/errors'
-import { queryGraphQL } from '../../backend/graphql'
+
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+
+import { requestGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
+import {
+    ExternalAccountFields,
+    ExternalAccountsConnectionFields,
+    ExternalAccountsResult,
+    ExternalAccountsVariables,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import {
-    externalAccountFragment,
     ExternalAccountNode,
     ExternalAccountNodeProps,
+    externalAccountsConnectionFragment,
 } from '../user/settings/ExternalAccountNode'
 
 interface Props extends RouteComponentProps<{}> {}
@@ -60,7 +67,7 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
                     An external account (on an <Link to="/site-admin/auth/providers">authentication provider</Link>) is
                     linked to a Sourcegraph user when it's used to sign into Sourcegraph.
                 </p>
-                <FilteredConnection<GQL.IExternalAccount, Omit<ExternalAccountNodeProps, 'node'>>
+                <FilteredConnection<ExternalAccountFields, Omit<ExternalAccountNodeProps, 'node'>>
                     className="list-group list-group-flush mt-3"
                     noun="external user account"
                     pluralNoun="external user accounts"
@@ -80,8 +87,8 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
         args: {
             first?: number
         } & FilterParameters
-    ): Observable<GQL.IExternalAccountConnection> =>
-        queryGraphQL(
+    ): Observable<ExternalAccountsConnectionFields> =>
+        requestGraphQL<ExternalAccountsResult, ExternalAccountsVariables>(
             gql`
                 query ExternalAccounts(
                     $first: Int
@@ -98,19 +105,20 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
                             serviceID: $serviceID
                             clientID: $clientID
                         ) {
-                            nodes {
-                                ...ExternalAccountFields
-                            }
-                            totalCount
-                            pageInfo {
-                                hasNextPage
-                            }
+                            ...ExternalAccountsConnectionFields
                         }
                     }
                 }
-                ${externalAccountFragment}
+
+                ${externalAccountsConnectionFragment}
             `,
-            args
+            {
+                clientID: args.clientID ?? null,
+                first: args.first ?? null,
+                serviceID: args.serviceID ?? null,
+                serviceType: args.serviceType ?? null,
+                user: args.user ?? null,
+            }
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.site || !data.site.externalAccounts) {

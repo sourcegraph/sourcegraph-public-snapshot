@@ -1,12 +1,15 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { HeroPage } from '../../../components/HeroPage'
-import { ExtensionsAreaRouteContext } from '../../../extensions/ExtensionsArea'
-import { RegistryNewExtensionPage } from './RegistryNewExtensionPage'
+
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+
 import { AuthenticatedUser } from '../../../auth'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import { HeroPage } from '../../../components/HeroPage'
+import { ExtensionsAreaRouteContext } from '../../../extensions/ExtensionsArea'
+
+import { RegistryNewExtensionPage } from './RegistryNewExtensionPage'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 

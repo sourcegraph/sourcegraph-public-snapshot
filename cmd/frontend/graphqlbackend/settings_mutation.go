@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // Deprecated: The GraphQL type Configuration is deprecated.
@@ -38,6 +39,7 @@ type settingsMutationGroupInput struct {
 }
 
 type settingsMutation struct {
+	db      dbutil.DB
 	input   *settingsMutationGroupInput
 	subject *settingsSubject
 }
@@ -68,6 +70,7 @@ func (r *schemaResolver) SettingsMutation(ctx context.Context, args *struct {
 	}
 
 	return &settingsMutation{
+		db:      r.db,
 		input:   args.Input,
 		subject: subject,
 	}, nil
@@ -162,7 +165,7 @@ func (r *settingsMutation) editSettings(ctx context.Context, keyPath jsonx.Path,
 func (r *settingsMutation) OverwriteSettings(ctx context.Context, args *struct {
 	Contents string
 }) (*updateSettingsPayload, error) {
-	_, err := settingsCreateIfUpToDate(ctx, r.subject, r.input.LastID, actor.FromContext(ctx).UID, args.Contents)
+	_, err := settingsCreateIfUpToDate(ctx, r.db, r.subject, r.input.LastID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +189,7 @@ func (r *settingsMutation) doUpdateSettings(ctx context.Context, computeEdits fu
 	}
 
 	// Write mutated settings.
-	updatedSettings, err := settingsCreateIfUpToDate(ctx, r.subject, r.input.LastID, actor.FromContext(ctx).UID, newSettings)
+	updatedSettings, err := settingsCreateIfUpToDate(ctx, r.db, r.subject, r.input.LastID, actor.FromContext(ctx).UID, newSettings)
 	if err != nil {
 		return 0, err
 	}
@@ -195,7 +198,7 @@ func (r *settingsMutation) doUpdateSettings(ctx context.Context, computeEdits fu
 
 func (r *settingsMutation) getCurrentSettings(ctx context.Context) (string, error) {
 	// Get the settings file whose contents to mutate.
-	settings, err := database.GlobalSettings.GetLatest(ctx, r.subject.toSubject())
+	settings, err := database.Settings(r.db).GetLatest(ctx, r.subject.toSubject())
 	if err != nil {
 		return "", err
 	}

@@ -4,28 +4,33 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"hash/crc32"
 	"strings"
 
 	kms "cloud.google.com/go/kms/apiv1"
 	"github.com/cockroachdb/errors"
+	"google.golang.org/api/option"
 	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func NewKey(ctx context.Context, keyName string) (encryption.Key, error) {
-	client, err := kms.NewKeyManagementClient(ctx)
+func NewKey(ctx context.Context, config schema.CloudKMSEncryptionKey) (encryption.Key, error) {
+	opts := []option.ClientOption{}
+	if config.CredentialsFile != "" {
+		opts = append(opts, option.WithCredentialsFile(config.CredentialsFile))
+	}
+	client, err := kms.NewKeyManagementClient(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
 	k := &Key{
-		name:   keyName,
+		name:   config.Keyname,
 		client: client,
 	}
-	_, err = k.ID(ctx)
+	_, err = k.Version(ctx)
 	return k, err
 }
 
@@ -34,16 +39,20 @@ type Key struct {
 	client *kms.KeyManagementClient
 }
 
-func (k *Key) ID(ctx context.Context) (string, error) {
+func (k *Key) Version(ctx context.Context) (encryption.KeyVersion, error) {
 	key, err := k.client.GetCryptoKey(ctx, &kmspb.GetCryptoKeyRequest{
 		Name: k.name,
 	})
 	if err != nil {
-		return "", errors.Wrap(err, "getting key ident")
+		return encryption.KeyVersion{}, errors.Wrap(err, "getting key version")
 	}
 	// return the primary key version name, as that will include which key
 	// revision is currently in use
-	return fmt.Sprintf("cloudkms:%s", key.Primary.Name), nil
+	return encryption.KeyVersion{
+		Type:    "cloudkms",
+		Version: key.Primary.Name,
+		Name:    key.Name,
+	}, nil
 }
 
 // Decrypt a secret, it must have been encrypted with the same Key

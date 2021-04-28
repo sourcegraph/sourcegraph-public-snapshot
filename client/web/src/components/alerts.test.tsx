@@ -1,6 +1,7 @@
-import renderer from 'react-test-renderer'
-import { ErrorAlert } from './alerts'
 import React from 'react'
+import renderer from 'react-test-renderer'
+
+import { ErrorAlert } from './alerts'
 
 jest.mock('mdi-react/AlertCircleIcon', () => 'AlertCircleIcon')
 

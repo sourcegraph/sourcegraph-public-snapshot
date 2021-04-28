@@ -1,22 +1,25 @@
-import { Position, Range } from '@sourcegraph/extension-api-types'
 import { upperFirst, toLower } from 'lodash'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ExportIcon from 'mdi-react/ExportIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
+import GitlabIcon from 'mdi-react/GitlabIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { merge, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
-import { PhabricatorIcon } from '../../../../shared/src/components/icons' // TODO: Switch mdi icon
-import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { fetchFileExternalLinks } from '../backend'
-import { RevisionSpec, FileSpec } from '../../../../shared/src/util/url'
+
+import { Position, Range } from '@sourcegraph/extension-api-types'
+import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
-import { useObservable } from '../../../../shared/src/util/useObservable'
-import GitlabIcon from 'mdi-react/GitlabIcon'
 import { eventLogger } from '../../tracking/eventLogger'
-import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
-import { useLocalStorage } from '../../../../shared/src/util/useLocalStorage'
+import { fetchFileExternalLinks } from '../backend'
 import { RepoHeaderContext } from '../RepoHeader'
+
+import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
 
 interface GoToCodeHostPopoverProps {
     /**

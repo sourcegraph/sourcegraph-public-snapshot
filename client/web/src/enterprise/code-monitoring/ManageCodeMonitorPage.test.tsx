@@ -1,18 +1,21 @@
-import * as React from 'react'
-import * as H from 'history'
-import { AuthenticatedUser } from '../../auth'
-import sinon from 'sinon'
 import { mount } from 'enzyme'
-import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
-import { mockCodeMonitor } from './testing/util'
-import { NEVER, of } from 'rxjs'
+import * as H from 'history'
+import * as React from 'react'
 import { act } from 'react-dom/test-utils'
+import { NEVER, of } from 'rxjs'
+import sinon from 'sinon'
+
 import {
     MonitorEditInput,
     MonitorEditTriggerInput,
     MonitorEditActionInput,
     MonitorEmailPriority,
-} from '../../../../shared/src/graphql-operations'
+} from '@sourcegraph/shared/src/graphql-operations'
+
+import { AuthenticatedUser } from '../../auth'
+
+import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
+import { mockCodeMonitor } from './testing/util'
 
 jest.mock('../../tracking/eventLogger', () => ({
     eventLogger: { logViewEvent: () => undefined },

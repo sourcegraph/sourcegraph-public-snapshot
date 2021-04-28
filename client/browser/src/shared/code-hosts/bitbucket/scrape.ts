@@ -1,5 +1,7 @@
 import * as path from 'path'
-import { createAggregateError } from '../../../../../shared/src/util/errors'
+
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+
 import { DiffResolvedRevisionSpec } from '../../repo'
 import { FileInfo, DiffInfo } from '../shared/codeHost'
 

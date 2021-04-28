@@ -1,11 +1,13 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { PreviewList } from './PreviewList'
 import { of, Observable } from 'rxjs'
+
 import { BatchSpecApplyPreviewConnectionFields, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
-import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
-import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+
+import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
+import { PreviewList } from './PreviewList'
+import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
 
 const { add } = storiesOf('web/batches/preview/PreviewList', module)
     .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)

@@ -1,25 +1,28 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { parseISO } from 'date-fns'
+import * as H from 'history'
 import React, { useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
-import { gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, createAggregateError, isErrorLike } from '../../../../../shared/src/util/errors'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { queryGraphQL } from '../../../backend/graphql'
+import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
+import { mailtoSales } from '../../../productSubscription/helpers'
 import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { mailtoSales } from '../../../productSubscription/helpers'
+
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { ProductSubscriptionBilling } from './ProductSubscriptionBilling'
 import { ProductSubscriptionHistory } from './ProductSubscriptionHistory'
 import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
-import { ErrorAlert } from '../../../components/alerts'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
-import * as H from 'history'
 
 interface Props extends Pick<RouteComponentProps<{ subscriptionUUID: string }>, 'match'> {
     user: Pick<GQL.IUser, 'settingsURL'>

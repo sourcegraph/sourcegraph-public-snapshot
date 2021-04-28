@@ -7,12 +7,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
 func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	credentials := make([]*SiteCredential, 0, 3)
+	credentials := make([]*btypes.SiteCredential, 0, 3)
 	// Make sure these are sorted alphabetically.
 	externalServiceTypes := []string{
 		extsvc.TypeBitbucketServer,
@@ -22,7 +23,7 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(credentials); i++ {
-			cred := &SiteCredential{
+			cred := &btypes.SiteCredential{
 				ExternalServiceType: externalServiceTypes[i],
 				ExternalServiceID:   "https://someurl.test",
 				Credential:          &auth.OAuthBearerToken{Token: "123"},

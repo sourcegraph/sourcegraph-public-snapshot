@@ -1,4 +1,5 @@
-import { findFilter, FilterKind, isContextFilterInQuery } from './validate'
+import { FilterType } from './filters'
+import { findFilter, FilterKind, filterExists } from './validate'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),
@@ -41,18 +42,18 @@ describe('finds a filter', () => {
 
 describe('isContextFilterInQuery', () => {
     test('no context filter in query', () => {
-        expect(isContextFilterInQuery('foo')).toBeFalsy()
+        expect(filterExists('foo', FilterType.context)).toBeFalsy()
     })
 
     test('context filter in query', () => {
-        expect(isContextFilterInQuery('context:@user foo')).toBeTruthy()
+        expect(filterExists('context:@user foo', FilterType.context)).toBeTruthy()
     })
 
     test('context filters in both subexpressions', () => {
-        expect(isContextFilterInQuery('(context:@user foo) or (context:@test bar)')).toBeTruthy()
+        expect(filterExists('(context:@user foo) or (context:@test bar)', FilterType.context)).toBeTruthy()
     })
 
     test('context filters in one subexpression', () => {
-        expect(isContextFilterInQuery('foo or (context:@test bar)')).toBeTruthy()
+        expect(filterExists('foo or (context:@test bar)', FilterType.context)).toBeTruthy()
     })
 })

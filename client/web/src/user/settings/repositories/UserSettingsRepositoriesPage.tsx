@@ -1,13 +1,19 @@
+import { isAfter, parseISO } from 'date-fns'
+import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { RouteComponentProps } from 'react-router'
+import { EMPTY, Observable } from 'rxjs'
+import { catchError, map } from 'rxjs/operators'
+
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { PageTitle } from '../../../components/PageTitle'
-import {
-    RepositoriesResult,
-    SiteAdminRepositoryFields,
-    UserRepositoriesResult,
-    ListExternalServiceFields,
-} from '../../../graphql-operations'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { ErrorAlert } from '../../../components/alerts'
+import { queryExternalServices } from '../../../components/externalServices/backend'
 import {
     Connection,
     FilteredConnection,
@@ -15,18 +21,17 @@ import {
     FilteredConnectionQueryArguments,
     FilterValue,
 } from '../../../components/FilteredConnection'
-import { EMPTY, Observable } from 'rxjs'
+import { PageTitle } from '../../../components/PageTitle'
+import {
+    RepositoriesResult,
+    SiteAdminRepositoryFields,
+    UserRepositoriesResult,
+    ListExternalServiceFields,
+} from '../../../graphql-operations'
 import { listUserRepositories } from '../../../site-admin/backend'
-import { queryExternalServices } from '../../../components/externalServices/backend'
-import { RouteComponentProps } from 'react-router'
-import { Link } from '../../../../../shared/src/components/Link'
+import { eventLogger } from '../../../tracking/eventLogger'
+
 import { RepositoryNode } from './RepositoryNode'
-import AddIcon from 'mdi-react/AddIcon'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
-import { ErrorAlert } from '../../../components/alerts'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
-import { catchError, map } from 'rxjs/operators'
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -67,16 +72,26 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const noReposState = (
         <div className="border rounded p-3">
             <h3>You have not added any repositories to Sourcegraph</h3>
-            <small>
-                <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
-                    Connect code hosts
-                </Link>{' '}
-                to start searching your own repositories, or{' '}
-                <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
-                    add public repositories
-                </Link>{' '}
-                from GitHub or GitLab.
-            </small>
+
+            {externalServices?.length === 0 ? (
+                <small>
+                    <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
+                        Connect code hosts
+                    </Link>{' '}
+                    to start searching your own repositories, or{' '}
+                    <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
+                        add public repositories
+                    </Link>{' '}
+                    from GitHub or GitLab.
+                </small>
+            ) : (
+                <small>
+                    <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
+                        Add repositories
+                    </Link>{' '}
+                    to start searching your code with Sourcegraph.
+                </small>
+            )}
         </div>
     )
     const showResults = (): JSX.Element => {
@@ -102,7 +117,6 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 location={location}
                 emptyElement={emptyState}
                 totalCountSummaryComponent={TotalCountSummary}
-                hideControlsWhenEmpty={true}
                 inputClassName="user-settings-repos__filter-input"
             />
         )
@@ -120,8 +134,10 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
                                 setExternalServices(result.nodes)
 
+                                let repoCount = 0
+
                                 for (const node of result.nodes) {
-                                    const nextSyncAt = new Date(node.nextSyncAt)
+                                    repoCount += node.repoCount
 
                                     // when the service was just added both
                                     // createdAt and updatedAt will have the same timestamp
@@ -130,9 +146,15 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                     }
 
                                     // if the next sync is in the future we must not be syncing
-                                    if (now > nextSyncAt) {
-                                        pending = 'pending'
+                                    if (node.nextSyncAt) {
+                                        if (isAfter(now, parseISO(node.nextSyncAt))) {
+                                            pending = 'pending'
+                                        }
                                     }
+                                }
+
+                                if (repoCount > 0) {
+                                    setHasRepos(true)
                                 }
 
                                 setPendingOrError(pending)
@@ -221,15 +243,26 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         [pendingOrError, userID]
     )
 
-    const updated = useCallback((value: Connection<SiteAdminRepositoryFields> | ErrorLike | undefined): void => {
-        if (value as Connection<SiteAdminRepositoryFields>) {
-            const conn = value as Connection<SiteAdminRepositoryFields>
-            if (conn.totalCount !== 0) {
-                setHasRepos(true)
-            } else {
-                setHasRepos(false)
+    const updated = useCallback(
+        (value: Connection<SiteAdminRepositoryFields> | ErrorLike | undefined, query: string): void => {
+            if (value as Connection<SiteAdminRepositoryFields>) {
+                const conn = value as Connection<SiteAdminRepositoryFields>
+
+                // hasRepos is only useful when query is not set since user may
+                // still have repos that don't match given query
+                if (query === '') {
+                    if (conn.totalCount !== 0) {
+                        setHasRepos(true)
+                    } else {
+                        setHasRepos(false)
+                    }
+                }
             }
-        }
+        },
+        []
+    )
+    const logManageRepositoriesClick = useCallback(() => {
+        eventLogger.log('UserSettingsRepositoriesManageRepositoriesClick')
     }, [])
 
     useEffect(() => {
@@ -248,7 +281,11 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
                 <h2 className="mb-2">Repositories</h2>
-                <Link className="btn btn-primary" to={`${routingPrefix}/repositories/manage`}>
+                <Link
+                    className="btn btn-primary"
+                    to={`${routingPrefix}/repositories/manage`}
+                    onClick={logManageRepositoriesClick}
+                >
                     {(hasRepos && <>Manage Repositories</>) || (
                         <>
                             <AddIcon className="icon-inline" /> Add repositories

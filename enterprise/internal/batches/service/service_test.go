@@ -11,17 +11,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -43,7 +44,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
 
-	createTestData := func(t *testing.T, s *store.Store, svc *Service, author int32) (*batches.BatchChange, *batches.Changeset, *batches.BatchSpec) {
+	createTestData := func(t *testing.T, s *store.Store, svc *Service, author int32) (*btypes.BatchChange, *btypes.Changeset, *btypes.BatchSpec) {
 		spec := testBatchSpec(author)
 		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
@@ -54,7 +55,7 @@ func TestServicePermissionLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		changeset := testChangeset(rs[0].ID, batchChange.ID, batches.ChangesetExternalStateOpen)
+		changeset := testChangeset(rs[0].ID, batchChange.ID, btypes.ChangesetExternalStateOpen)
 		if err := s.CreateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
@@ -185,8 +186,8 @@ func TestService(t *testing.T) {
 	s := store.NewWithClock(db, clock)
 	rs, _ := ct.CreateTestRepos(t, ctx, db, 4)
 
-	fakeSource := &ct.FakeChangesetSource{}
-	sourcer := repos.NewFakeSourcer(nil, fakeSource)
+	fakeSource := &sources.FakeChangesetSource{}
+	sourcer := sources.NewFakeSourcer(nil, fakeSource)
 
 	svc := New(s)
 	svc.sourcer = sourcer
@@ -212,7 +213,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CloseBatchChange", func(t *testing.T) {
-		createBatchChange := func(t *testing.T) *batches.BatchChange {
+		createBatchChange := func(t *testing.T) *btypes.BatchChange {
 			t.Helper()
 
 			spec := testBatchSpec(admin.ID)
@@ -229,7 +230,7 @@ func TestService(t *testing.T) {
 
 		adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 
-		closeConfirm := func(t *testing.T, c *batches.BatchChange, closeChangesets bool) {
+		closeConfirm := func(t *testing.T, c *btypes.BatchChange, closeChangesets bool) {
 			t.Helper()
 
 			closedBatchChange, err := svc.CloseBatchChange(adminCtx, c.ID, closeChangesets)
@@ -255,7 +256,7 @@ func TestService(t *testing.T) {
 					t.Errorf("changeset should be Closing, but is not")
 				}
 
-				if have, want := c.ReconcilerState, batches.ReconcilerStateQueued; have != want {
+				if have, want := c.ReconcilerState, btypes.ReconcilerStateQueued; have != want {
 					t.Errorf("changeset ReconcilerState wrong. want=%s, have=%s", want, have)
 				}
 			}
@@ -269,14 +270,14 @@ func TestService(t *testing.T) {
 		t.Run("changesets", func(t *testing.T) {
 			batchChange := createBatchChange(t)
 
-			changeset1 := testChangeset(rs[0].ID, batchChange.ID, batches.ChangesetExternalStateOpen)
-			changeset1.ReconcilerState = batches.ReconcilerStateCompleted
+			changeset1 := testChangeset(rs[0].ID, batchChange.ID, btypes.ChangesetExternalStateOpen)
+			changeset1.ReconcilerState = btypes.ReconcilerStateCompleted
 			if err := s.CreateChangeset(ctx, changeset1); err != nil {
 				t.Fatal(err)
 			}
 
-			changeset2 := testChangeset(rs[1].ID, batchChange.ID, batches.ChangesetExternalStateOpen)
-			changeset2.ReconcilerState = batches.ReconcilerStateCompleted
+			changeset2 := testChangeset(rs[1].ID, batchChange.ID, btypes.ChangesetExternalStateOpen)
+			changeset2.ReconcilerState = btypes.ReconcilerStateCompleted
 			if err := s.CreateChangeset(ctx, changeset2); err != nil {
 				t.Fatal(err)
 			}
@@ -296,7 +297,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		changeset := testChangeset(rs[0].ID, batchChange.ID, batches.ChangesetExternalStateOpen)
+		changeset := testChangeset(rs[0].ID, batchChange.ID, btypes.ChangesetExternalStateOpen)
 		if err := s.CreateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
@@ -339,7 +340,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		changeset := testChangeset(rs[0].ID, batchChange.ID, batches.ChangesetExternalStateOpen)
+		changeset := testChangeset(rs[0].ID, batchChange.ID, btypes.ChangesetExternalStateOpen)
 		if err := s.CreateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
@@ -352,12 +353,12 @@ func TestService(t *testing.T) {
 
 		ct.ReloadAndAssertChangeset(t, ctx, s, changeset, ct.ChangesetAssertions{
 			Repo:          rs[0].ID,
-			ExternalState: batches.ChangesetExternalStateOpen,
+			ExternalState: btypes.ChangesetExternalStateOpen,
 			ExternalID:    "ext-id-5",
 			AttachedTo:    []int64{batchChange.ID},
 
 			// The important fields:
-			ReconcilerState: batches.ReconcilerStateQueued,
+			ReconcilerState: btypes.ReconcilerStateQueued,
 			NumResets:       0,
 			NumFailures:     0,
 			FailureMessage:  nil,
@@ -373,10 +374,10 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateBatchSpec", func(t *testing.T) {
-		changesetSpecs := make([]*batches.ChangesetSpec, 0, len(rs))
+		changesetSpecs := make([]*btypes.ChangesetSpec, 0, len(rs))
 		changesetSpecRandIDs := make([]string, 0, len(rs))
 		for _, r := range rs {
-			cs := &batches.ChangesetSpec{RepoID: r.ID, UserID: admin.ID}
+			cs := &btypes.ChangesetSpec{RepoID: r.ID, UserID: admin.ID}
 			if err := s.CreateChangesetSpec(ctx, cs); err != nil {
 				t.Fatal(err)
 			}
@@ -407,7 +408,7 @@ func TestService(t *testing.T) {
 				t.Fatalf("UserID is %d, want %d", have, want)
 			}
 
-			var wantFields batches.BatchSpecFields
+			var wantFields btypes.BatchSpecFields
 			if err := json.Unmarshal([]byte(spec.RawSpec), &wantFields); err != nil {
 				t.Fatal(err)
 			}
@@ -443,7 +444,7 @@ func TestService(t *testing.T) {
 				t.Fatalf("BatchSpec ID is 0")
 			}
 
-			var wantFields batches.BatchSpecFields
+			var wantFields btypes.BatchSpecFields
 			if err := json.Unmarshal([]byte(ct.TestRawBatchSpec), &wantFields); err != nil {
 				t.Fatal(err)
 			}
@@ -571,7 +572,7 @@ func TestService(t *testing.T) {
 				t.Fatalf("ChangesetSpec ID is 0")
 			}
 
-			wantFields := &batches.ChangesetSpecDescription{}
+			wantFields := &btypes.ChangesetSpecDescription{}
 			if err := json.Unmarshal([]byte(spec.RawSpec), wantFields); err != nil {
 				t.Fatal(err)
 			}
@@ -615,10 +616,10 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("MoveBatchChange", func(t *testing.T) {
-		createBatchChange := func(t *testing.T, name string, authorID, userID, orgID int32) *batches.BatchChange {
+		createBatchChange := func(t *testing.T, name string, authorID, userID, orgID int32) *btypes.BatchChange {
 			t.Helper()
 
-			spec := &batches.BatchSpec{
+			spec := &btypes.BatchSpec{
 				UserID:          authorID,
 				NamespaceUserID: userID,
 				NamespaceOrgID:  orgID,
@@ -628,7 +629,7 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			c := &batches.BatchChange{
+			c := &btypes.BatchChange{
 				InitialApplierID: authorID,
 				NamespaceUserID:  userID,
 				NamespaceOrgID:   orgID,
@@ -739,7 +740,7 @@ func TestService(t *testing.T) {
 			t.Fatalf("expected batch change to be nil, but is not: %+v\n", haveBatchChange)
 		}
 
-		matchingBatchChange := &batches.BatchChange{
+		matchingBatchChange := &btypes.BatchChange{
 			Name:             batchSpec.Spec.Name,
 			Description:      batchSpec.Spec.Description,
 			InitialApplierID: admin.ID,
@@ -770,7 +771,7 @@ func TestService(t *testing.T) {
 		older := ct.CreateBatchSpec(t, ctx, s, "superseding", user.ID)
 		newer := ct.CreateBatchSpec(t, ctx, s, "superseding", user.ID)
 
-		for name, in := range map[string]*batches.BatchSpec{
+		for name, in := range map[string]*btypes.BatchSpec{
 			"older": older,
 			"newer": newer,
 		} {
@@ -799,8 +800,8 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("FetchUsernameForBitbucketServerToken", func(t *testing.T) {
-		fakeSource := &ct.FakeChangesetSource{Username: "my-bbs-username"}
-		sourcer := repos.NewFakeSourcer(nil, fakeSource)
+		fakeSource := &sources.FakeChangesetSource{Username: "my-bbs-username"}
+		sourcer := sources.NewFakeSourcer(nil, fakeSource)
 
 		// Create a fresh service for this test as to not mess with state
 		// possibly used by other tests.
@@ -841,7 +842,7 @@ func TestService(t *testing.T) {
 		t.Run("archived changeset", func(t *testing.T) {
 			archivedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 				Repo:            rs[1].ID,
-				ReconcilerState: batches.ReconcilerStateCompleted,
+				ReconcilerState: btypes.ReconcilerStateCompleted,
 				BatchChange:     batchChange.ID,
 				IsArchived:      true,
 			})
@@ -852,7 +853,7 @@ func TestService(t *testing.T) {
 				Repo: archivedChangeset.RepoID,
 				// The important fields:
 				AttachedTo:      []int64{},
-				ReconcilerState: batches.ReconcilerStateQueued,
+				ReconcilerState: btypes.ReconcilerStateQueued,
 				DetachFrom:      []int64{batchChange.ID},
 			})
 
@@ -860,7 +861,7 @@ func TestService(t *testing.T) {
 		t.Run("attached changeset", func(t *testing.T) {
 			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 				Repo:            rs[0].ID,
-				ReconcilerState: batches.ReconcilerStateCompleted,
+				ReconcilerState: btypes.ReconcilerStateCompleted,
 				BatchChange:     batchChange.ID,
 				IsArchived:      false,
 			})
@@ -872,8 +873,8 @@ func TestService(t *testing.T) {
 		t.Run("detached changeset", func(t *testing.T) {
 			detachedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 				Repo:            rs[2].ID,
-				ReconcilerState: batches.ReconcilerStateCompleted,
-				BatchChanges:    []batches.BatchChangeAssoc{},
+				ReconcilerState: btypes.ReconcilerStateCompleted,
+				BatchChanges:    []btypes.BatchChangeAssoc{},
 			})
 			err := svc.DetachChangesets(ctx, batchChange.ID, []int64{detachedChangeset.ID})
 			if err != ErrChangesetsToDetachNotFound {
@@ -881,10 +882,43 @@ func TestService(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("ValidateAuthenticator", func(t *testing.T) {
+		t.Run("valid", func(t *testing.T) {
+			fakeSource.AuthenticatorIsValid = true
+			fakeSource.ValidateAuthenticatorCalled = false
+			if err := svc.ValidateAuthenticator(
+				ctx,
+				"https://github.com/",
+				extsvc.TypeGitHub,
+				&auth.OAuthBearerToken{Token: "test123"},
+			); err != nil {
+				t.Fatal(err)
+			}
+			if !fakeSource.ValidateAuthenticatorCalled {
+				t.Fatal("ValidateAuthenticator on Source not called")
+			}
+		})
+		t.Run("invalid", func(t *testing.T) {
+			fakeSource.AuthenticatorIsValid = false
+			fakeSource.ValidateAuthenticatorCalled = false
+			if err := svc.ValidateAuthenticator(
+				ctx,
+				"https://github.com/",
+				extsvc.TypeGitHub,
+				&auth.OAuthBearerToken{Token: "test123"},
+			); err == nil {
+				t.Fatal("unexpected nil-error returned from ValidateAuthenticator")
+			}
+			if !fakeSource.ValidateAuthenticatorCalled {
+				t.Fatal("ValidateAuthenticator on Source not called")
+			}
+		})
+	})
 }
 
-func testBatchChange(user int32, spec *batches.BatchSpec) *batches.BatchChange {
-	c := &batches.BatchChange{
+func testBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
+	c := &btypes.BatchChange{
 		Name:             "test-batch-change",
 		InitialApplierID: user,
 		NamespaceUserID:  user,
@@ -896,15 +930,15 @@ func testBatchChange(user int32, spec *batches.BatchSpec) *batches.BatchChange {
 	return c
 }
 
-func testBatchSpec(user int32) *batches.BatchSpec {
-	return &batches.BatchSpec{
+func testBatchSpec(user int32) *btypes.BatchSpec {
+	return &btypes.BatchSpec{
 		UserID:          user,
 		NamespaceUserID: user,
 	}
 }
 
-func testChangeset(repoID api.RepoID, batchChange int64, extState batches.ChangesetExternalState) *batches.Changeset {
-	changeset := &batches.Changeset{
+func testChangeset(repoID api.RepoID, batchChange int64, extState btypes.ChangesetExternalState) *btypes.Changeset {
+	changeset := &btypes.Changeset{
 		RepoID:              repoID,
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalID:          fmt.Sprintf("ext-id-%d", batchChange),
@@ -913,7 +947,7 @@ func testChangeset(repoID api.RepoID, batchChange int64, extState batches.Change
 	}
 
 	if batchChange != 0 {
-		changeset.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: batchChange}}
+		changeset.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChange}}
 	}
 
 	return changeset

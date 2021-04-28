@@ -1,15 +1,17 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
-import * as GQL from '../../../shared/src/graphql/schema'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
 import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
-import { ThemeProps } from '../../../shared/src/theme'
 import { eventLogger } from '../tracking/eventLogger'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
 
 interface Props extends ThemeProps, TelemetryProps {
     history: H.History

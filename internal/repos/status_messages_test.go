@@ -70,15 +70,16 @@ func TestStatusMessages(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name            string
-		stored          types.Repos
-		gitserverCloned []string
-		sourcerErr      error
-		listRepoErr     error
-		res             []StatusMessage
-		user            *types.User
-		// maps repoName to external service id
-		repoOwner map[api.RepoName]int64
+		name             string
+		stored           types.Repos
+		gitserverCloned  []string
+		gitserverFailure map[string]bool
+		sourcerErr       error
+		listRepoErr      error
+		res              []StatusMessage
+		user             *types.User
+		// maps repoName to external service
+		repoOwner map[api.RepoName]*types.ExternalService
 		cloud     bool
 		err       string
 	}{
@@ -94,8 +95,8 @@ func TestStatusMessages(t *testing.T) {
 			stored:          []*types.Repo{{Name: "foobar"}},
 			user:            admin,
 			gitserverCloned: []string{},
-			repoOwner: map[api.RepoName]int64{
-				"foobar": siteLevelService.ID,
+			repoOwner: map[api.RepoName]*types.ExternalService{
+				"foobar": siteLevelService,
 			},
 			res: []StatusMessage{
 				{
@@ -110,9 +111,9 @@ func TestStatusMessages(t *testing.T) {
 			stored:          []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
 			user:            admin,
 			gitserverCloned: []string{"foobar"},
-			repoOwner: map[api.RepoName]int64{
-				"foobar": siteLevelService.ID,
-				"barfoo": siteLevelService.ID,
+			repoOwner: map[api.RepoName]*types.ExternalService{
+				"foobar": siteLevelService,
+				"barfoo": siteLevelService,
 			},
 			res: []StatusMessage{
 				{
@@ -125,8 +126,8 @@ func TestStatusMessages(t *testing.T) {
 		{
 			name:   "non admin users should only count their own non cloned repos",
 			stored: []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			repoOwner: map[api.RepoName]int64{
-				"foobar": userService.ID,
+			repoOwner: map[api.RepoName]*types.ExternalService{
+				"foobar": userService,
 			},
 			user: nonAdmin,
 			res: []StatusMessage{
@@ -149,14 +150,50 @@ func TestStatusMessages(t *testing.T) {
 			stored:          []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
 			user:            admin,
 			gitserverCloned: []string{"one", "two", "three"},
-			repoOwner: map[api.RepoName]int64{
-				"foobar": siteLevelService.ID,
-				"barfoo": siteLevelService.ID,
+			repoOwner: map[api.RepoName]*types.ExternalService{
+				"foobar": siteLevelService,
+				"barfoo": siteLevelService,
 			},
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
 						Message: "2 repositories not yet cloned",
+					},
+				},
+			},
+		},
+		{
+			name:             "one repo failed to sync",
+			stored:           []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			user:             admin,
+			gitserverCloned:  []string{"foobar", "barfoo"},
+			gitserverFailure: map[string]bool{"foobar": true},
+			repoOwner: map[api.RepoName]*types.ExternalService{
+				"foobar": siteLevelService,
+				"barfoo": siteLevelService,
+			},
+			res: []StatusMessage{
+				{
+					SyncError: &SyncError{
+						Message: "1 repository could not be synced",
+					},
+				},
+			},
+		},
+		{
+			name:             "two repos failed to sync",
+			stored:           []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			user:             admin,
+			gitserverCloned:  []string{"foobar", "barfoo"},
+			gitserverFailure: map[string]bool{"foobar": true, "barfoo": true},
+			repoOwner: map[api.RepoName]*types.ExternalService{
+				"foobar": siteLevelService,
+				"barfoo": siteLevelService,
+			},
+			res: []StatusMessage{
+				{
+					SyncError: &SyncError{
+						Message: "2 repositories could not be synced",
 					},
 				},
 			},
@@ -245,10 +282,15 @@ func TestStatusMessages(t *testing.T) {
 				if id == 0 {
 					continue
 				}
+				lastError := ""
+				if tc.gitserverFailure != nil && tc.gitserverFailure[toClone] {
+					lastError = "Oops"
+				}
 				if err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
 					RepoID:      id,
 					ShardID:     "test",
 					CloneStatus: types.CloneStatusCloned,
+					LastError:   lastError,
 				}); err != nil {
 					t.Fatal(err)
 				}
@@ -263,16 +305,19 @@ func TestStatusMessages(t *testing.T) {
 			// Set up ownership of repos
 			if tc.repoOwner != nil {
 				for _, repo := range stored {
-					svcID, ok := tc.repoOwner[repo.Name]
+					svc, ok := tc.repoOwner[repo.Name]
 					if !ok {
 						continue
 					}
-					_, err = db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES ($1, $2, 'example.com')`, svcID, repo.ID)
+					_, err = db.ExecContext(ctx, `
+						INSERT INTO external_service_repos(external_service_id, repo_id, user_id, clone_url)
+						VALUES ($1, $2, NULLIF($3, 0), 'example.com')
+					`, svc.ID, repo.ID, svc.NamespaceUserID)
 					if err != nil {
 						t.Fatal(err)
 					}
 					t.Cleanup(func() {
-						_, err = db.ExecContext(ctx, `DELETE FROM external_service_repos WHERE external_service_id = $1`, svcID)
+						_, err = db.ExecContext(ctx, `DELETE FROM external_service_repos WHERE external_service_id = $1`, svc.ID)
 						if err != nil {
 							t.Fatal(err)
 						}

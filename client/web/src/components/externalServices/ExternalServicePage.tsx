@@ -1,20 +1,23 @@
 import { parse as parseJSONC } from '@sqs/jsonc-parser'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import * as H from 'history'
 import React, { useEffect, useState, useCallback } from 'react'
 import { catchError } from 'rxjs/operators'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { PageTitle } from '../PageTitle'
-import { ExternalServiceCard } from './ExternalServiceCard'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { hasProperty } from '@sourcegraph/shared/src/util/types'
+
+import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'
 import { ErrorAlert } from '../alerts'
-import { defaultExternalServices, codeHostExternalServices } from './externalServices'
-import { hasProperty } from '../../../../shared/src/util/types'
-import * as H from 'history'
-import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { PageTitle } from '../PageTitle'
+
 import { isExternalService, updateExternalService, fetchExternalService as _fetchExternalService } from './backend'
-import { ExternalServiceWebhook } from './ExternalServiceWebhook'
+import { ExternalServiceCard } from './ExternalServiceCard'
 import { ExternalServiceForm } from './ExternalServiceForm'
-import { ExternalServiceFields, Scalars } from '../../graphql-operations'
+import { defaultExternalServices, codeHostExternalServices } from './externalServices'
+import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
 interface Props extends TelemetryProps {
     externalServiceID: Scalars['ID']
@@ -53,9 +56,13 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
     }, [externalServiceID, fetchExternalService])
 
     const onChange = useCallback(
-        (input: GQL.IAddExternalServiceInput) => {
+        (input: AddExternalServiceInput) => {
             if (isExternalService(externalServiceOrError)) {
-                setExternalServiceOrError({ ...externalServiceOrError, ...input })
+                setExternalServiceOrError({
+                    ...externalServiceOrError,
+                    ...input,
+                    namespace: externalServiceOrError.namespace,
+                })
             }
         },
         [externalServiceOrError, setExternalServiceOrError]
@@ -129,12 +136,12 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
             {isErrorLike(externalServiceOrError) && <ErrorAlert className="mb-3" error={externalServiceOrError} />}
             {externalServiceCategory && (
                 <div className="mb-3">
-                    <ExternalServiceCard {...externalServiceCategory} />
+                    <ExternalServiceCard {...externalServiceCategory} namespace={externalService?.namespace} />
                 </div>
             )}
             {externalService && externalServiceCategory && (
                 <ExternalServiceForm
-                    input={externalService}
+                    input={{ ...externalService, namespace: externalService.namespace?.id ?? null }}
                     editorActions={externalServiceCategory.editorActions}
                     jsonSchema={externalServiceCategory.jsonSchema}
                     error={error}

@@ -1,16 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useInputValidation, deriveInputClassName } from '../../../../shared/src/util/useInputValidation'
-import { LoaderInput } from '../../../../branded/src/components/LoaderInput'
-import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
 import classNames from 'classnames'
-import { Observable } from 'rxjs'
-import { Toggle } from '../../../../branded/src/components/Toggle'
-import { SourcegraphLogo } from '../../../../branded/src/components/SourcegraphLogo'
-import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
+import BookOpenPageVariantIcon from 'mdi-react/BookOpenPageVariantIcon'
+import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import EarthIcon from 'mdi-react/EarthIcon'
 import LockIcon from 'mdi-react/LockIcon'
-import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Observable } from 'rxjs'
+
+import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
+import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
+
 import { knownCodeHosts } from '../knownCodeHosts'
+
+import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
 
 export interface OptionsPageProps {
     version: string

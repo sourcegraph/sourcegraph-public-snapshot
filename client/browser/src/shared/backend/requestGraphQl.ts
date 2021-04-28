@@ -1,5 +1,7 @@
 import { from } from 'rxjs'
-import { requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
+
+import { requestGraphQLCommon } from '@sourcegraph/shared/src/graphql/graphql'
+
 import { background } from '../../browser-extension/web-extension-api/runtime'
 import { isBackground } from '../context'
 

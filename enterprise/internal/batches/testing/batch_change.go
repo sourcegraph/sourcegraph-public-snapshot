@@ -5,16 +5,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
 type CreateBatchChanger interface {
-	CreateBatchChange(ctx context.Context, batchChange *batches.BatchChange) error
+	CreateBatchChange(ctx context.Context, batchChange *btypes.BatchChange) error
 	Clock() func() time.Time
 }
 
-func BuildBatchChange(store CreateBatchChanger, name string, userID int32, spec int64) *batches.BatchChange {
-	b := &batches.BatchChange{
+func BuildBatchChange(store CreateBatchChanger, name string, userID int32, spec int64) *btypes.BatchChange {
+	b := &btypes.BatchChange{
 		InitialApplierID: userID,
 		LastApplierID:    userID,
 		LastAppliedAt:    store.Clock()(),
@@ -26,7 +26,7 @@ func BuildBatchChange(store CreateBatchChanger, name string, userID int32, spec 
 	return b
 }
 
-func CreateBatchChange(t *testing.T, ctx context.Context, store CreateBatchChanger, name string, userID int32, spec int64) *batches.BatchChange {
+func CreateBatchChange(t *testing.T, ctx context.Context, store CreateBatchChanger, name string, userID int32, spec int64) *btypes.BatchChange {
 	t.Helper()
 
 	b := BuildBatchChange(store, name, userID, spec)

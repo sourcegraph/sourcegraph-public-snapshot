@@ -1,8 +1,10 @@
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import React from 'react'
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { renderMarkdown } from '../../../../shared/src/util/markdown'
-import { pluralize } from '../../../../shared/src/util/strings'
+
+import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
+
 import { QueryFieldExample } from '../queryBuilder/QueryBuilderInputRow'
 
 interface Props {

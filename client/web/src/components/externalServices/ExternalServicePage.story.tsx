@@ -1,11 +1,14 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { ExternalServicePage } from './ExternalServicePage'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
-import { fetchExternalService as _fetchExternalService } from './backend'
 import { of } from 'rxjs'
+
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { ExternalServiceKind } from '../../graphql-operations'
 import { WebStory } from '../WebStory'
+
+import { fetchExternalService as _fetchExternalService } from './backend'
+import { ExternalServicePage } from './ExternalServicePage'
 
 const { add } = storiesOf('web/External services/ExternalServicePage', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
@@ -26,10 +29,15 @@ const fetchExternalService: typeof _fetchExternalService = () =>
         webhookURL: null,
         lastSyncError: null,
         repoCount: 0,
-        lastSyncAt: '0001-01-01T00:00:00Z',
-        nextSyncAt: '0001-01-01T00:00:00Z',
+        lastSyncAt: null,
+        nextSyncAt: null,
         updatedAt: '2021-03-15T19:39:11Z',
         createdAt: '2021-03-15T19:39:11Z',
+        namespace: {
+            id: 'userid',
+            namespaceName: 'johndoe',
+            url: '/users/johndoe',
+        },
     })
 
 add('View external service config', () => (

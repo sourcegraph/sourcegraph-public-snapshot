@@ -5,10 +5,13 @@ import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import React, { useEffect, useState } from 'react'
-import { PhabricatorIcon } from '../../../../shared/src/components/icons'
+
+import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
+
 import { WebStory } from '../../components/WebStory'
+
 import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
-import { ExternalServiceKind } from '../../../../shared/src/graphql/schema'
 
 const onClose = action('onClose')
 const onRejection = action('onRejection')

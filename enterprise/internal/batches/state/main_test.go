@@ -3,12 +3,12 @@ package state
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
-func setDraft(c *batches.Changeset) *batches.Changeset {
+func setDraft(c *btypes.Changeset) *btypes.Changeset {
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		m.IsDraft = true

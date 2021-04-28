@@ -1,5 +1,6 @@
-import { createDriverForTest, Driver } from '../../../../shared/src/testing/driver'
-import { Config } from '../../../../shared/src/testing/config'
+import { Config } from '@sourcegraph/shared/src/testing/config'
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+
 import { GraphQLClient, createGraphQLClient } from './GraphQlClient'
 import { TestResourceManager } from './TestResourceManager'
 

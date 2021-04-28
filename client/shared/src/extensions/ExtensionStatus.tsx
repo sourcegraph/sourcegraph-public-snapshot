@@ -1,15 +1,18 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useMemo } from 'react'
 import { UncontrolledPopover } from 'reactstrap'
 import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+
+import { wrapRemoteObservable } from '../api/client/api/common'
 import { Link } from '../components/Link'
-import { ExtensionsControllerProps } from './controller'
 import { PlatformContextProps } from '../platform/context'
 import { asError, isErrorLike } from '../util/errors'
 import { useObservable } from '../util/useObservable'
-import { wrapRemoteObservable } from '../api/client/api/common'
+
+import { ExtensionsControllerProps } from './controller'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps<'sideloadedExtensionURL'> {
     link: React.ComponentType<{ id: string }>
@@ -66,7 +69,7 @@ const ExtensionStatus: React.FunctionComponent<Props> = props => {
                 </span>
             )}
             <div className="card-body border-top">
-                <h6>Sideload extension</h6>
+                <h4>Sideload extension</h4>
                 {sideloadedExtensionURL ? (
                     <div>
                         <p>

@@ -2,12 +2,12 @@ package resolvers
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 type batchChangesCodeHostResolver struct {
-	codeHost   *batches.CodeHost
+	codeHost   *btypes.CodeHost
 	credential graphqlbackend.BatchChangesCredentialResolver
 }
 

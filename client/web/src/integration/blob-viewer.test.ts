@@ -1,7 +1,16 @@
 import assert from 'assert'
-import { commonWebGraphQlResults } from './graphQlResults'
-import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
-import { ExtensionManifest } from '../../../shared/src/schema/extensionSchema'
+
+import { Page } from 'puppeteer'
+import type * as sourcegraph from 'sourcegraph'
+
+import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+
+import { WebGraphQlOperations } from '../graphql-operations'
+import { Settings } from '../schema/settings.schema'
+
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
     createRepositoryRedirectResult,
@@ -10,12 +19,8 @@ import {
     createTreeEntriesResult,
     createBlobContentResult,
 } from './graphQlResponseHelpers'
-import { WebGraphQlOperations } from '../graphql-operations'
-import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
-import { Settings } from '../schema/settings.schema'
-import type * as sourcegraph from 'sourcegraph'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
-import { Page } from 'puppeteer'
+import { commonWebGraphQlResults } from './graphQlResults'
+import { percySnapshotWithVariants } from './utils'
 
 describe('Blob viewer', () => {
     let driver: Driver
@@ -48,6 +53,7 @@ describe('Blob viewer', () => {
         TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, ['README.md', fileName]),
         Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
     }
+
     beforeEach(() => {
         testContext.overrideGraphQL(commonBlobGraphQlResults)
     })
@@ -707,7 +713,7 @@ describe('Blob viewer', () => {
                     response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                 })
 
-            const timeout = 3000
+            const timeout = 5000
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
 
             // File 1 (test.ts). Only line two contains 'word'
@@ -945,8 +951,11 @@ describe('Blob viewer', () => {
             await driver.page.waitForSelector('.test-tooltip-find-references', { visible: true })
             await driver.page.click('.test-tooltip-find-references')
 
+            await driver.page.waitForSelector('.test-file-match-children-item', { visible: true })
+
+            await percySnapshotWithVariants(driver.page, 'Blob Reference Panel', { waitForCodeHighlighting: true })
+
             // Click on the first reference
-            await driver.page.waitForSelector('.test-file-match-children-item')
             await driver.page.click('.test-file-match-children-item')
 
             // Assert that the first line of code has text content which contains: 'file path: test spaces.ts'

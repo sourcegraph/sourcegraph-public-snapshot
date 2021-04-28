@@ -4,7 +4,9 @@ import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { NEVER } from 'rxjs'
 import sinon from 'sinon'
-import { extensionsController } from '../../shared/src/util/searchTestHelpers'
+
+import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+
 import { SearchPatternType } from './graphql-operations'
 import { Layout, LayoutProps } from './Layout'
 
@@ -61,7 +63,7 @@ describe('Layout', () => {
             { attachTo: document.querySelector('#root') as HTMLElement }
         )
 
-        sinon.assert.calledOnce(setParsedSearchQuery)
+        sinon.assert.called(setParsedSearchQuery)
         sinon.assert.calledWith(setParsedSearchQuery, 'r:golang/oauth2 test f:travis2')
 
         element.unmount()
@@ -108,7 +110,7 @@ describe('Layout', () => {
             { attachTo: document.querySelector('#root') as HTMLElement }
         )
 
-        sinon.assert.calledOnce(setParsedSearchQuery)
+        sinon.assert.called(setParsedSearchQuery)
         sinon.assert.calledWith(setParsedSearchQuery, '')
 
         element.unmount()
@@ -133,7 +135,7 @@ describe('Layout', () => {
             { attachTo: document.querySelector('#root') as HTMLElement }
         )
 
-        sinon.assert.calledOnce(setPatternTypeSpy)
+        sinon.assert.called(setPatternTypeSpy)
         sinon.assert.calledWith(setPatternTypeSpy, SearchPatternType.regexp)
 
         element.unmount()
@@ -206,7 +208,7 @@ describe('Layout', () => {
             { attachTo: document.querySelector('#root') as HTMLElement }
         )
 
-        sinon.assert.calledOnce(setCaseSensitivitySpy)
+        sinon.assert.called(setCaseSensitivitySpy)
         sinon.assert.calledWith(setCaseSensitivitySpy, true)
 
         element.unmount()
@@ -285,7 +287,7 @@ describe('Layout', () => {
             { attachTo: document.querySelector('#root') as HTMLElement }
         )
 
-        sinon.assert.calledOnce(setVersionContextSpy)
+        sinon.assert.called(setVersionContextSpy)
         sinon.assert.calledWith(setVersionContextSpy, 'test')
 
         element.unmount()
@@ -346,7 +348,7 @@ describe('Layout', () => {
             { attachTo: document.querySelector('#root') as HTMLElement }
         )
 
-        sinon.assert.calledOnce(setVersionContextSpy)
+        sinon.assert.called(setVersionContextSpy)
         sinon.assert.calledWith(setVersionContextSpy, undefined)
 
         element.unmount()

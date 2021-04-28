@@ -1,29 +1,36 @@
-import React, { FormEvent, useCallback, useEffect, useState } from 'react'
 import classNames from 'classnames'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { isEqual } from 'lodash'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import React, { FormEvent, useCallback, useEffect, useState, useRef } from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Subscription } from 'rxjs'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
+import { PageSelector } from '@sourcegraph/wildcard'
+
+import {
+    queryExternalServices,
+    setExternalServiceRepos,
+    listAffiliatedRepositories,
+} from '../../../components/externalServices/backend'
+import { LoaderButton } from '../../../components/LoaderButton'
 import { PageTitle } from '../../../components/PageTitle'
-import { CheckboxRepositoryNode } from './RepositoryNode'
-import { Form } from '../../../../../branded/src/components/Form'
-import { Link } from '../../../../../shared/src/components/Link'
 import {
     ExternalServiceKind,
     ExternalServicesResult,
     Maybe,
     AffiliatedRepositoriesResult,
 } from '../../../graphql-operations'
-import {
-    queryExternalServices,
-    setExternalServiceRepos,
-    listAffiliatedRepositories,
-} from '../../../components/externalServices/backend'
-import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
-import { LoaderButton } from '../../../components/LoaderButton'
-import { UserRepositoriesUpdateProps } from '../../../util'
 import { queryUserPublicRepositories, setUserPublicRepositories } from '../../../site-admin/backend'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { PageSelector } from '@sourcegraph/wildcard'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { UserRepositoriesUpdateProps } from '../../../util'
+
+import { AwayPrompt, ALLOW_NAVIGATION } from './AwayPrompt'
+import { CheckboxRepositoryNode } from './RepositoryNode'
 
 interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
     userID: string
@@ -90,16 +97,14 @@ const isLoading = (status: initialFetchingReposState): boolean => {
 }
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
-    <div className="alert alert-warning mt-3" role="alert">
-        <AlertCircleIcon key={warning} className="icon icon-inline" /> {warning}. {hint}{' '}
-        {hint ? 'for more details' : null}
+    <div key={warning} className="alert alert-warning mt-3" role="alert">
+        <AlertCircleIcon className="icon icon-inline" /> {warning}. {hint} {hint ? 'for more details' : null}
     </div>
 )
 
 const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
-    <div className="alert alert-danger mt-3" role="alert">
-        <AlertCircleIcon key={error.message} className="icon icon-inline" /> {error.message}. {hint}{' '}
-        {hint ? 'for more details' : null}
+    <div key={error.message} className="alert alert-danger mt-3" role="alert">
+        <AlertCircleIcon className="icon icon-inline" /> {error.message}. {hint} {hint ? 'for more details' : null}
     </div>
 )
 
@@ -116,7 +121,7 @@ const displayAffiliateRepoProblems = (
     }
 
     if (Array.isArray(problem)) {
-        return displayAffiliateRepoProblems(problem)
+        return <>{problem.map(prob => displayAffiliateRepoProblems(prob, hint))}</>
     }
 
     return null
@@ -140,12 +145,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [repoState, setRepoState] = useState(initialRepoState)
     const [publicRepoState, setPublicRepoState] = useState(initialPublicRepoState)
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
+    const [onloadSelectedRepos, setOnloadSelectedRepos] = useState<string[]>([])
     const [selectionState, setSelectionState] = useState(initialSelectionState)
     const [currentPage, setPage] = useState(1)
     const [query, setQuery] = useState('')
     const [codeHostFilter, setCodeHostFilter] = useState('')
     const [filteredRepos, setFilteredRepos] = useState<Repo[]>([])
     const [fetchingRepos, setFetchingRepos] = useState<initialFetchingReposState>()
+    const externalServiceSubscription = useRef<Subscription>()
 
     // since we're making many different GraphQL requests - track affiliate and
     // manually added public repo errors separately
@@ -243,8 +250,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             setPublicRepoState({ ...initialPublicRepoState, loaded: true })
         } else {
             // public repos separated by a new line
-            const publicRepos = result.map(({ name }) => name).join('\n')
-            setPublicRepoState({ repos: publicRepos, loaded: true, enabled: result.length > 0 })
+            const publicRepos = result.map(({ name }) => name)
+
+            // safe off initial selection state
+            setOnloadSelectedRepos(previousValue => [...previousValue, ...publicRepos])
+
+            setPublicRepoState({ repos: publicRepos.join('\n'), loaded: true, enabled: result.length > 0 })
         }
     }, [userID])
 
@@ -311,6 +322,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         loaded: true,
                     }))
 
+                    // safe off initial selection state
+                    setOnloadSelectedRepos(previousValue => [...previousValue, ...selectedRepos.keys()])
+
                     setSelectionState({
                         repos: selectedRepos,
                         radio: selectionState.radio,
@@ -357,10 +371,20 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         setPage(1)
     }, [repoState.repos, codeHostFilter, query])
 
+    const didRepoSelectionChange = useCallback((): boolean => {
+        const publicRepos = publicRepoState.enabled && publicRepoState.repos ? publicRepoState.repos.split('\n') : []
+        const affiliatedRepos = selectionState.repos.keys()
+
+        const currentlySelectedRepos = [...publicRepos, ...affiliatedRepos]
+
+        return !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
+    }, [onloadSelectedRepos, publicRepoState.enabled, publicRepoState.repos, selectionState.repos])
+
     // save changes and update code hosts
     const submit = useCallback(
         async (event: FormEvent<HTMLFormElement>): Promise<void> => {
             event.preventDefault()
+            eventLogger.log('UserManageRepositoriesSave')
 
             let publicRepos = publicRepoState.repos.split('\n').filter((row): boolean => row !== '')
             if (!publicRepoState.enabled) {
@@ -378,10 +402,11 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
 
             if (!selectionState.radio) {
-                return history.push(routingPrefix + '/repositories')
+                // location state is used here to prevent AwayPrompt from blocking
+                return history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
             }
 
-            const syncTimes = new Map<string, string>()
+            const syncTimes = new Map<string, string | null>()
             const codeHostRepoPromises = []
 
             for (const host of codeHosts.hosts) {
@@ -412,7 +437,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
 
             const started = Date.now()
-            const externalServiceSubscription = queryExternalServices({
+            externalServiceSubscription.current = queryExternalServices({
                 first: null,
                 after: null,
                 namespace: userID,
@@ -435,11 +460,19 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             }
 
                             // if the lastSyncAt has changed for all hosts then we're done
-                            if (result.nodes.every(codeHost => codeHost.lastSyncAt !== syncTimes.get(codeHost.id))) {
+                            if (
+                                result.nodes.every(
+                                    codeHost =>
+                                        codeHost.lastSyncAt && codeHost.lastSyncAt !== syncTimes.get(codeHost.id)
+                                )
+                            ) {
                                 const repoCount = result.nodes.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
                                 onUserRepositoriesUpdate(repoCount)
+
                                 // push the user back to the repo list page
-                                history.push(routingPrefix + '/repositories')
+                                // location state is used here to prevent AwayPrompt from blocking
+                                history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
+
                                 // cancel the repeatUntil
                                 return true
                             }
@@ -453,7 +486,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     () => {},
                     error => setAffiliateRepoProblems(asError(error)),
                     () => {
-                        externalServiceSubscription.unsubscribe()
+                        externalServiceSubscription.current?.unsubscribe()
                     }
                 )
         },
@@ -468,6 +501,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             history,
             routingPrefix,
         ]
+    )
+
+    useEffect(
+        () => () => {
+            externalServiceSubscription.current?.unsubscribe()
+        },
+        []
     )
 
     const handleRadioSelect = (changeEvent: React.ChangeEvent<HTMLInputElement>): void => {
@@ -550,8 +590,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         </Form>
     )
 
+    const preventSubmit = useCallback((event: React.FormEvent<HTMLFormElement>): void => event.preventDefault(), [])
+
     const filterControls: JSX.Element = (
-        <Form className="w-100 d-inline-flex justify-content-between flex-row mt-3">
+        <Form onSubmit={preventSubmit} className="w-100 d-inline-flex justify-content-between flex-row mt-3">
             <div className="d-inline-flex flex-row mr-3 align-items-baseline">
                 <p className="text-xl-center text-nowrap mr-2">Code Host:</p>
                 <select
@@ -693,27 +735,30 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 connected code hosts
                             </Link>
                         </p>
-                        <div className="alert alert-primary">
-                            Coming soon: search private repositories with Sourcegraph Cloud.{' '}
-                            <Link
-                                to="https://share.hsforms.com/1copeCYh-R8uVYGCpq3s4nw1n7ku"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                Get updated when this feature launches
-                            </Link>
-                        </div>
+                        {codeHosts.loaded && codeHosts.hosts.length !== 0 && (
+                            <div className="alert alert-primary">
+                                Coming soon: search private repositories with Sourcegraph Cloud.{' '}
+                                <Link
+                                    to="https://share.hsforms.com/1copeCYh-R8uVYGCpq3s4nw1n7ku"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Get updated when this feature launches
+                                </Link>
+                            </div>
+                        )}
+
                         {codeHosts.loaded && codeHosts.hosts.length === 0 && (
-                            <div className="alert alert-warning">
+                            <div className="alert alert-warning mb-2">
                                 <Link to={`${routingPrefix}/code-hosts`}>Connect with a code host</Link> to add your own
                                 repositories to Sourcegraph.
                             </div>
                         )}
                         {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
-                        {
+                        {codeHosts.loaded &&
+                            codeHosts.hosts.length !== 0 &&
                             // display radio button for 'all' or 'selected' repos
-                            modeSelect
-                        }
+                            modeSelect}
                         {
                             // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
                             selectionState.radio === 'selected' && (
@@ -778,6 +823,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 )}
             </ul>
             {isErrorLike(otherPublicRepoError) && displayError(otherPublicRepoError)}
+            <AwayPrompt
+                header="Discard unsaved changes?"
+                message="Currently synced repositories will be unchanged"
+                button_ok_text="Discard"
+                when={didRepoSelectionChange}
+            />
             <Form className="mt-4 d-flex" onSubmit={submit}>
                 <LoaderButton
                     loading={isLoading(fetchingRepos)}

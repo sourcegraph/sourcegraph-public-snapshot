@@ -1,8 +1,10 @@
-import * as React from 'react'
-import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
-import { RepoRevision, toPrettyBlobURL } from '../../../shared/src/util/url'
-import { toTreeURL } from '../util/url'
 import classNames from 'classnames'
+import * as React from 'react'
+
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { RepoRevision, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+
+import { toTreeURL } from '../util/url'
 
 /**
  * Displays a file path in a repository in breadcrumb style, with ancestor path
@@ -43,7 +45,7 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
         )
         if (index < parts.length - 1) {
             spans.push(
-                <span key={`sep${index}`} className="file-path-breadcrumbs__separator text-muted font-weight-semibold">
+                <span key={`sep${index}`} className="file-path-breadcrumbs__separator text-muted font-weight-medium">
                     /
                 </span>
             )

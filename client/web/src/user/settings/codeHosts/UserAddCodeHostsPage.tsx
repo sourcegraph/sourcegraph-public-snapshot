@@ -1,22 +1,25 @@
 import React, { useCallback, useState, useEffect } from 'react'
+
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isDefined, keyExistsIn } from '@sourcegraph/shared/src/util/types'
+
+import { ErrorAlert } from '../../../components/alerts'
+import { queryExternalServices } from '../../../components/externalServices/backend'
+import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
+import { PageTitle } from '../../../components/PageTitle'
+import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
+import { SourcegraphContext } from '../../../jscontext'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { UserRepositoriesUpdateProps } from '../../../util'
 
 import { CodeHostItem } from './CodeHostItem'
-import { PageTitle } from '../../../components/PageTitle'
-import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
-import { queryExternalServices } from '../../../components/externalServices/backend'
-import { ErrorAlert } from '../../../components/alerts'
-import { Link } from '../../../../../shared/src/components/Link'
-import { isDefined, keyExistsIn } from '../../../../../shared/src/util/types'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
-import { SourcegraphContext } from '../../../jscontext'
 
 type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
-export interface UserAddCodeHostsPageProps {
+export interface UserAddCodeHostsPageProps extends UserRepositoriesUpdateProps {
     userID: Scalars['ID']
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
@@ -56,6 +59,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     codeHostExternalServices,
     routingPrefix,
     context,
+    onUserRepositoriesUpdate,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
     const [oauthRequestFor, setOauthRequestFor] = useState<ExternalServiceKind>()
@@ -76,7 +80,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         }, {})
 
         setStatusOrError(services)
-    }, [userID])
+
+        const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
+        onUserRepositoriesUpdate(repoCount)
+    }, [userID, onUserRepositoriesUpdate])
 
     useEffect(() => {
         eventLogger.logViewEvent('UserSettingsCodeHostConnections')
@@ -92,8 +99,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         services.length > 0 ? (
             <div className="alert alert-success mb-4" role="alert" key="add-repos">
                 Connected with {services.join(', ')}. Next,{' '}
-                <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
-                    <b>add your repositories →</b>
+                <Link className="alert-link" to={`${routingPrefix}/repositories/manage`}>
+                    add your repositories →
                 </Link>
             </div>
         ) : null
@@ -188,6 +195,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                               key={kind}
                               type="button"
                               onClick={() => {
+                                  eventLogger.log('UserAttemptConnectCodeHost', { kind })
                                   setOauthRequestFor(kind)
                                   ifNotNavigated(() => {
                                       setOauthRequestFor(undefined)

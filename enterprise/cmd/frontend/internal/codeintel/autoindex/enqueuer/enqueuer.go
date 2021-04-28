@@ -4,9 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
-
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
@@ -86,12 +85,30 @@ func (s *IndexEnqueuer) queueIndex(ctx context.Context, repositoryID int, force 
 	}
 	traceLog(log.String("commit", commit))
 
+	return s.queueIndexForCommit(ctx, repositoryID, commit, force, traceLog, false)
+}
+
+// sourcegraphRepositoryID is the repository id of sg/sg on Cloud
+const sourcegraphRepositoryID = 36809250
+
+func (s *IndexEnqueuer) queueIndexForCommit(ctx context.Context, repositoryID int, commit string, force bool, traceLog observation.TraceLogger, noisy bool) (err error) {
+	if repositoryID == sourcegraphRepositoryID {
+		// Don't auto-index sg/sg; instead, we'll enqueue index jobs for all of the current commit's
+		// root go module dependencies. This is going to simulate what we _could_ do with dependency
+		// tracking for Go, though this particular implementations SUPER sketchy.
+		log15.Warn("Enqueueing dependencies of sourcegraph/sourcegraph for auto-indexing", "commit", commit)
+		return s.enqueueSourcegraphGoRootDependencies(ctx, repositoryID, commit)
+	}
+
 	if !force {
 		isQueued, err := s.dbStore.IsQueued(ctx, repositoryID, commit)
 		if err != nil {
 			return errors.Wrap(err, "dbstore.IsQueued")
 		}
 		if isQueued {
+			if noisy {
+				log15.Warn("Dependency already exists or is queued", "repositoryID", repositoryID, "commit", commit)
+			}
 			return nil
 		}
 	}
@@ -101,6 +118,9 @@ func (s *IndexEnqueuer) queueIndex(ctx context.Context, repositoryID int, force 
 		return err
 	}
 	if len(indexes) == 0 {
+		if noisy {
+			log15.Warn("No index jobs", "repositoryID", repositoryID, "commit", commit)
+		}
 		return nil
 	}
 	traceLog(log.Int("numIndexes", len(indexes)))
@@ -119,7 +139,11 @@ func (s *IndexEnqueuer) queueIndex(ctx context.Context, repositoryID int, force 
 			return errors.Wrap(err, "dbstore.QueueIndex")
 		}
 
-		log15.Info(
+		logFunc := log15.Info
+		if noisy {
+			logFunc = log15.Warn
+		}
+		logFunc(
 			"Enqueued index",
 			"id", id,
 			"repository_id", repositoryID,

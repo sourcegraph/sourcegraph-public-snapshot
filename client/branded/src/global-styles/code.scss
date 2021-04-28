@@ -1,14 +1,6 @@
 $code-font-family: sfmono-regular, consolas, menlo, dejavu sans mono, monospace;
 $code-font-size: (12/14) + em;
 
-.theme-dark {
-    --code-bg: var(--color-bg-2);
-}
-
-.theme-light {
-    --code-bg: var(--color-bg-2);
-}
-
 code,
 .text-code {
     font-family: $code-font-family;
@@ -34,6 +26,11 @@ kbd {
     color: var(--body-color);
     background-color: var(--color-bg-2);
     box-shadow: inset 0 -2px 0 var(--color-bg-3);
+}
+
+// Search examples that link to the results page should use this class.
+.search-query-link {
+    color: var(--body-color);
 }
 
 .search-filter-keyword {

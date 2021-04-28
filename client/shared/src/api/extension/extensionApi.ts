@@ -1,17 +1,19 @@
-import { ExtensionHostState } from './extensionHostState'
-import * as sourcegraph from 'sourcegraph'
-import { addWithRollback } from './util'
 import { proxy, Remote } from 'comlink'
-import { MainThreadAPI } from '../contract'
-import { proxySubscribable } from './api/common'
+import { sortBy } from 'lodash'
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
 import { debounceTime, mapTo } from 'rxjs/operators'
-import { sortBy } from 'lodash'
-import { NotificationType, PanelViewData } from './extensionHostApi'
-import { createDecorationType } from './api/decorations'
-import { syncRemoteSubscription } from '../util'
+import * as sourcegraph from 'sourcegraph'
+
 import { asError } from '../../util/errors'
+import { MainThreadAPI } from '../contract'
+import { syncRemoteSubscription } from '../util'
+
 import { createStatusBarItemType } from './api/codeEditor'
+import { proxySubscribable } from './api/common'
+import { createDecorationType } from './api/decorations'
+import { NotificationType, PanelViewData } from './extensionHostApi'
+import { ExtensionHostState } from './extensionHostState'
+import { addWithRollback } from './util'
 
 export interface InitResult {
     configuration: sourcegraph.ConfigurationService
@@ -54,11 +56,15 @@ export function createExtensionAPI(state: ExtensionHostState, mainAPI: Remote<Ma
         get versionContext() {
             return state.versionContext
         },
+        get searchContext() {
+            return state.searchContext
+        },
         onDidOpenTextDocument: state.openedTextDocuments.asObservable(),
         openedTextDocuments: state.openedTextDocuments.asObservable(),
         onDidChangeRoots: state.roots.pipe(mapTo(undefined)),
         rootChanges: state.rootChanges.asObservable(),
         versionContextChanges: state.versionContextChanges.asObservable(),
+        searchContextChanges: state.searchContextChanges.asObservable(),
     }
 
     const createProgressReporter = async (

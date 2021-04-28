@@ -1,6 +1,8 @@
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { FunctionComponent } from 'react'
-import { Link } from '../../../../../shared/src/components/Link'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+
 import { LsifIndexFields } from '../../../graphql-operations'
 import { CodeIntelState } from '../shared/CodeIntelState'
 import { CodeIntelUploadOrIndexCommit } from '../shared/CodeIntelUploadOrIndexCommit'

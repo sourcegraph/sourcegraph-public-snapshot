@@ -1,21 +1,23 @@
-import React, { useState, useCallback, useMemo, memo } from 'react'
-import WarningIcon from 'mdi-react/WarningIcon'
 import classNames from 'classnames'
-import { ConfiguredRegistryExtension, splitExtensionID } from '../../../shared/src/extensions/extension'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { PlatformContextProps } from '../../../shared/src/platform/context'
-import { ExtensionManifest } from '../../../shared/src/schema/extensionSchema'
-import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { isErrorLike } from '../../../shared/src/util/errors'
+import WarningIcon from 'mdi-react/WarningIcon'
+import React, { useState, useCallback, useMemo, memo } from 'react'
+import { Link } from 'react-router-dom'
+
+import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
+import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
+
 import { isExtensionAdded } from './extension/extension'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
-import { ExtensionToggle, OptimisticUpdateFailure } from './ExtensionToggle'
-import { isEncodedImage } from '../../../shared/src/util/icon'
-import { Link } from 'react-router-dom'
-import { DefaultIconEnabled, DefaultIcon, SourcegraphExtensionIcon } from './icons'
-import { ThemeProps } from '../../../shared/src/theme'
-import { useTimeoutManager } from '../../../shared/src/util/useTimeoutManager'
 import { ExtensionStatusBadge } from './extension/ExtensionStatusBadge'
+import { ExtensionToggle, OptimisticUpdateFailure } from './ExtensionToggle'
+import { DefaultIconEnabled, DefaultIcon, SourcegraphExtensionIcon } from './icons'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'>, ThemeProps {
     node: Pick<
@@ -257,13 +259,13 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                 {/* Visual feedback: alert when extension is disabled */}
                 {change === 'disabled' && (
                     <div className="alert alert-secondary px-2 py-1 extension-card__disabled-feedback">
-                        <span className="font-weight-semibold">{name}</span> is disabled
+                        <span className="font-weight-medium">{name}</span> is disabled
                     </div>
                 )}
                 {/* Visual feedback: alert when optimistic update fails */}
                 {optimisticFailure && (
                     <div className="alert alert-danger px-2 py-1 extension-card__disabled-feedback">
-                        <span className="font-weight-semibold">Error:</span>{' '}
+                        <span className="font-weight-medium">Error:</span>{' '}
                         {actionableErrorMessage(optimisticFailure.error)}
                     </div>
                 )}

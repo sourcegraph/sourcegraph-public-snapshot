@@ -1,13 +1,15 @@
+import * as H from 'history'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import InformationIcon from 'mdi-react/InformationIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
 import React from 'react'
+
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { renderMarkdown } from '../../../shared/src/util/markdown'
+import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+
 import { DismissibleAlert } from '../components/DismissibleAlert'
-import * as H from 'history'
-import { AlertType } from '../../../shared/src/graphql-operations'
 
 /**
  * A global alert that is shown at the top of the viewport.

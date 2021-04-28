@@ -1,13 +1,17 @@
-import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { uniqueId } from 'lodash'
 import { nextTick } from 'process'
+import { promisify } from 'util'
+
+import { uniqueId } from 'lodash'
 import { concat, Observable, of, ReplaySubject, Subject, Subscription } from 'rxjs'
 import { first, tap } from 'rxjs/operators'
-import { promisify } from 'util'
-import { FlatExtensionHostAPI } from '../../../../../shared/src/api/contract'
-import { LinkPreviewMerged } from '../../../../../shared/src/api/extension/extensionHostApi'
-import { pretendProxySubscribable, pretendRemote } from '../../../../../shared/src/api/util'
+
+import { MarkupKind } from '@sourcegraph/extension-api-classes'
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { LinkPreviewMerged } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
+
 import { MutationRecordLike } from '../../util/dom'
+
 import { handleContentViews } from './contentViews'
 
 const tick = promisify(nextTick)

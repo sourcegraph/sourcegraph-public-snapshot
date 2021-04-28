@@ -23,7 +23,7 @@ func TestListDefaultRepos(t *testing.T) {
 	}
 	tcs := []struct {
 		name  string
-		repos []*types.RepoName
+		repos []types.RepoName
 	}{
 		{
 			name:  "empty case",
@@ -31,7 +31,7 @@ func TestListDefaultRepos(t *testing.T) {
 		},
 		{
 			name: "one repo",
-			repos: []*types.RepoName{
+			repos: []types.RepoName{
 				{
 					ID:   api.RepoID(1),
 					Name: "github.com/foo/bar",
@@ -39,8 +39,8 @@ func TestListDefaultRepos(t *testing.T) {
 			},
 		},
 		{
-			name: "a few repos",
-			repos: []*types.RepoName{
+			name: "two repos",
+			repos: []types.RepoName{
 				{
 					ID:   api.RepoID(1),
 					Name: "github.com/foo/bar",
@@ -116,7 +116,7 @@ func TestListDefaultRepos(t *testing.T) {
 			t.Fatal("id should be 1")
 		}
 		_, err := db.ExecContext(ctx, `
-			-- insert one user-added repo, i.e. a repo added by an external service owned by a user
+			-- insert one public user-added repo, i.e. a repo added by an external service owned by a user
 			INSERT INTO users(id, username) VALUES (1, 'foo');
 			INSERT INTO repo(id, name) VALUES (10, 'github.com/foo/bar10');
 			INSERT INTO external_services(id, kind, display_name, config, namespace_user_id) VALUES (100, 'github', 'github', '{}', 1);
@@ -141,19 +141,52 @@ func TestListDefaultRepos(t *testing.T) {
 			INSERT INTO external_service_repos VALUES (101, 14, 'https://github.com/foo/bar14');
 			INSERT INTO user_public_repos(user_id, repo_id, repo_uri) VALUES (1, 14, 'github.com/foo/bar/14');
 			INSERT INTO gitserver_repos(repo_id, clone_status, shard_id) VALUES (14, 'cloned', 'test');
+
+			-- insert one private user-added repo, i.e. a repo added by an external service owned by a user
+			INSERT INTO repo(id, name, private) VALUES (15, 'github.com/foo/bar15', true);
+			INSERT INTO external_service_repos VALUES (100, 15, 'https://github.com/foo/bar15');
+			INSERT INTO external_service_repos(repo_id, external_service_id, clone_url) VALUES (15, 1, 'example.com');
+			INSERT INTO gitserver_repos(repo_id, clone_status, shard_id) VALUES (15, 'cloned', 'test');
 		`)
 		if err != nil {
 			t.Fatal(err)
 		}
 
+		// List ALL repos
 		DefaultRepos(db).resetCache()
-
 		repos, err := DefaultRepos(db).List(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
+		want := []types.RepoName{
+			{
+				ID:   api.RepoID(10),
+				Name: "github.com/foo/bar10",
+			},
+			{
+				ID:   api.RepoID(11),
+				Name: "github.com/foo/bar11",
+			},
+			{
+				ID:   api.RepoID(15),
+				Name: "github.com/foo/bar15",
+			},
+			{
+				ID:   api.RepoID(14),
+				Name: "github.com/foo/bar14",
+			},
+		}
+		if diff := cmp.Diff(want, repos, cmpopts.EquateEmpty()); diff != "" {
+			t.Errorf("mismatch (-want +got):\n%s", diff)
+		}
 
-		want := []*types.RepoName{
+		// List only public default repos
+		DefaultRepos(db).resetCache()
+		repos, err = DefaultRepos(db).ListPublic(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want = []types.RepoName{
 			{
 				ID:   api.RepoID(10),
 				Name: "github.com/foo/bar10",
@@ -167,7 +200,6 @@ func TestListDefaultRepos(t *testing.T) {
 				Name: "github.com/foo/bar14",
 			},
 		}
-		// expect 2 repos, the user added repo and the one that is referenced in the default repos table
 		if diff := cmp.Diff(want, repos, cmpopts.EquateEmpty()); diff != "" {
 			t.Errorf("mismatch (-want +got):\n%s", diff)
 		}
@@ -179,7 +211,7 @@ func TestListDefaultReposUncloned(t *testing.T) {
 		t.Skip()
 	}
 
-	reposToAdd := []*types.RepoName{
+	reposToAdd := []types.RepoName{
 		{
 			ID:   api.RepoID(1),
 			Name: "github.com/foo/bar1",

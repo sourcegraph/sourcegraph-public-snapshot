@@ -1,8 +1,11 @@
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
-import { ExternalServiceKind } from '../../../../../shared/src/graphql-operations'
+
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 
 const { add } = storiesOf('web/batches/settings/RemoveCredentialModal', module)

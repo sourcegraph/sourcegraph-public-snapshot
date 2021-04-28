@@ -1,21 +1,26 @@
-import { findPositionsFromEvents } from '@sourcegraph/codeintellify'
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback, useMemo, useState, useEffect } from 'react'
 import { combineLatest, from, NEVER, Observable, of, ReplaySubject, Subscription } from 'rxjs'
 import { filter, first, map, switchMap, tap } from 'rxjs/operators'
-import { DecorationMapByLine, groupDecorationsByLine } from '../../../../shared/src/api/extension/api/decorations'
-import { isDefined, property } from '../../../../shared/src/util/types'
-import { toURIWithPath } from '../../../../shared/src/util/url'
-import { ThemeProps } from '../../../../shared/src/theme'
-import { DiffHunk } from './DiffHunk'
-import { diffDomFunctions } from '../../repo/compare/dom-functions'
-import { FileDiffFields } from '../../graphql-operations'
-import { ViewerId } from '../../../../shared/src/api/viewerTypes'
-import { ExtensionInfo } from './FileDiffConnection'
-import { wrapRemoteObservable } from '../../../../shared/src/api/client/api/common'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
-import { useObservable } from '../../../../shared/src/util/useObservable'
+
+import { findPositionsFromEvents } from '@sourcegraph/codeintellify'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isDefined, property } from '@sourcegraph/shared/src/util/types'
+import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { StatusBar } from '../../extensions/components/StatusBar'
+import { FileDiffFields } from '../../graphql-operations'
+import { diffDomFunctions } from '../../repo/compare/dom-functions'
+
+import { DiffHunk } from './DiffHunk'
+import { DiffSplitHunk } from './DiffSplitHunk'
+import { ExtensionInfo } from './FileDiffConnection'
 
 export interface FileHunksProps extends ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
@@ -48,19 +53,20 @@ export interface FileHunksProps extends ThemeProps {
     history: H.History
     /** Reflect selected line in url */
     persistLines?: boolean
+    diffMode: string
 }
 
 /** Displays hunks in a unified file diff. */
 export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
     className,
     fileDiffAnchor,
-    history,
     hunks,
     isLightTheme,
     lineNumbers,
     location,
     extensionInfo,
     persistLines,
+    diffMode,
 }) => {
     /**
      * Decorations for the file at the two revisions of the diff
@@ -140,8 +146,16 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                 map(([baseStatusBarItems, headStatusBarItems]) => {
                     if (baseStatusBarItems && headStatusBarItems) {
                         return [
-                            ...baseStatusBarItems.map(({ text, ...rest }) => ({ text: `base: ${text}`, ...rest })),
-                            ...headStatusBarItems.map(({ text, ...rest }) => ({ text: `head: ${text}`, ...rest })),
+                            ...baseStatusBarItems.map(({ text, key, ...rest }) => ({
+                                text: `base: ${text}`,
+                                key: `base-${key}`,
+                                ...rest,
+                            })),
+                            ...headStatusBarItems.map(({ text, key, ...rest }) => ({
+                                text: `head: ${text}`,
+                                key: `head-${key}`,
+                                ...rest,
+                            })),
                         ]
                     }
 
@@ -200,6 +214,7 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                         const { repoName, revision, filePath, commitID } = extensionInfo[hoveredToken.part || 'head']
 
                         // If a hover or go-to-definition was invoked on this part, we know the file path must exist
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                         return { repoName, filePath: filePath!, revision, commitID }
                     },
                 })
@@ -225,28 +240,53 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                     <div className="text-muted m-2">No changes</div>
                 ) : (
                     <div className="file-diff-hunks__container" ref={nextCodeElement}>
-                        <table className="file-diff-hunks__table">
+                        <table
+                            className={classNames('file-diff-hunks__table file-diff-hunks__table', {
+                                'diff-hunk--split': diffMode === 'split',
+                            })}
+                        >
                             {lineNumbers && (
                                 <colgroup>
-                                    <col width="40" />
-                                    <col width="40" />
-                                    <col />
+                                    {diffMode === 'split' ? (
+                                        <>
+                                            <col width="40" />
+                                            <col />
+                                            <col width="40" />
+                                            <col />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <col width="40" />
+                                            <col width="40" />
+                                            <col />
+                                        </>
+                                    )}
                                 </colgroup>
                             )}
                             <tbody>
-                                {hunks.map((hunk, index) => (
-                                    <DiffHunk
-                                        fileDiffAnchor={fileDiffAnchor}
-                                        history={history}
-                                        isLightTheme={isLightTheme}
-                                        lineNumbers={lineNumbers}
-                                        location={location}
-                                        persistLines={persistLines}
-                                        key={index}
-                                        hunk={hunk}
-                                        decorations={decorations}
-                                    />
-                                ))}
+                                {hunks.map((hunk, index) =>
+                                    diffMode === 'split' ? (
+                                        <DiffSplitHunk
+                                            fileDiffAnchor={fileDiffAnchor}
+                                            isLightTheme={isLightTheme}
+                                            lineNumbers={lineNumbers}
+                                            persistLines={persistLines}
+                                            key={hunk.oldRange.startLine}
+                                            hunk={hunk}
+                                            decorations={decorations}
+                                        />
+                                    ) : (
+                                        <DiffHunk
+                                            fileDiffAnchor={fileDiffAnchor}
+                                            isLightTheme={isLightTheme}
+                                            lineNumbers={lineNumbers}
+                                            persistLines={persistLines}
+                                            key={hunk.oldRange.startLine}
+                                            hunk={hunk}
+                                            decorations={decorations}
+                                        />
+                                    )
+                                )}
                             </tbody>
                         </table>
                     </div>

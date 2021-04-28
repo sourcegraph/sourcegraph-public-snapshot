@@ -12,6 +12,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
@@ -92,6 +94,10 @@ const (
 // then the next update will be scheduled 4 hours from now. If there are still no new commits,
 // then the next update will be scheduled 6 hours from then.
 // This heuristic is simple to compute and has nice backoff properties.
+//
+// If an error occurs when attempting to fetch a repo we perform exponential
+// backoff by doubling the current interval. This ensures that problematic repos
+// don't stay in the front of the schedule clogging up the queue.
 //
 // When it is time for a repo to update, the scheduler inserts the repo into a queue.
 //
@@ -198,6 +204,12 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 				}
 				if interval := getCustomInterval(conf.Get(), string(repo.Name)); interval > 0 {
 					s.schedule.updateInterval(repo, interval)
+				} else if err != nil {
+					// On error we will double the current interval so that we back off and don't
+					// get stuck with problematic repos with low intervals.
+					if currentInterval, ok := s.schedule.getCurrentInterval(repo); ok {
+						s.schedule.updateInterval(repo, currentInterval*2)
+					}
 				} else if resp != nil && resp.LastFetched != nil && resp.LastChanged != nil {
 					// This is the heuristic that is described in the updateScheduler documentation.
 					// Update that documentation if you update this logic.
@@ -299,7 +311,7 @@ func (s *updateScheduler) SetCloned(names []string) {
 }
 
 // EnsureScheduled ensures that all repos in repos exist in the scheduler.
-func (s *updateScheduler) EnsureScheduled(repos []*types.RepoName) {
+func (s *updateScheduler) EnsureScheduled(repos []types.RepoName) {
 	s.schedule.insertNew(repos)
 }
 
@@ -354,11 +366,12 @@ func (s *updateScheduler) UpdateOnce(id api.RepoID, name api.RepoName) {
 }
 
 // DebugDump returns the state of the update scheduler for debugging.
-func (s *updateScheduler) DebugDump() interface{} {
+func (s *updateScheduler) DebugDump(ctx context.Context, db dbutil.DB) interface{} {
 	data := struct {
 		Name        string
 		UpdateQueue []*repoUpdate
 		Schedule    []*scheduledRepoUpdate
+		SyncJobs    []*types.ExternalServiceSyncJob
 	}{
 		Name: "repos",
 	}
@@ -399,6 +412,12 @@ func (s *updateScheduler) DebugDump() interface{} {
 		// won't change concurrently after we release the lock.
 		update := heap.Pop(&updateQueue).(*repoUpdate)
 		data.UpdateQueue = append(data.UpdateQueue, update)
+	}
+
+	var err error
+	data.SyncJobs, err = database.ExternalServices(db).GetSyncJobs(ctx)
+	if err != nil {
+		log15.Warn("Getting external service sync jobs foe debug page", "error", err)
 	}
 
 	return &data
@@ -696,7 +715,7 @@ func (s *schedule) setCloned(names []string) {
 }
 
 // insertNew will insert repos only if they are not known to the scheduler
-func (s *schedule) insertNew(repos []*types.RepoName) {
+func (s *schedule) insertNew(repos []types.RepoName) {
 	required := make(map[string]struct{}, len(repos))
 	for _, n := range repos {
 		required[strings.ToLower(string(n.Name))] = struct{}{}
@@ -756,6 +775,19 @@ func (s *schedule) updateInterval(repo configuredRepo, interval time.Duration) {
 		s.rescheduleTimer()
 	}
 	s.mu.Unlock()
+}
+
+// getCurrentInterval gets the current interval for the supplied repo and a bool
+// indicating whether it was found.
+func (s *schedule) getCurrentInterval(repo configuredRepo) (time.Duration, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	update, ok := s.index[repo.ID]
+	if !ok || update == nil {
+		return 0, false
+	}
+	return update.Interval, true
 }
 
 // remove removes a repo from the schedule.

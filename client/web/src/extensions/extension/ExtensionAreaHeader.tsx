@@ -1,15 +1,18 @@
+import classNames from 'classnames'
+import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import React, { useState, useCallback } from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
-import { isExtensionEnabled, splitExtensionID } from '../../../../shared/src/extensions/extension'
-import { ExtensionManifest } from '../../../../shared/src/schema/extensionSchema'
-import { isErrorLike } from '../../../../shared/src/util/errors'
+
+import { isExtensionEnabled, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
+import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
+
+import { PageHeader } from '../../components/PageHeader'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
+
 import { ExtensionAreaRouteContext } from './ExtensionArea'
-import { useTimeoutManager } from '../../../../shared/src/util/useTimeoutManager'
-import classNames from 'classnames'
-import { PageHeader } from '../../components/PageHeader'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { ExtensionStatusBadge } from './ExtensionStatusBadge'
 
 interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
@@ -96,7 +99,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                                 'alert-success': change === 'enabled',
                                             })}
                                         >
-                                            <span className="font-weight-semibold">{name}</span> is {change}
+                                            <span className="font-weight-medium">{name}</span> is {change}
                                         </div>
                                     )}
                                     {showCta && (

@@ -1,21 +1,24 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import * as H from 'history'
 import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import React, { useEffect, useMemo, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, throwError } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
-import { gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { asError, createAggregateError, isErrorLike } from '../../../../../shared/src/util/errors'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useEventObservable, useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
+import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
+
 import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
-import { ThemeProps } from '../../../../../shared/src/theme'
-import { ErrorAlert } from '../../../components/alerts'
-import { useEventObservable, useObservable } from '../../../../../shared/src/util/useObservable'
-import * as H from 'history'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }>, ThemeProps {
     user: Pick<GQL.IUser, 'id'>

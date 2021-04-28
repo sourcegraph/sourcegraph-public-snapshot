@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/batch-change-utils/overridable"
 
@@ -20,9 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -31,10 +33,12 @@ import (
 )
 
 func TestNullIDResilience(t *testing.T) {
+	ct.MockRSAKeygen(t)
+
 	db := dbtesting.GetDB(t)
 	sr := New(store.New(db))
 
-	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,10 +113,10 @@ func TestCreateBatchSpec(t *testing.T) {
 	}
 
 	// Create enough changeset specs to hit the licence check.
-	changesetSpecs := make([]*batches.ChangesetSpec, maxUnlicensedChangesets+1)
+	changesetSpecs := make([]*btypes.ChangesetSpec, maxUnlicensedChangesets+1)
 	for i := range changesetSpecs {
-		changesetSpecs[i] = &batches.ChangesetSpec{
-			Spec: &batches.ChangesetSpecDescription{
+		changesetSpecs[i] = &btypes.ChangesetSpec{
+			Spec: &btypes.ChangesetSpecDescription{
 				BaseRepository: graphqlbackend.MarshalRepositoryID(repo.ID),
 			},
 			RepoID: repo.ID,
@@ -124,7 +128,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +137,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	rawSpec := ct.TestRawBatchSpec
 
 	for name, tc := range map[string]struct {
-		changesetSpecs []*batches.ChangesetSpec
+		changesetSpecs []*btypes.ChangesetSpec
 		hasLicenseFor  map[licensing.Feature]struct{}
 		wantErr        bool
 	}{
@@ -289,7 +293,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -350,6 +354,10 @@ func TestApplyBatchChange(t *testing.T) {
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 
+	// Ensure our site configuration doesn't have rollout windows so we get a
+	// consistent initial state.
+	ct.MockConfig(t, &conf.Unified{})
+
 	userID := ct.CreateTestUser(t, db, true).ID
 
 	now := timeutil.Now()
@@ -365,16 +373,16 @@ func TestApplyBatchChange(t *testing.T) {
 
 	repoAPIID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
-	batchSpec := &batches.BatchSpec{
+	batchSpec := &btypes.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
-		Spec: batches.BatchSpecFields{
+		Spec: btypes.BatchSpecFields{
 			Name:        "my-batch-change",
 			Description: "My description",
-			ChangesetTemplate: batches.ChangesetTemplate{
+			ChangesetTemplate: btypes.ChangesetTemplate{
 				Title:  "Hello there",
 				Body:   "This is the body",
 				Branch: "my-branch",
-				Commit: batches.CommitTemplate{
+				Commit: btypes.CommitTemplate{
 					Message: "Add hello world",
 				},
 				Published: overridable.FromBoolOrString(false),
@@ -387,9 +395,9 @@ func TestApplyBatchChange(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changesetSpec := &batches.ChangesetSpec{
+	changesetSpec := &btypes.ChangesetSpec{
 		BatchSpecID: batchSpec.ID,
-		Spec: &batches.ChangesetSpecDescription{
+		Spec: &btypes.ChangesetSpecDescription{
 			BaseRepository: repoAPIID,
 		},
 		RepoID: repo.ID,
@@ -400,7 +408,7 @@ func TestApplyBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -435,7 +443,7 @@ func TestApplyBatchChange(t *testing.T) {
 		LastAppliedAt:  marshalDateTime(t, now),
 		Changesets: apitest.ChangesetConnection{
 			Nodes: []apitest.Changeset{
-				{Typename: "ExternalChangeset", State: string(batches.ChangesetStateProcessing)},
+				{Typename: "ExternalChangeset", State: string(btypes.ChangesetStateProcessing)},
 			},
 			TotalCount: 1,
 		},
@@ -511,9 +519,9 @@ func TestCreateBatchChange(t *testing.T) {
 
 	cstore := store.New(db)
 
-	batchSpec := &batches.BatchSpec{
+	batchSpec := &btypes.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
-		Spec: batches.BatchSpecFields{
+		Spec: btypes.BatchSpecFields{
 			Name:        "my-batch-change",
 			Description: "My description",
 		},
@@ -525,7 +533,7 @@ func TestCreateBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -577,7 +585,7 @@ func TestMoveBatchChange(t *testing.T) {
 
 	cstore := store.New(db)
 
-	batchSpec := &batches.BatchSpec{
+	batchSpec := &btypes.BatchSpec{
 		RawSpec:         ct.TestRawBatchSpec,
 		UserID:          userID,
 		NamespaceUserID: userID,
@@ -586,7 +594,7 @@ func TestMoveBatchChange(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	batchChange := &batches.BatchChange{
+	batchChange := &btypes.BatchChange{
 		BatchSpecID:      batchSpec.ID,
 		Name:             "old-name",
 		InitialApplierID: userID,
@@ -599,7 +607,7 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -664,14 +672,16 @@ mutation($batchChange: ID!, $newName: String, $newNamespace: ID){
 
 func TestListChangesetOptsFromArgs(t *testing.T) {
 	var wantFirst int32 = 10
-	wantPublicationStates := []batches.ChangesetPublicationState{
+	wantPublicationStates := []btypes.ChangesetPublicationState{
 		"PUBLISHED",
 		"INVALID",
 	}
-	wantStates := []batches.ChangesetState{"OPEN", "INVALID"}
-	wantExternalStates := []batches.ChangesetExternalState{"OPEN"}
-	wantReviewStates := []batches.ChangesetReviewState{"APPROVED", "INVALID"}
-	wantCheckStates := []batches.ChangesetCheckState{"PENDING", "INVALID"}
+	haveStates := []string{"OPEN", "INVALID"}
+	haveReviewStates := []string{"APPROVED", "INVALID"}
+	haveCheckStates := []string{"PENDING", "INVALID"}
+	wantExternalStates := []btypes.ChangesetExternalState{"OPEN"}
+	wantReviewStates := []btypes.ChangesetReviewState{"APPROVED", "INVALID"}
+	wantCheckStates := []btypes.ChangesetCheckState{"PENDING", "INVALID"}
 	truePtr := func() *bool { val := true; return &val }()
 	wantSearches := []search.TextSearchTerm{{Term: "foo"}, {Term: "bar", Not: true}}
 	var batchChangeID int64 = 1
@@ -699,26 +709,26 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting state is safe and transferred to opts.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				State: &wantStates[0],
+				State: &haveStates[0],
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
 				ExternalState:    &wantExternalStates[0],
 				PublicationState: &wantPublicationStates[0],
-				ReconcilerStates: []batches.ReconcilerState{batches.ReconcilerStateCompleted},
+				ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
 			},
 		},
 		// Setting invalid state fails.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				State: &wantStates[1],
+				State: &haveStates[1],
 			},
 			wantErr: "changeset state not valid",
 		},
 		// Setting review state is not safe and transferred to opts.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				ReviewState: &wantReviewStates[0],
+				ReviewState: &haveReviewStates[0],
 			},
 			wantSafe:   false,
 			wantParsed: store.ListChangesetsOpts{ExternalReviewState: &wantReviewStates[0]},
@@ -726,14 +736,14 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting invalid review state fails.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				ReviewState: &wantReviewStates[1],
+				ReviewState: &haveReviewStates[1],
 			},
 			wantErr: "changeset review state not valid",
 		},
 		// Setting check state is not safe and transferred to opts.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				CheckState: &wantCheckStates[0],
+				CheckState: &haveCheckStates[0],
 			},
 			wantSafe:   false,
 			wantParsed: store.ListChangesetsOpts{ExternalCheckState: &wantCheckStates[0]},
@@ -741,7 +751,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting invalid check state fails.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				CheckState: &wantCheckStates[1],
+				CheckState: &haveCheckStates[1],
 			},
 			wantErr: "changeset check state not valid",
 		},
@@ -827,6 +837,8 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		t.Skip()
 	}
 
+	ct.MockRSAKeygen(t)
+
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 
@@ -837,10 +849,18 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	cstore := store.New(db)
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	var validationErr error
+	service.Mocks.ValidateAuthenticator = func(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
+		return validationErr
+	}
+	t.Cleanup(func() {
+		service.Mocks.Reset()
+	})
 
 	t.Run("User credential", func(t *testing.T) {
 		input := map[string]interface{}{
@@ -855,6 +875,22 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		}
 		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
+		t.Run("validation fails", func(t *testing.T) {
+			// Throw correct error when credential failed validation
+			validationErr = errors.New("fake validation failed")
+			t.Cleanup(func() {
+				validationErr = nil
+			})
+			errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
+
+			if len(errs) != 1 {
+				t.Fatalf("expected single errors, but got none")
+			}
+			if have, want := errs[0].Extensions["code"], "ErrVerifyCredentialFailed"; have != want {
+				t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+			}
+		})
+
 		// First time it should work, because no credential exists
 		apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCredential)
 
@@ -863,12 +899,12 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		}
 
 		// Second time it should fail
-		errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
 
-		if len(errors) != 1 {
+		if len(errs) != 1 {
 			t.Fatalf("expected single errors, but got none")
 		}
-		if have, want := errors[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
+		if have, want := errs[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
 			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
 		}
 	})
@@ -884,6 +920,22 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 			CreateBatchChangesCredential apitest.BatchChangesCredential
 		}
 		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+		t.Run("validation fails", func(t *testing.T) {
+			// Throw correct error when credential failed validation
+			validationErr = errors.New("fake validation failed")
+			t.Cleanup(func() {
+				validationErr = nil
+			})
+			errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
+
+			if len(errs) != 1 {
+				t.Fatalf("expected single errors, but got none")
+			}
+			if have, want := errs[0].Extensions["code"], "ErrVerifyCredentialFailed"; have != want {
+				t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+			}
+		})
 
 		// First time it should work, because no site credential exists
 		apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCredential)
@@ -915,6 +967,8 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 		t.Skip()
 	}
 
+	ct.MockRSAKeygen(t)
+
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 
@@ -934,7 +988,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	siteCred := &store.SiteCredential{
+	siteCred := &btypes.SiteCredential{
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalServiceID:   "https://github.com/",
 		Credential:          authenticator,
@@ -944,7 +998,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

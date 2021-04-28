@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
 func TestGetUploadByID(t *testing.T) {
@@ -683,5 +685,101 @@ func TestSoftDeleteOldUploads(t *testing.T) {
 
 	if len(keys) != 1 || keys[0] != 50 {
 		t.Errorf("expected repository to be marked dirty")
+	}
+}
+
+func TestGetOldestCommitDate(t *testing.T) {
+	db, store := testStore(t)
+
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(time.Minute)
+	t3 := t1.Add(time.Minute * 4)
+	t4 := t1.Add(time.Minute * 6)
+
+	insertUploads(t, db,
+		Upload{ID: 1, State: "completed"},
+		Upload{ID: 2, State: "completed"},
+		Upload{ID: 3, State: "completed"},
+		Upload{ID: 4, State: "errored"},
+		Upload{ID: 5, State: "completed"},
+		Upload{ID: 6, State: "completed", RepositoryID: 51},
+		Upload{ID: 7, State: "completed", RepositoryID: 51},
+		Upload{ID: 8, State: "completed", RepositoryID: 51},
+	)
+
+	if _, err := db.Exec("UPDATE lsif_uploads SET committed_at = '-infinity' WHERE id = 3"); err != nil {
+		t.Fatalf("unexpected error updating commit date %s", err)
+	}
+
+	for uploadID, commitDate := range map[int]time.Time{
+		1: t3,
+		2: t4,
+		4: t1,
+		6: t2,
+	} {
+		if err := store.UpdateCommitedAt(context.Background(), uploadID, commitDate); err != nil {
+			t.Fatalf("unexpected error updating commit date %s", err)
+		}
+	}
+
+	if commitDate, ok, err := store.GetOldestCommitDate(context.Background(), 50); err != nil {
+		t.Fatalf("unexpected error getting oldest commit date: %s", err)
+	} else if !ok {
+		t.Fatalf("expected commit date for repository")
+	} else if !commitDate.Equal(t3) {
+		t.Fatalf("unexpected commit date. want=%s have=%s", t3, commitDate)
+	}
+
+	if commitDate, ok, err := store.GetOldestCommitDate(context.Background(), 51); err != nil {
+		t.Fatalf("unexpected error getting oldest commit date: %s", err)
+	} else if !ok {
+		t.Fatalf("expected commit date for repository")
+	} else if !commitDate.Equal(t2) {
+		t.Fatalf("unexpected commit date. want=%s have=%s", t2, commitDate)
+	}
+
+	if _, ok, err := store.GetOldestCommitDate(context.Background(), 52); err != nil {
+		t.Fatalf("unexpected error getting oldest commit date: %s", err)
+	} else if ok {
+		t.Fatalf("unexpected commit date for repository")
+	}
+}
+
+func TestUpdateCommitedAt(t *testing.T) {
+	db, store := testStore(t)
+
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(time.Minute)
+	t3 := t1.Add(time.Minute * 4)
+	t4 := t1.Add(time.Minute * 6)
+
+	insertUploads(t, db,
+		Upload{ID: 1, State: "completed"},
+		Upload{ID: 2, State: "completed"},
+		Upload{ID: 3, State: "completed"},
+		Upload{ID: 4, State: "completed"},
+		Upload{ID: 5, State: "completed"},
+		Upload{ID: 6, State: "completed"},
+		Upload{ID: 7, State: "completed"},
+		Upload{ID: 8, State: "completed"},
+	)
+
+	for uploadID, commitDate := range map[int]time.Time{
+		1: t3,
+		2: t4,
+		4: t1,
+		6: t2,
+	} {
+		if err := store.UpdateCommitedAt(context.Background(), uploadID, commitDate); err != nil {
+			t.Fatalf("unexpected error updating commit date %s", err)
+		}
+	}
+
+	commitDates, err := basestore.ScanTimes(db.Query("SELECT committed_at FROM lsif_uploads WHERE id IN (1, 2, 4, 6) ORDER BY id"))
+	if err != nil {
+		t.Fatalf("unexpected error querying commit dates: %s", err)
+	}
+	if diff := cmp.Diff([]time.Time{t3, t4, t1, t2}, commitDates); diff != "" {
+		t.Errorf("unexpected commit dates(-want +got):\n%s", diff)
 	}
 }

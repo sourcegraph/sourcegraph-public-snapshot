@@ -2,6 +2,7 @@ package batch
 
 import (
 	"context"
+	"database/sql"
 	"sync"
 	"testing"
 
@@ -44,6 +45,27 @@ func TestBatchInserter(t *testing.T) {
 
 	if diff := cmp.Diff(expectedValues, values); diff != "" {
 		t.Errorf("unexpected table contents (-want +got):\n%s", diff)
+	}
+}
+
+func TestBatchInserterWithReturn(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	setupTestTable(t)
+
+	tableSizeFactor := 2
+	numRows := maxNumParameters * tableSizeFactor
+	expectedValues := makeTestValues(tableSizeFactor, 0)
+
+	var expectedIDs []int
+	for i := 0; i < numRows; i++ {
+		expectedIDs = append(expectedIDs, i+1)
+	}
+
+	if diff := cmp.Diff(expectedIDs, testInsertWithReturn(t, expectedValues)); diff != "" {
+		t.Errorf("unexpected returned ids (-want +got):\n%s", diff)
 	}
 }
 
@@ -120,7 +142,7 @@ func makePayload(size int) string {
 func testInsert(t testing.TB, expectedValues [][]interface{}) {
 	ctx := context.Background()
 
-	inserter := NewBatchInserter(ctx, dbconn.Global, "batch_inserter_test", "col1", "col2", "col3", "col4", "col5")
+	inserter := NewInserter(ctx, dbconn.Global, "batch_inserter_test", "col1", "col2", "col3", "col4", "col5")
 	for _, values := range expectedValues {
 		if err := inserter.Insert(ctx, values...); err != nil {
 			t.Fatalf("unexpected error inserting values: %s", err)
@@ -130,4 +152,37 @@ func testInsert(t testing.TB, expectedValues [][]interface{}) {
 	if err := inserter.Flush(ctx); err != nil {
 		t.Fatalf("unexpected error flushing: %s", err)
 	}
+}
+
+func testInsertWithReturn(t testing.TB, expectedValues [][]interface{}) (insertedIDs []int) {
+	ctx := context.Background()
+
+	inserter := NewInserterWithReturn(
+		ctx,
+		dbconn.Global,
+		"batch_inserter_test",
+		[]string{"col1", "col2", "col3", "col4", "col5"},
+		[]string{"id"},
+		func(rows *sql.Rows) error {
+			var id int
+			if err := rows.Scan(&id); err != nil {
+				return err
+			}
+
+			insertedIDs = append(insertedIDs, id)
+			return nil
+		},
+	)
+
+	for _, values := range expectedValues {
+		if err := inserter.Insert(ctx, values...); err != nil {
+			t.Fatalf("unexpected error inserting values: %s", err)
+		}
+	}
+
+	if err := inserter.Flush(ctx); err != nil {
+		t.Fatalf("unexpected error flushing: %s", err)
+	}
+
+	return insertedIDs
 }

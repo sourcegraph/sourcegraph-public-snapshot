@@ -12,7 +12,7 @@
 | `-insecure-skip-verify` | Skip validation of TLS certificates against trusted chains | `false` |
 | `-json` | Whether or not to output results as JSON. | `false` |
 | `-less` | Pipe output to 'less -R' (only if stdout is terminal, and not json flag). | `true` |
-| `-stream` | Consume results as stream. Streaming search only supports a subset of flags and parameters: trace, insecure-skip-verify, display. | `false` |
+| `-stream` | Consume results as stream. Streaming search only supports a subset of flags and parameters: trace, insecure-skip-verify, display, json. | `false` |
 | `-trace` | Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing | `false` |
 
 
@@ -35,7 +35,7 @@ Usage of 'src search':
   -less
     	Pipe output to 'less -R' (only if stdout is terminal, and not json flag). (default true)
   -stream
-    	Consume results as stream. Streaming search only supports a subset of flags and parameters: trace, insecure-skip-verify, display.
+    	Consume results as stream. Streaming search only supports a subset of flags and parameters: trace, insecure-skip-verify, display, json.
   -trace
     	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
 

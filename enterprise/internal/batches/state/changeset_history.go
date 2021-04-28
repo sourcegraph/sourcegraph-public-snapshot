@@ -7,7 +7,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
@@ -46,39 +46,39 @@ func (h changesetHistory) StatesAtTime(t time.Time) (changesetStatesAtTime, bool
 // ChangesetEventKindGitHubReviewed event when a review has been
 // dismissed.
 // See: https://github.com/sourcegraph/sourcegraph/pull/9461
-var RequiredEventTypesForHistory = []batches.ChangesetEventKind{
-	batches.ChangesetEventKindGitLabUnmarkWorkInProgress,
-	batches.ChangesetEventKindGitHubReadyForReview,
-	batches.ChangesetEventKindGitLabMarkWorkInProgress,
-	batches.ChangesetEventKindGitHubConvertToDraft,
-	batches.ChangesetEventKindGitHubClosed,
-	batches.ChangesetEventKindBitbucketServerDeclined,
-	batches.ChangesetEventKindGitLabClosed,
-	batches.ChangesetEventKindGitHubMerged,
-	batches.ChangesetEventKindBitbucketServerMerged,
-	batches.ChangesetEventKindGitLabMerged,
-	batches.ChangesetEventKindGitHubReopened,
-	batches.ChangesetEventKindBitbucketServerReopened,
-	batches.ChangesetEventKindGitLabReopened,
-	batches.ChangesetEventKindGitHubReviewed,
-	batches.ChangesetEventKindBitbucketServerApproved,
-	batches.ChangesetEventKindBitbucketServerReviewed,
-	batches.ChangesetEventKindGitLabApproved,
-	batches.ChangesetEventKindBitbucketServerUnapproved,
-	batches.ChangesetEventKindBitbucketServerDismissed,
-	batches.ChangesetEventKindGitLabUnapproved,
+var RequiredEventTypesForHistory = []btypes.ChangesetEventKind{
+	btypes.ChangesetEventKindGitLabUnmarkWorkInProgress,
+	btypes.ChangesetEventKindGitHubReadyForReview,
+	btypes.ChangesetEventKindGitLabMarkWorkInProgress,
+	btypes.ChangesetEventKindGitHubConvertToDraft,
+	btypes.ChangesetEventKindGitHubClosed,
+	btypes.ChangesetEventKindBitbucketServerDeclined,
+	btypes.ChangesetEventKindGitLabClosed,
+	btypes.ChangesetEventKindGitHubMerged,
+	btypes.ChangesetEventKindBitbucketServerMerged,
+	btypes.ChangesetEventKindGitLabMerged,
+	btypes.ChangesetEventKindGitHubReopened,
+	btypes.ChangesetEventKindBitbucketServerReopened,
+	btypes.ChangesetEventKindGitLabReopened,
+	btypes.ChangesetEventKindGitHubReviewed,
+	btypes.ChangesetEventKindBitbucketServerApproved,
+	btypes.ChangesetEventKindBitbucketServerReviewed,
+	btypes.ChangesetEventKindGitLabApproved,
+	btypes.ChangesetEventKindBitbucketServerUnapproved,
+	btypes.ChangesetEventKindBitbucketServerDismissed,
+	btypes.ChangesetEventKindGitLabUnapproved,
 }
 
 type changesetStatesAtTime struct {
 	t             time.Time
-	externalState batches.ChangesetExternalState
-	reviewState   batches.ChangesetReviewState
+	externalState btypes.ChangesetExternalState
+	reviewState   btypes.ChangesetReviewState
 }
 
 // computeHistory calculates the changesetHistory for the given Changeset and
 // its ChangesetEvents.
 // The ChangesetEvents MUST be sorted by their Timestamp.
-func computeHistory(ch *batches.Changeset, ce ChangesetEvents) (changesetHistory, error) {
+func computeHistory(ch *btypes.Changeset, ce ChangesetEvents) (changesetHistory, error) {
 	if !sort.IsSorted(ce) {
 		return nil, errors.New("changeset events not sorted")
 	}
@@ -87,14 +87,14 @@ func computeHistory(ch *batches.Changeset, ce ChangesetEvents) (changesetHistory
 		states = []changesetStatesAtTime{}
 
 		currentExtState    = initialExternalState(ch, ce)
-		currentReviewState = batches.ChangesetReviewStatePending
+		currentReviewState = btypes.ChangesetReviewStatePending
 
-		lastReviewByAuthor = map[string]batches.ChangesetReviewState{}
+		lastReviewByAuthor = map[string]btypes.ChangesetReviewState{}
 		// The draft state is tracked alongside the "external state" on GitHub and GitLab,
 		// that means we need to take changes to this state into account separately. On reopen,
 		// we cannot simply say it's open, because it could be it was converted to a draft while
 		// it was closed. Hence, we need to track the state using this variable.
-		isDraft = currentExtState == batches.ChangesetExternalStateDraft
+		isDraft = currentExtState == btypes.ChangesetExternalStateDraft
 	)
 
 	pushStates := func(t time.Time) {
@@ -119,63 +119,63 @@ func computeHistory(ch *batches.Changeset, ce ChangesetEvents) (changesetHistory
 
 		// NOTE: If you add any kinds here, make sure they also appear in `RequiredEventTypesForHistory`.
 		switch e.Kind {
-		case batches.ChangesetEventKindGitHubClosed,
-			batches.ChangesetEventKindBitbucketServerDeclined,
-			batches.ChangesetEventKindGitLabClosed:
+		case btypes.ChangesetEventKindGitHubClosed,
+			btypes.ChangesetEventKindBitbucketServerDeclined,
+			btypes.ChangesetEventKindGitLabClosed:
 			// Merged is a final state. We can ignore everything after.
-			if currentExtState != batches.ChangesetExternalStateMerged {
-				currentExtState = batches.ChangesetExternalStateClosed
+			if currentExtState != btypes.ChangesetExternalStateMerged {
+				currentExtState = btypes.ChangesetExternalStateClosed
 				pushStates(et)
 			}
 
-		case batches.ChangesetEventKindGitHubMerged,
-			batches.ChangesetEventKindBitbucketServerMerged,
-			batches.ChangesetEventKindGitLabMerged:
-			currentExtState = batches.ChangesetExternalStateMerged
+		case btypes.ChangesetEventKindGitHubMerged,
+			btypes.ChangesetEventKindBitbucketServerMerged,
+			btypes.ChangesetEventKindGitLabMerged:
+			currentExtState = btypes.ChangesetExternalStateMerged
 			pushStates(et)
 
-		case batches.ChangesetEventKindGitLabMarkWorkInProgress:
+		case btypes.ChangesetEventKindGitLabMarkWorkInProgress:
 			isDraft = true
 			// This event only matters when the changeset is open, otherwise a change in the title won't change the overall external state.
-			if currentExtState == batches.ChangesetExternalStateOpen {
-				currentExtState = batches.ChangesetExternalStateDraft
+			if currentExtState == btypes.ChangesetExternalStateOpen {
+				currentExtState = btypes.ChangesetExternalStateDraft
 				pushStates(et)
 			}
 
-		case batches.ChangesetEventKindGitHubConvertToDraft:
+		case btypes.ChangesetEventKindGitHubConvertToDraft:
 			isDraft = true
 			// Merged is a final state. We can ignore everything after.
-			if currentExtState != batches.ChangesetExternalStateMerged {
-				currentExtState = batches.ChangesetExternalStateDraft
+			if currentExtState != btypes.ChangesetExternalStateMerged {
+				currentExtState = btypes.ChangesetExternalStateDraft
 				pushStates(et)
 			}
 
-		case batches.ChangesetEventKindGitLabUnmarkWorkInProgress,
-			batches.ChangesetEventKindGitHubReadyForReview:
+		case btypes.ChangesetEventKindGitLabUnmarkWorkInProgress,
+			btypes.ChangesetEventKindGitHubReadyForReview:
 			isDraft = false
 			// This event only matters when the changeset is open, otherwise a change in the title won't change the overall external state.
-			if currentExtState == batches.ChangesetExternalStateDraft {
-				currentExtState = batches.ChangesetExternalStateOpen
+			if currentExtState == btypes.ChangesetExternalStateDraft {
+				currentExtState = btypes.ChangesetExternalStateOpen
 				pushStates(et)
 			}
 
-		case batches.ChangesetEventKindGitHubReopened,
-			batches.ChangesetEventKindBitbucketServerReopened,
-			batches.ChangesetEventKindGitLabReopened:
+		case btypes.ChangesetEventKindGitHubReopened,
+			btypes.ChangesetEventKindBitbucketServerReopened,
+			btypes.ChangesetEventKindGitLabReopened:
 			// Merged is a final state. We can ignore everything after.
-			if currentExtState != batches.ChangesetExternalStateMerged {
+			if currentExtState != btypes.ChangesetExternalStateMerged {
 				if isDraft {
-					currentExtState = batches.ChangesetExternalStateDraft
+					currentExtState = btypes.ChangesetExternalStateDraft
 				} else {
-					currentExtState = batches.ChangesetExternalStateOpen
+					currentExtState = btypes.ChangesetExternalStateOpen
 				}
 				pushStates(et)
 			}
 
-		case batches.ChangesetEventKindGitHubReviewed,
-			batches.ChangesetEventKindBitbucketServerApproved,
-			batches.ChangesetEventKindBitbucketServerReviewed,
-			batches.ChangesetEventKindGitLabApproved:
+		case btypes.ChangesetEventKindGitHubReviewed,
+			btypes.ChangesetEventKindBitbucketServerApproved,
+			btypes.ChangesetEventKindBitbucketServerReviewed,
+			btypes.ChangesetEventKindGitLabApproved:
 
 			s, err := e.ReviewState()
 			if err != nil {
@@ -183,9 +183,9 @@ func computeHistory(ch *batches.Changeset, ce ChangesetEvents) (changesetHistory
 			}
 
 			// We only care about "Approved", "ChangesRequested" or "Dismissed" reviews
-			if s != batches.ChangesetReviewStateApproved &&
-				s != batches.ChangesetReviewStateChangesRequested &&
-				s != batches.ChangesetReviewStateDismissed {
+			if s != btypes.ChangesetReviewStateApproved &&
+				s != btypes.ChangesetReviewStateChangesRequested &&
+				s != btypes.ChangesetReviewStateDismissed {
 				continue
 			}
 
@@ -199,7 +199,7 @@ func computeHistory(ch *batches.Changeset, ce ChangesetEvents) (changesetHistory
 			// dismissed review, then recompute overall review state
 			oldReviewState := currentReviewState
 
-			if s == batches.ChangesetReviewStateDismissed {
+			if s == btypes.ChangesetReviewStateDismissed {
 				// In case of a dismissed review we dismiss _all_ of the
 				// previous reviews by the author, since that is what GitHub
 				// does in its UI.
@@ -215,30 +215,30 @@ func computeHistory(ch *batches.Changeset, ce ChangesetEvents) (changesetHistory
 				pushStates(et)
 			}
 
-		case batches.ChangesetEventKindBitbucketServerUnapproved,
-			batches.ChangesetEventKindBitbucketServerDismissed,
-			batches.ChangesetEventKindGitLabUnapproved:
+		case btypes.ChangesetEventKindBitbucketServerUnapproved,
+			btypes.ChangesetEventKindBitbucketServerDismissed,
+			btypes.ChangesetEventKindGitLabUnapproved:
 			author := e.ReviewAuthor()
 			// If the user has been deleted, skip their reviews, as they don't count towards the final state anymore.
 			if author == "" {
 				continue
 			}
 
-			if e.Type() == batches.ChangesetEventKindBitbucketServerUnapproved {
+			if e.Type() == btypes.ChangesetEventKindBitbucketServerUnapproved {
 				// A BitbucketServer Unapproved can only follow a previous Approved by
 				// the same author.
 				lastReview, ok := lastReviewByAuthor[author]
-				if !ok || lastReview != batches.ChangesetReviewStateApproved {
+				if !ok || lastReview != btypes.ChangesetReviewStateApproved {
 					log15.Warn("Bitbucket Server Unapproval not following an Approval", "event", e)
 					continue
 				}
 			}
 
-			if e.Type() == batches.ChangesetEventKindBitbucketServerDismissed {
+			if e.Type() == btypes.ChangesetEventKindBitbucketServerDismissed {
 				// A BitbucketServer Dismissed event can only follow a previous "Changes Requested" review by
 				// the same author.
 				lastReview, ok := lastReviewByAuthor[author]
-				if !ok || lastReview != batches.ChangesetReviewStateChangesRequested {
+				if !ok || lastReview != btypes.ChangesetReviewStateChangesRequested {
 					log15.Warn("Bitbucket Server Dismissal not following a Review", "event", e)
 					continue
 				}
@@ -261,7 +261,7 @@ func computeHistory(ch *batches.Changeset, ce ChangesetEvents) (changesetHistory
 	// ExternalDeletedAt manually in the Syncer.
 	deletedAt := ch.ExternalDeletedAt
 	if !deletedAt.IsZero() {
-		currentExtState = batches.ChangesetExternalStateClosed
+		currentExtState = btypes.ChangesetExternalStateClosed
 		pushStates(deletedAt)
 	}
 
@@ -270,8 +270,8 @@ func computeHistory(ch *batches.Changeset, ce ChangesetEvents) (changesetHistory
 
 // reduceReviewStates reduces the given a map of review per author down to a
 // single overall ChangesetReviewState.
-func reduceReviewStates(statesByAuthor map[string]batches.ChangesetReviewState) batches.ChangesetReviewState {
-	states := make(map[batches.ChangesetReviewState]bool)
+func reduceReviewStates(statesByAuthor map[string]btypes.ChangesetReviewState) btypes.ChangesetReviewState {
+	states := make(map[btypes.ChangesetReviewState]bool)
 	for _, s := range statesByAuthor {
 		states[s] = true
 	}
@@ -280,7 +280,7 @@ func reduceReviewStates(statesByAuthor map[string]batches.ChangesetReviewState) 
 
 // initialExternalState infers from the changeset state and the list of events in which
 // ChangesetExternalState the changeset must have been when it has been created.
-func initialExternalState(ch *batches.Changeset, ce ChangesetEvents) batches.ChangesetExternalState {
+func initialExternalState(ch *btypes.Changeset, ce ChangesetEvents) btypes.ChangesetExternalState {
 	open := true
 	switch m := ch.Metadata.(type) {
 	case *github.PullRequest:
@@ -293,7 +293,7 @@ func initialExternalState(ch *batches.Changeset, ce ChangesetEvents) batches.Cha
 			open = false
 		}
 	default:
-		return batches.ChangesetExternalStateOpen
+		return btypes.ChangesetExternalStateOpen
 	}
 	// Walk the events backwards, since we need to look from the current time to the past.
 	for i := len(ce) - 1; i >= 0; i-- {
@@ -306,7 +306,7 @@ func initialExternalState(ch *batches.Changeset, ce ChangesetEvents) batches.Cha
 		}
 	}
 	if open {
-		return batches.ChangesetExternalStateOpen
+		return btypes.ChangesetExternalStateOpen
 	}
-	return batches.ChangesetExternalStateDraft
+	return btypes.ChangesetExternalStateDraft
 }

@@ -1,13 +1,15 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { PlatformContextProps } from '../../../shared/src/platform/context'
-import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
+
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
+import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { SettingsArea } from '../settings/SettingsArea'
-import { ThemeProps } from '../../../shared/src/theme'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
-import { AuthenticatedUser } from '../auth'
 
 interface Props
     extends RouteComponentProps<{}>,

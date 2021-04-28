@@ -1,9 +1,10 @@
 import { describe, test } from 'mocha'
-import { getConfig } from '../../../shared/src/testing/config'
-import { catchError } from 'rxjs/operators'
-import { checkOk } from '../../../shared/src/backend/fetch'
 import { merge } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
+import { catchError } from 'rxjs/operators'
+
+import { checkOk } from '@sourcegraph/shared/src/backend/fetch'
+import { getConfig } from '@sourcegraph/shared/src/testing/config'
 
 describe('Native integrations regression test suite', () => {
     const { sourcegraphBaseUrl } = getConfig('sourcegraphBaseUrl')

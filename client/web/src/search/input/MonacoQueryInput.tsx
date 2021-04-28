@@ -1,22 +1,27 @@
-import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import * as H from 'history'
-import * as Monaco from 'monaco-editor'
 import { isPlainObject } from 'lodash'
-import { MonacoEditor } from '../../components/MonacoEditor'
-import { QueryState, submitSearch } from '../helpers'
-import { getProviders } from '../../../../shared/src/search/query/providers'
+import * as Monaco from 'monaco-editor'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Subscription, Observable, Unsubscribable, ReplaySubject } from 'rxjs'
-import { fetchSuggestions } from '../backend'
 import { Omit } from 'utility-types'
-import { ThemeProps } from '../../../../shared/src/theme'
+
+import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { getProviders } from '@sourcegraph/shared/src/search/query/providers'
+import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { SearchSuggestion } from '@sourcegraph/shared/src/search/suggestions'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { hasProperty } from '@sourcegraph/shared/src/util/types'
+
 import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '..'
-import { Toggles, TogglesProps } from './toggles/Toggles'
-import { hasProperty } from '../../../../shared/src/util/types'
-import { KeyboardShortcut } from '../../../../shared/src/keyboardShortcuts'
+import { MonacoEditor } from '../../components/MonacoEditor'
+import { SearchPatternType } from '../../graphql-operations'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
-import { SearchPatternType } from '../../graphql-operations'
+import { fetchSuggestions } from '../backend'
+import { QueryState, submitSearch } from '../helpers'
+
 import { SearchContextDropdown } from './SearchContextDropdown'
+import { Toggles, TogglesProps } from './toggles/Toggles'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery'>,
@@ -35,6 +40,7 @@ export interface MonacoQueryInputProps
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
+    submitSearchOnSearchContextChange?: boolean
 
     // Whether globbing is enabled for filters.
     globbing: boolean
@@ -63,6 +69,7 @@ const toUnsubscribable = (disposable: Monaco.IDisposable): Unsubscribable => ({
 export function addSourcegraphSearchCodeIntelligence(
     monaco: typeof Monaco,
     searchQueries: Observable<string>,
+    fetchSuggestions: (query: string) => Observable<SearchSuggestion[]>,
     options: {
         patternType: SearchPatternType
         globbing: boolean
@@ -178,6 +185,10 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         return () => subscription.unsubscribe()
     }, [editor, container])
 
+    const fetchSuggestionsWithContext = useCallback(
+        (query: string) => fetchSuggestions(appendContextFilter(query, props.selectedSearchContextSpec)),
+        [props.selectedSearchContextSpec]
+    )
     // Register themes and code intelligence providers. The providers are passed
     // a ReplaySubject of search queries to avoid registering new providers on
     // every query change. The ReplaySubject is updated with useLayoutEffect
@@ -195,14 +206,27 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         if (!monacoInstance) {
             return
         }
-        const subscription = addSourcegraphSearchCodeIntelligence(monacoInstance, searchQueries, {
-            patternType,
-            globbing,
-            enableSmartQuery,
-            interpretComments,
-        })
+        const subscription = addSourcegraphSearchCodeIntelligence(
+            monacoInstance,
+            searchQueries,
+            fetchSuggestionsWithContext,
+            {
+                patternType,
+                globbing,
+                enableSmartQuery,
+                interpretComments,
+            }
+        )
         return () => subscription.unsubscribe()
-    }, [monacoInstance, searchQueries, patternType, globbing, enableSmartQuery, interpretComments])
+    }, [
+        monacoInstance,
+        searchQueries,
+        fetchSuggestionsWithContext,
+        patternType,
+        globbing,
+        enableSmartQuery,
+        interpretComments,
+    ])
 
     // Register suggestions handle
     useEffect(() => {

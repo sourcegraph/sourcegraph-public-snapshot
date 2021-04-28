@@ -1,4 +1,5 @@
-import { PlatformContext } from '../../../../shared/src/platform/context'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+
 import { SearchCommand } from './search'
 
 export function initializeOmniboxInterface(requestGraphQL: PlatformContext['requestGraphQL']): void {

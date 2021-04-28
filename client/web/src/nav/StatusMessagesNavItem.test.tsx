@@ -1,9 +1,11 @@
+import { mount } from 'enzyme'
+import { createMemoryHistory } from 'history'
 import React from 'react'
 import { of, Observable } from 'rxjs'
-import { StatusMessagesNavItem } from './StatusMessagesNavItem'
-import { createMemoryHistory } from 'history'
-import { mount } from 'enzyme'
+
 import { StatusMessagesResult, StatusMessageFields } from '../graphql-operations'
+
+import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 
 describe('StatusMessagesNavItem', () => {
     test('no messages', () => {

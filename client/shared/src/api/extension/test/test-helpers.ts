@@ -1,4 +1,5 @@
 import { Remote } from 'comlink'
+
 import { FlatExtensionHostAPI, MainThreadAPI } from '../../contract'
 import { pretendRemote } from '../../util'
 import { createExtensionAPI } from '../extensionApi'

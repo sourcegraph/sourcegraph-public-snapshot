@@ -5,25 +5,24 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type FileMatch struct {
-	Path        string
-	LineMatches []*LineMatch
-	LimitHit    bool
-
-	Symbols  []*SymbolMatch  `json:"-"`
-	Repo     *types.RepoName `json:"-"`
-	CommitID api.CommitID    `json:"-"`
-
+// File represents all the information we need to identify a file in a repository
+type File struct {
 	// InputRev is the Git revspec that the user originally requested to search. It is used to
 	// preserve the original revision specifier from the user instead of navigating them to the
 	// absolute commit ID when they select a result.
-	InputRev *string `json:"-"`
+	InputRev *string        `json:"-"`
+	Repo     types.RepoName `json:"-"`
+	CommitID api.CommitID   `json:"-"`
+	Path     string
 }
 
-func (fm *FileMatch) URL() string {
+// URL generates a git URL for the file. This seems to currently only be used
+// as a unique key for the File, and may be removed in the future.
+func (fm *File) URL() string {
 	var b strings.Builder
 	var ref string
 	if fm.InputRev != nil {
@@ -41,6 +40,21 @@ func (fm *FileMatch) URL() string {
 	return b.String()
 }
 
+// FileMatch represents either:
+// - A collection of symbol results (len(Symbols) > 0)
+// - A collection of text content results (len(LineMatches) > 0)
+// - A result repsenting the whole file (len(Symbols) == 0 && len(LineMatches) == 0)
+type FileMatch struct {
+	File
+
+	LineMatches []*LineMatch
+	Symbols     []*SymbolMatch `json:"-"`
+
+	LimitHit bool
+}
+
+func (fm *FileMatch) searchResultMarker() {}
+
 func (fm *FileMatch) ResultCount() int {
 	rc := len(fm.Symbols)
 	for _, m := range fm.LineMatches {
@@ -50,6 +64,43 @@ func (fm *FileMatch) ResultCount() int {
 		return 1 // 1 to count "empty" results like type:path results
 	}
 	return rc
+}
+
+func (fm *FileMatch) Select(t filter.SelectPath) Match {
+	switch t.Type {
+	case filter.Repository:
+		return &RepoMatch{
+			Name: fm.Repo.Name,
+			ID:   fm.Repo.ID,
+		}
+	case filter.File:
+		fm.LineMatches = nil
+		fm.Symbols = nil
+		return fm
+	case filter.Symbol:
+		if len(fm.Symbols) > 0 {
+			fm.LineMatches = nil // Only return symbol match if symbols exist
+			if len(t.Fields) > 0 {
+				filteredSymbols := SelectSymbolKind(fm.Symbols, t.Fields[0])
+				if len(filteredSymbols) == 0 {
+					return nil // Remove file match if there are no symbol results after filtering
+				}
+				fm.Symbols = filteredSymbols
+			}
+			return fm
+		}
+		return nil
+	case filter.Content:
+		// Only return file match if line matches exist
+		if len(fm.LineMatches) > 0 {
+			fm.Symbols = nil
+			return fm
+		}
+		return nil
+	case filter.Commit:
+		return nil
+	}
+	return nil
 }
 
 // AppendMatches appends the line matches from src as well as updating match
@@ -92,5 +143,4 @@ type LineMatch struct {
 	Preview          string
 	OffsetAndLengths [][2]int32
 	LineNumber       int32
-	LimitHit         bool
 }

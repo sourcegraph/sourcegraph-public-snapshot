@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/cloudkms"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/mounted"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -41,7 +42,9 @@ func Init(ctx context.Context) error {
 		return err
 	}
 	if ring != nil {
+		mu.Lock()
 		defaultRing = *ring
+		mu.Unlock()
 	}
 
 	conf.ContributeValidator(func(cfg conf.Unified) conf.Problems {
@@ -72,17 +75,30 @@ func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, erro
 	if keyConfig == nil {
 		return nil, nil
 	}
-	extsvc, err := NewKey(ctx, keyConfig.ExternalServiceKey)
-	if err != nil {
-		return nil, err
+
+	var r Ring
+	var err error
+
+	if keyConfig.ExternalServiceKey != nil {
+		r.ExternalServiceKey, err = NewKey(ctx, keyConfig.ExternalServiceKey)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return &Ring{
-		ExternalServiceKey: extsvc,
-	}, nil
+
+	if keyConfig.UserExternalAccountKey != nil {
+		r.UserExternalAccountKey, err = NewKey(ctx, keyConfig.UserExternalAccountKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &r, nil
 }
 
 type Ring struct {
-	ExternalServiceKey encryption.Key
+	ExternalServiceKey     encryption.Key
+	UserExternalAccountKey encryption.Key
 }
 
 func NewKey(ctx context.Context, k *schema.EncryptionKey) (encryption.Key, error) {
@@ -91,7 +107,9 @@ func NewKey(ctx context.Context, k *schema.EncryptionKey) (encryption.Key, error
 	}
 	switch {
 	case k.Cloudkms != nil:
-		return cloudkms.NewKey(ctx, k.Cloudkms.Keyname)
+		return cloudkms.NewKey(ctx, *k.Cloudkms)
+	case k.Mounted != nil:
+		return mounted.NewKey(ctx, *k.Mounted)
 	case k.Noop != nil:
 		return &encryption.NoopKey{}, nil
 	default:

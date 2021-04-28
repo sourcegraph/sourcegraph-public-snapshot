@@ -1,8 +1,9 @@
-import React from 'react'
 import classNames from 'classnames'
 import { kebabCase, omit } from 'lodash'
+import React from 'react'
 import { NavLink, NavLinkProps } from 'react-router-dom'
-import { LinkProps, Link } from '../../../shared/src/components/Link'
+
+import { LinkProps, Link } from '@sourcegraph/shared/src/components/Link'
 
 interface Props extends LinkProps, Pick<NavLinkProps, 'activeClassName'> {
     text: string

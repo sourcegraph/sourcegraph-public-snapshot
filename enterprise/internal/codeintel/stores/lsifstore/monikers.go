@@ -53,7 +53,21 @@ func (s *Store) MonikersByPosition(ctx context.Context, bundleID int, path strin
 
 const monikersDocumentQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/monikers.go:MonikersByPosition
-SELECT dump_id, path, data FROM lsif_data_documents WHERE dump_id = %s AND path = %s LIMIT 1
+SELECT
+	dump_id,
+	path,
+	data,
+	ranges,
+	NULL AS hovers,
+	monikers,
+	NULL AS packages,
+	NULL AS diagnostics
+FROM
+	lsif_data_documents
+WHERE
+	dump_id = %s AND
+	path = %s
+LIMIT 1
 `
 
 // BulkMonikerResults returns the locations within one of the given bundles that define or reference

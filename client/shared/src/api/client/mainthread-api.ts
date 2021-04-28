@@ -1,22 +1,24 @@
 import { Remote, proxy } from 'comlink'
-import { updateSettings } from './services/settings'
 import { Subscription, from, Observable, of, combineLatest, Subject } from 'rxjs'
+import { fromFetch } from 'rxjs/fetch'
+import { catchError, distinctUntilChanged, map, publishReplay, refCount, switchMap } from 'rxjs/operators'
+import * as sourcegraph from 'sourcegraph'
+
+import { checkOk } from '../../backend/fetch'
+import { registerBuiltinClientCommands } from '../../commands/commands'
+import { ConfiguredExtension, isExtensionEnabled } from '../../extensions/extension'
+import { ExtensionManifest } from '../../extensions/extensionManifest'
+import { areExtensionsSame } from '../../extensions/extensions'
+import { viewerConfiguredExtensions } from '../../extensions/helpers'
 import { PlatformContext } from '../../platform/context'
 import { isSettingsValid } from '../../settings/settings'
-import { catchError, distinctUntilChanged, map, publishReplay, refCount, switchMap } from 'rxjs/operators'
-import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
-import { ProxySubscription } from './api/common'
-import * as sourcegraph from 'sourcegraph'
-import { proxySubscribable } from '../extension/api/common'
-import { ConfiguredExtension, isExtensionEnabled } from '../../extensions/extension'
-import { viewerConfiguredExtensions } from '../../extensions/helpers'
 import { asError, isErrorLike } from '../../util/errors'
-import { fromFetch } from 'rxjs/fetch'
-import { ExtensionManifest } from '../../extensions/extensionManifest'
-import { checkOk } from '../../backend/fetch'
-import { areExtensionsSame } from '../../extensions/extensions'
-import { registerBuiltinClientCommands } from '../../commands/commands'
+import { FlatExtensionHostAPI, MainThreadAPI } from '../contract'
+import { proxySubscribable } from '../extension/api/common'
 import { NotificationType, PlainNotification } from '../extension/extensionHostApi'
+
+import { ProxySubscription } from './api/common'
+import { updateSettings } from './services/settings'
 
 /** A registered command in the command registry. */
 export interface CommandEntry {
@@ -69,6 +71,7 @@ export const initMainThreadAPI = (
         | 'sideloadedExtensionURL'
         | 'getScriptURLForExtension'
         | 'getStaticExtensions'
+        | 'telemetryService'
     >
 ): { api: MainThreadAPI; exposedToClient: ExposedToClient; subscription: Subscription } => {
     const subscription = new Subscription()
@@ -106,7 +109,7 @@ export const initMainThreadAPI = (
         return Promise.resolve(commandEntry.run(...(args || [])))
     }
 
-    subscription.add(registerBuiltinClientCommands(platformContext, registerCommand))
+    subscription.add(registerBuiltinClientCommands(platformContext, extensionHost, registerCommand))
 
     const commandErrors = new Subject<PlainNotification>()
     const exposedToClient: ExposedToClient = {
@@ -167,6 +170,7 @@ export const initMainThreadAPI = (
 
             return proxySubscribable(getEnabledExtensions(platformContext))
         },
+        logEvent: (eventName, eventProperties) => platformContext.telemetryService?.log(eventName, eventProperties),
     }
 
     return { api, exposedToClient, subscription }

@@ -1,15 +1,17 @@
-import { RegistryExtensionFieldsForList } from '../graphql-operations'
-import { ExtensionCategory, EXTENSION_CATEGORIES } from '../../../shared/src/schema/extensionSchema'
 import {
     ConfiguredRegistryExtension,
     toConfiguredRegistryExtension,
     isExtensionEnabled,
-} from '../../../shared/src/extensions/extension'
+} from '@sourcegraph/shared/src/extensions/extension'
+import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
+import { isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { RegistryExtensionFieldsForList } from '../graphql-operations'
+
 import { validCategories } from './extension/extension'
-import { isErrorLike, ErrorLike } from '../../../shared/src/util/errors'
 import { ConfiguredExtensionCache, ExtensionsEnablement } from './ExtensionRegistry'
-import { Settings } from '../../../shared/src/settings/settings'
-import { createRecord } from '../../../shared/src/util/createRecord'
 
 export interface ConfiguredRegistryExtensions {
     [id: string]: Pick<ConfiguredRegistryExtension<RegistryExtensionFieldsForList>, 'manifest' | 'id'>

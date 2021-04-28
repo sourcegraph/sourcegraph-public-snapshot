@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -384,9 +385,10 @@ func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
 	store := ExternalServices(db)
-	store.PreCreateExternalService = func(ctx context.Context) error {
+	BeforeCreateExternalService = func(ctx context.Context, db dbutil.DB) error {
 		return errcode.NewPresentationError("test plan limit exceeded")
 	}
+	t.Cleanup(func() { BeforeCreateExternalService = nil })
 	if err := store.Create(ctx, confGet, es); err == nil {
 		t.Fatal("expected an error, got none")
 	}
@@ -1417,6 +1419,50 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 }
 
+func TestExternalServiceStore_GetExternalServiceSyncJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := ExternalServices(db).Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = db.ExecContext(ctx, "INSERT INTO external_service_sync_jobs (external_service_id) VALUES ($1)", es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	have, err := ExternalServices(db).GetSyncJobs(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(have) != 1 {
+		t.Fatalf("Expected 1 job, got %d", len(have))
+	}
+
+	want := &types.ExternalServiceSyncJob{
+		ID:                1,
+		State:             "queued",
+		ExternalServiceID: es.ID,
+	}
+	if diff := cmp.Diff(want, have[0], cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID")); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func TestExternalServicesStore_OneCloudDefaultPerKind(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1476,6 +1522,6 @@ func (k testKey) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Se
 	return &s, err
 }
 
-func (k testKey) ID(ctx context.Context) (string, error) {
-	return "testkey", nil
+func (k testKey) Version(ctx context.Context) (encryption.KeyVersion, error) {
+	return encryption.KeyVersion{Type: "testkey"}, nil
 }

@@ -1,16 +1,19 @@
 import * as H from 'history'
 import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { ThemeProps } from '../../../../../shared/src/theme'
+
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
 import { ErrorAlert } from '../../../components/alerts'
+import { CodeIntelAutoIndexSaveToolbar, AutoIndexProps } from '../../../components/CodeIntelAutoIndexSaveToolbar'
 import { PageTitle } from '../../../components/PageTitle'
+import { SaveToolbarPropsGenerator, SaveToolbarProps } from '../../../components/SaveToolbar'
 import { SettingsAreaRepositoryFields } from '../../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
+
 import { getConfiguration as defaultGetConfiguration, updateConfiguration, enqueueIndexJob } from './backend'
 import allConfigSchema from './schema.json'
-import { CodeIntelAutoIndexSaveToolbar, AutoIndexProps } from '../../../components/CodeIntelAutoIndexSaveToolbar'
-import { SaveToolbarPropsGenerator, SaveToolbarProps } from '../../../components/SaveToolbar'
 
 export interface CodeIntelIndexConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     repo: Pick<SettingsAreaRepositoryFields, 'id'>

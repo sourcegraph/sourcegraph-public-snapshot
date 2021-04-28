@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
-import { Link } from '../../../../shared/src/components/Link'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
 
 export const SearchPageFooter: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <footer className={classNames(className, 'd-flex flex-column flex-lg-row align-items-center')}>

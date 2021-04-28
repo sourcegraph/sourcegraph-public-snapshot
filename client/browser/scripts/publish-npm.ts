@@ -1,9 +1,10 @@
-import { writeFile } from 'mz/fs'
-import latestVersion from 'latest-version'
-import signale from 'signale'
-import * as semver from 'semver'
-import execa from 'execa'
 import * as path from 'path'
+
+import execa from 'execa'
+import latestVersion from 'latest-version'
+import { writeFile } from 'mz/fs'
+import * as semver from 'semver'
+import signale from 'signale'
 
 // Publish the native integration to npm
 

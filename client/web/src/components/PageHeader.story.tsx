@@ -1,12 +1,14 @@
 import { storiesOf } from '@storybook/react'
-import React from 'react'
-import SearchIcon from 'mdi-react/SearchIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
+import SearchIcon from 'mdi-react/SearchIcon'
+import React from 'react'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
 
 import webStyles from '../SourcegraphWebApp.scss'
-import { PageHeader } from './PageHeader'
-import { Link } from '../../../shared/src/components/Link'
+
 import { FeedbackBadge } from './FeedbackBadge'
+import { PageHeader } from './PageHeader'
 
 const { add } = storiesOf('web/PageHeader', module).addDecorator(story => (
     <>

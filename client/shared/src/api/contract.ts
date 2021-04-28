@@ -1,17 +1,20 @@
-import { SettingsCascade } from '../settings/settings'
-import { SettingsEdit } from './client/services/settings'
-import * as clientType from '@sourcegraph/extension-api-types'
 import { Remote, ProxyMarked } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
-import { ProxySubscribable } from './extension/api/common'
-import { Contributions, Evaluated, Raw, TextDocumentPositionParameters } from './protocol'
+
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { HoverMerged } from './client/types/hover'
-import { GraphQLResult } from '../graphql/graphql'
-import { ErrorLike } from '../util/errors'
+import * as clientType from '@sourcegraph/extension-api-types'
+
 import { ConfiguredExtension } from '../extensions/extension'
+import { GraphQLResult } from '../graphql/graphql'
+import { SettingsCascade } from '../settings/settings'
+import { ErrorLike } from '../util/errors'
 import { DeepReplace } from '../util/types'
-import { TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
+
+import { SettingsEdit } from './client/services/settings'
+import { HoverMerged } from './client/types/hover'
+import { ExecutableExtension } from './extension/activation'
+import { StatusBarItemWithKey } from './extension/api/codeEditor'
+import { ProxySubscribable } from './extension/api/common'
 import {
     FileDecorationsByPath,
     LinkPreviewMerged,
@@ -22,8 +25,8 @@ import {
     PlainNotification,
     ContributionOptions,
 } from './extension/extensionHostApi'
-import { ExecutableExtension } from './extension/activation'
-import { StatusBarItemWithKey } from './extension/api/codeEditor'
+import { Contributions, Evaluated, Raw, TextDocumentPositionParameters } from './protocol'
+import { TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -42,6 +45,7 @@ export interface FlatExtensionHostAPI {
     removeWorkspaceRoot: (uri: string) => void
 
     setVersionContext: (versionContext: string | undefined) => void
+    setSearchContext: (searchContext: string | undefined) => void
 
     // Search
     transformSearchQuery: (query: string) => ProxySubscribable<string>
@@ -199,4 +203,9 @@ export interface MainThreadAPI {
         | (((bundleURLs: string[]) => Promise<(string | ErrorLike)[]>) & ProxyMarked)
 
     getEnabledExtensions: () => ProxySubscribable<(ConfiguredExtension | ExecutableExtension)[]>
+
+    /**
+     * Log an event (by sending it to the server).
+     */
+    logEvent: (eventName: string, eventProperties?: any) => void
 }

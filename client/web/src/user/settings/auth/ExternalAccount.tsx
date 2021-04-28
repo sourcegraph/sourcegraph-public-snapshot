@@ -1,9 +1,12 @@
 import React, { useState, useCallback } from 'react'
-import { Link } from '../../../../../shared/src/components/Link'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { LoaderButton } from '../../../components/LoaderButton'
-import { ErrorLike } from '../../../../../shared/src/util/errors'
-import { RemoveExternalAccountModal } from './RemoveExternalAccountModal'
+
 import type { NormalizedMinAccount } from './ExternalAccountsSignIn'
+import { RemoveExternalAccountModal } from './RemoveExternalAccountModal'
 import type { AuthProvider } from './UserSettingsSecurityPage'
 
 interface Props {

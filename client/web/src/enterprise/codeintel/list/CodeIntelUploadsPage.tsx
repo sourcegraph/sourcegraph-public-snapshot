@@ -1,8 +1,10 @@
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { of } from 'rxjs'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -11,12 +13,13 @@ import {
 import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
+
 import {
     fetchLsifUploads as defaultFetchLsifUploads,
     fetchCommitGraphMetadata as defaultFetchCommitGraphMetadata,
 } from './backend'
-import { CommitGraphMetadata } from './CommitGraphMetadata'
 import { CodeIntelUploadNode, CodeIntelUploadNodeProps } from './CodeIntelUploadNode'
+import { CommitGraphMetadata } from './CommitGraphMetadata'
 
 export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: { id: string }

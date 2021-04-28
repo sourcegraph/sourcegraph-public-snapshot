@@ -1,9 +1,11 @@
-import React, { useCallback, useState } from 'react'
-import DownloadIcon from 'mdi-react/DownloadIcon'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { getChangesetDiff } from '../backend'
-import { asError, isErrorLike } from '../../../../../../shared/src/util/errors'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import DownloadIcon from 'mdi-react/DownloadIcon'
+import React, { useCallback, useState } from 'react'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
+import { getChangesetDiff } from '../backend'
 
 export interface DownloadDiffButtonProps {
     changesetID: string

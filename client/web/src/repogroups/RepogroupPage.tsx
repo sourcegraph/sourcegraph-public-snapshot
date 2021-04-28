@@ -1,12 +1,26 @@
-import React, { useEffect, useMemo } from 'react'
 import * as H from 'history'
+import BitbucketIcon from 'mdi-react/BitbucketIcon'
+import GithubIcon from 'mdi-react/GithubIcon'
+import GitlabIcon from 'mdi-react/GitlabIcon'
+import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
+import React, { useEffect, useMemo } from 'react'
+
+import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { SettingsCascadeProps, Settings, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
+import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
+import { SyntaxHighlightedSearchQuery } from '../components/SyntaxHighlightedSearchQuery'
+import { SearchPatternType } from '../graphql-operations'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { Link } from '../../../shared/src/components/Link'
-import { SettingsCascadeProps, Settings, isSettingsValid } from '../../../shared/src/settings/settings'
-import { ThemeProps } from '../../../shared/src/theme'
-import { ThemePreferenceProps } from '../theme'
-import { ActivationProps } from '../../../shared/src/components/activation/Activation'
+import { VersionContext } from '../schema/site.schema'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
@@ -16,23 +30,12 @@ import {
     ParsedSearchQueryProps,
     SearchContextProps,
 } from '../search'
-import { eventLogger } from '../tracking/eventLogger'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { PlatformContextProps } from '../../../shared/src/platform/context'
-import { VersionContextProps } from '../../../shared/src/search/util'
-import { VersionContext } from '../schema/site.schema'
 import { submitSearch } from '../search/helpers'
-import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
-import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import { RepogroupMetadata } from './types'
 import { SearchPageInput } from '../search/input/SearchPageInput'
-import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
-import { AuthenticatedUser } from '../auth'
-import { SearchPatternType } from '../graphql-operations'
-import { TelemetryProps } from '../../../shared/src/telemetry/telemetryService'
-import { SyntaxHighlightedSearchQuery } from '../components/SyntaxHighlightedSearchQuery'
+import { ThemePreferenceProps } from '../theme'
+import { eventLogger } from '../tracking/eventLogger'
+
+import { RepogroupMetadata } from './types'
 
 export interface RepogroupPageProps
     extends SettingsCascadeProps<Settings>,

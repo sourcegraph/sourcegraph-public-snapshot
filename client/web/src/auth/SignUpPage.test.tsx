@@ -1,10 +1,12 @@
-import renderer from 'react-test-renderer'
-import { SignUpPage } from './SignUpPage'
-import React from 'react'
 import { createMemoryHistory, createLocation } from 'history'
-import { SourcegraphContext } from '../jscontext'
+import React from 'react'
 import { MemoryRouter } from 'react-router'
+import renderer from 'react-test-renderer'
+
 import { AuthenticatedUser } from '../auth'
+import { SourcegraphContext } from '../jscontext'
+
+import { SignUpPage } from './SignUpPage'
 
 jest.mock('../tracking/eventLogger', () => ({
     eventLogger: { logViewEvent: () => undefined },

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -25,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -52,8 +50,6 @@ type GithubSource struct {
 
 var _ Source = &GithubSource{}
 var _ UserSource = &GithubSource{}
-var _ DraftChangesetSource = &GithubSource{}
-var _ ChangesetSource = &GithubSource{}
 var _ AffiliatedRepositorySource = &GithubSource{}
 
 // NewGithubSource returns a new GithubSource from the given external service.
@@ -155,7 +151,6 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 				},
 			})
 		}
-
 	}
 
 	return &GithubSource{
@@ -196,7 +191,7 @@ type githubResult struct {
 	repo *github.Repository
 }
 
-func (s GithubSource) ValidateToken(ctx context.Context) error {
+func (s GithubSource) ValidateAuthenticator(ctx context.Context) error {
 	_, err := s.v3Client.GetAuthenticatedUser(ctx)
 	return err
 }
@@ -226,149 +221,6 @@ func (s GithubSource) ListRepos(ctx context.Context, results chan SourceResult) 
 // ExternalServices returns a singleton slice containing the external service.
 func (s GithubSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
-}
-
-// CreateChangeset creates the given changeset on the code host.
-func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
-	input := buildCreatePullRequestInput(c)
-	return s.createChangeset(ctx, c, input)
-}
-
-// CreateDraftChangeset creates the given changeset on the code host in draft mode.
-func (s GithubSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
-	input := buildCreatePullRequestInput(c)
-	input.Draft = true
-	return s.createChangeset(ctx, c, input)
-}
-
-func buildCreatePullRequestInput(c *Changeset) *github.CreatePullRequestInput {
-	return &github.CreatePullRequestInput{
-		RepositoryID: c.Repo.Metadata.(*github.Repository).ID,
-		Title:        c.Title,
-		Body:         c.Body,
-		HeadRefName:  git.AbbreviateRef(c.HeadRef),
-		BaseRefName:  git.AbbreviateRef(c.BaseRef),
-	}
-}
-
-func (s GithubSource) createChangeset(ctx context.Context, c *Changeset, prInput *github.CreatePullRequestInput) (bool, error) {
-	var exists bool
-	pr, err := s.v4Client.CreatePullRequest(ctx, prInput)
-	if err != nil {
-		if err != github.ErrPullRequestAlreadyExists {
-			return exists, err
-		}
-		repo := c.Repo.Metadata.(*github.Repository)
-		owner, name, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
-		if err != nil {
-			return exists, errors.Wrap(err, "getting repo owner and name")
-		}
-		pr, err = s.v4Client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRef, c.HeadRef)
-		if err != nil {
-			return exists, errors.Wrap(err, "fetching existing PR")
-		}
-		exists = true
-	}
-
-	if err := c.SetMetadata(pr); err != nil {
-		return false, errors.Wrap(err, "setting changeset metadata")
-	}
-
-	return exists, nil
-}
-
-// CloseChangeset closes the given *Changeset on the code host and updates the
-// Metadata column in the *batches.Changeset to the newly closed pull request.
-func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
-	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
-	if !ok {
-		return errors.New("Changeset is not a GitHub pull request")
-	}
-
-	err := s.v4Client.ClosePullRequest(ctx, pr)
-	if err != nil {
-		return err
-	}
-
-	return c.Changeset.SetMetadata(pr)
-}
-
-// UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
-func (s GithubSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
-	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
-	if !ok {
-		return errors.New("Changeset is not a GitHub pull request")
-	}
-
-	err := s.v4Client.MarkPullRequestReadyForReview(ctx, pr)
-	if err != nil {
-		return err
-	}
-
-	return c.Changeset.SetMetadata(pr)
-}
-
-// LoadChangeset loads the latest state of the given Changeset from the codehost.
-func (s GithubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
-	repo := cs.Repo.Metadata.(*github.Repository)
-	number, err := strconv.ParseInt(cs.ExternalID, 10, 64)
-	if err != nil {
-		return errors.Wrap(err, "parsing changeset external id")
-	}
-
-	pr := &github.PullRequest{
-		RepoWithOwner: repo.NameWithOwner,
-		Number:        number,
-	}
-
-	if err := s.v4Client.LoadPullRequest(ctx, pr); err != nil {
-		if github.IsNotFound(err) {
-			return ChangesetNotFoundError{Changeset: cs}
-		}
-		return err
-	}
-
-	if err := cs.SetMetadata(pr); err != nil {
-		return errors.Wrap(err, "setting changeset metadata")
-	}
-
-	return nil
-}
-
-// UpdateChangeset updates the given *Changeset in the code host.
-func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
-	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
-	if !ok {
-		return errors.New("Changeset is not a GitHub pull request")
-	}
-
-	updated, err := s.v4Client.UpdatePullRequest(ctx, &github.UpdatePullRequestInput{
-		PullRequestID: pr.ID,
-		Title:         c.Title,
-		Body:          c.Body,
-		BaseRefName:   git.AbbreviateRef(c.BaseRef),
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return c.Changeset.SetMetadata(updated)
-}
-
-// ReopenChangeset reopens the given *Changeset on the code host.
-func (s GithubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
-	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
-	if !ok {
-		return errors.New("Changeset is not a GitHub pull request")
-	}
-
-	err := s.v4Client.ReopenPullRequest(ctx, pr)
-	if err != nil {
-		return err
-	}
-
-	return c.Changeset.SetMetadata(pr)
 }
 
 // GetRepo returns the Github repository with the given name and owner
@@ -402,31 +254,24 @@ func (s GithubSource) makeRepo(r *github.Repository) *types.Repo {
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
-				CloneURL: s.authenticatedRemoteURL(r),
+				CloneURL: s.remoteURL(r),
 			},
 		},
 		Metadata: r,
 	}
 }
 
-// authenticatedRemoteURL returns the repository's Git remote URL with the configured
-// GitHub personal access token inserted in the URL userinfo.
-func (s *GithubSource) authenticatedRemoteURL(repo *github.Repository) string {
+// remoteURL returns the repository's Git remote URL
+//
+// note: this used to contain credentials but that is no longer the case
+// if you need to get an authenticated clone url use types.RepoCloneURL
+func (s *GithubSource) remoteURL(repo *github.Repository) string {
 	if s.config.GitURLType == "ssh" {
 		url := fmt.Sprintf("git@%s:%s.git", s.originalHostname, repo.NameWithOwner)
 		return url
 	}
 
-	if s.config.Token == "" {
-		return repo.URL
-	}
-	u, err := url.Parse(repo.URL)
-	if err != nil {
-		log15.Warn("Error adding authentication to GitHub repository Git remote URL.", "url", repo.URL, "error", err)
-		return repo.URL
-	}
-	u.User = url.User(s.config.Token)
-	return u.String()
+	return repo.URL
 }
 
 func (s *GithubSource) excludes(r *github.Repository) bool {
@@ -865,8 +710,9 @@ func (s *GithubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 			done = true
 		}
 		for _, repo := range repos {
-			// the github user repositories API doesn't support query strings, so we'll have to filter here 😬
-			// this does make pagination more awkward though, as we won't paginate futher if you don't match anything
+			// the github user repositories API doesn't support query strings, so we'll have
+			// to filter here 😬 this does make pagination more awkward though, as we won't
+			// paginate further if you don't match anything
 			out = append(out, types.CodeHostRepository{
 				Name:       repo.NameWithOwner,
 				Private:    repo.IsPrivate,

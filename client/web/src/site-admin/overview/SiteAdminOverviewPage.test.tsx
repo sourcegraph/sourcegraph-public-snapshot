@@ -2,11 +2,14 @@ import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { of } from 'rxjs'
-import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
-import { eventLogger } from '../../tracking/eventLogger'
 import sinon from 'sinon'
-import { ISiteUsagePeriod } from '../../../../shared/src/graphql/schema'
+
+import { ISiteUsagePeriod } from '@sourcegraph/shared/src/graphql/schema'
+
 import { PageTitle } from '../../components/PageTitle'
+import { eventLogger } from '../../tracking/eventLogger'
+
+import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
 
 describe('SiteAdminOverviewPage', () => {
     afterEach(() => {

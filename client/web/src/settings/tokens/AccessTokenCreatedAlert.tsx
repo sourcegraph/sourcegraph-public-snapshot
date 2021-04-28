@@ -1,7 +1,9 @@
 import classNames from 'classnames'
 import CheckmarkCircleIcon from 'mdi-react/CheckCircleIcon'
 import React from 'react'
-import { CodeSnippet } from '../../../../branded/src/components/CodeSnippet'
+
+import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
+
 import { AccessTokenScopes } from '../../auth/accessToken'
 import { CopyableText } from '../../components/CopyableText'
 import { AccessTokenFields } from '../../graphql-operations'

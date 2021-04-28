@@ -1,13 +1,17 @@
 import assert from 'assert'
-import { commonWebGraphQlResults } from './graphQlResults'
-import { Driver, createDriverForTest } from '../../../shared/src/testing/driver'
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
-import { SharedGraphQlOperations } from '../../../shared/src/graphql-operations'
+
+import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { retry } from '@sourcegraph/shared/src/testing/utils'
+import { subtypeOf } from '@sourcegraph/shared/src/util/types'
+
 import { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
-import { emptyResponse } from '../../../shared/src/testing/integration/graphQlResults'
-import { subtypeOf } from '../../../shared/src/util/types'
-import { retry } from '../../../shared/src/testing/utils'
+
+import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { commonWebGraphQlResults } from './graphQlResults'
+import { percySnapshotWithVariants } from './utils'
 
 describe('Organizations', () => {
     const testOrg = subtypeOf<OrganizationResult['organization']>()({
@@ -81,6 +85,9 @@ describe('Organizations', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/site-admin/organizations')
 
             await driver.page.waitForSelector('.test-create-org-button')
+
+            await percySnapshotWithVariants(driver.page, 'Site admin org page')
+
             await driver.page.click('.test-create-org-button')
 
             await driver.replaceText({

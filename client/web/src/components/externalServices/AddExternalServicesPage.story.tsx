@@ -1,10 +1,13 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
+import { WebStory } from '../WebStory'
+
 import { AddExternalServicesPage } from './AddExternalServicesPage'
-import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import { fetchExternalService as _fetchExternalService } from './backend'
 import { codeHostExternalServices, nonCodeHostExternalServices } from './externalServices'
-import { WebStory } from '../WebStory'
 
 const { add } = storiesOf('web/External services/AddExternalServicesPage', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)

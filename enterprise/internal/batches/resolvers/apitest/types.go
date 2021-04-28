@@ -4,7 +4,8 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 type GitTarget struct {
@@ -120,22 +121,23 @@ type ExternalURL struct {
 }
 
 type Changeset struct {
-	Typename     string `json:"__typename"`
-	ID           string
-	Repository   Repository
-	BatchChanges BatchChangeConnection
-	CreatedAt    string
-	UpdatedAt    string
-	NextSyncAt   string
-	Title        string
-	Body         string
-	Error        string
-	State        string
-	ExternalID   string
-	ExternalURL  ExternalURL
-	ReviewState  string
-	CheckState   string
-	Events       ChangesetEventConnection
+	Typename           string `json:"__typename"`
+	ID                 string
+	Repository         Repository
+	BatchChanges       BatchChangeConnection
+	CreatedAt          string
+	UpdatedAt          string
+	NextSyncAt         string
+	ScheduleEstimateAt string
+	Title              string
+	Body               string
+	Error              string
+	State              string
+	ExternalID         string
+	ExternalURL        ExternalURL
+	ReviewState        string
+	CheckState         string
+	Events             ChangesetEventConnection
 
 	Diff Comparison
 
@@ -266,7 +268,7 @@ type ChangesetApplyPreviewConnectionStats struct {
 type ChangesetApplyPreview struct {
 	Typename string `json:"__typename"`
 
-	Operations []batches.ReconcilerOperation
+	Operations []btypes.ReconcilerOperation
 	Delta      ChangesetSpecDelta
 	Targets    ChangesetApplyPreviewTargets
 }

@@ -269,9 +269,9 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 	}
 
 	q := sqlf.Sprintf(`
-INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
-VALUES (%s, %s, '')
-`, cindyExternalService.ID, cindyPrivateRepo.ID)
+INSERT INTO external_service_repos (external_service_id, repo_id, user_id, clone_url)
+VALUES (%s, %s, NULLIF(%s, 0), '')
+`, cindyExternalService.ID, cindyPrivateRepo.ID, cindyExternalService.NamespaceUserID)
 	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		t.Fatal(err)

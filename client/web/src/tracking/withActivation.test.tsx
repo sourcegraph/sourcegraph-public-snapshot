@@ -1,9 +1,13 @@
 import * as util from 'util'
+
 import * as React from 'react'
 import renderer from 'react-test-renderer'
-import { ActivationProps } from '../../../shared/src/components/activation/Activation'
-import { withActivation } from './withActivation'
+
+import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+
 import { AuthenticatedUser } from '../auth'
+
+import { withActivation } from './withActivation'
 
 const Component: React.FunctionComponent<ActivationProps & { authenticatedUser: AuthenticatedUser | null }> = (
     props: ActivationProps & { authenticatedUser: AuthenticatedUser | null }

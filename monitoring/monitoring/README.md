@@ -38,7 +38,7 @@ To learn more about the generator\, see the top\-level program: https://github.c
   - [func (p ObservablePanel) Min(min float64) ObservablePanel](<#func-observablepanel-min>)
   - [func (p ObservablePanel) MinAuto() ObservablePanel](<#func-observablepanel-minauto>)
   - [func (p ObservablePanel) Unit(t UnitType) ObservablePanel](<#func-observablepanel-unit>)
-  - [func (p ObservablePanel) With(op ObservablePanelOption) ObservablePanel](<#func-observablepanel-with>)
+  - [func (p ObservablePanel) With(ops ...ObservablePanelOption) ObservablePanel](<#func-observablepanel-with>)
 - [type ObservablePanelOption](<#type-observablepaneloption>)
 - [type Row](<#type-row>)
 - [type UnitType](<#type-unittype>)
@@ -433,10 +433,10 @@ Unit sets the panel's Y axis unit type\.
 ### func \(ObservablePanel\) [With](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L104>)
 
 ```go
-func (p ObservablePanel) With(op ObservablePanelOption) ObservablePanel
+func (p ObservablePanel) With(ops ...ObservablePanelOption) ObservablePanel
 ```
 
-With adds the provided option to be applied when building this panel\.
+With adds the provided options to be applied when building this panel\.
 
 Before using this\, check if the customization you want is already included in the default \`Panel\(\)\` or available as a function on \`ObservablePanel\`\, such as \`ObservablePanel\.Unit\(UnitType\)\` for setting the units on a panel\.
 
@@ -500,10 +500,10 @@ const (
     Number UnitType = "short"
 
     // Milliseconds for representing time.
-    Milliseconds UnitType = "dtdurationms"
+    Milliseconds UnitType = "ms"
 
     // Seconds for representing time.
-    Seconds UnitType = "dtdurations"
+    Seconds UnitType = "s"
 
     // Percentage in the range of 0-100.
     Percentage UnitType = "percent"

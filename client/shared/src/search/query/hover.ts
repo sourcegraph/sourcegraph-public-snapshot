@@ -1,5 +1,5 @@
 import * as Monaco from 'monaco-editor'
-import { Token } from './token'
+
 import {
     decorate,
     toMonacoRange,
@@ -13,8 +13,10 @@ import {
     MetaStructuralKind,
     MetaSelector,
     MetaSelectorKind,
+    MetaPredicate,
 } from './decoratedToken'
 import { resolveFilter } from './filters'
+import { Token } from './token'
 
 const toRegexpHover = (token: MetaRegexp): string => {
     switch (token.kind) {
@@ -153,6 +155,21 @@ const toSelectorHover = (token: MetaSelector): string => {
     }
 }
 
+const toContainsHover = (token: MetaPredicate): string => {
+    const parameters = token.value.parameters.slice(1, -1)
+    switch (token.value.path.join('.')) {
+        case 'contains':
+            return '**Built-in predicate**. Search only inside repositories that satisfy the specified `file:` and `content:` filters. `file:` and `content:` filters should be regular expressions.'
+        case 'contains.file':
+            return `**Built-in predicate**. Search only inside repositories that contain a **file path** matching the regular expression \`${parameters}\`.`
+        case 'contains.content':
+            return `**Built-in predicate**. Search only inside repositories that contain **file content** matching the regular expression \`${parameters}\`.`
+        case 'contains.commit.after':
+            return `**Built-in predicate**. Search only inside repositories that have been committed to since \`${parameters}\`.`
+    }
+    return ''
+}
+
 const toHover = (token: DecoratedToken): string => {
     switch (token.type) {
         case 'pattern': {
@@ -169,6 +186,9 @@ const toHover = (token: DecoratedToken): string => {
             return toSelectorHover(token)
         case 'metaStructural':
             return toStructuralHover(token)
+        case 'metaPredicate': {
+            return toContainsHover(token)
+        }
     }
     return ''
 }
@@ -228,12 +248,11 @@ export const getHoverResult = (
                 range = toMonacoRange(token.range)
                 break
             case 'metaRegexp':
+            case 'metaStructural':
+            case 'metaPredicate':
                 values.push(toHover(token))
                 range = toMonacoRange(token.groupRange ? token.groupRange : token.range)
                 break
-            case 'metaStructural':
-                values.push(toHover(token))
-                range = toMonacoRange(token.groupRange ? token.groupRange : token.range)
         }
     })
     return {

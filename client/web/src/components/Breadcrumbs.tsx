@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import { Link } from '../../../shared/src/components/Link'
-import { sortBy } from 'lodash'
-import { Unsubscribable } from 'sourcegraph'
-import { isDefined } from '../../../shared/src/util/types'
-import * as H from 'history'
 import classNames from 'classnames'
+import * as H from 'history'
+import { sortBy } from 'lodash'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import { Unsubscribable } from 'sourcegraph'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 export type Breadcrumb = ElementBreadcrumb | LinkBreadcrumb
 
@@ -147,7 +148,7 @@ export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
 /**
  * Renders breadcrumbs by depth.
  */
-export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[]; location: H.Location }> = ({
+export const Breadcrumbs: React.FunctionComponent<{ breadcrumbs: BreadcrumbAtDepth[]; location: H.Location }> = ({
     breadcrumbs,
     location,
 }) => (
@@ -167,7 +168,7 @@ export const Breadcrumbs: React.FC<{ breadcrumbs: BreadcrumbAtDepth[]; location:
                             breadcrumb.className
                         )}
                     >
-                        {index !== 0 && <span className="font-weight-semibold">{divider}</span>}
+                        {index !== 0 && <span className="font-weight-medium">{divider}</span>}
                         {isElementBreadcrumb(breadcrumb) ? (
                             breadcrumb.element
                         ) : index === validBreadcrumbs.length - 1 && !location.hash ? (

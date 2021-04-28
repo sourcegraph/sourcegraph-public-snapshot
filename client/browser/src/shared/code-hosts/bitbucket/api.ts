@@ -2,11 +2,14 @@ import { first } from 'lodash'
 import { Observable } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { filter, map } from 'rxjs/operators'
-import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
-import { isDefined } from '../../../../../shared/src/util/types'
+
+import { checkOk } from '@sourcegraph/shared/src/backend/fetch'
+import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
+
 import { DiffResolvedRevisionSpec } from '../../repo'
+
 import { BitbucketRepoInfo } from './scrape'
-import { checkOk } from '../../../../../shared/src/backend/fetch'
 
 //
 // PR API /rest/api/1.0/projects/SG/repos/go-langserver/pull-requests/1

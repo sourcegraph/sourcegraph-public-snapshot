@@ -1,7 +1,9 @@
-import * as React from 'react'
-import { ErrorAlert } from '../../../components/alerts'
-import { asError } from '../../../../../shared/src/util/errors'
 import * as H from 'history'
+import * as React from 'react'
+
+import { asError } from '@sourcegraph/shared/src/util/errors'
+
+import { ErrorAlert } from '../../../components/alerts'
 
 export const BaseActionContainer: React.FunctionComponent<{
     title: React.ReactFragment

@@ -1,12 +1,17 @@
 import * as H from 'history'
-import { ActivationProps } from '../../../shared/src/components/activation/Activation'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { buildSearchURLQuery } from '../../../shared/src/util/url'
+
+import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+
 import { eventLogger } from '../tracking/eventLogger'
+
 import { SearchType } from './results/SearchResults'
-import { FilterType } from '../../../shared/src/search/query/filters'
+
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '.'
-import { VersionContextProps } from '../../../shared/src/search/util'
 
 export interface SubmitSearchParameters
     extends Partial<Pick<ActivationProps, 'activation'>>,
@@ -56,7 +61,7 @@ export function submitSearch({
     // Go to search results page
     const path = '/search?' + searchQueryParameter
     eventLogger.log('SearchSubmitted', {
-        query,
+        query: appendContextFilter(query, selectedSearchContextSpec),
         source,
     })
     history.push(path, { ...history.location.state, query })

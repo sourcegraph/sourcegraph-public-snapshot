@@ -21,21 +21,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/stripeutil"
 	db_ "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
-
-func init() {
-	// TODO(efritz) - de-globalize assignments in this function
-	graphqlbackend.ProductSubscriptionByID = func(ctx context.Context, db dbutil.DB, id graphql.ID) (graphqlbackend.ProductSubscription, error) {
-		return productSubscriptionByID(ctx, db, id)
-	}
-}
 
 // productSubscription implements the GraphQL type ProductSubscription.
 type productSubscription struct {
 	db dbutil.DB
 	v  *dbSubscription
+}
+
+// ProductSubscriptionByID looks up and returns the ProductSubscription with the given GraphQL
+// ID. If no such ProductSubscription exists, it returns a non-nil error.
+func (p ProductSubscriptionLicensingResolver) ProductSubscriptionByID(ctx context.Context, id graphql.ID) (graphqlbackend.ProductSubscription, error) {
+	return productSubscriptionByID(ctx, p.DB, id)
 }
 
 // productSubscriptionByID looks up and returns the ProductSubscription with the given GraphQL
@@ -51,7 +51,7 @@ func productSubscriptionByID(ctx context.Context, db dbutil.DB, id graphql.ID) (
 // productSubscriptionByDBID looks up and returns the ProductSubscription with the given database
 // ID. If no such ProductSubscription exists, it returns a non-nil error.
 func productSubscriptionByDBID(ctx context.Context, db dbutil.DB, id string) (*productSubscription, error) {
-	v, err := dbSubscriptions{}.GetByID(ctx, id)
+	v, err := dbSubscriptions{db: db}.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -66,8 +66,10 @@ func (r *productSubscription) ID() graphql.ID {
 	return marshalProductSubscriptionID(r.v.ID)
 }
 
+const ProductSubscriptionIDKind = "ProductSubscription"
+
 func marshalProductSubscriptionID(id string) graphql.ID {
-	return relay.MarshalID("ProductSubscription", id)
+	return relay.MarshalID(ProductSubscriptionIDKind, id)
 }
 
 func unmarshalProductSubscriptionID(id graphql.ID) (productSubscriptionID string, err error) {
@@ -114,7 +116,7 @@ func (r *productSubscription) Events(ctx context.Context) ([]graphqlbackend.Prod
 
 func (r *productSubscription) ActiveLicense(ctx context.Context) (graphqlbackend.ProductLicense, error) {
 	// Return newest license.
-	licenses, err := dbLicenses{}.List(ctx, dbLicensesListOptions{
+	licenses, err := dbLicenses{db: r.db}.List(ctx, dbLicensesListOptions{
 		ProductSubscriptionID: r.v.ID,
 		LimitOffset:           &db_.LimitOffset{Limit: 1},
 	})
@@ -169,7 +171,7 @@ func (r *productSubscription) URLForSiteAdminBilling(ctx context.Context) (*stri
 		return nil, err
 	}
 	if id := r.v.BillingSubscriptionID; id != nil {
-		u := billing.SubscriptionURL(*id)
+		u := stripeutil.SubscriptionURL(*id)
 		return &u, nil
 	}
 	return nil, nil
@@ -185,7 +187,7 @@ func (r ProductSubscriptionLicensingResolver) CreateProductSubscription(ctx cont
 	if err != nil {
 		return nil, err
 	}
-	id, err := dbSubscriptions{}.Create(ctx, user.DatabaseID())
+	id, err := dbSubscriptions{db: r.DB}.Create(ctx, user.DatabaseID())
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +218,7 @@ func (r ProductSubscriptionLicensingResolver) SetProductSubscriptionBilling(ctx 
 		return *s
 	}
 
-	if err := (dbSubscriptions{}).Update(ctx, dbSub.v.ID, dbSubscriptionUpdate{
+	if err := (dbSubscriptions{db: r.DB}).Update(ctx, dbSub.v.ID, dbSubscriptionUpdate{
 		billingSubscriptionID: &sql.NullString{
 			String: stringValue(args.BillingSubscriptionID),
 			Valid:  args.BillingSubscriptionID != nil,
@@ -255,7 +257,7 @@ func (r ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx 
 
 	// Create the subscription in our database first, before processing payment. If payment fails,
 	// users can retry payment on the already created subscription.
-	subID, err := dbSubscriptions{}.Create(ctx, user.DatabaseID())
+	subID, err := dbSubscriptions{db: r.DB}.Create(ctx, user.DatabaseID())
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +291,7 @@ func (r ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx 
 	}
 
 	// Link the billing subscription with the subscription in our database.
-	if err := (dbSubscriptions{}).Update(ctx, subID, dbSubscriptionUpdate{
+	if err := (dbSubscriptions{db: r.DB}).Update(ctx, subID, dbSubscriptionUpdate{
 		billingSubscriptionID: &sql.NullString{
 			String: billingSub.ID,
 			Valid:  true,
@@ -299,7 +301,7 @@ func (r ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx 
 	}
 
 	// Generate a new license key for the subscription.
-	if _, err := generateProductLicenseForSubscription(ctx, subID, &graphqlbackend.ProductLicenseInput{
+	if _, err := generateProductLicenseForSubscription(ctx, r.DB, subID, &graphqlbackend.ProductLicenseInput{
 		Tags:      licenseTags,
 		UserCount: args.ProductSubscription.UserCount,
 		ExpiresAt: int32(billingSub.CurrentPeriodEnd),
@@ -423,7 +425,7 @@ func (r ProductSubscriptionLicensingResolver) UpdatePaidProductSubscription(ctx 
 	}
 
 	// Generate a new license key for the subscription with the updated parameters.
-	if _, err := generateProductLicenseForSubscription(ctx, subToUpdate.v.ID, &graphqlbackend.ProductLicenseInput{
+	if _, err := generateProductLicenseForSubscription(ctx, r.DB, subToUpdate.v.ID, &graphqlbackend.ProductLicenseInput{
 		Tags:      licenseTags,
 		UserCount: args.Update.UserCount,
 		ExpiresAt: int32(billingSub.CurrentPeriodEnd),
@@ -444,7 +446,7 @@ func (r ProductSubscriptionLicensingResolver) ArchiveProductSubscription(ctx con
 	if err != nil {
 		return nil, err
 	}
-	if err := (dbSubscriptions{}).Archive(ctx, sub.v.ID); err != nil {
+	if err := (dbSubscriptions{db: r.DB}).Archive(ctx, sub.v.ID); err != nil {
 		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
@@ -520,7 +522,7 @@ func (r *productSubscriptionConnection) compute(ctx context.Context) ([]*dbSubsc
 			opt2.Limit++ // so we can detect if there is a next page
 		}
 
-		r.results, r.err = dbSubscriptions{}.List(ctx, opt2)
+		r.results, r.err = dbSubscriptions{db: r.db}.List(ctx, opt2)
 	})
 	return r.results, r.err
 }
@@ -539,7 +541,7 @@ func (r *productSubscriptionConnection) Nodes(ctx context.Context) ([]graphqlbac
 }
 
 func (r *productSubscriptionConnection) TotalCount(ctx context.Context) (int32, error) {
-	count, err := dbSubscriptions{}.Count(ctx, r.opt)
+	count, err := dbSubscriptions{db: r.db}.Count(ctx, r.opt)
 	return int32(count), err
 }
 

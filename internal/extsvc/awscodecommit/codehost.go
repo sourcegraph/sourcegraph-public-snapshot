@@ -1,8 +1,6 @@
 package awscodecommit
 
 import (
-	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -22,6 +20,6 @@ func ExternalRepoSpec(repo *Repository, serviceID string) api.ExternalRepoSpec {
 //
 // This value uniquely identifies the most specific namespace in which AWS CodeCommit repositories
 // are defined.
-func ServiceID(awsPartition endpoints.Partition, awsRegion endpoints.Region, awsAccountID string) string {
-	return "arn:" + awsPartition.ID() + ":codecommit:" + awsRegion.ID() + ":" + awsAccountID + ":"
+func ServiceID(awsPartition, awsRegion, awsAccountID string) string {
+	return "arn:" + awsPartition + ":codecommit:" + awsRegion + ":" + awsAccountID + ":"
 }

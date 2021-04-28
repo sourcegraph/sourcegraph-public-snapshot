@@ -1,18 +1,21 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import { SchedulerLike, timer } from 'rxjs'
+import { timer } from 'rxjs'
 import { catchError, concatMap, delay, repeatWhen, takeWhile } from 'rxjs/operators'
-import { LSIFIndexState } from '../../../../../shared/src/graphql-operations'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LSIFIndexState } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { ErrorAlert } from '../../../components/alerts'
 import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields } from '../../../graphql-operations'
 import { CodeIntelStateBanner } from '../shared/CodeIntelStateBanner'
+
 import { deleteLsifIndex, fetchLsifIndex as defaultFetchLsifIndex } from './backend'
 import { CodeIntelIndexMeta } from './CodeIntelIndexMeta'
 import { CodeIntelIndexTimeline } from './CodeIntelIndexTimeline'
@@ -20,8 +23,6 @@ import { CodeIntelIndexTimeline } from './CodeIntelIndexTimeline'
 export interface CodeIntelIndexPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     fetchLsifIndex?: typeof defaultFetchLsifIndex
     now?: () => Date
-    /** Scheduler for the refresh timer */
-    scheduler?: SchedulerLike
 }
 
 const REFRESH_INTERVAL_MS = 5000
@@ -32,12 +33,11 @@ const classNamesByState = new Map([
 ])
 
 export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
-    scheduler,
     match: {
         params: { id },
     },
-    telemetryService,
     fetchLsifIndex = defaultFetchLsifIndex,
+    telemetryService,
     now,
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelIndex'), [telemetryService])
@@ -47,7 +47,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
     const indexOrError = useObservable(
         useMemo(
             () =>
-                timer(0, REFRESH_INTERVAL_MS, scheduler).pipe(
+                timer(0, REFRESH_INTERVAL_MS, undefined).pipe(
                     concatMap(() =>
                         fetchLsifIndex({ id }).pipe(
                             catchError((error): [ErrorLike] => [asError(error)]),
@@ -56,7 +56,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                     ),
                     takeWhile(shouldReload, true)
                 ),
-            [id, scheduler, fetchLsifIndex]
+            [id, fetchLsifIndex]
         )
     )
 

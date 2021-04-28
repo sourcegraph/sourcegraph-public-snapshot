@@ -1,9 +1,11 @@
-import { ConsoleMessage, ConsoleMessageType, Page } from 'puppeteer'
-import chalk, { Chalk } from 'chalk'
 import * as util from 'util'
-import terminalSize from 'term-size'
-import stringWidth from 'string-width'
+
+import chalk, { Chalk } from 'chalk'
 import { identity } from 'lodash'
+import { ConsoleMessage, ConsoleMessageType, Page } from 'puppeteer'
+import stringWidth from 'string-width'
+import terminalSize from 'term-size'
+
 import { asError } from '../util/errors'
 
 const colors: Partial<Record<ConsoleMessageType, Chalk>> = {

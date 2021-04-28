@@ -1,13 +1,15 @@
-import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
-import * as React from 'react'
-import * as H from 'history'
-import { AuthenticatedUser } from '../../auth'
-import sinon from 'sinon'
 import { mount } from 'enzyme'
-import { NEVER, of } from 'rxjs'
-import { mockCodeMonitor } from './testing/util'
-import { CreateCodeMonitorVariables } from '../../graphql-operations'
+import * as H from 'history'
+import * as React from 'react'
 import { act } from 'react-dom/test-utils'
+import { NEVER, of } from 'rxjs'
+import sinon from 'sinon'
+
+import { AuthenticatedUser } from '../../auth'
+import { CreateCodeMonitorVariables } from '../../graphql-operations'
+
+import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
+import { mockCodeMonitor } from './testing/util'
 
 jest.mock('../../tracking/eventLogger', () => ({
     eventLogger: { logViewEvent: () => undefined },
@@ -54,11 +56,11 @@ describe('CreateCodeMonitorPage', () => {
         const triggerInput = component.find('.test-trigger-input')
         expect(triggerInput.length).toBe(1)
         act(() => {
-            triggerInput.simulate('change', { target: { value: 'test type:diff patterntype:literal' } })
+            triggerInput.simulate('change', { target: { value: 'test type:diff repo:test' } })
             clock.tick(600)
         })
         component = component.update()
-        expect(component.find('.is-valid').length).toBe(1)
+        expect(component.find('.test-is-valid').length).toBe(1)
         const submitTrigger = component.find('.test-submit-trigger')
         submitTrigger.simulate('click')
         const actionButton = component.find('.test-action-button')
@@ -86,11 +88,11 @@ describe('CreateCodeMonitorPage', () => {
         const triggerInput = component.find('.test-trigger-input')
         expect(triggerInput.length).toBe(1)
         act(() => {
-            triggerInput.simulate('change', { target: { value: 'test type:diff patterntype:literal' } })
+            triggerInput.simulate('change', { target: { value: 'test type:diff repo:test' } })
             clock.tick(600)
         })
         component = component.update()
-        expect(component.find('.is-valid').length).toBe(1)
+        expect(component.find('.test-is-valid').length).toBe(1)
         const submitTrigger = component.find('.test-submit-trigger')
         submitTrigger.simulate('click')
 

@@ -1,8 +1,10 @@
 import React from 'react'
-import * as GQL from '../../../../../../shared/src/graphql/schema'
-import renderer from 'react-test-renderer'
-import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
 import { MemoryRouter } from 'react-router'
+import renderer from 'react-test-renderer'
+
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+
+import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
 
 jest.mock('../../../dotcom/productSubscriptions/AccountName', () => ({ AccountName: 'AccountName' }))
 

@@ -2,15 +2,18 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
-import { gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../../shared/src/util/errors'
+
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
+import { GitCommitFields, Scalars } from '../../graphql-operations'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
+
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
-import { GitCommitFields, Scalars } from '../../graphql-operations'
 
 function queryRepositoryComparisonCommits(args: {
     repo: Scalars['ID']

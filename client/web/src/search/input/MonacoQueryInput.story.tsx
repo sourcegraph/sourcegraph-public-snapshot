@@ -1,8 +1,11 @@
 import { storiesOf } from '@storybook/react'
 import { createMemoryHistory } from 'history'
 import React from 'react'
+
 import { WebStory } from '../../components/WebStory'
 import { SearchPatternType } from '../../graphql-operations'
+import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+
 import { MonacoQueryInput, MonacoQueryInputProps } from './MonacoQueryInput'
 
 const { add } = storiesOf('web/search/input/MonacoQueryInput', module)
@@ -31,35 +34,15 @@ const defaultProps: MonacoQueryInputProps = {
     setCaseSensitivity: () => {},
     versionContext: undefined,
     showSearchContext: false,
+    showSearchContextManagement: false,
     selectedSearchContextSpec: 'global',
     setSelectedSearchContextSpec: () => {},
-    availableSearchContexts: [
-        {
-            __typename: 'SearchContext',
-            id: '1',
-            spec: 'global',
-            autoDefined: true,
-            description: 'All repositories on Sourcegraph',
-        },
-        {
-            __typename: 'SearchContext',
-            id: '2',
-            spec: '@username',
-            autoDefined: true,
-            description: 'Your repositories on Sourcegraph',
-        },
-        {
-            __typename: 'SearchContext',
-            id: '3',
-            spec: '@username/test-version-1.5',
-            autoDefined: true,
-            description: 'Only code in version 1.5',
-        },
-    ],
     defaultSearchContextSpec: 'global',
     copyQueryButton: false,
     onChange: () => {},
     onSubmit: () => {},
+    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+    fetchSearchContexts: mockFetchSearchContexts,
 }
 
 add(

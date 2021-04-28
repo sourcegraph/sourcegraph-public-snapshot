@@ -1,16 +1,21 @@
 // @ts-check
 
-const { generate } = require('@graphql-codegen/cli')
 const path = require('path')
+
+const { generate } = require('@graphql-codegen/cli')
 
 const ROOT_FOLDER = path.resolve(__dirname, '../../../')
 
 const WEB_FOLDER = path.resolve(ROOT_FOLDER, './client/web')
 const BROWSER_FOLDER = path.resolve(ROOT_FOLDER, './client/browser')
 const SHARED_FOLDER = path.resolve(ROOT_FOLDER, './client/shared')
-const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/schema.graphql')
+const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/*.graphql')
 
-const SHARED_DOCUMENTS_GLOB = [`${SHARED_FOLDER}/src/**/*.{ts,tsx}`, `!${SHARED_FOLDER}/src/testing/**/*.*`]
+const SHARED_DOCUMENTS_GLOB = [
+  `${SHARED_FOLDER}/src/**/*.{ts,tsx}`,
+  `!${SHARED_FOLDER}/src/testing/**/*.*`,
+  `!${SHARED_FOLDER}/src/graphql/schema.ts`,
+]
 
 const WEB_DOCUMENTS_GLOB = [
   `${WEB_FOLDER}/src/**/*.{ts,tsx}`,
@@ -63,6 +68,7 @@ async function generateGraphQlOperations() {
           GitObjectID: 'string',
           JSONCString: 'string',
           PublishedValue: "boolean | 'draft'",
+          BigInt: 'string',
         },
       },
       generates: {
@@ -71,7 +77,7 @@ async function generateGraphQlOperations() {
           config: {
             onlyOperationTypes: true,
             noExport: false,
-            enumValues: '../../shared/src/graphql-operations',
+            enumValues: '@sourcegraph/shared/src/graphql-operations',
             interfaceNameForOperations: 'BrowserGraphQlOperations',
           },
           plugins,
@@ -82,7 +88,7 @@ async function generateGraphQlOperations() {
           config: {
             onlyOperationTypes: true,
             noExport: false,
-            enumValues: '../../shared/src/graphql-operations',
+            enumValues: '@sourcegraph/shared/src/graphql-operations',
             interfaceNameForOperations: 'WebGraphQlOperations',
           },
           plugins,

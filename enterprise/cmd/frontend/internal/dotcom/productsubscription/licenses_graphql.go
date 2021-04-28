@@ -16,17 +16,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func init() {
-	// TODO(efritz) - de-globalize assignments in this function
-	graphqlbackend.ProductLicenseByID = func(ctx context.Context, db dbutil.DB, id graphql.ID) (graphqlbackend.ProductLicense, error) {
-		return productLicenseByID(ctx, db, id)
-	}
-}
-
 // productLicense implements the GraphQL type ProductLicense.
 type productLicense struct {
 	db dbutil.DB
 	v  *dbLicense
+}
+
+// ProductLicenseByID looks up and returns the ProductLicense with the given GraphQL ID. If no such
+// ProductLicense exists, it returns a non-nil error.
+func (p ProductSubscriptionLicensingResolver) ProductLicenseByID(ctx context.Context, id graphql.ID) (graphqlbackend.ProductLicense, error) {
+	return productLicenseByID(ctx, p.DB, id)
 }
 
 // productLicenseByID looks up and returns the ProductLicense with the given GraphQL ID. If no such
@@ -42,7 +41,7 @@ func productLicenseByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*prod
 // productLicenseByDBID looks up and returns the ProductLicense with the given database ID. If no
 // such ProductLicense exists, it returns a non-nil error.
 func productLicenseByDBID(ctx context.Context, db dbutil.DB, id string) (*productLicense, error) {
-	v, err := dbLicenses{}.GetByID(ctx, id)
+	v, err := dbLicenses{db: db}.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -64,8 +63,10 @@ func (r *productLicense) ID() graphql.ID {
 	return marshalProductLicenseID(r.v.ID)
 }
 
+const ProductLicenseIDKind = "ProductLicense"
+
 func marshalProductLicenseID(id string) graphql.ID {
-	return relay.MarshalID("ProductLicense", id)
+	return relay.MarshalID(ProductLicenseIDKind, id)
 }
 
 func unmarshalProductLicenseID(id graphql.ID) (productLicenseID string, err error) {
@@ -97,7 +98,7 @@ func (r *productLicense) CreatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.v.CreatedAt}
 }
 
-func generateProductLicenseForSubscription(ctx context.Context, subscriptionID string, input *graphqlbackend.ProductLicenseInput) (id string, err error) {
+func generateProductLicenseForSubscription(ctx context.Context, db dbutil.DB, subscriptionID string, input *graphqlbackend.ProductLicenseInput) (id string, err error) {
 	licenseKey, err := licensing.GenerateProductLicenseKey(license.Info{
 		Tags:      input.Tags,
 		UserCount: uint(input.UserCount),
@@ -106,7 +107,7 @@ func generateProductLicenseForSubscription(ctx context.Context, subscriptionID s
 	if err != nil {
 		return "", err
 	}
-	return dbLicenses{}.Create(ctx, subscriptionID, licenseKey)
+	return dbLicenses{db: db}.Create(ctx, subscriptionID, licenseKey)
 }
 
 func (r ProductSubscriptionLicensingResolver) GenerateProductLicenseForSubscription(ctx context.Context, args *graphqlbackend.GenerateProductLicenseForSubscriptionArgs) (graphqlbackend.ProductLicense, error) {
@@ -118,7 +119,7 @@ func (r ProductSubscriptionLicensingResolver) GenerateProductLicenseForSubscript
 	if err != nil {
 		return nil, err
 	}
-	id, err := generateProductLicenseForSubscription(ctx, sub.v.ID, args.License)
+	id, err := generateProductLicenseForSubscription(ctx, r.DB, sub.v.ID, args.License)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +175,7 @@ func (r *productLicenseConnection) compute(ctx context.Context) ([]*dbLicense, e
 			opt2.Limit++ // so we can detect if there is a next page
 		}
 
-		r.results, r.err = dbLicenses{}.List(ctx, opt2)
+		r.results, r.err = dbLicenses{db: r.db}.List(ctx, opt2)
 	})
 	return r.results, r.err
 }
@@ -193,7 +194,7 @@ func (r *productLicenseConnection) Nodes(ctx context.Context) ([]graphqlbackend.
 }
 
 func (r *productLicenseConnection) TotalCount(ctx context.Context) (int32, error) {
-	count, err := dbLicenses{}.Count(ctx, r.opt)
+	count, err := dbLicenses{db: r.db}.Count(ctx, r.opt)
 	return int32(count), err
 }
 

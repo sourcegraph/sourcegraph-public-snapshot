@@ -1,5 +1,8 @@
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
+
+import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
+
 import { observeStorageKey } from '../../browser-extension/web-extension-api/storage'
 
 export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
@@ -54,10 +57,6 @@ export function getExtensionVersion(): string {
     }
 
     return 'NO_VERSION'
-}
-
-export function isFirefox(): boolean {
-    return window.navigator.userAgent.includes('Firefox')
 }
 
 function isSafari(): boolean {

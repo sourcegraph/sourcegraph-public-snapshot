@@ -15,7 +15,6 @@ import (
 )
 
 var mockSearchRepositories func(args *search.TextParameters) ([]SearchResultResolver, *streaming.Stats, error)
-var repoIcon = "data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIKCSB2aWV3Qm94PSIwIDAgNjQgNjQiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDY0IDY0OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+Cjx0aXRsZT5JY29ucyA0MDA8L3RpdGxlPgo8Zz4KCTxwYXRoIGQ9Ik0yMywyMi40YzEuMywwLDIuNC0xLjEsMi40LTIuNHMtMS4xLTIuNC0yLjQtMi40Yy0xLjMsMC0yLjQsMS4xLTIuNCwyLjRTMjEuNywyMi40LDIzLDIyLjR6Ii8+Cgk8cGF0aCBkPSJNMzUsMjYuNGMxLjMsMCwyLjQtMS4xLDIuNC0yLjRzLTEuMS0yLjQtMi40LTIuNHMtMi40LDEuMS0yLjQsMi40UzMzLjcsMjYuNCwzNSwyNi40eiIvPgoJPHBhdGggZD0iTTIzLDQyLjRjMS4zLDAsMi40LTEuMSwyLjQtMi40cy0xLjEtMi40LTIuNC0yLjRzLTIuNCwxLjEtMi40LDIuNFMyMS43LDQyLjQsMjMsNDIuNHoiLz4KCTxwYXRoIGQ9Ik01MCwxNmgtMS41Yy0wLjMsMC0wLjUsMC4yLTAuNSwwLjV2MzVjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC0yN2MtMC41LDAtMS0wLjItMS40LTAuNmwtMC42LTAuNmMtMC4xLTAuMS0wLjEtMC4yLTAuMS0wLjQKCQljMC0wLjMsMC4yLTAuNSwwLjUtMC41SDQ0YzEuMSwwLDItMC45LDItMlYxMmMwLTEuMS0wLjktMi0yLTJIMTRjLTEuMSwwLTIsMC45LTIsMnYzNi4zYzAsMS4xLDAuNCwyLjEsMS4yLDIuOGwzLjEsMy4xCgkJYzEuMSwxLjEsMi43LDEuOCw0LjIsMS44SDUwYzEuMSwwLDItMC45LDItMlYxOEM1MiwxNi45LDUxLjEsMTYsNTAsMTZ6IE0xOSwyMGMwLTIuMiwxLjgtNCw0LTRjMS40LDAsMi44LDAuOCwzLjUsMgoJCWMxLjEsMS45LDAuNCw0LjMtMS41LDUuNFYzM2MxLTAuNiwyLjMtMC45LDQtMC45YzEsMCwyLTAuNSwyLjgtMS4zQzMyLjUsMzAsMzMsMjkuMSwzMywyOHYtMC42Yy0xLjItMC43LTItMi0yLTMuNQoJCWMwLTIuMiwxLjgtNCw0LTRjMi4yLDAsNCwxLjgsNCw0YzAsMS41LTAuOCwyLjctMiwzLjVoMGMtMC4xLDIuMS0wLjksNC40LTIuNSw2Yy0xLjYsMS42LTMuNCwyLjQtNS41LDIuNWMtMC44LDAtMS40LDAuMS0xLjksMC4zCgkJYy0wLjIsMC4xLTEsMC44LTEuMiwwLjlDMjYuNiwzOCwyNywzOC45LDI3LDQwYzAsMi4yLTEuOCw0LTQsNHMtNC0xLjgtNC00YzAtMS41LDAuOC0yLjcsMi0zLjRWMjMuNEMxOS44LDIyLjcsMTksMjEuNCwxOSwyMHoiLz4KPC9nPgo8L3N2Zz4K"
 
 // searchRepositories searches for repositories by name.
 //
@@ -117,7 +116,6 @@ func repoRevsToSearchResultResolver(ctx context.Context, db dbutil.DB, repos []*
 		}
 		for _, rev := range revs {
 			rr := NewRepositoryResolver(db, r.Repo.ToRepo())
-			rr.icon = repoIcon
 			rr.RepoMatch.Rev = rev
 			results = append(results, rr)
 		}
@@ -184,7 +182,9 @@ func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions, 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
 func reposToAdd(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos []*search.RepositoryRevisions) ([]*search.RepositoryRevisions, error) {
-	matchingIDs := make(map[api.RepoID]bool)
+	// matchCounts will contain the count of repohasfile patterns that matched.
+	// For negations, we will explicitly set this to -1 if it matches.
+	matchCounts := make(map[api.RepoID]int)
 	if len(args.PatternInfo.FilePatternsReposMustInclude) > 0 {
 		for _, pattern := range args.PatternInfo.FilePatternsReposMustInclude {
 			// The high FileMatchLimit here is to make sure we get all the repo matches we can. Setting it to
@@ -204,14 +204,22 @@ func reposToAdd(ctx context.Context, db dbutil.DB, args *search.TextParameters, 
 			if err != nil {
 				return nil, err
 			}
+
+			// deduplicate repo results
+			matchedIDs := make(map[api.RepoID]struct{})
 			for _, m := range matches {
-				matchingIDs[m.Repo.ID] = true
+				matchedIDs[m.Repo.ID] = struct{}{}
+			}
+
+			// increment the count for all seen repos
+			for id := range matchedIDs {
+				matchCounts[id] += 1
 			}
 		}
 	} else {
 		// Default to including all the repos, then excluding some of them below.
 		for _, r := range repos {
-			matchingIDs[r.Repo.ID] = true
+			matchCounts[r.Repo.ID] = 0
 		}
 	}
 
@@ -233,14 +241,14 @@ func reposToAdd(ctx context.Context, db dbutil.DB, args *search.TextParameters, 
 				return nil, err
 			}
 			for _, m := range matches {
-				matchingIDs[m.Repo.ID] = false
+				matchCounts[m.Repo.ID] = -1
 			}
 		}
 	}
 
 	var rsta []*search.RepositoryRevisions
 	for _, r := range repos {
-		if matchingIDs[r.Repo.ID] {
+		if count, ok := matchCounts[r.Repo.ID]; ok && count == len(args.PatternInfo.FilePatternsReposMustInclude) {
 			rsta = append(rsta, r)
 		}
 	}

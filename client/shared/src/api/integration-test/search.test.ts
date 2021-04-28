@@ -1,6 +1,8 @@
 import { take } from 'rxjs/operators'
-import { integrationTestContext } from './testHelpers'
+
 import { wrapRemoteObservable } from '../client/api/common'
+
+import { integrationTestContext } from './testHelpers'
 
 describe('search (integration)', () => {
     test('registers a query transformer', async () => {

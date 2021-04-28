@@ -1,7 +1,9 @@
 import { useMemo, useCallback, useState } from 'react'
 import { Subscription } from 'rxjs'
-import { isErrorGraphQLResult } from '../../../shared/src/graphql/graphql'
-import { createAggregateError } from '../../../shared/src/util/errors'
+
+import { isErrorGraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+
 import { requestGraphQL } from '../backend/graphql'
 
 export interface MutationResult<TData> {

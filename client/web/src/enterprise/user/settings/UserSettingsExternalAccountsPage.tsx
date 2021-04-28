@@ -2,15 +2,27 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../../../shared/src/util/errors'
-import { queryGraphQL } from '../../../backend/graphql'
+
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+
+import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
+import {
+    UserAreaUserFields,
+    ExternalAccountFields,
+    ExternalAccountsConnectionFields,
+    UserExternalAccountsResult,
+    UserExternalAccountsVariables,
+} from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { externalAccountFragment, ExternalAccountNode, ExternalAccountNodeProps } from './ExternalAccountNode'
-import { UserAreaUserFields } from '../../../graphql-operations'
+
+import {
+    ExternalAccountNode,
+    ExternalAccountNodeProps,
+    externalAccountsConnectionFragment,
+} from './ExternalAccountNode'
 
 interface Props extends RouteComponentProps<{}> {
     user: UserAreaUserFields
@@ -41,7 +53,7 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
             <div className="user-settings-external-accounts-page">
                 <PageTitle title="External accounts" />
                 <h2>External accounts</h2>
-                <FilteredConnection<GQL.IExternalAccount, Omit<ExternalAccountNodeProps, 'node'>>
+                <FilteredConnection<ExternalAccountFields, Omit<ExternalAccountNodeProps, 'node'>>
                     className="list-group list-group-flush mt-3"
                     noun="external account"
                     pluralNoun="external accounts"
@@ -58,33 +70,27 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
         )
     }
 
-    private queryUserExternalAccounts = (args: { first?: number }): Observable<GQL.IExternalAccountConnection> =>
-        queryGraphQL(
+    private queryUserExternalAccounts = (args: { first?: number }): Observable<ExternalAccountsConnectionFields> =>
+        requestGraphQL<UserExternalAccountsResult, UserExternalAccountsVariables>(
             gql`
                 query UserExternalAccounts($user: ID!, $first: Int) {
                     node(id: $user) {
                         ... on User {
                             externalAccounts(first: $first) {
-                                nodes {
-                                    ...ExternalAccountFields
-                                }
-                                totalCount
-                                pageInfo {
-                                    hasNextPage
-                                }
+                                ...ExternalAccountsConnectionFields
                             }
                         }
                     }
                 }
-                ${externalAccountFragment}
+                ${externalAccountsConnectionFragment}
             `,
-            { user: this.props.user.id, first: args.first }
+            { user: this.props.user.id, first: args.first ?? null }
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.node) {
                     throw createAggregateError(errors)
                 }
-                const user = data.node as GQL.IUser
+                const user = data.node
                 if (!user.externalAccounts) {
                     throw createAggregateError(errors)
                 }

@@ -1,6 +1,7 @@
 import * as H from 'history'
 import { useEffect, useState } from 'react'
-import { tryCatch } from '../../../shared/src/util/errors'
+
+import { tryCatch } from '@sourcegraph/shared/src/util/errors'
 
 /**
  * A React hook that scrolls the viewport to the element identified in the location hash (e.g., the

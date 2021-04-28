@@ -1,10 +1,12 @@
-import React from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import renderer, { act } from 'react-test-renderer'
 import * as H from 'history'
-import { SearchStatsPage } from './SearchStatsPage'
-import { of } from 'rxjs'
+import React from 'react'
 import { MemoryRouter } from 'react-router'
+import renderer, { act } from 'react-test-renderer'
+import { of } from 'rxjs'
+
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+
+import { SearchStatsPage } from './SearchStatsPage'
 
 describe('SearchStatsPage', () => {
     test('renders', () => {

@@ -1,6 +1,9 @@
-import { map } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
 import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
+
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+
+import { requestGraphQL } from '../../../backend/graphql'
 import {
     BatchChangesVariables,
     BatchChangesResult,
@@ -9,7 +12,6 @@ import {
     AreBatchChangesLicensedResult,
     AreBatchChangesLicensedVariables,
 } from '../../../graphql-operations'
-import { requestGraphQL } from '../../../backend/graphql'
 
 const listBatchChangeFragment = gql`
     fragment ListBatchChange on BatchChange {

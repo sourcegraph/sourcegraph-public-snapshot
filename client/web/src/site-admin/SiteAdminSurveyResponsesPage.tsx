@@ -3,7 +3,9 @@ import React, { useCallback, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
-import { useLocalStorage } from '../../../shared/src/util/useLocalStorage'
+
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { SingleValueCard } from '../components/SingleValueCard'
@@ -20,6 +22,7 @@ import {
 } from '../marketing/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
+
 import { USER_ACTIVITY_FILTERS } from './SiteAdminUsageStatisticsPage'
 
 interface SurveyResponseNodeProps {

@@ -1,11 +1,13 @@
-import React from 'react'
-import * as GQL from '../../../../shared/src/graphql/schema'
 import classNames from 'classnames'
-import { Link } from '../../../../shared/src/components/Link'
-import { ThemeProps } from '../../../../shared/src/theme'
-import { FileDecorator } from '../../tree/FileDecorator'
 import { identity } from 'lodash'
-import { FileDecorationsByPath } from '../../../../shared/src/api/extension/extensionHostApi'
+import React from 'react'
+
+import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
+import { FileDecorator } from '../../tree/FileDecorator'
 
 /**
  * Use a multi-column layout for tree entries when there are at least this many. See TreeEntriesSection.scss

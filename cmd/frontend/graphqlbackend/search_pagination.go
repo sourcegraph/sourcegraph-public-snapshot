@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -141,13 +142,14 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		return nil, err
 	}
 	if alertResult != nil {
-		return alertResult, nil
+		return &SearchResultsResolver{db: r.db, alert: alertResult}, nil
 	}
 
-	p, err := r.getPatternInfo(nil)
+	q, err := query.ToBasicQuery(r.Query)
 	if err != nil {
 		return nil, err
 	}
+	p := search.ToTextPatternInfo(q, search.Pagination, query.Identity)
 	args := search.TextParameters{
 		PatternInfo:     p,
 		RepoPromise:     (&search.Promise{}).Resolve(resolved.RepoRevs),
@@ -191,7 +193,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	var alert *searchAlert
 
 	if len(resolved.MissingRepoRevs) > 0 {
-		alert = alertForMissingRepoRevs(r.PatternType, resolved.MissingRepoRevs)
+		alert = alertForMissingRepoRevs(resolved.MissingRepoRevs)
 	}
 
 	log15.Info("next cursor for paginated search request",
@@ -212,7 +214,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 
 // repoIsLess sorts repositories first by name then by ID, suitable for use
 // with sort.Slice.
-func repoIsLess(i, j *types.RepoName) bool {
+func repoIsLess(i, j types.RepoName) bool {
 	if i.Name != j.Name {
 		return i.Name < j.Name
 	}
@@ -255,7 +257,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search
 		searchBucketMin:     10,
 		searchBucketMax:     1000,
 	}
-	return plan.execute(ctx, func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error) {
+	return plan.execute(ctx, database.Repos(db), func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error) {
 		batchArgs := *args
 		batchArgs.RepoPromise = (&search.Promise{}).Resolve(batch)
 		fileResults, fileCommon, err := searchFilesInReposBatch(ctx, db, &batchArgs)
@@ -335,13 +337,13 @@ func repoOfResult(result SearchResultResolver) string {
 //
 // If the executor returns any error, the search will be cancelled and the error
 // returned.
-func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *searchCursor, results []SearchResultResolver, common *streaming.Stats, err error) {
+func (p *repoPaginationPlan) execute(ctx context.Context, repoStore *database.RepoStore, exec executor) (c *searchCursor, results []SearchResultResolver, common *streaming.Stats, err error) {
 	// Determine how large the batches of repositories we will search over will be.
 	var totalRepos int
 	if p.mockNumTotalRepos != nil {
 		totalRepos = p.mockNumTotalRepos()
 	} else {
-		totalRepos = numTotalRepos.get(ctx)
+		totalRepos = numTotalRepos.get(ctx, repoStore)
 	}
 	batchSize := clamp(totalRepos/p.searchBucketDivisor, p.searchBucketMin, p.searchBucketMax)
 
@@ -363,7 +365,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 
 	// Search backends don't populate Stats.repos, the
 	// repository searcher does. We need to do that here.
-	commonRepos := make(map[api.RepoID]*types.RepoName, len(repos))
+	commonRepos := make(map[api.RepoID]types.RepoName, len(repos))
 	for _, r := range repos {
 		commonRepos[r.Repo.ID] = r.Repo
 	}
@@ -402,7 +404,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 	if len(sliced.results) > 0 {
 		// First, identify what repository corresponds to the last result.
 		lastRepoConsumedName := repoOfResult(sliced.results[len(sliced.results)-1])
-		var lastRepoConsumed *types.RepoName
+		var lastRepoConsumed types.RepoName
 		for _, repo := range p.repositories {
 			if string(repo.Repo.Name) == lastRepoConsumedName {
 				lastRepoConsumed = repo.Repo
@@ -415,7 +417,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 		// that out now. For example, a cloning repository could be last or
 		// first in the results and we need to know the position for the cursor
 		// RepositoryOffset.
-		potentialLastRepos := []*types.RepoName{lastRepoConsumed}
+		potentialLastRepos := []types.RepoName{lastRepoConsumed}
 		sliced.common.Status.Filter(search.RepoStatusCloning|search.RepoStatusMissing, func(id api.RepoID) {
 			potentialLastRepos = append(potentialLastRepos, sliced.common.Repos[id])
 		})
@@ -487,11 +489,11 @@ func sliceSearchResults(results []SearchResultResolver, common *streaming.Stats,
 
 	// Break results into repositories because for each result we need to add
 	// the respective repository to the new common structure.
-	reposByName := map[string]*types.RepoName{}
+	reposByName := map[string]types.RepoName{}
 	for _, r := range common.Repos {
 		reposByName[string(r.Name)] = r
 	}
-	resultsByRepo := map[*types.RepoName][]SearchResultResolver{}
+	resultsByRepo := map[types.RepoName][]SearchResultResolver{}
 	for _, r := range results[:limit] {
 		repo := reposByName[repoOfResult(r)]
 		resultsByRepo[repo] = append(resultsByRepo[repo], r)
@@ -553,7 +555,7 @@ func sliceSearchResultsCommon(common *streaming.Stats, firstResultRepo, lastResu
 	final := &streaming.Stats{
 		IsLimitHit:         false, // irrelevant in paginated search
 		IsIndexUnavailable: common.IsIndexUnavailable,
-		Repos:              make(map[api.RepoID]*types.RepoName),
+		Repos:              make(map[api.RepoID]types.RepoName),
 	}
 
 	for _, r := range common.Repos {
@@ -598,7 +600,7 @@ type numTotalReposCache struct {
 	count      int
 }
 
-func (n *numTotalReposCache) get(ctx context.Context) int {
+func (n *numTotalReposCache) get(ctx context.Context, repoStore *database.RepoStore) int {
 	n.RLock()
 	if !n.lastUpdate.IsZero() && time.Since(n.lastUpdate) < 1*time.Minute {
 		defer n.RUnlock()
@@ -607,7 +609,7 @@ func (n *numTotalReposCache) get(ctx context.Context) int {
 	n.RUnlock()
 
 	n.Lock()
-	newCount, err := database.GlobalRepos.Count(ctx, database.ReposListOptions{})
+	newCount, err := repoStore.Count(ctx, database.ReposListOptions{})
 	if err != nil {
 		defer n.Unlock()
 		log15.Error("failed to determine numTotalRepos", "error", err)

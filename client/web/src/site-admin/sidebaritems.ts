@@ -1,10 +1,11 @@
-import EarthIcon from 'mdi-react/EarthIcon'
-import UsersIcon from 'mdi-react/UsersIcon'
-import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import CogsIcon from 'mdi-react/CogsIcon'
-import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
+import EarthIcon from 'mdi-react/EarthIcon'
+import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import UsersIcon from 'mdi-react/UsersIcon'
+
+import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 export const overviewGroup: SiteAdminSideBarGroup = {
     header: {
@@ -24,6 +25,10 @@ export const overviewGroup: SiteAdminSideBarGroup = {
         {
             label: 'Feedback survey',
             to: '/site-admin/surveys',
+        },
+        {
+            label: 'Migrations',
+            to: '/site-admin/migrations',
         },
     ],
 }

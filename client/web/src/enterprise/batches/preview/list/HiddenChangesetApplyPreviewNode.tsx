@@ -1,9 +1,12 @@
-import React from 'react'
-import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
-import { PreviewActions } from './PreviewActions'
+import React from 'react'
+
+import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
+
+import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
-import { ChangesetState } from '../../../../../../shared/src/graphql-operations'
+
+import { PreviewActions } from './PreviewActions'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
 
 export interface HiddenChangesetApplyPreviewNodeProps {

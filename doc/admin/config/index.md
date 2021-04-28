@@ -3,6 +3,8 @@
 - [Site configuration](site_config.md)
 - [Code host configuration](../external_service/index.md) (GitHub, GitLab, and the [Nginx HTTP server](../http_https_configuration.md).)
 - [Search configuration](../search.md)
+- [Configuring Authorization and Authentication](./authorization_and_authentication.md)
+- [Batch Changes configuration](batch_changes.md)
 
 ## Common tasks
 
@@ -20,3 +22,4 @@
 
 - [Loading configuration via the file system](advanced_config_file.md)
 - [Restore postgres database from snapshot](restore/index.md)
+- [Enabling database encryption for sensitive data](encryption.md)

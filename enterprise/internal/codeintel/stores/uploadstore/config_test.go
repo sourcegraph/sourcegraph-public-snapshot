@@ -1,8 +1,13 @@
 package uploadstore
 
 import (
+	"context"
 	"testing"
 	"time"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestConfigDefaults(t *testing.T) {
@@ -70,25 +75,44 @@ func TestConfigS3(t *testing.T) {
 	}
 }
 
-func TestConfigMinIOSessionOptions(t *testing.T) {
+func TestS3ClientOptions(t *testing.T) {
 	config := Config{}
 	config.SetMockGetter(mapGetter(nil))
 	config.Load()
 
-	options := s3SessionOptions("minio", config.S3)
+	// minIO
+	{
+		options := &s3.Options{}
+		s3ClientOptions("minio", config.S3)(options)
 
-	if value := *options.Config.Region; value != "us-east-1" {
-		t.Errorf("unexpected region. want=%s have=%s", "us-east-1", value)
+		if options.EndpointResolver == nil {
+			t.Fatalf("unexpected endpoint option")
+		}
+		endpoint, err := options.EndpointResolver.ResolveEndpoint("us-east-2", s3.EndpointResolverOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if endpoint.URL != "http://minio:9000" {
+			t.Errorf("unexpected endpoint. want=%s have=%s", "http://minio:9000", endpoint.URL)
+		}
+
+		if !options.UsePathStyle {
+			t.Errorf("invalid UsePathStyle setting for S3Options")
+		}
 	}
-	if value := *options.Config.Endpoint; value != "http://minio:9000" {
-		t.Errorf("unexpected endpoint. want=%s have=%s", "http://minio:9000", value)
-	}
-	if options.Config.S3ForcePathStyle == nil || !*options.Config.S3ForcePathStyle {
-		t.Errorf("expected path style option")
+
+	// S3
+	{
+		options := &s3.Options{}
+		s3ClientOptions("s3", config.S3)(options)
+
+		if diff := cmp.Diff(&s3.Options{}, options); diff != "" {
+			t.Fatalf("invalid s3 options returned for S3: %s", diff)
+		}
 	}
 }
 
-func TestConfigS3SessionOptions(t *testing.T) {
+func TestS3ClientConfig(t *testing.T) {
 	env := map[string]string{
 		"PRECISE_CODE_INTEL_UPLOAD_BACKEND":               "S3",
 		"PRECISE_CODE_INTEL_UPLOAD_BUCKET":                "lsif-uploads",
@@ -104,16 +128,28 @@ func TestConfigS3SessionOptions(t *testing.T) {
 	config.SetMockGetter(mapGetter(env))
 	config.Load()
 
-	options := s3SessionOptions("s3", config.S3)
+	cfg, err := s3ClientConfig(context.Background(), config.S3)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	if value := *options.Config.Region; value != "us-east-2" {
+	if value := cfg.Region; value != "us-east-2" {
 		t.Errorf("unexpected region. want=%s have=%s", "us-east-2", value)
 	}
-	if options.Config.Endpoint != nil {
-		t.Errorf("unexpected endpoint option")
+	cred, err := cfg.Credentials.Retrieve(context.Background())
+	if err != nil {
+		t.Fatal(err)
 	}
-	if options.Config.S3ForcePathStyle != nil {
-		t.Errorf("unexpected path style option")
+	if diff := cmp.Diff(aws.Credentials{
+		AccessKeyID:     config.S3.AccessKeyID,
+		SecretAccessKey: config.S3.SecretAccessKey,
+		SessionToken:    config.S3.SessionToken,
+		Source:          "StaticCredentials",
+	}, cred); diff != "" {
+		t.Errorf("invalid credential returned: %s", diff)
+	}
+	if cfg.EndpointResolver != nil {
+		t.Errorf("unexpected endpoint option")
 	}
 }
 

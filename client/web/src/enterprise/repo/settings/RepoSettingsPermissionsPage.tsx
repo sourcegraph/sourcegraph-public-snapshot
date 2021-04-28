@@ -1,11 +1,17 @@
-import React, { useEffect } from 'react'
+import * as H from 'history'
+import React, { useEffect, useMemo } from 'react'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
-import { eventLogger } from '../../../tracking/eventLogger'
-import * as H from 'history'
-import { scheduleRepositoryPermissionsSync } from '../../../site-admin/backend'
-import { ActionContainer } from '../../../repo/settings/components/ActionContainer'
 import { SettingsAreaRepositoryFields } from '../../../graphql-operations'
+import { ActionContainer } from '../../../repo/settings/components/ActionContainer'
+import { scheduleRepositoryPermissionsSync } from '../../../site-admin/backend'
+import { eventLogger } from '../../../tracking/eventLogger'
+
+import { repoPermissionsInfo } from './backend'
 
 export interface RepoSettingsPermissionsPageProps {
     repo: SettingsAreaRepositoryFields
@@ -20,6 +26,11 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<RepoSettingsPe
     history,
 }) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsPermissions'))
+    const permissionsInfo = useObservable(useMemo(() => repoPermissionsInfo(repo.id), [repo.id]))
+
+    if (permissionsInfo === undefined) {
+        return <LoadingSpinner />
+    }
 
     return (
         <div className="repo-settings-permissions-page w-100">
@@ -29,7 +40,7 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<RepoSettingsPe
                 <div className="alert alert-info">
                     Access to this repository is not restricted, all Sourcegraph users have access.
                 </div>
-            ) : !repo.permissionsInfo ? (
+            ) : !permissionsInfo ? (
                 <div className="alert alert-info">
                     This repository is queued to sync permissions, only site admins will have access to it until syncing
                     is finished.
@@ -41,18 +52,14 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<RepoSettingsPe
                             <tr>
                                 <th>Last complete sync</th>
                                 <td>
-                                    {repo.permissionsInfo.syncedAt ? (
-                                        <Timestamp date={repo.permissionsInfo.syncedAt} />
-                                    ) : (
-                                        'Never'
-                                    )}
+                                    {permissionsInfo.syncedAt ? <Timestamp date={permissionsInfo.syncedAt} /> : 'Never'}
                                 </td>
                                 <td className="text-muted">Updated by repository permissions syncing</td>
                             </tr>
                             <tr>
                                 <th>Last incremental sync</th>
                                 <td>
-                                    <Timestamp date={repo.permissionsInfo.updatedAt} />
+                                    <Timestamp date={permissionsInfo.updatedAt} />
                                 </td>
                                 <td className="text-muted">Updated by user permissions syncing</td>
                             </tr>
@@ -62,7 +69,7 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<RepoSettingsPe
                 </div>
             )}
             <a href="/help/admin/repo/permissions#background-permissions-syncing">
-                Learn more about background permissions synching.
+                Learn more about background permissions syncing.
             </a>
         </div>
     )

@@ -1,9 +1,12 @@
 import * as H from 'history'
 import React, { useCallback } from 'react'
-import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
-import { Form } from '../../../../branded/src/components/Form'
-import { submitSearch, QueryState } from '../helpers'
-import { SearchButton } from './SearchButton'
+
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+
 import {
     PatternTypeProps,
     CaseSensitivityProps,
@@ -11,10 +14,10 @@ import {
     OnboardingTourProps,
     SearchContextProps,
 } from '..'
-import { ThemeProps } from '../../../../shared/src/theme'
-import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { VersionContextProps } from '../../../../shared/src/search/util'
+import { submitSearch, QueryState } from '../helpers'
+
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
+import { SearchButton } from './SearchButton'
 import { useSearchOnboardingTour } from './SearchOnboardingTour'
 
 interface Props
@@ -68,6 +71,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 queryState={props.navbarSearchState}
                 onSubmit={onSubmit}
                 autoFocus={autoFocus}
+                showSearchContextHighlightTourStep={true}
             />
             <SearchButton />
         </Form>

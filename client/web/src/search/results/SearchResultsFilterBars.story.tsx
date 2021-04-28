@@ -1,8 +1,11 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { SearchFilters } from '../../../../shared/src/api/protocol'
+
+import { SearchFilters } from '@sourcegraph/shared/src/api/protocol'
+
 import { WebStory } from '../../components/WebStory'
 import { QuickLink } from '../../schema/settings.schema'
+
 import { DynamicSearchFilter, SearchResultsFilterBars, SearchResultsFilterBarsProps } from './SearchResultsFilterBars'
 
 const defaultProps: SearchResultsFilterBarsProps = {

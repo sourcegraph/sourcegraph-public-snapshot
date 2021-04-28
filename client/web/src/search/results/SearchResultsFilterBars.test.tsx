@@ -1,8 +1,11 @@
 import { mount } from 'enzyme'
 import React from 'react'
 import sinon from 'sinon'
-import { SearchFilters } from '../../../../shared/src/api/protocol'
+
+import { SearchFilters } from '@sourcegraph/shared/src/api/protocol'
+
 import { FilterChip } from '../FilterChip'
+
 import { DynamicSearchFilter, SearchResultsFilterBars, SearchResultsFilterBarsProps } from './SearchResultsFilterBars'
 
 describe('SearchResultsFilterBars', () => {

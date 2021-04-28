@@ -1,13 +1,15 @@
 /* eslint jsx-a11y/mouse-events-have-key-events: warn */
+import classNames from 'classnames'
 import * as React from 'react'
+import { FileDecoration } from 'sourcegraph'
+
+import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { Directory } from './Directory'
 import { TreeNode } from './Tree'
 import { TreeLayerProps } from './TreeLayer'
 import { maxEntries, SingleChildGitTree } from './util'
-import classNames from 'classnames'
-import { FileDecoration } from 'sourcegraph'
-import { FileDecorationsByPath } from '../../../shared/src/api/extension/extensionHostApi'
 
 interface SingleChildTreeLayerProps extends TreeLayerProps {
     childrenEntries: SingleChildGitTree[]

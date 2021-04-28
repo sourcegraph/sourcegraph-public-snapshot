@@ -1,18 +1,22 @@
 import { from, Observable, of, throwError } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { map, mapTo, switchMap, catchError } from 'rxjs/operators'
-import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../../shared/src/graphql/schema'
-import { PlatformContext } from '../../../../../shared/src/platform/context'
-import { memoizeObservable } from '../../../../../shared/src/util/memoizeObservable'
+
+import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
+import { checkOk } from '@sourcegraph/shared/src/backend/fetch'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
+import { RepoSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+
 import { storage } from '../../../browser-extension/web-extension-api/storage'
 import { isExtension } from '../../context'
 import { resolveRepo } from '../../repo/backend'
+
 import { normalizeRepoName } from './util'
-import { isRepoNotFoundErrorLike } from '../../../../../shared/src/backend/errors'
-import { RepoSpec, FileSpec, ResolvedRevisionSpec } from '../../../../../shared/src/util/url'
+
 import { RevisionSpec, DiffSpec, BaseDiffSpec } from '.'
-import { checkOk } from '../../../../../shared/src/backend/fetch'
 
 interface PhabEntity {
     id: string // e.g. "48"

@@ -1,26 +1,30 @@
+import classNames from 'classnames'
+import cookies from 'js-cookie'
+import GithubIcon from 'mdi-react/GithubIcon'
+import GitlabIcon from 'mdi-react/GitlabIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import React, { useCallback, useMemo, useState } from 'react'
-import { asError } from '../../../shared/src/util/errors'
-import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY } from '../tracking/eventLogger'
-import { enterpriseTrial, signupTerms } from '../util/features'
-import { EmailInput, PasswordInput, UsernameInput } from './SignInSignUpCommon'
-import { ErrorAlert } from '../components/alerts'
-import classNames from 'classnames'
-import { OrDivider } from './OrDivider'
-import GithubIcon from 'mdi-react/GithubIcon'
 import { Observable, of } from 'rxjs'
-import { catchError, switchMap } from 'rxjs/operators'
 import { fromFetch } from 'rxjs/fetch'
-import GitlabIcon from 'mdi-react/GitlabIcon'
-import { LoaderButton } from '../components/LoaderButton'
-import { LoaderInput } from '../../../branded/src/components/LoaderInput'
+import { catchError, switchMap } from 'rxjs/operators'
+
+import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 import {
     useInputValidation,
     ValidationOptions,
     deriveInputClassName,
-} from '../../../shared/src/util/useInputValidation'
+} from '@sourcegraph/shared/src/util/useInputValidation'
+
+import { ErrorAlert } from '../components/alerts'
+import { LoaderButton } from '../components/LoaderButton'
 import { SourcegraphContext } from '../jscontext'
-import cookies from 'js-cookie'
+import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY } from '../tracking/eventLogger'
+import { enterpriseTrial, signupTerms } from '../util/features'
+
+import { OrDivider } from './OrDivider'
+import { EmailInput, PasswordInput, UsernameInput } from './SignInSignUpCommon'
+
 export interface SignUpArguments {
     email: string
     username: string

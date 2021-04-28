@@ -1,10 +1,16 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { RepoNotFoundError } from '../../../../shared/src/backend/errors'
-import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { PlatformContext } from '../../../../shared/src/platform/context'
-import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
+
+import { RepoNotFoundError } from '@sourcegraph/shared/src/backend/errors'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
+
+import {
+    FileDiffConnectionFields,
+    RepositoryComparisonDiffResult,
+    RepositoryComparisonDiffVariables,
+} from '../../graphql-operations'
 
 export const queryRepositoryComparisonFileDiffs = memoizeObservable(
     ({
@@ -15,20 +21,24 @@ export const queryRepositoryComparisonFileDiffs = memoizeObservable(
         base: string | null
         head: string | null
         first?: number
-    } & Pick<PlatformContext, 'requestGraphQL'>): Observable<GQL.IFileDiffConnection> =>
-        requestGraphQL<GQL.IQuery>({
+    } & Pick<PlatformContext, 'requestGraphQL'>): Observable<FileDiffConnectionFields> =>
+        requestGraphQL<RepositoryComparisonDiffResult, RepositoryComparisonDiffVariables>({
             request: gql`
                 query RepositoryComparisonDiff($repo: String!, $base: String, $head: String, $first: Int) {
                     repository(name: $repo) {
                         comparison(base: $base, head: $head) {
                             fileDiffs(first: $first) {
-                                nodes {
-                                    ...FileDiffFields
-                                }
-                                totalCount
+                                ...FileDiffConnectionFields
                             }
                         }
                     }
+                }
+
+                fragment FileDiffConnectionFields on FileDiffConnection {
+                    nodes {
+                        ...FileDiffFields
+                    }
+                    totalCount
                 }
 
                 fragment FileDiffFields on FileDiff {
@@ -37,7 +47,7 @@ export const queryRepositoryComparisonFileDiffs = memoizeObservable(
                     internalID
                 }
             `,
-            variables: { repo: args.repo, base: args.base, head: args.head, first: args.first },
+            variables: { repo: args.repo, base: args.base, head: args.head, first: args.first ?? null },
             mightContainPrivateInfo: true,
         }).pipe(
             map(dataOrThrowErrors),

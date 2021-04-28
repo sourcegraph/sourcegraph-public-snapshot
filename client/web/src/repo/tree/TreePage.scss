@@ -1,5 +1,5 @@
 @import '../../search/input/SearchButton';
-@import './ViewGrid';
+@import '../../insights/components/InsightsViewGrid/InsightsViewGrid';
 @import './TreeEntriesSection';
 
 .tree-page {
@@ -21,7 +21,7 @@
             margin-bottom: 0.125rem;
         }
 
-        max-width: $media-xl;
+        max-width: map-get($grid-breakpoints, xl);
 
         &-search {
             display: flex;

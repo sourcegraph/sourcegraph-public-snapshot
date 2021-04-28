@@ -1,6 +1,8 @@
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { EXTENSION_CATEGORIES, ExtensionCategory } from '../../../shared/src/schema/extensionSchema'
+
+import { EXTENSION_CATEGORIES, ExtensionCategory } from '@sourcegraph/shared/src/schema/extensionSchema'
+
 import { ExtensionsEnablement } from './ExtensionRegistry'
 
 interface Props {

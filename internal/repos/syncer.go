@@ -98,8 +98,11 @@ func (s *Syncer) Run(ctx context.Context, db *sql.DB, store *Store, opts RunOpti
 	defer resetter.Stop()
 
 	for ctx.Err() == nil {
-		if err := store.EnqueueSyncJobs(ctx, opts.IsCloud); err != nil && s.Logger != nil {
-			s.Logger.Error("Enqueuing sync jobs", "error", err)
+		if !conf.Get().DisableAutoCodeHostSyncs {
+			err := store.EnqueueSyncJobs(ctx, opts.IsCloud)
+			if err != nil && s.Logger != nil {
+				s.Logger.Error("Enqueuing sync jobs", "error", err)
+			}
 		}
 		sleep(ctx, opts.EnqueueInterval())
 	}
@@ -174,7 +177,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		// If we are over our limit for user added repos we abort the sync
 		totalAllowed := uint64(s.UserReposMaxPerSite)
 		if totalAllowed == 0 {
-			totalAllowed = uint64(ConfUserReposMaxPerSite())
+			totalAllowed = uint64(conf.UserReposMaxPerSite())
 		}
 		userAdded, err := tx.CountUserAddedRepos(ctx)
 		if err != nil {
@@ -189,7 +192,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		var sourcedRepoCount int64
 		maxAllowed := s.UserReposMaxPerUser
 		if maxAllowed == 0 {
-			maxAllowed = ConfUserReposMaxPerUser()
+			maxAllowed = conf.UserReposMaxPerUser()
 		}
 		onSourced = func(r *types.Repo) error {
 			newCount := atomic.AddInt64(&sourcedRepoCount, 1)
@@ -223,14 +226,13 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		log15.Warn("Non fatal error during sync", "externalService", svc.ID, "unauthorized", unauthorized, "accountSuspended", accountSuspended)
 	}
 
-	// Unless explicitly specified with the "all" setting or the owner of the service has the "AllowUserExternalServicePrivate" tag,
-	// user added external services should only sync public code.
-	if isUserOwned && conf.ExternalServiceUserMode() != conf.ExternalServiceModeAll {
-		ok, err := database.GlobalUsers.HasTag(ctx, svc.NamespaceUserID, database.TagAllowUserExternalServicePrivate)
-		if err != nil {
-			return errors.Wrap(err, "checking user tag")
-		}
-		if !ok {
+	// Unless our site config explicitly allows private code or the user has the
+	// "AllowUserExternalServicePrivate" tag, user added external services should
+	// only sync public code.
+	if isUserOwned {
+		if mode, err := database.UsersWith(tx).UserAllowedExternalServices(ctx, svc.NamespaceUserID); err != nil {
+			return errors.Wrap(err, "checking if user can add private code")
+		} else if mode != conf.ExternalServiceModeAll {
 			sourced = sourced.Filter(func(r *types.Repo) bool { return !r.Private })
 		}
 	}
@@ -295,9 +297,6 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 
 	// Delete from external_service_repos only. Deletes need to happen first so that we don't end up with
 	// constraint violations later.
-	// The trigger 'trig_soft_delete_orphan_repo_by_external_service_repo' will run
-	// and remove any repos that no longer have any rows in the external_service_repos
-	// table.
 	sdiff := s.sourcesUpserts(&diff, storedServiceReposAndConflicting)
 	if err = tx.UpsertSources(ctx, nil, nil, sdiff.Deleted); err != nil {
 		return errors.Wrap(err, "syncer.sync.store.delete-sources")
@@ -520,9 +519,6 @@ func (s *Syncer) syncRepo(ctx context.Context, store *Store, insertOnly bool, pu
 
 	// Delete from external_service_repos only. Deletes need to happen first so that we don't end up with
 	// constraint violations later.
-	// The trigger 'trig_soft_delete_orphan_repo_by_external_service_repo' will run
-	// and remove any repos that no longer have any rows in the external_service_repos
-	// table.
 	sdiff := s.sourcesUpserts(&diff, storedCopy)
 	if err = store.UpsertSources(ctx, nil, nil, sdiff.Deleted); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.syncrepo.store.delete-sources")
@@ -553,6 +549,8 @@ func (s *Syncer) syncRepo(ctx context.Context, store *Store, insertOnly bool, pu
 	return diff, nil
 }
 
+// upserts returns a slice containing modified or added repos from a Diff. Deleted
+// repos are ignored.
 func (s *Syncer) upserts(diff Diff) []*types.Repo {
 	now := s.Now()
 	upserts := make([]*types.Repo, 0, len(diff.Added)+len(diff.Modified))

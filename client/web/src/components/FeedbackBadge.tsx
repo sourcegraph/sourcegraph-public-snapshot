@@ -1,5 +1,6 @@
-import React from 'react'
 import classnames from 'classnames'
+import React from 'react'
+
 import { Badge, BadgeProps } from './Badge'
 
 interface FeedbackBadgeProps extends BadgeProps {
@@ -12,7 +13,7 @@ interface FeedbackBadgeProps extends BadgeProps {
     className?: string
 }
 
-export const FeedbackBadge: React.FC<FeedbackBadgeProps> = props => {
+export const FeedbackBadge: React.FunctionComponent<FeedbackBadgeProps> = props => {
     const {
         className,
         status,

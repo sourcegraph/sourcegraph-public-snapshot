@@ -1,20 +1,33 @@
 import expect from 'expect'
-import { commonWebGraphQlResults } from './graphQlResults'
+import { test } from 'mocha'
+import { Key } from 'ts-key-enum'
+
+import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
+import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+
 import {
     RepoGroupsResult,
     SearchResult,
     SearchSuggestionsResult,
     WebGraphQlOperations,
-    SearchContextsResult,
+    AutoDefinedSearchContextsResult,
 } from '../graphql-operations'
-import { Driver, createDriverForTest, percySnapshot } from '../../../shared/src/testing/driver'
-import { afterEachSaveScreenshotIfFailed } from '../../../shared/src/testing/screenshotReporter'
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { test } from 'mocha'
-import { siteGQLID, siteID } from './jscontext'
-import { SharedGraphQlOperations, SymbolKind } from '../../../shared/src/graphql-operations'
 import { SearchEvent } from '../search/stream'
-import { Key } from 'ts-key-enum'
+
+import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { commonWebGraphQlResults } from './graphQlResults'
+import { createJsContext, siteGQLID, siteID } from './jscontext'
+import {
+    commitHighlightResult,
+    commitSearchStreamEvents,
+    diffSearchStreamEvents,
+    diffHighlightResult,
+    mixedSearchStreamEvents,
+    highlightFileResult,
+    symbolSearchStreamEvents,
+} from './streaming-search-mocks'
+import { percySnapshotWithVariants } from './utils'
 
 const searchResults = (): SearchResult => ({
     search: {
@@ -61,8 +74,6 @@ const searchResults = (): SearchResult => ({
                             '\u003Cp\u003E\u003Ca href="/github.com/Algorilla/manta-ray" rel="nofollow"\u003Egithub.com/Algorilla/manta-ray\u003C/a\u003E\u003C/p\u003E\n',
                     },
                     url: '/github.com/Algorilla/manta-ray',
-                    icon:
-                        'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4PSIwcHgiIHk9IjBweCIKCSB2aWV3Qm94PSIwIDAgNjQgNjQiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDY0IDY0OyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+Cjx0aXRsZT5JY29ucyA0MDA8L3RpdGxlPgo8Zz4KCTxwYXRoIGQ9Ik0yMywyMi40YzEuMywwLDIuNC0xLjEsMi40LTIuNHMtMS4xLTIuNC0yLjQtMi40Yy0xLjMsMC0yLjQsMS4xLTIuNCwyLjRTMjEuNywyMi40LDIzLDIyLjR6Ii8+Cgk8cGF0aCBkPSJNMzUsMjYuNGMxLjMsMCwyLjQtMS4xLDIuNC0yLjRzLTEuMS0yLjQtMi40LTIuNHMtMi40LDEuMS0yLjQsMi40UzMzLjcsMjYuNCwzNSwyNi40eiIvPgoJPHBhdGggZD0iTTIzLDQyLjRjMS4zLDAsMi40LTEuMSwyLjQtMi40cy0xLjEtMi40LTIuNC0yLjRzLTIuNCwxLjEtMi40LDIuNFMyMS43LDQyLjQsMjMsNDIuNHoiLz4KCTxwYXRoIGQ9Ik01MCwxNmgtMS41Yy0wLjMsMC0wLjUsMC4yLTAuNSwwLjV2MzVjMCwwLjMtMC4yLDAuNS0wLjUsMC41aC0yN2MtMC41LDAtMS0wLjItMS40LTAuNmwtMC42LTAuNmMtMC4xLTAuMS0wLjEtMC4yLTAuMS0wLjQKCQljMC0wLjMsMC4yLTAuNSwwLjUtMC41SDQ0YzEuMSwwLDItMC45LDItMlYxMmMwLTEuMS0wLjktMi0yLTJIMTRjLTEuMSwwLTIsMC45LTIsMnYzNi4zYzAsMS4xLDAuNCwyLjEsMS4yLDIuOGwzLjEsMy4xCgkJYzEuMSwxLjEsMi43LDEuOCw0LjIsMS44SDUwYzEuMSwwLDItMC45LDItMlYxOEM1MiwxNi45LDUxLjEsMTYsNTAsMTZ6IE0xOSwyMGMwLTIuMiwxLjgtNCw0LTRjMS40LDAsMi44LDAuOCwzLjUsMgoJCWMxLjEsMS45LDAuNCw0LjMtMS41LDUuNFYzM2MxLTAuNiwyLjMtMC45LDQtMC45YzEsMCwyLTAuNSwyLjgtMS4zQzMyLjUsMzAsMzMsMjkuMSwzMywyOHYtMC42Yy0xLjItMC43LTItMi0yLTMuNQoJCWMwLTIuMiwxLjgtNCw0LTRjMi4yLDAsNCwxLjgsNCw0YzAsMS41LTAuOCwyLjctMiwzLjVoMGMtMC4xLDIuMS0wLjksNC40LTIuNSw2Yy0xLjYsMS42LTMuNCwyLjQtNS41LDIuNWMtMC44LDAtMS40LDAuMS0xLjksMC4zCgkJYy0wLjIsMC4xLTEsMC44LTEuMiwwLjlDMjYuNiwzOCwyNywzOC45LDI3LDQwYzAsMi4yLTEuOCw0LTQsNHMtNC0xLjgtNC00YzAtMS41LDAuOC0yLjcsMi0zLjRWMjMuNEMxOS44LDIyLjcsMTksMjEuNCwxOSwyMHoiLz4KPC9nPgo8L3N2Zz4K',
                     detail: { html: '\u003Cp\u003ERepository match\u003C/p\u003E\n' },
                     matches: [],
                 },
@@ -84,8 +95,11 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     RepoGroups: (): RepoGroupsResult => ({
         repoGroups: [],
     }),
-    SearchContexts: (): SearchContextsResult => ({
-        searchContexts: [],
+    AutoDefinedSearchContexts: (): AutoDefinedSearchContextsResult => ({
+        autoDefinedSearchContexts: [],
+    }),
+    ConvertVersionContextToSearchContext: ({ name }) => ({
+        convertVersionContextToSearchContext: { id: `id${name}`, spec: name },
     }),
 }
 
@@ -113,6 +127,15 @@ describe('Search', () => {
 
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
         driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
+
+    test('Styled correctly on results page', async () => {
+        testContext.overrideGraphQL({
+            ...commonSearchGraphQLResults,
+        })
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
+        await driver.page.waitForSelector('#monaco-query-input')
+        await percySnapshotWithVariants(driver.page, 'Search results page')
+    })
 
     describe('Search filters', () => {
         test('Search filters are shown on search result pages and clicking them triggers a new search', async () => {
@@ -443,50 +466,12 @@ describe('Search', () => {
         })
 
         test('Streaming diff search syntax highlighting', async () => {
-            const searchStreamEvents: SearchEvent[] = [
-                {
-                    type: 'matches',
-                    data: [
-                        {
-                            type: 'commit',
-                            icon:
-                                'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmVyc2lvbj0iMS4xIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTE3LDEyQzE3LDE0LjQyIDE1LjI4LDE2LjQ0IDEzLDE2LjlWMjFIMTFWMTYuOUM4LjcyLDE2LjQ0IDcsMTQuNDIgNywxMkM3LDkuNTggOC43Miw3LjU2IDExLDcuMVYzSDEzVjcuMUMxNS4yOCw3LjU2IDE3LDkuNTggMTcsMTJNMTIsOUEzLDMgMCAwLDAgOSwxMkEzLDMgMCAwLDAgMTIsMTVBMywzIDAgMCwwIDE1LDEyQTMsMyAwIDAsMCAxMiw5WiIgLz48L3N2Zz4=',
-                            label:
-                                '[sourcegraph/sourcegraph](/gitlab.sgdev.org/sourcegraph/sourcegraph) › [Rijnard van Tonder](/gitlab.sgdev.org/sourcegraph/sourcegraph/-/commit/b6dd338737c090fdab31d324542bfdaa7ce9f766): [search: if not specified, set fork:no by default (#8739)](/gitlab.sgdev.org/sourcegraph/sourcegraph/-/commit/b6dd338737c090fdab31d324542bfdaa7ce9f766)',
-                            url:
-                                '/gitlab.sgdev.org/sourcegraph/sourcegraph/-/commit/b6dd338737c090fdab31d324542bfdaa7ce9f766',
-                            detail:
-                                '[`b6dd338` one year ago](/gitlab.sgdev.org/sourcegraph/sourcegraph/-/commit/b6dd338737c090fdab31d324542bfdaa7ce9f766)',
-                            content:
-                                "```diff\nweb/src/regression/search.test.ts web/src/regression/search.test.ts\n@@ -434,0 +435,3 @@ describe('Search regression test suite', () => {\n+        test('Fork repos excluded by default', async () => {\n+            const urlQuery = buildSearchURLQuery('type:repo sgtest/mux', GQL.SearchPatternType.regexp, false)\n+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)\n@@ -434,0 +439,4 @@ describe('Search regression test suite', () => {\n+        })\n+        test('Forked repos included by by fork option', async () => {\n+            const urlQuery = buildSearchURLQuery('type:repo sgtest/mux fork:yes', GQL.SearchPatternType.regexp, false)\n+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)\n```",
-                            ranges: [
-                                [-1, 30, 4],
-                                [-4, 30, 4],
-                                [3, 9, 4],
-                                [4, 63, 4],
-                                [8, 9, 4],
-                                [9, 63, 4],
-                            ],
-                        },
-                    ],
-                },
-                { type: 'done', data: {} },
-            ]
-
-            const highlightResult: Partial<WebGraphQlOperations> = {
-                highlightCode: ({ isLightTheme }) => ({
-                    highlightCode: isLightTheme
-                        ? '<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#657b83;">web/src/regression/search.test.ts web/src/regression/search.test.ts\n</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#268bd2;">@@ -434,0 +435,3 @@ </span><span style="color:#cb4b16;">describe(&#39;Search regression test suite&#39;, () =&gt; {\n</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="background-color:#deeade;color:#2b3750;">+        test(&#39;Fork repos excluded by default&#39;, async () =&gt; {\n</span></div></td></tr><tr><td class="line" data-line="4"></td><td class="code"><div><span style="background-color:#deeade;color:#2b3750;">+            const urlQuery = buildSearchURLQuery(&#39;type:repo sgtest/mux&#39;, GQL.SearchPatternType.regexp, false)\n</span></div></td></tr><tr><td class="line" data-line="5"></td><td class="code"><div><span style="background-color:#deeade;color:#2b3750;">+            await driver.page.goto(config.sourcegraphBaseUrl + &#39;/search?&#39; + urlQuery)\n</span></div></td></tr><tr><td class="line" data-line="6"></td><td class="code"><div><span style="color:#268bd2;">@@ -434,0 +439,4 @@ </span><span style="color:#cb4b16;">describe(&#39;Search regression test suite&#39;, () =&gt; {\n</span></div></td></tr><tr><td class="line" data-line="7"></td><td class="code"><div><span style="background-color:#deeade;color:#2b3750;">+        })\n</span></div></td></tr><tr><td class="line" data-line="8"></td><td class="code"><div><span style="background-color:#deeade;color:#2b3750;">+        test(&#39;Forked repos included by by fork option&#39;, async () =&gt; {\n</span></div></td></tr><tr><td class="line" data-line="9"></td><td class="code"><div><span style="background-color:#deeade;color:#2b3750;">+            const urlQuery = buildSearchURLQuery(&#39;type:repo sgtest/mux fork:yes&#39;, GQL.SearchPatternType.regexp, false)\n</span></div></td></tr><tr><td class="line" data-line="10"></td><td class="code"><div><span style="background-color:#deeade;color:#2b3750;">+            await driver.page.goto(config.sourcegraphBaseUrl + &#39;/search?&#39; + urlQuery)</span></div></td></tr></tbody></table>'
-                        : '<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#969896;">web/src/regression/search.test.ts web/src/regression/search.test.ts\n</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#268bd2;">@@ -434,0 +435,3 @@ </span><span style="color:#8fa1b3;">describe(&#39;Search regression test suite&#39;, () =&gt; {\n</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="background-color:#0e2414;color:#f2f4f8;">+        test(&#39;Fork repos excluded by default&#39;, async () =&gt; {\n</span></div></td></tr><tr><td class="line" data-line="4"></td><td class="code"><div><span style="background-color:#0e2414;color:#f2f4f8;">+            const urlQuery = buildSearchURLQuery(&#39;type:repo sgtest/mux&#39;, GQL.SearchPatternType.regexp, false)\n</span></div></td></tr><tr><td class="line" data-line="5"></td><td class="code"><div><span style="background-color:#0e2414;color:#f2f4f8;">+            await driver.page.goto(config.sourcegraphBaseUrl + &#39;/search?&#39; + urlQuery)\n</span></div></td></tr><tr><td class="line" data-line="6"></td><td class="code"><div><span style="color:#268bd2;">@@ -434,0 +439,4 @@ </span><span style="color:#8fa1b3;">describe(&#39;Search regression test suite&#39;, () =&gt; {\n</span></div></td></tr><tr><td class="line" data-line="7"></td><td class="code"><div><span style="background-color:#0e2414;color:#f2f4f8;">+        })\n</span></div></td></tr><tr><td class="line" data-line="8"></td><td class="code"><div><span style="background-color:#0e2414;color:#f2f4f8;">+        test(&#39;Forked repos included by by fork option&#39;, async () =&gt; {\n</span></div></td></tr><tr><td class="line" data-line="9"></td><td class="code"><div><span style="background-color:#0e2414;color:#f2f4f8;">+            const urlQuery = buildSearchURLQuery(&#39;type:repo sgtest/mux fork:yes&#39;, GQL.SearchPatternType.regexp, false)\n</span></div></td></tr><tr><td class="line" data-line="10"></td><td class="code"><div><span style="background-color:#0e2414;color:#f2f4f8;">+            await driver.page.goto(config.sourcegraphBaseUrl + &#39;/search?&#39; + urlQuery)</span></div></td></tr></tbody></table>',
-                }),
-            }
-
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
                 ...viewerSettingsWithStreamingSearch,
-                ...highlightResult,
+                ...diffHighlightResult,
             })
-            testContext.overrideSearchStreamEvents(searchStreamEvents)
+            testContext.overrideSearchStreamEvents(diffSearchStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test%20type:diff&patternType=regexp')
             await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
@@ -494,7 +479,69 @@ describe('Search', () => {
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
 
-            await percySnapshot(driver.page, 'Streaming diff search syntax highlighting')
+            await percySnapshotWithVariants(driver.page, 'Streaming diff search syntax highlighting', {
+                waitForCodeHighlighting: true,
+            })
+        })
+
+        test('Streaming commit search syntax highlighting', async () => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+                ...viewerSettingsWithStreamingSearch,
+                ...commitHighlightResult,
+            })
+            testContext.overrideSearchStreamEvents(commitSearchStreamEvents)
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=graph%20type:commit&patternType=regexp')
+            await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
+                visible: true,
+            })
+            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+
+            await percySnapshotWithVariants(driver.page, 'Streaming commit search syntax highlighting', {
+                waitForCodeHighlighting: true,
+            })
+        })
+
+        test('Streaming search code, file and repo results with filter suggestions', async () => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+                ...viewerSettingsWithStreamingSearch,
+                ...highlightFileResult,
+            })
+            testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('.code-excerpt .selection-highlight', {
+                visible: true,
+            })
+            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+
+            await percySnapshotWithVariants(
+                driver.page,
+                'Streaming commit code, file and repo results with filter suggestions',
+                {
+                    waitForCodeHighlighting: true,
+                }
+            )
+        })
+
+        test('Streaming search symbols', async () => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+                ...viewerSettingsWithStreamingSearch,
+            })
+            testContext.overrideSearchStreamEvents(symbolSearchStreamEvents)
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('.test-file-match-children-item', {
+                visible: true,
+            })
+            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+
+            await percySnapshotWithVariants(driver.page, 'Streaming search symbols', {
+                waitForCodeHighlighting: true,
+            })
         })
     })
 
@@ -509,7 +556,12 @@ describe('Search', () => {
                             viewerCanAdminister: false,
                             latestSettings: {
                                 id: 0,
-                                contents: JSON.stringify({ experimentalFeatures: { showSearchContext: true } }),
+                                contents: JSON.stringify({
+                                    experimentalFeatures: {
+                                        showSearchContext: true,
+                                        showSearchContextManagement: true,
+                                    },
+                                }),
                             },
                         },
                         {
@@ -518,7 +570,12 @@ describe('Search', () => {
                             siteID,
                             latestSettings: {
                                 id: 470,
-                                contents: JSON.stringify({ experimentalFeatures: { showSearchContext: true } }),
+                                contents: JSON.stringify({
+                                    experimentalFeatures: {
+                                        showSearchContext: true,
+                                        showSearchContextManagement: true,
+                                    },
+                                }),
                             },
                             settingsURL: '/site-admin/global-settings',
                             viewerCanAdminister: true,
@@ -531,14 +588,15 @@ describe('Search', () => {
         const testContextForSearchContexts: Partial<WebGraphQlOperations> = {
             ...commonSearchGraphQLResults,
             ...viewerSettingsWithSearchContexts,
-            SearchContexts: () => ({
-                searchContexts: [
+            AutoDefinedSearchContexts: () => ({
+                autoDefinedSearchContexts: [
                     {
                         __typename: 'SearchContext',
                         id: '1',
                         spec: 'global',
                         description: '',
                         autoDefined: true,
+                        repositories: [],
                     },
                     {
                         __typename: 'SearchContext',
@@ -546,6 +604,7 @@ describe('Search', () => {
                         spec: '@test',
                         description: '',
                         autoDefined: true,
+                        repositories: [],
                     },
                 ],
             }),
@@ -570,9 +629,28 @@ describe('Search', () => {
                 },
             }),
         }
+        const versionContexts = [
+            {
+                name: 'version-context-1',
+                description: 'v1',
+                revisions: [],
+            },
+            {
+                name: 'version-context-2',
+                description: 'v2',
+                revisions: [],
+            },
+        ]
 
         beforeEach(() => {
             testContext.overrideGraphQL(testContextForSearchContexts)
+            const context = createJsContext({ sourcegraphBaseUrl: driver.sourcegraphBaseUrl })
+            testContext.overrideJsContext({
+                ...context,
+                experimentalFeatures: {
+                    versionContexts,
+                },
+            })
         })
 
         afterEach(async () => {
@@ -587,17 +665,37 @@ describe('Search', () => {
                 () => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown') !== null
             )
 
+        const isSearchContextHighlightTourStepVisible = () =>
+            driver.page.evaluate(
+                () =>
+                    document.querySelector<HTMLDivElement>(
+                        'div[data-shepherd-step-id="search-contexts-start-tour"]'
+                    ) !== null
+            )
+
         const isSearchContextDropdownDisabled = () =>
             driver.page.evaluate(
                 () => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown')?.disabled
             )
         test('Search context selected based on URL', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:%40test+test&patternType=regexp')
+            testContext.overrideGraphQL({
+                ...testContextForSearchContexts,
+                IsSearchContextAvailable: () => ({
+                    isSearchContextAvailable: true,
+                }),
+            })
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:%40test+test&patternType=regexp', {
+                waitUntil: 'networkidle0',
+            })
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@test')
         })
 
-        test('Missing context param should default to global context', async () => {
+        test('Missing context filter should default to global context', async () => {
+            // Initialize localStorage to a valid context, that should not be used
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+            await driver.page.evaluate(() => localStorage.setItem('sg-last-search-context', '@test'))
+            // Visit the search page with a query without a context filter
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
@@ -605,7 +703,8 @@ describe('Search', () => {
 
         test('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
             await driver.page.goto(
-                driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp'
+                driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp',
+                { waitUntil: 'networkidle0' }
             )
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             await driver.page.waitForSelector('#monaco-query-input')
@@ -629,6 +728,88 @@ describe('Search', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await driver.page.waitForSelector('#monaco-query-input')
             expect(await isSearchContextDropdownVisible()).toBeFalsy()
+        })
+
+        test('Reset unavailable search context from localStorage if query is not present', async () => {
+            // First initialize localStorage on the page
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+            await driver.page.evaluate(() => localStorage.setItem('sg-last-search-context', 'doesnotexist'))
+            // Visit the page again with localStorage initialized
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
+                waitUntil: 'networkidle0',
+            })
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
+        })
+
+        test('Convert version context', async () => {
+            testContext.overrideGraphQL({
+                ...testContextForSearchContexts,
+                IsSearchContextAvailable: () => ({
+                    isSearchContextAvailable: false,
+                }),
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts?tab=convert-version-contexts')
+
+            await driver.page.waitForSelector('.test-convert-version-context-btn')
+            await driver.page.click('.test-convert-version-context-btn')
+
+            await driver.page.waitForSelector('.convert-version-context-node .alert-success')
+
+            const successText = await driver.page.evaluate(
+                () => document.querySelector('.convert-version-context-node .alert-success')?.textContent
+            )
+            expect(successText).toBe('Version context successfully converted.')
+        })
+
+        test('Convert all version contexts', async () => {
+            testContext.overrideGraphQL({
+                ...testContextForSearchContexts,
+                IsSearchContextAvailable: () => ({
+                    isSearchContextAvailable: false,
+                }),
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts?tab=convert-version-contexts')
+
+            await driver.page.waitForSelector('.test-convert-all-search-contexts-btn')
+            await driver.page.click('.test-convert-all-search-contexts-btn')
+
+            testContext.overrideGraphQL({
+                ...testContextForSearchContexts,
+                IsSearchContextAvailable: () => ({
+                    isSearchContextAvailable: true,
+                }),
+            })
+
+            // Check that a success message appears with the correct number of converted contexts
+            await driver.page.waitForSelector('.test-convert-all-search-contexts-success')
+            const successText = await driver.page.evaluate(
+                () => document.querySelector('.test-convert-all-search-contexts-success')?.textContent
+            )
+            expect(successText).toBe(`Sucessfully converted ${versionContexts.length} version contexts.`)
+
+            // Check that individual context nodes have 'Converted' text
+            const convertedContexts = await driver.page.evaluate(
+                () => document.querySelectorAll('.test-converted-context').length
+            )
+            expect(convertedContexts).toBe(versionContexts.length)
+        })
+
+        test('Highlight tour step should be visible with empty local storage', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            expect(await isSearchContextHighlightTourStepVisible()).toBeTruthy()
+        })
+
+        test('Highlight tour step should not be visible if already seen', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
+            await driver.page.evaluate(() =>
+                localStorage.setItem('has-seen-search-contexts-dropdown-highlight-tour-step', 'true')
+            )
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            expect(await isSearchContextHighlightTourStepVisible()).toBeFalsy()
         })
     })
 })

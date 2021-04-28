@@ -39,21 +39,25 @@ import (
 func TestSearchFilesInRepos(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
-			})}, false, nil
+			return []result.FileMatch{{
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
+			}}, false, nil
 		case "foo/two":
-			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
-			})}, false, nil
+			return []result.FileMatch{{
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
+			}}, false, nil
 		case "foo/empty":
 			return nil, false, nil
 		case "foo/cloning":
@@ -132,27 +136,33 @@ func TestSearchFilesInRepos(t *testing.T) {
 func TestSearchFilesInReposStream(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
-			})}, false, nil
+			return []result.FileMatch{{
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
+			}}, false, nil
 		case "foo/two":
-			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
-			})}, false, nil
+			return []result.FileMatch{{
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
+			}}, false, nil
 		case "foo/three":
-			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
-			})}, false, nil
+			return []result.FileMatch{{
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
+			}}, false, nil
 		default:
 			return nil, false, errors.New("Unexpected repo")
 		}
@@ -212,15 +222,17 @@ func mkStatusMap(m map[string]search.RepoStatus) search.RepoStatusMap {
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
-			return []*FileMatchResolver{mkFileMatchResolver(db, result.FileMatch{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
-			})}, false, nil
+			return []result.FileMatch{{
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
+			}}, false, nil
 		default:
 			panic("unexpected repo")
 		}
@@ -324,8 +336,8 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	return r
 }
 
-func mkRepos(names ...string) []*types.RepoName {
-	var repos []*types.RepoName
+func mkRepos(names ...string) []types.RepoName {
+	var repos []types.RepoName
 	for _, name := range names {
 		sum := md5.Sum([]byte(name))
 		id := api.RepoID(binary.BigEndian.Uint64(sum[:]))
@@ -335,84 +347,9 @@ func mkRepos(names ...string) []*types.RepoName {
 		if id == 0 {
 			id++
 		}
-		repos = append(repos, &types.RepoName{ID: id, Name: api.RepoName(name)})
+		repos = append(repos, types.RepoName{ID: id, Name: api.RepoName(name)})
 	}
 	return repos
-}
-
-func TestLimitSearcherRepos(t *testing.T) {
-	repoRevs := func(repoRevs ...string) []*search.RepositoryRevisions {
-		var result []*search.RepositoryRevisions
-		for _, repoRev := range repoRevs {
-			split := strings.Split(repoRev, "@")
-			repo, rev := split[0], split[1]
-
-			found := false
-			for _, existing := range result {
-				if string(existing.Repo.Name) == repo {
-					existing.Revs = append(existing.Revs, search.RevisionSpecifier{RevSpec: rev})
-					found = true
-					break
-				}
-			}
-			if found {
-				continue
-			}
-			result = append(result, &search.RepositoryRevisions{
-				Repo: mkRepos(repo)[0],
-				Revs: []search.RevisionSpecifier{{RevSpec: rev}},
-			})
-		}
-		return result
-	}
-
-	tests := []struct {
-		name        string
-		limit       int
-		input       []*search.RepositoryRevisions
-		want        []*search.RepositoryRevisions
-		wantLimited []*types.RepoName
-	}{
-		{
-			name:        "non_limited",
-			limit:       5,
-			input:       repoRevs("a@1", "a@2", "b@1", "c@1"),
-			want:        repoRevs("a@1", "a@2", "b@1", "c@1"),
-			wantLimited: nil,
-		},
-		{
-			name:        "limited",
-			limit:       5,
-			input:       repoRevs("a@1", "b@1", "c@1", "d@1", "e@1", "f@1", "g@1"),
-			want:        repoRevs("a@1", "b@1", "c@1", "d@1", "e@1"),
-			wantLimited: mkRepos("f", "g"),
-		},
-		{
-			name:        "rev_limited",
-			limit:       6,
-			input:       repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1", "f@1", "g@1"),
-			want:        repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1"),
-			wantLimited: mkRepos("f", "g"),
-		},
-		{
-			name:        "rev_limited_duplication",
-			limit:       6,
-			input:       repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1", "f@1", "f@2", "g@1"),
-			want:        repoRevs("a@1", "a@2", "b@1", "c@1", "d@1", "e@1"),
-			wantLimited: mkRepos("f", "g"),
-		},
-	}
-	for _, tst := range tests {
-		t.Run(tst.name, func(t *testing.T) {
-			got, gotLimited := limitSearcherRepos(tst.input, tst.limit)
-			if !reflect.DeepEqual(got, tst.want) {
-				t.Errorf("got %+v want %+v", got, tst.limit)
-			}
-			if !reflect.DeepEqual(gotLimited, tst.wantLimited) {
-				t.Errorf("got limited %+v want %+v", gotLimited, tst.wantLimited)
-			}
-		})
-	}
 }
 
 func TestFileMatch_Limit(t *testing.T) {

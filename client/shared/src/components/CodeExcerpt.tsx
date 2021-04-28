@@ -4,10 +4,11 @@ import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
+
+import * as GQL from '../graphql/schema'
 import { highlightNode } from '../util/dom'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { Repo } from '../util/url'
-import * as GQL from '../graphql/schema'
 
 export interface FetchFileParameters {
     repoName: string
@@ -32,7 +33,12 @@ interface Props extends Repo {
     className?: string
     /** A function to fetch the range of lines this code excerpt will display. It will be provided
      * the same start and end lines properties that were provided as component props */
-    fetchHighlightedFileRangeLines: (isFirst: boolean, startLine: number, endLine: number) => Observable<string[]>
+    fetchHighlightedFileRangeLines: (
+        isFirst: boolean,
+        startLine: number,
+        endLine: number,
+        isLightTheme: boolean
+    ) => Observable<string[]>
 }
 
 interface HighlightRange {
@@ -82,7 +88,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                     })),
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     switchMap(({ repoName, filePath, commitID, isLightTheme, isFirst, startLine, endLine }) =>
-                        props.fetchHighlightedFileRangeLines(isFirst, startLine, endLine)
+                        props.fetchHighlightedFileRangeLines(isFirst, startLine, endLine, isLightTheme)
                     ),
                     catchError(error => [asError(error)])
                 )

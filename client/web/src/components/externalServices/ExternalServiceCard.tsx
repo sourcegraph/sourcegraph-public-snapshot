@@ -1,8 +1,11 @@
 import * as H from 'history'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import UserIcon from 'mdi-react/UserIcon'
 import React from 'react'
-import { ExternalServiceKind } from '../../graphql-operations'
-import { Link } from '../../../../shared/src/components/Link'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+
+import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
 
 interface ExternalServiceCardProps {
     /**
@@ -22,6 +25,8 @@ interface ExternalServiceCardProps {
 
     kind: ExternalServiceKind
 
+    namespace?: ExternalServiceFields['namespace']
+
     to?: H.LocationDescriptor
     className?: string
 }
@@ -32,13 +37,24 @@ export const ExternalServiceCard: React.FunctionComponent<ExternalServiceCardPro
     shortDescription,
     to,
     kind,
+    namespace,
     className = '',
 }) => {
     const children = (
         <div className={`p-3 d-flex align-items-start border ${className}`}>
             <Icon className="icon-inline h3 mb-0 mr-3" />
             <div className="flex-1">
-                <h3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>{title}</h3>
+                <h3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>
+                    {title}
+                    {namespace && (
+                        <small>
+                            {' '}
+                            by
+                            <UserIcon className="icon-inline" />
+                            <Link to={namespace.url}>{namespace.namespaceName}</Link>
+                        </small>
+                    )}
+                </h3>
                 {shortDescription && <p className="mb-0 text-muted">{shortDescription}</p>}
             </div>
             {to && <ChevronRightIcon className="align-self-center" />}

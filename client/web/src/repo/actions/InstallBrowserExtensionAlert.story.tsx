@@ -1,9 +1,12 @@
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
+
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
+
 import { WebStory } from '../../components/WebStory'
+
 import { InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
-import { ExternalServiceKind } from '../../../../shared/src/graphql/schema'
 
 const onAlertDismissed = action('onAlertDismissed')
 

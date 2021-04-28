@@ -1,9 +1,23 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import * as H from 'history'
+import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect, useMemo } from 'react'
+import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
+import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
-import { isEqual } from 'lodash'
+import { BatchChangeFields, Scalars } from '../../../graphql-operations'
+import { Description } from '../Description'
+
 import {
     fetchBatchChangeByNamespace as _fetchBatchChangeByNamespace,
     queryChangesets as _queryChangesets,
@@ -11,25 +25,14 @@ import {
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
     deleteBatchChange as _deleteBatchChange,
 } from './backend'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
-import * as H from 'history'
-import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
-import { ThemeProps } from '../../../../../shared/src/theme'
-import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
-import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { BatchChangeFields, Scalars } from '../../../graphql-operations'
-import { Description } from '../Description'
-import { BatchChangeStatsCard } from './BatchChangeStatsCard'
-import { BatchChangeTabs } from './BatchChangeTabs'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
-import { UnpublishedNotice } from './UnpublishedNotice'
-import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
-import { BatchChangesIcon } from '../../../batches/icons'
-import { PageHeader } from '../../../components/PageHeader'
-import { ClosedNotice } from './ClosedNotice'
+import { BatchChangeStatsCard } from './BatchChangeStatsCard'
+import { BatchChangeTabs } from './BatchChangeTabs'
 import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
+import { ClosedNotice } from './ClosedNotice'
+import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
+import { UnpublishedNotice } from './UnpublishedNotice'
 
 export interface BatchChangeDetailsPageProps
     extends ThemeProps,
@@ -92,8 +95,6 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
         )
     )
 
-    const archiveEnabled = window.context?.experimentalFeatures?.archiveBatchChangeChangesets
-
     // Is loading.
     if (batchChange === undefined) {
         return (
@@ -145,7 +146,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 total={batchChange.changesetsStats.total}
                 className="mb-3"
             />
-            {archiveEnabled && <ChangesetsArchivedNotice history={history} location={location} />}
+            <ChangesetsArchivedNotice history={history} location={location} />
             <BatchChangeStatsCard
                 closedAt={batchChange.closedAt}
                 stats={batchChange.changesetsStats}

@@ -14,6 +14,7 @@ import (
 	"github.com/throttled/throttled/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -361,6 +362,82 @@ func shouldCheckParam(p visitor.VisitFuncParams) bool {
 	return true
 }
 
+type LimiterArgs struct {
+	IsIP          bool
+	Anonymous     bool
+	RequestName   string
+	RequestSource trace.SourceType
+}
+
+type Limiter interface {
+	RateLimit(key string, quantity int, args LimiterArgs) (bool, throttled.RateLimitResult, error)
+}
+
+type LimitWatcher interface {
+	Get() (Limiter, bool)
+}
+
+func NewBasicLimitWatcher(store throttled.GCRAStore) *BasicLimitWatcher {
+	basic := &BasicLimitWatcher{
+		store: store,
+	}
+	conf.Watch(func() {
+		e := conf.Get().ExperimentalFeatures
+		if e == nil {
+			basic.updateFromConfig(0)
+			return
+		}
+		basic.updateFromConfig(e.RateLimitAnonymous)
+	})
+	return basic
+}
+
+type BasicLimitWatcher RateLimitWatcher
+
+func (bl *BasicLimitWatcher) updateFromConfig(limit int) {
+	if limit <= 0 {
+		bl.rl.Store(&BasicLimiter{nil, false})
+		log15.Debug("BasicLimiter disabled")
+		return
+	}
+	maxBurstPercentage := 0.2
+	l, err := throttled.NewGCRARateLimiter(
+		bl.store,
+		throttled.RateQuota{
+			MaxRate:  throttled.PerHour(limit),
+			MaxBurst: int(float64(limit) * maxBurstPercentage)},
+	)
+	if err != nil {
+		log15.Warn("error updating BasicLimiter from config")
+		bl.rl.Store(&BasicLimiter{nil, false})
+		return
+	}
+	bl.rl.Store(&BasicLimiter{l, true})
+	log15.Debug("BasicLimiter: rate limit updated", "new limit", limit)
+}
+
+// Get returns the latest Limiter.
+func (bl *BasicLimitWatcher) Get() (Limiter, bool) {
+	if l, ok := bl.rl.Load().(*BasicLimiter); ok {
+		return l, l.enabled
+	}
+	return nil, false
+}
+
+type BasicLimiter struct {
+	*throttled.GCRARateLimiter
+	enabled bool
+}
+
+// RateLimit limits unauthenticated requests to the GraphQL API with an equal
+// quantity of 1.
+func (bl *BasicLimiter) RateLimit(_ string, _ int, args LimiterArgs) (bool, throttled.RateLimitResult, error) {
+	if args.Anonymous && args.RequestName == "unknown" && args.RequestSource == trace.SourceOther && bl.GCRARateLimiter != nil {
+		return bl.GCRARateLimiter.RateLimit("basic", 1)
+	}
+	return false, throttled.RateLimitResult{}, nil
+}
+
 // RateLimitWatcher stores the currently configured rate limiter and whether or
 // not rate limiting is enabled.
 type RateLimitWatcher struct {
@@ -385,7 +462,7 @@ func NewRateLimiteWatcher(store throttled.GCRAStore) *RateLimitWatcher {
 
 // Get returns the current rate limiter. If rate limiting is currently disabled
 // (nil, false) is returned.
-func (w *RateLimitWatcher) Get() (*RateLimiter, bool) {
+func (w *RateLimitWatcher) Get() (Limiter, bool) {
 	if l, ok := w.rl.Load().(*RateLimiter); ok && l.enabled {
 		return l, true
 	}
@@ -478,11 +555,11 @@ type RateLimiter struct {
 	overrides   map[string]limiter
 }
 
-func (rl *RateLimiter) RateLimit(uid string, isIP bool, cost int) (bool, throttled.RateLimitResult, error) {
+func (rl *RateLimiter) RateLimit(uid string, cost int, args LimiterArgs) (bool, throttled.RateLimitResult, error) {
 	if r, ok := rl.overrides[uid]; ok {
 		return r.RateLimit(uid, cost)
 	}
-	if isIP {
+	if args.IsIP {
 		return rl.ipLimiter.RateLimit(uid, cost)
 	}
 	return rl.userLimiter.RateLimit(uid, cost)

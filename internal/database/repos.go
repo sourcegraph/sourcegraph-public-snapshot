@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -346,6 +347,10 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(awscodecommit.Repository)
 	case extsvc.TypeGitolite:
 		r.Metadata = new(gitolite.Repo)
+	case extsvc.TypePerforce:
+		r.Metadata = new(perforce.Depot)
+	case extsvc.TypeOther:
+		r.Metadata = new(types.OtherRepoMetadata)
 	default:
 		return nil
 	}
@@ -469,6 +474,11 @@ type ReposListOptions struct {
 	// is non-zero. Note that these are not repos owned by this user, just ones they are interested in.
 	IncludeUserPublicRepos bool
 
+	// FailedFetch, if true, will filter to only repos that failed to clone or fetch
+	// when last attempted. Specifically, this means that they have a non-null
+	// last_error value in the gitserver_repos table.
+	FailedFetch bool
+
 	*LimitOffset
 }
 
@@ -533,7 +543,7 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 }
 
 // ListRepoNames returns a list of repositories names and ids.
-func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (results []*types.RepoName, err error) {
+func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (results []types.RepoName, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListRepoNames", "")
 	defer func() {
 		tr.SetError(err)
@@ -549,7 +559,7 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
 
-	var repos []*types.RepoName
+	var repos []types.RepoName
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.RepoName
 		err := rows.Scan(&r.ID, &r.Name)
@@ -557,7 +567,7 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 			return err
 		}
 
-		repos = append(repos, &r)
+		repos = append(repos, r)
 		return nil
 	})
 	if err != nil {
@@ -714,6 +724,9 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		// where = append(where, sqlf.Sprintf("gr.clone_status = 'cloned'"))
 		where = append(where, sqlf.Sprintf("(gr.clone_status = 'cloned' OR (gr.clone_status IS NULL AND repo.cloned))"))
 	}
+	if opt.FailedFetch {
+		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
+	}
 	if opt.NoPrivate {
 		where = append(where, sqlf.Sprintf("NOT private"))
 	}
@@ -756,7 +769,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch {
 		from = append(from, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 
@@ -801,10 +814,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 }
 
 const userReposQuery = `
-SELECT repo_id as id
-FROM external_service_repos esr
-JOIN external_services es ON esr.external_service_id = es.id
-WHERE es.namespace_user_id = %d AND es.deleted_at IS NULL
+SELECT repo_id as id FROM external_service_repos WHERE user_id = %d
 `
 
 const userPublicReposQuery = `
@@ -814,11 +824,13 @@ SELECT repo_id as id FROM user_public_repos WHERE user_id = %d
 type ListDefaultReposOptions struct {
 	// If true, will only include uncloned default repos
 	OnlyUncloned bool
+	// If true, we include user added private repos
+	IncludePrivate bool
 }
 
 // ListDefaultRepos returns a list of default repos. Default repos are a union of
 // repos in our default_repos table and repos owned by users.
-func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposOptions) (results []*types.RepoName, err error) {
+func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposOptions) (results []types.RepoName, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListDefaultRepos", "")
 	defer func() {
 		tr.SetError(err)
@@ -826,10 +838,16 @@ func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposO
 	}()
 	s.ensureStore()
 
+	var filters []*sqlf.Query
 	cloneClause := sqlf.Sprintf("TRUE")
 	if opts.OnlyUncloned {
 		cloneClause = sqlf.Sprintf("gr.clone_status = %s", types.CloneStatusNotCloned)
 	}
+	filters = append(filters, cloneClause)
+	if !opts.IncludePrivate {
+		filters = append(filters, sqlf.Sprintf("NOT repo.private"))
+	}
+	filterClause := sqlf.Join(filters, "AND")
 
 	q := sqlf.Sprintf(`
 -- source: internal/database/repos.go:RepoStore.ListDefaultRepos
@@ -861,7 +879,7 @@ FROM repo
 WHERE EXISTS(SELECT 1 FROM user_public_repos WHERE repo_id = repo.id)
   AND repo.deleted_at IS NULL
   AND %s
-`, cloneClause, cloneClause, cloneClause)
+`, cloneClause, filterClause, cloneClause)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -873,7 +891,7 @@ WHERE EXISTS(SELECT 1 FROM user_public_repos WHERE repo_id = repo.id)
 		if err := rows.Scan(&r.ID, &r.Name); err != nil {
 			return nil, errors.Wrap(err, "scanning row from default_repos table")
 		}
-		results = append(results, &r)
+		results = append(results, r)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, errors.Wrap(err, "scanning rows for default repos")
@@ -1118,13 +1136,16 @@ insert_sources AS (
   INSERT INTO external_service_repos (
     external_service_id,
     repo_id,
+    user_id,
     clone_url
   )
   SELECT
     external_service_id,
     repo_id,
+    es.namespace_user_id,
     clone_url
   FROM sources_list
+  JOIN external_services es ON (es.id = external_service_id)
   ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_unique
   DO
     UPDATE SET clone_url = EXCLUDED.clone_url

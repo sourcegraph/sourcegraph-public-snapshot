@@ -3,16 +3,18 @@ import React from 'react'
 import { combineLatest, merge, Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, first, map, scan, startWith, switchMap, tap } from 'rxjs/operators'
 import { Subtract } from 'utility-types'
+
 import {
     ActivationCompletionStatus,
     ActivationProps,
     ActivationStep,
-} from '../../../shared/src/components/activation/Activation'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
+} from '@sourcegraph/shared/src/components/activation/Activation'
+import { UserEvent } from '@sourcegraph/shared/src/graphql-operations'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+
+import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
 import { logUserEvent, logEvent } from '../user/settings/backend'
-import { AuthenticatedUser } from '../auth'
-import { UserEvent } from '../../../shared/src/graphql-operations'
 
 /**
  * Fetches activation status from server.
