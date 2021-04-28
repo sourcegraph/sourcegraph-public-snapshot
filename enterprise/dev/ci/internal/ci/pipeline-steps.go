@@ -90,7 +90,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 
-		if c.isStorybookAffected() {
+		if c.isMasterDryRun || c.isStorybookAffected() {
 			// Upload storybook to Chromatic
 			chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
 			if !c.isPR() {

@@ -26,7 +26,6 @@ var ignoredRootFiles []string = []string{
 	".prettierignore",
 	".editorconfig",
 	"prettier.config.js",
-	".graphqlrc.yml",
 	".dockerignore",
 	"doc.go",
 	".gitignore",
