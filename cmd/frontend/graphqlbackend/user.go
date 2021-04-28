@@ -28,7 +28,7 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 }) (*UserResolver, error) {
 	switch {
 	case args.Username != nil:
-		user, err := database.GlobalUsers.GetByUsername(ctx, *args.Username)
+		user, err := database.Users(r.db).GetByUsername(ctx, *args.Username)
 		if err != nil {
 			return nil, err
 		}
@@ -42,7 +42,7 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 				return nil, err
 			}
 		}
-		user, err := database.GlobalUsers.GetByVerifiedEmail(ctx, *args.Email)
+		user, err := database.Users(r.db).GetByVerifiedEmail(ctx, *args.Email)
 		if err != nil {
 			return nil, err
 		}
@@ -77,7 +77,7 @@ func UserByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*UserResolver, 
 // UserByIDInt32 looks up and returns the user with the given database ID. If no such user exists,
 // it returns a non-nil error.
 func UserByIDInt32(ctx context.Context, db dbutil.DB, id int32) (*UserResolver, error) {
-	user, err := database.GlobalUsers.GetByID(ctx, id)
+	user, err := database.Users(db).GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (r *UserResolver) Email(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	email, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, r.user.ID)
+	email, _, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, r.user.ID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return "", err
 	}
@@ -157,7 +157,7 @@ func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 		return nil, err
 	}
 
-	settings, err := database.GlobalSettings.GetLatest(ctx, r.settingsSubject())
+	settings, err := database.Settings(r.db).GetLatest(ctx, r.settingsSubject())
 	if err != nil {
 		return nil, err
 	}
@@ -210,13 +210,13 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 		DisplayName: args.DisplayName,
 		AvatarURL:   args.AvatarURL,
 	}
-	if args.Username != nil && viewerIsChangingUsername(ctx, userID, *args.Username) {
+	if args.Username != nil && viewerIsChangingUsername(ctx, r.db, userID, *args.Username) {
 		if !viewerCanChangeUsername(ctx, userID) {
 			return nil, fmt.Errorf("unable to change username because auth.enableUsernameChanges is false in site configuration")
 		}
 		update.Username = *args.Username
 	}
-	if err := database.GlobalUsers.Update(ctx, userID, update); err != nil {
+	if err := database.Users(r.db).Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
 	return UserByIDInt32(ctx, r.db, userID)
@@ -225,7 +225,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 // CurrentUser returns the authenticated user if any. If there is no authenticated user, it returns
 // (nil, nil). If some other error occurs, then the error is returned.
 func CurrentUser(ctx context.Context, db dbutil.DB) (*UserResolver, error) {
-	user, err := database.GlobalUsers.GetByCurrentAuthUser(ctx)
+	user, err := database.Users(db).GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
 			return nil, nil
@@ -236,7 +236,7 @@ func CurrentUser(ctx context.Context, db dbutil.DB) (*UserResolver, error) {
 }
 
 func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticResolver, error) {
-	orgs, err := database.GlobalOrgs.GetByUserID(ctx, r.user.ID)
+	orgs, err := database.Orgs(r.db).GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -296,7 +296,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	NewPassword string
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: A user can only change their own password.
-	user, err := database.GlobalUsers.GetByCurrentAuthUser(ctx)
+	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -304,7 +304,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 		return nil, errors.New("no authenticated user")
 	}
 
-	if err := database.GlobalUsers.UpdatePassword(ctx, user.ID, args.OldPassword, args.NewPassword); err != nil {
+	if err := database.Users(r.db).UpdatePassword(ctx, user.ID, args.OldPassword, args.NewPassword); err != nil {
 		return nil, err
 	}
 
@@ -320,14 +320,14 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	NewPassword string
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: A user can only create their own password.
-	user, err := database.GlobalUsers.GetByCurrentAuthUser(ctx)
+	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if user == nil {
 		return nil, errors.New("no authenticated user")
 	}
-	if err := database.GlobalUsers.CreatePassword(ctx, user.ID, args.NewPassword); err != nil {
+	if err := database.Users(r.db).CreatePassword(ctx, user.ID, args.NewPassword); err != nil {
 		return nil, err
 	}
 
@@ -452,8 +452,8 @@ func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 //
 // If that subject's username is different from the proposed one, then a
 // change is being attempted and may be rejected by viewerCanChangeUsername.
-func viewerIsChangingUsername(ctx context.Context, subjectUserID int32, proposedUsername string) bool {
-	subject, err := database.GlobalUsers.GetByID(ctx, subjectUserID)
+func viewerIsChangingUsername(ctx context.Context, db dbutil.DB, subjectUserID int32, proposedUsername string) bool {
+	subject, err := database.Users(db).GetByID(ctx, subjectUserID)
 	if err != nil {
 		log15.Warn("viewerIsChangingUsername", "error", err)
 		return true

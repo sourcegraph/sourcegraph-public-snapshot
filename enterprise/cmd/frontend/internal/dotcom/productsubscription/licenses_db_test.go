@@ -12,7 +12,7 @@ func TestProductLicenses_Create(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
-	u, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u"})
+	u, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func TestProductLicenses_List(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
-	u1, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u1"})
+	u1, err := database.Users(db).Create(ctx, database.NewUser{Username: "u1"})
 	if err != nil {
 		t.Fatal(err)
 	}

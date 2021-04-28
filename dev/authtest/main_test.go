@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/inconshreveable/log15"
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
@@ -24,6 +25,8 @@ var (
 	password = flag.String("password", "supersecurepassword", "The password of the admin user")
 
 	githubToken = flag.String("github-token", os.Getenv("GITHUB_TOKEN"), "The GitHub personal access token that will be used to authenticate a GitHub external service")
+
+	dotcom = flag.Bool("dotcom", false, "Whether to test dotcom specific constraints")
 )
 
 func TestMain(m *testing.M) {
@@ -66,4 +69,12 @@ func TestMain(m *testing.M) {
 		log15.Root().SetHandler(log15.DiscardHandler())
 	}
 	os.Exit(m.Run())
+}
+
+func mustMarshalJSONString(v interface{}) string {
+	str, err := jsoniter.MarshalToString(v)
+	if err != nil {
+		panic(err)
+	}
+	return str
 }

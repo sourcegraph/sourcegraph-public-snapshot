@@ -321,12 +321,12 @@ WHERE %s ORDER BY %s LIMIT %d OFFSET %d
 // makeSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an upload.
 func makeSearchCondition(term string) *sqlf.Query {
 	searchableColumns := []string{
-		"(u.state)::text",
-		`u.repository_name`,
 		"u.commit",
 		"u.root",
-		"u.indexer",
+		"(u.state)::text",
 		"u.failure_message",
+		`u.repository_name`,
+		"u.indexer",
 	}
 
 	var termConds []*sqlf.Query

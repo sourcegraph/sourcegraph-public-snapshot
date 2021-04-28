@@ -36,7 +36,7 @@ func TestSearch(t *testing.T) {
 				"sgtest/go-diff",
 				"sgtest/appdash",
 				"sgtest/sourcegraph-typescript",
-				"sgtest/private",
+				"sgtest/private",  // Private
 				"sgtest/mux",      // Fork
 				"sgtest/archived", // Archived
 			},
@@ -59,7 +59,7 @@ func TestSearch(t *testing.T) {
 		"github.com/sgtest/go-diff",
 		"github.com/sgtest/appdash",
 		"github.com/sgtest/sourcegraph-typescript",
-		"github.com/sgtest/private",
+		"github.com/sgtest/private",  // Private
 		"github.com/sgtest/mux",      // Fork
 		"github.com/sgtest/archived", // Archived
 	)
@@ -1015,6 +1015,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:   `repo contains with non-matching repo filter`,
 				query:  `repo:nonexist repo:contains(file:diff.proto)`,
 				counts: counts{Repo: 0},
+			},
+			{
+				`repo contains respects parameters that affect repo search (fork)`,
+				`repo:sgtest/mux fork:yes repo:contains.file(README)`,
+				counts{Repo: 1},
 			},
 			{
 				name:   `commit results without repo filter`,
