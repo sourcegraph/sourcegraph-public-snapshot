@@ -5,8 +5,8 @@
 ### Prerequisites
 
 1. Duplicate `client/web/.env.example` as `client/web/.env`.
-2. Make sure that `WEBPACK_SERVE_INDEX` is set to `true`.
-3. Make sure that `SOURCEGRAPH_API_URL` points to the accessible API url.
+2. Make sure that `WEBPACK_SERVE_INDEX` is set to `true` in the env file.
+3. Make sure that `SOURCEGRAPH_API_URL` points to the accessible API url in the env file.
 
 ### Development server
 
