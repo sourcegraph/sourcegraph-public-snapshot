@@ -1,4 +1,5 @@
 $toggle-width: 2rem;
+$box-shadow-spacing: 0 0 0 1px var(--body-bg);
 
 .toggle {
     --toggle-bar-bg: var(--text-muted);
@@ -8,7 +9,7 @@ $toggle-width: 2rem;
     --toggle-bar-opacity: 0.2;
     --toggle-bar-focus-opacity: 0.5;
     --toggle-knob-disabled-opacity: 0.2;
-    --toggle-bar-focus-box-shadow: 0 0 0 0.1875rem var(--primary);
+    --toggle-bar-focus-box-shadow: #{$box-shadow-spacing}, 0 0 0 0.1875rem var(--primary);
 
     .theme-redesign & {
         --toggle-bar-bg: var(--icon-color);
@@ -18,7 +19,7 @@ $toggle-width: 2rem;
         --toggle-bar-opacity: 1;
         --toggle-bar-focus-opacity: 1;
         --toggle-knob-disabled-opacity: 1;
-        --toggle-bar-focus-box-shadow: var(--focus-box-shadow);
+        --toggle-bar-focus-box-shadow: #{$box-shadow-spacing}, 0 0 0 0.1875rem var(--primary-2);
     }
 
     background: none;
@@ -30,7 +31,7 @@ $toggle-width: 2rem;
     width: $toggle-width;
 
     &:focus-visible {
-        // Move focus to rounded bar
+        // Move focus style to the rounded bar
         box-shadow: none;
     }
 
@@ -39,8 +40,8 @@ $toggle-width: 2rem;
     }
 
     &__bar {
-        border: 1px solid var(--body-bg);
         border-radius: 1rem;
+        top: 2px;
         left: 0;
         height: 1rem;
         width: 100%;
@@ -65,7 +66,7 @@ $toggle-width: 2rem;
 
         height: 0.75rem;
         width: 0.75rem;
-        margin-top: 0.125rem;
+        margin-top: 0.25rem;
         left: 0.125rem;
 
         position: relative;
@@ -88,10 +89,6 @@ $toggle-width: 2rem;
     }
 
     &:disabled &__knob {
-        opacity: var(--toggle-bar-opacity);
-    }
-
-    &:disabled &__bar {
-        opacity: var(--toggle-bar-opacity);
+        opacity: var(--toggle-knob-disabled-opacity);
     }
 }
