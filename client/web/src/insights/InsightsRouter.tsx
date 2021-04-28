@@ -20,9 +20,9 @@ const InsightCreateLazyPage = lazyComponent<CreationSearchInsightPageProps, 'Cre
     'CreationSearchInsightPage'
 )
 
-const InsightCreateIntroLazyPage = lazyComponent<{}, 'CreateIntroPage'>(
-    () => import('./pages/create-intro/CreateIntroPage'),
-    'CreateIntroPage'
+const InsightCreateIntroLazyPage = lazyComponent<{}, 'CreationIntroPage'>(
+    () => import('./pages/creation-intro/CreationIntroPage'),
+    'CreationIntroPage'
 )
 
 /**
