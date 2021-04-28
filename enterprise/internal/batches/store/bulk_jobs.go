@@ -24,11 +24,11 @@ END AS state`,
 		btypes.ReconcilerStateFailed.ToDB(),
 	),
 	sqlf.Sprintf(
-		"COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) / COUNT(*) AS progress,",
+		"COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) / COUNT(*) AS progress",
 		btypes.ReconcilerStateCompleted.ToDB(),
 		btypes.ReconcilerStateFailed.ToDB(),
 	),
-	sqlf.Sprintf("MIN(changeset_jobs.created_at) AS created_at,"),
+	sqlf.Sprintf("MIN(changeset_jobs.created_at) AS created_at"),
 	sqlf.Sprintf(
 		"CASE WHEN (COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) / COUNT(*)) = 1.0 THEN MAX(changeset_jobs.finished_at) ELSE null END AS finished_at",
 		btypes.ReconcilerStateCompleted.ToDB(),

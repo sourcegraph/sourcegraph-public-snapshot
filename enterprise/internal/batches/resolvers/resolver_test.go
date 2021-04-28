@@ -52,6 +52,7 @@ func TestNullIDResilience(t *testing.T) {
 		marshalChangesetSpecRandID(""),
 		marshalBatchChangesCredentialID(0, false),
 		marshalBatchChangesCredentialID(0, true),
+		marshalBulkJobID(""),
 	}
 
 	for _, id := range ids {
@@ -78,6 +79,8 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { createBatchChangesCredential(externalServiceKind: GITHUB, externalServiceURL: "http://test", credential: "123123", user: %q) { id } }`, graphqlbackend.MarshalUserID(0)),
 		fmt.Sprintf(`mutation { deleteBatchChangesCredential(batchChangesCredential: %q) { alwaysNil } }`, marshalBatchChangesCredentialID(0, false)),
 		fmt.Sprintf(`mutation { deleteBatchChangesCredential(batchChangesCredential: %q) { alwaysNil } }`, marshalBatchChangesCredentialID(0, true)),
+		fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [], body: "test") { id } }`, marshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [%q], body: "test") { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
 	}
 
 	for _, m := range mutations {
@@ -1051,6 +1054,88 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 const mutationDeleteCredential = `
 mutation($batchChangesCredential: ID!) {
   deleteBatchChangesCredential(batchChangesCredential: $batchChangesCredential) { alwaysNil }
+}
+`
+
+func TestCreateChangesetComments(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := dbtesting.GetDB(t)
+	cstore := store.New(db)
+
+	userID := ct.CreateTestUser(t, db, true).ID
+	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-comments", userID)
+	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-comments", userID, batchSpec.ID)
+	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
+	repo := repos[0]
+	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:             repo.ID,
+		BatchChange:      batchChange.ID,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
+	})
+
+	r := &Resolver{store: cstore}
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	generateInput := func() map[string]interface{} {
+		return map[string]interface{}{
+			"batchChange": marshalBatchChangeID(batchChange.ID),
+			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
+			"body":        "test-body",
+		}
+	}
+
+	var response struct {
+		CreateChangesetComments apitest.BulkJob
+	}
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	t.Run("empty body fails", func(t *testing.T) {
+		input := generateInput()
+		input["body"] = ""
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateChangesetComments)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "empty comment body is not allowed"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("0 changesets fails", func(t *testing.T) {
+		input := generateInput()
+		input["changesets"] = []string{}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateChangesetComments)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "specify at least one changeset"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("runs successfully", func(t *testing.T) {
+		input := generateInput()
+		apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateChangesetComments)
+
+		if response.CreateChangesetComments.ID == "" {
+			t.Fatalf("expected bulk job to be created, but was not")
+		}
+	})
+
+}
+
+const mutationCreateChangesetComments = `
+mutation($batchChange: ID!, $changesets: [ID!]!, $body: String!) {
+    createChangesetComments(batchChange: $batchChange, changesets: $changesets, body: $body) { id }
 }
 `
 

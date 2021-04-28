@@ -345,3 +345,18 @@ type BatchChangesCodeHost struct {
 	ExternalServiceURL  string
 	Credential          BatchChangesCredential
 }
+
+type BulkJob struct {
+	ID         string
+	Type       string
+	State      string
+	Progress   float64
+	Errors     []*ChangesetJobError
+	CreatedAt  string
+	FinishedAt string
+}
+
+type ChangesetJobError struct {
+	Changeset *Changeset
+	Error     *string
+}
