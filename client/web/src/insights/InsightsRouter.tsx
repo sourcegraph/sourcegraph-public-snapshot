@@ -2,6 +2,8 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
 import { RouteComponentProps, Switch, Route } from 'react-router'
 
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+
 import { HeroPage } from '../components/HeroPage'
 import { lazyComponent } from '../util/lazyComponent'
 
@@ -21,7 +23,7 @@ const InsightCreateLazyPage = lazyComponent<CreateInsightPageProps, 'CreateInsig
 /**
  * Feature flag for new code insights creation UI.
  * */
-const isCreationUIEnabled = localStorage.getItem('enableCodeInsightCreationUI')
+const CREATION_UI_ENABLED_KEY = 'enableCodeInsightCreationUI';
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -38,13 +40,14 @@ export interface InsightsRouterProps
 /** Main Insight routing component. Main entry point to code insights UI. */
 export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = props => {
     const { match, ...outerProps } = props
+    const [isCreationUIEnabled] = useLocalStorage(CREATION_UI_ENABLED_KEY, false);
 
     return (
         <Switch>
             <Route
                 /* eslint-disable-next-line react/jsx-no-bind */
                 render={props => (
-                    <InsightsLazyPage isCreationUIEnabled={!!isCreationUIEnabled} {...outerProps} {...props} />
+                    <InsightsLazyPage isCreationUIEnabled={isCreationUIEnabled} {...outerProps} {...props} />
                 )}
                 path={match.url}
                 exact={true}
