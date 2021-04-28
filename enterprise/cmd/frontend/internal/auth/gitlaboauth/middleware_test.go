@@ -10,10 +10,13 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -26,6 +29,8 @@ func TestMiddleware(t *testing.T) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
+	db := dbtesting.GetDB(t)
+
 	const mockUserID = 123
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -35,8 +40,8 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", Middleware.API(h))
-	authedHandler.Handle("/", Middleware.App(h))
+	authedHandler.Handle("/.api/", Middleware(db).API(h))
+	authedHandler.Handle("/", Middleware(db).App(h))
 
 	mockGitLabCom := newMockProvider(t, "gitlab-com-client", "gitlab-com-secret", "https://gitlab.com/")
 	mockPrivateGitLab := newMockProvider(t, "gitlab-private-instsance-client", "github-private-instance-secret", "https://mycompany.com/")
@@ -293,12 +298,14 @@ func newMockProvider(t *testing.T, clientID, clientSecret, baseURL string) *Mock
 	if mp.Provider == nil {
 		t.Fatalf("Expected provider")
 	}
-	mp.Provider.Callback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if got, want := r.Method, "GET"; got != want {
-			t.Errorf("In OAuth callback handler got %q request, wanted %q", got, want)
-		}
-		w.WriteHeader(http.StatusFound)
-		mp.lastCallbackRequestURL = r.URL
-	})
+	mp.Provider.Callback = func(oauth2.Config) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if got, want := r.Method, "GET"; got != want {
+				t.Errorf("In OAuth callback handler got %q request, wanted %q", got, want)
+			}
+			w.WriteHeader(http.StatusFound)
+			mp.lastCallbackRequestURL = r.URL
+		})
+	}
 	return &mp
 }
