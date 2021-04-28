@@ -23,8 +23,8 @@ func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factor
 
 		scheduler.NewScheduler(ctx, batchesStore),
 
-		// newBulkJobWorker(ctx, batchesStore, sourcer, metrics),
-		// newBulkJobWorkerResetter(batchesStore, metrics),
+		newBulkJobWorker(ctx, batchesStore, sourcer, metrics),
+		newBulkJobWorkerResetter(batchesStore, metrics),
 	}
 	return routines
 }
