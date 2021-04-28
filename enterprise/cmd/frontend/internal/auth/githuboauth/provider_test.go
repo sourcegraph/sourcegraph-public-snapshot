@@ -52,8 +52,8 @@ func TestRequestedScopes(t *testing.T) {
 			schema: &schema.GitHubAuthProvider{
 				AllowOrgs: []string{"myorg"},
 			},
-			extraScopes: []string{"repo", "user:email"},
-			expScopes:   []string{"read:org", "user:email", "repo"},
+			extraScopes: []string{"repo", "user:follow", "user:email"},
+			expScopes:   []string{"read:org", "repo", "user:email", "user:follow"},
 		},
 	}
 	for _, test := range tests {

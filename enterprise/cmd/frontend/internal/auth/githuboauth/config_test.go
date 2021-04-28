@@ -134,21 +134,31 @@ func TestParseConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotProviders, gotProblems := parseConfig(tt.args.cfg)
-			for _, p := range gotProviders {
+			gotConfigs := make([]oauth2.Config, len(gotProviders))
+			for k, p := range gotProviders {
 				if p, ok := p.Provider.(*oauth.Provider); ok {
 					p.Login, p.Callback = nil, nil
+					gotConfigs[k] = p.OAuth2Config()
+					p.OAuth2Config = nil
 					p.ProviderOp.Login, p.ProviderOp.Callback = nil, nil
 				}
 			}
-			for _, p := range tt.wantProviders {
+			wantConfigs := make([]oauth2.Config, len(tt.wantProviders))
+			for k, p := range tt.wantProviders {
+				k := k
 				if q, ok := p.Provider.(*oauth.Provider); ok {
 					q.SourceConfig = schema.AuthProviders{Github: p.GitHubAuthProvider}
+					wantConfigs[k] = q.OAuth2Config()
+					q.OAuth2Config = nil
 				}
 			}
 			if diff := cmp.Diff(tt.wantProviders, gotProviders); diff != "" {
 				t.Errorf("providers: %s", diff)
 			}
 			if diff := cmp.Diff(tt.wantProblems, gotProblems.Messages()); diff != "" {
+				t.Errorf("problems: %s", diff)
+			}
+			if diff := cmp.Diff(wantConfigs, gotConfigs); diff != "" {
 				t.Errorf("problems: %s", diff)
 			}
 		})
