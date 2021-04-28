@@ -49,14 +49,14 @@ func contains(s []string, str string) bool {
 	return false
 }
 
-func isNotIgnoredRootFile(p string) bool {
+func isAllowedRootFile(p string) bool {
 	return filepath.Dir(p) == "." && !contains(ignoredRootFiles, p)
 }
 
 // Run Storybook workflow only if related files were changed.
 func (c Config) isStorybookAffected() bool {
 	for _, p := range c.changedFiles {
-		if !strings.HasSuffix(p, ".md") && (strings.HasPrefix(p, "client/") || isNotIgnoredRootFile(p)) {
+		if !strings.HasSuffix(p, ".md") && (strings.HasPrefix(p, "client/") || isAllowedRootFile(p)) {
 			return true
 		}
 	}
