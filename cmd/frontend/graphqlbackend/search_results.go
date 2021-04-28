@@ -556,36 +556,6 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 	return intersectMerge(left, right)
 }
 
-// evaluateAndStream is a wrapper around evaluateAnd which temporarily suspends
-// streaming and waits for evaluateAnd to return before streaming results back on
-// r.resultChannel.
-func (r *searchResolver) evaluateAndStream(ctx context.Context, q query.Basic) (*SearchResultsResolver, error) {
-	// Streaming disabled.
-	if r.stream == nil {
-		return r.evaluateAnd(ctx, q)
-	}
-	// For streaming search we rely on batch evaluation of
-	// results. Implementing true streaming on AND expressions will require
-	// support in backends (eg directly using Zoekt) or ANDing per repo.
-	r2 := *r
-	r2.stream = nil
-
-	result, err := r2.evaluateAnd(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	// evaluateAnd may return result, err = nil, nil because downstream calls return
-	// nil, nil. See further comments in evaluateAnd.
-	if result == nil {
-		return &SearchResultsResolver{}, nil
-	}
-	r.stream.Send(SearchEvent{
-		Results: result.SearchResults,
-		Stats:   result.Stats,
-	})
-	return result, err
-}
-
 // evaluateAnd performs set intersection on result sets. It collects results for
 // all expressions that are ANDed together by searching for each subexpression
 // and then intersects those results that are in the same repo/file path. To
@@ -748,7 +718,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 
 		switch term.Kind {
 		case query.And:
-			return r.evaluateAndStream(ctx, q)
+			return r.evaluateAnd(ctx, q)
 		case query.Or:
 			return r.evaluateOr(ctx, q)
 		case query.Concat:
@@ -872,6 +842,19 @@ func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolv
 }
 
 func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsResolver, error) {
+	if !query.IsStreamingCompatible(r.Plan) {
+		// The query is not streaming compatible, but we still want to
+		// use the streaming endpoint. Run a batch search then send the
+		// results back on the stream.
+		endpoint := r.stream
+		r.stream = nil // Disables streaming: backends may not use the endpoint.
+		srr, err := r.resultsBatch(ctx)
+		endpoint.Send(SearchEvent{
+			Results: srr.SearchResults,
+			Stats:   srr.Stats,
+		})
+		return srr, err
+	}
 	return r.resultsRecursive(ctx, r.Plan)
 }
 
