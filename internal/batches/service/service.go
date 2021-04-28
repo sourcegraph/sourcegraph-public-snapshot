@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
-	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 )
 
 type Service struct {
@@ -155,30 +154,34 @@ func (svc *Service) CreateChangesetSpec(ctx context.Context, spec *batches.Chang
 //
 // Progress information is reported back to the given progress function: perc
 // will be a value between 0.0 and 1.0, inclusive.
-func (svc *Service) SetDockerImages(ctx context.Context, spec *batches.BatchSpec, loadWorkspaceImage bool, progress func(perc float64)) error {
+func (svc *Service) SetDockerImages(ctx context.Context, spec *batches.BatchSpec, progress func(perc float64)) error {
 	total := len(spec.Steps) + 1
 	progress(0)
 
 	// TODO: this _really_ should be parallelised, since the image cache takes
 	// care to only pull the same image once.
 	for i := range spec.Steps {
-		spec.Steps[i].SetImage(svc.imageCache.Get(spec.Steps[i].Container))
-		if err := spec.Steps[i].EnsureImage(ctx); err != nil {
-			return errors.Wrapf(err, "pulling image %q", spec.Steps[i].Container)
+		img, err := svc.EnsureImage(ctx, spec.Steps[i].Container)
+		if err != nil {
+			return err
 		}
-		progress(float64(i) / float64(total))
-	}
+		spec.Steps[i].SetImage(img)
 
-	// We also need to ensure we have our own utility images available, if
-	// necessary.
-	if loadWorkspaceImage {
-		if err := svc.imageCache.Get(workspace.DockerVolumeWorkspaceImage).Ensure(ctx); err != nil {
-			return errors.Wrapf(err, "pulling image %q", workspace.DockerVolumeWorkspaceImage)
-		}
+		progress(float64(i) / float64(total))
 	}
 
 	progress(1)
 	return nil
+}
+
+func (svc *Service) EnsureImage(ctx context.Context, name string) (docker.Image, error) {
+	img := svc.imageCache.Get(name)
+
+	if err := img.Ensure(ctx); err != nil {
+		return nil, errors.Wrapf(err, "pulling image %q", name)
+	}
+
+	return img, nil
 }
 
 func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository, spec *batches.BatchSpec) ([]*executor.Task, error) {

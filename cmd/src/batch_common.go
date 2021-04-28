@@ -234,23 +234,29 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) error {
 	}
 	batchCompletePending(pending, "Resolving namespace")
 
-	pending = batchCreatePending(opts.out, "Determining workspace type")
-	workspaceCreator := workspace.NewCreator(ctx, opts.flags.workspace, opts.flags.cacheDir, opts.flags.tempDir, batchSpec.Steps)
-	pending.VerboseLine(output.Linef("🚧", output.StyleSuccess, "Workspace creator: %T", workspaceCreator))
-	batchCompletePending(pending, "Set workspace type")
-
-	loadWorkspaceImage := workspaceCreator.Type() == workspace.CreatorTypeVolume
 	imageProgress := opts.out.Progress([]output.ProgressBar{{
 		Label: "Preparing container images",
 		Max:   1.0,
 	}}, nil)
-	err = svc.SetDockerImages(ctx, batchSpec, loadWorkspaceImage, func(perc float64) {
+	err = svc.SetDockerImages(ctx, batchSpec, func(perc float64) {
 		imageProgress.SetValue(0, perc)
 	})
 	if err != nil {
 		return err
 	}
 	imageProgress.Complete()
+
+	pending = batchCreatePending(opts.out, "Determining workspace type")
+	workspaceCreator := workspace.NewCreator(ctx, opts.flags.workspace, opts.flags.cacheDir, opts.flags.tempDir, batchSpec.Steps)
+	if workspaceCreator.Type() == workspace.CreatorTypeVolume {
+		_, err = svc.EnsureImage(ctx, workspace.DockerVolumeWorkspaceImage)
+		if err != nil {
+			return err
+		}
+	}
+
+	pending.VerboseLine(output.Linef("🚧", output.StyleSuccess, "Workspace creator: %T", workspaceCreator))
+	batchCompletePending(pending, "Set workspace type")
 
 	pending = batchCreatePending(opts.out, "Resolving repositories")
 	repos, err := svc.ResolveRepositories(ctx, batchSpec)
