@@ -6,7 +6,7 @@ import { Plugin } from 'webpack'
 
 import { createJsContext, environmentConfig, STATIC_ASSETS_PATH } from '../utils'
 
-const { SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_API_URL, NODE_ENV } = environmentConfig
+const { SOURCEGRAPH_HTTPS_PORT, NODE_ENV } = environmentConfig
 
 export const getHTMLWebpackPlugins = (): Plugin[] => {
     const jsContext = createJsContext({ sourcegraphBaseUrl: `http://localhost:${SOURCEGRAPH_HTTPS_PORT}` })
