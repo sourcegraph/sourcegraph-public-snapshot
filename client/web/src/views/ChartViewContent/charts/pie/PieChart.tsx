@@ -1,6 +1,7 @@
 import { Group } from '@visx/group'
 import Pie, { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
 import React, { ReactElement, useMemo, useState } from 'react'
+import { noop } from 'rxjs'
 import { PieChartContent } from 'sourcegraph'
 
 import { MaybeLink } from '../MaybeLink'
@@ -22,7 +23,7 @@ export interface PieChartProps<Datum extends object> extends PieChartContent<Dat
     /** Chart height in px */
     height: number
     /** Click handler for pie arc-link element. */
-    onDatumLinkClick: (event: React.MouseEvent) => void
+    onDatumLinkClick?: (event: React.MouseEvent) => void
     /** Chart padding in px */
     padding?: typeof DEFAULT_PADDING
 }
@@ -31,7 +32,7 @@ export interface PieChartProps<Datum extends object> extends PieChartContent<Dat
  * Display Pie chart with annotation.
  */
 export function PieChart<Datum extends object>(props: PieChartProps<Datum>): ReactElement | null {
-    const { width, height, padding = DEFAULT_PADDING, pies, onDatumLinkClick } = props
+    const { width, height, padding = DEFAULT_PADDING, pies, onDatumLinkClick = noop } = props
 
     // We have to track which arc is hovered to change order of rendering.
     // Due the fact svg elements don't have css z-index (in svg only order of renderings matters)
