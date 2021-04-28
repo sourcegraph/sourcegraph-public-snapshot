@@ -23,7 +23,8 @@ const (
 // by batch changes with the migration runner.
 func RegisterMigrations(cstore *store.Store, key encryption.Key, outOfBandMigrationRunner *oobmigration.Runner) error {
 	migrations := map[int]oobmigration.Migrator{
-		BatchChangesSSHMigrationID: &sshMigrator{store: cstore, key: key},
+		BatchChangesSSHMigrationID:            &sshMigrator{store: cstore, key: key},
+		BatchChangesUserCredentialMigrationID: &userCredentialMigrator{store: cstore, key: key},
 	}
 
 	for id, migrator := range migrations {

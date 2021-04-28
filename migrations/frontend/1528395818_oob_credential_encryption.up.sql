@@ -41,10 +41,12 @@ WHERE
     );
 
 -- Create an index on credential_enc, since we want to quickly check its null
--- state when calculating the progress of the OOB migration.
+-- state when calculating the progress of the OOB migration. Note that we can't
+-- apply an index to the actual field because it may be (and in many cases
+-- probably is) beyond the limit for a B-tree index.
 CREATE INDEX IF NOT EXISTS
     user_credentials_credential_enc_idx
 ON
-    user_credentials (credential_enc);
+    user_credentials ((credential_enc IS NULL));
 
 COMMIT;
