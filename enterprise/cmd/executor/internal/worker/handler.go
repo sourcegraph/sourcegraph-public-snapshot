@@ -8,14 +8,18 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -30,8 +34,15 @@ var _ workerutil.Handler = &handler{}
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
-func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workerutil.Record) error {
+func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workerutil.Record) (err error) {
 	job := record.(executor.Job)
+
+	start := time.Now()
+	defer func() {
+		if honey.Enabled() {
+			_ = createHoneyEvent(ctx, job, err, time.Since(start)).Send()
+		}
+	}()
 
 	h.idSet.Add(job.ID)
 	defer h.idSet.Remove(job.ID)
@@ -184,4 +195,24 @@ func union(a, b map[string]string) map[string]string {
 
 func scriptNameFromJobStep(job executor.Job, i int) string {
 	return fmt.Sprintf("%d.%d_%s@%s.sh", job.ID, i, strings.ReplaceAll(job.RepositoryName, "/", "_"), job.Commit)
+}
+
+func createHoneyEvent(ctx context.Context, job executor.Job, err error, duration time.Duration) *libhoney.Event {
+	fields := map[string]interface{}{
+		"duration_ms":    duration.Milliseconds(),
+		"recordID":       job.RecordID(),
+		"repositoryName": job.RepositoryName,
+		"commit":         job.Commit,
+		"numDockerSteps": len(job.DockerSteps),
+		"numCliSteps":    len(job.CliSteps),
+	}
+
+	if err != nil {
+		fields["error"] = err.Error()
+	}
+	if spanURL := trace.SpanURLFromContext(ctx); spanURL != "" {
+		fields["trace"] = spanURL
+	}
+
+	return honey.EventWithFields("executor", fields)
 }
