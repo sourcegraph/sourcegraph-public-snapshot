@@ -1,0 +1,57 @@
+
+.form {
+    display: flex;
+    flex-direction: column;
+
+    &__field {
+        max-width: 100%;
+    }
+
+    &__field + &__field {
+        margin-top: 2rem;
+    }
+
+    &__radio-group-content {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: -1rem;
+    }
+
+    &__threshold-group {
+        display: flex;
+    }
+
+    &__threshold-input {
+        margin-right: 0.5rem;
+        width: 6rem;
+    }
+
+    &__threshold-input-symbol {
+        align-self: center;
+    }
+
+    &__radio-group-content {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: -1rem;
+    }
+
+    &__radio {
+        margin-bottom: 1rem;
+        margin-right: 1rem;
+    }
+
+    &__separator {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+        width: 100%;
+    }
+
+    &__buttons {
+        margin-top: 2rem;
+    }
+
+    &__button + &__button {
+        margin-left: 1rem;
+    }
+}

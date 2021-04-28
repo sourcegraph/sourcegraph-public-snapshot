@@ -3,7 +3,7 @@ import { FORM_ERROR } from 'final-form'
 import * as React from 'react'
 import sinon from 'sinon'
 
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/shared/out/src/util/errors'
 
 import { CreationSearchInsightForm, CreationSearchInsightFormProps } from './CreationSearchInsightForm'
 

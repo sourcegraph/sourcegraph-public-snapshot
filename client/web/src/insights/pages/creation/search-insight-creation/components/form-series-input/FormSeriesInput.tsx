@@ -3,10 +3,10 @@ import React, { Ref, useCallback, useEffect, useImperativeHandle, useRef } from 
 import { useField, useForm } from 'react-final-form-hooks'
 import { noop } from 'rxjs'
 
+import { InputField } from '../../../../../components/form/form-field/FormField'
 import { DataSeries } from '../../types'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
-import { InputField } from '../form-field/FormField'
-import { createRequiredValidator, createValidRegExpValidator, composeValidators } from '../validators'
+import { createRequiredValidator, createValidRegExpValidator, composeValidators } from '../../../../../components/form/validators'
 
 import styles from './FormSeriesInput.module.scss'
 

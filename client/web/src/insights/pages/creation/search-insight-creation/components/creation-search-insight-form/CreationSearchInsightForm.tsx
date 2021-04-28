@@ -5,12 +5,12 @@ import React, { useEffect, useMemo, useRef } from 'react'
 import { useField, useForm } from 'react-final-form-hooks'
 import { noop } from 'rxjs'
 
+import { InputField } from '../../../../../components/form/form-field/FormField'
+import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
+import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
+import { createRequiredValidator, composeValidators, ValidationResult } from '../../../../../components/form/validators'
 import { DataSeries } from '../../types'
-import { InputField } from '../form-field/FormField'
-import { FormGroup } from '../form-group/FormGroup'
-import { FormRadioInput } from '../form-radio-input/FormRadioInput'
 import { FormSeries, FormSeriesReferenceAPI } from '../form-series/FormSeries'
-import { createRequiredValidator, composeValidators, ValidationResult } from '../validators'
 
 import styles from './CreationSearchInsightForm.module.scss'
 

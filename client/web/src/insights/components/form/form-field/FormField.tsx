@@ -1,5 +1,5 @@
 import classnames from 'classnames'
-import React, { forwardRef, InputHTMLAttributes, useEffect, useRef } from 'react'
+import React, { forwardRef, InputHTMLAttributes, ReactNode, useEffect, useRef } from 'react'
 import { useMergeRefs } from 'use-callback-ref'
 
 import styles from './FormField.module.scss'
@@ -17,11 +17,15 @@ interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement> {
     valid?: boolean
     /** Turn on or turn off autofocus for input. */
     autofocus?: boolean
+    /** Custom class name for input element. */
+    inputClassName?: string;
+    /** Input icon (symbol) which render right after the input element. */
+    inputSymbol?: ReactNode;
 }
 
 /** Displays input with description, error message, visual invalid and valid states. */
 export const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, reference) => {
-    const { title, description, className, valid, error, autofocus = false, ...otherProps } = props
+    const { title, description, className, inputClassName, inputSymbol, valid, error, autofocus = false, ...otherProps } = props
     const localInputReference = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
@@ -34,15 +38,19 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, 
         <label className={classnames(styles.formField, className)}>
             {title && <h4>{title}</h4>}
 
-            <input
-                type="text"
-                className={classnames(styles.formFieldInput, 'form-control', {
-                    'is-valid': valid,
-                    'is-invalid': !!error,
-                })}
-                {...otherProps}
-                ref={useMergeRefs([localInputReference, reference])}
-            />
+            <div className={styles.formFieldInputBlock}>
+                <input
+                    type="text"
+                    className={classnames(inputClassName, 'form-control', {
+                        'is-valid': valid,
+                        'is-invalid': !!error,
+                    })}
+                    {...otherProps}
+                    ref={useMergeRefs([localInputReference, reference])}
+                />
+
+                { inputSymbol }
+            </div>
 
             {error && <span className={styles.formFieldError}>*{error}</span>}
             {!error && description && (

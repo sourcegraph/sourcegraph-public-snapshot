@@ -7,8 +7,8 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { HeroPage } from '../components/HeroPage'
 import { lazyComponent } from '../util/lazyComponent'
 
+import { CreationSearchInsightPageProps } from './pages/creation/search-insight-creation/CreationSearchInsightPage'
 import { InsightsPageProps } from './pages/dashboard/InsightsPage'
-import { CreationSearchInsightPageProps } from './pages/search-insight-creation/CreationSearchInsightPage'
 
 const InsightsLazyPage = lazyComponent<InsightsPageProps, 'InsightsPage'>(
     () => import('./pages/dashboard/InsightsPage'),
@@ -16,13 +16,18 @@ const InsightsLazyPage = lazyComponent<InsightsPageProps, 'InsightsPage'>(
 )
 
 const InsightCreateLazyPage = lazyComponent<CreationSearchInsightPageProps, 'CreationSearchInsightPage'>(
-    () => import('./pages/search-insight-creation/CreationSearchInsightPage'),
+    () => import('./pages/creation/search-insight-creation/CreationSearchInsightPage'),
     'CreationSearchInsightPage'
 )
 
 const InsightCreateIntroLazyPage = lazyComponent<{}, 'CreationIntroPage'>(
-    () => import('./pages/creation-intro/CreationIntroPage'),
+    () => import('./pages/creation/intro-creation/CreationIntroPage'),
     'CreationIntroPage'
+)
+
+const CreationLangStatsInsightLazyPage = lazyComponent(
+    () => import('./pages/creation/lang-stats-creation/CreationLangStatsInsightPage'),
+    'CreationLangStatsInsightPage'
 )
 
 /**
@@ -61,9 +66,15 @@ export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = prop
             {isCreationUIEnabled && (
                 <>
                     <Route
-                        path={`${match.url}/create`}
+                        path={`${match.url}/create-search-insight`}
                         /* eslint-disable-next-line react/jsx-no-bind */
                         render={props => <InsightCreateLazyPage {...outerProps} {...props} />}
+                    />
+
+                    <Route
+                        path={`${match.url}/create-lang-stats-insight`}
+                        /* eslint-disable-next-line react/jsx-no-bind */
+                        render={props => <CreationLangStatsInsightLazyPage {...outerProps} {...props} />}
                     />
 
                     <Route path={`${match.url}/create-intro`} component={InsightCreateIntroLazyPage} />

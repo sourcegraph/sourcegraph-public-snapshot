@@ -3,16 +3,16 @@ import classnames from 'classnames'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-import { Page } from '../../../components/Page'
-import { PageTitle } from '../../../components/PageTitle'
-import { LineChart } from '../../../views/ChartViewContent/charts/line/LineChart'
-import { PieChart } from '../../../views/ChartViewContent/charts/pie/PieChart'
+import { Page } from '../../../../components/Page'
+import { PageTitle } from '../../../../components/PageTitle'
+import { LineChart } from '../../../../views/ChartViewContent/charts/line/LineChart'
+import { PieChart } from '../../../../views/ChartViewContent/charts/pie/PieChart'
 
 import { LINE_CHART_DATA, PIE_CHART_DATA } from './charts-mock'
-import styles from './CreateIntroPage.module.scss'
+import styles from './CreationIntroPage.module.scss'
 
 /** Displays intro page for insights creation UI. */
-export const CreateIntroPage: React.FunctionComponent = () => (
+export const CreationIntroPage: React.FunctionComponent = () => (
     <Page className="col-8">
         <PageTitle title="Create code insights" />
 
@@ -58,7 +58,7 @@ export const CreateIntroPage: React.FunctionComponent = () => (
             </section>
 
             <section className={styles.createIntroPageInsightCard}>
-                <h3>Based on your search query</h3>
+                <h3>Language usage</h3>
 
                 <p>Shows usage of languages in your repository based on number of lines of code.</p>
 
