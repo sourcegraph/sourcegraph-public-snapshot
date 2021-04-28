@@ -238,7 +238,9 @@ export const Panel = React.memo<Props>(props => {
             <div className="tablist-wrapper bg-body d-flex justify-content-between">
                 <TabList>
                     {items.map(({ label, id }) => (
-                        <Tab key={id}>{label}</Tab>
+                        <Tab key={id}>
+                            <span className="tablist-label">{label}</span>
+                        </Tab>
                     ))}
                 </TabList>
                 <div className="align-items-center d-flex mr-2">

@@ -2,33 +2,96 @@
 
 // Override tabs component styles (see: https://reach.tech/styling/#including-base-styles)
 
-[data-reach-tabs] {
-    background: var(--color-bg-2);
-}
-
-[data-reach-tab-list] {
-    background: transparent;
-}
-
-[data-reach-tab] {
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
-    border-bottom: 3px solid transparent;
-    margin-bottom: -(3/16) + rem;
-    padding: (5/16) + rem;
-    color: var(--color-text-3);
-    &:hover {
-        color: var(--body-color);
-        border-bottom: 3px solid var(--link-color);
+:not(.theme-redesign) {
+    [data-reach-tabs] {
+        background: var(--color-bg-2);
     }
-    &[data-selected] {
-        color: var(--body-color);
-        border-bottom: 3px solid var(--primary);
+
+    [data-reach-tab-list] {
+        background: transparent;
+    }
+
+    [data-reach-tab] {
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -(3/16) + rem;
+        padding: (5/16) + rem;
+        color: var(--color-text-3);
+        &:hover {
+            color: var(--body-color);
+            border-bottom: 3px solid var(--link-color);
+        }
+        &[data-selected] {
+            color: var(--body-color);
+            border-bottom: 3px solid var(--primary);
+        }
+    }
+
+    .tablist-wrapper {
+        background: var(--body-bg);
+        border-bottom: 3px solid var(--border-color);
+        align-items: center;
+        &__full-width {
+            display: flex;
+            justify-content: space-around;
+            flex: 1;
+        }
     }
 }
 
-.tablist-wrapper {
-    background: var(--body-bg);
-    border-bottom: 3px solid var(--border-color);
+.theme-redesign {
+    [data-reach-tab-list] {
+        background: var(--color-bg-1);
+        padding: 0;
+        &:first-child {
+            padding-left: 0;
+        }
+        &:last-child {
+            padding-right: 0;
+        }
+    }
+
+    [data-reach-tab] {
+        align-items: center;
+        letter-spacing: normal;
+        font-size: 0.75rem;
+        padding: 0 0.625rem;
+        margin: 0;
+        color: var(--body-color);
+        text-transform: none;
+        &:hover {
+            color: var(--color-text-3);
+            border-bottom: 3px solid transparent;
+        }
+        &[data-selected] {
+            color: var(--body-color);
+            font-weight: bold;
+            border-bottom: 3px solid var(--brand-secondary);
+        }
+        &:focus-visible {
+            outline: none;
+            box-shadow: none;
+            .tablist-label {
+                border-radius: 3px;
+                outline: 1px solid transparent;
+                box-shadow: 0 0 0 2px var(--primary-2);
+            }
+        }
+    }
+
+    .tablist-wrapper {
+        height: 2rem;
+        background: var(--color-bg-1);
+        border: 1px solid var(--border-color);
+        padding: 0 1rem;
+        padding-bottom: 0;
+        display: flex;
+        align-items: stretch;
+        justify-content: space-between;
+        &__full-width {
+            display: flex;
+        }
+    }
 }

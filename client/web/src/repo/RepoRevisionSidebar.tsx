@@ -62,10 +62,14 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                     defaultIndex={tabIndex}
                     onChange={handleTabsChange}
                 >
-                    <div className="tablist-wrapper d-flex w-100 align-items-center bg-transparent">
+                    <div className="tablist-wrapper d-flex w-100">
                         <TabList>
-                            <Tab data-test-tab="files">Files</Tab>
-                            <Tab data-test-tab="symbols">Symbols</Tab>
+                            <Tab data-test-tab="files">
+                                <span className="tablist-label">Files</span>
+                            </Tab>
+                            <Tab data-test-tab="symbols">
+                                <span className="tablist-label">Symbols</span>
+                            </Tab>
                         </TabList>
                         <Button
                             onClick={handleSidebarToggle}

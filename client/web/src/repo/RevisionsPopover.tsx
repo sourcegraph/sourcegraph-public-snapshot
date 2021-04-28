@@ -1,5 +1,6 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import * as H from 'history'
+import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
@@ -11,6 +12,7 @@ import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { requestGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../components/FilteredConnection'
@@ -207,6 +209,8 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
 
+    const [isRedesignEnabled] = useRedesignToggle()
+
     const queryGitBranches = (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
         queryGitReferences({ ...args, repo: props.repo, type: GitRefType.GIT_BRANCH, withBehindAhead: false })
 
@@ -224,18 +228,30 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
 
     return (
         <Tabs defaultIndex={tabIndex} className="revisions-popover" onChange={handleTabsChange}>
-            <div className="tablist-wrapper w-100 align-items-center">
+            <div className="tablist-wrapper w-100">
                 <TabList>
                     {TABS.map(({ label, id }) => (
-                        <Tab className="d-flex flex-1 justify-content-around" key={id} data-test-tab={id}>
-                            {label}
+                        <Tab className="tablist-wrapper__full-width" key={id} data-test-tab={id}>
+                            <span className="tablist-label">{label}</span>
                         </Tab>
                     ))}
                 </TabList>
+                {isRedesignEnabled && (
+                    <button
+                        type="button"
+                        // onClick={handlePanelClose}
+                        className="btn btn-icon"
+                        title="Close panel"
+                        data-tooltip="Close panel"
+                        data-placement="left"
+                    >
+                        <CloseIcon className="icon-inline" />
+                    </button>
+                )}
             </div>
             <TabPanels className="revisions-popover__tabs">
                 {TABS.map(tab => (
-                    <TabPanel className="" key={tab.id}>
+                    <TabPanel key={tab.id}>
                         {tab.type ? (
                             <FilteredConnection<GitRefFields, Omit<GitReferencePopoverNodeProps, 'node'>>
                                 key={tab.id}
