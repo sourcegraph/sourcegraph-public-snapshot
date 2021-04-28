@@ -63,6 +63,10 @@ func encryptAuthenticator(ctx context.Context, enc encryption.Encrypter, a auth.
 		return nil, errors.Wrap(err, "marshalling authenticator")
 	}
 
+	if enc == nil {
+		return []byte(raw), nil
+	}
+
 	secret, err := enc.Encrypt(ctx, []byte(raw))
 	if err != nil {
 		return nil, errors.Wrap(err, "encrypting credential")

@@ -84,6 +84,23 @@ func TestUserCredential_Authenticator(t *testing.T) {
 			t.Errorf("unexpected authenticator (-have +want):\n%s", diff)
 		}
 	})
+
+	t.Run("nil key", func(t *testing.T) {
+		a := &auth.BasicAuth{Username: "foo", Password: "bar"}
+
+		enc, err := encryptAuthenticator(ctx, nil, a)
+		if err != nil {
+			t.Fatal(err)
+		}
+		uc := &UserCredential{encryptedCredential: enc}
+
+		have, err := uc.Authenticator(ctx, nil)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		} else if diff := cmp.Diff(have, a); diff != "" {
+			t.Errorf("unexpected authenticator (-have +want):\n%s", diff)
+		}
+	})
 }
 
 func TestUserCredential_SetAuthenticator(t *testing.T) {
@@ -100,13 +117,19 @@ func TestUserCredential_SetAuthenticator(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		key := et.TestKey{}
-		uc := &UserCredential{credential: a}
+		for name, key := range map[string]encryption.Key{
+			"nil":      nil,
+			"test key": et.TestKey{},
+		} {
+			t.Run(name, func(t *testing.T) {
+				uc := &UserCredential{credential: a}
 
-		if err := uc.SetAuthenticator(ctx, key, a); err != nil {
-			t.Errorf("unexpected error: %v", err)
-		} else if uc.credential != nil {
-			t.Errorf("unencrypted credential is still present: %v", uc.credential)
+				if err := uc.SetAuthenticator(ctx, key, a); err != nil {
+					t.Errorf("unexpected error: %v", err)
+				} else if uc.credential != nil {
+					t.Errorf("unencrypted credential is still present: %v", uc.credential)
+				}
+			})
 		}
 	})
 }

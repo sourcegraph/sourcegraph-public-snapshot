@@ -46,12 +46,18 @@ func (uc *UserCredential) Authenticator(ctx context.Context, dec encryption.Decr
 		return nil, errors.New("no unencrypted or encrypted credential found")
 	}
 
-	secret, err := dec.Decrypt(ctx, uc.encryptedCredential)
-	if err != nil {
-		return nil, errors.Wrap(err, "decrypting credential")
+	var raw string
+	if dec != nil {
+		secret, err := dec.Decrypt(ctx, uc.encryptedCredential)
+		if err != nil {
+			return nil, errors.Wrap(err, "decrypting credential")
+		}
+		raw = secret.Secret()
+	} else {
+		raw = string(uc.encryptedCredential)
 	}
 
-	a, err := unmarshalAuthenticator(secret.Secret())
+	a, err := unmarshalAuthenticator(raw)
 	if err != nil {
 		return nil, errors.Wrap(err, "unmarshalling authenticator")
 	}
@@ -290,6 +296,10 @@ type UserCredentialsListOpts struct {
 	// TODO(batch-change-credential-encryption): this should be removed once the
 	// OOB SSH migration is removed.
 	SSHMigrationApplied *bool
+
+	// TODO(batch-change-credential-encryption): this should be removed once the
+	// OOB user credential migration is removed.
+	OnlyUnencrypted bool
 }
 
 // sql overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
@@ -326,6 +336,11 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 	// migration is removed.
 	if opts.SSHMigrationApplied != nil {
 		preds = append(preds, sqlf.Sprintf("ssh_migration_applied = %s", *opts.SSHMigrationApplied))
+	}
+	// TODO(batch-change-credential-encryption): remove once the OOB user
+	// credential migration is removed.
+	if opts.OnlyUnencrypted {
+		preds = append(preds, sqlf.Sprintf("credential_enc IS NULL"))
 	}
 
 	if len(preds) == 0 {
