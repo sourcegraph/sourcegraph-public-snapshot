@@ -1486,6 +1486,7 @@ Foreign-key constraints:
 Indexes:
     "user_credentials_pkey" PRIMARY KEY, btree (id)
     "user_credentials_domain_user_id_external_service_type_exter_key" UNIQUE CONSTRAINT, btree (domain, user_id, external_service_type, external_service_id)
+    "user_credentials_credential_enc_idx" btree ((credential_enc IS NULL))
 Check constraints:
     "user_credentials_there_can_be_only_one" CHECK (num_nonnulls(credential, credential_enc) = 1)
 Foreign-key constraints:
