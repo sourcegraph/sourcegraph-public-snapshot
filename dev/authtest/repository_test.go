@@ -28,8 +28,9 @@ func TestRepository(t *testing.T) {
 						"sgtest/go-diff",
 						"sgtest/private", // Private
 					},
-					Token: *githubToken,
-					Url:   "https://github.com/",
+					RepositoryPathPattern: "github.com/{nameWithOwner}",
+					Token:                 *githubToken,
+					Url:                   "https://ghe.sgdev.org/",
 				},
 			),
 		},

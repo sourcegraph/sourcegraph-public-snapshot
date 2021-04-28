@@ -65,3 +65,6 @@ echo "Waiting for $URL... done"
 
 echo '--- go test ./dev/gqltest -long'
 go test ./dev/gqltest -long
+
+echo '--- go test ./dev/authtest -long'
+go test ./dev/authtest -long -email "gqltest@sourcegraph.com" -username "gqltest-admin"

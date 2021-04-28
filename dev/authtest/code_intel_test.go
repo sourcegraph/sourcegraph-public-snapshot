@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -26,6 +27,44 @@ func TestCodeIntelEndpoints(t *testing.T) {
 			t.Fatal(err)
 		}
 	}()
+
+	// Set up external service
+	esID, err := client.AddExternalService(
+		gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "authtest-github-code-intel-repository",
+			Config: mustMarshalJSONString(
+				&schema.GitHubConnection{
+					Authorization: &schema.GitHubAuthorization{},
+					Repos: []string{
+						"sgtest/go-diff",
+						"sgtest/private", // Private
+					},
+					RepositoryPathPattern: "github.com/{nameWithOwner}",
+					Token:                 *githubToken,
+					Url:                   "https://ghe.sgdev.org/",
+				},
+			),
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err := client.DeleteExternalService(esID)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	const privateRepo = "github.com/sgtest/private"
+	err = client.WaitForReposToBeCloned(
+		"github.com/sgtest/go-diff",
+		privateRepo,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("LSIF upload", func(t *testing.T) {
 		// Update site configuration to enable "lsifEnforceAuth".
