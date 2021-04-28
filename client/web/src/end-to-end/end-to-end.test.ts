@@ -273,8 +273,8 @@ describe('e2e test suite', () => {
 
         const awsAccessKeyID = process.env.AWS_ACCESS_KEY_ID
         const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
-        const awsCodeCommitUsername = process.env.AWS_CODE_COMMIT_GIT_USERNAME
-        const awsCodeCommitPassword = process.env.AWS_CODE_COMMIT_GIT_PASSWORD
+        const awsCodeCommitUsername = process.env.AWS_CODE_COMMIT_USERNAME
+        const awsCodeCommitPassword = process.env.AWS_CODE_COMMIT_PASSWORD
 
         const testIfAwsCredentialsSet =
             awsSecretAccessKey && awsAccessKeyID && awsCodeCommitUsername && awsCodeCommitPassword
