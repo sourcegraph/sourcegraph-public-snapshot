@@ -5,10 +5,10 @@ import sinon from 'sinon'
 
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
-import { CreationSearchInsightForm, CreateInsightFormProps } from './CreationSearchInsightForm'
+import { CreationSearchInsightForm, CreationSearchInsightFormProps } from './CreationSearchInsightForm'
 
 describe('CreateInsightForm', () => {
-    const renderWithProps = (props: CreateInsightFormProps): RenderResult => render(<CreationSearchInsightForm {...props} />)
+    const renderWithProps = (props: CreationSearchInsightFormProps): RenderResult => render(<CreationSearchInsightForm {...props} />)
     const onSubmitMock = sinon.spy()
 
     beforeEach(() => onSubmitMock.resetHistory())
