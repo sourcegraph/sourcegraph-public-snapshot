@@ -12,7 +12,7 @@ import { FormRadioInput } from '../form-radio-input/FormRadioInput'
 import { FormSeries, FormSeriesReferenceAPI } from '../form-series/FormSeries'
 import { createRequiredValidator, composeValidators, ValidationResult } from '../validators'
 
-import styles from './CreateInsightForm.module.scss'
+import styles from './CreationSearchInsightForm.module.scss'
 
 const requiredTitleField = createRequiredValidator('Title is required field for code insight.')
 const repositoriesFieldValidator = composeValidators(
@@ -30,7 +30,7 @@ const INITIAL_VALUES: Partial<CreateInsightFormFields> = {
 }
 
 /** Public API of code insight creation form. */
-export interface CreateInsightFormProps {
+export interface CreationSearchInsightFormProps {
     /** Custom class name for root form element. */
     className?: string
     /** Submit handler for form element. */
@@ -57,7 +57,7 @@ export interface CreateInsightFormFields {
 }
 
 /** Displays creation code insight form (title, visibility, series, etc.) */
-export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> = props => {
+export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchInsightFormProps> = props => {
     const { className, onSubmit } = props
 
     const titleReference = useRef<HTMLInputElement>(null)
@@ -92,7 +92,7 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form onSubmit={handleSubmit} className={classnames(className, styles.createInsightForm)}>
+        <form onSubmit={handleSubmit} className={classnames(className, styles.creationInsightForm)}>
             <InputField
                 title="Title"
                 autofocus={true}
@@ -102,7 +102,7 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                 error={title.meta.touched && title.meta.error}
                 {...title.input}
                 ref={titleReference}
-                className={styles.createInsightFormField}
+                className={styles.creationInsightFormField}
             />
 
             <InputField
@@ -113,7 +113,7 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                 error={repositories.meta.touched && repositories.meta.error}
                 {...repositories.input}
                 ref={repositoriesReference}
-                className={styles.createInsightFormField}
+                className={styles.creationInsightFormField}
             />
 
             <FormGroup
@@ -121,16 +121,16 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                 title="Visibility"
                 description="This insigh will be visible only on your personal dashboard. It will not be show to other
                             users in your organisation."
-                className={styles.createInsightFormField}
+                className={styles.creationInsightFormField}
             >
-                <div className={styles.createInsightFormRadioGroupContent}>
+                <div className={styles.creationInsightFormRadioGroupContent}>
                     <FormRadioInput
                         name="visibility"
                         value="personal"
                         title="Personal"
                         description="only for you"
                         checked={visibility.input.value === 'personal'}
-                        className={styles.createInsightFormRadio}
+                        className={styles.creationInsightFormRadio}
                         onChange={visibility.input.onChange}
                     />
 
@@ -141,7 +141,7 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                         description="to all users in your organization"
                         checked={visibility.input.value === 'organization'}
                         onChange={visibility.input.onChange}
-                        className={styles.createInsightFormRadio}
+                        className={styles.creationInsightFormRadio}
                     />
                 </div>
             </FormGroup>
@@ -151,7 +151,7 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                 title="Data series"
                 subtitle="Add any number of data series to your chart"
                 error={series.meta.touched && series.meta.error}
-                className={styles.createInsightFormField}
+                className={styles.creationInsightFormField}
             >
                 <FormSeries
                     name={series.input.name}
@@ -166,15 +166,15 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                 title="Step between data points"
                 description="The distance between two data points on the chart"
                 error={stepValue.meta.touched && stepValue.meta.error}
-                className={styles.createInsightFormField}
+                className={styles.creationInsightFormField}
             >
-                <div className={styles.createInsightFormRadioGroupContent}>
+                <div className={styles.creationInsightFormRadioGroupContent}>
                     <InputField
                         placeholder="ex. 2"
                         {...stepValue.input}
                         valid={stepValue.meta.touched && stepValue.meta.valid}
                         ref={stepValueReference}
-                        className={classnames(styles.createInsightFormStepInput)}
+                        className={classnames(styles.creationInsightFormStepInput)}
                     />
 
                     <FormRadioInput
@@ -183,7 +183,7 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                         value="hours"
                         checked={step.input.value === 'hours'}
                         onChange={step.input.onChange}
-                        className={styles.createInsightFormRadio}
+                        className={styles.creationInsightFormRadio}
                     />
                     <FormRadioInput
                         title="Days"
@@ -191,7 +191,7 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                         value="days"
                         checked={step.input.value === 'days'}
                         onChange={step.input.onChange}
-                        className={styles.createInsightFormRadio}
+                        className={styles.creationInsightFormRadio}
                     />
                     <FormRadioInput
                         title="Weeks"
@@ -199,7 +199,7 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                         value="weeks"
                         checked={step.input.value === 'weeks'}
                         onChange={step.input.onChange}
-                        className={styles.createInsightFormRadio}
+                        className={styles.creationInsightFormRadio}
                     />
                     <FormRadioInput
                         title="Months"
@@ -207,7 +207,7 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                         value="months"
                         checked={step.input.value === 'months'}
                         onChange={step.input.onChange}
-                        className={styles.createInsightFormRadio}
+                        className={styles.creationInsightFormRadio}
                     />
                     <FormRadioInput
                         title="Years"
@@ -215,23 +215,23 @@ export const CreateInsightForm: React.FunctionComponent<CreateInsightFormProps> 
                         value="years"
                         checked={step.input.value === 'years'}
                         onChange={step.input.onChange}
-                        className={styles.createInsightFormRadio}
+                        className={styles.creationInsightFormRadio}
                     />
                 </div>
             </FormGroup>
 
-            <div className={styles.createInsightFormButtons}>
+            <div className={styles.creationInsightFormButtons}>
                 {submitErrors?.[FORM_ERROR] && (
                     <div className="alert alert-danger">{submitErrors[FORM_ERROR].toString()}</div>
                 )}
 
                 <button
                     type="submit"
-                    className={classnames(styles.createInsightFormButton, styles.createInsightFormButtonActive)}
+                    className={classnames(styles.creationInsightFormButton, styles.creationInsightFormButtonActive)}
                 >
                     Create code insight
                 </button>
-                <button type="button" className={classnames(styles.createInsightFormButton)}>
+                <button type="button" className={classnames(styles.creationInsightFormButton)}>
                     Cancel
                 </button>
             </div>

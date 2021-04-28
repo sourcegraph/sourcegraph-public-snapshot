@@ -7,17 +7,17 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { HeroPage } from '../components/HeroPage'
 import { lazyComponent } from '../util/lazyComponent'
 
-import { CreateInsightPageProps } from './pages/create/CreateInsightPage'
 import { InsightsPageProps } from './pages/dashboard/InsightsPage'
+import { CreationSearchInsightPageProps } from './pages/search-insight-creation/CreationSearchInsightPage'
 
 const InsightsLazyPage = lazyComponent<InsightsPageProps, 'InsightsPage'>(
     () => import('./pages/dashboard/InsightsPage'),
     'InsightsPage'
 )
 
-const InsightCreateLazyPage = lazyComponent<CreateInsightPageProps, 'CreateInsightPage'>(
-    () => import('./pages/create/CreateInsightPage'),
-    'CreateInsightPage'
+const InsightCreateLazyPage = lazyComponent<CreationSearchInsightPageProps, 'CreationSearchInsightPage'>(
+    () => import('./pages/search-insight-creation/CreationSearchInsightPage'),
+    'CreationSearchInsightPage'
 )
 
 /**
@@ -35,7 +35,7 @@ const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIco
 export interface InsightsRouterProps
     extends RouteComponentProps,
         Omit<InsightsPageProps, 'isCreationUIEnabled'>,
-        CreateInsightPageProps {}
+        CreationSearchInsightPageProps {}
 
 /** Main Insight routing component. Main entry point to code insights UI. */
 export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = props => {

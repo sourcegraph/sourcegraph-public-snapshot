@@ -12,10 +12,10 @@ import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { InsightsApiContext } from '../../core/backend/api-provider'
 
-import { CreateInsightForm, CreateInsightFormProps } from './components/create-insight-form/CreateInsightForm'
-import styles from './CreateInsightPage.module.scss'
+import { CreationSearchInsightForm, CreateInsightFormProps } from './components/creation-search-insight-form/CreationSearchInsightForm'
+import styles from './CreationSearchInsightPage.module.scss'
 
-export interface CreateInsightPageProps extends PlatformContextProps, RouteComponentProps {
+export interface CreationSearchInsightPageProps extends PlatformContextProps, RouteComponentProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
@@ -24,7 +24,7 @@ export interface CreateInsightPageProps extends PlatformContextProps, RouteCompo
 }
 
 /** Displays create insight page with creation form. */
-export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> = props => {
+export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchInsightPageProps> = props => {
     const { platformContext, authenticatedUser, history } = props
     const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
 
@@ -108,7 +108,7 @@ export const CreateInsightPage: React.FunctionComponent<CreateInsightPageProps> 
                 </p>
             </div>
 
-            <CreateInsightForm onSubmit={handleSubmit} />
+            <CreationSearchInsightForm onSubmit={handleSubmit} />
         </Page>
     )
 }
