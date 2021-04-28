@@ -2,7 +2,7 @@
   "private": true,
   "name": "@sourcegraph/storybook",
   "version": "0.0.1",
-  "description": "Sourcegraph Storybook configuration",
+  "description": "This change should trigger Chromatic workflow",
   "sideEffects": false,
   "license": "Apache-2.0",
   "scripts": {
