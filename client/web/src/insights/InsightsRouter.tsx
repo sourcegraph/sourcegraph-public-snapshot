@@ -25,11 +25,6 @@ const InsightCreateIntroLazyPage = lazyComponent<{}, 'CreationIntroPage'>(
     'CreationIntroPage'
 )
 
-const InsightCreateIntroLazyPage = lazyComponent<{}, 'CreateIntroPage'>(
-    () => import('./pages/create-intro/CreateIntroPage'),
-    'CreateIntroPage'
-)
-
 /**
  * Feature flag for new code insights creation UI.
  * */
