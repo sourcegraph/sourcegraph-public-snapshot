@@ -40,4 +40,11 @@ WHERE
         'OAuthBearerToken'
     );
 
+-- Create an index on credential_enc, since we want to quickly check its null
+-- state when calculating the progress of the OOB migration.
+CREATE INDEX IF NOT EXISTS
+    user_credentials_credential_enc_idx
+ON
+    user_credentials (credential_enc);
+
 COMMIT;
