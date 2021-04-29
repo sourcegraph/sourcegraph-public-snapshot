@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -84,10 +85,15 @@ func newOAuthFlowHandler(db dbutil.DB, serviceType string) http.Handler {
 				}
 
 				if ok {
-					if serviceType == extsvc.TypeGitHub {
+					switch serviceType {
+					case extsvc.TypeGitHub:
 						extraScopes = append(extraScopes, "repo")
-					} else {
+					case extsvc.TypeGitLab:
 						extraScopes = append(extraScopes, "api")
+					default:
+						log15.Error("unknown service type", "serviceType", serviceType)
+						http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site).", http.StatusInternalServerError)
+						return
 					}
 				}
 			}
