@@ -55,7 +55,7 @@ COPY --from=sourcegraph/syntect_server:453e9ca@sha256:c3f19209794119c703f43a8309
 
 
 # install minio (keep this up to date with docker-images/minio/Dockerfile)
-ENV MINIO_VERSION=RELEASE.2021-04-06T23-11-00Z
+ENV MINIO_VERSION=RELEASE.2021-04-22T15-44-28Z
 RUN wget "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.$MINIO_VERSION" && \
     chmod +x "minio.$MINIO_VERSION" && \
     mv "minio.$MINIO_VERSION" /usr/local/bin/minio
