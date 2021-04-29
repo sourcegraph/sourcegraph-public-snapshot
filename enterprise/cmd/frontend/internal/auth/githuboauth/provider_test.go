@@ -14,9 +14,10 @@ func TestRequestedScopes(t *testing.T) {
 	defer envvar.MockSourcegraphDotComMode(false)
 
 	tests := []struct {
-		dotComMode bool
-		schema     *schema.GitHubAuthProvider
-		expScopes  []string
+		dotComMode  bool
+		schema      *schema.GitHubAuthProvider
+		extraScopes []string
+		expScopes   []string
 	}{
 		{
 			dotComMode: false,
@@ -46,11 +47,19 @@ func TestRequestedScopes(t *testing.T) {
 			},
 			expScopes: []string{"read:org", "user:email"},
 		},
+		{
+			dotComMode: true,
+			schema: &schema.GitHubAuthProvider{
+				AllowOrgs: []string{"myorg"},
+			},
+			extraScopes: []string{"repo", "user:follow", "user:email"},
+			expScopes:   []string{"read:org", "repo", "user:email", "user:follow"},
+		},
 	}
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
 			envvar.MockSourcegraphDotComMode(test.dotComMode)
-			scopes := requestedScopes(test.schema)
+			scopes := requestedScopes(test.schema, test.extraScopes)
 			sort.Strings(scopes)
 			if diff := cmp.Diff(test.expScopes, scopes); diff != "" {
 				t.Fatalf("scopes: %s", diff)
