@@ -11,14 +11,15 @@ import { RouterLinkOrAnchor } from '@sourcegraph/web/src/components/RouterLinkOr
 import { InsightsApiContext } from '@sourcegraph/web/src/insights'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
-import { MockInsightsApi } from './mock-api'
+import { createMockAPI } from './mock-api'
 
 import '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { lazyComponent } from '@sourcegraph/web/src/util/lazyComponent'
 import { Route, Switch } from 'react-router'
 import { LayoutRouteProps } from '@sourcegraph/web/src/routes'
+import { authUser } from '@sourcegraph/web/src/search/panels/utils';
 
-const mockAPI = new MockInsightsApi()
+const mockAPI = createMockAPI();
 
 const CONTEXT = {
     versionContext: undefined,
@@ -29,33 +30,7 @@ const CONTEXT = {
     patternType: SearchPatternType.literal,
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     globbing: false,
-    authenticatedUser: {
-        id: 'VXNlcjoyODA5Mw==',
-        databaseID: 28093,
-        username: 'vovakulikov',
-        avatarURL: 'https://avatars.githubusercontent.com/u/18492575?v=4',
-        email: 'vovakulikov@icloud.com',
-        displayName: 'Vova Kulikov',
-        siteAdmin: false,
-        tags: ['AllowUserExternalServicePublic'],
-        url: '/users/vovakulikov',
-        settingsURL: '/users/vovakulikov/settings',
-        organizations: {
-            nodes: [
-                {
-                    id: 'T3JnOjE=',
-                    name: 'sourcegraph',
-                    displayName: 'Sourcegraph',
-                    url: '/organizations/sourcegraph',
-                    settingsURL: '/organizations/sourcegraph/settings',
-                },
-            ],
-        },
-        session: {
-            canSignOut: true,
-        },
-        viewerCanAdminister: true,
-    },
+    authenticatedUser: authUser,
     extensionsController: null,
 }
 
