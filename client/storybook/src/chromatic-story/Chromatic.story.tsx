@@ -5,7 +5,7 @@ import isChromatic from 'chromatic/isChromatic'
 import { addStory } from './add-story'
 
 // Execute logic below only in the environment where Chromatic snapshots are captured.
-if (isChromatic() || true) {
+if (isChromatic()) {
     // Get an array of all stories which are already added to the `StoryStore`.
     // Use `raw()` because we don't want to apply any filtering and sorting on the array of stories.
     const storeItems = raw() as PublishedStoreItem[]
