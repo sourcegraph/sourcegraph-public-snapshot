@@ -31,10 +31,20 @@ var _ workerutil.Handler = &handler{}
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
-func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workerutil.Record) error {
+func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workerutil.Record) (err error) {
 	job := record.(executor.Job)
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(h.options.MaximumRuntimePerJob))
 	defer cancel()
+
+	wrapError := func(err error, message string) error {
+		for ex := err; ex != nil; ex = errors.Unwrap(ex) {
+			if ex == context.DeadlineExceeded {
+				err = fmt.Errorf("job exceeded maximum execution time of %s", h.options.MaximumRuntimePerJob)
+			}
+		}
+
+		return errors.Wrap(err, message)
+	}
 
 	h.idSet.Add(job.ID)
 	defer h.idSet.Remove(job.ID)
@@ -65,7 +75,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	hostRunner := h.runnerFactory("", logger, command.Options{}, h.operations)
 	workingDirectory, err := h.prepareWorkspace(ctx, hostRunner, job.RepositoryName, job.Commit)
 	if err != nil {
-		return err
+		return wrapError(err, "failed to prepare workspace")
 	}
 	defer func() {
 		_ = os.RemoveAll(workingDirectory)
@@ -125,7 +135,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 
 	// Setup Firecracker VM (if enabled)
 	if err := runner.Setup(ctx, imageNames, nil); err != nil {
-		return err
+		return wrapError(err, "failed to setup virtual machine")
 	}
 	defer func() {
 		// Perform this outside of the task execution context. If there is a timeout or
@@ -148,7 +158,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 		}
 
 		if err := runner.Run(ctx, dockerStepCommand); err != nil {
-			return errors.Wrap(err, "failed to perform docker step")
+			return wrapError(err, "failed to perform docker step")
 		}
 	}
 
@@ -163,7 +173,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 		}
 
 		if err := runner.Run(ctx, cliStepCommand); err != nil {
-			return errors.Wrap(err, "failed to perform src-cli step")
+			return wrapError(err, "failed to perform src-cli step")
 		}
 	}
 
