@@ -26,7 +26,6 @@ import { FormFieldVariants } from './FormFieldVariants'
 import { TextStory } from './TextStory'
 import { preventDefault } from './utils'
 import { ColorVariants } from './ColorVariants'
-import { TextVariants } from './TextVariants'
 
 const { add } = storiesOf('branded/Global styles', module).addDecorator(story => (
     <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>
@@ -38,7 +37,7 @@ add(
         <>
             <h1>Typography</h1>
 
-            <TextVariants />
+            <TextStory />
         </>
     ),
     {
@@ -70,7 +69,7 @@ add(
                 areas.
             </p>
 
-            <TextVariants />
+            <TextStory />
         </div>
     ),
     {
