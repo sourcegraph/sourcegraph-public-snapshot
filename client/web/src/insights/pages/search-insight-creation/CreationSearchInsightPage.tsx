@@ -1,3 +1,4 @@
+import * as jsonc from '@sqs/jsonc-parser'
 import { FORM_ERROR } from 'final-form'
 import React, { useCallback, useContext } from 'react'
 import { Redirect } from 'react-router'
@@ -17,6 +18,12 @@ import {
     CreationSearchInsightFormProps,
 } from './components/creation-search-insight-form/CreationSearchInsightForm'
 import styles from './CreationSearchInsightPage.module.scss'
+
+const defaultFormattingOptions: jsonc.FormattingOptions = {
+    eol: '\n',
+    insertSpaces: true,
+    tabSize: 2,
+}
 
 export interface CreationSearchInsightPageProps extends PlatformContextProps, RouteComponentProps {
     /**
@@ -49,12 +56,10 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
 
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
-                const content = JSON.parse(settings.contents) as object
                 const insightID = uuid.v4()
 
-                const newSettings = {
-                    ...content,
-                    [`searchInsights.insight.${insightID}`]: {
+                const newSettingsString = JSON.stringify(
+                    {
                         title: values.title,
                         repositories: values.repositories.split(','),
                         series: values.series.map(line => ({
@@ -70,12 +75,23 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
                             [values.step]: +values.stepValue,
                         },
                     },
-                }
+                    null,
+                    2,
+                )
+
+                const edits = jsonc.modify(
+                    settings.contents,
+                    [`searchInsights.insight.${insightID}`],
+                    newSettingsString,
+                    { formattingOptions: defaultFormattingOptions }
+                )
+
+                const editedSettings = jsonc.applyEdits(settings.contents, edits);
 
                 await updateSubjectSettings(
                     platformContext,
                     subjectID,
-                    JSON.stringify(newSettings, null, 2)
+                    editedSettings,
                 ).toPromise()
 
                 history.push('/insights')
