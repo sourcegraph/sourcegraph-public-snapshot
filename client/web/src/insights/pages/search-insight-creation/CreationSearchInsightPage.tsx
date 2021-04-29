@@ -30,7 +30,7 @@ export interface CreationSearchInsightPageProps extends PlatformContextProps, Ro
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
      * */
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations'> | null
 }
 
 /** Displays create insight page with creation form. */
