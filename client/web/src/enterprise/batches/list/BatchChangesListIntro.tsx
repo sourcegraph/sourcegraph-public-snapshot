@@ -2,6 +2,8 @@ import WarningIcon from 'mdi-react/WarningIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
+import { PageSelector } from '@sourcegraph/wildcard'
+
 import { SourcegraphIcon } from '../../../auth/icons'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
@@ -100,6 +102,7 @@ const BatchChangesRenameAlert: React.FunctionComponent = () => (
         partialStorageKey="batch-changes-list-intro-rename"
     >
         <div className="batch-changes-list-intro__card card h-100 p-2">
+            <PageSelector currentPage={1} totalPages={20} onPageChange={console.log} />
             <div className="card-body">
                 <h4>Campaigns is now Batch Changes</h4>
                 <p className="text-muted mb-0">
