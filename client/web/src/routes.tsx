@@ -13,6 +13,7 @@ import { kubernetes } from './repogroups/Kubernetes'
 import { python2To3Metadata } from './repogroups/Python2To3'
 import { reactHooks } from './repogroups/ReactHooks'
 import { RepogroupPage } from './repogroups/RepogroupPage'
+import { stackStorm } from './repogroups/StackStorm'
 import { stanford } from './repogroups/Stanford'
 import { StreamingSearchResults } from './search/results/streaming/StreamingSearchResults'
 import { isMacPlatform, UserRepositoriesUpdateProps } from './util'
@@ -226,6 +227,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/kubernetes',
         render: props => <RepogroupPage {...props} repogroupMetadata={kubernetes} />,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+    },
+    {
+        path: '/stackstorm',
+        render: props => <RepogroupPage {...props} repogroupMetadata={stackStorm} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {

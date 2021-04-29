@@ -17,14 +17,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func NewHandler(serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
-	oauthFlowHandler := http.StripPrefix(authPrefix, newOAuthFlowHandler(serviceType))
+func NewHandler(db dbutil.DB, serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
+	oauthFlowHandler := http.StripPrefix(authPrefix, newOAuthFlowHandler(db, serviceType))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Delegate to the auth flow handler
 		if !isAPIHandler && strings.HasPrefix(r.URL.Path, authPrefix+"/") {
@@ -56,7 +60,7 @@ func NewHandler(serviceType, authPrefix string, isAPIHandler bool, next http.Han
 	})
 }
 
-func newOAuthFlowHandler(serviceType string) http.Handler {
+func newOAuthFlowHandler(db dbutil.DB, serviceType string) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/login", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		id := req.URL.Query().Get("pc")
@@ -66,7 +70,36 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 			http.Error(w, "Misconfigured GitHub auth provider.", http.StatusInternalServerError)
 			return
 		}
-		p.Login.ServeHTTP(w, req)
+
+		var extraScopes []string
+
+		// On Sourcegraph Cloud and for GitHub or GitLab, check if the user has the AllowUserExternalServicePrivate tag
+		// and if so, ask the code host for additional scopes
+		if envvar.SourcegraphDotComMode() && (serviceType == extsvc.TypeGitHub || serviceType == extsvc.TypeGitLab) {
+			if actor := actor.FromContext(req.Context()); actor.IsAuthenticated() {
+				ok, err := database.Users(db).HasTag(req.Context(), actor.UID, database.TagAllowUserExternalServicePrivate)
+				if err != nil {
+					log15.Error("error while checking user tag", "id", actor.UID, "tag", database.TagAllowUserExternalServicePrivate)
+					http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site).", http.StatusInternalServerError)
+					return
+				}
+
+				if ok {
+					switch serviceType {
+					case extsvc.TypeGitHub:
+						extraScopes = append(extraScopes, "repo")
+					case extsvc.TypeGitLab:
+						extraScopes = append(extraScopes, "api")
+					default:
+						log15.Error("unknown service type", "serviceType", serviceType)
+						http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site).", http.StatusInternalServerError)
+						return
+					}
+				}
+			}
+		}
+
+		p.Login(p.OAuth2Config(extraScopes...)).ServeHTTP(w, req)
 	}))
 	mux.Handle("/callback", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		state, err := DecodeState(req.URL.Query().Get("state"))
@@ -81,7 +114,7 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not find provider that matches the OAuth state parameter.", http.StatusBadRequest)
 			return
 		}
-		p.Callback.ServeHTTP(w, req)
+		p.Callback(p.OAuth2Config()).ServeHTTP(w, req)
 	}))
 	return mux
 }

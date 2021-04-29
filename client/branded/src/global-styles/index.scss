@@ -1,13 +1,15 @@
 @import './colors.scss';
+@import './border-radius.scss';
 
 // Bootstrap configuration before Bootstrap is imported
-$border-radius: 2px;
-$border-radius-sm: 1px;
-$border-radius-lg: 4px;
+$border-radius: var(--border-radius);
+$border-radius-sm: var(--border-radius-sm);
+$border-radius-lg: var(--border-radius-lg);
+
 $font-size-base: 0.875rem;
 $line-height-base: (20/14);
 
-$box-shadow: 0 0.25rem 0.5rem rgba($gray-19, 0.07);
+$box-shadow: var(--box-shadow);
 
 $grid-gutter-width: 1.5rem;
 
@@ -45,17 +47,18 @@ $badge-padding-x: 0.6em;
 
 // Tooltips
 
-$tooltip-bg: $gray-19;
+$tooltip-bg: var(--tooltip-bg);
 
 // Forms
 
-$form-check-input-margin-y: 0.2em;
+$form-check-input-margin-y: var(--form-check-input-margin-y);
+$form-feedback-font-size: 0.75rem;
 $input-btn-focus-width: 2px;
-$input-focus-border-color: $primary;
 // The default focus ring for buttons is very hard to see, raise opacity.
 // We only show the focus ring when using the keyboard, when the focus ring
 // should be clearly visible.
-$btn-focus-box-shadow: 0 0 0 $input-btn-focus-width rgba($primary, 0.8);
+$btn-focus-box-shadow: var(--focus-box-shadow);
+$btn-link-disabled-color: var(--btn-link-disabled-color);
 
 // Forms don't manipulate the colors at compile time,
 // which is why we can use CSS variables for theming here
@@ -69,6 +72,17 @@ $input-placeholder-color: var(--input-placeholder-color);
 $input-group-addon-color: var(--input-group-addon-color);
 $input-group-addon-bg: var(--input-group-addon-bg);
 $input-group-addon-border-color: var(--input-group-addon-border-color);
+$input-focus-border-color: var(--input-focus-border-color);
+$input-focus-box-shadow: var(--input-focus-box-shadow);
+
+// Custom Selects
+$custom-select-bg-size: 16px 16px;
+$custom-select-disabled-bg: var(--input-disabled-bg);
+$custom-select-focus-box-shadow: var(--input-focus-box-shadow);
+// Icon: mdi-react/ChevronDownIcon
+$custom-select-indicator: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' fill='#{$redesign-gray-06}' viewBox='0 0 24 24'><path d='M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z'/></svg>");
+// Hide feedback icon for custom-select
+$custom-select-feedback-icon-size: 0;
 
 // Dropdown
 $dropdown-bg: var(--dropdown-bg);
@@ -98,6 +112,9 @@ $collapsible-expand-btn-width: 1.25rem;
 
 $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
+
+// Disable transitions
+$input-transition: none;
 
 // './breakpoints' defines $grid-breakpoints for global CSS and exposes breakpoints mixins to CSS modules
 @import './breakpoints';
@@ -150,9 +167,13 @@ $hr-margin-y: 0.25rem;
 }
 :focus-visible {
     outline: 0;
-    box-shadow: $btn-focus-box-shadow;
+    box-shadow: var(--focus-box-shadow);
 }
 
-.cursor-pointer {
-    cursor: pointer;
+.cursor-pointer,
+input[type='radio'],
+input[type='checkbox'] {
+    &:not(:disabled) {
+        cursor: pointer;
+    }
 }

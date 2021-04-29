@@ -40,13 +40,13 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 		)
 		// get all external services for user, or for the specified external service
 		if r.codeHost == 0 {
-			svcs, err = database.GlobalExternalServices.List(ctx, database.ExternalServicesListOptions{NamespaceUserID: r.userID})
+			svcs, err = database.ExternalServices(r.db).List(ctx, database.ExternalServicesListOptions{NamespaceUserID: r.userID})
 			if err != nil {
 				r.err = err
 				return
 			}
 		} else {
-			svc, err := database.GlobalExternalServices.GetByID(ctx, r.codeHost)
+			svc, err := database.ExternalServices(r.db).GetByID(ctx, r.codeHost)
 			if err != nil {
 				r.err = err
 				return

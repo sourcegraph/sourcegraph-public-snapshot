@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"sort"
 	"strings"
 	"unicode/utf8"
@@ -17,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -168,10 +166,6 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		return nil, err
 	}
 	span.SetTag("commit", string(commitID))
-	baseURI, err := gituri.Parse("git://" + string(repoRevs.Repo.Name) + "?" + url.QueryEscape(inputRev))
-	if err != nil {
-		return nil, err
-	}
 
 	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
 		Repo:            repoRevs.Repo.Name,
@@ -187,26 +181,33 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 
 	// All symbols are from the same repo, so we can just partition them by path
 	// to build fileMatches
-	symbolMatchesByPath := make(map[string][]*result.SymbolMatch)
+	symbolsByPath := make(map[string][]*result.Symbol)
 	for _, symbol := range symbols {
-		symbolMatch := &result.SymbolMatch{
-			Symbol:  symbol,
-			BaseURI: baseURI,
-		}
-
-		cur := symbolMatchesByPath[symbol.Path]
-		symbolMatchesByPath[symbol.Path] = append(cur, symbolMatch)
+		cur := symbolsByPath[symbol.Path]
+		symbolsByPath[symbol.Path] = append(cur, &symbol)
 	}
 
 	// Create file matches from partitioned symbols
-	fileMatches := make([]result.FileMatch, 0, len(symbolMatchesByPath))
-	for path, symbolMatches := range symbolMatchesByPath {
-		fileMatches = append(fileMatches, result.FileMatch{
+	fileMatches := make([]result.FileMatch, 0, len(symbolsByPath))
+	for path, symbols := range symbolsByPath {
+		file := result.File{
 			Path:     path,
-			Symbols:  symbolMatches,
 			Repo:     repoRevs.Repo,
 			CommitID: commitID,
 			InputRev: &inputRev,
+		}
+
+		symbolMatches := make([]*result.SymbolMatch, 0, len(symbols))
+		for _, symbol := range symbols {
+			symbolMatches = append(symbolMatches, &result.SymbolMatch{
+				File:   &file,
+				Symbol: *symbol,
+			})
+		}
+
+		fileMatches = append(fileMatches, result.FileMatch{
+			Symbols: symbolMatches,
+			File:    file,
 		})
 	}
 

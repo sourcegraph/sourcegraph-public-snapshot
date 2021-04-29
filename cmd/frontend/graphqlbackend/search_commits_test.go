@@ -138,7 +138,7 @@ func TestExpandUsernamesToEmails(t *testing.T) {
 		}, nil
 	}
 
-	x, err := expandUsernamesToEmails(context.Background(), []string{"foo", "@alice"})
+	x, err := expandUsernamesToEmails(context.Background(), nil, []string{"foo", "@alice"})
 	if err != nil {
 		t.Fatal(err)
 	}

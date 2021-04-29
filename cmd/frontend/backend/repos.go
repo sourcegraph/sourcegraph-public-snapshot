@@ -156,10 +156,10 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	return s.store.List(ctx, opt)
 }
 
-// ListDefault calls database.DefaultRepos.List, with tracing. It lists ALL
+// ListIndexable calls database.DefaultRepos.List, with tracing. It lists ALL
 // default repos which could include private user added repos.
-func (s *repos) ListDefault(ctx context.Context) (repos []types.RepoName, err error) {
-	ctx, done := trace(ctx, "Repos", "ListDefault", nil, &err)
+func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err error) {
+	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
 	defer func() {
 		if err == nil {
 			span := opentracing.SpanFromContext(ctx)
@@ -170,10 +170,10 @@ func (s *repos) ListDefault(ctx context.Context) (repos []types.RepoName, err er
 	return database.GlobalDefaultRepos.List(ctx)
 }
 
-// ListDefaultPublicAndUser calls database.DefaultRepos.ListPublic, with tracing.
+// ListDefault calls database.DefaultRepos.ListPublic, with tracing.
 // It lists all public default repos and also any private repos added by the
 // current user.
-func (s *repos) ListDefaultPublicAndUser(ctx context.Context) (repos []types.RepoName, err error) {
+func (s *repos) ListDefault(ctx context.Context) (repos []types.RepoName, err error) {
 	ctx, done := trace(ctx, "Repos", "ListDefaultPublic", nil, &err)
 	defer func() {
 		if err == nil {

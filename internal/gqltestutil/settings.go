@@ -8,6 +8,47 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// SettingsSubject contains contents of a setting.
+type SettingsSubject struct {
+	ID       int64  `json:"id"`
+	Contents string `json:"contents"`
+}
+
+// SettingsCascade returns settings of given subject ID with contents.
+func (c *Client) SettingsCascade(subjectID string) ([]*SettingsSubject, error) {
+	const query = `
+query SettingsCascade($subject: ID!) {
+	settingsSubject(id: $subject) {
+		settingsCascade {
+			subjects {
+				latestSettings {
+					id
+					contents
+				}
+			}
+		}
+	}
+}
+`
+	variables := map[string]interface{}{
+		"subject": subjectID,
+	}
+	var resp struct {
+		Data struct {
+			SettingsSubject struct {
+				SettingsCascade struct {
+					Subjects []*SettingsSubject `json:"subjects"`
+				} `json:"settingsCascade"`
+			} `json:"settingsSubject"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+	return resp.Data.SettingsSubject.SettingsCascade.Subjects, nil
+}
+
 // OverwriteSettings overwrites settings for given subject ID with contents.
 func (c *Client) OverwriteSettings(subjectID, contents string) error {
 	lastID, err := c.lastSettingsID(subjectID)

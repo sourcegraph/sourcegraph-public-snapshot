@@ -77,6 +77,7 @@ FROM lsif_uploads u
 JOIN repo r ON r.id = u.repository_id
 WHERE u.state = 'completed' AND u.committed_at IS NULL
 GROUP BY u.repository_id, r.name, u.commit
+ORDER BY repository_id, commit
 LIMIT %s
 `
 

@@ -27,7 +27,7 @@ I have read [when and why we perform patch releases](https://about.sourcegraph.c
 
 <!-- **ANSWER THIS, explain if needed** -->
 
-> This will interrupt our regular planned work and release cycle, taking 3-6 hours of our time, and will take up all of our site admin's valuable time by asking them to upgrade or producing noise for them if they don't need to upgrade.
+> This will interrupt our regular planned work and release cycle, taking one full working day of our time, and will take up all of our site admin's valuable time by asking them to upgrade or producing noise for them if they don't need to upgrade.
 >
 > Do you believe the changes are important enough to warrant this?
 

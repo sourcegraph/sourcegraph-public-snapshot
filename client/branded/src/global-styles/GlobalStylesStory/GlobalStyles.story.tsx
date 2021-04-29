@@ -8,7 +8,8 @@ import { action } from '@storybook/addon-actions'
 import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
-import { flow, startCase } from 'lodash'
+import { flow } from 'lodash'
+import SearchIcon from 'mdi-react/SearchIcon'
 import openColor from 'open-color'
 import React, { useState } from 'react'
 import 'storybook-addon-designs'
@@ -20,14 +21,11 @@ import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
 import { Form } from '../../components/Form'
 
+import { ButtonVariants } from './ButtonVariants'
+import { SEMANTIC_COLORS } from './constants'
+import { FormFieldVariants } from './FormFieldVariants'
 import { TextStory } from './TextStory'
-
-const semanticColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'merged'] as const
-
-const preventDefault = <E extends React.SyntheticEvent>(event: E): E => {
-    event.preventDefault()
-    return event
-}
+import { preventDefault } from './utils'
 
 const { add } = storiesOf('branded/Global styles', module).addDecorator(story => (
     <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>
@@ -39,7 +37,7 @@ add(
         <>
             <h1>Typography</h1>
 
-            <TextStory semanticColors={semanticColors} />
+            <TextStory />
         </>
     ),
     {
@@ -71,7 +69,7 @@ add(
                 areas.
             </p>
 
-            <TextStory semanticColors={semanticColors} />
+            <TextStory />
         </div>
     ),
     {
@@ -171,7 +169,7 @@ add(
                 available on most CSS components and the <code>border-</code> and <code>bg-</code> utility classes.
             </p>
             <div className="d-flex flex-wrap">
-                {semanticColors.map(semantic => (
+                {SEMANTIC_COLORS.map(semantic => (
                     <div className="m-2 text-center" key={semantic}>
                         <div className={`bg-${semantic} rounded`} style={{ width: '5rem', height: '5rem' }} />
                         {semantic}
@@ -315,7 +313,7 @@ add(
                 Provide contextual feedback messages for typical user actions with the handful of available and flexible
                 alert messages.
             </p>
-            {semanticColors.map(semantic => (
+            {SEMANTIC_COLORS.map(semantic => (
                 <div key={semantic} className={classNames('alert', `alert-${semantic}`)}>
                     A simple {semantic} alert — check it out! It can also contain{' '}
                     <a href="/" onClick={flow(preventDefault, action('alert link clicked'))}>
@@ -423,7 +421,7 @@ add(
             <h2>Semantic variations</h2>
             <p>Change the appearance of any badge with modifier classes for semantic colors.</p>
             <p>
-                {semanticColors.map(semantic => (
+                {SEMANTIC_COLORS.map(semantic => (
                     <React.Fragment key={semantic}>
                         <span className={classNames('badge', `badge-${semantic}`)}>{semantic}</span>{' '}
                     </React.Fragment>
@@ -521,81 +519,47 @@ add(
                 sizes, states, and more.{' '}
                 <a href="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</a>
             </p>
-
             <h2>Semantic variants</h2>
-            <p>
-                {semanticColors.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <button
-                            type="button"
-                            key={semantic}
-                            className={classNames('btn', `btn-${semantic}`)}
-                            onClick={flow(preventDefault, action('button clicked'))}
-                        >
-                            {startCase(semantic)}
-                        </button>{' '}
-                    </React.Fragment>
-                ))}
-            </p>
-
+            <ButtonVariants variants={SEMANTIC_COLORS} />
             <h2>Outline variants</h2>
-            <p>
-                {semanticColors.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <button
-                            type="button"
-                            key={semantic}
-                            className={classNames('btn', `btn-outline-${semantic}`)}
-                            onClick={flow(preventDefault, action('button clicked'))}
-                        >
-                            {startCase(semantic)}
-                        </button>{' '}
-                    </React.Fragment>
-                ))}
-            </p>
-
-            <h2>Disabled</h2>
-            <div className="mb-2">
-                {semanticColors.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <button
-                            type="button"
-                            key={semantic}
-                            className={classNames('btn', `btn-${semantic}`)}
-                            disabled={true}
-                        >
-                            Disabled
-                        </button>{' '}
-                    </React.Fragment>
-                ))}
-            </div>
-            <div className="mb-2">
-                {semanticColors.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <button
-                            type="button"
-                            key={semantic}
-                            className={classNames('btn', `btn-outline-${semantic}`)}
-                            disabled={true}
-                        >
-                            Disabled
-                        </button>{' '}
-                    </React.Fragment>
-                ))}
-            </div>
-
+            <ButtonVariants variants={['primary', 'secondary', 'danger']} variantType="btn-outline" />
+            <h2>Icons</h2>
+            <p>We can use icons with our buttons</p>
+            <ButtonVariants variants={['danger']} icon={SearchIcon} />
+            <ButtonVariants variants={['danger']} variantType="btn-outline" icon={SearchIcon} />
+            <h2>Size</h2>
+            <p>We can make our buttons smaller</p>
+            <ButtonVariants variants={['primary']} variantType="btn-outline" small={true} />
             <h2>Links</h2>
-            <p>Links can be made to look like buttons too.</p>
-            <a href="https://example.com" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+            <p>Links can be made to look like buttons:</p>
+            <a href="https://example.com" className="btn btn-secondary mb-3" target="_blank" rel="noopener noreferrer">
                 I am a link
             </a>
+            <p>Buttons can be made to look like links:</p>
+            <button type="button" className="btn btn-link mr-3">
+                Link button
+            </button>
+            <button type="button" className="btn btn-link mr-3 focus">
+                Focused
+            </button>
+            <button type="button" className="btn btn-link mr-3" disabled={true}>
+                Disabled
+            </button>
         </>
     ),
     {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=35%3A11',
-        },
+        design: [
+            {
+                type: 'figma',
+                url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=35%3A11',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Redesign',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2513',
+            },
+        ],
     }
 )
 
@@ -825,7 +789,7 @@ add(
                 </div>
                 <div className="form-group">
                     <label htmlFor="example-example-select">Example select</label>
-                    <select id="example-select" className="form-control">
+                    <select id="example-select" className="custom-select">
                         <option>Option A</option>
                         <option>Option B</option>
                         <option>Option C</option>
@@ -860,7 +824,7 @@ add(
                     </div>
                     <div className="form-group">
                         <label htmlFor="disabledSelect">Disabled select menu</label>
-                        <select id="disabledSelect" className="form-control">
+                        <select id="disabledSelect" className="custom-select">
                             <option>Disabled select</option>
                         </select>
                     </div>
@@ -887,25 +851,20 @@ add(
             <input className="form-control" type="text" value="I'm a readonly value" readOnly={true} />
 
             <h2 className="mt-3">Sizing</h2>
-            <p>Form controls can be made smaller or larger for rare use cases, like a select inside a dropdown menu.</p>
+            <p>Form fields can be made smaller</p>
             <div className="d-flex">
-                <div>
-                    <input className="form-control form-control-lg mb-1" type="text" placeholder="Large input" />
-                    <input className="form-control mb-1" type="text" placeholder="Default input" />
-                    <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
-                </div>
-                <div className="ml-2">
-                    <select className="form-control form-control-lg mb-1">
-                        <option>Large select</option>
-                    </select>
-                    <select className="form-control mb-1">
-                        <option>Default select</option>
-                    </select>
-                    <select className="form-control form-control-sm mb-1">
-                        <option>Small select</option>
-                    </select>
-                </div>
+                <fieldset>
+                    <div className="form-group">
+                        <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
+                        <textarea className="form-control form-control-sm mb-1" placeholder="Small textarea" />
+                        <select className="custom-select custom-select-sm mb-1">
+                            <option>Small select</option>
+                        </select>
+                    </div>
+                </fieldset>
             </div>
+            <h2 className="mt-3">Field reference</h2>
+            <FormFieldVariants />
         </>
     ),
     {

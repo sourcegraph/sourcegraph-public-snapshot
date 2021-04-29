@@ -38,14 +38,14 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	// Collect username, verified email addresses, and external accounts to be used
 	// for revoking user permissions later, otherwise they will be removed from database
 	// if it's a hard delete.
-	user, err := database.GlobalUsers.GetByID(ctx, userID)
+	user, err := database.Users(r.db).GetByID(ctx, userID)
 	if err != nil {
 		return nil, errors.Wrap(err, "get user by ID")
 	}
 
 	var accounts []*extsvc.Accounts
 
-	extAccounts, err := database.GlobalExternalAccounts.List(ctx, database.ExternalAccountsListOptions{UserID: userID})
+	extAccounts, err := database.ExternalAccounts(r.db).List(ctx, database.ExternalAccountsListOptions{UserID: userID})
 	if err != nil {
 		return nil, errors.Wrap(err, "list external accounts")
 	}
@@ -57,7 +57,7 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 		})
 	}
 
-	verifiedEmails, err := database.GlobalUserEmails.ListByUser(ctx, database.UserEmailsListOptions{
+	verifiedEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
 		UserID:       user.ID,
 		OnlyVerified: true,
 	})
@@ -75,11 +75,11 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	})
 
 	if args.Hard != nil && *args.Hard {
-		if err := database.GlobalUsers.HardDelete(ctx, user.ID); err != nil {
+		if err := database.Users(r.db).HardDelete(ctx, user.ID); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := database.GlobalUsers.Delete(ctx, user.ID); err != nil {
+		if err := database.Users(r.db).Delete(ctx, user.ID); err != nil {
 			return nil, err
 		}
 	}
@@ -97,7 +97,7 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-func (*schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
+func (r *schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can delete orgs.
@@ -110,7 +110,7 @@ func (*schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := database.GlobalOrgs.Delete(ctx, orgID); err != nil {
+	if err := database.Orgs(r.db).Delete(ctx, orgID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -139,7 +139,7 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := database.GlobalUsers.SetIsSiteAdmin(ctx, userID, args.SiteAdmin); err != nil {
+	if err := database.Users(r.db).SetIsSiteAdmin(ctx, userID, args.SiteAdmin); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
