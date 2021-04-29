@@ -27,6 +27,18 @@ export const KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR: KeyboardShortcut = {
     keybindings: [{ ordered: ['/'] }],
 }
 
+export const KEYBOARD_SHORTCUT_FUZZY_FILES: KeyboardShortcut = {
+    id: 'fuzzyFiles',
+    title: 'Fuzzy search files',
+    keybindings: [{ ordered: ['t'] }],
+}
+
+export const KEYBOARD_SHORTCUT_CLOSE_FUZZY_FILES: KeyboardShortcut = {
+    id: 'closeFuzzyFiles',
+    title: 'Close fuzzy search files',
+    keybindings: [{ ordered: ['Escape'] }],
+}
+
 export const KEYBOARD_SHORTCUT_COPY_FULL_QUERY: KeyboardShortcut = {
     id: 'copyFullQuery',
     title: 'Copy full query',
@@ -42,6 +54,8 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     KEYBOARD_SHORTCUT_SWITCH_THEME,
     KEYBOARD_SHORTCUT_SHOW_HELP,
     KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR,
+    KEYBOARD_SHORTCUT_FUZZY_FILES,
+    KEYBOARD_SHORTCUT_CLOSE_FUZZY_FILES,
     KEYBOARD_SHORTCUT_COPY_FULL_QUERY,
 ]
 

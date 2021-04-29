@@ -59,6 +59,7 @@ const LOADING = 'loading' as const
 interface TreeRootState {
     treeOrError?: typeof LOADING | TreeFields | ErrorLike
     fileDecorationsByPath: FileDecorationsByPath
+    isFuzzyModalVisible: boolean
 }
 
 export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
@@ -78,6 +79,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         }
         this.state = {
             fileDecorationsByPath: {},
+            isFuzzyModalVisible: false,
         }
     }
 
