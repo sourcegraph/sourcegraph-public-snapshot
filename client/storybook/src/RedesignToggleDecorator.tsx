@@ -1,4 +1,5 @@
 import { DecoratorFunction } from '@storybook/addons'
+import isChromatic from 'chromatic/isChromatic'
 import React, { ReactElement, useEffect } from 'react'
 
 import { useRedesignToggle, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
@@ -27,7 +28,16 @@ const updateManager = (isRedesignEnabled: boolean): void => {
 }
 
 export const RedesignToggleDecorator: DecoratorFunction<ReactElement> = (Story, context) => {
-    const [isRedesignEnabled] = useRedesignToggle()
+    const [isRedesignEnabled, setIsRedesignEnabled] = useRedesignToggle()
+
+    useEffect(() => {
+        // In Chromatic set disable redesign theme by default. It will be enabled by ChromaticStoryDecorator if it's redesign story.
+        if (isChromatic() && isRedesignEnabled) {
+            setIsRedesignEnabled(false)
+        }
+        // We want to do it once on component mount, after that `ChromaticStoryDecorator` will control redesign theme flag.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     useEffect(() => {
         updatePreview(isRedesignEnabled)
