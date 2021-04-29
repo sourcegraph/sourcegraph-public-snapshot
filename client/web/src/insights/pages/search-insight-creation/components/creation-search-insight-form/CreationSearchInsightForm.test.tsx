@@ -1,5 +1,6 @@
 import { render, RenderResult, within, BoundFunction, GetByRole, cleanup, fireEvent } from '@testing-library/react'
 import { FORM_ERROR } from 'final-form'
+import openColor from 'open-color'
 import * as React from 'react'
 import sinon from 'sinon'
 
@@ -125,7 +126,7 @@ describe('CreateInsightForm', () => {
                         name: 'First code insight series',
                         query: 'patternType:regex case:yes \\*\\sas\\sGQL',
                         // Open color value from our own css variables
-                        color: 'var(--oc-yellow-7)',
+                        color: openColor.yellow[7],
                     },
                 ],
                 stepValue: '2',
