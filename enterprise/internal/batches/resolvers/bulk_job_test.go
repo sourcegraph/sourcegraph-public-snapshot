@@ -63,7 +63,7 @@ func TestBulkJobResolver(t *testing.T) {
 			ChangesetID:    changeset1.ID,
 			JobType:        btypes.ChangesetJobTypeComment,
 			Payload:        btypes.ChangesetJobCommentPayload{Message: "test"},
-			State:          btypes.ReconcilerStateFailed,
+			State:          btypes.ChangesetJobStateFailed,
 			FailureMessage: strPtr(errorMsg),
 			StartedAt:      now,
 			FinishedAt:     now,
@@ -76,7 +76,7 @@ func TestBulkJobResolver(t *testing.T) {
 			ChangesetID:   changeset2.ID,
 			JobType:       btypes.ChangesetJobTypeComment,
 			Payload:       btypes.ChangesetJobCommentPayload{Message: "test"},
-			State:         btypes.ReconcilerStateQueued,
+			State:         btypes.ChangesetJobStateQueued,
 			StartedAt:     now,
 		},
 		// Not accessible and failed.
@@ -87,7 +87,7 @@ func TestBulkJobResolver(t *testing.T) {
 			ChangesetID:    changeset3.ID,
 			JobType:        btypes.ChangesetJobTypeComment,
 			Payload:        btypes.ChangesetJobCommentPayload{Message: "test"},
-			State:          btypes.ReconcilerStateFailed,
+			State:          btypes.ChangesetJobStateFailed,
 			FailureMessage: strPtr(errorMsg),
 			StartedAt:      now,
 			FinishedAt:     now,
@@ -106,7 +106,7 @@ func TestBulkJobResolver(t *testing.T) {
 	wantBatchChange := apitest.BulkJob{
 		ID:       bulkJobAPIID,
 		Type:     "COMMENT",
-		State:    "PROCESSING",
+		State:    string(btypes.BulkJobStateProcessing),
 		Progress: 2.0 / 3.0,
 		Errors: []*apitest.ChangesetJobError{
 			{

@@ -15,14 +15,17 @@ var bulkJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("changeset_jobs.job_type AS type"),
 	sqlf.Sprintf(
 		`CASE
-	WHEN COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s, %s)) > 0 THEN 'PROCESSING'
-	WHEN COUNT(*) FILTER (WHERE changeset_jobs.state = %s) > 0 THEN 'FAILED'
-	ELSE 'COMPLETED'
+	WHEN COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s, %s)) > 0 THEN %s
+	WHEN COUNT(*) FILTER (WHERE changeset_jobs.state = %s) > 0 THEN %s
+	ELSE %s
 END AS state`,
 		btypes.ReconcilerStateProcessing.ToDB(),
 		btypes.ReconcilerStateQueued.ToDB(),
 		btypes.ReconcilerStateErrored.ToDB(),
+		btypes.BulkJobStateProcessing,
 		btypes.ReconcilerStateFailed.ToDB(),
+		btypes.BulkJobStateFailed,
+		btypes.BulkJobStateCompleted,
 	),
 	sqlf.Sprintf(
 		"CAST(COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) AS float) / CAST(COUNT(*) AS float) AS progress",

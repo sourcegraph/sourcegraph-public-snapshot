@@ -20,8 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-// seededRand is used to populate the RandID fields on BatchSpec and
-// ChangesetSpec when creating them.
+// seededRand is used in RandomID() to generate a "random" number.
 var seededRand *rand.Rand = rand.New(rand.NewSource(timeutil.Now().UnixNano()))
 
 // ErrNoResults is returned by Store method calls that found no results.

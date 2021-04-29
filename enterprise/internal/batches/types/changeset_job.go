@@ -1,6 +1,40 @@
 package types
 
-import "time"
+import (
+	"strings"
+	"time"
+)
+
+// ChangesetJobState defines the possible states of a changeset job.
+type ChangesetJobState string
+
+// ChangesetJobState constants.
+const (
+	ChangesetJobStateQueued     ChangesetJobState = "QUEUED"
+	ChangesetJobStateProcessing ChangesetJobState = "PROCESSING"
+	ChangesetJobStateErrored    ChangesetJobState = "ERRORED"
+	ChangesetJobStateFailed     ChangesetJobState = "FAILED"
+	ChangesetJobStateCompleted  ChangesetJobState = "COMPLETED"
+)
+
+// Valid returns true if the given ChangesetJobState is valid.
+func (s ChangesetJobState) Valid() bool {
+	switch s {
+	case ChangesetJobStateQueued,
+		ChangesetJobStateProcessing,
+		ChangesetJobStateErrored,
+		ChangesetJobStateFailed,
+		ChangesetJobStateCompleted:
+		return true
+	default:
+		return false
+	}
+}
+
+// ToDB returns the database representation of the worker state. That's
+// needed because we want to use UPPERCASE in the application and GraphQL layer,
+// but need to use lowercase in the database to make it work with workerutil.Worker.
+func (s ChangesetJobState) ToDB() string { return strings.ToLower(string(s)) }
 
 // ChangesetJobType specifies all valid type of jobs that the bulk processor
 // understands.
@@ -28,7 +62,7 @@ type ChangesetJob struct {
 
 	// workerutil fields
 
-	State          ReconcilerState
+	State          ChangesetJobState
 	FailureMessage *string
 	StartedAt      time.Time
 	FinishedAt     time.Time

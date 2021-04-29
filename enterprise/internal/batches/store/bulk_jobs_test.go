@@ -45,7 +45,7 @@ func testStoreBulkJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 			UserID:        int32(i + 1234),
 			BatchChangeID: batchChangeID,
 			ChangesetID:   changeset.ID,
-			State:         btypes.ReconcilerStateQueued,
+			State:         btypes.ChangesetJobStateQueued,
 			JobType:       btypes.ChangesetJobTypeComment,
 		}
 
@@ -53,7 +53,7 @@ func testStoreBulkJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 			c.ChangesetID = changesetWithDeletedRepo.ID
 		}
 		if i == 0 {
-			c.State = btypes.ReconcilerStateFailed
+			c.State = btypes.ChangesetJobStateFailed
 			failureMessage := "bad error"
 			c.FailureMessage = &failureMessage
 		}
@@ -67,13 +67,13 @@ func testStoreBulkJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 		j := &btypes.BulkJob{
 			ID:        jobs[i].BulkGroup,
 			DBID:      jobs[i].ID,
-			State:     "PROCESSING",
+			State:     btypes.BulkJobStateProcessing,
 			Type:      btypes.ChangesetJobTypeComment,
 			CreatedAt: clock.Now(),
 		}
 		if i == 0 {
 			j.Progress = 1
-			j.State = "FAILED"
+			j.State = btypes.BulkJobStateFailed
 		}
 		bulkJobs = append(bulkJobs, j)
 	}

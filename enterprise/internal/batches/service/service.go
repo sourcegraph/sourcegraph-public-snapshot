@@ -704,7 +704,7 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 			ChangesetID:   changeset.ID,
 			BatchChangeID: batchChangeID,
 			UserID:        userID,
-			State:         btypes.ReconcilerStateQueued,
+			State:         btypes.ChangesetJobStateQueued,
 			JobType:       jobType,
 			Payload:       payload,
 		})
