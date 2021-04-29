@@ -72,9 +72,9 @@ func newOAuthFlowHandler(db dbutil.DB, serviceType string) http.Handler {
 
 		var extraScopes []string
 
-		// on Sourcegraph.com and for GitHub or Gitlab, check if the user has the AllowUserExternalServicePrivate tag
+		// On Sourcegraph Cloud and for GitHub or GitLab, check if the user has the AllowUserExternalServicePrivate tag
 		// and if so, ask the code host for additional scopes
-		if envvar.SourcegraphDotComMode() && (serviceType == "github" || serviceType == "gitlab") {
+		if envvar.SourcegraphDotComMode() && (serviceType == extsvc.TypeGitHub || serviceType == extsvc.TypeGitLab) {
 			if actor := actor.FromContext(req.Context()); actor.IsAuthenticated() {
 				ok, err := database.Users(db).HasTag(req.Context(), actor.UID, database.TagAllowUserExternalServicePrivate)
 				if err != nil {
@@ -84,7 +84,7 @@ func newOAuthFlowHandler(db dbutil.DB, serviceType string) http.Handler {
 				}
 
 				if ok {
-					if serviceType == "github" {
+					if serviceType == extsvc.TypeGitHub {
 						extraScopes = append(extraScopes, "repo")
 					} else {
 						extraScopes = append(extraScopes, "api")
