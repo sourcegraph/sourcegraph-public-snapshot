@@ -165,6 +165,11 @@ func TestServicePermissionLevels(t *testing.T) {
 				err := svc.DetachChangesets(currentUserCtx, batchChange.ID, []int64{changeset.ID})
 				tc.assertFunc(t, err)
 			})
+
+			t.Run("CreateChangesetJobs", func(t *testing.T) {
+				_, err := svc.CreateChangesetJobs(currentUserCtx, batchChange.ID, []int64{changeset.ID}, btypes.ChangesetJobTypeComment, btypes.ChangesetJobCommentPayload{Message: "test"})
+				tc.assertFunc(t, err)
+			})
 		})
 	}
 }
@@ -179,6 +184,8 @@ func TestService(t *testing.T) {
 
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)
+	adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
+	userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -227,8 +234,6 @@ func TestService(t *testing.T) {
 			}
 			return batchChange
 		}
-
-		adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 
 		closeConfirm := func(t *testing.T, c *btypes.BatchChange, closeChangesets bool) {
 			t.Helper()
@@ -385,9 +390,6 @@ func TestService(t *testing.T) {
 			changesetSpecRandIDs = append(changesetSpecRandIDs, cs.RandID)
 		}
 
-		adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
-		userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
-
 		t.Run("success", func(t *testing.T) {
 			opts := CreateBatchSpecOpts{
 				NamespaceUserID:      admin.ID,
@@ -482,8 +484,6 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("namespace user is not admin and not creator", func(t *testing.T) {
-			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
-
 			opts := CreateBatchSpecOpts{
 				NamespaceUserID: admin.ID,
 				RawSpec:         ct.TestRawBatchSpecYAML,
@@ -495,8 +495,6 @@ func TestService(t *testing.T) {
 			}
 
 			// Try again as admin
-			adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
-
 			opts.NamespaceUserID = user.ID
 
 			_, err = svc.CreateBatchSpec(adminCtx, opts)
@@ -513,8 +511,6 @@ func TestService(t *testing.T) {
 				RawSpec:              ct.TestRawBatchSpec,
 				ChangesetSpecRandIDs: changesetSpecRandIDs,
 			}
-
-			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 
 			_, err := svc.CreateBatchSpec(userCtx, opts)
 			if have, want := err, backend.ErrNotAnOrgMember; have != want {
@@ -687,7 +683,6 @@ func TestService(t *testing.T) {
 
 			opts := MoveBatchChangeOpts{BatchChangeID: batchChange.ID, NewNamespaceUserID: user2.ID}
 
-			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 			_, err := svc.MoveBatchChange(userCtx, opts)
 			if !errcode.IsUnauthorized(err) {
 				t.Fatalf("expected unauthorized error but got %s", err)
@@ -721,7 +716,6 @@ func TestService(t *testing.T) {
 
 			opts := MoveBatchChangeOpts{BatchChangeID: batchChange.ID, NewNamespaceOrgID: orgID}
 
-			userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
 			_, err := svc.MoveBatchChange(userCtx, opts)
 			if have, want := err, backend.ErrNotAnOrgMember; have != want {
 				t.Fatalf("expected %s error but got %s", want, have)
@@ -912,6 +906,61 @@ func TestService(t *testing.T) {
 			}
 			if !fakeSource.ValidateAuthenticatorCalled {
 				t.Fatal("ValidateAuthenticator on Source not called")
+			}
+		})
+	})
+
+	t.Run("CreateChangesetJobs", func(t *testing.T) {
+		spec := testBatchSpec(admin.ID)
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		batchChange := testBatchChange(admin.ID, spec)
+		if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+			t.Fatal(err)
+		}
+
+		t.Run("creates jobs", func(t *testing.T) {
+			changeset1 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:             rs[0].ID,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				BatchChange:      batchChange.ID,
+			})
+			changeset2 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:             rs[1].ID,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				BatchChange:      batchChange.ID,
+			})
+			bulkJobID, err := svc.CreateChangesetJobs(
+				adminCtx,
+				batchChange.ID,
+				[]int64{changeset1.ID, changeset2.ID},
+				btypes.ChangesetJobTypeComment,
+				btypes.ChangesetJobCommentPayload{Message: "test"},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// Validate the bulk job exists.
+			if _, err = s.GetBulkJob(ctx, store.GetBulkJobOpts{ID: bulkJobID}); err != nil {
+				t.Fatal(err)
+			}
+		})
+		t.Run("changeset not found", func(t *testing.T) {
+			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:        rs[0].ID,
+				BatchChange: batchChange.ID,
+			})
+			_, err := svc.CreateChangesetJobs(
+				adminCtx,
+				batchChange.ID,
+				[]int64{changeset.ID},
+				btypes.ChangesetJobTypeComment,
+				btypes.ChangesetJobCommentPayload{Message: "test"},
+			)
+			if err != ErrChangesetsForJobNotFound {
+				t.Fatalf("wrong error. want=%s, got=%s", ErrChangesetsForJobNotFound, err)
 			}
 		})
 	})
