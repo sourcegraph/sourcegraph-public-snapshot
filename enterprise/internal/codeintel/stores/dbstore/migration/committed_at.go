@@ -94,7 +94,6 @@ SELECT repository_id, commit
 FROM lsif_uploads
 WHERE state = 'completed' AND committed_at IS NULL
 GROUP BY repository_id, commit
-ORDER BY repository_id, commit
 LIMIT %s
 `
 
