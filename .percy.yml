@@ -3,12 +3,13 @@ snapshot:
   widths:
     - 960
     - 1920
+  enable-javascript: true
   percy-css: |
     .percy-hide,
     .monaco-editor .cursor {
       visibility: hidden !important;
     }
 static:
-  base-url: /.assets
+  base-url: /.assets/
 discovery:
   disable-cache: true
