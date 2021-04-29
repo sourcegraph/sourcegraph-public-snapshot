@@ -12,5 +12,3 @@ static:
   base-url: /.assets
 discovery:
   disable-cache: true
-  launch-options:
-    executable: /node_modules/puppeteer/.local-chromium/
