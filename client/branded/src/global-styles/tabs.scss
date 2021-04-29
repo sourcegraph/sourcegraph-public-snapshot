@@ -19,6 +19,9 @@
     margin-bottom: -(3/16) + rem;
     padding: (5/16) + rem;
     color: var(--color-text-3);
+    @media (forced-colors: active) {
+        color: canvastext;
+    }
     &:hover {
         color: var(--body-color);
         border-bottom: 3px solid var(--link-color);

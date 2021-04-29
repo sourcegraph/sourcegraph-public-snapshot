@@ -13,17 +13,11 @@
         height: 100%;
         top: 0;
         left: 0;
-
-        &--with-cursor {
-            cursor: pointer;
-        }
     }
 
-    &__lines {
-        path {
-            @media (forced-colors: active) {
-                stroke: canvastext;
-            }
+    &__series {
+        @media (forced-colors: active) {
+            stroke: canvastext;
         }
     }
 

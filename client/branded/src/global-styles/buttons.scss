@@ -29,6 +29,24 @@
     }
 }
 
+@media (forced-colors: active) {
+    .btn:not(.btn-link),
+    .list-group-item-action:not(a) {
+        forced-color-adjust: none;
+        background: canvas !important;
+        background: buttonface !important;
+        color: canvastext !important;
+        color: buttontext !important;
+        border: 1px solid currentColor !important;
+        border-color: buttonborder !important;
+
+        &:focus-visible {
+            outline-color: highlight;
+            box-shadow: none;
+        }
+    }
+}
+
 // This class is meant for clickable icons. It is NOT meant for buttons with icons in it or for nav
 // items.
 .btn-icon {

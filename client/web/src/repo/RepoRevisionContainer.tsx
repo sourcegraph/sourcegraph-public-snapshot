@@ -138,7 +138,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                         <button
                             type="button"
                             id="repo-revision-popover"
-                            className="btn btn-icon px-0"
+                            className="btn btn-icon px-0 ml-1"
                             aria-label="Change revision"
                         >
                             <MenuDownIcon className="icon-inline" />

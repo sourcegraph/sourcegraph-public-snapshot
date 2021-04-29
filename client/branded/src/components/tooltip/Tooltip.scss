@@ -3,6 +3,15 @@
     white-space: pre-wrap;
     animation: 0.25s fade-in;
     pointer-events: none;
+
+    @media (forced-colors: active) {
+        background: canvas;
+        border: 1px solid canvastext;
+
+        .arrow {
+            display: none;
+        }
+    }
 }
 
 @keyframes fade-in {

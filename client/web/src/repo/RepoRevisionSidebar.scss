@@ -5,12 +5,7 @@
         height: calc(100% - 2rem);
     }
 
-    &__close-icon {
-        color: var(--link-color);
-    }
-
     &__toggle {
-        color: var(--link-color);
         background-color: var(--color-bg-2);
         isolation: isolate;
         width: 2.5rem;

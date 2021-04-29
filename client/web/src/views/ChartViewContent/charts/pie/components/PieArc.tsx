@@ -1,11 +1,11 @@
 import { Annotation, Connector } from '@visx/annotation'
 import { Group } from '@visx/group'
 import { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
-import classnames from 'classnames'
 import { Arc as ArcType } from 'd3-shape'
 import React, { PointerEventHandler, ReactElement } from 'react'
 
 import { Label } from '../../../annotation/Label'
+import { TextProps } from '../../../annotation/Text'
 
 // Pie arc visual settings
 const CONNECTION_LINE_LENGTH = 15
@@ -13,8 +13,8 @@ const CONNECTION_LINE_MARGIN = 2
 const LABEL_PADDING = 4
 
 // We have no other way but to add our own classes to label in this way
-const TITLE_PROPS = { className: 'pie-chart__label-title' }
-const SUBTITLE_PROPS = { className: 'pie-chart__label-sub-title' }
+const TITLE_PROPS: Partial<TextProps> = { className: 'pie-chart__label-title', color: '' }
+const SUBTITLE_PROPS: Partial<TextProps> = { className: 'pie-chart__label-sub-title', color: '' }
 
 interface PieArcProps<Datum> {
     /** Title for current pie arc */
@@ -23,8 +23,6 @@ interface PieArcProps<Datum> {
     subtitle: string
     /** Getter (accessor) to have a color for current pie arc */
     getColor: (d: PieArcDatum<Datum>) => string
-    /** Getter (accessor) to have a link for current pie arc */
-    getLink: (d: PieArcDatum<Datum>) => string | undefined
     /** The arc generator produces a circular or annular sector, as in a pie or donut chart. */
     path: ArcType<unknown, PieArcDatum<Datum>>
     /** Element of the Arc. The generic refers to the data type of an element in the input array. */
@@ -39,10 +37,9 @@ interface PieArcProps<Datum> {
  * Display particular arc and annotation for PieChart.
  * */
 export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
-    const { title, subtitle, path, arc, getColor, getLink, onPointerMove, onPointerOut } = props
+    const { title, subtitle, path, arc, getColor, onPointerMove, onPointerOut } = props
 
     const pathValue = path(arc) ?? ''
-    const link = getLink(arc)
 
     // Math to put label and connection line in a middle of arc radius surface
     // Find the middle of the arc segment. Here we have polar system of coordinate.
@@ -65,12 +62,8 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
     const labelX = normalX * CONNECTION_LINE_LENGTH
     const labelY = normalY * CONNECTION_LINE_LENGTH
 
-    const classes = classnames('pie-chart__arc', {
-        'pie-chart__arc--with-link': link,
-    })
-
     return (
-        <Group aria-hidden={true} className={classes} onPointerMove={onPointerMove} onPointerOut={onPointerOut}>
+        <Group aria-hidden={true} className="pie-chart__arc" onPointerMove={onPointerMove} onPointerOut={onPointerOut}>
             <path className="pie-chart__arc-path" d={pathValue} fill={getColor(arc)} />
 
             <Annotation x={surfaceX} y={surfaceY} dx={labelX} dy={labelY}>
@@ -81,6 +74,7 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
                     backgroundPadding={LABEL_PADDING}
                     showBackground={true}
                     showAnchorLine={false}
+                    fontColor=""
                     title={title}
                     subtitleDy={0}
                     titleFontWeight={200}

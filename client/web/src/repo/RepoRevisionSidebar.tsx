@@ -67,15 +67,16 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                             <Tab data-test-tab="files">Files</Tab>
                             <Tab data-test-tab="symbols">Symbols</Tab>
                         </TabList>
-                        <Button
+                        <button
+                            type="button"
                             onClick={handleSidebarToggle}
-                            className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
-                            title="Close panel"
+                            className="btn btn-icon ml-auto p-1 text-muted rounded-0"
+                            title="Close sidebar"
                             data-tooltip="Collapse panel"
                             data-placement="right"
                         >
                             <ChevronDoubleLeftIcon className="icon-inline repo-revision-container__close-icon" />
-                        </Button>
+                        </button>
                     </div>
                     <div
                         aria-hidden={true}

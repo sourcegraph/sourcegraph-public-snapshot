@@ -9,6 +9,15 @@
     color: inherit;
 }
 
+@media (forced-colors: active) {
+    .code {
+        forced-color-adjust: none;
+        // In the spirit of limiting the color palette, saturate the colors drastically to effectively
+        // limit the colors to a small set of well-distinguishable colors compared to without filtering.
+        filter: saturate(3.5) contrast(2);
+    }
+}
+
 .theme-light {
     // Adapted from https://github.com/highlightjs/highlight.js/blob/1b10552510a1ec13a3d30d46281dc268553ad157/src/styles/vs.css
 

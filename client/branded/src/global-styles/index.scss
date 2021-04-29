@@ -145,11 +145,13 @@ $hr-margin-y: 0.25rem;
 
 // Show a focus ring when performing keyboard navigation. Uses the polyfill at
 // https://github.com/WICG/focus-visible because few browsers support :focus-visible.
-:focus:not(:focus-visible) {
-    outline: 2px solid transparent !important;
+:focus:not(:focus-visible),
+:focus-visible {
+    outline-width: 2px !important;
+    outline-style: solid !important;
+    outline-color: transparent;
 }
 :focus-visible {
-    outline: 2px solid transparent !important; // transparent so that in high contrast color is overridden
     box-shadow: $btn-focus-box-shadow;
 }
 

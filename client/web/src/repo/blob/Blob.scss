@@ -44,13 +44,6 @@
             width: 100%;
             padding-left: 1rem;
             white-space: pre;
-            forced-color-adjust: none;
-
-            @media (forced-colors: active) {
-                // In the spirit of limiting the color palette, saturate the colors drastically to effectively
-                // limit the colors to a small set of well-distinguishable colors compared to without filtering.
-                filter: saturate(3);
-            }
 
             div {
                 display: inline-block;

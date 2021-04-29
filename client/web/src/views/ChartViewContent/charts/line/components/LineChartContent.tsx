@@ -206,11 +206,8 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
         ...otherHandlers,
     }
 
-    const hoveredDatumLink = hoveredDatum?.line?.linkURLs?.[hoveredDatum?.index]
-    const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!hoveredDatumLink })
-
     return (
-        <div className={rootClasses} data-testid="line-chart__content">
+        <div className="line-chart__content" data-testid="line-chart__content">
             {/*
                 Because XYChart wraps itself with context providers in case if consumer didn't add them
                 But this recursive wrapping leads to problem with event emitter context - double subscription all event
@@ -303,6 +300,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                         dataKey={line.dataKey as string}
                                         data={sortedData}
                                         strokeWidth={2}
+                                        className="line-chart__series"
                                         /* eslint-disable-next-line jsx-a11y/aria-role */
                                         role="graphics-dataline"
                                         xAccessor={accessors.x}

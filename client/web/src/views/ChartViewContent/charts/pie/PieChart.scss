@@ -4,14 +4,6 @@
     // Arcs
     &__arc {
         stroke: var(--body-bg);
-
-        &--with-link {
-            cursor: pointer;
-
-            @media (forced-colors: active) {
-                color: linktext; // TODO remove when we use actual <a> tags so it inherits automatically through currentColor.
-            }
-        }
     }
 
     &__arc-path {

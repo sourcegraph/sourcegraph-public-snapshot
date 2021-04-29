@@ -91,6 +91,9 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
             cursor: not-allowed;
             filter: saturate(0%);
             opacity: 0.7;
+            @media (forced-colors: active) {
+                opacity: 1;
+            }
         }
 
         // Default icon generated for extensions with no iconURL
