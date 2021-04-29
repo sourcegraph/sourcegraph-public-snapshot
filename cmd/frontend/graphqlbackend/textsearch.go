@@ -48,7 +48,7 @@ func (fm *FileMatchResolver) Equal(other *FileMatchResolver) bool {
 }
 
 func (fm *FileMatchResolver) Key() string {
-	return fm.URL()
+	return fmt.Sprintf("%#v", fm.Key())
 }
 
 func (fm *FileMatchResolver) File() *GitTreeEntryResolver {

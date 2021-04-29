@@ -67,6 +67,19 @@ func (r *CommitMatch) Select(path filter.SelectPath) Match {
 	return nil
 }
 
+// Key implements Match interface's Key() method
+func (r *CommitMatch) Key() Key {
+	typeRank := 1
+	if r.DiffPreview != nil {
+		typeRank = 2
+	}
+	return Key{
+		TypeRank: typeRank,
+		Repo:     string(r.RepoName.Name),
+		Commit:   string(r.Commit.ID),
+	}
+}
+
 // selectModifiedLines extracts the highlight ranges that correspond to lines
 // that have a `+` or `-` prefix (corresponding to additions resp. removals).
 func selectModifiedLines(lines []string, highlights []HighlightedRange, prefix string, offset int32) []HighlightedRange {

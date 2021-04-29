@@ -138,6 +138,15 @@ func (fm *FileMatch) Limit(limit int) int {
 	return 0
 }
 
+func (fm *FileMatch) Key() Key {
+	return Key{
+		TypeRank: 0,
+		Repo:     string(fm.Repo.Name),
+		Commit:   string(fm.CommitID),
+		Path:     fm.Path,
+	}
+}
+
 // LineMatch is the struct used by vscode to receive search results for a line
 type LineMatch struct {
 	Preview          string
