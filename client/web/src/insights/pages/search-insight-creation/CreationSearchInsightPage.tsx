@@ -58,26 +58,22 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
                 const settings = await getSubjectSettings(subjectID).toPromise()
                 const insightID = uuid.v4()
 
-                const newSettingsString = JSON.stringify(
-                    {
-                        title: values.title,
-                        repositories: values.repositories.split(','),
-                        series: values.series.map(line => ({
-                            name: line.name,
-                            // Query field is a reg exp field for code insight query setting
-                            // Native html input element adds escape symbols by himself
-                            // to prevent this behavior below we replace double escaping
-                            // with just one series of escape characters e.g. - //
-                            query: line.query.replace(/\\\\/g, '\\'),
-                            stroke: line.color,
-                        })),
-                        step: {
-                            [values.step]: +values.stepValue,
-                        },
+                const newSettingsString = {
+                    title: values.title,
+                    repositories: values.repositories.split(','),
+                    series: values.series.map(line => ({
+                        name: line.name,
+                        // Query field is a reg exp field for code insight query setting
+                        // Native html input element adds escape symbols by himself
+                        // to prevent this behavior below we replace double escaping
+                        // with just one series of escape characters e.g. - //
+                        query: line.query.replace(/\\\\/g, '\\'),
+                        stroke: line.color,
+                    })),
+                    step: {
+                        [values.step]: +values.stepValue,
                     },
-                    null,
-                    2,
-                )
+                }
 
                 const edits = jsonc.modify(
                     settings.contents,
@@ -86,13 +82,9 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
                     { formattingOptions: defaultFormattingOptions }
                 )
 
-                const editedSettings = jsonc.applyEdits(settings.contents, edits);
+                const editedSettings = jsonc.applyEdits(settings.contents, edits)
 
-                await updateSubjectSettings(
-                    platformContext,
-                    subjectID,
-                    editedSettings,
-                ).toPromise()
+                await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
 
                 history.push('/insights')
             } catch (error) {
