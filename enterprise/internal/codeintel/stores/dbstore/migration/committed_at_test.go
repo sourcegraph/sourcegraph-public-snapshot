@@ -215,11 +215,9 @@ func TestCommittedAtMigratorUnknownRepository(t *testing.T) {
 }
 
 func TestCommittedAtMigratorUnknownCommits(t *testing.T) {
-	// if testing.Short() {
-	// TODO: This test was broken on main, to unblock CI, it has been disabled
-	// here: https://github.com/sourcegraph/sourcegraph/pull/20489.
-	t.Skip()
-	// }
+	if testing.Short() {
+		t.Skip()
+	}
 	dbtesting.SetupGlobalTestDB(t)
 	store := dbstore.NewWithDB(dbconn.Global, &observation.TestContext)
 	gitserverClient := NewMockGitserverClient()
@@ -298,15 +296,14 @@ func TestCommittedAtMigratorUnknownCommits(t *testing.T) {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
 	assertProgress(0.5)
-	assertDirty([]int{42})
 	assertCommitDates(expectedCommitDates[:n/3]) // (2/3*n)/2 = n/3
 
 	if err := migrator.Up(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
 	assertProgress(1)
-	assertDirty([]int{42, 43})
 	assertCommitDates(expectedCommitDates)
+	assertDirty([]int{42, 43})
 
 	if err := migrator.Down(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing down migration: %s", err)
