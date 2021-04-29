@@ -4,7 +4,10 @@ import "time"
 
 // BulkJob represents a virtual entity of a bulk job, as represented in the database.
 type BulkJob struct {
-	ID         string
+	ID string
+	// DBID is only used internally for pagination. Don't make any assumptions
+	// about this field.
+	DBID       int64
 	Type       ChangesetJobType
 	State      ReconcilerState
 	Progress   float64

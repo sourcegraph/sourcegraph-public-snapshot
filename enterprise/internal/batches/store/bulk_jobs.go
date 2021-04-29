@@ -11,6 +11,7 @@ import (
 
 var bulkJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("changeset_jobs.bulk_group AS id"),
+	sqlf.Sprintf("MIN(changeset_jobs.id) AS db_id"),
 	sqlf.Sprintf("changeset_jobs.job_type AS type"),
 	sqlf.Sprintf(
 		`CASE
@@ -24,7 +25,7 @@ END AS state`,
 		btypes.ReconcilerStateFailed.ToDB(),
 	),
 	sqlf.Sprintf(
-		"COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) / COUNT(*) AS progress",
+		"CAST(COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) AS float) / CAST(COUNT(*) AS float) AS progress",
 		btypes.ReconcilerStateCompleted.ToDB(),
 		btypes.ReconcilerStateFailed.ToDB(),
 	),
@@ -90,13 +91,13 @@ func getBulkJobQuery(opts *GetBulkJobOpts) *sqlf.Query {
 // ListBulkJobsOpts captures the query options needed for getting a list of bulk jobs.
 type ListBulkJobsOpts struct {
 	LimitOpts
-	Cursor *string
+	Cursor int64
 
 	BatchChangeID int64
 }
 
 // ListBulkJobs gets a list of BulkJobs matching the given options.
-func (s *Store) ListBulkJobs(ctx context.Context, opts ListBulkJobsOpts) (bs []*btypes.BulkJob, next string, err error) {
+func (s *Store) ListBulkJobs(ctx context.Context, opts ListBulkJobsOpts) (bs []*btypes.BulkJob, next int64, err error) {
 	q := listBulkJobsQuery(&opts)
 
 	bs = make([]*btypes.BulkJob, 0, opts.DBLimit())
@@ -110,7 +111,7 @@ func (s *Store) ListBulkJobs(ctx context.Context, opts ListBulkJobsOpts) (bs []*
 	})
 
 	if opts.Limit != 0 && len(bs) == opts.DBLimit() {
-		next = bs[len(bs)-1].ID
+		next = bs[len(bs)-1].DBID
 		bs = bs[:len(bs)-1]
 	}
 
@@ -128,7 +129,7 @@ WHERE
     %s
 GROUP BY
     changeset_jobs.bulk_group, changeset_jobs.job_type
-ORDER BY id ASC
+ORDER BY MIN(changeset_jobs.id) ASC
 `
 
 func listBulkJobsQuery(opts *ListBulkJobsOpts) *sqlf.Query {
@@ -137,8 +138,8 @@ func listBulkJobsQuery(opts *ListBulkJobsOpts) *sqlf.Query {
 		sqlf.Sprintf("changeset_jobs.batch_change_id = %s", opts.BatchChangeID),
 	}
 
-	if opts.Cursor != nil {
-		preds = append(preds, sqlf.Sprintf("changeset_jobs.bulk_group > %s", *opts.Cursor))
+	if opts.Cursor > 0 {
+		preds = append(preds, sqlf.Sprintf("changeset_jobs.id >= %s", opts.Cursor))
 	}
 
 	return sqlf.Sprintf(
@@ -232,6 +233,7 @@ func listBulkJobErrorsQuery(opts *ListBulkJobErrorsOpts) *sqlf.Query {
 func scanBulkJob(b *btypes.BulkJob, s scanner) error {
 	return s.Scan(
 		&b.ID,
+		&b.DBID,
 		&b.Type,
 		&b.State,
 		&b.Progress,

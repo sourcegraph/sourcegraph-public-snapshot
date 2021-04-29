@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -262,15 +263,22 @@ func (r *batchChangeResolver) BulkJobs(
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
+	opts := store.ListBulkJobsOpts{
+		LimitOpts: store.LimitOpts{
+			Limit: int(args.First),
+		},
+	}
+	if args.After != nil {
+		id, err := strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+		opts.Cursor = int64(id)
+	}
 
 	return &bulkJobConnectionResolver{
 		store:         r.store,
 		batchChangeID: r.batchChange.ID,
-		opts: store.ListBulkJobsOpts{
-			LimitOpts: store.LimitOpts{
-				Limit: int(args.First),
-			},
-			Cursor: args.After,
-		},
+		opts:          opts,
 	}, nil
 }

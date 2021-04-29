@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strconv"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -18,7 +19,7 @@ type bulkJobConnectionResolver struct {
 	// Cache results because they are used by multiple fields
 	once     sync.Once
 	bulkJobs []*btypes.BulkJob
-	next     string
+	next     int64
 	err      error
 }
 
@@ -40,8 +41,8 @@ func (r *bulkJobConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.
 		return nil, err
 	}
 
-	if next != "" {
-		return graphqlutil.NextPageCursor(next), nil
+	if next != 0 {
+		return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
 	}
 
 	return graphqlutil.HasNextPage(false), nil
@@ -61,7 +62,7 @@ func (r *bulkJobConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend
 	return resolvers, nil
 }
 
-func (r *bulkJobConnectionResolver) compute(ctx context.Context) ([]*btypes.BulkJob, string, error) {
+func (r *bulkJobConnectionResolver) compute(ctx context.Context) ([]*btypes.BulkJob, int64, error) {
 	r.once.Do(func() {
 		opts := r.opts
 		opts.BatchChangeID = r.batchChangeID
