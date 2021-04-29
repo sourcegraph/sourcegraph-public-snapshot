@@ -44,7 +44,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, 
 
             {error && (
                 <small className="text-danger form-text" role="alert">
-                    *{error}
+                    {error}
                 </small>
             )}
             {!error && description && <small className={classnames('text-muted', 'form-text')}>{description}</small>}

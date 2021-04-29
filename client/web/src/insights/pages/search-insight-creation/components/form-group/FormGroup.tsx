@@ -30,7 +30,7 @@ export const FormGroup: React.FunctionComponent<PropsWithChildren<FormGroupProps
                 <div className="mb-1 font-weight-bold">{title}</div>
 
                 {subtitle && <small className="text-muted">{subtitle}</small>}
-                {error && <small className="text-danger">*{error}</small>}
+                {error && <small className="text-danger">{error}</small>}
             </legend>
 
             <div className={contentClassName}>{children}</div>
