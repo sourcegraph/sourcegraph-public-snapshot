@@ -9,7 +9,7 @@ export const TextStory: React.FunctionComponent = () => (
         <h2>Headings</h2>
         <table className="table">
             <tbody>
-                {(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const).map(Heading => (
+                {(['h1', 'h2', 'h3', 'h4', 'h5'] as const).map(Heading => (
                     <tr key={Heading}>
                         <td>
                             <code>
