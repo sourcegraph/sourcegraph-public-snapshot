@@ -44,7 +44,7 @@ export const File: React.FunctionComponent<FileProps> = props => {
                                 <span
                                     // needed because of dynamic styling
                                     // eslint-disable-next-line react/forbid-dom-props
-                                    // style={treePadding(props.depth, true)}
+                                    style={treePadding(props.depth, true)}
                                     className="tree__row-icon"
                                     onClick={props.noopRowClick}
                                 >
@@ -63,7 +63,7 @@ export const File: React.FunctionComponent<FileProps> = props => {
                                     className="tree__row-icon"
                                     // needed because of dynamic styling
                                     // eslint-disable-next-line react/forbid-dom-props
-                                    // style={treePadding(props.depth, true)}
+                                    style={treePadding(props.depth, true)}
                                 >
                                     <SourceRepositoryIcon className="icon-inline" />
                                 </span>

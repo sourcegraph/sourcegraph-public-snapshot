@@ -228,7 +228,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
 
     return (
         <Tabs defaultIndex={tabIndex} className="revisions-popover" onChange={handleTabsChange}>
-            <div className="tablist-wrapper w-100">
+            <div className="tablist-wrapper flex-1">
                 <TabList>
                     {TABS.map(({ label, id }) => (
                         <Tab className="tablist-wrapper__full-width" key={id} data-test-tab={id}>
