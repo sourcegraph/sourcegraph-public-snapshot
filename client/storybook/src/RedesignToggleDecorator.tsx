@@ -31,11 +31,11 @@ export const RedesignToggleDecorator: DecoratorFunction<ReactElement> = (Story, 
     const [isRedesignEnabled, setIsRedesignEnabled] = useRedesignToggle()
 
     useEffect(() => {
-        // In Chromatic set disable redesign theme by default. It will be enabled by ChromaticStoryDecorator if it's redesign story.
+        // In Chromatic, disable the redesign theme by default. It will be enabled by `ChromaticStoryDecorator` if it's a redesign story.
         if (isChromatic() && isRedesignEnabled) {
             setIsRedesignEnabled(false)
         }
-        // We want to do it once on component mount, after that `ChromaticStoryDecorator` will control redesign theme flag.
+        // We want to do it once on the component mount; after that `ChromaticStoryDecorator` will control the redesign theme flag.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
