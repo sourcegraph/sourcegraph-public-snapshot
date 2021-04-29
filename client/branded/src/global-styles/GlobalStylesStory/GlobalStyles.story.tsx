@@ -37,7 +37,7 @@ add(
         <>
             <h1>Typography</h1>
 
-            <TextStory semanticColors={SEMANTIC_COLORS} />
+            <TextStory />
         </>
     ),
     {
@@ -69,7 +69,7 @@ add(
                 areas.
             </p>
 
-            <TextStory semanticColors={SEMANTIC_COLORS} />
+            <TextStory />
         </div>
     ),
     {
