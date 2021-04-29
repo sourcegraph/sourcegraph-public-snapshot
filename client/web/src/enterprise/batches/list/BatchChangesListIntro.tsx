@@ -15,6 +15,9 @@ export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntr
     <>
         <div className="row">
             <div className="col-12">
+                <PageSelector currentPage={1} totalPages={20} onPageChange={console.log} />
+            </div>
+            <div className="col-12">
                 <BatchChangesRenameAlert />
             </div>
         </div>
