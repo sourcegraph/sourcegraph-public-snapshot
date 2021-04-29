@@ -30,7 +30,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, 
 
     return (
         <label className={classnames(className)}>
-            {title && <div className='mb-2'>{title}</div>}
+            {title && <div className="mb-2">{title}</div>}
 
             <input
                 type="text"
@@ -42,10 +42,12 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, 
                 ref={useMergeRefs([localInputReference, reference])}
             />
 
-            {error && <small className="text-danger form-text" role="alert">*{error}</small>}
-            {!error && description && (
-                <small className={classnames('text-muted', 'form-text')}>{description}</small>
+            {error && (
+                <small className="text-danger form-text" role="alert">
+                    *{error}
+                </small>
             )}
+            {!error && description && <small className={classnames('text-muted', 'form-text')}>{description}</small>}
         </label>
     )
 })

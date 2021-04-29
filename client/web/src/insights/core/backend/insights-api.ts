@@ -70,5 +70,5 @@ export const createInsightAPI = (): ApiService => ({
     getCombinedViews,
     getInsightCombinedViews,
     getSubjectSettings,
-    updateSubjectSettings
+    updateSubjectSettings,
 })

@@ -18,7 +18,7 @@ export const FormRadioInput: React.FunctionComponent<RadioInputProps> = props =>
         <label className={classnames('d-flex align-items-center', className)}>
             <input type="radio" {...otherProps} />
 
-            <div className='pl-2'>
+            <div className="pl-2">
                 <span>{title}</span>
                 {description && <span className="text-muted"> – {description}</span>}
             </div>

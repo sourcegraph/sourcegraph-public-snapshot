@@ -157,5 +157,5 @@ export const createMockAPI = (): InsightsAPI => ({
     getCombinedViews: () => of(MOCK_VIEWS),
     getInsightCombinedViews: () => of(MOCK_VIEWS),
     getSubjectSettings: () => of({ id: 0, contents: '{}' }),
-    updateSubjectSettings: () => EMPTY
+    updateSubjectSettings: () => EMPTY,
 })

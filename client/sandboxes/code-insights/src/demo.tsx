@@ -17,9 +17,9 @@ import '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { lazyComponent } from '@sourcegraph/web/src/util/lazyComponent'
 import { Route, Switch } from 'react-router'
 import { LayoutRouteProps } from '@sourcegraph/web/src/routes'
-import { authUser } from '@sourcegraph/web/src/search/panels/utils';
+import { authUser } from '@sourcegraph/web/src/search/panels/utils'
 
-const mockAPI = createMockAPI();
+const mockAPI = createMockAPI()
 
 const CONTEXT = {
     versionContext: undefined,

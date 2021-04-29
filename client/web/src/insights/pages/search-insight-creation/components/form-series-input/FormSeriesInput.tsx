@@ -111,7 +111,6 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
 
     const handleSubmitButton = useCallback(
         async (event: React.MouseEvent) => {
-
             // handleSubmit work with form element and use form event
             // but we can't have sub forms for the sake of semantics.
             // if this case synthetic event of totally comparable with event
@@ -149,7 +148,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
                 description="Do not include the repo: filter as it will be added automatically for the current repository"
                 valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.valid}
                 error={queryField.meta.touched && queryField.meta.error}
-                className='mt-4'
+                className="mt-4"
                 {...queryField.input}
                 ref={queryReference}
             />
@@ -157,26 +156,18 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
             <FormColorInput
                 name="series color group"
                 title="Color"
-                className='mt-4'
+                className="mt-4"
                 value={colorField.input.value}
                 onChange={colorField.input.onChange}
             />
 
-            <div className='mt-4'>
-                <button
-                    type="submit"
-                    onClick={handleSubmitButton}
-                    className='btn btn-light'
-                >
+            <div className="mt-4">
+                <button type="submit" onClick={handleSubmitButton} className="btn btn-light">
                     Done
                 </button>
 
                 {cancel && (
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className='btn btn-outline-secondary ml-2'
-                    >
+                    <button type="button" onClick={onCancel} className="btn btn-outline-secondary ml-2">
                         Cancel
                     </button>
                 )}

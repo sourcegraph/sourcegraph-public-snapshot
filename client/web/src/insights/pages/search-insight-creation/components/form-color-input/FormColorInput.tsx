@@ -1,5 +1,5 @@
 import classnames from 'classnames'
-import openColor from 'open-color';
+import openColor from 'open-color'
 import React, { ChangeEvent, ChangeEventHandler, useCallback, useRef, useState } from 'react'
 import { noop } from 'rxjs'
 
@@ -59,9 +59,7 @@ export const FormColorInput: React.FunctionComponent<FormColorPickerProps> = pro
 
     return (
         <fieldset className={classnames('d-flex flex-column', className)}>
-            <legend className={classnames('mb-3', styles.formColorPickerTitle)}>
-                {title}
-            </legend>
+            <legend className={classnames('mb-3', styles.formColorPickerTitle)}>{title}</legend>
 
             <div>
                 {colours.map(colorInfo => (

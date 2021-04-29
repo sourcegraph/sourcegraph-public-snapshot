@@ -102,7 +102,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 error={title.meta.touched && title.meta.error}
                 {...title.input}
                 ref={titleReference}
-                className='mb-0'
+                className="mb-0"
             />
 
             <InputField
@@ -113,7 +113,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 error={repositories.meta.touched && repositories.meta.error}
                 {...repositories.input}
                 ref={repositoriesReference}
-                className='mb-0 mt-4'
+                className="mb-0 mt-4"
             />
 
             <FormGroup
@@ -121,7 +121,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 title="Visibility"
                 description="This insigh will be visible only on your personal dashboard. It will not be show to other
                             users in your organisation."
-                className='mb-0 mt-4'
+                className="mb-0 mt-4"
                 contentClassName="d-flex flex-wrap mb-n2"
             >
                 <FormRadioInput
@@ -130,7 +130,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                     title="Personal"
                     description="only for you"
                     checked={visibility.input.value === 'personal'}
-                    className='mr-3'
+                    className="mr-3"
                     onChange={visibility.input.onChange}
                 />
 
@@ -141,18 +141,18 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                     description="to all users in your organization"
                     checked={visibility.input.value === 'organization'}
                     onChange={visibility.input.onChange}
-                    className='mr-3'
+                    className="mr-3"
                 />
             </FormGroup>
 
-            <hr className={styles.creationInsightFormSeparator}/>
+            <hr className={styles.creationInsightFormSeparator} />
 
             <FormGroup
                 name="data series group"
                 title="Data series"
                 subtitle="Add any number of data series to your chart"
                 error={series.meta.touched && series.meta.error}
-                className='mb-0'
+                className="mb-0"
             >
                 <FormSeries
                     name={series.input.name}
@@ -162,15 +162,15 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 />
             </FormGroup>
 
-            <hr className={styles.creationInsightFormSeparator}/>
+            <hr className={styles.creationInsightFormSeparator} />
 
             <FormGroup
                 name="insight step group"
                 title="Step between data points"
                 description="The distance between two data points on the chart"
                 error={stepValue.meta.touched && stepValue.meta.error}
-                className='mb-0'
-                contentClassName='d-flex flex-wrap mb-n2'
+                className="mb-0"
+                contentClassName="d-flex flex-wrap mb-n2"
             >
                 <InputField
                     placeholder="ex. 2"
@@ -186,7 +186,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                     value="hours"
                     checked={step.input.value === 'hours'}
                     onChange={step.input.onChange}
-                    className='mr-3'
+                    className="mr-3"
                 />
                 <FormRadioInput
                     title="Days"
@@ -194,7 +194,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                     value="days"
                     checked={step.input.value === 'days'}
                     onChange={step.input.onChange}
-                    className='mr-3'
+                    className="mr-3"
                 />
                 <FormRadioInput
                     title="Weeks"
@@ -202,7 +202,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                     value="weeks"
                     checked={step.input.value === 'weeks'}
                     onChange={step.input.onChange}
-                    className='mr-3'
+                    className="mr-3"
                 />
                 <FormRadioInput
                     title="Months"
@@ -210,7 +210,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                     value="months"
                     checked={step.input.value === 'months'}
                     onChange={step.input.onChange}
-                    className='mr-3'
+                    className="mr-3"
                 />
                 <FormRadioInput
                     title="Years"
@@ -218,21 +218,18 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                     value="years"
                     checked={step.input.value === 'years'}
                     onChange={step.input.onChange}
-                    className='mr-3'
+                    className="mr-3"
                 />
             </FormGroup>
 
-            <hr className={styles.creationInsightFormSeparator}/>
+            <hr className={styles.creationInsightFormSeparator} />
 
             <div>
                 {submitErrors?.[FORM_ERROR] && (
                     <div className="alert alert-danger">{submitErrors[FORM_ERROR].toString()}</div>
                 )}
 
-                <button
-                    type="submit"
-                    className="btn btn-primary mr-2"
-                >
+                <button type="submit" className="btn btn-primary mr-2">
                     Create code insight
                 </button>
                 <button type="button" className="btn btn-outline-secondary">

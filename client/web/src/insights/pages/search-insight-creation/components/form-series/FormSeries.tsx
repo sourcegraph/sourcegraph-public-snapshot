@@ -97,7 +97,7 @@ export const FormSeries = forwardRef<FormSeriesReferenceAPI, FormSeriesProps>((p
     }
 
     return (
-        <div className='d-flex flex-column'>
+        <div className="d-flex flex-column">
             {series.map((line, index) =>
                 editSeriesIndexes.includes(index) ? (
                     <FormSeriesInput
@@ -169,11 +169,11 @@ function SeriesCard(props: SeriesCardProps): ReactElement {
         <button
             type="button"
             onClick={onEdit}
-            className={classnames(styles.formSeriesCard, className, 'd-flex p-3 btn btn-outline-secondary')}>
-
+            className={classnames(styles.formSeriesCard, className, 'd-flex p-3 btn btn-outline-secondary')}
+        >
             <div className="flex-grow-1 d-flex flex-column align-items-start">
-                <span className='mb-1 font-weight-bold'>{name}</span>
-                <span className='mb-0 text-muted'>{query}</span>
+                <span className="mb-1 font-weight-bold">{name}</span>
+                <span className="mb-0 text-muted">{query}</span>
             </div>
 
             {/* eslint-disable-next-line react/forbid-dom-props */}
