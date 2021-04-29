@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
@@ -35,8 +37,8 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", Middleware.API(h))
-	authedHandler.Handle("/", Middleware.App(h))
+	authedHandler.Handle("/.api/", Middleware(nil).API(h))
+	authedHandler.Handle("/", Middleware(nil).App(h))
 
 	mockGitLabCom := newMockProvider(t, "gitlab-com-client", "gitlab-com-secret", "https://gitlab.com/")
 	mockPrivateGitLab := newMockProvider(t, "gitlab-private-instsance-client", "github-private-instance-secret", "https://mycompany.com/")
@@ -121,7 +123,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := uredirect.Query().Get("client_id"), mockGitLabCom.Provider.CachedInfo().ClientID; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
-		if got, want := uredirect.Query().Get("scope"), "api read_user"; got != want {
+		if got, want := uredirect.Query().Get("scope"), "read_user api"; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 		if got, want := uredirect.Query().Get("response_type"), "code"; got != want {
@@ -154,7 +156,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := uredirect.Query().Get("client_id"), mockPrivateGitLab.Provider.CachedInfo().ClientID; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
-		if got, want := uredirect.Query().Get("scope"), "api read_user"; got != want {
+		if got, want := uredirect.Query().Get("scope"), "read_user api"; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 		if got, want := uredirect.Query().Get("response_type"), "code"; got != want {
@@ -187,7 +189,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := uredirect.Query().Get("client_id"), mockGitLabCom.Provider.CachedInfo().ClientID; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
-		if got, want := uredirect.Query().Get("scope"), "api read_user"; got != want {
+		if got, want := uredirect.Query().Get("scope"), "read_user api"; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 		if got, want := uredirect.Query().Get("response_type"), "code"; got != want {
@@ -293,12 +295,14 @@ func newMockProvider(t *testing.T, clientID, clientSecret, baseURL string) *Mock
 	if mp.Provider == nil {
 		t.Fatalf("Expected provider")
 	}
-	mp.Provider.Callback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if got, want := r.Method, "GET"; got != want {
-			t.Errorf("In OAuth callback handler got %q request, wanted %q", got, want)
-		}
-		w.WriteHeader(http.StatusFound)
-		mp.lastCallbackRequestURL = r.URL
-	})
+	mp.Provider.Callback = func(oauth2.Config) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if got, want := r.Method, "GET"; got != want {
+				t.Errorf("In OAuth callback handler got %q request, wanted %q", got, want)
+			}
+			w.WriteHeader(http.StatusFound)
+			mp.lastCallbackRequestURL = r.URL
+		})
+	}
 	return &mp
 }

@@ -20,9 +20,6 @@ exports[`Toggle aria 1`] = `
       className="toggle__bar"
     />
     <span
-      className="toggle__bar-shadow"
-    />
-    <span
       className="toggle__knob"
     />
   </button>
@@ -42,9 +39,6 @@ exports[`Toggle className 1`] = `
   >
     <span
       className="toggle__bar"
-    />
-    <span
-      className="toggle__bar-shadow"
     />
     <span
       className="toggle__knob"
@@ -70,9 +64,6 @@ exports[`Toggle disabled 1`] = `
       className="toggle__bar"
     />
     <span
-      className="toggle__bar-shadow"
-    />
-    <span
       className="toggle__knob"
     />
   </button>
@@ -95,9 +86,6 @@ exports[`Toggle value is false 1`] = `
       className="toggle__bar"
     />
     <span
-      className="toggle__bar-shadow"
-    />
-    <span
       className="toggle__knob"
     />
   </button>
@@ -118,9 +106,6 @@ exports[`Toggle value is true 1`] = `
   >
     <span
       className="toggle__bar toggle__bar--on"
-    />
-    <span
-      className="toggle__bar-shadow toggle__bar-shadow--on"
     />
     <span
       className="toggle__knob toggle__knob--on"

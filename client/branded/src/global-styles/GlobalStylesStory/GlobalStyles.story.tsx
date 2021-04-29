@@ -23,6 +23,7 @@ import { Form } from '../../components/Form'
 
 import { ButtonVariants } from './ButtonVariants'
 import { SEMANTIC_COLORS } from './constants'
+import { FormFieldVariants } from './FormFieldVariants'
 import { TextStory } from './TextStory'
 import { preventDefault } from './utils'
 
@@ -36,7 +37,7 @@ add(
         <>
             <h1>Typography</h1>
 
-            <TextStory semanticColors={SEMANTIC_COLORS} />
+            <TextStory />
         </>
     ),
     {
@@ -68,7 +69,7 @@ add(
                 areas.
             </p>
 
-            <TextStory semanticColors={SEMANTIC_COLORS} />
+            <TextStory />
         </div>
     ),
     {
@@ -788,7 +789,7 @@ add(
                 </div>
                 <div className="form-group">
                     <label htmlFor="example-example-select">Example select</label>
-                    <select id="example-select" className="form-control">
+                    <select id="example-select" className="custom-select">
                         <option>Option A</option>
                         <option>Option B</option>
                         <option>Option C</option>
@@ -823,7 +824,7 @@ add(
                     </div>
                     <div className="form-group">
                         <label htmlFor="disabledSelect">Disabled select menu</label>
-                        <select id="disabledSelect" className="form-control">
+                        <select id="disabledSelect" className="custom-select">
                             <option>Disabled select</option>
                         </select>
                     </div>
@@ -850,25 +851,20 @@ add(
             <input className="form-control" type="text" value="I'm a readonly value" readOnly={true} />
 
             <h2 className="mt-3">Sizing</h2>
-            <p>Form controls can be made smaller or larger for rare use cases, like a select inside a dropdown menu.</p>
+            <p>Form fields can be made smaller</p>
             <div className="d-flex">
-                <div>
-                    <input className="form-control form-control-lg mb-1" type="text" placeholder="Large input" />
-                    <input className="form-control mb-1" type="text" placeholder="Default input" />
-                    <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
-                </div>
-                <div className="ml-2">
-                    <select className="form-control form-control-lg mb-1">
-                        <option>Large select</option>
-                    </select>
-                    <select className="form-control mb-1">
-                        <option>Default select</option>
-                    </select>
-                    <select className="form-control form-control-sm mb-1">
-                        <option>Small select</option>
-                    </select>
-                </div>
+                <fieldset>
+                    <div className="form-group">
+                        <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
+                        <textarea className="form-control form-control-sm mb-1" placeholder="Small textarea" />
+                        <select className="custom-select custom-select-sm mb-1">
+                            <option>Small select</option>
+                        </select>
+                    </div>
+                </fieldset>
             </div>
+            <h2 className="mt-3">Field reference</h2>
+            <FormFieldVariants />
         </>
     ),
     {

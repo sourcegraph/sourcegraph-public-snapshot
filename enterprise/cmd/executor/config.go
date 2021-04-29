@@ -30,6 +30,7 @@ type Config struct {
 	FirecrackerDiskSpace string
 	ImageArchivesPath    string
 	DisableHealthServer  bool
+	MaximumRuntimePerJob time.Duration
 }
 
 func (c *Config) Load() {
@@ -47,17 +48,19 @@ func (c *Config) Load() {
 	c.FirecrackerDiskSpace = c.Get("EXECUTOR_FIRECRACKER_DISK_SPACE", "20G", "How much disk space to allocate to each virtual machine or container.")
 	c.ImageArchivesPath = c.Get("EXECUTOR_IMAGE_ARCHIVE_PATH", "", "Where to store tar archives of docker images shared by virtual machines.")
 	c.DisableHealthServer = c.GetBool("EXECUTOR_DISABLE_HEALTHSERVER", "false", "Whether or not to disable the health server.")
+	c.MaximumRuntimePerJob = c.GetInterval("EXECUTOR_MAXIMUM_RUNTIME_PER_JOB", "30m", "The maximum wall time that can be spent on a single job.")
 }
 
 func (c *Config) APIWorkerOptions(transport http.RoundTripper) apiworker.Options {
 	return apiworker.Options{
-		QueueName:          c.QueueName,
-		HeartbeatInterval:  c.HeartbeatInterval,
-		WorkerOptions:      c.WorkerOptions(),
-		FirecrackerOptions: c.FirecrackerOptions(),
-		ResourceOptions:    c.ResourceOptions(),
-		GitServicePath:     "/.executors/git",
-		ClientOptions:      c.ClientOptions(transport),
+		QueueName:            c.QueueName,
+		HeartbeatInterval:    c.HeartbeatInterval,
+		WorkerOptions:        c.WorkerOptions(),
+		FirecrackerOptions:   c.FirecrackerOptions(),
+		ResourceOptions:      c.ResourceOptions(),
+		MaximumRuntimePerJob: c.MaximumRuntimePerJob,
+		GitServicePath:       "/.executors/git",
+		ClientOptions:        c.ClientOptions(transport),
 		RedactedValues: map[string]string{
 			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
 			// git repositories that make it into commands or stdout/stderr streams.

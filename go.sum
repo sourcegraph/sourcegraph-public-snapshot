@@ -1304,6 +1304,12 @@ github.com/sourcegraph/gosaml2 v0.6.1-0.20210128133756-84151d087b10 h1:lLSG41QZ5
 github.com/sourcegraph/gosaml2 v0.6.1-0.20210128133756-84151d087b10/go.mod h1:CAOGXqoL6YYtu7kCSx69SZlbNZWbwUchYzOacZatJ3s=
 github.com/sourcegraph/gosyntect v0.0.0-20200429204402-842ed26129d0 h1:AEImdu3+4bPQegJFuRHwDQq+F6qTgnF+m2ksHA8y/W8=
 github.com/sourcegraph/gosyntect v0.0.0-20200429204402-842ed26129d0/go.mod h1:WiNJKgKTnR3psOIGzVZQjLqZjJZuoL3F8tCh25Uk8dU=
+github.com/sourcegraph/gosyntect v0.0.0-20210420181630-7d028595ff2a h1:MlkIQlpE6ClOt5bBFfIYUoeoqOvd7rATO8LWaN2Q/+k=
+github.com/sourcegraph/gosyntect v0.0.0-20210420181630-7d028595ff2a/go.mod h1:WiNJKgKTnR3psOIGzVZQjLqZjJZuoL3F8tCh25Uk8dU=
+github.com/sourcegraph/gosyntect v0.0.0-20210421211451-39f5748b8967 h1:uOgQWThKW641LwdzK1HtwK+ssk9eD8jDTEKrl6MSIq8=
+github.com/sourcegraph/gosyntect v0.0.0-20210421211451-39f5748b8967/go.mod h1:WiNJKgKTnR3psOIGzVZQjLqZjJZuoL3F8tCh25Uk8dU=
+github.com/sourcegraph/gosyntect v0.0.0-20210422223331-645353f16ddc h1:iaDqNUpXf8FKUzw1pZrA6NrpILji4OigouwD9OSyamo=
+github.com/sourcegraph/gosyntect v0.0.0-20210422223331-645353f16ddc/go.mod h1:WiNJKgKTnR3psOIGzVZQjLqZjJZuoL3F8tCh25Uk8dU=
 github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1 h1:o9U79WCNQjxxK2RYhIvflq7PK6JBbG70O2qG2haR26M=
 github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1/go.mod h1:RqWagzxNGCvucQQC9vX6aps474LCCOgshDpUTTyb+O8=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWiiMP/vkkHiMXqFXzl1XfUNOdxKJbd6bI=

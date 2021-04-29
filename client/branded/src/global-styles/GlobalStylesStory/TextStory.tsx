@@ -1,13 +1,10 @@
 import React from 'react'
 import 'storybook-addon-designs'
 
-import { TextVariations } from './TextVariations'
+import { SEMANTIC_COLORS } from './constants'
+import { TextVariants } from './TextVariants'
 
-interface TextStoryProps {
-    semanticColors: readonly string[]
-}
-
-export const TextStory: React.FunctionComponent<TextStoryProps> = ({ semanticColors }) => (
+export const TextStory: React.FunctionComponent = () => (
     <>
         <h2>Headings</h2>
         <table className="table">
@@ -30,7 +27,7 @@ export const TextStory: React.FunctionComponent<TextStoryProps> = ({ semanticCol
         </table>
 
         <h2>Text variations</h2>
-        <TextVariations />
+        <TextVariants />
 
         <h2>Prose</h2>
         <p>Text uses system fonts. The fonts should never be overridden.</p>
@@ -89,7 +86,7 @@ export const TextStory: React.FunctionComponent<TextStoryProps> = ({ semanticCol
             <code>text-*</code> classes can be used to apply semantic coloring to text.
         </p>
         <div className="mb-3">
-            {['muted', ...semanticColors].map(color => (
+            {['muted', ...SEMANTIC_COLORS].map(color => (
                 <div key={color} className={'text-' + color}>
                     This is text-{color}
                 </div>

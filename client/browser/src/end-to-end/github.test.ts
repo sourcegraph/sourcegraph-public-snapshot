@@ -47,10 +47,6 @@ describe('Sourcegraph browser extension on github.com', function () {
             'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go#L5:6',
     })
 
-    const headGoToDefinitionUrl = new URL(
-        '/github.com/gorilla/mux@e73f183699f8ab7d54609771e1fa0ab7ffddc21b/-/blob/regexp.go#L247:24&tab=def',
-        sourcegraphBaseUrl
-    ).toString()
     const tokens = {
         // https://github.com/gorilla/mux/pull/117/files#diff-9ef8a22c4ce5141c30a501c542fb1adeL244
         base: {
@@ -63,7 +59,8 @@ describe('Sourcegraph browser extension on github.com', function () {
         head: {
             token: 'host',
             lineId: 'diff-a609417fa264c6aed88fb8cfe2d9b4fb24226ffdf7db1f685e344d5239783d46R247',
-            goToDefinitionURL: headGoToDefinitionUrl,
+            goToDefinitionURL:
+                'https://github.com/gorilla/mux/blob/e73f183699f8ab7d54609771e1fa0ab7ffddc21b/mux_test.go#L20:2',
         },
     }
 

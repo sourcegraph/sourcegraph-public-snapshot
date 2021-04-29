@@ -90,17 +90,19 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 
-		// Upload storybook to Chromatic
-		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
-		if !c.isPR() {
-			chromaticCommand += " --auto-accept-changes"
+		if c.isMasterDryRun || c.isStorybookAffected() {
+			// Upload storybook to Chromatic
+			chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
+			if !c.isPR() {
+				chromaticCommand += " --auto-accept-changes"
+			}
+			pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
+				bk.AutomaticRetry(5),
+				bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
+				bk.Cmd("yarn gulp generate"),
+				bk.Env("MINIFY", "1"),
+				bk.Cmd(chromaticCommand))
 		}
-		pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
-			bk.AutomaticRetry(5),
-			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn gulp generate"),
-			bk.Env("MINIFY", "1"),
-			bk.Cmd(chromaticCommand))
 
 		// Shared tests
 		pipeline.AddStep(":jest: Test shared client code",
@@ -290,7 +292,7 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["VAGRANT_SERVICE_ACCOUNT"] = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.27.3"
+	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.27.4"
 
 	env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(images.SourcegraphDockerImages)
 
