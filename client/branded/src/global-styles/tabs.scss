@@ -40,8 +40,11 @@
 }
 
 .theme-redesign {
+    [data-reach-tabs] {
+        background: var(--body-bg);
+    }
+
     [data-reach-tab-list] {
-        background: var(--color-bg-1);
         padding: 0;
         &:first-child {
             padding-left: 0;

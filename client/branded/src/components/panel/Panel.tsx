@@ -237,11 +237,13 @@ export const Panel = React.memo<Props>(props => {
         <Tabs className="panel" index={tabIndex} onChange={handleActiveTab}>
             <div className="tablist-wrapper bg-body d-flex justify-content-between">
                 <TabList>
-                    {items.map(({ label, id }) => (
-                        <Tab key={id}>
-                            <span className="tablist-label">{label}</span>
-                        </Tab>
-                    ))}
+                    <div className="border-bottom d-flex w-100">
+                        {items.map(({ label, id }) => (
+                            <Tab key={id}>
+                                <span className="tablist-label">{label}</span>
+                            </Tab>
+                        ))}
+                    </div>
                 </TabList>
                 <div className="align-items-center d-flex mr-2">
                     {activeTab && (

@@ -76,11 +76,27 @@
     }
 
     a {
-        color: inherit !important;
+        color: inherit;
     }
 }
 
 .tree-layer {
     width: 100%;
     outline: none;
+}
+
+.theme-redesign {
+    .tree {
+        &__row {
+            &:hover {
+                background-color: var(--color-bg-2);
+            }
+        }
+        &__row-icon {
+            color: var(--link-color);
+        }
+        &__cell {
+            border-radius: var(--border-radius);
+        }
+    }
 }
