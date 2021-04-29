@@ -4,18 +4,10 @@
  * The hash algorithm here is similar to the one used in Java's String.hashCode
  * and in lsifstore.
  */
-export function hashCode(string: string, maxIndex: number): number {
-    let hash = 0
+export async function hashCode(string: string, maxIndex: number): Promise<string> {
+    const crypto = await require('crypto');
+    const secret = maxIndex.toString();
+    const hash = crypto.createHmac('sha256', secret).update(string).digest('hex');  
 
-    for (let index = 0; index < string.length; index++) {
-        const char = string.charCodeAt(index)
-        hash = (hash << 5) - hash + char
-        hash |= 0 // Convert to 32bit integer
-    }
-
-    if (hash < 0) {
-        hash = -hash
-    }
-
-    return hash % maxIndex
+    return hash;  
 }
