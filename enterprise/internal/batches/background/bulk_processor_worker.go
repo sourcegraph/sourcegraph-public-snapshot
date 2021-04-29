@@ -62,14 +62,10 @@ func newBulkJobWorkerResetter(s *store.Store, metrics batchChangesMetrics) *dbwo
 }
 
 func createBulkJobDBWorkerStore(s *store.Store) dbworkerstore.Store {
-	columns := []*sqlf.Query{}
-	for _, col := range store.ChangesetJobColumns {
-		columns = append(columns, sqlf.Sprintf(col))
-	}
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		Name:              "batches_bulk_worker_store",
 		TableName:         "changeset_jobs",
-		ColumnExpressions: columns,
+		ColumnExpressions: store.ChangesetJobColumns.ToSqlf(),
 		Scan:              scanFirstChangesetJobRecord,
 
 		OrderByExpression: sqlf.Sprintf("changeset_jobs.state = 'errored', changeset_jobs.updated_at DESC"),

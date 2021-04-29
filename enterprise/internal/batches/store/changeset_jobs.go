@@ -35,7 +35,7 @@ var changesetJobInsertColumns = []string{
 
 // ChangesetJobColumns are used by the changeset job related Store methods to query
 // and create changeset jobs.
-var ChangesetJobColumns = []string{
+var ChangesetJobColumns = SQLColumns{
 	"changeset_jobs.id",
 	"changeset_jobs.bulk_group",
 	"changeset_jobs.user_id",
@@ -148,14 +148,9 @@ func getChangesetJobQuery(opts *GetChangesetJobOpts) *sqlf.Query {
 		sqlf.Sprintf("changeset_jobs.id = %s", opts.ID),
 	}
 
-	columns := []*sqlf.Query{}
-	for _, col := range ChangesetJobColumns {
-		columns = append(columns, sqlf.Sprintf(col))
-	}
-
 	return sqlf.Sprintf(
 		getChangesetJobsQueryFmtstr,
-		sqlf.Join(columns, ", "),
+		sqlf.Join(ChangesetJobColumns.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }

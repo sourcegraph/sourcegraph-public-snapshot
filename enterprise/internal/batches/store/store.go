@@ -20,6 +20,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
+// SQLColumns is a slice of column names, that can be converted to a slice of
+// *sqlf.Query.
+type SQLColumns []string
+
+// ToSqlf returns all the columns wrapped in a *sqlf.Query.
+func (s SQLColumns) ToSqlf() []*sqlf.Query {
+	columns := []*sqlf.Query{}
+	for _, col := range s {
+		columns = append(columns, sqlf.Sprintf(col))
+	}
+	return columns
+}
+
 // seededRand is used in RandomID() to generate a "random" number.
 var seededRand *rand.Rand = rand.New(rand.NewSource(timeutil.Now().UnixNano()))
 
