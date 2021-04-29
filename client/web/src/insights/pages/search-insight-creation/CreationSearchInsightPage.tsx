@@ -60,7 +60,7 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
 
                 const newSettingsString = {
                     title: values.title,
-                    repositories: values.repositories.split(','),
+                    repositories: values.repositories.trim().split(/\s*,\s*/),
                     series: values.series.map(line => ({
                         name: line.name,
                         // Query field is a reg exp field for code insight query setting
