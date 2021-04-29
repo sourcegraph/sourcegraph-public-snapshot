@@ -1130,7 +1130,6 @@ func TestCreateChangesetComments(t *testing.T) {
 			t.Fatalf("expected bulk job to be created, but was not")
 		}
 	})
-
 }
 
 const mutationCreateChangesetComments = `
