@@ -31,5 +31,6 @@ func TestIntegration(t *testing.T) {
 		t.Run("UserDeleteCascades", storeTest(db, testUserDeleteCascades))
 		t.Run("SiteCredentials", storeTest(db, testStoreSiteCredentials))
 		t.Run("ChangesetJobs", storeTest(db, testStoreChangesetJobs))
+		t.Run("BulkJobs", storeTest(db, testStoreBulkJobs))
 	})
 }
