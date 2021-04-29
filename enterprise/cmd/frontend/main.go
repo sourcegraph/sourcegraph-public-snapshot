@@ -14,7 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
-	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
@@ -48,6 +48,8 @@ func enterpriseSetupHook(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Ru
 	if debug {
 		log.Println("enterprise edition")
 	}
+
+	auth.Init(db)
 
 	ctx := context.Background()
 	enterpriseServices := enterprise.DefaultServices()
