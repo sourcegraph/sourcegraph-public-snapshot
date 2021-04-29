@@ -13,12 +13,8 @@
     }
 
     &__add-button {
-        width: 100%;
         padding: 1rem;
-        color: var(--link-color);
-        background-color: transparent;
-        border: none;
-        transition: background-color 0.2s ease;
+        transition: background-color 0.2s ease, color 0.2s ease;
 
         &:hover {
             background-color: var(--link-hover-bg-color);
@@ -27,28 +23,10 @@
 }
 
 .form-series-card {
-    display: flex;
-    border-radius: 4px;
-    border: 1px solid var(--border-color);
-    padding: 1rem;
-    cursor: pointer;
     transition: background-color 0.2s ease;
 
     &:hover {
         background-color: var(--link-hover-bg-color-2);
-    }
-
-    &__content {
-        flex-grow: 1;
-        text-align: start;
-    }
-
-    &__name {
-        margin-bottom: 0.25rem;
-    }
-
-    &__query {
-        margin-bottom: 0;
     }
 
     &__color {

@@ -8,8 +8,6 @@ import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormCo
 import { InputField } from '../form-field/FormField'
 import { createRequiredValidator, createValidRegExpValidator, composeValidators } from '../validators'
 
-import styles from './FormSeriesInput.module.scss'
-
 const requiredNameField = createRequiredValidator('Name is required field for data series.')
 
 const validQuery = composeValidators(
@@ -113,6 +111,13 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
 
     const handleSubmitButton = useCallback(
         async (event: React.MouseEvent) => {
+
+            // handleSubmit work with form element and use form event
+            // but we can't have sub forms for the sake of semantics.
+            // if this case synthetic event of totally comparable with event
+            // from submit button.
+            await handleSubmit((event as unknown) as React.SyntheticEvent<HTMLFormElement>)
+
             if (nameField.meta.error) {
                 event.preventDefault()
                 return nameReference.current?.focus()
@@ -122,25 +127,18 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
                 event.preventDefault()
                 return queryReference.current?.focus()
             }
-
-            // handleSubmit work with form element and use form event
-            // but we can't have sub forms for the sake of semantics.
-            // if this case synthetic event of totally comparable with event
-            // from submit button.
-            await handleSubmit((event as unknown) as React.SyntheticEvent<HTMLFormElement>)
         },
         [handleSubmit, nameField.meta.error, queryField.meta.error]
     )
 
     return (
-        <div className={classnames(styles.formSeriesInput, className)}>
+        <div className={classnames('d-flex flex-column', className)}>
             <InputField
                 title="Name"
                 placeholder="ex. Function component"
                 description="Name shown in the legend and tooltip"
                 valid={(hasNameControlledValue || nameField.meta.touched) && nameField.meta.valid}
                 error={nameField.meta.touched && nameField.meta.error}
-                className={styles.formSeriesInputField}
                 {...nameField.input}
                 ref={nameReference}
             />
@@ -151,7 +149,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
                 description="Do not include the repo: filter as it will be added automatically for the current repository"
                 valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.valid}
                 error={queryField.meta.touched && queryField.meta.error}
-                className={styles.formSeriesInputField}
+                className='mt-4'
                 {...queryField.input}
                 ref={queryReference}
             />
@@ -159,16 +157,16 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
             <FormColorInput
                 name="series color group"
                 title="Color"
-                className={classnames(styles.formSeriesInputField, styles.formSeriesInputColor)}
+                className='mt-4'
                 value={colorField.input.value}
                 onChange={colorField.input.onChange}
             />
 
-            <div>
+            <div className='mt-4'>
                 <button
                     type="submit"
                     onClick={handleSubmitButton}
-                    className={classnames(styles.formSeriesInputButton, 'button')}
+                    className='btn btn-light'
                 >
                     Done
                 </button>
@@ -177,11 +175,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
                     <button
                         type="button"
                         onClick={onCancel}
-                        className={classnames(
-                            styles.formSeriesInputButton,
-                            styles.formSeriesInputButtonCancel,
-                            'button'
-                        )}
+                        className='btn btn-outline-secondary ml-2'
                     >
                         Cancel
                     </button>

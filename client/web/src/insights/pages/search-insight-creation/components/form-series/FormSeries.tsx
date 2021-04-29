@@ -97,7 +97,7 @@ export const FormSeries = forwardRef<FormSeriesReferenceAPI, FormSeriesProps>((p
     }
 
     return (
-        <div className={classnames(styles.formSeries)}>
+        <div className='d-flex flex-column'>
             {series.map((line, index) =>
                 editSeriesIndexes.includes(index) ? (
                     <FormSeriesInput
@@ -137,7 +137,7 @@ export const FormSeries = forwardRef<FormSeriesReferenceAPI, FormSeriesProps>((p
                 <button
                     type="button"
                     onClick={handleAddSeries}
-                    className={classnames(styles.formSeriesItem, styles.formSeriesAddButton, 'button')}
+                    className={classnames(styles.formSeriesItem, styles.formSeriesAddButton, 'btn btn-link')}
                 >
                     + Add another data series
                 </button>
@@ -166,10 +166,14 @@ function SeriesCard(props: SeriesCardProps): ReactElement {
     const { name, query, color, className, onEdit } = props
 
     return (
-        <button type="button" onClick={onEdit} className={classnames(styles.formSeriesCard, className, 'btn')}>
-            <div className={styles.formSeriesCardContent}>
-                <h4 className={styles.formSeriesCardName}>{name}</h4>
-                <p className={classnames(styles.formSeriesCardQuery, 'text-muted')}>{query}</p>
+        <button
+            type="button"
+            onClick={onEdit}
+            className={classnames(styles.formSeriesCard, className, 'd-flex p-3 btn btn-outline-secondary')}>
+
+            <div className="flex-grow-1 d-flex flex-column align-items-start">
+                <span className='mb-1 font-weight-bold'>{name}</span>
+                <span className='mb-0 text-muted'>{query}</span>
             </div>
 
             {/* eslint-disable-next-line react/forbid-dom-props */}

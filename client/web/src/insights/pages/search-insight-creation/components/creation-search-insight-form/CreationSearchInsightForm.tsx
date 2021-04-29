@@ -92,7 +92,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form onSubmit={handleSubmit} className={classnames(className, styles.creationInsightForm)}>
+        <form onSubmit={handleSubmit} className={classnames(className, 'd-flex flex-column')}>
             <InputField
                 title="Title"
                 autofocus={true}
@@ -102,7 +102,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 error={title.meta.touched && title.meta.error}
                 {...title.input}
                 ref={titleReference}
-                className={styles.creationInsightFormField}
+                className='mb-0'
             />
 
             <InputField
@@ -113,7 +113,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 error={repositories.meta.touched && repositories.meta.error}
                 {...repositories.input}
                 ref={repositoriesReference}
-                className={styles.creationInsightFormField}
+                className='mb-0 mt-4'
             />
 
             <FormGroup
@@ -121,37 +121,38 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 title="Visibility"
                 description="This insigh will be visible only on your personal dashboard. It will not be show to other
                             users in your organisation."
-                className={styles.creationInsightFormField}
+                className='mb-0 mt-4'
+                contentClassName="d-flex flex-wrap mb-n2"
             >
-                <div className={styles.creationInsightFormRadioGroupContent}>
-                    <FormRadioInput
-                        name="visibility"
-                        value="personal"
-                        title="Personal"
-                        description="only for you"
-                        checked={visibility.input.value === 'personal'}
-                        className={styles.creationInsightFormRadio}
-                        onChange={visibility.input.onChange}
-                    />
+                <FormRadioInput
+                    name="visibility"
+                    value="personal"
+                    title="Personal"
+                    description="only for you"
+                    checked={visibility.input.value === 'personal'}
+                    className='mr-3'
+                    onChange={visibility.input.onChange}
+                />
 
-                    <FormRadioInput
-                        name="visibility"
-                        value="organization"
-                        title="Organization"
-                        description="to all users in your organization"
-                        checked={visibility.input.value === 'organization'}
-                        onChange={visibility.input.onChange}
-                        className={styles.creationInsightFormRadio}
-                    />
-                </div>
+                <FormRadioInput
+                    name="visibility"
+                    value="organization"
+                    title="Organization"
+                    description="to all users in your organization"
+                    checked={visibility.input.value === 'organization'}
+                    onChange={visibility.input.onChange}
+                    className='mr-3'
+                />
             </FormGroup>
+
+            <hr className={styles.creationInsightFormSeparator}/>
 
             <FormGroup
                 name="data series group"
                 title="Data series"
                 subtitle="Add any number of data series to your chart"
                 error={series.meta.touched && series.meta.error}
-                className={styles.creationInsightFormField}
+                className='mb-0'
             >
                 <FormSeries
                     name={series.input.name}
@@ -161,77 +162,80 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 />
             </FormGroup>
 
+            <hr className={styles.creationInsightFormSeparator}/>
+
             <FormGroup
                 name="insight step group"
                 title="Step between data points"
                 description="The distance between two data points on the chart"
                 error={stepValue.meta.touched && stepValue.meta.error}
-                className={styles.creationInsightFormField}
+                className='mb-0'
+                contentClassName='d-flex flex-wrap mb-n2'
             >
-                <div className={styles.creationInsightFormRadioGroupContent}>
-                    <InputField
-                        placeholder="ex. 2"
-                        {...stepValue.input}
-                        valid={stepValue.meta.touched && stepValue.meta.valid}
-                        ref={stepValueReference}
-                        className={classnames(styles.creationInsightFormStepInput)}
-                    />
+                <InputField
+                    placeholder="ex. 2"
+                    {...stepValue.input}
+                    valid={stepValue.meta.touched && stepValue.meta.valid}
+                    ref={stepValueReference}
+                    className={classnames(styles.creationInsightFormStepInput)}
+                />
 
-                    <FormRadioInput
-                        title="Hours"
-                        name="step"
-                        value="hours"
-                        checked={step.input.value === 'hours'}
-                        onChange={step.input.onChange}
-                        className={styles.creationInsightFormRadio}
-                    />
-                    <FormRadioInput
-                        title="Days"
-                        name="step"
-                        value="days"
-                        checked={step.input.value === 'days'}
-                        onChange={step.input.onChange}
-                        className={styles.creationInsightFormRadio}
-                    />
-                    <FormRadioInput
-                        title="Weeks"
-                        name="step"
-                        value="weeks"
-                        checked={step.input.value === 'weeks'}
-                        onChange={step.input.onChange}
-                        className={styles.creationInsightFormRadio}
-                    />
-                    <FormRadioInput
-                        title="Months"
-                        name="step"
-                        value="months"
-                        checked={step.input.value === 'months'}
-                        onChange={step.input.onChange}
-                        className={styles.creationInsightFormRadio}
-                    />
-                    <FormRadioInput
-                        title="Years"
-                        name="step"
-                        value="years"
-                        checked={step.input.value === 'years'}
-                        onChange={step.input.onChange}
-                        className={styles.creationInsightFormRadio}
-                    />
-                </div>
+                <FormRadioInput
+                    title="Hours"
+                    name="step"
+                    value="hours"
+                    checked={step.input.value === 'hours'}
+                    onChange={step.input.onChange}
+                    className='mr-3'
+                />
+                <FormRadioInput
+                    title="Days"
+                    name="step"
+                    value="days"
+                    checked={step.input.value === 'days'}
+                    onChange={step.input.onChange}
+                    className='mr-3'
+                />
+                <FormRadioInput
+                    title="Weeks"
+                    name="step"
+                    value="weeks"
+                    checked={step.input.value === 'weeks'}
+                    onChange={step.input.onChange}
+                    className='mr-3'
+                />
+                <FormRadioInput
+                    title="Months"
+                    name="step"
+                    value="months"
+                    checked={step.input.value === 'months'}
+                    onChange={step.input.onChange}
+                    className='mr-3'
+                />
+                <FormRadioInput
+                    title="Years"
+                    name="step"
+                    value="years"
+                    checked={step.input.value === 'years'}
+                    onChange={step.input.onChange}
+                    className='mr-3'
+                />
             </FormGroup>
 
-            <div className={styles.creationInsightFormButtons}>
+            <hr className={styles.creationInsightFormSeparator}/>
+
+            <div>
                 {submitErrors?.[FORM_ERROR] && (
                     <div className="alert alert-danger">{submitErrors[FORM_ERROR].toString()}</div>
                 )}
 
                 <button
                     type="submit"
-                    className={classnames(styles.creationInsightFormButton, styles.creationInsightFormButtonActive)}
+                    className="btn btn-primary mr-2"
                 >
                     Create code insight
                 </button>
-                <button type="button" className={classnames(styles.creationInsightFormButton)}>
+                <button type="button" className="btn btn-outline-secondary">
                     Cancel
                 </button>
             </div>

@@ -1,29 +1,7 @@
 .form-group {
-    display: flex;
-    flex-direction: column;
-
-    &--with-subtitle > &__name {
-        margin-bottom: 0.25rem;
-    }
-
-    &__name-block {
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 1rem;
-        font-size: inherit;
-    }
-
-    &__name {
-        margin-bottom: 0.25rem;
-    }
-
-    &__description {
-        margin-top: 1rem;
-        font-size: 0.875em;
-    }
-
-    &__error {
-        color: var(--danger);
-        font-size: 0.875em;
+    &__legend {
+        // Bootstrap legend element's styles have 1.5rem font size
+        // for all legends on the page. Because of it we have to set size explicitly.
+        font-size: 1rem;
     }
 }

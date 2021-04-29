@@ -2,8 +2,6 @@ import classnames from 'classnames'
 import React, { forwardRef, InputHTMLAttributes, useEffect, useRef } from 'react'
 import { useMergeRefs } from 'use-callback-ref'
 
-import styles from './FormField.module.scss'
-
 interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Title of input. */
     title?: string
@@ -31,12 +29,12 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, 
     }, [autofocus])
 
     return (
-        <label className={classnames(styles.formField, className)}>
-            {title && <h4>{title}</h4>}
+        <label className={classnames(className)}>
+            {title && <div className='mb-2'>{title}</div>}
 
             <input
                 type="text"
-                className={classnames(styles.formFieldInput, 'form-control', {
+                className={classnames('form-control', {
                     'is-valid': valid,
                     'is-invalid': !!error,
                 })}
@@ -44,9 +42,9 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, 
                 ref={useMergeRefs([localInputReference, reference])}
             />
 
-            {error && <span className={styles.formFieldError}>*{error}</span>}
+            {error && <small className="text-danger form-text" role="alert">*{error}</small>}
             {!error && description && (
-                <span className={classnames(styles.formFieldDescription, 'text-muted')}>{description}</span>
+                <small className={classnames('text-muted', 'form-text')}>{description}</small>
             )}
         </label>
     )
