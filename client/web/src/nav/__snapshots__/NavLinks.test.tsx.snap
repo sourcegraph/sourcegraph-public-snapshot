@@ -536,8 +536,8 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
   <li
     class="nav-item"
   >
-    <button
-      class="test-command-list-button btn btn-link"
+    <span
+      class="test-command-list-button command-list__popover-button btn btn-link"
       id="command-list-popover-button-7"
       role="button"
     >
@@ -563,7 +563,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
           d="M7,10L12,15L17,10H7Z"
         />
       </svg>
-    </button>
+    </span>
   </li>
   <li
     class="nav-item"
@@ -585,7 +585,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
             class="align-items-center d-flex"
           >
             <svg
-              class="mdi-icon user-avatar icon-inline"
+              class="mdi-icon user-avatar icon-inline user-nav-item__avatar"
               fill="currentColor"
               height="24"
               id="target-user-avatar"
@@ -1315,8 +1315,8 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
   <li
     class="nav-item"
   >
-    <button
-      class="test-command-list-button btn btn-link"
+    <span
+      class="test-command-list-button command-list__popover-button btn btn-link"
       id="command-list-popover-button-8"
       role="button"
     >
@@ -1342,7 +1342,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
           d="M7,10L12,15L17,10H7Z"
         />
       </svg>
-    </button>
+    </span>
   </li>
   <li
     class="nav-item"
@@ -1364,7 +1364,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
             class="align-items-center d-flex"
           >
             <svg
-              class="mdi-icon user-avatar icon-inline"
+              class="mdi-icon user-avatar icon-inline user-nav-item__avatar"
               fill="currentColor"
               height="24"
               id="target-user-avatar"
@@ -2104,8 +2104,8 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
   <li
     class="nav-item"
   >
-    <button
-      class="test-command-list-button btn btn-link"
+    <span
+      class="test-command-list-button command-list__popover-button btn btn-link"
       id="command-list-popover-button-5"
       role="button"
     >
@@ -2131,7 +2131,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
           d="M7,10L12,15L17,10H7Z"
         />
       </svg>
-    </button>
+    </span>
   </li>
   <li
     class="nav-item"
@@ -2153,7 +2153,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
             class="align-items-center d-flex"
           >
             <svg
-              class="mdi-icon user-avatar icon-inline"
+              class="mdi-icon user-avatar icon-inline user-nav-item__avatar"
               fill="currentColor"
               height="24"
               id="target-user-avatar"
@@ -2864,8 +2864,8 @@ exports[`NavLinks authed self-hosted /search 1`] = `
   <li
     class="nav-item"
   >
-    <button
-      class="test-command-list-button btn btn-link"
+    <span
+      class="test-command-list-button command-list__popover-button btn btn-link"
       id="command-list-popover-button-6"
       role="button"
     >
@@ -2891,7 +2891,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
           d="M7,10L12,15L17,10H7Z"
         />
       </svg>
-    </button>
+    </span>
   </li>
   <li
     class="nav-item"
@@ -2913,7 +2913,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
             class="align-items-center d-flex"
           >
             <svg
-              class="mdi-icon user-avatar icon-inline"
+              class="mdi-icon user-avatar icon-inline user-nav-item__avatar"
               fill="currentColor"
               height="24"
               id="target-user-avatar"
@@ -3393,8 +3393,8 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
   <li
     class="nav-item"
   >
-    <button
-      class="test-command-list-button btn btn-link"
+    <span
+      class="test-command-list-button command-list__popover-button btn btn-link"
       id="command-list-popover-button-3"
       role="button"
     >
@@ -3420,7 +3420,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
           d="M7,10L12,15L17,10H7Z"
         />
       </svg>
-    </button>
+    </span>
   </li>
   <li
     class="nav-item mx-1"
@@ -3730,8 +3730,8 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
   <li
     class="nav-item"
   >
-    <button
-      class="test-command-list-button btn btn-link"
+    <span
+      class="test-command-list-button command-list__popover-button btn btn-link"
       id="command-list-popover-button-4"
       role="button"
     >
@@ -3757,7 +3757,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
           d="M7,10L12,15L17,10H7Z"
         />
       </svg>
-    </button>
+    </span>
   </li>
   <li
     class="nav-item mx-1"
@@ -4034,8 +4034,8 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
   <li
     class="nav-item"
   >
-    <button
-      class="test-command-list-button btn btn-link"
+    <span
+      class="test-command-list-button command-list__popover-button btn btn-link"
       id="command-list-popover-button-1"
       role="button"
     >
@@ -4061,7 +4061,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
           d="M7,10L12,15L17,10H7Z"
         />
       </svg>
-    </button>
+    </span>
   </li>
   <li
     class="nav-item mx-1"
@@ -4328,8 +4328,8 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
   <li
     class="nav-item"
   >
-    <button
-      class="test-command-list-button btn btn-link"
+    <span
+      class="test-command-list-button command-list__popover-button btn btn-link"
       id="command-list-popover-button-2"
       role="button"
     >
@@ -4355,7 +4355,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
           d="M7,10L12,15L17,10H7Z"
         />
       </svg>
-    </button>
+    </span>
   </li>
   <li
     class="nav-item mx-1"

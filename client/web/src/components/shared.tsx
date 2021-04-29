@@ -1,6 +1,5 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { ActionsNavItems, ActionsNavItemsProps } from '@sourcegraph/shared/src/actions/ActionsNavItems'
 import {
@@ -61,24 +60,20 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverT
 }
 WebHoverOverlay.displayName = 'WebHoverOverlay'
 
-export const WebCommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = props => {
-    const [isRedesignEnabled] = useRedesignToggle()
-
-    return (
-        <CommandListPopoverButton
-            {...props}
-            buttonClassName={classNames('btn', !isRedesignEnabled && 'btn-link')}
-            popoverClassName="popover"
-            popoverInnerClassName="border rounded overflow-hidden"
-            formClassName="form"
-            inputClassName="form-control px-2 py-1 rounded-0"
-            listClassName="list-group list-group-flush list-unstyled"
-            actionItemClassName="list-group-item list-group-item-action px-2"
-            selectedActionItemClassName="active border-primary"
-            noResultsClassName="list-group-item text-muted"
-        />
-    )
-}
+export const WebCommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = props => (
+    <CommandListPopoverButton
+        {...props}
+        buttonClassName="btn btn-link"
+        popoverClassName="popover"
+        popoverInnerClassName="border rounded overflow-hidden"
+        formClassName="form"
+        inputClassName="form-control px-2 py-1 rounded-0"
+        listClassName="list-group list-group-flush list-unstyled"
+        actionItemClassName="list-group-item list-group-item-action px-2"
+        selectedActionItemClassName="active border-primary"
+        noResultsClassName="list-group-item text-muted"
+    />
+)
 
 WebCommandListPopoverButton.displayName = 'WebCommandListPopoverButton'
 

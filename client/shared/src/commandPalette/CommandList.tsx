@@ -43,7 +43,7 @@ import { EmptyCommandList } from './EmptyCommandList'
 export interface CommandListPopoverButtonClassProps {
     /** The class name for the root button element of {@link CommandListPopoverButton}. */
     buttonClassName?: string
-    buttonElement?: 'span' | 'a' | 'button'
+    buttonElement?: 'span' | 'a'
     buttonOpenClassName?: string
 
     showCaret?: boolean
@@ -374,7 +374,7 @@ export interface CommandListPopoverButtonProps
 
 export const CommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = ({
     buttonClassName = '',
-    buttonElement: ButtonElement = 'button',
+    buttonElement: ButtonElement = 'span',
     buttonOpenClassName = '',
     showCaret = true,
     popoverClassName,
@@ -400,13 +400,9 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
     return (
         <ButtonElement
             role="button"
-            className={classNames(
-                'test-command-list-button',
-                isRedesignEnabled ? 'command-list__popover-button btn p-0' : buttonClassName,
-                {
-                    buttonOpenClassName: isOpen,
-                }
-            )}
+            className={classNames('test-command-list-button command-list__popover-button', buttonClassName, {
+                buttonOpenClassName: isOpen,
+            })}
             id={id}
             onClick={toggleIsOpen}
         >
