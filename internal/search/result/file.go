@@ -1,9 +1,6 @@
 package result
 
 import (
-	"net/url"
-	"strings"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -18,26 +15,6 @@ type File struct {
 	Repo     types.RepoName `json:"-"`
 	CommitID api.CommitID   `json:"-"`
 	Path     string
-}
-
-// URL generates a git URL for the file. This seems to currently only be used
-// as a unique key for the File, and may be removed in the future.
-func (fm *File) URL() string {
-	var b strings.Builder
-	var ref string
-	if fm.InputRev != nil {
-		ref = url.QueryEscape(*fm.InputRev)
-	}
-	b.Grow(len(fm.Repo.Name) + len(ref) + len(fm.Path) + len("git://?#"))
-	b.WriteString("git://")
-	b.WriteString(string(fm.Repo.Name))
-	if ref != "" {
-		b.WriteByte('?')
-		b.WriteString(ref)
-	}
-	b.WriteByte('#')
-	b.WriteString(fm.Path)
-	return b.String()
 }
 
 // FileMatch represents either:
