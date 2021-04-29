@@ -1,12 +1,12 @@
 import classnames from 'classnames'
-import React, { forwardRef, InputHTMLAttributes, useEffect, useRef } from 'react'
+import React, { forwardRef, InputHTMLAttributes, ReactNode, useEffect, useRef } from 'react'
 import { useMergeRefs } from 'use-callback-ref'
 
 interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Title of input. */
     title?: string
     /** Description block for field. */
-    description?: string
+    description?: ReactNode
     /** Custom class name for root label element. */
     className?: string
     /** Error massage for input. */

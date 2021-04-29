@@ -134,7 +134,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
         <div className={classnames('d-flex flex-column', className)}>
             <InputField
                 title="Name"
-                placeholder="ex. Function component"
+                placeholder="Example: Function component"
                 description="Name shown in the legend and tooltip"
                 valid={(hasNameControlledValue || nameField.meta.touched) && nameField.meta.valid}
                 error={nameField.meta.touched && nameField.meta.error}
@@ -144,8 +144,13 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
 
             <InputField
                 title="Query"
-                placeholder="ex. spatternType:regexp const\\s\\w+:\\s(React\\.)?FunctionComponent"
-                description="Do not include the repo: filter as it will be added automatically for the current repository"
+                placeholder="Example: patternType:regexp const\\s\\w+:\\s(React\\.)?FunctionComponent"
+                description={
+                    <span>
+                        Do not include the <code>repo:</code> filter as it will be added automatically for the current
+                        repository
+                    </span>
+                }
                 valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.valid}
                 error={queryField.meta.touched && queryField.meta.error}
                 className="mt-4"
