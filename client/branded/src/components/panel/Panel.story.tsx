@@ -40,7 +40,7 @@ const panels: PanelViewData[] = [
 const { add } = storiesOf('branded/Panel', module)
     .addDecorator(story => (
         <>
-            <div className="p-4">
+            <div className="p-5">
                 <MemoryRouter initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
                     {story()}
                 </MemoryRouter>
