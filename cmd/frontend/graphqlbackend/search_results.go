@@ -849,10 +849,12 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 		endpoint := r.stream
 		r.stream = nil // Disables streaming: backends may not use the endpoint.
 		srr, err := r.resultsBatch(ctx)
-		endpoint.Send(SearchEvent{
-			Results: srr.SearchResults,
-			Stats:   srr.Stats,
-		})
+		if srr != nil {
+			endpoint.Send(SearchEvent{
+				Results: srr.SearchResults,
+				Stats:   srr.Stats,
+			})
+		}
 		return srr, err
 	}
 	return r.resultsRecursive(ctx, r.Plan)
