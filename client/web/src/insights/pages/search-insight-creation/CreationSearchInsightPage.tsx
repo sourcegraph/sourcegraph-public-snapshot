@@ -64,7 +64,7 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
                     series: values.series.map(line => ({
                         name: line.name,
                         // Query field is a reg exp field for code insight query setting
-                        // Native html input element adds escape symbols by himself
+                        // Native html input element adds escape symbols by itself
                         // to prevent this behavior below we replace double escaping
                         // with just one series of escape characters e.g. - //
                         query: line.query.replace(/\\\\/g, '\\'),
