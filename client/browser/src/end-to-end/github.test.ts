@@ -60,7 +60,7 @@ describe('Sourcegraph browser extension on github.com', function () {
             token: 'host',
             lineId: 'diff-a609417fa264c6aed88fb8cfe2d9b4fb24226ffdf7db1f685e344d5239783d46R247',
             goToDefinitionURL:
-                'https://github.com/gorilla/mux/blob/e73f183699f8ab7d54609771e1fa0ab7ffddc21b/mux_test.go#L20:2',
+                'https://github.com/gorilla/mux/blob/e73f183699f8ab7d54609771e1fa0ab7ffddc21b/regexp.go#L233:2',
         },
     }
 
