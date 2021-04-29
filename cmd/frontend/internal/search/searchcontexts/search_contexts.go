@@ -65,7 +65,7 @@ func ResolveSearchContextSpec(ctx context.Context, db dbutil.DB, searchContextSp
 	return searchContext, nil
 }
 
-func validateSearchContextNamespaceForCurrentUser(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32) error {
+func validateSearchContextWriteAccessForCurrentUser(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32, public bool) error {
 	if namespaceUserID != 0 && namespaceOrgID != 0 {
 		return errors.New("namespaceUserID and namespaceOrgID are mutually exclusive")
 	}
@@ -78,16 +78,26 @@ func validateSearchContextNamespaceForCurrentUser(ctx context.Context, db dbutil
 		return errors.New("current user not found")
 	}
 
-	if user.SiteAdmin {
+	// Site-admins have write access to all public search contexts
+	if user.SiteAdmin && public {
 		return nil
-	} else if namespaceUserID == 0 && namespaceOrgID == 0 {
-		return errors.New("current user must be site-admin")
 	}
 
-	if namespaceUserID != 0 && namespaceUserID != user.ID {
+	if namespaceUserID == 0 && namespaceOrgID == 0 && !user.SiteAdmin {
+		// Only site-admins have write access to instance-level search contexts
+		return errors.New("current user must be site-admin")
+	} else if namespaceUserID != 0 && namespaceUserID != user.ID {
+		// Only the creator of the search context has write access to its search contexts
 		return errors.New("search context user does not match current user")
 	} else if namespaceOrgID != 0 {
-		return backend.CheckOrgAccess(ctx, db, namespaceOrgID)
+		// Only members of the org have write access to org search contexts
+		membership, err := database.OrgMembers(db).GetByOrgIDAndUserID(ctx, namespaceOrgID, user.ID)
+		if err != nil {
+			return err
+		}
+		if membership == nil {
+			return errors.New("current user is not an org member")
+		}
 	}
 
 	return nil
@@ -144,7 +154,7 @@ func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.D
 		return nil, errors.New("cannot override global search context")
 	}
 
-	err := validateSearchContextNamespaceForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID)
+	err := validateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +191,7 @@ func DeleteSearchContext(ctx context.Context, db dbutil.DB, searchContext *types
 		return errors.New("cannot delete auto-defined search context")
 	}
 
-	err := validateSearchContextNamespaceForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID)
+	err := validateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
 	if err != nil {
 		return err
 	}
