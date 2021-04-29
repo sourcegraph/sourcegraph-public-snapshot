@@ -392,9 +392,9 @@ func TestSearchContexts_Permissions(t *testing.T) {
 			wantSearchContexts: []*types.SearchContext{searchContexts[0], searchContexts[2], searchContexts[4]},
 		},
 		{
-			name:               "site-admin user2 has access to all contexts",
+			name:               "site-admin user2 has access to all public contexts and private instance-level contexts",
 			userID:             user2.ID,
-			wantSearchContexts: searchContexts,
+			wantSearchContexts: []*types.SearchContext{searchContexts[0], searchContexts[1], searchContexts[2], searchContexts[4]},
 			siteAdmin:          true,
 		},
 	}
@@ -455,16 +455,23 @@ func TestSearchContexts_Permissions(t *testing.T) {
 			wantErr:       "search context not found",
 		},
 		{
-			name:          "authenticated site-admin user2 has access to private user1 context",
+			name:          "authenticated site-admin user2 does not have access to private user1 context",
 			userID:        user2.ID,
 			searchContext: searchContexts[3],
 			siteAdmin:     true,
+			wantErr:       "search context not found",
 		},
 		{
 			name:          "authenticated user1 does not have access to private instance-level context",
 			userID:        user1.ID,
 			searchContext: searchContexts[1],
 			wantErr:       "search context not found",
+		},
+		{
+			name:          "site-admin user2 has access to private instance-level context",
+			userID:        user2.ID,
+			siteAdmin:     true,
+			searchContext: searchContexts[1],
 		},
 		{
 			name:          "authenticated user1 has access to his private context",

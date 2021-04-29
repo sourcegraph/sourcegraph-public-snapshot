@@ -254,7 +254,7 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 	}
 }
 
-func TestSearchContextNamespaceValidation(t *testing.T) {
+func TestSearchContextWriteAccessValidation(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -288,6 +288,7 @@ func TestSearchContextNamespaceValidation(t *testing.T) {
 		name            string
 		namespaceUserID int32
 		namespaceOrgID  int32
+		public          bool
 		userID          int32
 		wantErr         string
 	}{
@@ -306,7 +307,7 @@ func TestSearchContextNamespaceValidation(t *testing.T) {
 			name:           "current user must be a member of the org namespace",
 			namespaceOrgID: org.ID,
 			userID:         user3.ID,
-			wantErr:        "current user is not an org member",
+			wantErr:        "org member not found",
 		},
 		{
 			name:    "non site-admin users are not valid for instance-level contexts",
@@ -314,18 +315,32 @@ func TestSearchContextNamespaceValidation(t *testing.T) {
 			wantErr: "current user must be site-admin",
 		},
 		{
-			name:   "site-admin is valid for any instance-level context",
+			name:            "site-admin is invalid for private user search context",
+			namespaceUserID: user2.ID,
+			userID:          user1.ID,
+			wantErr:         "search context user does not match current user",
+		},
+		{
+			name:           "site-admin is invalid for private org search context",
+			namespaceOrgID: org.ID,
+			userID:         user1.ID,
+			wantErr:        "org member not found",
+		},
+		{
+			name:   "site-admin is valid for private instance-level context",
 			userID: user1.ID,
 		},
 		{
-			name:            "site-admin is valid for any user namespace",
+			name:            "site-admin is valid for any public user search context",
 			namespaceUserID: user2.ID,
+			public:          true,
 			userID:          user1.ID,
 		},
 		{
-			name:            "site-admin is valid for any org namespace",
-			namespaceUserID: org.ID,
-			userID:          user1.ID,
+			name:           "site-admin is valid for any public org search context",
+			namespaceOrgID: org.ID,
+			public:         true,
+			userID:         user1.ID,
 		},
 		{
 			name:            "current user is valid if matches the user namespace",
@@ -343,7 +358,7 @@ func TestSearchContextNamespaceValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: tt.userID})
 
-			err := validateSearchContextNamespaceForCurrentUser(ctx, db, tt.namespaceUserID, tt.namespaceOrgID)
+			err := validateSearchContextWriteAccessForCurrentUser(ctx, db, tt.namespaceUserID, tt.namespaceOrgID, tt.public)
 
 			expectErr := tt.wantErr != ""
 			if !expectErr && err != nil {

@@ -57,7 +57,6 @@ func searchContextsPermissionsCondition(ctx context.Context, db dbutil.DB) (*sql
 			return nil, err
 		}
 		authenticatedUserID = currentUser.ID
-		bypassPermissionsCheck = currentUser.SiteAdmin
 	}
 	q := sqlf.Sprintf(searchContextsPermissionsConditionFmtStr, bypassPermissionsCheck, authenticatedUserID, authenticatedUserID, authenticatedUserID)
 	return q, nil

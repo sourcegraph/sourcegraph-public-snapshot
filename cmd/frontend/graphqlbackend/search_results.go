@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -20,7 +21,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
@@ -344,7 +344,7 @@ var (
 // relies on the invariant that query and pattern error checking has already
 // been performed.
 func LogSearchLatency(ctx context.Context, db dbutil.DB, si *SearchInputs, durationMs int32) {
-	tr, ctx := trace.New(ctx, "logSearchLatency", "")
+	tr, ctx := trace.New(ctx, "LogSearchLatency", "")
 	defer func() {
 		tr.Finish()
 	}()
@@ -556,36 +556,6 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 	return intersectMerge(left, right)
 }
 
-// evaluateAndStream is a wrapper around evaluateAnd which temporarily suspends
-// streaming and waits for evaluateAnd to return before streaming results back on
-// r.resultChannel.
-func (r *searchResolver) evaluateAndStream(ctx context.Context, q query.Basic) (*SearchResultsResolver, error) {
-	// Streaming disabled.
-	if r.stream == nil {
-		return r.evaluateAnd(ctx, q)
-	}
-	// For streaming search we rely on batch evaluation of
-	// results. Implementing true streaming on AND expressions will require
-	// support in backends (eg directly using Zoekt) or ANDing per repo.
-	r2 := *r
-	r2.stream = nil
-
-	result, err := r2.evaluateAnd(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	// evaluateAnd may return result, err = nil, nil because downstream calls return
-	// nil, nil. See further comments in evaluateAnd.
-	if result == nil {
-		return &SearchResultsResolver{}, nil
-	}
-	r.stream.Send(SearchEvent{
-		Results: result.SearchResults,
-		Stats:   result.Stats,
-	})
-	return result, err
-}
-
 // evaluateAnd performs set intersection on result sets. It collects results for
 // all expressions that are ANDed together by searching for each subexpression
 // and then intersects those results that are in the same repo/file path. To
@@ -748,7 +718,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 
 		switch term.Kind {
 		case query.And:
-			return r.evaluateAndStream(ctx, q)
+			return r.evaluateAnd(ctx, q)
 		case query.Or:
 			return r.evaluateOr(ctx, q)
 		case query.Concat:
@@ -797,30 +767,7 @@ func invalidateRepoCache(plan query.Plan) bool {
 	return seenRepo+seenRepoGroup > 1 || seenRevision > 1 || seenContext > 1
 }
 
-func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
-	start := time.Now()
-	srr, err := r.resultsRecursive(ctx, r.Plan)
-	elapsed := time.Since(start)
-
-	// For streams we write logs in streamHandler.
-	if r.stream != nil {
-		return srr, err
-	}
-
-	if srr != nil {
-		srr.elapsed = elapsed
-		LogSearchLatency(ctx, r.db, r.SearchInputs, srr.ElapsedMilliseconds())
-	}
-
-	var status, alertType string
-	status = DetermineStatusForLogs(srr, err)
-	if srr != nil && srr.alert != nil {
-		alertType = srr.alert.PrometheusType()
-	}
-
-	requestSource := string(trace.RequestSource(ctx))
-	requestName := trace.GraphQLRequestName(ctx)
-
+func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
 	searchResponseCounter.WithLabelValues(
 		status,
 		alertType,
@@ -834,32 +781,88 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 		requestSource,
 		requestName,
 	).Observe(elapsed.Seconds())
+}
 
-	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
-	if honey.Enabled() || isSlow {
-		var n int
-		if srr != nil {
-			n = len(srr.SearchResults)
-		}
-		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
-			OriginalQuery: r.rawQuery(),
-			Typ:           requestName,
-			Source:        requestSource,
-			Status:        status,
-			AlertType:     alertType,
-			DurationMs:    elapsed.Milliseconds(),
-			ResultSize:    n,
-		})
-
-		if honey.Enabled() {
-			_ = ev.Send()
-		}
-
-		if isSlow {
-			log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
-		}
+func newHoneyEvent(ctx context.Context, status, alertType, requestSource, requestName, query string, elapsed time.Duration, srr *SearchResultsResolver) *libhoney.Event {
+	var n int
+	if srr != nil {
+		n = len(srr.SearchResults)
 	}
+	return honey.SearchEvent(ctx, honey.SearchEventArgs{
+		OriginalQuery: query,
+		Typ:           requestName,
+		Source:        requestSource,
+		Status:        status,
+		AlertType:     alertType,
+		DurationMs:    elapsed.Milliseconds(),
+		ResultSize:    n,
+	})
+}
+
+func logHoneyBatch(ctx context.Context, status, alertType, requestSource, requestName string, elapsed time.Duration, query string, start time.Time, srr *SearchResultsResolver) {
+	var ev *libhoney.Event
+	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
+
+	if honey.Enabled() || isSlow {
+		ev = newHoneyEvent(ctx, status, alertType, requestSource, requestName, query, elapsed, srr)
+	}
+
+	if honey.Enabled() && ev != nil {
+		_ = ev.Send()
+	}
+
+	if isSlow && ev != nil {
+		log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
+	}
+}
+
+func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolver, start time.Time, err error) {
+	elapsed := time.Since(start)
+	if srr != nil {
+		srr.elapsed = elapsed
+		LogSearchLatency(ctx, r.db, r.SearchInputs, srr.ElapsedMilliseconds())
+	}
+
+	var status, alertType string
+	status = DetermineStatusForLogs(srr, err)
+	if srr != nil && srr.alert != nil {
+		alertType = srr.alert.PrometheusType()
+	}
+	requestSource := string(trace.RequestSource(ctx))
+	requestName := trace.GraphQLRequestName(ctx)
+	logPrometheusBatch(status, alertType, requestSource, requestName, elapsed)
+	logHoneyBatch(ctx, status, alertType, requestSource, requestName, elapsed, r.rawQuery(), start, srr)
+}
+
+func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
+	start := time.Now()
+	srr, err := r.resultsRecursive(ctx, r.Plan)
+	r.logBatch(ctx, srr, start, err)
 	return srr, err
+}
+
+func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsResolver, error) {
+	if !query.IsStreamingCompatible(r.Plan) {
+		// The query is not streaming compatible, but we still want to
+		// use the streaming endpoint. Run a batch search then send the
+		// results back on the stream.
+		endpoint := r.stream
+		r.stream = nil // Disables streaming: backends may not use the endpoint.
+		srr, err := r.resultsBatch(ctx)
+		endpoint.Send(SearchEvent{
+			Results: srr.SearchResults,
+			Stats:   srr.Stats,
+		})
+		return srr, err
+	}
+	return r.resultsRecursive(ctx, r.Plan)
+}
+
+func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
+	if r.stream == nil {
+		return r.resultsBatch(ctx)
+	}
+	return r.resultsStreaming(ctx)
 }
 
 // DetermineStatusForLogs determines the final status of a search for logging
