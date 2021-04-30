@@ -83,18 +83,23 @@ func TestClient_GetRepository(t *testing.T) {
 	"full_name": "o/r",
 	"description": "d",
 	"html_url": "https://github.example.com/o/r",
-	"fork": true
+	"fork": true,
+	"stargazers_count": 30,
+	"watchers_count": 20,
+	"forks_count": 5
 }
 `,
 	}
 	c := newTestClient(t, &mock)
 
 	want := Repository{
-		ID:            "i",
-		NameWithOwner: "o/r",
-		Description:   "d",
-		URL:           "https://github.example.com/o/r",
-		IsFork:        true,
+		ID:             "i",
+		NameWithOwner:  "o/r",
+		Description:    "d",
+		URL:            "https://github.example.com/o/r",
+		IsFork:         true,
+		StargazerCount: 30,
+		ForkCount:      5,
 	}
 
 	repo, err := c.GetRepository(context.Background(), "owner", "repo")
