@@ -7,7 +7,7 @@ VALUES (
     'frontend-db.user-credentials',             -- Component being migrated
     'Encrypt batch changes user credentials',   -- Description
     '3.28.0',                                   -- The next minor release
-    true                                        -- Can be read with previous version without down migration
+    false                                       -- Can be read with previous version without down migration
 )
 ON CONFLICT DO NOTHING;
 
