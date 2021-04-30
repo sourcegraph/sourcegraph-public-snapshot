@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -257,6 +258,18 @@ func ProductResearchPageEnabled() bool {
 		return *enabled
 	}
 	return true
+}
+
+func DesignRefreshToggleEnabled() bool {
+	// Always enabled for local development
+	if env.InsecureDev {
+		return true
+	}
+
+	if enabled := Get().DesignRefreshToggleEnabled; enabled != nil {
+		return *enabled
+	}
+	return false
 }
 
 func ExternalURL() string {
