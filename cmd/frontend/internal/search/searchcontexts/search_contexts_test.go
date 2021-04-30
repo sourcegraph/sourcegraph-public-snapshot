@@ -422,6 +422,11 @@ func TestCreatingSearchContexts(t *testing.T) {
 			wantErr:       "\"invalid name\" is not a valid search context name",
 		},
 		{
+			name:          "can create search context with non-space separators",
+			searchContext: &types.SearchContext{Name: "version_1.2-final/3"},
+			userID:        user1.ID,
+		},
+		{
 			name:          "cannot create search context with name too long",
 			searchContext: &types.SearchContext{Name: tooLongName},
 			userID:        user1.ID,
