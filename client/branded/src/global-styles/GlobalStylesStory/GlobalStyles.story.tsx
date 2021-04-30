@@ -21,6 +21,7 @@ import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
 import { Form } from '../../components/Form'
 
+import { BadgeVariants } from './BadgeVariants/BadgeVariants'
 import { ButtonVariants } from './ButtonVariants'
 import { SEMANTIC_COLORS } from './constants'
 import { FormFieldVariants } from './FormFieldVariants'
@@ -418,87 +419,8 @@ add(
                 </tbody>
             </table>
 
-            <h2>Semantic variations</h2>
-            <p>Change the appearance of any badge with modifier classes for semantic colors.</p>
-            <p>
-                {SEMANTIC_COLORS.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <span className={classNames('badge', `badge-${semantic}`)}>{semantic}</span>{' '}
-                    </React.Fragment>
-                ))}
-            </p>
-
-            <h2>Uppercase</h2>
-            <p>
-                Badges can be visually uppercased by combining them with the <code>text-uppercase</code> class.
-                Examples:
-            </p>
-            <div>
-                <h1>
-                    Blockchain support{' '}
-                    <sup>
-                        <span className="badge badge-warning text-uppercase">Beta</span>
-                    </sup>
-                </h1>
-                <h1>
-                    Blockchain support{' '}
-                    <sup>
-                        <span className="badge badge-info text-uppercase">Preview</span>
-                    </sup>
-                </h1>
-                <h1>
-                    Blockchain support{' '}
-                    <sup>
-                        <span className="badge badge-info text-uppercase">Experimental</span>
-                    </sup>
-                </h1>
-                <h1>
-                    Blockchain support{' '}
-                    <sup>
-                        <span className="badge badge-info text-uppercase">Prototype</span>
-                    </sup>
-                </h1>
-            </div>
-            <p>
-                <span className="badge badge-success text-uppercase">added</span> <code>path/to/file.ts</code>
-            </p>
-            <p>
-                <span className="badge badge-danger text-uppercase">deleted</span> <code>path/to/file.ts</code>
-            </p>
-            <p>
-                <span className="badge badge-warning text-uppercase">moved</span> <code>path/to/file.ts</code>
-            </p>
-            <p>Do not use it for user-supplied text like labels (tags) or usernames.</p>
-
-            <h2>Pill badges</h2>
-            <p>Pill badges are commonly used to display counts.</p>
-            <div className="mb-4">
-                Matches <span className="badge badge-pill badge-secondary">321+</span>
-            </div>
-            <div>
-                <ul className="nav nav-tabs mb-2">
-                    <li className="nav-item">
-                        <a className="nav-link active" href="/" onClick={preventDefault}>
-                            Comments <span className="badge badge-pill badge-secondary">14</span>
-                        </a>
-                    </li>
-                    <li className="nav-item">
-                        <a className="nav-link" href="/" onClick={preventDefault}>
-                            Changed files <span className="badge badge-pill badge-secondary">6</span>
-                        </a>
-                    </li>
-                </ul>
-
-                <span>No content here!</span>
-            </div>
-
-            <h2>Links</h2>
-
-            <p>
-                <LinkOrSpan className="badge badge-secondary" to="http://google.com">
-                    Tooltip
-                </LinkOrSpan>
-            </p>
+            <h2>Reference</h2>
+            <BadgeVariants variants={SEMANTIC_COLORS} />
         </>
     ),
     {

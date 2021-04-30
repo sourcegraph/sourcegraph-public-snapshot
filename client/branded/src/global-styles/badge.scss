@@ -10,12 +10,57 @@
     }
 }
 
-.theme-light.theme-redesign,
-.theme-dark.theme-redesign {
-    @each $color, $value in $theme-colors-redesign {
-        .badge-#{$color},
-        a.badge-#{$color} {
-            @include badge-variant($value);
+@mixin redesign-badge-variant($name, $base-color, $text-color: var(--light-text), $hover-color) {
+    .badge-#{$name},
+    a.badge-#{$name} {
+        background-color: $base-color;
+        color: $text-color;
+    }
+
+    a.badge-#{$name} {
+        &:hover,
+        &:focus {
+            color: $text-color;
+            background-color: $hover-color;
+        }
+
+        &:focus,
+        &.focus {
+            outline: 0;
+            box-shadow: var(--focus-box-shadow);
         }
     }
+}
+
+.theme-light.theme-redesign,
+.theme-dark.theme-redesign {
+    .badge {
+        background-color: var(--subtle-bg); // TODO: Add color
+        color: var(--link-color);
+    }
+
+    @include redesign-badge-variant($name: 'primary', $base-color: var(--primary), $hover-color: var(--primary-3));
+    @include redesign-badge-variant(
+        $name: 'secondary',
+        $base-color: var(--color-bg-2),
+        $text-color: var(--body-color),
+        $hover-color: var(--color-bg-2)
+    );
+    @include redesign-badge-variant($name: 'success', $base-color: var(--success), $hover-color: var(--success-3));
+    @include redesign-badge-variant($name: 'danger', $base-color: var(--danger), $hover-color: var(--danger-3));
+    @include redesign-badge-variant(
+        $name: 'info',
+        $base-color: var(--info),
+        $text-color: var(--dark-text),
+        $hover-color: var(--info-3)
+    );
+    @include redesign-badge-variant(
+        $name: 'warning',
+        $base-color: var(--warning),
+        $text-color: var(--dark-text),
+        $hover-color: var(--warning-3)
+    );
+    @include redesign-badge-variant($name: 'merged', $base-color: var(--merged), $hover-color: var(--merged-3));
+    @include redesign-badge-variant($name: 'new', $base-color: var(--info-3), $hover-color: var(--info-3));
+    @include redesign-badge-variant($name: 'new', $base-color: var(--info-3), $hover-color: var(--info-3));
 }
