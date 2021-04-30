@@ -287,7 +287,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <GlobalNavbar
                     {...props}
                     authRequired={!!authRequired}
-                    isSearchRelatedPage={isSearchRelatedPage}
+                    showSearchBox={isSearchRelatedPage && !isSearchHomepage && !isRepogroupPage}
                     variant={
                         hideGlobalSearchInput
                             ? 'no-search-input'
