@@ -16,11 +16,7 @@ const getCSSCustomProperties = () => [
                     [...sheet.cssRules].filter(isStyleRule).reduce<string[]>((totalVariables, rule) => {
                         const variables = [...rule.style]
                             .map(propName => propName.trim())
-                            .filter(
-                                propName =>
-                                    propName.indexOf('--') === 0 &&
-                                    SEMANTIC_COLORS.some(color => propName.includes(color))
-                            )
+                            .filter(propName => propName.indexOf('--') === 0)
                         return [...totalVariables, ...variables]
                     }, [])
                 ),
