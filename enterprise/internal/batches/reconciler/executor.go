@@ -16,6 +16,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -115,7 +116,7 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 	events, err := e.ch.Events()
 	if err != nil {
 		log15.Error("Events", "err", err)
-		return err
+		return errcode.MakeNonRetryable(err)
 	}
 	state.SetDerivedState(ctx, e.tx.Repos(), e.ch, events)
 
