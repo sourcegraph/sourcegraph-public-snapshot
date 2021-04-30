@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import React, { useCallback, useState } from 'react'
@@ -12,9 +13,8 @@ import { queryChangesetApplyPreview as _queryChangesetApplyPreview, queryChanges
 import { ChangesetApplyPreviewNode, ChangesetApplyPreviewNodeProps } from './ChangesetApplyPreviewNode'
 import { EmptyPreviewListElement } from './EmptyPreviewListElement'
 import { PreviewFilterRow, PreviewFilters } from './PreviewFilterRow'
-import { PreviewListHeader } from './PreviewListHeader'
 import styles from './PreviewList.module.scss'
-import classNames from 'classnames'
+import { PreviewListHeader } from './PreviewListHeader'
 
 interface Props extends ThemeProps {
     batchSpecID: Scalars['ID']

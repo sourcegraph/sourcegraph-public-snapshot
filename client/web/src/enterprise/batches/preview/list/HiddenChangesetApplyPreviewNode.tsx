@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React from 'react'
 
@@ -6,10 +7,9 @@ import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 
+import styles from './HiddenChangesetApplyPreviewNode.module.scss'
 import { PreviewActions } from './PreviewActions'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
-import styles from './HiddenChangesetApplyPreviewNode.module.scss'
-import classNames from 'classnames'
 
 export interface HiddenChangesetApplyPreviewNodeProps {
     node: HiddenChangesetApplyPreviewFields
@@ -17,8 +17,7 @@ export interface HiddenChangesetApplyPreviewNodeProps {
 
 export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChangesetApplyPreviewNodeProps> = ({
     node,
-}) => {
-    return (
+}) => (
         <>
             <span className={classNames(styles.hiddenChangesetApplyPreviewNodeListCell, 'd-none d-sm-block')} />
             <HiddenChangesetApplyPreviewNodeStatusCell
@@ -71,7 +70,6 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChan
             <span />
         </>
     )
-}
 
 const HiddenChangesetApplyPreviewNodeStatusCell: React.FunctionComponent<
     HiddenChangesetApplyPreviewNodeProps & { className?: string }

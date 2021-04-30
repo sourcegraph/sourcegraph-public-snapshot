@@ -13,8 +13,8 @@ import {
 } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
-import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
 import styles from './PreviewList.module.scss'
+import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
 
 const { add } = storiesOf('web/batches/preview/VisibleChangesetApplyPreviewNode', module).addDecorator(story => (
     <div className={classNames(styles.previewListGrid, 'p-3 container web-content')}>{story()}</div>
