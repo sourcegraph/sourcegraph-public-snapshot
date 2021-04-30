@@ -148,7 +148,12 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                             <p className={classNames('mb-0 py-2', step === 'get-ssh-key' && 'text-muted')}>
                                 1. Add token
                             </p>
-                            <div className={classNames(styles.modalStepRuler, styles.modalStepRulerPurple)} />
+                            <div
+                                className={classNames(
+                                    styles.addCredentialModalModalStepRuler,
+                                    styles.addCredentialModalModalStepRulerPurple
+                                )}
+                            />
                         </div>
                         <div className="flex-grow-1 ml-2">
                             <p className={classNames('mb-0 py-2', step === 'add-token' && 'text-muted')}>
@@ -156,9 +161,9 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                             </p>
                             <div
                                 className={classNames(
-                                    styles.modalStepRuler,
-                                    step === 'add-token' && styles.modalStepRulerGray,
-                                    step === 'get-ssh-key' && styles.modalStepRulerBlue
+                                    styles.addCredentialModalModalStepRuler,
+                                    step === 'add-token' && styles.addCredentialModalModalStepRulerGray,
+                                    step === 'get-ssh-key' && styles.addCredentialModalModalStepRulerBlue
                                 )}
                             />
                         </div>
