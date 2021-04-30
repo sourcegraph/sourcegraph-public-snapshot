@@ -179,7 +179,7 @@ const (
 	DocumentationStringTypeDetail DocumentationStringType = "detail"
 )
 
-func NewDocumentationStringEdge(id, inV, outV uint64) DocumentationStringEdge {
+func NewDocumentationStringEdge(id, inV, outV uint64, typ DocumentationStringType) DocumentationStringEdge {
 	return DocumentationStringEdge{
 		Edge: Edge{
 			Element: Element{
@@ -190,6 +190,7 @@ func NewDocumentationStringEdge(id, inV, outV uint64) DocumentationStringEdge {
 		},
 		OutV: outV,
 		InV:  inV,
+		Type: typ,
 	}
 }
 
