@@ -1,13 +1,13 @@
 {
-  "id": 3,
-  "version": 4,
-  "title": "This testing PR is always open",
-  "description": "Ignore this. This is a testing PR that is always open.",
+  "id": 132,
+  "version": 0,
+  "title": "This is a test PR",
+  "description": "This is a test PR. Feel free to ignore.",
   "state": "OPEN",
   "open": true,
   "closed": false,
-  "createdDate": 1573644199945,
-  "updatedDate": 1573644199945,
+  "createdDate": 1618447968146,
+  "updatedDate": 1618447968146,
   "fromRef": {
    "id": "refs/heads/always-open-pr-bbs",
    "repository": {
@@ -31,12 +31,12 @@
   "locked": false,
   "author": {
    "user": {
-    "name": "thorsten",
-    "emailAddress": "thorsten@sourcegraph.com",
-    "id": 104,
-    "displayName": "thorsten",
+    "name": "erik",
+    "emailAddress": "erik@sourcegraph.com",
+    "id": 152,
+    "displayName": "Erik Seliger",
     "active": true,
-    "slug": "thorsten",
+    "slug": "erik",
     "type": "NORMAL"
    },
    "role": "AUTHOR",
@@ -48,21 +48,21 @@
   "links": {
    "self": [
     {
-     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/3"
+     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/132"
     }
    ]
   },
   "activities": [
    {
-    "id": 95,
-    "createdDate": 1573644199954,
+    "id": 3867,
+    "createdDate": 1618447968165,
     "user": {
-     "name": "thorsten",
-     "emailAddress": "thorsten@sourcegraph.com",
-     "id": 104,
-     "displayName": "thorsten",
+     "name": "erik",
+     "emailAddress": "erik@sourcegraph.com",
+     "id": 152,
+     "displayName": "Erik Seliger",
      "active": true,
-     "slug": "thorsten",
+     "slug": "erik",
      "type": "NORMAL"
     },
     "action": "OPENED"

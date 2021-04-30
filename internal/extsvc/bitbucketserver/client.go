@@ -549,15 +549,35 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 		}
 	}
 
+	// Minimal version of Reviewer, to reduce payload size sent.
+	type reviewer struct {
+		User struct {
+			Name string `json:"name"`
+		} `json:"user"`
+	}
+
 	type requestBody struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		State       string `json:"state"`
-		Open        bool   `json:"open"`
-		Closed      bool   `json:"closed"`
-		FromRef     Ref    `json:"fromRef"`
-		ToRef       Ref    `json:"toRef"`
-		Locked      bool   `json:"locked"`
+		Title       string     `json:"title"`
+		Description string     `json:"description"`
+		State       string     `json:"state"`
+		Open        bool       `json:"open"`
+		Closed      bool       `json:"closed"`
+		FromRef     Ref        `json:"fromRef"`
+		ToRef       Ref        `json:"toRef"`
+		Locked      bool       `json:"locked"`
+		Reviewers   []reviewer `json:"reviewers"`
+	}
+
+	defaultReviewers, err := c.FetchDefaultReviewers(ctx, pr)
+	if err != nil {
+		return errors.Wrap(err, "fetching default reviewers")
+	}
+
+	reviewers := make([]reviewer, 0, len(defaultReviewers))
+	for _, r := range defaultReviewers {
+		reviewers = append(reviewers, reviewer{User: struct {
+			Name string `json:"name"`
+		}{Name: r}})
 	}
 
 	// Bitbucket Server doesn't support GFM taskitems. But since we might add
@@ -574,6 +594,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 		FromRef:     pr.FromRef,
 		ToRef:       pr.ToRef,
 		Locked:      false,
+		Reviewers:   reviewers,
 	}
 
 	path := fmt.Sprintf(
@@ -582,7 +603,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 		pr.ToRef.Repository.Slug,
 	)
 
-	_, err := c.send(ctx, "POST", path, nil, payload, pr)
+	_, err = c.send(ctx, "POST", path, nil, payload, pr)
 	if err != nil {
 		if IsDuplicatePullRequest(err) {
 			pr, extractErr := ExtractDuplicatePullRequest(err)
@@ -596,6 +617,55 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 		return err
 	}
 	return nil
+}
+
+// FetchDefaultReviewers loads the suggested default reviewers for the given pr.
+func (c *Client) FetchDefaultReviewers(ctx context.Context, pr *PullRequest) ([]string, error) {
+	// Validate input.
+	for _, namedRef := range [...]struct {
+		name string
+		ref  Ref
+	}{
+		{"ToRef", pr.ToRef},
+		{"FromRef", pr.FromRef},
+	} {
+		if namedRef.ref.ID == "" {
+			return nil, errors.Errorf("%s id empty", namedRef.name)
+		}
+		if namedRef.ref.Repository.ID == 0 {
+			return nil, errors.Errorf("%s repository id empty", namedRef.name)
+		}
+		if namedRef.ref.Repository.Slug == "" {
+			return nil, errors.Errorf("%s repository slug empty", namedRef.name)
+		}
+		if namedRef.ref.Repository.Project.Key == "" {
+			return nil, errors.Errorf("%s project key empty", namedRef.name)
+		}
+	}
+
+	path := fmt.Sprintf(
+		"rest/default-reviewers/1.0/projects/%s/repos/%s/reviewers",
+		pr.ToRef.Repository.Project.Key,
+		pr.ToRef.Repository.Slug,
+	)
+	queryParams := url.Values{
+		"sourceRepoId": []string{strconv.Itoa(pr.FromRef.Repository.ID)},
+		"targetRepoId": []string{strconv.Itoa(pr.ToRef.Repository.ID)},
+		"sourceRefId":  []string{pr.FromRef.ID},
+		"targetRefId":  []string{pr.ToRef.ID},
+	}
+
+	var resp []User
+	_, err := c.send(ctx, "GET", path, queryParams, nil, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	reviewerNames := make([]string, 0, len(resp))
+	for _, r := range resp {
+		reviewerNames = append(reviewerNames, r.Name)
+	}
+	return reviewerNames, nil
 }
 
 // DeclinePullRequest declines and closes the given PullRequest, returning an error in case of failure.
