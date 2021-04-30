@@ -3,10 +3,9 @@ import React from 'react'
 
 import { SearchPatternType } from '../../../../graphql-operations'
 
-import { SearchSidebarProps } from './SearchSidebar'
-import { getSearchTypeLinks } from './SearchTypeLink'
+import { getSearchTypeLinks, SearchTypeLinksProps } from './SearchTypeLink'
 
-const defaultProps: Omit<SearchSidebarProps, 'settingsCascade'> = {
+const defaultProps: SearchTypeLinksProps = {
     caseSensitive: false,
     patternType: SearchPatternType.literal,
     versionContext: undefined,
@@ -15,7 +14,7 @@ const defaultProps: Omit<SearchSidebarProps, 'settingsCascade'> = {
 }
 
 describe('SearchTypeLink', () => {
-    it('should have correct links when type not apresent', () => {
+    it('should have correct links when type not present', () => {
         const links = getSearchTypeLinks(defaultProps)
         expect(mount(<>{links}</>)).toMatchSnapshot()
     })
