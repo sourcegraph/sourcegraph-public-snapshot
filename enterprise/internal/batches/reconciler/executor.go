@@ -112,7 +112,11 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		}
 	}
 
-	events := e.ch.Events()
+	events, err := e.ch.Events()
+	if err != nil {
+		log15.Error("Events", "err", err)
+		return err
+	}
 	state.SetDerivedState(ctx, e.tx.Repos(), e.ch, events)
 
 	if err := e.tx.UpsertChangesetEvents(ctx, events...); err != nil {

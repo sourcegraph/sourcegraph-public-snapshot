@@ -28,6 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 - `repo:contains(...)` built-in did not respect parameters that affect repo filtering (e.g., `repogroup`, `fork`). It now respects these. [#20339](https://github.com/sourcegraph/sourcegraph/pull/20339)
 - An issue where duplicate results would render for certain `or`-expressions. [#20480](https://github.com/sourcegraph/sourcegraph/pull/20480)
 - Issue where the search query bar suggests that some `lang` values are not valid. [#20534](https://github.com/sourcegraph/sourcegraph/pull/20534)
+- Pull request event webhooks received from GitHub with unexpected actions no longer cause panics.
 
 ### Removed
 

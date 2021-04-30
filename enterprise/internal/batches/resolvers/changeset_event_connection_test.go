@@ -88,7 +88,10 @@ func TestChangesetEventConnectionResolver(t *testing.T) {
 	})
 
 	// Create ChangesetEvents from the timeline items in the metadata.
-	events := changeset.Events()
+	events, err := changeset.Events()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := cstore.UpsertChangesetEvents(ctx, events...); err != nil {
 		t.Fatal(err)
 	}

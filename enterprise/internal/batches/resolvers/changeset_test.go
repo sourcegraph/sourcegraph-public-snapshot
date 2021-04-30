@@ -156,7 +156,10 @@ func TestChangesetResolver(t *testing.T) {
 			UpdatedAt: now,
 		},
 	})
-	events := syncedGitHubChangeset.Events()
+	events, err := syncedGitHubChangeset.Events()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := cstore.UpsertChangesetEvents(ctx, events...); err != nil {
 		t.Fatal(err)
 	}
