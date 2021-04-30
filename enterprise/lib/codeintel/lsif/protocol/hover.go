@@ -96,6 +96,18 @@ func (ms MarkedString) String() string {
 	return b.String()
 }
 
+type MarkupKind string
+
+const (
+	PlainText MarkupKind = "plaintext"
+	Markdown  MarkupKind = "markdown"
+)
+
+type MarkupContent struct {
+	Kind  MarkupKind
+	Value string
+}
+
 type TextDocumentHover struct {
 	Edge
 	OutV uint64 `json:"outV"`
