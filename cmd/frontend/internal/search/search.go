@@ -185,19 +185,19 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if fm, ok := result.ToFileMatch(); ok {
 				display = fm.Limit(display)
 
-				if syms := fm.Symbols(); len(syms) > 0 {
+				if syms := fm.FileMatch.Symbols; len(syms) > 0 {
 					symbols := make([]streamhttp.Symbol, 0, len(syms))
 					for _, sym := range syms {
-						kind := sym.SymbolMatch.Symbol.LSPKind()
+						kind := sym.Symbol.LSPKind()
 						kindString := "UNKNOWN"
 						if kind != 0 {
 							kindString = strings.ToUpper(kind.String())
 						}
 
 						symbols = append(symbols, streamhttp.Symbol{
-							URL:           sym.SymbolMatch.URL().String(),
-							Name:          sym.SymbolMatch.Symbol.Name,
-							ContainerName: sym.SymbolMatch.Symbol.Parent,
+							URL:           sym.URL().String(),
+							Name:          sym.Symbol.Name,
+							ContainerName: sym.Symbol.Parent,
 							Kind:          kindString,
 						})
 					}
