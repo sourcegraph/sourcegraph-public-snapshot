@@ -3,6 +3,7 @@ import React from 'react'
 
 import { ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { ChangesetAddedIcon, ChangesetModifiedIcon, ChangesetRemovedIcon } from '../icons'
+
 import styles from './PreviewNodeIndicator.module.scss'
 
 const containerClassName = classNames(

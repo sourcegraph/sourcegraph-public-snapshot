@@ -7,9 +7,9 @@ import { ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 
 import { queryChangesetSpecFileDiffs } from './backend'
+import styles from './ChangesetApplyPreviewNode.module.scss'
 import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNode'
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
-import styles from './ChangesetApplyPreviewNode.module.scss'
 
 export interface ChangesetApplyPreviewNodeProps extends ThemeProps {
     node: ChangesetApplyPreviewFields
