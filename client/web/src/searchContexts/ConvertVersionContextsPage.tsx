@@ -10,7 +10,6 @@ import { useEventObservable, useObservable } from '@sourcegraph/shared/src/util/
 import { Page } from '../components/Page'
 import { VersionContext } from '../schema/site.schema'
 import { SearchContextProps } from '../search'
-import { isSearchContextAvailable } from '../search/backend'
 
 import { ConvertVersionContextNode } from './ConvertVersionContextNode'
 
@@ -49,14 +48,14 @@ export const ConvertVersionContextsPage: React.FunctionComponent<ConvertVersionC
                             searchContextSpec,
                             isConvertedUpdates: new Subject<void>(),
                         }),
-                        isSearchContextAvailable(searchContextSpec),
+                        isSearchContextSpecAvailable(searchContextSpec),
                     ])
                 }),
                 map(([versionContext, isConverted]) => ({ ...versionContext, isConverted })),
                 toArray(),
                 startWith(LOADING)
             )
-        }, [availableVersionContexts])
+        }, [isSearchContextSpecAvailable, availableVersionContexts])
     )
 
     // Sort unconverted version contexts to the front of the array
@@ -134,17 +133,17 @@ export const ConvertVersionContextsPage: React.FunctionComponent<ConvertVersionC
                             {convertAllResult === LOADING ? 'Converting All...' : 'Convert All'}
                         </button>
                     </div>
-                    <hr className="mt-3 mb-0" />
                     {typeof convertAllResult !== 'undefined' &&
                         convertAllResult !== LOADING &&
                         (convertAllResult === 0 ? (
-                            <div className="alert alert-info">No version contexts to convert.</div>
+                            <div className="alert alert-info mt-3">No version contexts to convert.</div>
                         ) : (
-                            <div className="alert alert-success test-convert-all-search-contexts-success">
+                            <div className="alert alert-success test-convert-all-search-contexts-success mt-3">
                                 Sucessfully converted <strong>{convertAllResult}</strong> version contexts into search
                                 contexts.
                             </div>
                         ))}
+                    <hr className="mt-3 mb-0" />
                     {versionContexts && versionContexts === LOADING && (
                         <div className="d-flex justify-content-center mt-3">
                             <LoadingSpinner />

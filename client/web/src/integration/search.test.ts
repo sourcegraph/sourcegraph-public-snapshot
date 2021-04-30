@@ -808,10 +808,13 @@ describe('Search', () => {
         })
 
         test('Highlight tour step should not be visible if already seen', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp', {
+                waitUntil: 'networkidle0',
+            })
             await driver.page.evaluate(() =>
                 localStorage.setItem('has-seen-search-contexts-dropdown-highlight-tour-step', 'true')
             )
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             expect(await isSearchContextHighlightTourStepVisible()).toBeFalsy()
         })
