@@ -19,24 +19,24 @@ var bulkJobColumns = []*sqlf.Query{
 	WHEN COUNT(*) FILTER (WHERE changeset_jobs.state = %s) > 0 THEN %s
 	ELSE %s
 END AS state`,
-		btypes.ReconcilerStateProcessing.ToDB(),
-		btypes.ReconcilerStateQueued.ToDB(),
-		btypes.ReconcilerStateErrored.ToDB(),
+		btypes.ChangesetJobStateProcessing.ToDB(),
+		btypes.ChangesetJobStateQueued.ToDB(),
+		btypes.ChangesetJobStateErrored.ToDB(),
 		btypes.BulkJobStateProcessing,
-		btypes.ReconcilerStateFailed.ToDB(),
+		btypes.ChangesetJobStateFailed.ToDB(),
 		btypes.BulkJobStateFailed,
 		btypes.BulkJobStateCompleted,
 	),
 	sqlf.Sprintf(
 		"CAST(COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) AS float) / CAST(COUNT(*) AS float) AS progress",
-		btypes.ReconcilerStateCompleted.ToDB(),
-		btypes.ReconcilerStateFailed.ToDB(),
+		btypes.ChangesetJobStateCompleted.ToDB(),
+		btypes.ChangesetJobStateFailed.ToDB(),
 	),
 	sqlf.Sprintf("MIN(changeset_jobs.created_at) AS created_at"),
 	sqlf.Sprintf(
 		"CASE WHEN (COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) / COUNT(*)) = 1.0 THEN MAX(changeset_jobs.finished_at) ELSE null END AS finished_at",
-		btypes.ReconcilerStateCompleted.ToDB(),
-		btypes.ReconcilerStateFailed.ToDB(),
+		btypes.ChangesetJobStateCompleted.ToDB(),
+		btypes.ChangesetJobStateFailed.ToDB(),
 	),
 }
 
