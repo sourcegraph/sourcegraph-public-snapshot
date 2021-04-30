@@ -553,7 +553,7 @@ func TestDeleteUploadByID(t *testing.T) {
 	}
 
 	// Ensure record was deleted
-	if states, err := getStates(1); err != nil {
+	if states, err := getUploadStates(1); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else if diff := cmp.Diff(map[int]string{1: "deleted"}, states); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
@@ -641,7 +641,7 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 	}
 
 	// Ensure records were deleted
-	if states, err := getStates(uploadIDs...); err != nil {
+	if states, err := getUploadStates(uploadIDs...); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else {
 		deletedStates := 0
@@ -676,7 +676,7 @@ func TestHardDeleteUploadByID(t *testing.T) {
 	}
 
 	// Ensure records were deleted
-	if states, err := getStates(1); err != nil {
+	if states, err := getUploadStates(1); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else if len(states) != 0 {
 		t.Fatalf("unexpected record")
@@ -727,7 +727,7 @@ func TestSoftDeleteOldUploads(t *testing.T) {
 	}
 
 	// Ensure record was deleted
-	if states, err := getStates(1, 2, 3, 4, 5, 6, 7, 8, 9); err != nil {
+	if states, err := getUploadStates(1, 2, 3, 4, 5, 6, 7, 8, 9); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
 		t.Errorf("unexpected upload (-want +got):\n%s", diff)
