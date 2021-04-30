@@ -76,11 +76,13 @@ func TestGithubSource_GetRepo(t *testing.T) {
 						},
 					},
 					Metadata: &github.Repository{
-						ID:            "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
-						DatabaseID:    41288708,
-						NameWithOwner: "sourcegraph/sourcegraph",
-						Description:   "Code search and navigation tool (self-hosted)",
-						URL:           "https://github.com/sourcegraph/sourcegraph",
+						ID:             "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+						DatabaseID:     41288708,
+						NameWithOwner:  "sourcegraph/sourcegraph",
+						Description:    "Code search and navigation tool (self-hosted)",
+						URL:            "https://github.com/sourcegraph/sourcegraph",
+						StargazerCount: 2220,
+						ForkCount:      164,
 					},
 				}
 

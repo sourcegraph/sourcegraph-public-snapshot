@@ -446,6 +446,8 @@ fragment RepositoryFields on Repository {
 	isLocked
 	isDisabled
 	viewerPermission
+	stargazerCount
+	forkCount
 }
 	`
 	}
@@ -464,6 +466,8 @@ fragment RepositoryFields on Repository {
 	isArchived
 	isLocked
 	isDisabled
+	stargazerCount
+	forkCount
 }
 	`
 }
