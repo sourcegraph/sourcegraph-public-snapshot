@@ -395,6 +395,12 @@ export const validateFilter = (
         // account for finite discrete values and exemption of checks.
         return { valid: true }
     }
+    if (typeAndDefinition.type === FilterType.lang) {
+        // Lang filter is exempt because our discrete completion values are only a subset of all valid
+        // language values, which are captured by a Go library. The backend takes care of returning an
+        // alert for invalid values.
+        return { valid: true }
+    }
     const { definition } = typeAndDefinition
     if (definition.discreteValues && (!value || !isValidDiscreteValue(definition, value, value.value))) {
         return {

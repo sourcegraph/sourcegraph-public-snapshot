@@ -59,10 +59,22 @@ const filters: FilteredConnectionFilter[] = [
                 args: { state: LSIFUploadState.ERRORED },
             },
             {
+                label: 'Processing',
+                value: 'processing',
+                tooltip: 'Show processing uploads only',
+                args: { state: LSIFUploadState.PROCESSING },
+            },
+            {
                 label: 'Queued',
                 value: 'queued',
                 tooltip: 'Show queued uploads only',
                 args: { state: LSIFUploadState.QUEUED },
+            },
+            {
+                label: 'Uploading',
+                value: 'uploading',
+                tooltip: 'Show uploading uploads only',
+                args: { state: LSIFUploadState.UPLOADING },
             },
         ],
     },

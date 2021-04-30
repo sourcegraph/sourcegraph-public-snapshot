@@ -598,9 +598,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -707,9 +704,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -820,9 +814,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -929,9 +920,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -1042,9 +1030,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -1151,9 +1136,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -1264,9 +1246,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -1373,9 +1352,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -1486,9 +1462,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -1595,9 +1568,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -2054,9 +2024,6 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -2165,9 +2132,6 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -2274,9 +2238,6 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -2967,9 +2928,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -3076,9 +3034,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -3189,9 +3144,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -3298,9 +3250,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -3411,9 +3360,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -3520,9 +3466,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -3633,9 +3576,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -3742,9 +3682,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -3855,9 +3792,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -3964,9 +3898,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -4077,9 +4008,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -4186,9 +4114,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
