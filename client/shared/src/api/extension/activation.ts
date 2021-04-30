@@ -159,7 +159,7 @@ export function activateExtensions(
                                     // We only want to log non-default extension events
                                     if (!defaultExtensions[id]) {
                                         // Hash extension IDs that specify host, since that means that it's a private registry extension.
-                                        const telemetryExtensionID = splitExtensionID(id).host ? hashCode(id, 20) : id
+                                        const telemetryExtensionID = splitExtensionID(id).host ? hashCode(id) : id
                                         mainAPI
                                             .logEvent('ExtensionActivation', {
                                                 extension_id: telemetryExtensionID,
