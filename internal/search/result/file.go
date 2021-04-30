@@ -25,7 +25,7 @@ func (f *File) URL() *url.URL {
 	path.Grow(len("/@/-/blob/") + len(f.Repo.Name) + len(f.Path) + 20)
 	path.WriteRune('/')
 	path.WriteString(string(f.Repo.Name))
-	if f.InputRev != nil {
+	if f.InputRev != nil && len(*f.InputRev) > 0 {
 		path.WriteRune('@')
 		path.WriteString(*f.InputRev)
 	}
