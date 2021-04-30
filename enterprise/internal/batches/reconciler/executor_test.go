@@ -988,7 +988,6 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				sourcer,
 				true,
 				cstore,
-
 				plan,
 			)
 
