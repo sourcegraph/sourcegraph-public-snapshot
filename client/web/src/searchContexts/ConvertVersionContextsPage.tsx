@@ -1,0 +1,172 @@
+import React, { useCallback, useMemo, useState } from 'react'
+import { combineLatest, concat, from, Observable, of, Subject } from 'rxjs'
+import { catchError, concatMap, delay, map, mergeMap, reduce, startWith, tap, toArray } from 'rxjs/operators'
+
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useEventObservable, useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { Page } from '../components/Page'
+import { VersionContext } from '../schema/site.schema'
+import { SearchContextProps } from '../search'
+import { isSearchContextAvailable } from '../search/backend'
+
+import { ConvertVersionContextNode } from './ConvertVersionContextNode'
+
+export interface ConvertVersionContextsPageProps
+    extends Pick<SearchContextProps, 'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable'> {
+    availableVersionContexts: VersionContext[] | undefined
+}
+
+const initialItemsToShow = 15
+const incrementalItemsToShow = 10
+const LOADING = 'LOADING' as const
+
+const versionContextNameToSearchContextSpecRegExp = /\s+/g
+
+export const ConvertVersionContextsPage: React.FunctionComponent<ConvertVersionContextsPageProps> = ({
+    availableVersionContexts,
+    convertVersionContextToSearchContext,
+    isSearchContextSpecAvailable,
+}) => {
+    const itemKey = useCallback((item: VersionContext): string => item.name, [])
+
+    const versionContexts = useObservable(
+        useMemo(() => {
+            if (!availableVersionContexts) {
+                return of([])
+            }
+            return from(availableVersionContexts).pipe(
+                concatMap(versionContext => {
+                    const searchContextSpec = versionContext.name.replace(
+                        versionContextNameToSearchContextSpecRegExp,
+                        '_'
+                    )
+                    return combineLatest([
+                        of({
+                            ...versionContext,
+                            searchContextSpec,
+                            isConvertedUpdates: new Subject<void>(),
+                        }),
+                        isSearchContextAvailable(searchContextSpec),
+                    ])
+                }),
+                map(([versionContext, isConverted]) => ({ ...versionContext, isConverted })),
+                toArray(),
+                startWith(LOADING)
+            )
+        }, [availableVersionContexts])
+    )
+
+    // Sort unconverted version contexts to the front of the array
+    const sortedVersionContexts = useMemo(
+        () =>
+            versionContexts && versionContexts !== LOADING
+                ? versionContexts.sort((a, b) => Number(a.isConverted) - Number(b.isConverted))
+                : [],
+        [versionContexts]
+    )
+
+    const renderResult = useCallback(
+        (item: VersionContext & { isConvertedUpdates: Subject<void>; searchContextSpec: string }): JSX.Element => (
+            <ConvertVersionContextNode
+                name={item.name}
+                searchContextSpec={item.searchContextSpec}
+                isConvertedUpdates={item.isConvertedUpdates}
+                isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                convertVersionContextToSearchContext={convertVersionContextToSearchContext}
+            />
+        ),
+        [isSearchContextSpecAvailable, convertVersionContextToSearchContext]
+    )
+
+    const [itemsToShow, setItemsToShow] = useState(initialItemsToShow)
+    const onBottomHit = useCallback(() => {
+        setItemsToShow(items => Math.min(sortedVersionContexts.length || 0, items + incrementalItemsToShow))
+    }, [sortedVersionContexts])
+
+    const [convertAll, convertAllResult] = useEventObservable(
+        useCallback(
+            (event: Observable<React.MouseEvent>) =>
+                event.pipe(
+                    mergeMap(() => {
+                        const convertAll = from(sortedVersionContexts).pipe(
+                            mergeMap(({ name, isConvertedUpdates }) =>
+                                convertVersionContextToSearchContext(name).pipe(
+                                    tap(() => isConvertedUpdates.next()),
+                                    catchError(error => [asError(error)])
+                                )
+                            ),
+                            map(result => (isErrorLike(result) ? 0 : 1)),
+                            reduce((accumulator, result) => accumulator + result, 0)
+                        )
+                        return concat(of(LOADING), convertAll.pipe(delay(500)))
+                    })
+                ),
+            [convertVersionContextToSearchContext, sortedVersionContexts]
+        )
+    )
+
+    return (
+        <div className="w-100">
+            <Page>
+                <div className="convert-version-contexts-page">
+                    <h1 className="m-0">Convert version contexts</h1>
+                    <div className="text-muted mt-2">
+                        Convert existing version contexts defined in site config into search contexts.{' '}
+                        <a
+                            href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts-experimental"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            Learn more
+                        </a>
+                    </div>
+                    <div className="convert-version-contexts-page__header d-flex flex-row justify-content-between align-items-center mt-4">
+                        <h3 className="convert-version-contexts-page__header-title">Available version contexts</h3>
+                        <button
+                            type="button"
+                            className="btn btn-outline-primary test-convert-all-search-contexts-btn"
+                            onClick={convertAll}
+                            disabled={convertAllResult === LOADING}
+                        >
+                            {convertAllResult === LOADING ? 'Converting All...' : 'Convert All'}
+                        </button>
+                    </div>
+                    <hr className="mt-3 mb-0" />
+                    {typeof convertAllResult !== 'undefined' &&
+                        convertAllResult !== LOADING &&
+                        (convertAllResult === 0 ? (
+                            <div className="alert alert-info">No version contexts to convert.</div>
+                        ) : (
+                            <div className="alert alert-success test-convert-all-search-contexts-success">
+                                Sucessfully converted <strong>{convertAllResult}</strong> version contexts into search
+                                contexts.
+                            </div>
+                        ))}
+                    {versionContexts && versionContexts === LOADING && (
+                        <div className="d-flex justify-content-center mt-3">
+                            <LoadingSpinner />
+                        </div>
+                    )}
+                    {versionContexts && versionContexts !== LOADING && sortedVersionContexts.length > 0 && (
+                        <VirtualList<VersionContext & { isConvertedUpdates: Subject<void>; searchContextSpec: string }>
+                            itemsToShow={itemsToShow}
+                            onShowMoreItems={onBottomHit}
+                            items={sortedVersionContexts}
+                            itemProps={undefined}
+                            itemKey={itemKey}
+                            renderItem={renderResult}
+                        />
+                    )}
+                    {versionContexts && versionContexts !== LOADING && sortedVersionContexts.length === 0 && (
+                        <div className="d-flex justify-content-center mt-3 text-muted">
+                            No version contexts to convert.
+                        </div>
+                    )}
+                </div>
+            </Page>
+        </div>
+    )
+}

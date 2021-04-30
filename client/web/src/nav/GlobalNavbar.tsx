@@ -55,7 +55,7 @@ interface Props
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        SearchContextProps,
+        Omit<SearchContextProps, 'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable'>,
         CodeMonitoringProps,
         OnboardingTourProps {
     history: H.History

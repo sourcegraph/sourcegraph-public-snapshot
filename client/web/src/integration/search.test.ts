@@ -750,9 +750,9 @@ describe('Search', () => {
                 }),
             })
 
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts?tab=convert-version-contexts')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/convert-version-contexts')
 
-            await driver.page.waitForSelector('.test-convert-version-context-btn')
+            await driver.page.waitForSelector('.test-convert-version-context-btn', { visible: true })
             await driver.page.click('.test-convert-version-context-btn')
 
             await driver.page.waitForSelector('.convert-version-context-node .alert-success')
@@ -771,8 +771,10 @@ describe('Search', () => {
                 }),
             })
 
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts?tab=convert-version-contexts')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/convert-version-contexts')
 
+            // Wait for individual nodes to load
+            await driver.page.waitForSelector('.test-convert-version-context-btn', { visible: true })
             await driver.page.waitForSelector('.test-convert-all-search-contexts-btn')
             await driver.page.click('.test-convert-all-search-contexts-btn')
 
@@ -788,7 +790,9 @@ describe('Search', () => {
             const successText = await driver.page.evaluate(
                 () => document.querySelector('.test-convert-all-search-contexts-success')?.textContent
             )
-            expect(successText).toBe(`Sucessfully converted ${versionContexts.length} version contexts.`)
+            expect(successText).toBe(
+                `Sucessfully converted ${versionContexts.length} version contexts into search contexts.`
+            )
 
             // Check that individual context nodes have 'Converted' text
             const convertedContexts = await driver.page.evaluate(

@@ -71,7 +71,13 @@ const SearchContextMenuItem: React.FunctionComponent<{
 }
 
 export interface SearchContextMenuProps
-    extends Omit<SearchContextProps, 'showSearchContext' | 'setSelectedSearchContextSpec'> {
+    extends Omit<
+        SearchContextProps,
+        | 'showSearchContext'
+        | 'setSelectedSearchContextSpec'
+        | 'convertVersionContextToSearchContext'
+        | 'isSearchContextSpecAvailable'
+    > {
     closeMenu: () => void
     selectSearchContextSpec: (spec: string) => void
 }

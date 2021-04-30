@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { merge, Observable, of, Subject } from 'rxjs'
 import { catchError, delay, mergeMap, switchMap } from 'rxjs/operators'
 
@@ -6,23 +6,23 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { ConvertVersionContextsTabProps } from './ConvertVersionContextsTab'
+import { ConvertVersionContextsPageProps } from './ConvertVersionContextsPage'
 
 export interface ConvertVersionContextNodeProps
     extends Pick<
-        ConvertVersionContextsTabProps,
+        ConvertVersionContextsPageProps,
         'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable'
     > {
     name: string
+    searchContextSpec: string
     isConvertedUpdates: Subject<void>
 }
 
 const LOADING = 'LOADING' as const
 
-const versionContextNameToSearchContextSpecRegExp = /\s+/g
-
 export const ConvertVersionContextNode: React.FunctionComponent<ConvertVersionContextNodeProps> = ({
     name,
+    searchContextSpec,
     isConvertedUpdates,
     convertVersionContextToSearchContext,
     isSearchContextSpecAvailable,
@@ -42,8 +42,6 @@ export const ConvertVersionContextNode: React.FunctionComponent<ConvertVersionCo
         )
     )
 
-    const searchContextSpec = useMemo(() => name.replace(versionContextNameToSearchContextSpecRegExp, '_'), [name])
-
     const [isConverted, setIsConverted] = useState<boolean | typeof LOADING>(false)
     useEffect(() => {
         const subscription = isConvertedUpdates
@@ -60,7 +58,7 @@ export const ConvertVersionContextNode: React.FunctionComponent<ConvertVersionCo
     useEffect(() => isConvertedUpdates.next(), [isConvertedUpdates])
 
     return (
-        <div className="convert-version-context-node card mb-1 p-3 d-flex justify-content-between align-items-center flex-row">
+        <div className="convert-version-context-node d-flex justify-content-between align-items-center flex-row">
             <div>{name}</div>
             {(convertOrError === LOADING || isConverted === LOADING) && <LoadingSpinner />}
             {isConverted === false && !convertOrError && (
