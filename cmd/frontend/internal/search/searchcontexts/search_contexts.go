@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	validateSearchContextNameRegexp   = lazyregexp.New(`^[a-zA-Z0-9_\-\/]+$`)
+	validateSearchContextNameRegexp   = lazyregexp.New(`^[a-zA-Z0-9_\-\/\.]+$`)
 	namespacedSearchContextSpecRegexp = lazyregexp.New(searchContextSpecPrefix + `(.*?)\/(.*)`)
 )
 
