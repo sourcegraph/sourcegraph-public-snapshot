@@ -12,7 +12,7 @@
         }
     }
     &__bg-expanded {
-        background-color: rgba(var(--oc-blue-0), 0.5);
+        background-color: var(--oc-blue-0);
     }
     &__expanded-section {
         // Make it full width in the current row.
