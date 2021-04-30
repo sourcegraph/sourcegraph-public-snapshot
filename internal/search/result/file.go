@@ -1,6 +1,9 @@
 package result
 
 import (
+	"net/url"
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -15,6 +18,20 @@ type File struct {
 	Repo     types.RepoName `json:"-"`
 	CommitID api.CommitID   `json:"-"`
 	Path     string
+}
+
+func (f *File) URL() *url.URL {
+	var path strings.Builder
+	path.Grow(len("/@/-/blob/") + len(f.Repo.Name) + len(f.Path) + 20)
+	path.WriteRune('/')
+	path.WriteString(string(f.Repo.Name))
+	if f.InputRev != nil {
+		path.WriteRune('@')
+		path.WriteString(*f.InputRev)
+	}
+	path.WriteString("/-/blob/")
+	path.WriteString(f.Path)
+	return &url.URL{Path: path.String()}
 }
 
 // FileMatch represents either:
