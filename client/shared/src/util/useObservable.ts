@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Observable, Observer, Subject } from 'rxjs'
+import { BehaviorSubject, Observable, Observer, Subject } from 'rxjs'
 
 /**
  * Returns a function that will trigger an error on the next render,
@@ -22,12 +22,12 @@ export function useError(): (error: any) => void {
  * @param observable The Observable to subscribe to. If this is the return value of a function, you should use `useMemo()` to make sure it is not resubscribed on every render.
  * @throws If the Observable pipeline errors.
  */
-export function useObservable<T>(observable: Observable<T>): T | undefined {
+export function useObservable<T>(observable: Observable<T> | BehaviorSubject<T>): T | undefined {
+    const [currentValue, setCurrentValue] = useState<T | undefined>((observable as BehaviorSubject<T>).value)
     const [error, setError] = useState<any>()
-    const [currentValue, setCurrentValue] = useState<T>()
 
     useEffect(() => {
-        setCurrentValue(undefined)
+        setCurrentValue((observable as BehaviorSubject<T>).value)
         const subscription = observable.subscribe({ next: setCurrentValue, error: setError })
         return () => subscription.unsubscribe()
     }, [observable])
