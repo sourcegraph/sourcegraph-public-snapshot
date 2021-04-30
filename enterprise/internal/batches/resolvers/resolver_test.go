@@ -1068,12 +1068,19 @@ func TestCreateChangesetComments(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, true).ID
 	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-comments", userID)
+	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-comments-other", userID)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-comments", userID, batchSpec.ID)
+	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-comments-other", userID, otherBatchSpec.ID)
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
 	repo := repos[0]
 	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      batchChange.ID,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
+	})
+	otherChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:             repo.ID,
+		BatchChange:      otherBatchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
 	})
 
@@ -1118,6 +1125,19 @@ func TestCreateChangesetComments(t *testing.T) {
 			t.Fatalf("expected single errors, but got none")
 		}
 		if have, want := errs[0].Message, "specify at least one changeset"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("changeset in different batch change fails", func(t *testing.T) {
+		input := generateInput()
+		input["changesets"] = []string{string(marshalChangesetID(otherChangeset.ID))}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateChangesetComments)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
 			t.Fatalf("wrong error. want=%q, have=%q", want, have)
 		}
 	})
