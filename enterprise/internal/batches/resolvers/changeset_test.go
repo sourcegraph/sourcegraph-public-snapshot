@@ -34,7 +34,7 @@ func TestChangesetResolver(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, clock)
+	cstore := store.NewWithClock(db, nil, clock)
 	esStore := database.ExternalServicesWith(cstore)
 	repoStore := database.ReposWith(cstore)
 

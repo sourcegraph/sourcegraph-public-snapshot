@@ -36,7 +36,7 @@ func TestNullIDResilience(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
 	db := dbtesting.GetDB(t)
-	sr := New(store.New(db))
+	sr := New(store.New(db, nil))
 
 	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil)
 	if err != nil {
@@ -103,7 +103,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -283,7 +283,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -362,7 +362,7 @@ func TestApplyBatchChange(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, clock)
+	cstore := store.NewWithClock(db, nil, clock)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -517,7 +517,7 @@ func TestCreateBatchChange(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
@@ -583,7 +583,7 @@ func TestMoveBatchChange(t *testing.T) {
 	orgName := "move-batch-change-test"
 	orgID := ct.InsertTestOrg(t, db, orgName)
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec:         ct.TestRawBatchSpec,
@@ -842,11 +842,11 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 
-	pruneUserCredentials(t, db)
+	pruneUserCredentials(t, db, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 
 	r := &Resolver{store: cstore}
 	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
@@ -972,11 +972,11 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 
-	pruneUserCredentials(t, db)
+	pruneUserCredentials(t, db, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 
 	authenticator := &auth.OAuthBearerToken{Token: "SOSECRET"}
 	userCred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{

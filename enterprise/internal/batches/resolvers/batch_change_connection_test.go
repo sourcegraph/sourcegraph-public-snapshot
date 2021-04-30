@@ -29,7 +29,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -184,7 +184,7 @@ func TestBatchChangesListing(t *testing.T) {
 
 	orgID := ct.InsertTestOrg(t, db, "org")
 
-	store := store.New(db)
+	store := store.New(db, nil)
 
 	r := &Resolver{store: store}
 	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
