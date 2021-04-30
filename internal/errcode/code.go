@@ -182,6 +182,15 @@ func IsNonRetryable(err error) bool {
 	})
 }
 
+// MakeNonRetryable makes any error non-retryable.
+func MakeNonRetryable(err error) error {
+	return nonRetryableError{err}
+}
+
+type nonRetryableError struct{ error }
+
+func (nonRetryableError) NonRetryable() bool { return true }
+
 // isErrorPredicate returns true if err or one of its causes returns true when
 // passed to p.
 func isErrorPredicate(err error, p func(err error) bool) bool {
