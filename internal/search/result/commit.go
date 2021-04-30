@@ -75,8 +75,8 @@ func (r *CommitMatch) Key() Key {
 	}
 	return Key{
 		TypeRank: typeRank,
-		Repo:     string(r.RepoName.Name),
-		Commit:   string(r.Commit.ID),
+		Repo:     r.RepoName.Name,
+		Commit:   r.Commit.ID,
 	}
 }
 

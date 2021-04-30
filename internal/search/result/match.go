@@ -1,6 +1,9 @@
 package result
 
-import "github.com/sourcegraph/sourcegraph/internal/search/filter"
+import (
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+)
 
 // Match is *FileMatch | *RepoMatch | *CommitMatch. We have a private method
 // to ensure only those types implement Match.
@@ -40,11 +43,11 @@ type Key struct {
 	TypeRank int
 
 	// Repo is the name of the repo the match belongs to
-	Repo string
+	Repo api.RepoName
 
 	// Commit is the commit hash of the commit the match belongs to.
 	// Empty if there is no commit associated with the match (e.g. RepoMatch)
-	Commit string
+	Commit api.CommitID
 
 	// Path is the path of the file the match belongs to.
 	// Empty if there is no file associated with the match (e.g. RepoMatch or CommitMatch)
