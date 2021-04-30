@@ -117,7 +117,7 @@ func (fm *FileMatch) Limit(limit int) int {
 
 func (fm *FileMatch) Key() Key {
 	return Key{
-		TypeRank: 0,
+		TypeRank: FileMatchRank,
 		Repo:     string(fm.Repo.Name),
 		Commit:   string(fm.CommitID),
 		Path:     fm.Path,

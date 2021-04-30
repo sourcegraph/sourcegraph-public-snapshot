@@ -16,18 +16,27 @@ type Match interface {
 	searchResultMarker()
 }
 
-var _ Match = (*FileMatch)(nil)
-var _ Match = (*RepoMatch)(nil)
-var _ Match = (*CommitMatch)(nil)
+// Guard to ensure all match types implement the interface
+var (
+	_ Match = (*FileMatch)(nil)
+	_ Match = (*RepoMatch)(nil)
+	_ Match = (*CommitMatch)(nil)
+)
+
+// Match ranks are used for sorting the different match types.
+// Match types with lower ranks will be sorted before match types
+// with higher ranks.
+const (
+	FileMatchRank   = 0
+	CommitMatchRank = 1
+	DiffMatchRank   = 2
+	RepoMatchRank   = 3
+)
 
 // Key is a sorting or deduplicating key for a Match.
 // It contains all the identifying information for the Match.
 type Key struct {
 	// TypeRank is the sorting rank of the type this key belongs to.
-	// FileMatch = 0
-	// CommitMatch (Commit) = 1
-	// CommitMatch (Diff) = 2
-	// RepoMatch = 3
 	TypeRank int
 
 	// Repo is the name of the repo the match belongs to

@@ -50,7 +50,7 @@ func (r *RepoMatch) URL() *url.URL {
 
 func (r *RepoMatch) Key() Key {
 	return Key{
-		TypeRank: 2,
+		TypeRank: RepoMatchRank,
 		Repo:     string(r.Name),
 	}
 }

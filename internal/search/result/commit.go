@@ -69,9 +69,9 @@ func (r *CommitMatch) Select(path filter.SelectPath) Match {
 
 // Key implements Match interface's Key() method
 func (r *CommitMatch) Key() Key {
-	typeRank := 1
+	typeRank := CommitMatchRank
 	if r.DiffPreview != nil {
-		typeRank = 2
+		typeRank = DiffMatchRank
 	}
 	return Key{
 		TypeRank: typeRank,
