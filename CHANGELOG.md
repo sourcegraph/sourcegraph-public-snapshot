@@ -19,7 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- When `type:repo` is specified, Sourcegraph will return results where repository names match all of the patterns in the query, independent of order. Spaces are insignificant unless escaped or quoted when regexp is toggled on. Previously, pattern order and spaces were significant, and would rarely yield results for queries like `type:repo org name`. Note: prefer filtering repository names with `repo:<pattern>` syntax rather than `type:repo`. [#20539](https://github.com/sourcegraph/sourcegraph/pull/20539)
 
 ### Fixed
 

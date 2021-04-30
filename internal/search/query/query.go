@@ -60,7 +60,7 @@ func For(searchType SearchType) step {
 		processType = succeeds(labelStructural, ellipsesForHoles, substituteConcat(space))
 	}
 	normalize := succeeds(LowercaseFieldNames, SubstituteAliases(searchType), SubstituteCountAll)
-	return sequence(normalize, processType)
+	return sequence(normalize, typeRepoToFilter, processType)
 }
 
 // Init creates a step from an input string and search type. It parses the
@@ -104,13 +104,14 @@ func Validate(disjuncts [][]Node) error {
 type BasicPass func(Basic) Basic
 
 // MapPlan applies a conversion to all Basic queries in a plan. It expects a
-// valid plan. guarantee transformation succeeds.
-func MapPlan(plan Plan, pass BasicPass) Plan {
-	updated := make([]Basic, 0, len(plan))
-	for _, query := range plan {
-		updated = append(updated, pass(query))
+// valid plan. It guarantees transformation succeeds.
+func MapPlan(plan Plan, passes ...BasicPass) Plan {
+	for _, pass := range passes {
+		for i, query := range plan {
+			plan[i] = pass(query)
+		}
 	}
-	return Plan(updated)
+	return plan
 }
 
 func ToPlan(disjuncts [][]Node) (Plan, error) {
@@ -137,7 +138,6 @@ func Pipeline(steps ...step) (Plan, error) {
 	if err := Validate(disjuncts); err != nil {
 		return nil, err
 	}
-
 	plan, err := ToPlan(disjuncts)
 	if err != nil {
 		return nil, err

@@ -95,6 +95,10 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			input: "type:symbol select:symbol.timelime",
 			want:  "invalid field 'timelime' on select type 'symbol'",
 		},
+		{
+			input: "type:repo sucks more than type:file",
+			want:  "`type:repo` may not be used with any other `type:` parameter. The query contains both `type:repo` and `type:file`",
+		},
 	}
 	for _, c := range cases {
 		t.Run("validate and/or query", func(t *testing.T) {
@@ -342,58 +346,6 @@ func TestContainsRefGlobs(t *testing.T) {
 			got := ContainsRefGlobs(query)
 			if got != c.want {
 				t.Errorf("got %t, expected %t", got, c.want)
-			}
-		})
-	}
-}
-
-func TestHasTypeRepo(t *testing.T) {
-	tests := []struct {
-		query           string
-		wantHasTypeRepo bool
-	}{
-		{
-			query:           "sourcegraph type:repo",
-			wantHasTypeRepo: true,
-		},
-		{
-			query:           "sourcegraph type:symbol type:repo",
-			wantHasTypeRepo: true,
-		},
-		{
-			query:           "(sourcegraph type:repo) or (goreman type:repo)",
-			wantHasTypeRepo: true,
-		},
-		{
-			query:           "sourcegraph repohasfile:Dockerfile type:repo",
-			wantHasTypeRepo: true,
-		},
-		{
-			query:           "repo:sourcegraph type:repo",
-			wantHasTypeRepo: true,
-		},
-		{
-			query:           "repo:sourcegraph",
-			wantHasTypeRepo: false,
-		},
-		{
-			query:           "repository",
-			wantHasTypeRepo: false,
-		},
-		{
-			query:           "",
-			wantHasTypeRepo: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.query, func(t *testing.T) {
-			q, err := ParseLiteral(tt.query)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got := HasTypeRepo(q); got != tt.wantHasTypeRepo {
-				t.Fatalf("got %t, expected %t", got, tt.wantHasTypeRepo)
 			}
 		})
 	}

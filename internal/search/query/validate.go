@@ -445,6 +445,9 @@ func validatePureLiteralPattern(nodes []Node, balanced bool) error {
 		if !balanced {
 			return errors.New("this literal search query contains unbalanced parentheses. I tried to guess what you meant, but wasn't able to. Maybe you missed a parenthesis? Otherwise, try using the content: filter if the pattern is unbalanced")
 		}
+		if HasTypeRepo(nodes) {
+			return errors.New("this query expression is not compatible with `type:repo`. You might try adding an `and` keyword before or after any parenthesized expressions.")
+		}
 		return errors.New("i'm having trouble understanding that query. The combination of parentheses is the problem. Try using the content: filter to quote patterns that contain parentheses")
 	}
 	return nil

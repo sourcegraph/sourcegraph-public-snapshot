@@ -683,6 +683,80 @@ func ConcatRevFilters(b Basic) Basic {
 	return Basic{Parameters: toParameters(modified), Pattern: b.Pattern}
 }
 
+func remove(s []Parameter, i int) []Parameter {
+	s[i] = s[len(s)-1]
+	// We do not need to put s[i] at the end, as it will be discarded anyway
+	return s[:len(s)-1]
+}
+
+// typeRepoToFilter rewrites queries of the form:
+//
+//   type:repo match me
+//
+//   to
+//
+//   repo:match repo:me
+//
+// Note that the transformed query implies `repo:match and repo:me` (order
+// becomes insignificant). Thus, `type:repo` affects the semantics of space
+// compared to matching ordered patterns. We do this for convenience, as the
+// behavior would be non-obvious if we transformed this query to `repo:"match
+// me`, which would be unlikely to yield any results. This comes with a cost:
+// The parser assumes that order is significant for unqualified values (i.e.,
+// patterns). If we wanted to support scoping via `type:repo`, we would have to
+// fundamentally change parsing to understand this scope and context,
+// interpreting and create appropriate existing pattern-nodes-with-spaces as
+// `and` operators rather than `concat` nodes. This is exceedingly complex.
+// Instead, we run this post-processing transformation that converts `concat`
+// nodes to `and` nodes for `type:repo`, introducing the restriction that
+// `type:repo` always acts as global quantifier on all patterns.
+func typeRepoToFilter(nodes []Node) ([]Node, error) {
+	if !HasTypeRepo(nodes) {
+		return nodes, nil
+	}
+
+	var err error
+	VisitField(nodes, FieldType, func(value string, _ bool, _ Annotation) {
+		if value != "repo" {
+			err = fmt.Errorf("`type:repo` may not be used with any other `type:` parameter. The query contains both `type:repo` and `type:%s`", value)
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	nodes = MapParameter(nodes, func(field, value string, negated bool, ann Annotation) Node {
+		if value == "repo" {
+			return nil
+		}
+		return Parameter{
+			Field:      field,
+			Value:      value,
+			Negated:    negated,
+			Annotation: ann,
+		}
+	})
+	nodes = MapPattern(nodes, func(value string, negated bool, ann Annotation) Node {
+		if ann.Labels.IsSet(Quoted) || ann.Labels.IsSet(Literal) || ann.Labels.IsSet(Structural) {
+			// Respect search type: If the pattern is literal, then
+			// interpet the value literally for the repo filter.
+			value = regexp.QuoteMeta(value)
+		}
+		return Parameter{
+			Field:   FieldRepo,
+			Value:   value,
+			Negated: negated,
+		}
+	})
+	nodes = MapOperator(nodes, func(kind operatorKind, operands []Node) []Node {
+		if kind == Concat {
+			return newOperator(operands, And)
+		}
+		return newOperator(operands, kind)
+	})
+	return nodes, nil
+}
+
 // labelStructural converts Literal labels to Structural labels. Structural
 // queries are parsed the same as literal queries, we just convert the labels as
 // a postprocessing step to keep the parser lean.
