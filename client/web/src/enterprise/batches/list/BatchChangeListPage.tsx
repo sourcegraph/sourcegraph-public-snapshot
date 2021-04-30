@@ -144,7 +144,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                     noun="batch change"
                     pluralNoun="batch changes"
                     listComponent="div"
-                    listClassName={classNames(styles.grid, 'mb-3')}
+                    listClassName={classNames(styles.batchChangeListPageGrid, 'mb-3')}
                     className="mb-3"
                     cursorPaging={true}
                     noSummaryIfAllNodesVisible={true}
