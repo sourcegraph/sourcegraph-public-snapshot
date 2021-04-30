@@ -82,5 +82,5 @@ func (m *userCredentialMigrator) Up(ctx context.Context) error {
 }
 
 func (m *userCredentialMigrator) Down(ctx context.Context) error {
-	return errors.New("down migration is not supported for user credentials")
+	return errors.New("down migration is not supported for encrypting user credentials")
 }
