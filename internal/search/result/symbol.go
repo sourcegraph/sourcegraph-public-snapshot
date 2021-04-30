@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-lsp"
 )
 
@@ -27,6 +28,66 @@ type Symbol struct {
 	Pattern    string
 
 	FileLimited bool
+}
+
+func (s Symbol) LSPKind() lsp.SymbolKind {
+	// Ctags kinds are determined by the parser and do not (in general) match LSP symbol kinds.
+	switch strings.ToLower(s.Kind) {
+	case "file":
+		return lsp.SKFile
+	case "module":
+		return lsp.SKModule
+	case "namespace":
+		return lsp.SKNamespace
+	case "package", "packagename", "subprogspec":
+		return lsp.SKPackage
+	case "class", "type", "service", "typedef", "union", "section", "subtype", "component":
+		return lsp.SKClass
+	case "method", "methodspec":
+		return lsp.SKMethod
+	case "property":
+		return lsp.SKProperty
+	case "field", "member", "anonmember", "recordfield":
+		return lsp.SKField
+	case "constructor":
+		return lsp.SKConstructor
+	case "enum", "enumerator":
+		return lsp.SKEnum
+	case "interface":
+		return lsp.SKInterface
+	case "function", "func", "subroutine", "macro", "subprogram", "procedure", "command", "singletonmethod":
+		return lsp.SKFunction
+	case "variable", "var", "functionvar", "define", "alias", "val":
+		return lsp.SKVariable
+	case "constant", "const":
+		return lsp.SKConstant
+	case "string", "message", "heredoc":
+		return lsp.SKString
+	case "number":
+		return lsp.SKNumber
+	case "bool", "boolean":
+		return lsp.SKBoolean
+	case "array":
+		return lsp.SKArray
+	case "object", "literal", "map":
+		return lsp.SKObject
+	case "key", "label", "target", "selector", "id", "tag":
+		return lsp.SKKey
+	case "null":
+		return lsp.SKNull
+	case "enum member", "enumconstant":
+		return lsp.SKEnumMember
+	case "struct":
+		return lsp.SKStruct
+	case "event":
+		return lsp.SKEvent
+	case "operator":
+		return lsp.SKOperator
+	case "type parameter", "annotation":
+		return lsp.SKTypeParameter
+	}
+	log15.Debug("Unknown ctags kind", "kind", s.Kind)
+	return 0
 }
 
 // offset calculates a symbol offset based on the the only Symbol

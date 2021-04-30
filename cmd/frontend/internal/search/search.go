@@ -188,11 +188,17 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if syms := fm.Symbols(); len(syms) > 0 {
 					symbols := make([]streamhttp.Symbol, 0, len(syms))
 					for _, sym := range syms {
+						kind := sym.SymbolMatch.Symbol.LSPKind()
+						kindString := "UNKNOWN"
+						if kind != 0 {
+							kindString = strings.ToUpper(kind.String())
+						}
+
 						symbols = append(symbols, streamhttp.Symbol{
 							URL:           sym.SymbolMatch.URL().String(),
-							Name:          sym.Name(),
-							ContainerName: fromStrPtr(sym.ContainerName()),
-							Kind:          sym.Kind(),
+							Name:          sym.SymbolMatch.Symbol.Name,
+							ContainerName: sym.SymbolMatch.Symbol.Parent,
+							Kind:          kindString,
 						})
 					}
 					matchesAppend(fromSymbolMatch(fm, symbols))

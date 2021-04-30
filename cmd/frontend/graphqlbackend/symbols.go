@@ -276,7 +276,7 @@ func (r symbolResolver) ContainerName() *string {
 }
 
 func (r symbolResolver) Kind() string /* enum SymbolKind */ {
-	kind := ctagsKindToLSPSymbolKind(r.Symbol.Kind)
+	kind := r.Symbol.LSPKind()
 	if kind == 0 {
 		return "UNKNOWN"
 	}
