@@ -37,7 +37,7 @@ const (
 )
 
 type MarkupContent struct {
-	Kind  MarkupKind `json:"kind"` // currently unused
+	Kind  MarkupKind `json:"kind"` // currently unused outside of Sourcegraph documentation LSIF extension
 	Value string     `json:"value"`
 }
 
@@ -94,18 +94,6 @@ func (ms MarkedString) String() string {
 	b.WriteString(codeFence)
 
 	return b.String()
-}
-
-type MarkupKind string
-
-const (
-	PlainText MarkupKind = "plaintext"
-	Markdown  MarkupKind = "markdown"
-)
-
-type MarkupContent struct {
-	Kind  MarkupKind
-	Value string
 }
 
 type TextDocumentHover struct {
