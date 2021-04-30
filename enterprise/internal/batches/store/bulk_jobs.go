@@ -152,7 +152,7 @@ func listBulkJobsQuery(opts *ListBulkJobsOpts) *sqlf.Query {
 	)
 }
 
-// CountBulkJobsOpts captures the query options needed counting BulkJobs.
+// CountBulkJobsOpts captures the query options needed when counting BulkJobs.
 type CountBulkJobsOpts struct {
 	BatchChangeID int64
 }
