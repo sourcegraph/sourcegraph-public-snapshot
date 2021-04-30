@@ -1,0 +1,56 @@
+package reader
+
+import "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol"
+
+// This file contains code for the Sourcegraph documentation LSIF extension.
+
+func init() {
+	// Vertex unmarshalers
+	vertexUnmarshalers[string(protocol.VertexSourcegraphDocumentationResult)] = unmarshalDocumentationResult
+	vertexUnmarshalers[string(protocol.VertexSourcegraphDocumentationString)] = unmarshalDocumentationString
+
+	// Edge unmarshalers
+	edgeUnmarshalers[string(protocol.EdgeSourcegraphDocumentationString)] = unmarshalDocumentationStringEdge
+}
+
+func unmarshalDocumentationResult(line []byte) (interface{}, error) {
+	var payload struct {
+		Result protocol.Documentation `json:"result"`
+	}
+	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+		return nil, err
+	}
+	return payload.Result, nil
+}
+
+func unmarshalDocumentationString(line []byte) (interface{}, error) {
+	var payload struct {
+		Result protocol.MarkupContent `json:"result"`
+	}
+	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+		return nil, err
+	}
+	return payload.Result, nil
+}
+
+type DocumentationStringEdge struct {
+	OutV int
+	InV  int
+	Type protocol.DocumentationStringType
+}
+
+func unmarshalDocumentationStringEdge(line []byte) (interface{}, error) {
+	var payload struct {
+		OutV int    `json:"outV"`
+		InV  int    `json:"inV"`
+		Type string `json:"type"`
+	}
+	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+		return DocumentationStringEdge{}, err
+	}
+	return DocumentationStringEdge{
+		OutV: payload.OutV,
+		InV:  payload.InV,
+		Type: protocol.DocumentationStringType(payload.Type),
+	}, nil
+}
