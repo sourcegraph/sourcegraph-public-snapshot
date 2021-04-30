@@ -20,7 +20,7 @@ $changeset-backdrop: #f3faff;
         }
     }
     &__status-cell {
-        // color: $gray-11;
+        color: var(--muted);
         @include media-breakpoint-up(sm) {
             background-color: var(--oc-blue-0);
         }
@@ -38,7 +38,7 @@ $changeset-backdrop: #f3faff;
         grid-column: 1 / -1;
     }
     &__commit-change-entry {
-        // color: $gray-10;
+        color: var(--muted);
     }
     &__tab-link {
         &--active {
@@ -53,20 +53,22 @@ $changeset-backdrop: #f3faff;
     }
 }
 
-:global(.theme-dark) .visible-changeset-apply-preview-node {
-    &__status-cell {
-        color: var(--body-color);
-        @include media-breakpoint-up(sm) {
+:global(.theme-dark) {
+    .visible-changeset-apply-preview-node {
+        &__status-cell {
+            color: var(--body-color);
+            @include media-breakpoint-up(sm) {
+                background-color: var(--oc-gray-7);
+            }
+        }
+        &__bg-expanded {
             background-color: var(--oc-gray-7);
         }
-    }
-    &__bg-expanded {
-        background-color: var(--oc-gray-7);
-    }
-    &__tab-link {
-        &--active {
-            background-color: var(--oc-gray-7) !important;
-            border-bottom: 1px solid var(--oc-gray-7) !important;
+        &__tab-link {
+            &--active {
+                background-color: var(--oc-gray-7) !important;
+                border-bottom: 1px solid var(--oc-gray-7) !important;
+            }
         }
     }
 }

@@ -13,6 +13,8 @@ import { ChangesetApplyPreviewNode, ChangesetApplyPreviewNodeProps } from './Cha
 import { EmptyPreviewListElement } from './EmptyPreviewListElement'
 import { PreviewFilterRow, PreviewFilters } from './PreviewFilterRow'
 import { PreviewListHeader } from './PreviewListHeader'
+import styles from './PreviewList.module.scss'
+import classNames from 'classnames'
 
 interface Props extends ThemeProps {
     batchSpecID: Scalars['ID']
@@ -86,7 +88,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                 location={location}
                 useURLQuery={true}
                 listComponent="div"
-                listClassName="preview-list__grid mb-3"
+                listClassName={classNames(styles.previewListGrid, 'mb-3')}
                 headComponent={PreviewListHeader}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}

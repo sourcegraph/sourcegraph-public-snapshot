@@ -19,14 +19,14 @@
         }
     }
     &__current-state {
-        // color: $gray-11;
+        color: var(--icon-color);
         @include media-breakpoint-up(sm) {
             background-color: var(--oc-blue-0);
         }
     }
 }
 
-.theme-dark {
+:global(.theme-dark) {
     .hidden-changeset-apply-preview-node {
         &__current-state {
             color: var(--body-color);
