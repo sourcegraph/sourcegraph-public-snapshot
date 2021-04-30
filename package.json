@@ -99,6 +99,7 @@
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@mermaid-js/mermaid-cli": "^8.7.0",
     "@octokit/rest": "^16.36.0",
+    "@percy/cli": "^1.0.0-beta.48",
     "@percy/puppeteer": "^2.0.0",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.4.3",
     "@pollyjs/adapter": "^5.0.0",
