@@ -33,7 +33,7 @@
         }
     }
     &__expanded-section {
-        background-color: rgba(var(--oc-blue-0), 0.5);
+        background-color: var(--oc-blue-0);
         // Make it full width in the current row.
         grid-column: 2 / -1;
     }
