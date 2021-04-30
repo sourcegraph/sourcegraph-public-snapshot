@@ -21,11 +21,11 @@ import { CodeSnippet } from '../../components/CodeSnippet'
 import { Form } from '../../components/Form'
 
 import { ButtonVariants } from './ButtonVariants'
+import { ColorVariants } from './ColorVariants'
 import { SEMANTIC_COLORS } from './constants'
 import { FormFieldVariants } from './FormFieldVariants'
 import { TextStory } from './TextStory'
 import { preventDefault } from './utils'
-import { ColorVariants } from './ColorVariants'
 
 const { add } = storiesOf('branded/Global styles', module).addDecorator(story => (
     <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>

@@ -1,10 +1,13 @@
-import React from 'react'
+/* eslint-disable react/forbid-dom-props */
 import openColor from 'open-color'
+import React from 'react'
 
-import { getSemanticColorVariables } from '../utils'
-import styles from './ColorVariants.module.scss'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+
 import { SEMANTIC_COLORS } from '../constants'
+import { getSemanticColorVariables } from '../utils'
+
+import styles from './ColorVariants.module.scss'
 
 export const ColorVariants: React.FunctionComponent = () => {
     const [isRedesignEnabled] = useRedesignToggle()
