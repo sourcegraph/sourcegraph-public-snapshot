@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import openColor from 'open-color'
 
 import { getSemanticColorVariables } from '../utils'
@@ -7,20 +7,13 @@ import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggl
 import { SEMANTIC_COLORS } from '../constants'
 
 export const ColorVariants: React.FunctionComponent = () => {
-    const [colorVariants, setColorVariants] = useState<string[]>([])
     const [isRedesignEnabled] = useRedesignToggle()
-
-    useEffect(() => {
-        setTimeout(() => {
-            setColorVariants(getSemanticColorVariables())
-        })
-    }, [])
 
     if (isRedesignEnabled) {
         return (
             <div className={styles.grid}>
-                {colorVariants.map(variant => (
-                    <div className="m-2 text-center" key={variant} {...console.log(variant)}>
+                {getSemanticColorVariables().map(variant => (
+                    <div className="m-2 text-center" key={variant}>
                         <div
                             className="rounded"
                             style={{ width: '6rem', height: '6rem', backgroundColor: `var(${variant})` }}
