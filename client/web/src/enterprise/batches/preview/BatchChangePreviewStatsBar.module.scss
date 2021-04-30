@@ -2,7 +2,7 @@
 
 .batch-change-preview-stats-bar {
     &__stat {
-        // color: $gray-10;
+        color: var(--icon-color);
     }
     &__divider {
         border: 1px solid var(--border-color-2);
