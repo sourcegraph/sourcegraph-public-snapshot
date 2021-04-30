@@ -8,6 +8,7 @@ import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable, useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { Page } from '../components/Page'
+import { PageTitle } from '../components/PageTitle'
 import { VersionContext } from '../schema/site.schema'
 import { SearchContextProps } from '../search'
 
@@ -110,60 +111,67 @@ export const ConvertVersionContextsPage: React.FunctionComponent<ConvertVersionC
     return (
         <div className="w-100">
             <Page>
-                <div className="convert-version-contexts-page">
-                    <h1 className="m-0">Convert version contexts</h1>
-                    <div className="text-muted mt-2">
-                        Convert existing version contexts defined in site config into search contexts.{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts-experimental"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Learn more
-                        </a>
-                    </div>
-                    <div className="convert-version-contexts-page__header d-flex flex-row justify-content-between align-items-center mt-4">
-                        <h3 className="convert-version-contexts-page__header-title">Available version contexts</h3>
-                        <button
-                            type="button"
-                            className="btn btn-outline-primary test-convert-all-search-contexts-btn"
-                            onClick={convertAll}
-                            disabled={convertAllResult === LOADING}
-                        >
-                            {convertAllResult === LOADING ? 'Converting All...' : 'Convert All'}
-                        </button>
-                    </div>
-                    {typeof convertAllResult !== 'undefined' &&
-                        convertAllResult !== LOADING &&
-                        (convertAllResult === 0 ? (
-                            <div className="alert alert-info mt-3">No version contexts to convert.</div>
-                        ) : (
-                            <div className="alert alert-success test-convert-all-search-contexts-success mt-3">
-                                Sucessfully converted <strong>{convertAllResult}</strong> version contexts into search
-                                contexts.
+                <div className="container col-8">
+                    <PageTitle title="Convert version contexts" />
+                    <div className="convert-version-contexts-page">
+                        <div className="page-header d-flex flex-wrap align-items-center">
+                            <h2 className="flex-grow-1">Convert version contexts</h2>
+                        </div>
+                        <div className="text-muted">
+                            Convert existing version contexts defined in site config into search contexts.{' '}
+                            <a
+                                href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts-experimental"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Learn more
+                            </a>
+                        </div>
+                        <div className="convert-version-contexts-page__header d-flex flex-row justify-content-between align-items-center mt-4">
+                            <h3 className="convert-version-contexts-page__header-title">Available version contexts</h3>
+                            <button
+                                type="button"
+                                className="btn btn-outline-primary test-convert-all-search-contexts-btn"
+                                onClick={convertAll}
+                                disabled={convertAllResult === LOADING}
+                            >
+                                {convertAllResult === LOADING ? 'Converting All...' : 'Convert All'}
+                            </button>
+                        </div>
+                        {typeof convertAllResult !== 'undefined' &&
+                            convertAllResult !== LOADING &&
+                            (convertAllResult === 0 ? (
+                                <div className="alert alert-info mt-3">No version contexts to convert.</div>
+                            ) : (
+                                <div className="alert alert-success test-convert-all-search-contexts-success mt-3">
+                                    Sucessfully converted <strong>{convertAllResult}</strong> version contexts into
+                                    search contexts.
+                                </div>
+                            ))}
+                        <hr className="mt-3 mb-0" />
+                        {versionContexts && versionContexts === LOADING && (
+                            <div className="d-flex justify-content-center mt-3">
+                                <LoadingSpinner />
                             </div>
-                        ))}
-                    <hr className="mt-3 mb-0" />
-                    {versionContexts && versionContexts === LOADING && (
-                        <div className="d-flex justify-content-center mt-3">
-                            <LoadingSpinner />
-                        </div>
-                    )}
-                    {versionContexts && versionContexts !== LOADING && sortedVersionContexts.length > 0 && (
-                        <VirtualList<VersionContext & { isConvertedUpdates: Subject<void>; searchContextSpec: string }>
-                            itemsToShow={itemsToShow}
-                            onShowMoreItems={onBottomHit}
-                            items={sortedVersionContexts}
-                            itemProps={undefined}
-                            itemKey={itemKey}
-                            renderItem={renderResult}
-                        />
-                    )}
-                    {versionContexts && versionContexts !== LOADING && sortedVersionContexts.length === 0 && (
-                        <div className="d-flex justify-content-center mt-3 text-muted">
-                            No version contexts to convert.
-                        </div>
-                    )}
+                        )}
+                        {versionContexts && versionContexts !== LOADING && sortedVersionContexts.length > 0 && (
+                            <VirtualList<
+                                VersionContext & { isConvertedUpdates: Subject<void>; searchContextSpec: string }
+                            >
+                                itemsToShow={itemsToShow}
+                                onShowMoreItems={onBottomHit}
+                                items={sortedVersionContexts}
+                                itemProps={undefined}
+                                itemKey={itemKey}
+                                renderItem={renderResult}
+                            />
+                        )}
+                        {versionContexts && versionContexts !== LOADING && sortedVersionContexts.length === 0 && (
+                            <div className="d-flex justify-content-center mt-3 text-muted">
+                                No version contexts to convert.
+                            </div>
+                        )}
+                    </div>
                 </div>
             </Page>
         </div>
