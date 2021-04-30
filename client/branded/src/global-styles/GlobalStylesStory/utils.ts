@@ -27,7 +27,7 @@ const getCSSCustomProperties = () => [
 
 export const getSemanticColorVariables = () => {
     const properties = getCSSCustomProperties()
-    return SEMANTIC_COLORS.map(color =>
+    return SEMANTIC_COLORS.flatMap(color =>
         properties.filter(customProperty => customProperty.match(`^--${color}(-\\d)?$`)).sort()
     )
 }

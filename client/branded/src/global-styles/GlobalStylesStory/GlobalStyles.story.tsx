@@ -164,10 +164,7 @@ add(
             <h1>Colors</h1>
 
             <h2>Semantic colors</h2>
-            <p>
-                These can be used to give semantic clues and always work both in light and dark theme. They are
-                available on most CSS components and the <code>border-</code> and <code>bg-</code> utility classes.
-            </p>
+            <p>These can be used to give semantic clues and always work both in light and dark theme.</p>
             <ColorVariants />
         </>
     ),
