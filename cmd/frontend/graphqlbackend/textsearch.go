@@ -84,10 +84,6 @@ func (fm *FileMatchResolver) RevSpec() *gitRevSpec {
 	}
 }
 
-func (fm *FileMatchResolver) Resource() string {
-	return fm.URL()
-}
-
 func (fm *FileMatchResolver) Symbols() []symbolResolver {
 	return symbolResultsToResolvers(fm.db, fm.Commit(), fm.FileMatch.Symbols)
 }
