@@ -20,7 +20,7 @@ const (
 
 // RegisterMigrations registers all currently implemented out of band migrations
 // by batch changes with the migration runner.
-func RegisterMigrations(cstore *store.Store,  outOfBandMigrationRunner *oobmigration.Runner) error {
+func RegisterMigrations(cstore *store.Store, outOfBandMigrationRunner *oobmigration.Runner) error {
 	migrations := map[int]oobmigration.Migrator{
 		BatchChangesSSHMigrationID:            &sshMigrator{store: cstore},
 		BatchChangesUserCredentialMigrationID: &userCredentialMigrator{store: cstore},
