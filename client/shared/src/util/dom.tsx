@@ -66,71 +66,67 @@ function highlightNodeHelper(
             case Node.TEXT_NODE: {
                 const nodeText = child.textContent!
 
-                if (currentOffset <= start && currentOffset + nodeText.length > start) {
-                    // Current node overlaps start of highlighting.
-                    child.remove()
+                // Split the text node into a range before the highlight, a range overlapping with
+                // the highlight, and a range after the highlight. These ranges can be zero-length
+                const preHighlightedRange = nodeText.slice(0, Math.max(0, start - currentOffset))
+                const highlightedRange = nodeText.slice(
+                    Math.max(0, start - currentOffset),
+                    start - currentOffset + length
+                )
+                const postHighlightedRange = nodeText.slice(start - currentOffset + length)
 
-                    // The characters beginning at the start of highlighting and extending to the end of the node.
-                    const rest = nodeText.slice(start - currentOffset)
+                // Create new nodes for each of the ranges with length > 0
+                let newNodes: Node[] = []
 
-                    const containerNode = document.createElement('span')
-                    if (nodeText.slice(0, Math.max(0, start - currentOffset))) {
-                        // If characters were consumed leading up to the start of highlighting, add them to the parent.
-                        containerNode.append(
-                            document.createTextNode(nodeText.slice(0, Math.max(0, start - currentOffset)))
-                        )
-                    }
+                if (preHighlightedRange) {
+                    newNodes.push(document.createTextNode(preHighlightedRange))
+                }
 
-                    if (rest.length >= length) {
-                        // The highlighted range is fully contained within the node.
-                        if (currentNode.classList.contains('selection-highlight')) {
-                            // Nothing to do; it's already highlighted.
-                            currentNode.append(child)
-                        } else {
-                            const text = rest.slice(0, Math.max(0, length))
-                            const highlight = document.createElement('span')
-                            highlight.className = 'selection-highlight'
-                            highlight.append(document.createTextNode(text))
-                            containerNode.append(highlight)
-                            if (rest.length > length) {
-                                // There is more in the span than the highlighted chars.
-                                containerNode.append(document.createTextNode(rest.slice(length)))
-                            }
-
-                            if (currentNode.childNodes.length === 0 || isLastNode) {
-                                currentNode.append(containerNode)
-                            } else {
-                                currentNode.insertBefore(
-                                    containerNode,
-                                    currentNode.childNodes[index] || currentNode.firstChild
-                                )
-                            }
-                        }
-
-                        return { highlightingCompleted: true, charsConsumed: nodeText.length, charsHighlighted: length }
-                    }
-
-                    // Else the highlighted range spans multiple nodes.
-                    charsHighlighted += rest.length
-
+                if (highlightedRange) {
                     const highlight = document.createElement('span')
                     highlight.className = 'selection-highlight'
-                    highlight.append(document.createTextNode(rest))
-                    containerNode.append(highlight)
+                    highlight.append(document.createTextNode(highlightedRange))
+                    newNodes.push(highlight)
+                }
 
-                    if (currentNode.childNodes.length === 0 || isLastNode) {
-                        if (currentNode.classList.contains('selection-highlight')) {
-                            // Nothing to do; it's already highlighted.
-                            currentNode.append(child)
-                        } else {
-                            currentNode.append(containerNode)
-                        }
+                if (postHighlightedRange) {
+                    newNodes.push(document.createTextNode(postHighlightedRange))
+                }
+
+                let newNode: Node
+                if (newNodes.length == 1) {
+                    // If we only have one new node, no need to wrap it in a containing span
+                    newNode = newNodes[0]
+                } else {
+                    // If there are more than one new nodes, wrap them in a span
+                    const containerNode = document.createElement('span')
+                    containerNode.append(...newNodes)
+                    newNode = containerNode
+                }
+
+                // Remove the original child and replace it with the new node
+                child.remove()
+                if (currentNode.childNodes.length === 0 || isLastNode) {
+                    if (currentNode.classList.contains('selection-highlight')) {
+                        // Nothing to do; it's already highlighted.
+                        currentNode.append(child)
                     } else {
-                        currentNode.insertBefore(containerNode, currentNode.childNodes[index] || currentNode.firstChild)
+                        currentNode.append(newNode)
                     }
+                } else {
+                    currentNode.insertBefore(newNode, currentNode.childNodes[index] || currentNode.firstChild)
                 }
 
                 currentOffset += nodeText.length
+                charsHighlighted += highlightedRange.length
+                if (highlightedRange.length > 0 && postHighlightedRange.length > 0) {
+                    return {
+                        highlightingCompleted: true,
+                        charsConsumed: nodeText.length,
+                        charsHighlighted: highlightedRange.length,
+                    }
+                }
+
                 break
             }
 
