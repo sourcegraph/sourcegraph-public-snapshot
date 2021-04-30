@@ -18,58 +18,58 @@ export interface HiddenChangesetApplyPreviewNodeProps {
 export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChangesetApplyPreviewNodeProps> = ({
     node,
 }) => (
-        <>
-            <span className={classNames(styles.hiddenChangesetApplyPreviewNodeListCell, 'd-none d-sm-block')} />
-            <HiddenChangesetApplyPreviewNodeStatusCell
-                node={node}
-                className={classNames(
-                    styles.hiddenChangesetApplyPreviewNodeListCell,
-                    styles.hiddenChangesetApplyPreviewNodeCurrentState,
-                    'd-block d-sm-flex'
+    <>
+        <span className={classNames(styles.hiddenChangesetApplyPreviewNodeListCell, 'd-none d-sm-block')} />
+        <HiddenChangesetApplyPreviewNodeStatusCell
+            node={node}
+            className={classNames(
+                styles.hiddenChangesetApplyPreviewNodeListCell,
+                styles.hiddenChangesetApplyPreviewNodeCurrentState,
+                'd-block d-sm-flex'
+            )}
+        />
+        <PreviewNodeIndicator node={node} />
+        <PreviewActions
+            node={node}
+            className={classNames(
+                styles.hiddenChangesetApplyPreviewNodeListCell,
+                styles.hiddenChangesetApplyPreviewNodeAction
+            )}
+        />
+        <div
+            className={classNames(
+                styles.hiddenChangesetApplyPreviewNodeListCell,
+                styles.hiddenChangesetApplyPreviewNodeInformation,
+                ' d-flex flex-column'
+            )}
+        >
+            <h3 className="text-muted">
+                {node.targets.__typename === 'HiddenApplyPreviewTargetsAttach' ||
+                node.targets.__typename === 'HiddenApplyPreviewTargetsUpdate' ? (
+                    <>
+                        {node.targets.changesetSpec.type === ChangesetSpecType.EXISTING && (
+                            <>Import changeset from a private repository</>
+                        )}
+                        {node.targets.changesetSpec.type === ChangesetSpecType.BRANCH && (
+                            <>Create changeset in a private repository</>
+                        )}
+                    </>
+                ) : (
+                    <>Detach changeset in a private repository</>
                 )}
-            />
-            <PreviewNodeIndicator node={node} />
-            <PreviewActions
-                node={node}
-                className={classNames(
-                    styles.hiddenChangesetApplyPreviewNodeListCell,
-                    styles.hiddenChangesetApplyPreviewNodeAction
-                )}
-            />
-            <div
-                className={classNames(
-                    styles.hiddenChangesetApplyPreviewNodeListCell,
-                    styles.hiddenChangesetApplyPreviewNodeInformation,
-                    ' d-flex flex-column'
-                )}
-            >
-                <h3 className="text-muted">
-                    {node.targets.__typename === 'HiddenApplyPreviewTargetsAttach' ||
-                    node.targets.__typename === 'HiddenApplyPreviewTargetsUpdate' ? (
-                        <>
-                            {node.targets.changesetSpec.type === ChangesetSpecType.EXISTING && (
-                                <>Import changeset from a private repository</>
-                            )}
-                            {node.targets.changesetSpec.type === ChangesetSpecType.BRANCH && (
-                                <>Create changeset in a private repository</>
-                            )}
-                        </>
-                    ) : (
-                        <>Detach changeset in a private repository</>
-                    )}
-                </h3>
-                <span className="text-danger">
-                    No action will be taken on apply.{' '}
-                    <InfoCircleOutlineIcon
-                        className="icon-inline"
-                        data-tooltip="You have no permissions to access this repository."
-                    />
-                </span>
-            </div>
-            <span />
-            <span />
-        </>
-    )
+            </h3>
+            <span className="text-danger">
+                No action will be taken on apply.{' '}
+                <InfoCircleOutlineIcon
+                    className="icon-inline"
+                    data-tooltip="You have no permissions to access this repository."
+                />
+            </span>
+        </div>
+        <span />
+        <span />
+    </>
+)
 
 const HiddenChangesetApplyPreviewNodeStatusCell: React.FunctionComponent<
     HiddenChangesetApplyPreviewNodeProps & { className?: string }
