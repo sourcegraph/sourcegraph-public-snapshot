@@ -99,6 +99,7 @@ interface Props
      *
      * 'low-profile-with-logo' renders the low-profile navbar but with the homepage logo. Used on repogroup pages.
      */
+    // TODO: after redesign refresh is done remove no-search-input variant
     variant: 'default' | 'low-profile' | 'low-profile-with-logo' | 'no-search-input'
 
     setVersionContext: (versionContext: string | undefined) => Promise<void>
