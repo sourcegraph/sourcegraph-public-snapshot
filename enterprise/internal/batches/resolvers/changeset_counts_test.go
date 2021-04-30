@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -123,7 +122,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	})
 	defer mockState.Unmock()
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 	sourcer := sources.NewSourcer(cf)
 
 	spec := &btypes.BatchSpec{
@@ -180,7 +179,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(db, New(cstore, et.TestKey{}), nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

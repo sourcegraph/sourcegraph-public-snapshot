@@ -37,10 +37,10 @@ func TestPermissionLevels(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
 	db := dbtesting.GetDB(t)
-
-	cstore := store.New(db)
 	key := et.TestKey{}
-	sr := New(cstore, key)
+
+	cstore := store.New(db, key)
+	sr := New(cstore)
 	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -288,7 +288,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db)
+					pruneUserCredentials(t, db, key)
 					pruneSiteCredentials(t, cstore)
 
 					graphqlID := string(graphqlbackend.MarshalUserID(tc.user))
@@ -355,12 +355,12 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db)
+					pruneUserCredentials(t, db, key)
 					pruneSiteCredentials(t, cstore)
 
 					var graphqlID graphql.ID
 					if tc.user != 0 {
-						cred, err := cstore.UserCredentials().Create(ctx, key, database.UserCredentialScope{
+						cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 							Domain:              database.UserCredentialDomainBatches,
 							ExternalServiceID:   "https://github.com/",
 							ExternalServiceType: extsvc.TypeGitHub,
@@ -451,7 +451,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db)
+					pruneUserCredentials(t, db, key)
 					pruneSiteCredentials(t, cstore)
 
 					var res struct {
@@ -544,12 +544,12 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db)
+					pruneUserCredentials(t, db, key)
 					pruneSiteCredentials(t, cstore)
 
 					var batchChangesCredentialID graphql.ID
 					if tc.user != 0 {
-						cred, err := cstore.UserCredentials().Create(ctx, key, database.UserCredentialScope{
+						cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 							Domain:              database.UserCredentialDomainBatches,
 							ExternalServiceID:   "https://github.com/",
 							ExternalServiceType: extsvc.TypeGitHub,
@@ -921,7 +921,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	db := dbtesting.GetDB(t)
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 	sr := &Resolver{store: cstore}
 	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil)
 	if err != nil {

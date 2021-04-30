@@ -30,25 +30,19 @@ func TestUserCredential_Authenticator(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("errors", func(t *testing.T) {
-		for name, tc := range map[string]struct {
-			uc  *UserCredential
-			dec encryption.Decrypter
-		}{
-			"no credential": {
-				uc:  &UserCredential{},
-				dec: &et.TestKey{},
-			},
+		for name, credential := range map[string]*UserCredential{
+			"no credential": {key: &et.TestKey{}},
 			"bad decrypter": {
-				uc:  &UserCredential{encryptedCredential: []byte("foo")},
-				dec: &et.BadKey{Err: errors.New("bad key, bad key, what you gonna do")},
+				encryptedCredential: []byte("foo"),
+				key:                 &et.BadKey{Err: errors.New("bad  bad  what you gonna do")},
 			},
 			"invalid secret": {
-				uc:  &UserCredential{encryptedCredential: []byte("foo")},
-				dec: et.NewTransparentDecrypter(t),
+				encryptedCredential: []byte("foo"),
+				key:                 et.NewTransparentKey(t),
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
-				if _, err := tc.uc.Authenticator(ctx, tc.dec); err == nil {
+				if _, err := credential.Authenticator(ctx); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -57,9 +51,9 @@ func TestUserCredential_Authenticator(t *testing.T) {
 
 	t.Run("plaintext credential", func(t *testing.T) {
 		a := &auth.BasicAuth{}
-		uc := &UserCredential{credential: a}
+		uc := &UserCredential{credential: a, key: et.TestKey{}}
 
-		have, err := uc.Authenticator(ctx, nil)
+		have, err := uc.Authenticator(ctx)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		} else if have != a {
@@ -75,9 +69,9 @@ func TestUserCredential_Authenticator(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		uc := &UserCredential{encryptedCredential: enc}
+		uc := &UserCredential{encryptedCredential: enc, key: key}
 
-		have, err := uc.Authenticator(ctx, key)
+		have, err := uc.Authenticator(ctx)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		} else if diff := cmp.Diff(have, a); diff != "" {
@@ -92,9 +86,9 @@ func TestUserCredential_Authenticator(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		uc := &UserCredential{encryptedCredential: enc}
+		uc := &UserCredential{encryptedCredential: enc, key: nil}
 
-		have, err := uc.Authenticator(ctx, nil)
+		have, err := uc.Authenticator(ctx)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		} else if diff := cmp.Diff(have, a); diff != "" {
@@ -108,10 +102,9 @@ func TestUserCredential_SetAuthenticator(t *testing.T) {
 	a := &auth.BasicAuth{Username: "foo", Password: "bar"}
 
 	t.Run("error", func(t *testing.T) {
-		key := &et.BadKey{Err: errors.New("error")}
-		uc := &UserCredential{}
+		uc := &UserCredential{key: &et.BadKey{Err: errors.New("error")}}
 
-		if err := uc.SetAuthenticator(ctx, key, a); err == nil {
+		if err := uc.SetAuthenticator(ctx, a); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
@@ -122,9 +115,9 @@ func TestUserCredential_SetAuthenticator(t *testing.T) {
 			"test key": et.TestKey{},
 		} {
 			t.Run(name, func(t *testing.T) {
-				uc := &UserCredential{credential: a}
+				uc := &UserCredential{credential: a, key: key}
 
-				if err := uc.SetAuthenticator(ctx, key, a); err != nil {
+				if err := uc.SetAuthenticator(ctx, a); err != nil {
 					t.Errorf("unexpected error: %v", err)
 				} else if uc.credential != nil {
 					t.Errorf("unencrypted credential is still present: %v", uc.credential)
@@ -159,7 +152,7 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 				ExternalServiceID:   "https://github.com",
 			}
 
-			cred, err := UserCredentials(db).Create(ctx, key, scope, auth)
+			cred, err := UserCredentials(db, key).Create(ctx, scope, auth)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			} else if cred == nil {
@@ -181,7 +174,9 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 			if cred.ExternalServiceID != scope.ExternalServiceID {
 				t.Errorf("unexpected external service id: have=%q want=%q", cred.ExternalServiceID, scope.ExternalServiceID)
 			}
-			if have, err := cred.Authenticator(ctx, key); err != nil {
+			if have, err := cred.Authenticator(ctx); err != nil {
+				t.Log("cred.key", cred.key)
+				t.Log("key", key)
 				t.Fatal(err)
 			} else if diff := diffAuthenticators(have, auth); diff != "" {
 				t.Errorf("unexpected credential:\n%s", diff)
@@ -194,7 +189,7 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 			}
 
 			// Ensure that trying to insert again fails.
-			if cred, err := UserCredentials(db).Create(ctx, key, scope, auth); err == nil {
+			if cred, err := UserCredentials(db, key).Create(ctx, scope, auth); err == nil {
 				t.Error("unexpected nil error")
 			} else if cred != nil {
 				t.Errorf("unexpected non-nil credential: %v", cred)
@@ -204,11 +199,11 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 
 			cred.ExternalServiceType = newExternalServiceType
 
-			if err := UserCredentials(db).Update(ctx, cred); err != nil {
+			if err := UserCredentials(db, key).Update(ctx, cred); err != nil {
 				t.Errorf("unexpected non-nil error updating: %+v", err)
 			}
 
-			updatedCred, err := UserCredentials(db).GetByID(ctx, cred.ID)
+			updatedCred, err := UserCredentials(db, key).GetByID(ctx, cred.ID)
 			if err != nil {
 				t.Errorf("unexpected non-nil error getting credential: %+v", err)
 			}
@@ -224,7 +219,7 @@ func TestUserCredentials_Delete(t *testing.T) {
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("nonextant", func(t *testing.T) {
-		err := UserCredentials(db).Delete(ctx, 1)
+		err := UserCredentials(db, key).Delete(ctx, 1)
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
@@ -247,16 +242,16 @@ func TestUserCredentials_Delete(t *testing.T) {
 		}
 		token := &auth.OAuthBearerToken{Token: "abcdef"}
 
-		cred, err := UserCredentials(db).Create(ctx, key, scope, token)
+		cred, err := UserCredentials(db, key).Create(ctx, scope, token)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if err := UserCredentials(db).Delete(ctx, cred.ID); err != nil {
+		if err := UserCredentials(db, key).Delete(ctx, cred.ID); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		_, err = UserCredentials(db).GetByID(ctx, cred.ID)
+		_, err = UserCredentials(db, key).GetByID(ctx, cred.ID)
 		if _, ok := err.(UserCredentialNotFoundErr); !ok {
 			t.Errorf("unexpected error retrieving credential after deletion: %v", err)
 		}
@@ -268,7 +263,7 @@ func TestUserCredentials_GetByID(t *testing.T) {
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("nonextant", func(t *testing.T) {
-		cred, err := UserCredentials(db).GetByID(ctx, 1)
+		cred, err := UserCredentials(db, key).GetByID(ctx, 1)
 		if cred != nil {
 			t.Errorf("unexpected non-nil credential: %v", cred)
 		}
@@ -294,12 +289,12 @@ func TestUserCredentials_GetByID(t *testing.T) {
 		}
 		token := &auth.OAuthBearerToken{Token: "abcdef"}
 
-		want, err := UserCredentials(db).Create(ctx, key, scope, token)
+		want, err := UserCredentials(db, key).Create(ctx, scope, token)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		have, err := UserCredentials(db).GetByID(ctx, want.ID)
+		have, err := UserCredentials(db, key).GetByID(ctx, want.ID)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -322,7 +317,7 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 	token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 	t.Run("nonextant", func(t *testing.T) {
-		cred, err := UserCredentials(db).GetByScope(ctx, scope)
+		cred, err := UserCredentials(db, key).GetByScope(ctx, scope)
 		if cred != nil {
 			t.Errorf("unexpected non-nil credential: %v", cred)
 		}
@@ -340,12 +335,12 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 	})
 
 	t.Run("extant", func(t *testing.T) {
-		want, err := UserCredentials(db).Create(ctx, key, scope, token)
+		want, err := UserCredentials(db, key).Create(ctx, scope, token)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		have, err := UserCredentials(db).GetByScope(ctx, scope)
+		have, err := UserCredentials(db, key).GetByScope(ctx, scope)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -375,18 +370,18 @@ func TestUserCredentials_List(t *testing.T) {
 
 	// Unlike the other tests in this file, we'll set up a couple of credentials
 	// right now, and then list from there.
-	githubCred, err := UserCredentials(db).Create(ctx, key, githubScope, token)
+	githubCred, err := UserCredentials(db, key).Create(ctx, githubScope, token)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	gitlabCred, err := UserCredentials(db).Create(ctx, key, gitlabScope, token)
+	gitlabCred, err := UserCredentials(db, key).Create(ctx, gitlabScope, token)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("not found", func(t *testing.T) {
-		creds, next, err := UserCredentials(db).List(ctx, UserCredentialsListOpts{
+		creds, next, err := UserCredentials(db, key).List(ctx, UserCredentialsListOpts{
 			Scope: UserCredentialScope{
 				Domain: "this is not a valid domain",
 			},
@@ -424,7 +419,7 @@ func TestUserCredentials_List(t *testing.T) {
 		},
 	} {
 		t.Run("single match on "+name, func(t *testing.T) {
-			creds, next, err := UserCredentials(db).List(ctx, UserCredentialsListOpts{
+			creds, next, err := UserCredentials(db, key).List(ctx, UserCredentialsListOpts{
 				Scope: tc.scope,
 			})
 			if err != nil {
@@ -451,7 +446,7 @@ func TestUserCredentials_List(t *testing.T) {
 		},
 	} {
 		t.Run("multiple matches on "+name, func(t *testing.T) {
-			creds, next, err := UserCredentials(db).List(ctx, opts)
+			creds, next, err := UserCredentials(db, key).List(ctx, opts)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			}
@@ -466,7 +461,7 @@ func TestUserCredentials_List(t *testing.T) {
 		t.Run("pagination for "+name, func(t *testing.T) {
 			o := opts
 			o.LimitOffset = &LimitOffset{Limit: 1}
-			creds, next, err := UserCredentials(db).List(ctx, o)
+			creds, next, err := UserCredentials(db, key).List(ctx, o)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			}
@@ -478,7 +473,7 @@ func TestUserCredentials_List(t *testing.T) {
 			}
 
 			o.LimitOffset = &LimitOffset{Limit: 1, Offset: next}
-			creds, next, err = UserCredentials(db).List(ctx, o)
+			creds, next, err = UserCredentials(db, key).List(ctx, o)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			}
@@ -497,7 +492,7 @@ func TestUserCredentials_Invalid(t *testing.T) {
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("marshal", func(t *testing.T) {
-		if _, err := UserCredentials(db).Create(ctx, key, UserCredentialScope{}, &invalidAuth{}); err == nil {
+		if _, err := UserCredentials(db, key).Create(ctx, UserCredentialScope{}, &invalidAuth{}); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
@@ -538,12 +533,12 @@ func TestUserCredentials_Invalid(t *testing.T) {
 			"malformed JSON":          insertRawCredential(t, "malformed", "this is not valid JSON"),
 		} {
 			t.Run(name, func(t *testing.T) {
-				cred, err := UserCredentials(db).GetByID(ctx, id)
+				cred, err := UserCredentials(db, key).GetByID(ctx, id)
 				if err != nil {
 					t.Error("unexpected error")
 				}
 
-				if _, err := cred.Authenticator(ctx, key); err == nil {
+				if _, err := cred.Authenticator(ctx); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})

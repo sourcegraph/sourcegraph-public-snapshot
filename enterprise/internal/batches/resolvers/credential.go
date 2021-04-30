@@ -80,7 +80,7 @@ func (c *batchChangesUserCredentialResolver) ExternalServiceURL() string {
 }
 
 func (c *batchChangesUserCredentialResolver) SSHPublicKey(ctx context.Context) (*string, error) {
-	a, err := c.credential.Authenticator(ctx, c.key)
+	a, err := c.credential.Authenticator(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving authenticator")
 	}

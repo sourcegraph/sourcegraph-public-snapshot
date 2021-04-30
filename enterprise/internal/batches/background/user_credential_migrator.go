@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
@@ -17,7 +16,6 @@ const userCredentialMigrationCountPerRun = 5
 
 type userCredentialMigrator struct {
 	store *store.Store
-	key   encryption.Key
 }
 
 var _ oobmigration.Migrator = &userCredentialMigrator{}
@@ -64,12 +62,12 @@ func (m *userCredentialMigrator) Up(ctx context.Context) error {
 			return errors.Wrap(err, "listing user credentials")
 		}
 		for _, cred := range credentials {
-			a, err := cred.Authenticator(ctx, m.key)
+			a, err := cred.Authenticator(ctx)
 			if err != nil {
 				return errors.Wrapf(err, "retrieving authenticator for ID %d", cred.ID)
 			}
 
-			if err := cred.SetAuthenticator(ctx, m.key, a); err != nil {
+			if err := cred.SetAuthenticator(ctx, a); err != nil {
 				return errors.Wrapf(err, "setting authenticator for ID %d", cred.ID)
 			}
 

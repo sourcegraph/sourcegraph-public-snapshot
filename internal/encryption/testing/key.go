@@ -47,27 +47,36 @@ func (k *BadKey) Version(context.Context) (encryption.KeyVersion, error) {
 	return encryption.KeyVersion{}, k.Err
 }
 
-// TransparentDecrypter is a decrypter that returns its own string value, but
-// errors if not called within a test. This allows mocking the decrypter when
-// it's only important that it's called, and not what it actually does.
-type TransparentDecrypter struct{ called int }
+// TransparentKey is a key that performs no encryption or decryption, but errors
+// if not called within a test. This allows mocking the decrypter when it's only
+// important that it's called, and not what it actually does.
+type TransparentKey struct{ called int }
 
-var _ encryption.Decrypter = &TransparentDecrypter{}
+var _ encryption.Key = &TransparentKey{}
 
-func NewTransparentDecrypter(t *testing.T) *TransparentDecrypter {
-	dec := &TransparentDecrypter{}
+func NewTransparentKey(t *testing.T) *TransparentKey {
+	dec := &TransparentKey{}
 	t.Cleanup(func() {
 		if dec.called == 0 {
-			t.Error("transparent decrypter was never called")
+			t.Error("transparent key was never called")
 		}
 	})
 
 	return dec
 }
 
-func (dec *TransparentDecrypter) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Secret, error) {
+func (dec *TransparentKey) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Secret, error) {
 	dec.called++
 
 	secret := encryption.NewSecret(string(ciphertext))
 	return &secret, nil
+}
+
+func (dec *TransparentKey) Encrypt(ctx context.Context, value []byte) ([]byte, error) {
+	dec.called++
+	return value, nil
+}
+
+func (dec *TransparentKey) Version(ctx context.Context) (encryption.KeyVersion, error) {
+	return encryption.KeyVersion{Type: "transparent"}, nil
 }

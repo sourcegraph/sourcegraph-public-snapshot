@@ -28,7 +28,7 @@ func InitBackgroundJobs(
 	// the registry can start or stop the syncer associated with the service
 	HandleExternalServiceSync(es api.ExternalService)
 } {
-	cstore := store.New(db)
+	cstore := store.New(db, key)
 
 	// We use an internal actor so that we can freely load dependencies from
 	// the database without repository permissions being enforced.
@@ -39,7 +39,7 @@ func InitBackgroundJobs(
 
 	syncRegistry := syncer.NewSyncRegistry(ctx, cstore, cf)
 
-	go goroutine.MonitorBackgroundRoutines(ctx, background.Routines(ctx, cstore, key, cf)...)
+	go goroutine.MonitorBackgroundRoutines(ctx, background.Routines(ctx, cstore, cf)...)
 
 	return syncRegistry
 }

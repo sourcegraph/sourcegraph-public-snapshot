@@ -88,7 +88,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		s := store.NewWithClock(db, clock)
+		s := store.NewWithClock(db, nil, clock)
 		sourcer := sources.NewSourcer(cf)
 
 		spec := &btypes.BatchSpec{

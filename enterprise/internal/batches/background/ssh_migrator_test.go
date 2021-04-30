@@ -20,10 +20,9 @@ func TestSSHMigrator(t *testing.T) {
 
 	ct.MockRSAKeygen(t)
 
-	cstore := store.New(db)
-	key := et.TestKey{}
+	cstore := store.New(db, et.TestKey{})
 
-	migrator := &sshMigrator{cstore, key}
+	migrator := &sshMigrator{cstore}
 	progress, err := migrator.Progress(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -33,7 +32,7 @@ func TestSSHMigrator(t *testing.T) {
 	}
 
 	oauth := &auth.OAuthBearerToken{Token: "test"}
-	credential, err := cstore.UserCredentials().Create(ctx, key, database.UserCredentialScope{
+	credential, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainBatches,
 		UserID:              user.ID,
 		ExternalServiceType: extsvc.TypeGitHub,
@@ -98,7 +97,7 @@ func TestSSHMigrator(t *testing.T) {
 			t.Fatalf("invalid migration flag: have=%v want=%v", migratedCredential.SSHMigrationApplied, true)
 		}
 
-		a, err := migratedCredential.Authenticator(ctx, key)
+		a, err := migratedCredential.Authenticator(ctx)
 		if err != nil {
 			t.Fatalf("unexpected error getting authenticator: %v", err)
 		}
@@ -154,7 +153,7 @@ func TestSSHMigrator(t *testing.T) {
 			t.Fatalf("invalid migration flag: have=%v want=%v", migratedCredential.SSHMigrationApplied, false)
 		}
 
-		a, err := migratedCredential.Authenticator(ctx, key)
+		a, err := migratedCredential.Authenticator(ctx)
 		if err != nil {
 			t.Fatalf("unexpected error getting authenticator: %v", err)
 		}

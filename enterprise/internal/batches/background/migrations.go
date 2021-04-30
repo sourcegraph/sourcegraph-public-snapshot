@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
@@ -21,10 +20,10 @@ const (
 
 // RegisterMigrations registers all currently implemented out of band migrations
 // by batch changes with the migration runner.
-func RegisterMigrations(cstore *store.Store, key encryption.Key, outOfBandMigrationRunner *oobmigration.Runner) error {
+func RegisterMigrations(cstore *store.Store,  outOfBandMigrationRunner *oobmigration.Runner) error {
 	migrations := map[int]oobmigration.Migrator{
-		BatchChangesSSHMigrationID:            &sshMigrator{store: cstore, key: key},
-		BatchChangesUserCredentialMigrationID: &userCredentialMigrator{store: cstore, key: key},
+		BatchChangesSSHMigrationID:            &sshMigrator{store: cstore},
+		BatchChangesUserCredentialMigrationID: &userCredentialMigrator{store: cstore},
 	}
 
 	for id, migrator := range migrations {

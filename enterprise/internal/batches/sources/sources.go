@@ -12,7 +12,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -197,8 +196,8 @@ func ToDraftChangesetSource(css ChangesetSource) (DraftChangesetSource, error) {
 	return draftCss, nil
 }
 
-func WithAuthenticatorForUser(ctx context.Context, tx SourcerStore, dec encryption.Decrypter, css ChangesetSource, userID int32, repo *types.Repo) (ChangesetSource, error) {
-	cred, err := loadUserCredential(ctx, dec, tx, userID, repo)
+func WithAuthenticatorForUser(ctx context.Context, tx SourcerStore, css ChangesetSource, userID int32, repo *types.Repo) (ChangesetSource, error) {
+	cred, err := loadUserCredential(ctx, tx, userID, repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading user credential")
 	}
@@ -305,7 +304,7 @@ func buildChangesetSource(store SourcerStore, cf *httpcli.Factory, externalServi
 
 // loadUserCredential attempts to find a user credential for the given repo.
 // When no credential is found, nil is returned.
-func loadUserCredential(ctx context.Context, dec encryption.Decrypter, s SourcerStore, userID int32, repo *types.Repo) (auth.Authenticator, error) {
+func loadUserCredential(ctx context.Context, s SourcerStore, userID int32, repo *types.Repo) (auth.Authenticator, error) {
 	cred, err := s.UserCredentials().GetByScope(ctx, database.UserCredentialScope{
 		Domain:              database.UserCredentialDomainBatches,
 		UserID:              userID,
@@ -316,7 +315,7 @@ func loadUserCredential(ctx context.Context, dec encryption.Decrypter, s Sourcer
 		return nil, err
 	}
 	if cred != nil {
-		return cred.Authenticator(ctx, dec)
+		return cred.Authenticator(ctx)
 	}
 	return nil, nil
 }

@@ -19,7 +19,6 @@ const sshMigrationCountPerRun = 5
 // to a variant that includes it.
 type sshMigrator struct {
 	store *store.Store
-	key   encryption.Key
 }
 
 var _ oobmigration.Migrator = &sshMigrator{}
@@ -71,7 +70,7 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 		return err
 	}
 	for _, cred := range credentials {
-		a, err := cred.Authenticator(ctx, m.key)
+		a, err := cred.Authenticator(ctx)
 		if err != nil {
 			return err
 		}
@@ -86,7 +85,7 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 			newCred.PrivateKey = keypair.PrivateKey
 			newCred.PublicKey = keypair.PublicKey
 			newCred.Passphrase = keypair.Passphrase
-			if err := cred.SetAuthenticator(ctx, m.key, newCred); err != nil {
+			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
 				return err
 			}
 		case *auth.BasicAuth:
@@ -98,7 +97,7 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 			newCred.PrivateKey = keypair.PrivateKey
 			newCred.PublicKey = keypair.PublicKey
 			newCred.Passphrase = keypair.Passphrase
-			if err := cred.SetAuthenticator(ctx, m.key, newCred); err != nil {
+			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
 				return err
 			}
 		}
@@ -133,7 +132,7 @@ func (m *sshMigrator) Down(ctx context.Context) error {
 		SSHMigrationApplied: &t,
 	})
 	for _, cred := range credentials {
-		a, err := cred.Authenticator(ctx, m.key)
+		a, err := cred.Authenticator(ctx)
 		if err != nil {
 			return err
 		}
@@ -141,12 +140,12 @@ func (m *sshMigrator) Down(ctx context.Context) error {
 		switch a := a.(type) {
 		case *auth.OAuthBearerTokenWithSSH:
 			newCred := &a.OAuthBearerToken
-			if err := cred.SetAuthenticator(ctx, m.key, newCred); err != nil {
+			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
 				return err
 			}
 		case *auth.BasicAuthWithSSH:
 			newCred := &a.BasicAuth
-			if err := cred.SetAuthenticator(ctx, m.key, newCred); err != nil {
+			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
 				return err
 			}
 		}

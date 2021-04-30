@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -29,11 +28,10 @@ const bulkProcessorMaxNumResets = 60
 func newBulkJobWorker(
 	ctx context.Context,
 	s *store.Store,
-	key encryption.Key,
 	sourcer sources.Sourcer,
 	metrics batchChangesMetrics,
 ) *workerutil.Worker {
-	r := &bulkProcessorWorker{key: key, sourcer: sourcer, store: s}
+	r := &bulkProcessorWorker{sourcer: sourcer, store: s}
 
 	options := workerutil.WorkerOptions{
 		Name:        "batches_bulk_processor",
@@ -89,7 +87,6 @@ func scanFirstChangesetJobRecord(rows *sql.Rows, err error) (workerutil.Record, 
 // bulkProcessorWorker is a wrapper for the workerutil handlerfunc to create a
 // bulkProcessor with a source and store.
 type bulkProcessorWorker struct {
-	key     encryption.Key
 	store   *store.Store
 	sourcer sources.Sourcer
 }
@@ -97,7 +94,6 @@ type bulkProcessorWorker struct {
 func (b *bulkProcessorWorker) HandlerFunc() dbworker.HandlerFunc {
 	return func(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
 		processor := &bulkProcessor{
-			key:     b.key,
 			sourcer: b.sourcer,
 			store:   b.store.With(tx),
 		}

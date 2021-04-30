@@ -16,19 +16,17 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // executePlan executes the given reconciler plan.
-func executePlan(ctx context.Context, gitserverClient GitserverClient, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, key encryption.Key, plan *Plan) (err error) {
+func executePlan(ctx context.Context, gitserverClient GitserverClient, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
 	e := &executor{
 		gitserverClient:   gitserverClient,
 		sourcer:           sourcer,
 		noSleepBeforeSync: noSleepBeforeSync,
 		tx:                tx,
-		key:               key,
 		ch:                plan.Changeset,
 		spec:              plan.ChangesetSpec,
 		delta:             plan.Delta,
@@ -42,7 +40,6 @@ type executor struct {
 	sourcer           sources.Sourcer
 	noSleepBeforeSync bool
 	tx                *store.Store
-	key               encryption.Key
 	ch                *btypes.Changeset
 	spec              *btypes.ChangesetSpec
 	delta             *ChangesetSpecDelta
@@ -63,7 +60,7 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 	}
 
 	// Load the changeset source.
-	e.css, err = loadChangesetSource(ctx, e.tx, e.key, e.sourcer, e.ch, e.repo)
+	e.css, err = loadChangesetSource(ctx, e.tx, e.sourcer, e.ch, e.repo)
 	if err != nil {
 		return err
 	}
@@ -344,7 +341,7 @@ func (e *executor) sleep() {
 	}
 }
 
-func loadChangesetSource(ctx context.Context, s *store.Store, key encryption.Key, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
+func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
 	// This is a changeset source using the external service config for authentication,
 	// based on our heuristic in the sources package.
 	css, err := sourcer.ForRepo(ctx, s, repo)
@@ -359,7 +356,7 @@ func loadChangesetSource(ctx context.Context, s *store.Store, key encryption.Key
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load owning batch change")
 		}
-		css, err = sources.WithAuthenticatorForUser(ctx, s, key, css, batchChange.LastApplierID, repo)
+		css, err = sources.WithAuthenticatorForUser(ctx, s, css, batchChange.LastApplierID, repo)
 		if err != nil {
 			switch err {
 			case sources.ErrMissingCredentials:

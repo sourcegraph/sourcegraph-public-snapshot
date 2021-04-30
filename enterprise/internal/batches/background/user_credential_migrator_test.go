@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -23,10 +22,9 @@ func TestUserCredentialMigrator(t *testing.T) {
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 
-	cstore := store.New(db)
-	key := et.TestKey{}
+	cstore := store.New(db, et.TestKey{})
 
-	migrator := &userCredentialMigrator{cstore, key}
+	migrator := &userCredentialMigrator{cstore}
 	a := &auth.BasicAuth{Username: "foo", Password: "bar"}
 
 	t.Run("no user credentials", func(t *testing.T) {
@@ -37,7 +35,7 @@ func TestUserCredentialMigrator(t *testing.T) {
 	// invocations.
 	for i := 0; i < userCredentialMigrationCountPerRun*2; i++ {
 		user := ct.CreateTestUser(t, db, false)
-		createUnencryptedUserCredential(t, ctx, cstore, key, database.UserCredentialScope{
+		createUnencryptedUserCredential(t, ctx, cstore, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainBatches,
 			UserID:              user.ID,
 			ExternalServiceType: extsvc.TypeGitLab,
@@ -72,8 +70,9 @@ func TestUserCredentialMigrator(t *testing.T) {
 		}
 
 		for _, cred := range credentials {
-			have, err := cred.Authenticator(ctx, key)
+			have, err := cred.Authenticator(ctx)
 			if err != nil {
+				t.Logf("cred: %+v", cred)
 				t.Errorf("cannot get authenticator: %v", err)
 			}
 
@@ -112,10 +111,9 @@ func createUnencryptedUserCredential(
 	t *testing.T,
 	ctx context.Context,
 	store *store.Store,
-	key encryption.Key,
 	scope database.UserCredentialScope,
 	a auth.Authenticator) *database.UserCredential {
-	cred, err := store.UserCredentials().Create(ctx, key, scope, a)
+	cred, err := store.UserCredentials().Create(ctx, scope, a)
 	if err != nil {
 		t.Fatal(err)
 	}

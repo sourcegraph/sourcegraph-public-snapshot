@@ -33,11 +33,13 @@ type UserCredential struct {
 	SSHMigrationApplied bool
 	credential          auth.Authenticator
 	encryptedCredential []byte
+
+	key encryption.Key
 }
 
 // Authenticator decrypts and creates the authenticator associated with the user
 // credential.
-func (uc *UserCredential) Authenticator(ctx context.Context, dec encryption.Decrypter) (auth.Authenticator, error) {
+func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator, error) {
 	if uc.credential != nil {
 		return uc.credential, nil
 	}
@@ -47,8 +49,8 @@ func (uc *UserCredential) Authenticator(ctx context.Context, dec encryption.Decr
 	}
 
 	var raw string
-	if dec != nil {
-		secret, err := dec.Decrypt(ctx, uc.encryptedCredential)
+	if uc.key != nil {
+		secret, err := uc.key.Decrypt(ctx, uc.encryptedCredential)
 		if err != nil {
 			return nil, errors.Wrap(err, "decrypting credential")
 		}
@@ -67,8 +69,8 @@ func (uc *UserCredential) Authenticator(ctx context.Context, dec encryption.Decr
 
 // SetAuthenticator encrypts and sets the authenticator within the user
 // credential.
-func (uc *UserCredential) SetAuthenticator(ctx context.Context, enc encryption.Encrypter, a auth.Authenticator) error {
-	secret, err := encryptAuthenticator(ctx, enc, a)
+func (uc *UserCredential) SetAuthenticator(ctx context.Context, a auth.Authenticator) error {
+	secret, err := encryptAuthenticator(ctx, uc.key, a)
 	if err != nil {
 		return err
 	}
@@ -100,17 +102,24 @@ func (UserCredentialNotFoundErr) NotFound() bool {
 // UserCredentialsStore provides access to the `user_credentials` table.
 type UserCredentialsStore struct {
 	*basestore.Store
+	key  encryption.Key
 	once sync.Once
 }
 
 // NewUserStoreWithDB instantiates and returns a new UserCredentialsStore with prepared statements.
-func UserCredentials(db dbutil.DB) *UserCredentialsStore {
-	return &UserCredentialsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func UserCredentials(db dbutil.DB, key encryption.Key) *UserCredentialsStore {
+	return &UserCredentialsStore{
+		Store: basestore.NewWithDB(db, sql.TxOptions{}),
+		key:   key,
+	}
 }
 
 // NewUserStoreWith instantiates and returns a new UserCredentialsStore using the other store handle.
-func UserCredentialsWith(other basestore.ShareableStore) *UserCredentialsStore {
-	return &UserCredentialsStore{Store: basestore.NewWithHandle(other.Handle())}
+func UserCredentialsWith(other basestore.ShareableStore, key encryption.Key) *UserCredentialsStore {
+	return &UserCredentialsStore{
+		Store: basestore.NewWithHandle(other.Handle()),
+		key:   key,
+	}
 }
 
 func (s *UserCredentialsStore) With(other basestore.ShareableStore) *UserCredentialsStore {
@@ -147,13 +156,13 @@ type UserCredentialScope struct {
 // Create creates a new user credential based on the given scope and
 // authenticator. If the scope already has a credential, an error will be
 // returned.
-func (s *UserCredentialsStore) Create(ctx context.Context, enc encryption.Encrypter, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error) {
+func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error) {
 	if Mocks.UserCredentials.Create != nil {
-		return Mocks.UserCredentials.Create(ctx, enc, scope, credential)
+		return Mocks.UserCredentials.Create(ctx, scope, credential)
 	}
 	s.ensureStore()
 
-	secret, err := encryptAuthenticator(ctx, enc, credential)
+	secret, err := encryptAuthenticator(ctx, s.key, credential)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +177,7 @@ func (s *UserCredentialsStore) Create(ctx context.Context, enc encryption.Encryp
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
 
-	cred := UserCredential{}
+	cred := UserCredential{key: s.key}
 	row := s.QueryRow(ctx, q)
 	if err := scanUserCredential(&cred, row); err != nil {
 		return nil, err
@@ -247,7 +256,7 @@ func (s *UserCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCred
 		id,
 	)
 
-	cred := UserCredential{}
+	cred := UserCredential{key: s.key}
 	row := s.QueryRow(ctx, q)
 	if err := scanUserCredential(&cred, row); err == sql.ErrNoRows {
 		return nil, UserCredentialNotFoundErr{args: []interface{}{id}}
@@ -275,7 +284,7 @@ func (s *UserCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 		scope.ExternalServiceID,
 	)
 
-	cred := UserCredential{}
+	cred := UserCredential{key: s.key}
 	row := s.QueryRow(ctx, q)
 	if err := scanUserCredential(&cred, row); err == sql.ErrNoRows {
 		return nil, UserCredentialNotFoundErr{args: []interface{}{scope}}
@@ -368,7 +377,7 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 
 	var creds []*UserCredential
 	for rows.Next() {
-		cred := UserCredential{}
+		cred := UserCredential{key: s.key}
 		if err := scanUserCredential(&cred, rows); err != nil {
 			return nil, 0, err
 		}

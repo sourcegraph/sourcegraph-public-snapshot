@@ -56,7 +56,7 @@ func (b *bulkProcessor) process(ctx context.Context, job *btypes.ChangesetJob) (
 	if err != nil {
 		return errors.Wrap(err, "loading ChangesetSource")
 	}
-	b.css, err = sources.WithAuthenticatorForUser(ctx, b.store, b.key, b.css, job.UserID, b.repo)
+	b.css, err = sources.WithAuthenticatorForUser(ctx, b.store, b.css, job.UserID, b.repo)
 	if err != nil {
 		return errors.Wrap(err, "authenticating ChangesetSource")
 	}
