@@ -146,7 +146,7 @@ Foreign-key constraints:
  updated_at      | timestamp with time zone |           | not null | now()
 Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
-    "changeset_jobs_group_idx" btree (bulk_group)
+    "changeset_jobs_bulk_group_idx" btree (bulk_group)
     "changeset_jobs_state_idx" btree (state)
 Check constraints:
     "changeset_jobs_payload_check" CHECK (jsonb_typeof(payload) = 'object'::text)
