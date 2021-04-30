@@ -3,6 +3,8 @@ import React from 'react'
 
 import { ChangesetLabelFields } from '../../../../graphql-operations'
 
+import styles from './ChangesetLabel.module.scss'
+
 interface Props {
     label: ChangesetLabelFields
 }
@@ -29,7 +31,7 @@ export const ChangesetLabel: React.FunctionComponent<Props> = ({ label }) => {
         <span
             className={classNames(
                 'badge mr-2 badge-secondary',
-                labelBrightness < 127 ? 'text-white' : 'changeset-label__text--dark'
+                labelBrightness < 127 ? 'text-white' : styles.changesetLabelTextDark
             )}
             // eslint-disable-next-line react/forbid-dom-props
             style={{ backgroundColor: '#' + label.color }}
