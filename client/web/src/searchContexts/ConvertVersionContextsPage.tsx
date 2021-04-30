@@ -68,6 +68,11 @@ export const ConvertVersionContextsPage: React.FunctionComponent<ConvertVersionC
         [versionContexts]
     )
 
+    const allVersionContextsConverted = useMemo(
+        () => sortedVersionContexts.every(versionContext => versionContext.isConverted),
+        [sortedVersionContexts]
+    )
+
     const renderResult = useCallback(
         (item: VersionContext & { isConvertedUpdates: Subject<void>; searchContextSpec: string }): JSX.Element => (
             <ConvertVersionContextNode
@@ -133,7 +138,11 @@ export const ConvertVersionContextsPage: React.FunctionComponent<ConvertVersionC
                                 type="button"
                                 className="btn btn-outline-primary test-convert-all-search-contexts-btn"
                                 onClick={convertAll}
-                                disabled={convertAllResult === LOADING}
+                                disabled={
+                                    allVersionContextsConverted ||
+                                    convertAllResult === LOADING ||
+                                    typeof convertAllResult !== 'undefined'
+                                }
                             >
                                 {convertAllResult === LOADING ? 'Converting All...' : 'Convert All'}
                             </button>
