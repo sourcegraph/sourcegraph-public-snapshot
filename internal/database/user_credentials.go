@@ -162,7 +162,7 @@ func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 	}
 	s.ensureStore()
 
-	secret, err := encryptAuthenticator(ctx, s.key, credential)
+	enc, err := encryptAuthenticator(ctx, s.key, credential)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 		scope.UserID,
 		scope.ExternalServiceType,
 		scope.ExternalServiceID,
-		secret,
+		enc,
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
 
