@@ -5,6 +5,10 @@
         margin-top: 0.5rem;
     }
 
+    &__search-box {
+        display: block;
+    }
+
     &__list-item {
         display: flex;
         font-size: 0.75rem;
@@ -22,5 +26,10 @@
         &:active {
             background-color: var(--color-bg-3);
         }
+    }
+
+    &__no-results {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
     }
 }
