@@ -5,7 +5,6 @@ package database
 var (
 	GlobalExternalServices            = &ExternalServiceStore{}
 	GlobalRepos                       = &RepoStore{}
-	GlobalSettings                    = &SettingStore{}
 	GlobalUsers                       = &UserStore{}
 	GlobalUserEmails                  = &UserEmailsStore{}
 	GlobalExternalAccounts            = &UserExternalAccountsStore{}
