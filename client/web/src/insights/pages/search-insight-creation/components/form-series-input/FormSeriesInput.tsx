@@ -144,7 +144,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
 
             <InputField
                 title="Query"
-                placeholder="Example: patternType:regexp const\\s\\w+:\\s(React\\.)?FunctionComponent"
+                placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 description={
                     <span>
                         Do not include the <code>repo:</code> filter as it will be added automatically for the current
