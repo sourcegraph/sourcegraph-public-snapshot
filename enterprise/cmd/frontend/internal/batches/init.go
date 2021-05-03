@@ -16,7 +16,7 @@ import (
 )
 
 // Init initializes the given enterpriseServices to include the required
-// resolvers for batch changes and sets up webhook handlers for changeset
+// resolvers for Batch Changes and sets up webhook handlers for changeset
 // events.
 func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
 	// Validate site configuration.
