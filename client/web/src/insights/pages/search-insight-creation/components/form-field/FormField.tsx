@@ -1,5 +1,5 @@
 import classnames from 'classnames'
-import React, { forwardRef, InputHTMLAttributes, ReactNode, useEffect, useRef } from 'react'
+import React, { forwardRef, InputHTMLAttributes, ReactNode, useRef } from 'react'
 import { useMergeRefs } from 'use-callback-ref'
 
 interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -20,21 +20,15 @@ interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement> {
 
 /** Displays input with description, error message, visual invalid and valid states. */
 export const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, reference) => {
-    const { title, description, className, valid, error, autofocus = false, errorInputState, ...otherProps } = props
+    const { type = 'text', title, description, className, valid, error, errorInputState, ...otherProps } = props
     const localInputReference = useRef<HTMLInputElement>(null)
-
-    useEffect(() => {
-        if (autofocus) {
-            localInputReference.current?.focus()
-        }
-    }, [autofocus])
 
     return (
         <label className={classnames(className)}>
             {title && <div className="mb-2">{title}</div>}
 
             <input
-                type="text"
+                type={type}
                 className={classnames('form-control', {
                     'is-valid': valid,
                     'is-invalid': !!error || errorInputState,

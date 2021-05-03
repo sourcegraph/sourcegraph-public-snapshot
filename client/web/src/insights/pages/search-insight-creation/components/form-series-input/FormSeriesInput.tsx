@@ -38,6 +38,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
         color,
         className,
         cancel = false,
+        autofocus = true,
         onCancel = noop,
         onSubmit = noop,
     } = props
@@ -68,6 +69,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
             <InputField
                 title="Name"
                 required={true}
+                autoFocus={autofocus}
                 placeholder="Example: Function component"
                 description="Name shown in the legend and tooltip"
                 valid={(hasNameControlledValue || nameField.meta.touched) && nameField.meta.validState === 'VALID'}

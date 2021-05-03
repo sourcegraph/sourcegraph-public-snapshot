@@ -71,7 +71,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
 
     useEffect(() => () => { isUnmounted.current = true }, []);
 
-    // Allow pass onSubmit
+    // Allow pass handler without memo
     onSubmitReference.current = onSubmit;
 
     return {
@@ -183,7 +183,7 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
             return setState(state => ({
                 ...state,
                 validState: 'INVALID',
-                error: customValidation,
+                error: validationMessage,
                 validity
             }))
         }

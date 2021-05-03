@@ -1,10 +1,11 @@
 import * as jsonc from '@sqs/jsonc-parser'
+import { camelCase } from 'lodash'
 import React, { useCallback, useContext } from 'react'
 import { Redirect } from 'react-router'
 import { RouteComponentProps } from 'react-router-dom'
-import * as uuid from 'uuid'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings';
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -24,7 +25,9 @@ const defaultFormattingOptions: jsonc.FormattingOptions = {
     tabSize: 2,
 }
 
-export interface CreationSearchInsightPageProps extends PlatformContextProps, RouteComponentProps {
+const DEFAULT_FINAL_SETTINGS = {};
+
+export interface CreationSearchInsightPageProps extends PlatformContextProps, RouteComponentProps, SettingsCascadeProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
@@ -34,7 +37,7 @@ export interface CreationSearchInsightPageProps extends PlatformContextProps, Ro
 
 /** Displays create insight page with creation form. */
 export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchInsightPageProps> = props => {
-    const { platformContext, authenticatedUser, history } = props
+    const { platformContext, authenticatedUser, history, settingsCascade } = props
     const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
 
     const handleSubmit = useCallback<CreationSearchInsightFormProps['onSubmit']>(
@@ -55,7 +58,6 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
 
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
-                const insightID = uuid.v4()
 
                 const newSettingsString = {
                     title: values.title,
@@ -76,7 +78,8 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
 
                 const edits = jsonc.modify(
                     settings.contents,
-                    [`searchInsights.insight.${insightID}`],
+                    // According to our naming convention <type>.insight.<name>
+                    [`searchInsights.insight.${camelCase(values.title)}`],
                     newSettingsString,
                     { formattingOptions: defaultFormattingOptions }
                 )
@@ -93,6 +96,13 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
             return
         },
         [history, updateSubjectSettings, getSubjectSettings, platformContext, authenticatedUser]
+    )
+
+    const handleCancel = useCallback(
+        () => {
+            history.push('/insights')
+        },
+        [history]
     )
 
     if (authenticatedUser === null) {
@@ -118,7 +128,11 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
                 </p>
             </div>
 
-            <CreationSearchInsightForm onSubmit={handleSubmit} />
+            <CreationSearchInsightForm
+                className='pb-5'
+                settings={settingsCascade.final ?? DEFAULT_FINAL_SETTINGS}
+                onSubmit={handleSubmit}
+                onCancel={handleCancel}/>
         </Page>
     )
 }

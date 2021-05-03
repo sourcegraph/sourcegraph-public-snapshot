@@ -1,21 +1,26 @@
 import classnames from 'classnames'
-import React from 'react'
+import { camelCase } from 'lodash';
+import React, { useMemo } from 'react'
+import { noop } from 'rxjs';
 
 import { ErrorAlert } from '../../../../../components/alerts';
+import { LoaderButton } from '../../../../../components/LoaderButton';
 import { FORM_ERROR, SubmissionErrors, useField, useForm, Validator } from '../../hooks/useForm';
 import { DataSeries } from '../../types'
 import { InputField } from '../form-field/FormField'
 import { FormGroup } from '../form-group/FormGroup'
 import { FormRadioInput } from '../form-radio-input/FormRadioInput'
 import { FormSeries } from '../form-series/FormSeries'
-import { createRequiredValidator } from '../validators'
+import { createRequiredValidator, composeValidators } from '../validators'
 
 import styles from './CreationSearchInsightForm.module.scss'
 
-const requiredTitleField = createRequiredValidator('Title is required field for code insight.')
 const repositoriesFieldValidator = createRequiredValidator('Repositories is required field for code insight.')
-
 const requiredStepValueField = createRequiredValidator('Please specify a step between points.')
+/**
+ * Custom validator for chart series. Since series has complex type
+ * we can't validate this with standard validators.
+ * */
 const seriesRequired: Validator<DataSeries[]> = series =>
     series && series.length > 0
         ? undefined
@@ -25,19 +30,22 @@ const INITIAL_VALUES: Partial<CreateInsightFormFields> = {
     visibility: 'personal',
     series: [],
     step: 'months',
-    stepValue: '',
+    stepValue: '2',
     title: '',
     repositories: '',
 }
 
 /** Public API of code insight creation form. */
 export interface CreationSearchInsightFormProps {
+    /** Final settings cascade. Used for title field validation. */
+    settings: { [key:string]: any }
     /** Custom class name for root form element. */
     className?: string
     /** Submit handler for form element. */
     onSubmit: (
         values: CreateInsightFormFields,
     ) => SubmissionErrors | Promise<SubmissionErrors> | void
+    onCancel?: () => void
 }
 
 /** Creation form fields. */
@@ -58,14 +66,30 @@ export interface CreateInsightFormFields {
 
 /** Displays creation code insight form (title, visibility, series, etc.) */
 export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchInsightFormProps> = props => {
-    const { className, onSubmit } = props
+    const { settings, className, onSubmit, onCancel = noop } = props
 
     const { formAPI, ref, handleSubmit } = useForm<CreateInsightFormFields>({
         initialValues: INITIAL_VALUES,
         onSubmit
     })
 
-    const title = useField('title', formAPI, requiredTitleField)
+    // We can't have two or more insights with the same name, since we rely on name as on id of insights.
+    const titleValidator = useMemo(() => {
+        const alreadyExistsInsightNames = new Set(Object
+            .keys(settings)
+            // According to our convention about insights name <insight type>.insight.<insight name>
+            .filter(key => key.startsWith('searchInsights.insight'))
+            .map(key => camelCase(key.split('.').pop())))
+
+        return composeValidators<string>(
+            createRequiredValidator('Title is required field for code insight.'),
+            value => alreadyExistsInsightNames.has(camelCase(value))
+                ? 'An insight with this name already exists. Please set a different name for the new insight.'
+                : undefined
+        )
+    }, [settings])
+
+    const title = useField('title', formAPI, titleValidator)
     const repositories = useField('repositories', formAPI, repositoriesFieldValidator)
     const visibility = useField('visibility', formAPI)
 
@@ -78,6 +102,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
         <form noValidate={true} ref={ref} onSubmit={handleSubmit} className={classnames(className, 'd-flex flex-column')}>
             <InputField
                 title="Title"
+                autoFocus={true}
                 required={true}
                 description="Shown as title for your insight"
                 placeholder="ex. Migration to React function components"
@@ -156,6 +181,8 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 <InputField
                     placeholder="ex. 2"
                     required={true}
+                    type='number'
+                    min={1}
                     {...stepValue.input}
                     valid={stepValue.meta.touched && stepValue.meta.validState === 'VALID'}
                     errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
@@ -210,10 +237,16 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
 
                 {formAPI.submitErrors?.[FORM_ERROR] && <ErrorAlert error={formAPI.submitErrors[FORM_ERROR]} />}
 
-                <button type="submit" className="btn btn-primary mr-2">
-                    Create code insight
-                </button>
-                <button type="button" className="btn btn-outline-secondary">
+                <LoaderButton
+                    alwaysShowLabel={true}
+                    loading={formAPI.submitting}
+                    label={formAPI.submitting ? 'Submitting' : 'Create code insight'}
+                    type="submit"
+                    disabled={formAPI.submitting}
+                    className="btn btn-primary mr-2"
+                />
+
+                <button type="button" className="btn btn-outline-secondary" onClick={onCancel}>
                     Cancel
                 </button>
             </div>
