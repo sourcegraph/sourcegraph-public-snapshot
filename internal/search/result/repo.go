@@ -48,4 +48,11 @@ func (r *RepoMatch) URL() *url.URL {
 	return &url.URL{Path: path}
 }
 
+func (r *RepoMatch) Key() Key {
+	return Key{
+		TypeRank: rankRepoMatch,
+		Repo:     r.Name,
+	}
+}
+
 func (r *RepoMatch) searchResultMarker() {}
