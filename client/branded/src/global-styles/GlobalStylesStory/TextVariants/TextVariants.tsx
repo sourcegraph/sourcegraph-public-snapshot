@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React, { ElementType } from 'react'
 
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+
 import styles from './TextVariants.module.scss'
 
 const SIZE_VARIANTS = ['Base', 'Small'] as const
@@ -40,6 +42,7 @@ interface TextVariantsProps {
 
 const TextVariations: React.FunctionComponent<TextVariantsProps> = props => {
     const { component: Component, name, weights = ['Regular'], className } = props
+    const [isRedesignEnabled] = useRedesignToggle()
 
     const textVariations = SIZE_VARIANTS.flatMap(size =>
         weights.map(weight => {
@@ -48,7 +51,7 @@ const TextVariations: React.FunctionComponent<TextVariantsProps> = props => {
             return (
                 <Component key={`${size}/${weight}`} className={classNames(styles.textVariant, className)}>
                     <SizeWrapper>
-                        <TextLabel size={size} weight={weight} name={name} />
+                        {name} isRedesignEnabled: {String(isRedesignEnabled)}
                     </SizeWrapper>
                 </Component>
             )
