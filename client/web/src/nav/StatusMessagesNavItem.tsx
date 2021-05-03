@@ -1,14 +1,21 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import CloudAlertIcon from 'mdi-react/CloudAlertIcon'
-import CloudCheckIcon from 'mdi-react/CloudCheckIcon'
-import CloudSyncIcon from 'mdi-react/CloudSyncIcon'
+import { MdiReactIconProps } from 'mdi-react'
+import CloudAlertIconCurrent from 'mdi-react/CloudAlertIcon'
+import CloudCheckIconCurrent from 'mdi-react/CloudCheckIcon'
+import CloudSyncIconCurrent from 'mdi-react/CloudSyncIcon'
 import React from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Observable, Subscription } from 'rxjs'
 import { catchError, map, repeatWhen, delay, distinctUntilChanged } from 'rxjs/operators'
 
+import {
+    CloudAlertIconRefresh,
+    CloudSyncIconRefresh,
+    CloudCheckIconRefresh,
+    IconProps,
+} from '@sourcegraph/shared/src/components/icons'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -67,9 +74,29 @@ interface StatusMessageEntryProps {
     linkText: string
     entryType: EntryType
     linkOnClick: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void
+    isRedesignEnabled?: boolean
 }
 
-function entryIcon(entryType: EntryType): JSX.Element {
+type Icon =
+    | React.FunctionComponent<IconProps>
+    | React.ComponentClass<MdiReactIconProps, any>
+    | React.FunctionComponent<MdiReactIconProps>
+
+interface IconsToShow {
+    CloudAlertIcon: Icon
+    CloudSyncIcon: Icon
+    CloudCheckIcon: Icon
+}
+
+function iconsToShow(isRedesignEnabled = false): IconsToShow {
+    const CloudAlertIcon = isRedesignEnabled ? CloudAlertIconRefresh : CloudAlertIconCurrent
+    const CloudSyncIcon = isRedesignEnabled ? CloudSyncIconRefresh : CloudSyncIconCurrent
+    const CloudCheckIcon = isRedesignEnabled ? CloudCheckIconRefresh : CloudCheckIconCurrent
+    return { CloudAlertIcon, CloudSyncIcon, CloudCheckIcon }
+}
+
+function entryIcon(entryType: EntryType, isRedesignEnabled?: boolean): JSX.Element {
+    const { CloudAlertIcon, CloudSyncIcon, CloudCheckIcon } = iconsToShow(isRedesignEnabled)
     switch (entryType) {
         case 'warning':
             return <CloudAlertIcon className="icon-inline mr-1" />
@@ -89,7 +116,7 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProp
         )}
     >
         <h4>
-            {entryIcon(props.entryType)}
+            {entryIcon(props.entryType, props.isRedesignEnabled)}
             {props.title}
         </h4>
         <p>{props.text}</p>
@@ -106,6 +133,7 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProp
 interface Props {
     fetchMessages?: () => Observable<StatusMessagesResult['statusMessages']>
     isSiteAdmin: boolean
+    isRedesignEnabled?: boolean
     history: H.History
 }
 
@@ -148,56 +176,49 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     }
 
     private renderMessage(message: StatusMessageFields, key: number): JSX.Element | null {
+        const props = {
+            key,
+            text: message.message,
+            showLink: this.props.isSiteAdmin,
+            linkTo: '/site-admin/externa-services',
+            linkOnClick: this.toggleIsOpen,
+            isRedesignEnabled: this.props.isRedesignEnabled,
+        }
         switch (message.__typename) {
             case 'CloningProgress':
                 return (
                     <StatusMessagesNavItemEntry
-                        key={key}
+                        {...props}
                         title="Repositories cloning"
-                        text={message.message}
-                        showLink={this.props.isSiteAdmin}
-                        linkTo="/site-admin/external-services"
                         linkText="Configure synced repositories"
-                        linkOnClick={this.toggleIsOpen}
                         entryType="progress"
                     />
                 )
             case 'IndexingProgress':
                 return (
                     <StatusMessagesNavItemEntry
-                        key={key}
+                        {...props}
                         title="Repositories indexing"
-                        text={message.message}
-                        showLink={this.props.isSiteAdmin}
-                        linkTo="/site-admin/external-services"
                         linkText="Configure synced repositories"
-                        linkOnClick={this.toggleIsOpen}
                         entryType="progress"
                     />
                 )
             case 'ExternalServiceSyncError':
                 return (
                     <StatusMessagesNavItemEntry
-                        key={key}
+                        {...props}
                         title={`Syncing repositories from external service "${message.externalService.displayName}" failed:`}
-                        text={message.message}
-                        showLink={this.props.isSiteAdmin}
                         linkTo={`/site-admin/external-services/${message.externalService.id}`}
                         linkText={`Edit "${message.externalService.displayName}"`}
-                        linkOnClick={this.toggleIsOpen}
                         entryType="warning"
                     />
                 )
             case 'SyncError':
                 return (
                     <StatusMessagesNavItemEntry
-                        key={key}
+                        {...props}
                         title="Syncing repositories failed:"
-                        text={message.message}
-                        showLink={this.props.isSiteAdmin}
-                        linkTo="/site-admin/external-services"
                         linkText="Configure synced repositories"
-                        linkOnClick={this.toggleIsOpen}
                         entryType="warning"
                     />
                 )
@@ -205,6 +226,8 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     }
 
     private renderIcon(): JSX.Element | null {
+        const { CloudAlertIcon, CloudSyncIcon, CloudCheckIcon } = iconsToShow(this.props.isRedesignEnabled)
+
         if (isErrorLike(this.state.messagesOrError)) {
             return <CloudAlertIcon className="icon-inline" />
         }
