@@ -338,7 +338,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
          * 3. no repos selected - empty state
          */
         const radioSelectOption =
-            ALLOW_SYNC_ALL && selectedAffiliatedRepos.size !== 0 && allCodeHostsSyncAffiliatedRepos
+            ALLOW_SYNC_ALL && allCodeHostsSyncAffiliatedRepos
                 ? 'all'
                 : selectedAffiliatedRepos.size > 0
                 ? 'selected'
