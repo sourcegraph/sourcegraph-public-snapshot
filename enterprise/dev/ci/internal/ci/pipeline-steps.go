@@ -92,14 +92,15 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 
 		if c.isMasterDryRun || c.isStorybookAffected() {
 			// Upload storybook to Chromatic
-			chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
-			if !c.isPR() {
+			chromaticCommand := "dev/ci/yarn-run.sh chromatic --exit-zero-on-changes --exit-once-uploaded"
+			if c.isMainBranch() {
 				chromaticCommand += " --auto-accept-changes"
 			}
 			pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
 				bk.AutomaticRetry(5),
-				bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
-				bk.Cmd("yarn gulp generate"),
+				// Set MINIFY, so the uploaded storybooks require less bandwidth
+				// to download. Otherwise to view a storybook people would need
+				// to download around 60MB of JS bundles.
 				bk.Env("MINIFY", "1"),
 				bk.Cmd(chromaticCommand))
 		}
