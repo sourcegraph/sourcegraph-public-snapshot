@@ -20,20 +20,9 @@ interface FormColorPickerProps {
     className?: string
 }
 
-const DEFAULT_COLOURS = [
-    { color: openColor.red[7], name: 'Red' },
-    { color: openColor.pink[7], name: 'Pink' },
-    { color: openColor.grape[7], name: 'Grape' },
-    { color: openColor.violet[7], name: 'Violet' },
-    { color: openColor.indigo[7], name: 'Indigo' },
-    { color: openColor.blue[7], name: 'Blue' },
-    { color: openColor.cyan[7], name: 'Cyan' },
-    { color: openColor.teal[7], name: 'Teal' },
-    { color: openColor.green[7], name: 'Green' },
-    { color: openColor.lime[7], name: 'Lime' },
-    { color: openColor.yellow[7], name: 'Yellow' },
-    { color: openColor.orange[7], name: 'Orange' },
-]
+const DEFAULT_COLOURS = Object.keys(openColor)
+    .filter(name => name !== 'white' && name !== 'black')
+    .map(name => ({ name: startCase(name), color: `var(--oc-${name}-7)` }))
 
 export const DEFAULT_ACTIVE_COLOR = openColor.grape[7]
 
