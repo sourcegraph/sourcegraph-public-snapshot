@@ -51,9 +51,9 @@ The only exceptions are colon characters, which are by default used for specifyi
 
 Oracle OpenGrok provides three boolean operators — `AND`, `OR`, and `NOT` — for scoping searches to files that contain strings that match multiple patterns.
 
-Sourcegraph also provides [`AND`, `OR`, and `NOT` operators](../reference/queries.md#operators).
+Sourcegraph also provides [`AND`, `OR`, and `NOT` operators](../reference/queries.md#boolean-operators).
 
-> NOTE: Operators are available as of Sourcegraph 3.15 and enabled with `{"experimentalFeatures": {"andOrQuery": "enabled"}}` in the site configuration. Built-in operator support is planned for an upcoming release.
+> NOTE: Operators are available as of Sourcegraph 3.17
 
 ### Search keywords
 
