@@ -14,6 +14,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	internalapitest "github.com/sourcegraph/sourcegraph/internal/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -219,7 +220,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 
 			input := map[string]interface{}{"id": marshalChangesetSpecRandID(spec.RandID)}
 			var response struct{ Node apitest.ChangesetSpec }
-			apitest.MustExec(ctx, t, s, input, &response, queryChangesetSpecNode)
+			internalapitest.MustExec(ctx, t, s, input, &response, queryChangesetSpecNode)
 
 			want := tc.want(spec)
 			if diff := cmp.Diff(want, response.Node); diff != "" {
