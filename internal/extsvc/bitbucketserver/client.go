@@ -619,7 +619,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 	return nil
 }
 
-// FetchDefaultReviewers loads the suggested default reviewers for the given pr.
+// FetchDefaultReviewers loads the suggested default reviewers for the given PR.
 func (c *Client) FetchDefaultReviewers(ctx context.Context, pr *PullRequest) ([]string, error) {
 	// Validate input.
 	for _, namedRef := range [...]struct {
