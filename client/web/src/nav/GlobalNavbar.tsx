@@ -9,6 +9,7 @@ import { startWith } from 'rxjs/operators'
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { ActivationDropdown } from '@sourcegraph/shared/src/components/activation/ActivationDropdown'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -248,6 +249,11 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         <NavItem icon={PuzzleOutlineIcon}>
                             <NavLink to="/extensions">Extensions</NavLink>
                         </NavItem>
+                        {props.activation && (
+                            <NavItem>
+                                <ActivationDropdown activation={props.activation} history={history} />
+                            </NavItem>
+                        )}
                         {!props.authenticatedUser && (
                             <>
                                 {showDotComMarketing && (
