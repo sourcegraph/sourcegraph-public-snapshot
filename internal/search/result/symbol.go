@@ -7,7 +7,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-lsp"
 )
 
@@ -86,7 +85,6 @@ func (s Symbol) LSPKind() lsp.SymbolKind {
 	case "type parameter", "annotation":
 		return lsp.SKTypeParameter
 	}
-	log15.Debug("Unknown ctags kind", "kind", s.Kind)
 	return 0
 }
 
