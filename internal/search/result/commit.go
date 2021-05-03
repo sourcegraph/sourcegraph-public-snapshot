@@ -1,6 +1,8 @@
 package result
 
 import (
+	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -78,6 +80,30 @@ func (r *CommitMatch) Key() Key {
 		Repo:     r.RepoName.Name,
 		Commit:   r.Commit.ID,
 	}
+}
+
+func (r *CommitMatch) Label() string {
+	message := r.Commit.Message.Subject()
+	author := r.Commit.Author.Name
+	repoName := displayRepoName(string(r.RepoName.Name))
+	repoURL := (&RepoMatch{Name: r.RepoName.Name, ID: r.RepoName.ID}).URL().String()
+	commitURL := r.URL().String()
+
+	return fmt.Sprintf("[%s](%s) › [%s](%s): [%s](%s)", repoName, repoURL, author, commitURL, message, commitURL)
+}
+
+func (r *CommitMatch) URL() *url.URL {
+	u := (&RepoMatch{Name: r.RepoName.Name, ID: r.RepoName.ID}).URL()
+	u.Path = u.Path + "/-/commit/" + string(r.Commit.ID)
+	return u
+}
+
+func displayRepoName(repoPath string) string {
+	parts := strings.Split(repoPath, "/")
+	if len(parts) >= 3 && strings.Contains(parts[0], ".") {
+		parts = parts[1:] // remove hostname from repo path (reduce visual noise)
+	}
+	return strings.Join(parts, "/")
 }
 
 // selectModifiedLines extracts the highlight ranges that correspond to lines
