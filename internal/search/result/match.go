@@ -42,6 +42,9 @@ type Key struct {
 	// Repo is the name of the repo the match belongs to
 	Repo api.RepoName
 
+	// Rev is the revision associated with the repo if it exists
+	Rev string
+
 	// Commit is the commit hash of the commit the match belongs to.
 	// Empty if there is no commit associated with the match (e.g. RepoMatch)
 	Commit api.CommitID
@@ -58,6 +61,10 @@ type Key struct {
 func (k Key) Less(other Key) bool {
 	if k.Repo != other.Repo {
 		return k.Repo < other.Repo
+	}
+
+	if k.Rev != other.Rev {
+		return k.Rev < other.Rev
 	}
 
 	if k.Commit != other.Commit {
