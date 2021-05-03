@@ -3,6 +3,7 @@ import { combineLatest, concat, from, Observable, of, Subject } from 'rxjs'
 import { catchError, concatMap, delay, map, mergeMap, reduce, startWith, tap, toArray } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable, useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -119,7 +120,10 @@ export const ConvertVersionContextsPage: React.FunctionComponent<ConvertVersionC
                 <div className="container col-8">
                     <PageTitle title="Convert version contexts" />
                     <div className="convert-version-contexts-page">
-                        <div className="page-header d-flex flex-wrap align-items-center">
+                        <Link to="/contexts">
+                            « <span className="convert-version-contexts-page__back-label">Back</span>
+                        </Link>
+                        <div className="page-header d-flex flex-wrap align-items-center mt-2">
                             <h2 className="flex-grow-1">Convert version contexts</h2>
                         </div>
                         <div className="text-muted">
