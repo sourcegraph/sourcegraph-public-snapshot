@@ -204,6 +204,17 @@ type DetachChangesetsArgs struct {
 	Changesets  []graphql.ID
 }
 
+type ListBatchChangeBulkOperationArgs struct {
+	First int32
+	After *string
+}
+
+type CreateChangesetCommentsArgs struct {
+	BatchChange graphql.ID
+	Changesets  []graphql.ID
+	Body        string
+}
+
 type BatchChangesResolver interface {
 	//
 	// MUTATIONS
@@ -231,6 +242,7 @@ type BatchChangesResolver interface {
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
 	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (*EmptyResponse, error)
+	CreateChangesetComments(ctx context.Context, args *CreateChangesetCommentsArgs) (BulkOperationResolver, error)
 
 	// Queries
 
@@ -245,6 +257,27 @@ type BatchChangesResolver interface {
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
+}
+
+type BulkOperationConnectionResolver interface {
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Nodes(ctx context.Context) ([]BulkOperationResolver, error)
+}
+
+type BulkOperationResolver interface {
+	ID() graphql.ID
+	Type() (string, error)
+	State() string
+	Progress() float64
+	Errors(ctx context.Context) ([]ChangesetJobErrorResolver, error)
+	CreatedAt() DateTime
+	FinishedAt() *DateTime
+}
+
+type ChangesetJobErrorResolver interface {
+	Changeset() ChangesetResolver
+	Error() *string
 }
 
 type BatchSpecResolver interface {
@@ -515,6 +548,7 @@ type BatchChangeResolver interface {
 	ClosedAt() *DateTime
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	CurrentSpec(ctx context.Context) (BatchSpecResolver, error)
+	BulkOperations(ctx context.Context, args *ListBatchChangeBulkOperationArgs) (BulkOperationConnectionResolver, error)
 
 	// TODO(campaigns-deprecation): This should be removed once we remove batches.
 	// It's here so that in the NodeResolver we can have the same resolver,

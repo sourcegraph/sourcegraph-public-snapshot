@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
+	"github.com/dineshappavoo/basex"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
@@ -18,12 +20,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-// seededRand is used to populate the RandID fields on BatchSpec and
-// ChangesetSpec when creating them.
+// SQLColumns is a slice of column names, that can be converted to a slice of
+// *sqlf.Query.
+type SQLColumns []string
+
+// ToSqlf returns all the columns wrapped in a *sqlf.Query.
+func (s SQLColumns) ToSqlf() []*sqlf.Query {
+	columns := []*sqlf.Query{}
+	for _, col := range s {
+		columns = append(columns, sqlf.Sprintf(col))
+	}
+	return columns
+}
+
+// seededRand is used in RandomID() to generate a "random" number.
 var seededRand *rand.Rand = rand.New(rand.NewSource(timeutil.Now().UnixNano()))
 
 // ErrNoResults is returned by Store method calls that found no results.
 var ErrNoResults = errors.New("no results")
+
+// RandomID generates a random ID to be used for identifiers in the database.
+func RandomID() (string, error) {
+	return basex.Encode(strconv.Itoa(seededRand.Int()))
+}
 
 // Store exposes methods to read and write batches domain models
 // from persistent storage.

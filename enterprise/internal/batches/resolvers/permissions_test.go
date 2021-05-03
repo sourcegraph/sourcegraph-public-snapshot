@@ -730,6 +730,12 @@ func TestPermissionLevels(t *testing.T) {
 					return fmt.Sprintf(`mutation { moveBatchChange(batchChange: %q, newName: "foobar") { id } }`, batchChangeID)
 				},
 			},
+			{
+				name: "createChangesetComments",
+				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+					return fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [%q], body: "test") { id } }`, batchChangeID, changesetID)
+				},
+			},
 		}
 
 		for _, m := range mutations {
