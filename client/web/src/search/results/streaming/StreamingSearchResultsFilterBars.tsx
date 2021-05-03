@@ -68,10 +68,7 @@ export const StreamingSearchResultsFilterBars: React.FunctionComponent<Props> = 
         },
         [props]
     )
-    const calculateCount = useCallback(
-        () => (results?.state === 'complete' ? Math.max(results.progress.matchCount * 2 || 0, 1000) : 0),
-        [results]
-    )
+    const calculateCount = useCallback(() => (results?.state === 'complete' ? 'all' : 0), [results])
     const showMoreResults = useCallback(() => {
         const count = calculateCount()
         const newQuery = updateFilter(props.navbarSearchQueryState.query, 'count', count.toString())
