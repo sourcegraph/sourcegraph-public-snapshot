@@ -10,15 +10,9 @@ export const SearchSidebarSection: React.FunctionComponent<{
     showSearch?: boolean // Search only works if children are FilterLink
 }> = ({ header, children = [], showSearch = false }) => {
     const [filter, setFilter] = useState('')
-    const onFilterChanged = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        event => setFilter(event.currentTarget.value),
-        []
-    )
 
     // Clear filter when children change
-    useEffect(() => {
-        setFilter('')
-    }, [children])
+    useEffect(() => setFilter(''), [children])
 
     const filteredChildren = useMemo(
         () =>
@@ -26,7 +20,8 @@ export const SearchSidebarSection: React.FunctionComponent<{
                 if (child.type === FilterLink) {
                     const props = child.props as FilterLinkProps
                     return (
-                        (props?.label).includes(filter.toLowerCase()) || (props?.value).includes(filter.toLowerCase())
+                        (props?.label).toLowerCase().includes(filter.toLowerCase()) ||
+                        (props?.value).toLowerCase().includes(filter.toLowerCase())
                     )
                 }
                 return true
@@ -42,8 +37,12 @@ export const SearchSidebarSection: React.FunctionComponent<{
                     type="search"
                     placeholder="Find..."
                     value={filter}
-                    onInput={onFilterChanged}
-                    className={classNames('form-control', styles.sidebarSectionSearchBox)}
+                    onChange={event => setFilter(event.currentTarget.value)}
+                    className={classNames(
+                        'form-control',
+                        styles.sidebarSectionSearchBox,
+                        'test-sidebar-section-search-box'
+                    )}
                 />
             )}
 
