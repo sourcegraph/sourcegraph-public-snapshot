@@ -31,6 +31,12 @@
             margin-left: 0.375rem;
         }
     }
+    &:hover:not(.active) {
+        border-bottom: 2px solid var(--border-color);
+        .link-content {
+            margin-bottom: -0.125rem;
+        }
+    }
     @include media-breakpoint-down(sm) {
         padding: 0.25rem 0;
         flex: 1;
@@ -62,7 +68,6 @@
 
 .active {
     border-bottom: 2px solid var(--brand-secondary);
-    margin-bottom: -0.0625rem;
     .link-content {
         margin-bottom: -0.125rem;
     }
