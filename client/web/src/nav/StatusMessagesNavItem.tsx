@@ -180,7 +180,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             key,
             text: message.message,
             showLink: this.props.isSiteAdmin,
-            linkTo: '/site-admin/externa-services',
+            linkTo: '/site-admin/external-services',
             linkOnClick: this.toggleIsOpen,
             isRedesignEnabled: this.props.isRedesignEnabled,
         }
