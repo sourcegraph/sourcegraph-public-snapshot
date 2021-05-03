@@ -522,11 +522,22 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 	if err != nil {
 		return nil, err
 	}
+
 	hunkLines := strings.Split(string(r.hunk.Body), "\n")
+
 	// Remove final empty line on files that end with a newline, as most code hosts do.
 	if hunkLines[len(hunkLines)-1] == "" {
 		hunkLines = hunkLines[:len(hunkLines)-1]
 	}
+
+	// Trim a trailing empty line to match the behavior of highlight.Code
+	// If this isn't done, it causes the length of highlightedHead to be
+	// different than the length of hunkLines, which leads to out-of-bounds
+	// errors like https://github.com/sourcegraph/sourcegraph/issues/20405
+	if hunkLines[len(hunkLines)-1] == "+" {
+		hunkLines = hunkLines[:len(hunkLines)-1]
+	}
+
 	highlightedDiffHunkLineResolvers := make([]*highlightedDiffHunkLineResolver, len(hunkLines))
 	// Lines in highlightedBase and highlightedHead are 0-indexed.
 	baseLine := r.hunk.OrigStartLine - 1

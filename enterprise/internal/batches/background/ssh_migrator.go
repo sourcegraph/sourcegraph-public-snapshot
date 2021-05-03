@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -13,10 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
-
-// BatchChangesSSHMigrationID is the ID of row holding the ssh migration. It is defined in
-// `1528395788_campaigns_ssh_key_migration.up`.
-const BatchChangesSSHMigrationID = 2
 
 const sshMigrationCountPerRun = 5
 
@@ -31,15 +26,10 @@ var _ oobmigration.Migrator = &sshMigrator{}
 // Progress returns the ratio of migrated records to total records. Any record with a
 // credential type that ends on WithSSH is considered migrated.
 func (m *sshMigrator) Progress(ctx context.Context) (float64, error) {
-	unmigratedMigratorTypes := []*sqlf.Query{
-		sqlf.Sprintf("%s", strconv.Quote(string(database.AuthenticatorTypeBasicAuth))),
-		sqlf.Sprintf("%s", strconv.Quote(string(database.AuthenticatorTypeOAuthBearerToken))),
-	}
 	progress, _, err := basestore.ScanFirstFloat(
 		m.store.Query(ctx, sqlf.Sprintf(
 			sshMigratorProgressQuery,
 			database.UserCredentialDomainBatches,
-			sqlf.Join(unmigratedMigratorTypes, ","),
 			database.UserCredentialDomainBatches,
 		)))
 	if err != nil {
@@ -52,7 +42,7 @@ func (m *sshMigrator) Progress(ctx context.Context) (float64, error) {
 const sshMigratorProgressQuery = `
 -- source: enterprise/internal/batches/ssh_migrator.go:Progress
 SELECT CASE c2.count WHEN 0 THEN 1 ELSE CAST((c2.count - c1.count) AS float) / CAST(c2.count AS float) END FROM
-	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s AND (credential::json->'Type')::text IN (%s)) c1,
+	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s AND ssh_migration_applied = FALSE) c1,
 	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s) c2
 `
 
@@ -65,6 +55,7 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 	}
 	defer func() { err = tx.Done(err) }()
 
+	f := false
 	credentials, _, err := tx.UserCredentials().List(ctx, database.UserCredentialsListOpts{
 		Scope: database.UserCredentialScope{
 			Domain: database.UserCredentialDomainBatches,
@@ -72,14 +63,19 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 		LimitOffset: &database.LimitOffset{
 			Limit: sshMigrationCountPerRun,
 		},
-		AuthenticatorType: []database.AuthenticatorType{database.AuthenticatorTypeBasicAuth, database.AuthenticatorTypeOAuthBearerToken},
-		ForUpdate:         true,
+		ForUpdate:           true,
+		SSHMigrationApplied: &f,
 	})
 	if err != nil {
 		return err
 	}
 	for _, cred := range credentials {
-		switch a := cred.Credential.(type) {
+		a, err := cred.Authenticator(ctx)
+		if err != nil {
+			return err
+		}
+
+		switch a := a.(type) {
 		case *auth.OAuthBearerToken:
 			newCred := &auth.OAuthBearerTokenWithSSH{OAuthBearerToken: *a}
 			keypair, err := encryption.GenerateRSAKey()
@@ -89,8 +85,7 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 			newCred.PrivateKey = keypair.PrivateKey
 			newCred.PublicKey = keypair.PublicKey
 			newCred.Passphrase = keypair.Passphrase
-			cred.Credential = newCred
-			if err := tx.UserCredentials().Update(ctx, cred); err != nil {
+			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
 				return err
 			}
 		case *auth.BasicAuth:
@@ -102,10 +97,14 @@ func (m *sshMigrator) Up(ctx context.Context) error {
 			newCred.PrivateKey = keypair.PrivateKey
 			newCred.PublicKey = keypair.PublicKey
 			newCred.Passphrase = keypair.Passphrase
-			cred.Credential = newCred
-			if err := tx.UserCredentials().Update(ctx, cred); err != nil {
+			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
 				return err
 			}
+		}
+
+		cred.SSHMigrationApplied = true
+		if err := tx.UserCredentials().Update(ctx, cred); err != nil {
+			return err
 		}
 	}
 
@@ -121,6 +120,7 @@ func (m *sshMigrator) Down(ctx context.Context) error {
 	}
 	defer func() { err = tx.Done(err) }()
 
+	t := true
 	credentials, _, err := tx.UserCredentials().List(ctx, database.UserCredentialsListOpts{
 		Scope: database.UserCredentialScope{
 			Domain: database.UserCredentialDomainBatches,
@@ -128,23 +128,31 @@ func (m *sshMigrator) Down(ctx context.Context) error {
 		LimitOffset: &database.LimitOffset{
 			Limit: sshMigrationCountPerRun,
 		},
-		AuthenticatorType: []database.AuthenticatorType{database.AuthenticatorTypeBasicAuthWithSSH, database.AuthenticatorTypeOAuthBearerTokenWithSSH},
-		ForUpdate:         true,
+		ForUpdate:           true,
+		SSHMigrationApplied: &t,
 	})
 	for _, cred := range credentials {
-		switch a := cred.Credential.(type) {
+		a, err := cred.Authenticator(ctx)
+		if err != nil {
+			return err
+		}
+
+		switch a := a.(type) {
 		case *auth.OAuthBearerTokenWithSSH:
 			newCred := &a.OAuthBearerToken
-			cred.Credential = newCred
-			if err := tx.UserCredentials().Update(ctx, cred); err != nil {
+			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
 				return err
 			}
 		case *auth.BasicAuthWithSSH:
 			newCred := &a.BasicAuth
-			cred.Credential = newCred
-			if err := tx.UserCredentials().Update(ctx, cred); err != nil {
+			if err := cred.SetAuthenticator(ctx, newCred); err != nil {
 				return err
 			}
+		}
+
+		cred.SSHMigrationApplied = false
+		if err := tx.UserCredentials().Update(ctx, cred); err != nil {
+			return err
 		}
 	}
 

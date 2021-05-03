@@ -16,7 +16,7 @@ func TestBulkProcessor(t *testing.T) {
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 	tx := dbtest.NewTx(t, db)
-	bstore := store.New(tx)
+	bstore := store.New(tx, nil)
 	user := ct.CreateTestUser(t, db, true)
 	repos, _ := ct.CreateTestRepos(t, ctx, db, 1)
 	repo := repos[0]

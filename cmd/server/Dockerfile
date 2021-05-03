@@ -51,11 +51,11 @@ RUN apk update && apk add --no-cache \
 # hadolint ignore=DL3022
 COPY --from=comby/comby:0.18.4@sha256:b47ce282778bfea7f80d45f5ef0cc546ba0d6347baccebaf171a7866143b2593 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/syntect_server:453e9ca@sha256:c3f19209794119c703f43a830918005cd6346e15d6db56e42dde63f7acb23b9e /syntect_server /usr/local/bin/
+COPY --from=sourcegraph/syntect_server:dd97058@sha256:d7163842f41388f41d19ce04833ac5f6d4e41d212869e7d2aea9c38ba6e77261 /syntect_server /usr/local/bin/
 
 
 # install minio (keep this up to date with docker-images/minio/Dockerfile)
-ENV MINIO_VERSION=RELEASE.2021-04-06T23-11-00Z
+ENV MINIO_VERSION=RELEASE.2021-04-22T15-44-28Z
 RUN wget "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.$MINIO_VERSION" && \
     chmod +x "minio.$MINIO_VERSION" && \
     mv "minio.$MINIO_VERSION" /usr/local/bin/minio

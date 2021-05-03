@@ -2,6 +2,7 @@ package githuboauth
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/dghubble/gologin/github"
@@ -33,33 +34,39 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 		messages = append(messages, "GitHub client secret contains unexpected characters, possibly hidden")
 	}
 	codeHost := extsvc.NewCodeHost(parsedURL, extsvc.TypeGitHub)
-	oauth2Cfg := oauth2.Config{
-		ClientID:     p.ClientID,
-		ClientSecret: p.ClientSecret,
-		Scopes:       requestedScopes(p),
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  codeHost.BaseURL.ResolveReference(&url.URL{Path: "/login/oauth/authorize"}).String(),
-			TokenURL: codeHost.BaseURL.ResolveReference(&url.URL{Path: "/login/oauth/access_token"}).String(),
-		},
-	}
+
 	return oauth.NewProvider(oauth.ProviderOp{
-		AuthPrefix:   authPrefix,
-		OAuth2Config: oauth2Cfg,
+		AuthPrefix: authPrefix,
+		OAuth2Config: func(extraScopes ...string) oauth2.Config {
+			return oauth2.Config{
+				ClientID:     p.ClientID,
+				ClientSecret: p.ClientSecret,
+				Scopes:       requestedScopes(p, extraScopes),
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  codeHost.BaseURL.ResolveReference(&url.URL{Path: "/login/oauth/authorize"}).String(),
+					TokenURL: codeHost.BaseURL.ResolveReference(&url.URL{Path: "/login/oauth/access_token"}).String(),
+				},
+			}
+		},
 		SourceConfig: sourceCfg,
 		StateConfig:  getStateConfig(),
 		ServiceID:    codeHost.ServiceID,
 		ServiceType:  codeHost.ServiceType,
-		Login:        github.LoginHandler(&oauth2Cfg, nil),
-		Callback: github.CallbackHandler(
-			&oauth2Cfg,
-			oauth.SessionIssuer(&sessionIssuerHelper{
-				CodeHost:    codeHost,
-				clientID:    p.ClientID,
-				allowSignup: p.AllowSignup,
-				allowOrgs:   p.AllowOrgs,
-			}, sessionKey),
-			nil,
-		),
+		Login: func(oauth2Cfg oauth2.Config) http.Handler {
+			return github.LoginHandler(&oauth2Cfg, nil)
+		},
+		Callback: func(oauth2Cfg oauth2.Config) http.Handler {
+			return github.CallbackHandler(
+				&oauth2Cfg,
+				oauth.SessionIssuer(&sessionIssuerHelper{
+					CodeHost:    codeHost,
+					clientID:    p.ClientID,
+					allowSignup: p.AllowSignup,
+					allowOrgs:   p.AllowOrgs,
+				}, sessionKey),
+				nil,
+			)
+		},
 	}), messages
 }
 
@@ -69,7 +76,7 @@ func validateClientIDAndSecret(clientIDOrSecret string) (valid bool) {
 	return clientIDSecretValidator.MatchString(clientIDOrSecret)
 }
 
-func requestedScopes(p *schema.GitHubAuthProvider) []string {
+func requestedScopes(p *schema.GitHubAuthProvider, extraScopes []string) []string {
 	scopes := []string{"user:email"}
 	if !envvar.SourcegraphDotComMode() {
 		scopes = append(scopes, "repo")
@@ -78,6 +85,21 @@ func requestedScopes(p *schema.GitHubAuthProvider) []string {
 	// Needs extra scope to check organization membership
 	if len(p.AllowOrgs) > 0 {
 		scopes = append(scopes, "read:org")
+	}
+
+	// Append extra scopes and ensure there are no duplicates
+	for _, s := range extraScopes {
+		var found bool
+		for _, inner := range scopes {
+			if inner == s {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			scopes = append(scopes, s)
+		}
 	}
 
 	return scopes

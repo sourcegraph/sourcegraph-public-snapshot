@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -349,13 +350,26 @@ func normalizeVisibleUploads(uploadMetas map[string][]commitgraph.UploadMeta) ma
 	return uploadMetas
 }
 
-func getStates(ids ...int) (map[int]string, error) {
+func getUploadStates(ids ...int) (map[int]string, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
 
 	q := sqlf.Sprintf(
 		`SELECT id, state FROM lsif_uploads WHERE id IN (%s)`,
+		sqlf.Join(intsToQueries(ids), ", "),
+	)
+
+	return scanStates(dbconn.Global.Query(q.Query(sqlf.PostgresBindVar), q.Args()...))
+}
+
+func getIndexStates(ids ...int) (map[int]string, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	q := sqlf.Sprintf(
+		`SELECT id, state FROM lsif_indexes WHERE id IN (%s)`,
 		sqlf.Join(intsToQueries(ids), ", "),
 	)
 
@@ -377,7 +391,7 @@ func scanStates(rows *sql.Rows, queryErr error) (_ map[int]string, err error) {
 			return nil, err
 		}
 
-		states[id] = state
+		states[id] = strings.ToLower(state)
 	}
 
 	return states, nil

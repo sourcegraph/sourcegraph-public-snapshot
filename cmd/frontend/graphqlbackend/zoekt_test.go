@@ -312,7 +312,7 @@ func TestIndexedSearch(t *testing.T) {
 			var gotMatchInputRevs []string
 			for _, m := range gotFm {
 				gotMatchCount += int(m.ResultCount())
-				gotMatchURLs = append(gotMatchURLs, m.Resource())
+				gotMatchURLs = append(gotMatchURLs, m.URL())
 				if m.InputRev != nil {
 					gotMatchInputRevs = append(gotMatchInputRevs, *m.InputRev)
 				}

@@ -95,7 +95,7 @@ type CampaignsCredentialResolver interface {
 	ID() graphql.ID
 	ExternalServiceKind() string
 	ExternalServiceURL() string
-	SSHPublicKey() *string
+	SSHPublicKey(ctx context.Context) (*string, error)
 	CreatedAt() DateTime
 }
 
@@ -461,7 +461,7 @@ type BatchChangesCredentialResolver interface {
 	ID() graphql.ID
 	ExternalServiceKind() string
 	ExternalServiceURL() string
-	SSHPublicKey() *string
+	SSHPublicKey(ctx context.Context) (*string, error)
 	CreatedAt() DateTime
 	IsSiteCredential() bool
 }

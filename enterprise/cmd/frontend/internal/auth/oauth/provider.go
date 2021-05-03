@@ -24,8 +24,8 @@ import (
 type Provider struct {
 	ProviderOp
 
-	Login    http.Handler
-	Callback http.Handler
+	Login    func(oauth2.Config) http.Handler
+	Callback func(oauth2.Config) http.Handler
 }
 
 var _ providers.Provider = (*Provider)(nil)
@@ -42,7 +42,7 @@ func GetProvider(serviceType, id string) *Provider {
 
 func (p *Provider) ConfigID() providers.ConfigID {
 	return providers.ConfigID{
-		ID:   p.ServiceID + "::" + p.OAuth2Config.ClientID,
+		ID:   p.ServiceID + "::" + p.OAuth2Config().ClientID,
 		Type: p.ServiceType,
 	}
 }
@@ -61,7 +61,7 @@ func (p *Provider) CachedInfo() *providers.Info {
 	}
 	return &providers.Info{
 		ServiceID:   p.ServiceID,
-		ClientID:    p.OAuth2Config.ClientID,
+		ClientID:    p.OAuth2Config().ClientID,
 		DisplayName: displayName,
 		AuthenticationURL: (&url.URL{
 			Path:     path.Join(p.AuthPrefix, "login"),
@@ -76,17 +76,17 @@ func (p *Provider) Refresh(ctx context.Context) error {
 
 type ProviderOp struct {
 	AuthPrefix   string
-	OAuth2Config oauth2.Config
+	OAuth2Config func(extraScopes ...string) oauth2.Config
 	SourceConfig schema.AuthProviders
 	StateConfig  gologin.CookieConfig
 	ServiceID    string
 	ServiceType  string
-	Login        http.Handler
-	Callback     http.Handler
+	Login        func(oauth2.Config) http.Handler
+	Callback     func(oauth2.Config) http.Handler
 }
 
 func NewProvider(op ProviderOp) *Provider {
-	providerID := op.ServiceID + "::" + op.OAuth2Config.ClientID
+	providerID := op.ServiceID + "::" + op.OAuth2Config().ClientID
 	return &Provider{
 		ProviderOp: op,
 		Login:      stateHandler(true, providerID, op.StateConfig, op.Login),
@@ -101,43 +101,48 @@ func NewProvider(op ProviderOp) *Provider {
 // we encode the returnTo URL in the state. We could use the `redirect_uri` parameter to do this,
 // but doing so would require using Sourcegraph's external hostname and making sure it is consistent
 // with what is specified in the OAuth app config as the "callback URL."
-func stateHandler(isLogin bool, providerID string, config gologin.CookieConfig, success http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, req *http.Request) {
-		ctx := req.Context()
-		csrf, err := randomState()
-		if err != nil {
-			log15.Error("Failed to generated random state", "error", err)
-			http.Error(w, "Failed to generate random state", http.StatusInternalServerError)
-			return
-		}
-		if isLogin {
-			redirect, err := getRedirect(req)
+func stateHandler(isLogin bool, providerID string, config gologin.CookieConfig, success func(oauth2.Config) http.Handler) func(oauth2.Config) http.Handler {
+	return func(oauthConfig oauth2.Config) http.Handler {
+		handler := success(oauthConfig)
+
+		fn := func(w http.ResponseWriter, req *http.Request) {
+			ctx := req.Context()
+			csrf, err := randomState()
 			if err != nil {
-				log15.Error("Failed to parse URL from Referrer header", "error", err)
-				http.Error(w, "Failed to parse URL from Referrer header.", http.StatusInternalServerError)
+				log15.Error("Failed to generated random state", "error", err)
+				http.Error(w, "Failed to generate random state", http.StatusInternalServerError)
 				return
 			}
-			// add Cookie with a random state + redirect
-			stateVal, err := LoginState{
-				Redirect:   redirect,
-				CSRF:       csrf,
-				ProviderID: providerID,
-				Op:         LoginStateOp(req.URL.Query().Get("op")),
-			}.Encode()
-			if err != nil {
-				log15.Error("Could not encode OAuth state", "error", err)
-				http.Error(w, "Could not encode OAuth state.", http.StatusInternalServerError)
-				return
+			if isLogin {
+				redirect, err := getRedirect(req)
+				if err != nil {
+					log15.Error("Failed to parse URL from Referrer header", "error", err)
+					http.Error(w, "Failed to parse URL from Referrer header.", http.StatusInternalServerError)
+					return
+				}
+				// add Cookie with a random state + redirect
+				stateVal, err := LoginState{
+					Redirect:   redirect,
+					CSRF:       csrf,
+					ProviderID: providerID,
+					Op:         LoginStateOp(req.URL.Query().Get("op")),
+				}.Encode()
+				if err != nil {
+					log15.Error("Could not encode OAuth state", "error", err)
+					http.Error(w, "Could not encode OAuth state.", http.StatusInternalServerError)
+					return
+				}
+				http.SetCookie(w, NewCookie(config, stateVal))
+				ctx = goauth2.WithState(ctx, stateVal)
+			} else if cookie, err := req.Cookie(config.Name); err == nil { // not login and cookie exists
+				// add the cookie state to the ctx
+				ctx = goauth2.WithState(ctx, cookie.Value)
 			}
-			http.SetCookie(w, NewCookie(config, stateVal))
-			ctx = goauth2.WithState(ctx, stateVal)
-		} else if cookie, err := req.Cookie(config.Name); err == nil { // not login and cookie exists
-			// add the cookie state to the ctx
-			ctx = goauth2.WithState(ctx, cookie.Value)
+			handler.ServeHTTP(w, req.WithContext(ctx))
 		}
-		success.ServeHTTP(w, req.WithContext(ctx))
+
+		return http.HandlerFunc(fn)
 	}
-	return http.HandlerFunc(fn)
 }
 
 type LoginStateOp string

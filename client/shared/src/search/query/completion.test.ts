@@ -298,30 +298,46 @@ describe('getCompletionItems()', () => {
                     false
                 )
             )?.suggestions.map(({ label }) => label)
-        ).toStrictEqual([
-            'c',
-            'cpp',
-            'csharp',
-            'css',
-            'go',
-            'graphql',
-            'haskell',
-            'html',
-            'java',
-            'javascript',
-            'json',
-            'lua',
-            'markdown',
-            'php',
-            'powershell',
-            'python',
-            'r',
-            'ruby',
-            'rust',
-            'sass',
-            'swift',
-            'typescript',
-        ])
+        ).toMatchInlineSnapshot(
+            `
+            Array [
+              "Assembly",
+              "Bash",
+              "C",
+              "C++",
+              "C#",
+              "CSS",
+              "Dart",
+              "Go",
+              "GraphQL",
+              "Haskell",
+              "HTML",
+              "Java",
+              "JavaScript",
+              "Kotlin",
+              "JSON",
+              "Julia",
+              "Lua",
+              "Markdown",
+              "Objective-C",
+              "OCaml",
+              "PHP",
+              "PowerShell",
+              "Python",
+              "R",
+              "Ruby",
+              "Rust",
+              "Sass",
+              "Scala",
+              "SQL",
+              "Swift",
+              "TypeScript",
+              "VBA",
+              "XML",
+              "Zig",
+            ]
+        `
+        )
     })
 
     test('returns completions in order of discrete value definition, not alphabetically', async () => {

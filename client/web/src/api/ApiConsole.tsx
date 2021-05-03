@@ -93,7 +93,9 @@ export class ApiConsole extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             this.updates
                 .pipe(debounceTime(500))
-                .subscribe(data => this.props.history.replace({ hash: encodeURIComponent(JSON.stringify(data)) }))
+                .subscribe(data =>
+                    this.props.history.replace({ ...location, hash: encodeURIComponent(JSON.stringify(data)) })
+                )
         )
 
         this.subscriptions.add(
@@ -156,7 +158,7 @@ export class ApiConsole extends React.PureComponent<Props, State> {
                     onEditQuery={this.onEditQuery}
                     onEditVariables={this.onEditVariables}
                     onEditOperationName={this.onEditOperationName}
-                    fetcher={fetcher}
+                    fetcher={this.fetcher}
                     defaultQuery={defaultQuery}
                     editorTheme="sourcegraph"
                     ref={this.setGraphiQLRef}
@@ -224,19 +226,26 @@ export class ApiConsole extends React.PureComponent<Props, State> {
         }
         this.graphiQLRef.handleToggleHistory()
     }
-}
 
-async function fetcher(graphQLParameters: _graphiqlModule.GraphQLParams): Promise<string> {
-    const response = await fetch('/.api/graphql', {
-        method: 'POST',
-        body: JSON.stringify(graphQLParameters),
-        credentials: 'include',
-        headers: new Headers({ 'x-requested-with': 'Sourcegraph GraphQL Explorer' }),
-    })
-    const responseBody = await response.text()
-    try {
-        return JSON.parse(responseBody)
-    } catch {
-        return responseBody
+    private fetcher = async (graphQLParameters: _graphiqlModule.GraphQLParams): Promise<string> => {
+        const headers = new Headers({
+            'x-requested-with': 'Sourcegraph GraphQL Explorer',
+        })
+        const searchParameters = new URLSearchParams(this.props.location.search)
+        if (searchParameters.get('trace') === '1') {
+            headers.set('x-sourcegraph-should-trace', 'true')
+        }
+        const response = await fetch('/.api/graphql', {
+            method: 'POST',
+            body: JSON.stringify(graphQLParameters),
+            credentials: 'include',
+            headers,
+        })
+        const responseBody = await response.text()
+        try {
+            return JSON.parse(responseBody)
+        } catch {
+            return responseBody
+        }
     }
 }
