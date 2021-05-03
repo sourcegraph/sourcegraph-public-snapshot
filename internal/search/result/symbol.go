@@ -33,7 +33,7 @@ type Symbol struct {
 // data member that currently exposes line content: the symbols Pattern member,
 // which has the form /^ ... $/. We find the offset of the symbol name in this
 // line, after escaping the Pattern.
-func (s Symbol) offset() int {
+func (s *Symbol) offset() int {
 	if s.Pattern == "" {
 		return 0
 	}
