@@ -477,7 +477,7 @@ func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) *streamhttp.E
 		Type:    streamhttp.CommitMatchType,
 		Label:   commit.CommitMatch.Label(),
 		URL:     commit.CommitMatch.URL().String(),
-		Detail:  commit.Detail().Text(),
+		Detail:  commit.CommitMatch.Detail(),
 		Content: content,
 		Ranges:  ranges,
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/xeonx/timeago"
 )
 
 type CommitMatch struct {
@@ -90,6 +91,12 @@ func (r *CommitMatch) Label() string {
 	commitURL := r.URL().String()
 
 	return fmt.Sprintf("[%s](%s) › [%s](%s): [%s](%s)", repoName, repoURL, author, commitURL, message, commitURL)
+}
+
+func (r *CommitMatch) Detail() string {
+	commitHash := r.Commit.ID.Short()
+	timeagoConfig := timeago.NoMax(timeago.English)
+	return fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(r.Commit.Author.Date), r.URL())
 }
 
 func (r *CommitMatch) URL() *url.URL {

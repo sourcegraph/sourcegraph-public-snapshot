@@ -12,7 +12,6 @@ import (
 	"unicode/utf8"
 
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/xeonx/timeago"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/pkg/errors"
@@ -115,10 +114,7 @@ func (r *CommitSearchResultResolver) URL() string {
 }
 
 func (r *CommitSearchResultResolver) Detail() Markdown {
-	commitHash := r.CommitMatch.Commit.ID.Short()
-	timeagoConfig := timeago.NoMax(timeago.English)
-	detail := fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(r.CommitMatch.Commit.Author.Date), r.Commit().URL())
-	return Markdown(detail)
+	return Markdown(r.CommitMatch.Detail())
 }
 
 func (r *CommitSearchResultResolver) Matches() []*searchResultMatchResolver {
