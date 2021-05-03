@@ -35,7 +35,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
     )
 
     return children.length > 0 ? (
-        <div>
+        <div className="mb-4">
             <h5 className="pb-2">{header}</h5>
             {showSearch && children.length > 1 && (
                 <input

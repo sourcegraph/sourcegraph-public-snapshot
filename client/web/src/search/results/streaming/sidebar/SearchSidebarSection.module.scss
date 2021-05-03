@@ -3,6 +3,8 @@
         list-style-type: none;
         padding: 0;
         margin-top: 0.5rem;
+        max-height: 15.5rem;
+        overflow: auto;
     }
 
     &__search-box {
