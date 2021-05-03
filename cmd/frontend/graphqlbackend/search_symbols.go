@@ -4,13 +4,10 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/go-lsp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -215,64 +212,4 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		return fileMatches[i].Path < fileMatches[j].Path
 	})
 	return fileMatches, err
-}
-
-func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
-	// Ctags kinds are determined by the parser and do not (in general) match LSP symbol kinds.
-	switch strings.ToLower(kind) {
-	case "file":
-		return lsp.SKFile
-	case "module":
-		return lsp.SKModule
-	case "namespace":
-		return lsp.SKNamespace
-	case "package", "packagename", "subprogspec":
-		return lsp.SKPackage
-	case "class", "type", "service", "typedef", "union", "section", "subtype", "component":
-		return lsp.SKClass
-	case "method", "methodspec":
-		return lsp.SKMethod
-	case "property":
-		return lsp.SKProperty
-	case "field", "member", "anonmember", "recordfield":
-		return lsp.SKField
-	case "constructor":
-		return lsp.SKConstructor
-	case "enum", "enumerator":
-		return lsp.SKEnum
-	case "interface":
-		return lsp.SKInterface
-	case "function", "func", "subroutine", "macro", "subprogram", "procedure", "command", "singletonmethod":
-		return lsp.SKFunction
-	case "variable", "var", "functionvar", "define", "alias", "val":
-		return lsp.SKVariable
-	case "constant", "const":
-		return lsp.SKConstant
-	case "string", "message", "heredoc":
-		return lsp.SKString
-	case "number":
-		return lsp.SKNumber
-	case "bool", "boolean":
-		return lsp.SKBoolean
-	case "array":
-		return lsp.SKArray
-	case "object", "literal", "map":
-		return lsp.SKObject
-	case "key", "label", "target", "selector", "id", "tag":
-		return lsp.SKKey
-	case "null":
-		return lsp.SKNull
-	case "enum member", "enumconstant":
-		return lsp.SKEnumMember
-	case "struct":
-		return lsp.SKStruct
-	case "event":
-		return lsp.SKEvent
-	case "operator":
-		return lsp.SKOperator
-	case "type parameter", "annotation":
-		return lsp.SKTypeParameter
-	}
-	log15.Debug("Unknown ctags kind", "kind", kind)
-	return 0
 }
