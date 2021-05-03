@@ -1,11 +1,11 @@
 import classnames from 'classnames'
-import { camelCase } from 'lodash';
+import { camelCase } from 'lodash'
 import React, { useMemo } from 'react'
-import { noop } from 'rxjs';
+import { noop } from 'rxjs'
 
-import { ErrorAlert } from '../../../../../components/alerts';
-import { LoaderButton } from '../../../../../components/LoaderButton';
-import { FORM_ERROR, SubmissionErrors, useField, useForm, Validator } from '../../hooks/useForm';
+import { ErrorAlert } from '../../../../../components/alerts'
+import { LoaderButton } from '../../../../../components/LoaderButton'
+import { FORM_ERROR, SubmissionErrors, useField, useForm, Validator } from '../../hooks/useForm'
 import { DataSeries } from '../../types'
 import { InputField } from '../form-field/FormField'
 import { FormGroup } from '../form-group/FormGroup'
@@ -22,9 +22,7 @@ const requiredStepValueField = createRequiredValidator('Please specify a step be
  * we can't validate this with standard validators.
  * */
 const seriesRequired: Validator<DataSeries[]> = series =>
-    series && series.length > 0
-        ? undefined
-        : 'Series is empty. You must have at least one series for code insight.'
+    series && series.length > 0 ? undefined : 'Series is empty. You must have at least one series for code insight.'
 
 const INITIAL_VALUES: Partial<CreateInsightFormFields> = {
     visibility: 'personal',
@@ -38,13 +36,11 @@ const INITIAL_VALUES: Partial<CreateInsightFormFields> = {
 /** Public API of code insight creation form. */
 export interface CreationSearchInsightFormProps {
     /** Final settings cascade. Used for title field validation. */
-    settings: { [key:string]: any }
+    settings: { [key: string]: any }
     /** Custom class name for root form element. */
     className?: string
     /** Submit handler for form element. */
-    onSubmit: (
-        values: CreateInsightFormFields,
-    ) => SubmissionErrors | Promise<SubmissionErrors> | void
+    onSubmit: (values: CreateInsightFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel?: () => void
 }
 
@@ -70,20 +66,20 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
 
     const { formAPI, ref, handleSubmit } = useForm<CreateInsightFormFields>({
         initialValues: INITIAL_VALUES,
-        onSubmit
+        onSubmit,
     })
 
     // We can't have two or more insights with the same name, since we rely on name as on id of insights.
     const titleValidator = useMemo(() => {
-        const alreadyExistsInsightNames = new Set(Object
-            .keys(settings)
-            // According to our convention about insights name <insight type>.insight.<insight name>
-            .filter(key => key.startsWith('searchInsights.insight'))
-            .map(key => camelCase(key.split('.').pop())))
+        const alreadyExistsInsightNames = new Set(
+            Object.keys(settings)
+                // According to our convention about insights name <insight type>.insight.<insight name>
+                .filter(key => key.startsWith('searchInsights.insight'))
+                .map(key => camelCase(key.split('.').pop()))
+        )
 
-        return composeValidators<string>(
-            createRequiredValidator('Title is required field for code insight.'),
-            value => alreadyExistsInsightNames.has(camelCase(value))
+        return composeValidators<string>(createRequiredValidator('Title is required field for code insight.'), value =>
+            alreadyExistsInsightNames.has(camelCase(value))
                 ? 'An insight with this name already exists. Please set a different name for the new insight.'
                 : undefined
         )
@@ -99,7 +95,12 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form noValidate={true} ref={ref} onSubmit={handleSubmit} className={classnames(className, 'd-flex flex-column')}>
+        <form
+            noValidate={true}
+            ref={ref}
+            onSubmit={handleSubmit}
+            className={classnames(className, 'd-flex flex-column')}
+        >
             <InputField
                 title="Title"
                 autoFocus={true}
@@ -162,10 +163,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 innerRef={series.input.ref}
                 className="mb-0"
             >
-                <FormSeries
-                    series={series.input.value}
-                    onChange={series.input.onChange}
-                />
+                <FormSeries series={series.input.value} onChange={series.input.onChange} />
             </FormGroup>
 
             <hr className={styles.creationInsightFormSeparator} />
@@ -181,7 +179,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 <InputField
                     placeholder="ex. 2"
                     required={true}
-                    type='number'
+                    type="number"
                     min={1}
                     {...stepValue.input}
                     valid={stepValue.meta.touched && stepValue.meta.validState === 'VALID'}
@@ -234,7 +232,6 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
             <hr className={styles.creationInsightFormSeparator} />
 
             <div>
-
                 {formAPI.submitErrors?.[FORM_ERROR] && <ErrorAlert error={formAPI.submitErrors[FORM_ERROR]} />}
 
                 <LoaderButton

@@ -5,7 +5,7 @@ import { Redirect } from 'react-router'
 import { RouteComponentProps } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings';
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -17,7 +17,7 @@ import {
     CreationSearchInsightForm,
     CreationSearchInsightFormProps,
 } from './components/creation-search-insight-form/CreationSearchInsightForm'
-import { FORM_ERROR } from './hooks/useForm';
+import { FORM_ERROR } from './hooks/useForm'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
     eol: '\n',
@@ -25,9 +25,12 @@ const defaultFormattingOptions: jsonc.FormattingOptions = {
     tabSize: 2,
 }
 
-const DEFAULT_FINAL_SETTINGS = {};
+const DEFAULT_FINAL_SETTINGS = {}
 
-export interface CreationSearchInsightPageProps extends PlatformContextProps, RouteComponentProps, SettingsCascadeProps {
+export interface CreationSearchInsightPageProps
+    extends PlatformContextProps<'updateSettings'>,
+        Pick<RouteComponentProps, 'history'>,
+        SettingsCascadeProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
@@ -98,12 +101,9 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
         [history, updateSubjectSettings, getSubjectSettings, platformContext, authenticatedUser]
     )
 
-    const handleCancel = useCallback(
-        () => {
-            history.push('/insights')
-        },
-        [history]
-    )
+    const handleCancel = useCallback(() => {
+        history.push('/insights')
+    }, [history])
 
     if (authenticatedUser === null) {
         return <Redirect to="/" />
@@ -113,7 +113,7 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
         <Page className="col-8">
             <PageTitle title="Create new code insight" />
 
-            <div className='mb-5'>
+            <div className="mb-5">
                 <h2>Create new code insight</h2>
 
                 <p className="text-muted">
@@ -129,10 +129,11 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
             </div>
 
             <CreationSearchInsightForm
-                className='pb-5'
+                className="pb-5"
                 settings={settingsCascade.final ?? DEFAULT_FINAL_SETTINGS}
                 onSubmit={handleSubmit}
-                onCancel={handleCancel}/>
+                onCancel={handleCancel}
+            />
         </Page>
     )
 }

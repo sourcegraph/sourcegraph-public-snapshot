@@ -9,7 +9,7 @@ import { InputField } from '../form-field/FormField'
 import { createRequiredValidator } from '../validators'
 
 const requiredNameField = createRequiredValidator('Name is required field for data series.')
-const validQuery =  createRequiredValidator('Query is required field for data series.')
+const validQuery = createRequiredValidator('Query is required field for data series.')
 
 interface FormSeriesProps {
     /** Name of series. */
@@ -32,16 +32,7 @@ interface FormSeriesProps {
 
 /** Displays form series input (three field - name field, query field and color picker). */
 export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props => {
-    const {
-        name,
-        query,
-        color,
-        className,
-        cancel = false,
-        autofocus = true,
-        onCancel = noop,
-        onSubmit = noop,
-    } = props
+    const { name, query, color, className, cancel = false, autofocus = true, onCancel = noop, onSubmit = noop } = props
 
     const hasNameControlledValue = !!name
     const hasQueryControlledValue = !!query

@@ -64,13 +64,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
     // In case if we don't have series we have to skip series list ui (components below)
     // and render simple series form component.
     if (series.length === 0) {
-        return (
-            <FormSeriesInput
-                autofocus={false}
-                className='card card-body p-3'
-                onSubmit={handleSubmitNewSeries}
-            />
-        )
+        return <FormSeriesInput autofocus={false} className="card card-body p-3" onSubmit={handleSubmitNewSeries} />
     }
 
     return (

@@ -62,8 +62,11 @@ const getSubjectSettings = (id: string): Observable<SubjectSettingsResult> =>
         map(settings => settings.settingsSubject?.latestSettings ?? { id: null, contents: '' })
     )
 
-const updateSubjectSettings = (context: PlatformContext, subjectId: string, content: string): Observable<void> =>
-    from(context.updateSettings(subjectId, content))
+const updateSubjectSettings = (
+    context: Pick<PlatformContext, 'updateSettings'>,
+    subjectId: string,
+    content: string
+): Observable<void> => from(context.updateSettings(subjectId, content))
 
 /** Main API service to get data for code insights */
 export const createInsightAPI = (): ApiService => ({

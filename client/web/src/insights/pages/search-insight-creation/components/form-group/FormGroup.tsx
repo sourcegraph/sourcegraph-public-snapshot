@@ -25,13 +25,17 @@ export const FormGroup: React.FunctionComponent<PropsWithChildren<FormGroupProps
 
     return (
         <fieldset ref={innerRef} name={name} className={className}>
-            <legend className='d-flex flex-column mb-3'>
+            <legend className="d-flex flex-column mb-3">
                 <div className="font-weight-bold">{title}</div>
 
                 {/* Since safari doesn't support flex column on legend element we have to set d-block*/}
                 {/* explicitly */}
                 {subtitle && <small className="d-block text-muted">{subtitle}</small>}
-                {error && <small role='alert' className="d-block text-danger">{error}</small>}
+                {error && (
+                    <small role="alert" className="d-block text-danger">
+                        {error}
+                    </small>
+                )}
             </legend>
 
             <div className={contentClassName}>{children}</div>
