@@ -186,16 +186,10 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				display = fm.Limit(display)
 
 				if syms := fm.Symbols(); len(syms) > 0 {
-					// Inlining to avoid exporting a bunch of stuff from
-					// graphqlbackend
 					symbols := make([]streamhttp.Symbol, 0, len(syms))
 					for _, sym := range syms {
-						u, err := sym.URL(ctx)
-						if err != nil {
-							continue
-						}
 						symbols = append(symbols, streamhttp.Symbol{
-							URL:           u,
+							URL:           sym.SymbolMatch.URL().String(),
 							Name:          sym.Name(),
 							ContainerName: fromStrPtr(sym.ContainerName()),
 							Kind:          sym.Kind(),
