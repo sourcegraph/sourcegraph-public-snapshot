@@ -18,7 +18,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
         () =>
             children.filter(child => {
                 if (child.type === FilterLink) {
-                    const props = child.props as FilterLinkProps
+                    const props: FilterLinkProps = child.props as FilterLinkProps
                     return (
                         (props?.label).toLowerCase().includes(filter.toLowerCase()) ||
                         (props?.value).toLowerCase().includes(filter.toLowerCase())
