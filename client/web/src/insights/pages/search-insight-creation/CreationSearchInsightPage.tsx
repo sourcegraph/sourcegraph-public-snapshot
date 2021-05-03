@@ -50,7 +50,7 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
             const subjectID =
                 values.visibility === 'personal'
                     ? userID
-                    : // TODO [VK] Add orgs picker in creation UI and not just pick first organization
+                    : // TODO [VK] Add org picker in creation UI and not just pick first organization
                       orgs[0].id
 
             try {

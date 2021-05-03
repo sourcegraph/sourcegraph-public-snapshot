@@ -1,4 +1,4 @@
-import { of, EMPTY, throwError } from 'rxjs'
+import { of, throwError } from 'rxjs'
 
 import {
     ApiService,
@@ -157,5 +157,5 @@ export const createMockAPI = (): ApiService => ({
     getCombinedViews: () => of(MOCK_VIEWS),
     getInsightCombinedViews: () => of(MOCK_VIEWS),
     getSubjectSettings: () => of({ id: 0, contents: '{}' }),
-    updateSubjectSettings: () => throwError('Hello this is error block'),
+    updateSubjectSettings: () => throwError(new Error('Hello this is submit error block')),
 })
