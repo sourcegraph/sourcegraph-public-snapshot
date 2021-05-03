@@ -1,15 +1,12 @@
 import classnames from 'classnames'
-import { FORM_ERROR, FormApi, SubmissionErrors } from 'final-form'
-import createFocusDecorator from 'final-form-focus'
-import React, { useEffect, useMemo, useRef } from 'react'
-import { useField, useForm } from 'react-final-form-hooks'
-import { noop } from 'rxjs'
+import React from 'react'
 
+import { FORM_ERROR, SubmissionErrors, useField, useForm } from '../../hooks/useForm';
 import { DataSeries } from '../../types'
 import { InputField } from '../form-field/FormField'
 import { FormGroup } from '../form-group/FormGroup'
 import { FormRadioInput } from '../form-radio-input/FormRadioInput'
-import { FormSeries, FormSeriesReferenceAPI } from '../form-series/FormSeries'
+import { FormSeries } from '../form-series/FormSeries'
 import { createRequiredValidator, composeValidators, ValidationResult } from '../validators'
 
 import styles from './CreationSearchInsightForm.module.scss'
@@ -20,7 +17,7 @@ const repositoriesFieldValidator = composeValidators(
 )
 
 const requiredStepValueField = createRequiredValidator('Please specify a step between points.')
-const seriesRequired = (series: DataSeries[]): ValidationResult =>
+const seriesRequired = (series: DataSeries[] | undefined): ValidationResult =>
     series && series.length > 0 ? undefined : 'Series is empty. You must have at least one series for code insight.'
 
 const INITIAL_VALUES: Partial<CreateInsightFormFields> = {
@@ -36,7 +33,6 @@ export interface CreationSearchInsightFormProps {
     /** Submit handler for form element. */
     onSubmit: (
         values: CreateInsightFormFields,
-        form: FormApi<CreateInsightFormFields, Partial<CreateInsightFormFields>>
     ) => SubmissionErrors | Promise<SubmissionErrors> | void
 }
 
@@ -53,66 +49,48 @@ export interface CreateInsightFormFields {
     /** Setting for set chart step - how often do we collect data. */
     step: 'hours' | 'days' | 'weeks' | 'months' | 'years'
     /** Value for insight step setting */
-    stepValue: number
+    stepValue: string
 }
 
 /** Displays creation code insight form (title, visibility, series, etc.) */
 export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchInsightFormProps> = props => {
     const { className, onSubmit } = props
 
-    const titleReference = useRef<HTMLInputElement>(null)
-    const repositoriesReference = useRef<HTMLInputElement>(null)
-    const seriesReference = useRef<FormSeriesReferenceAPI>(null)
-    const stepValueReference = useRef<HTMLInputElement>(null)
-
-    const focusOnErrorsDecorator = useMemo(() => {
-        const noopFocus = { focus: noop, name: '' }
-
-        return createFocusDecorator<CreateInsightFormFields>(() => [
-            titleReference.current ?? noopFocus,
-            repositoriesReference.current ?? noopFocus,
-            seriesReference.current ?? noopFocus,
-            stepValueReference.current ?? noopFocus,
-        ])
-    }, [])
-
-    const { form, handleSubmit, submitErrors } = useForm<CreateInsightFormFields>({
+    const { formAPI, ref, handleSubmit } = useForm<CreateInsightFormFields>({
         initialValues: INITIAL_VALUES,
-        onSubmit,
+        onSubmit
     })
 
-    useEffect(() => focusOnErrorsDecorator(form), [form, focusOnErrorsDecorator])
+    const title = useField('title', formAPI, requiredTitleField)
+    const repositories = useField('repositories', formAPI, repositoriesFieldValidator)
+    const visibility = useField('visibility', formAPI)
 
-    const title = useField('title', form, requiredTitleField)
-    const repositories = useField('repositories', form, repositoriesFieldValidator)
-    const visibility = useField('visibility', form)
-    const series = useField<DataSeries[], CreateInsightFormFields>('series', form, seriesRequired)
-    const step = useField('step', form)
-    const stepValue = useField('stepValue', form, requiredStepValueField)
+    const series = useField('series', formAPI, seriesRequired)
+    const step = useField('step', formAPI)
+    const stepValue = useField('stepValue', formAPI, requiredStepValueField)
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form onSubmit={handleSubmit} className={classnames(className, 'd-flex flex-column')}>
+        <form noValidate={true} ref={ref} onSubmit={handleSubmit} className={classnames(className, 'd-flex flex-column')}>
             <InputField
                 title="Title"
-                autofocus={true}
+                required={true}
                 description="Shown as title for your insight"
                 placeholder="ex. Migration to React function components"
-                valid={title.meta.touched && title.meta.valid}
+                valid={title.meta.touched && title.meta.validState === 'VALID'}
                 error={title.meta.touched && title.meta.error}
                 {...title.input}
-                ref={titleReference}
                 className="mb-0"
             />
 
             <InputField
                 title="Repositories"
+                required={true}
                 description="Create a list of repositories to run your search over. Separate them with comas."
                 placeholder="Add or search for repositories"
-                valid={repositories.meta.touched && repositories.meta.valid}
+                valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
                 error={repositories.meta.touched && repositories.meta.error}
                 {...repositories.input}
-                ref={repositoriesReference}
                 className="mb-0 mt-4"
             />
 
@@ -155,8 +133,6 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 className="mb-0"
             >
                 <FormSeries
-                    name={series.input.name}
-                    ref={seriesReference}
                     series={series.input.value}
                     onChange={series.input.onChange}
                 />
@@ -175,8 +151,8 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 <InputField
                     placeholder="ex. 2"
                     {...stepValue.input}
-                    valid={stepValue.meta.touched && stepValue.meta.valid}
-                    ref={stepValueReference}
+                    valid={stepValue.meta.touched && stepValue.meta.validState === 'VALID'}
+                    errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
                     className={classnames(styles.creationInsightFormStepInput)}
                 />
 
@@ -225,8 +201,9 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
             <hr className={styles.creationInsightFormSeparator} />
 
             <div>
-                {submitErrors?.[FORM_ERROR] && (
-                    <div className="alert alert-danger">{submitErrors[FORM_ERROR].toString()}</div>
+
+                {formAPI.submitErrors?.[FORM_ERROR] && (
+                    <div className="alert alert-danger">{formAPI.submitErrors[FORM_ERROR]}</div>
                 )}
 
                 <button type="submit" className="btn btn-primary mr-2">

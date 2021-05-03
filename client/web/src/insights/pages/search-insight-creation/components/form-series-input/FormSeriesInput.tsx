@@ -1,8 +1,8 @@
 import classnames from 'classnames'
-import React, { Ref, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
-import { useField, useForm } from 'react-final-form-hooks'
+import React, { Ref } from 'react'
 import { noop } from 'rxjs'
 
+import { useField, useForm } from '../../hooks/useForm'
 import { DataSeries } from '../../types'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
 import { InputField } from '../form-field/FormField'
@@ -19,12 +19,6 @@ const validQuery = composeValidators(
 export interface FormSeriesInputAPI {
     /** Mimic-function to native input focus. */
     focus: () => void
-}
-
-interface FormSeriesValues {
-    seriesName: string
-    seriesQuery: string
-    seriesColor: string
 }
 
 interface FormSeriesProps {
@@ -56,16 +50,14 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
         color,
         className,
         cancel = false,
-        autofocus = false,
         onCancel = noop,
         onSubmit = noop,
-        innerRef,
     } = props
 
     const hasNameControlledValue = !!name
     const hasQueryControlledValue = !!query
 
-    const { handleSubmit, form } = useForm<FormSeriesValues>({
+    const { formAPI, handleSubmit, ref } = useForm({
         initialValues: {
             seriesName: name,
             seriesQuery: query,
@@ -79,67 +71,19 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
             }),
     })
 
-    const nameField = useField('seriesName', form, requiredNameField)
-    const queryField = useField('seriesQuery', form, validQuery)
-    const colorField = useField('seriesColor', form)
-
-    const nameReference = useRef<HTMLInputElement>(null)
-    const queryReference = useRef<HTMLInputElement>(null)
-
-    // In case if consumer asked this component to be focused (call .focus() on ref)
-    // We focus first invalid field. Otherwise we focus first field of form series
-    // - series name field.
-    useImperativeHandle(innerRef, () => ({
-        focus: () => {
-            if (nameField.meta.error) {
-                return nameReference.current?.focus()
-            }
-
-            if (queryField.meta.error) {
-                return queryReference.current?.focus()
-            }
-
-            nameReference.current?.focus()
-        },
-    }))
-
-    useEffect(() => {
-        if (autofocus) {
-            nameReference.current?.focus()
-        }
-    }, [autofocus])
-
-    const handleSubmitButton = useCallback(
-        async (event: React.MouseEvent) => {
-            // handleSubmit work with form element and use form event
-            // but we can't have sub forms for the sake of semantics.
-            // if this case synthetic event of totally comparable with event
-            // from submit button.
-            await handleSubmit((event as unknown) as React.SyntheticEvent<HTMLFormElement>)
-
-            if (nameField.meta.error) {
-                event.preventDefault()
-                return nameReference.current?.focus()
-            }
-
-            if (queryField.meta.error) {
-                event.preventDefault()
-                return queryReference.current?.focus()
-            }
-        },
-        [handleSubmit, nameField.meta.error, queryField.meta.error]
-    )
+    const nameField = useField('seriesName', formAPI, requiredNameField)
+    const queryField = useField('seriesQuery', formAPI, validQuery)
+    const colorField = useField('seriesColor', formAPI)
 
     return (
-        <div className={classnames('d-flex flex-column', className)}>
+        <div ref={ref} className={classnames('d-flex flex-column', className)}>
             <InputField
                 title="Name"
                 placeholder="Example: Function component"
                 description="Name shown in the legend and tooltip"
-                valid={(hasNameControlledValue || nameField.meta.touched) && nameField.meta.valid}
+                valid={(hasNameControlledValue || nameField.meta.touched) && nameField.meta.validState === 'VALID'}
                 error={nameField.meta.touched && nameField.meta.error}
                 {...nameField.input}
-                ref={nameReference}
             />
 
             <InputField
@@ -151,11 +95,10 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
                         repository
                     </span>
                 }
-                valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.valid}
+                valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.validState === 'VALID'}
                 error={queryField.meta.touched && queryField.meta.error}
                 className="mt-4"
                 {...queryField.input}
-                ref={queryReference}
             />
 
             <FormColorInput
@@ -167,7 +110,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
             />
 
             <div className="mt-4">
-                <button type="submit" onClick={handleSubmitButton} className="btn btn-light">
+                <button type="button" onClick={handleSubmit} className="btn btn-light">
                     Done
                 </button>
 

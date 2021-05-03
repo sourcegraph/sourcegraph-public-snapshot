@@ -1,5 +1,5 @@
 import classnames from 'classnames'
-import React, { forwardRef, ReactElement, useCallback, useImperativeHandle, useRef, useState } from 'react'
+import React, { ReactElement, useCallback, useRef, useState } from 'react'
 
 import { DataSeries } from '../../types'
 import { FormSeriesInput, FormSeriesInputAPI } from '../form-series-input/FormSeriesInput'
@@ -7,29 +7,15 @@ import { FormSeriesInput, FormSeriesInputAPI } from '../form-series-input/FormSe
 import styles from './FormSeries.module.scss'
 
 export interface FormSeriesProps {
-    /** Name of form series input (sub-form) */
-    name: string
     /** Controlled value (series - chart lines) for series input component. */
     series?: DataSeries[]
     /** Change handler. */
     onChange: (series: DataSeries[]) => void
 }
 
-/**
- * Public API - mimic the standard native input API.
- * Consumers of this form (FormSeries) may have to able to focus
- * some input of this form. For it we have to provider (expose) some api.
- * */
-export interface FormSeriesReferenceAPI {
-    /** Mimic-value of native input name. */
-    name: string
-    /** Mimic-function of native input focus. */
-    focus: () => void
-}
-
 /** Renders form series (sub-form) for series (chart lines) creation code insight form. */
-export const FormSeries = forwardRef<FormSeriesReferenceAPI, FormSeriesProps>((props, reference) => {
-    const { name, series = [], onChange } = props
+export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
+    const { series = [], onChange } = props
 
     // We can have more than one series. In case if user clicked on existing series
     // he should see edit form for series. To track which series is active now
@@ -76,13 +62,6 @@ export const FormSeries = forwardRef<FormSeriesReferenceAPI, FormSeriesProps>((p
     const handleCancelEditSeries = (index: number): void => {
         setEditSeriesIndex(indexes => indexes.filter(currentIndex => currentIndex !== index))
     }
-
-    // In some cases consumers of this component may want to call focus or get name field
-    // in a way that would be a native html element.
-    useImperativeHandle(reference, () => ({
-        name,
-        focus: () => seriesInputReference.current?.focus(),
-    }))
 
     // In case if we don't have series we have to skip series list ui (components below)
     // and render simple series form component.
@@ -144,7 +123,7 @@ export const FormSeries = forwardRef<FormSeriesReferenceAPI, FormSeriesProps>((p
             )}
         </div>
     )
-})
+}
 
 interface SeriesCardProps {
     /** Name of series. */

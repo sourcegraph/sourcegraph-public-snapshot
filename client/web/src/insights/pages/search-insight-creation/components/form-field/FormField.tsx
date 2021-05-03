@@ -11,6 +11,7 @@ interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement> {
     className?: string
     /** Error massage for input. */
     error?: string
+    errorInputState?: boolean
     /** Valid sign to show valid state on input. */
     valid?: boolean
     /** Turn on or turn off autofocus for input. */
@@ -19,7 +20,7 @@ interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement> {
 
 /** Displays input with description, error message, visual invalid and valid states. */
 export const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, reference) => {
-    const { title, description, className, valid, error, autofocus = false, ...otherProps } = props
+    const { title, description, className, valid, error, autofocus = false, errorInputState, ...otherProps } = props
     const localInputReference = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
@@ -36,7 +37,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, 
                 type="text"
                 className={classnames('form-control', {
                     'is-valid': valid,
-                    'is-invalid': !!error,
+                    'is-invalid': !!error || errorInputState,
                 })}
                 {...otherProps}
                 ref={useMergeRefs([localInputReference, reference])}
@@ -47,7 +48,7 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, 
                     {error}
                 </small>
             )}
-            {!error && description && <small className={classnames('text-muted', 'form-text')}>{description}</small>}
+            {!error && description && <small role='alert' className={classnames('text-muted', 'form-text')}>{description}</small>}
         </label>
     )
 })
