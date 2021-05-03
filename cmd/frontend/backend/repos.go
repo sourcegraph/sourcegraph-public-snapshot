@@ -167,7 +167,7 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err 
 		}
 		done()
 	}()
-	return database.GlobalDefaultRepos.List(ctx)
+	return database.DefaultReposWith(s.store).List(ctx)
 }
 
 // ListDefault calls database.DefaultRepos.ListPublic, with tracing.
@@ -185,7 +185,7 @@ func (s *repos) ListDefault(ctx context.Context) (repos []types.RepoName, err er
 
 	span := opentracing.SpanFromContext(ctx)
 	span.LogFields(otlog.String("ListPublic", "start"))
-	repos, err = database.GlobalDefaultRepos.ListPublic(ctx)
+	repos, err = database.DefaultReposWith(s.store).ListPublic(ctx)
 	if err != nil {
 		span.LogFields(otlog.String("ListPublic", "failed"))
 		return nil, errors.Wrap(err, "listing default public repos")
