@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/stretchr/testify/require"
 )
 
 func init() {
@@ -471,6 +473,90 @@ func TestCreatingSearchContexts(t *testing.T) {
 			if expectErr && err != nil && !strings.Contains(err.Error(), tt.wantErr) {
 				t.Fatalf("wanted error containing %s, got %s", tt.wantErr, err)
 			}
+		})
+	}
+}
+
+func TestUpdatingSearchContexts(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	internalCtx := actor.WithInternalActor(context.Background())
+	db := dbtesting.GetDB(t)
+	u := database.Users(db)
+
+	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	require.NoError(t, err)
+
+	repos, err := createRepos(internalCtx, database.Repos(db))
+	require.NoError(t, err)
+
+	var scs []*types.SearchContext
+	for i := 0; i < 6; i++ {
+		sc, err := database.SearchContexts(db).CreateSearchContextWithRepositoryRevisions(
+			internalCtx,
+			&types.SearchContext{Name: strconv.Itoa(i)},
+			[]*types.SearchContextRepositoryRevisions{},
+		)
+		require.NoError(t, err)
+		scs = append(scs, sc)
+	}
+
+	set := func(sc *types.SearchContext, f func(*types.SearchContext)) *types.SearchContext {
+		copied := *sc
+		f(&copied)
+		return &copied
+	}
+
+	tests := []struct {
+		name                string
+		update              *types.SearchContext
+		repositoryRevisions []*types.SearchContextRepositoryRevisions
+		userID              int32
+		wantErr             string
+	}{
+		{
+			name:    "cannot create search context with global name",
+			update:  &types.SearchContext{Name: "global"},
+			wantErr: "cannot update global search context",
+		},
+		{
+			name:    "cannot update search context to use an invalid name",
+			update:  set(scs[0], func(sc *types.SearchContext) { sc.Name = "invalid name" }),
+			wantErr: "not a valid search context name",
+		},
+		{
+			name:    "cannot update search context with name too long",
+			update:  set(scs[1], func(sc *types.SearchContext) { sc.Name = strings.Repeat("x", 33) }),
+			wantErr: "exceeds maximum allowed length (32)",
+		},
+		{
+			name:    "cannot update search context with description too long",
+			update:  set(scs[2], func(sc *types.SearchContext) { sc.Description = strings.Repeat("x", 1025) }),
+			wantErr: "search context description exceeds maximum allowed length (1024)",
+		},
+		{
+			name:   "cannot update search context with revisions too long",
+			update: scs[3],
+			repositoryRevisions: []*types.SearchContextRepositoryRevisions{
+				{Repo: repos[0], Revisions: []string{strings.Repeat("x", 256)}},
+			},
+			wantErr: "exceeds maximum allowed length (255)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user1.ID})
+
+			updated, err := UpdateSearchContextWithRepositoryRevisions(ctx, db, tt.update, tt.repositoryRevisions)
+			if tt.wantErr != "" {
+				require.Contains(t, err.Error(), tt.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tt.update, updated)
 		})
 	}
 }

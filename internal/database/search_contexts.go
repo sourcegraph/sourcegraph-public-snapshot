@@ -256,6 +256,36 @@ func (s *SearchContextsStore) CreateSearchContextWithRepositoryRevisions(ctx con
 	return createdSearchContext, nil
 }
 
+const updateSearchContextFmtStr = `
+UPDATE search_contexts
+SET
+	name = %s,
+	description = %s,
+	public = %s,
+	updated_at = now()
+WHERE id = %d AND deleted_at IS NULL
+`
+
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin or has permission to update the search context.
+func (s *SearchContextsStore) UpdateSearchContextWithRepositoryRevisions(ctx context.Context, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (_ *types.SearchContext, err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	updatedSearchContext, err := tx.updateSearchContext(ctx, searchContext)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.SetSearchContextRepositoryRevisions(ctx, updatedSearchContext.ID, repositoryRevisions)
+	if err != nil {
+		return nil, err
+	}
+	return updatedSearchContext, nil
+}
+
 func (s *SearchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64, repositoryRevisions []*types.SearchContextRepositoryRevisions) (err error) {
 	if len(repositoryRevisions) == 0 {
 		return nil
@@ -296,6 +326,24 @@ func (s *SearchContextsStore) createSearchContext(ctx context.Context, searchCon
 		searchContext.Public,
 		nullInt32Column(searchContext.NamespaceUserID),
 		nullInt32Column(searchContext.NamespaceOrgID),
+	))
+	if err != nil {
+		return nil, err
+	}
+	return s.GetSearchContext(ctx, GetSearchContextOptions{
+		Name:            searchContext.Name,
+		NamespaceUserID: searchContext.NamespaceUserID,
+		NamespaceOrgID:  searchContext.NamespaceOrgID,
+	})
+}
+
+func (s *SearchContextsStore) updateSearchContext(ctx context.Context, searchContext *types.SearchContext) (*types.SearchContext, error) {
+	err := s.Exec(ctx, sqlf.Sprintf(
+		updateSearchContextFmtStr,
+		searchContext.Name,
+		searchContext.Description,
+		searchContext.Public,
+		searchContext.ID,
 	))
 	if err != nil {
 		return nil, err

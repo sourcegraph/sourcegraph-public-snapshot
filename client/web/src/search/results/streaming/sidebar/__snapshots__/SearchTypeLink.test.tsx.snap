@@ -209,7 +209,7 @@ Array [
 ]
 `;
 
-exports[`SearchTypeLink should have correct links when type not apresent 1`] = `
+exports[`SearchTypeLink should have correct links when type not present 1`] = `
 Array [
   <SearchTypeLink
     caseSensitive={false}

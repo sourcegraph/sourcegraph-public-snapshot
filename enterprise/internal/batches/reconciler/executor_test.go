@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -37,7 +38,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, clock)
+	cstore := store.NewWithClock(db, et.TestKey{}, clock)
 
 	admin := ct.CreateTestUser(t, db, true)
 
@@ -592,7 +593,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 
-	cstore := store.New(db)
+	cstore := store.New(db, et.TestKey{})
 
 	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
 
@@ -634,7 +635,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	token := &auth.OAuthBearerToken{Token: "abcdef"}
 
-	cstore := store.New(db)
+	cstore := store.New(db, et.TestKey{})
 
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)
@@ -799,7 +800,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	db := dbtesting.GetDB(t)
 
-	cstore := store.New(db)
+	cstore := store.New(db, et.TestKey{})
 
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)

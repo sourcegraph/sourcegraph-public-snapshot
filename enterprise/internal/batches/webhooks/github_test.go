@@ -17,6 +17,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	gh "github.com/google/go-github/v28/github"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
@@ -88,7 +89,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		s := store.NewWithClock(db, clock)
+		s := store.NewWithClock(db, nil, clock)
 		sourcer := sources.NewSourcer(cf)
 
 		spec := &btypes.BatchSpec{
@@ -214,5 +215,24 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				}
 			})
 		}
+
+		t.Run("unexpected payload", func(t *testing.T) {
+			// GitHub pull request events are processed based on the action
+			// embedded within them, but that action is just a string that could
+			// be anything. We need to ensure that this is hardened against
+			// unexpected input.
+			n := 10156
+			action := "this is a bad action"
+
+			if err := hook.handleGitHubWebhook(ctx, extSvc, &gh.PullRequestEvent{
+				Number: &n,
+				Repo: &gh.Repository{
+					NodeID: &githubRepo.ExternalRepo.ID,
+				},
+				Action: &action,
+			}); err == nil {
+				t.Error("unexpected nil error")
+			}
+		})
 	}
 }

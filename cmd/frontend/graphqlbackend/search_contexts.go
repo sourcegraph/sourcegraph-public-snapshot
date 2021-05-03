@@ -37,6 +37,12 @@ type searchContextInputArgs struct {
 	Namespace   *graphql.ID
 }
 
+type searchContextEditInputArgs struct {
+	Name        string
+	Description string
+	Public      bool
+}
+
 type searchContextRepositoryRevisionsInputArgs struct {
 	RepositoryID graphql.ID
 	Revisions    []string
@@ -44,6 +50,12 @@ type searchContextRepositoryRevisionsInputArgs struct {
 
 type createSearchContextArgs struct {
 	SearchContext searchContextInputArgs
+	Repositories  []searchContextRepositoryRevisionsInputArgs
+}
+
+type updateSearchContextArgs struct {
+	ID            graphql.ID
+	SearchContext searchContextEditInputArgs
 	Repositories  []searchContextRepositoryRevisionsInputArgs
 }
 
@@ -169,19 +181,9 @@ func (r *schemaResolver) CreateSearchContext(ctx context.Context, args createSea
 		}
 	}
 
-	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, 0, len(args.Repositories))
-	for _, repository := range args.Repositories {
-		repoResolver, err := r.repositoryByID(ctx, repository.RepositoryID)
-		if err != nil {
-			return nil, err
-		}
-		repositoryRevisions = append(repositoryRevisions, &types.SearchContextRepositoryRevisions{
-			Repo: types.RepoName{
-				ID:   repoResolver.IDInt32(),
-				Name: repoResolver.RepoName(),
-			},
-			Revisions: repository.Revisions,
-		})
+	repositoryRevisions, err := r.repositoryRevisionsFromInputArgs(ctx, args.Repositories)
+	if err != nil {
+		return nil, err
 	}
 
 	searchContext, err := searchcontexts.CreateSearchContextWithRepositoryRevisions(
@@ -200,6 +202,57 @@ func (r *schemaResolver) CreateSearchContext(ctx context.Context, args createSea
 		return nil, err
 	}
 	return &searchContextResolver{searchContext, r.db}, nil
+}
+
+func (r *schemaResolver) UpdateSearchContext(ctx context.Context, args updateSearchContextArgs) (*searchContextResolver, error) {
+	searchContextSpec, err := unmarshalSearchContextID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	repositoryRevisions, err := r.repositoryRevisionsFromInputArgs(ctx, args.Repositories)
+	if err != nil {
+		return nil, err
+	}
+
+	original, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	updated := original // inherits the ID
+	updated.Name = args.SearchContext.Name
+	updated.Description = args.SearchContext.Description
+	updated.Public = args.SearchContext.Public
+
+	searchContext, err := searchcontexts.UpdateSearchContextWithRepositoryRevisions(
+		ctx,
+		r.db,
+		updated,
+		repositoryRevisions,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &searchContextResolver{searchContext, r.db}, nil
+}
+
+func (r *schemaResolver) repositoryRevisionsFromInputArgs(ctx context.Context, args []searchContextRepositoryRevisionsInputArgs) ([]*types.SearchContextRepositoryRevisions, error) {
+	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, 0, len(args))
+	for _, repository := range args {
+		repoResolver, err := r.repositoryByID(ctx, repository.RepositoryID)
+		if err != nil {
+			return nil, err
+		}
+		repositoryRevisions = append(repositoryRevisions, &types.SearchContextRepositoryRevisions{
+			Repo: types.RepoName{
+				ID:   repoResolver.IDInt32(),
+				Name: repoResolver.RepoName(),
+			},
+			Revisions: repository.Revisions,
+		})
+	}
+	return repositoryRevisions, nil
 }
 
 func (r *schemaResolver) DeleteSearchContext(ctx context.Context, args struct {

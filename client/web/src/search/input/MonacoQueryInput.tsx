@@ -11,6 +11,7 @@ import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transf
 import { SearchSuggestion } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '..'
 import { MonacoEditor } from '../../components/MonacoEditor'
@@ -189,6 +190,9 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         (query: string) => fetchSuggestions(appendContextFilter(query, props.selectedSearchContextSpec)),
         [props.selectedSearchContextSpec]
     )
+
+    const [isRedesignEnabled] = useRedesignToggle()
+
     // Register themes and code intelligence providers. The providers are passed
     // a ReplaySubject of search queries to avoid registering new providers on
     // every query change. The ReplaySubject is updated with useLayoutEffect
@@ -398,6 +402,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                             options={options}
                             border={false}
                             keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
+                            isRedesignEnabled={isRedesignEnabled}
                             className="test-query-input"
                         />
                     </div>
