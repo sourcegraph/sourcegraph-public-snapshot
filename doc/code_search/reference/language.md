@@ -196,27 +196,27 @@ Search parameters allow you to filter search results or modify search behavior.
 
 <script>
 ComplexDiagram(
-		Choice(0,
-			Skip(),
-			Terminal("-"),
-			Sequence(
-				Terminal("NOT"),
-				Terminal("space", {href: "#whitespace"}))),
-		Choice(0,
-			Terminal("repo:"),
-			Terminal("r:")),
-		Choice(0,
-            Terminal("regex", {href: "#regular-expression"}),
-            Terminal("built-in", {href: "#built-in-predicate"})),
-   	    Choice(0,
-		    Skip(),
-		    Sequence(
-			    Terminal("@"),
-			    Terminal("revision", {href: "#revision"})),
-            Sequence(
-			    Terminal("space", {href: "#whitespace"}),
-			    Terminal("rev:"),
-			    Terminal("revision", {href: "#revision"})))).addTo();
+    Choice(0,
+        Skip(),
+        Terminal("-"),
+        Sequence(
+            Terminal("NOT"),
+            Terminal("space", {href: "#whitespace"}))),
+    Choice(0,
+        Terminal("repo:"),
+        Terminal("r:")),
+    Choice(0,
+        Terminal("regex", {href: "#regular-expression"}),
+        Terminal("built-in", {href: "#built-in-predicate"})),
+    Choice(0,
+        Skip(),
+        Sequence(
+            Terminal("@"),
+            Terminal("revision", {href: "#revision"})),
+        Sequence(
+            Terminal("space", {href: "#whitespace"}),
+            Terminal("rev:"),
+            Terminal("revision", {href: "#revision"})))).addTo();
 </script>
 
 Search repositories that match the regular expression. A `-` before `repo`
@@ -518,8 +518,7 @@ ComplexDiagram(
     Terminal("quoted string", {href: "#quoted-string"})).addTo();
 </script>
 
-_Deprecated. Prefer [Repo contains commit
-after](#repo-contains-commit-after)._ Filter out stale repositories that don’t
+_Deprecated. Prefer [Repo contains commit after](#repo-contains-commit-after)._ Filter out stale repositories that don’t
 contain commits past the specified time frame. This parameter is experimental.
 
 **Example:** `repo:github\.com/sourcegraph repohascommitafter:"1 week ago"` [↗](https://sourcegraph.com/search?q=context:global+repo:github%5C.com/sourcegraph+repohascommitafter:%221+week+ago%22&patternType=literal)
@@ -591,26 +590,15 @@ or a structural search pattern. This parameter is available as a command-line an
 accessibility option, and synonymous with the visual [search pattern](#search-pattern) toggles.
 in [search pattern](#search-pattern).
 
-## Regular expression
-
-<script>
-ComplexDiagram(
-    Choice(0,
-        Terminal("string", {href: "#string"}),
-        Terminal("quoted string", {href: "#quoted-string"}))).addTo();
-</script>
-
-A string that is interpreted as a <a href="https://golang.org/s/re2syntax">RE2</a> regular expression.
-
 ## Built-in predicate
 
 <script>
 ComplexDiagram(
     Choice(0,
         Terminal("contains.content(...)", {href: "#repo-contains-content"}),
-        Terminal("contains.file(...)", {href: "#contains-file"}),
-        Terminal("contains(...)", {href: "#contains"}),
-        Terminal("contains.commit.after(...)", {href: "#contains-commit-after"}))).addTo();
+        Terminal("contains.file(...)", {href: "#repo-contains-file"}),
+        Terminal("contains(...)", {href: "#repo-contains-file-and-content"}),
+        Terminal("contains.commit.after(...)", {href: "#repo-contains-commit-after"}))).addTo();
 </script>
 
 ### Repo contains file
@@ -673,6 +661,17 @@ for accepted formats. Use this to filter out stale repositories that don’t con
 commits past the specified time frame. This parameter is experimental.
 
 **Example:** `repo:contains.commit.after(1 month ago)` [↗](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph+repo:contains.commit.after%281+month+ago%29&patternType=literal)
+
+## Regular expression
+
+<script>
+ComplexDiagram(
+    Choice(0,
+        Terminal("string", {href: "#string"}),
+        Terminal("quoted string", {href: "#quoted-string"}))).addTo();
+</script>
+
+A string that is interpreted as a <a href="https://golang.org/s/re2syntax">RE2</a> regular expression.
 
 ## String
 
