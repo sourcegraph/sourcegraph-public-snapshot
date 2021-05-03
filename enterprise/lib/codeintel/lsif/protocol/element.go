@@ -38,6 +38,10 @@ const (
 	VertexHoverResult          VertexLabel = "hoverResult"
 	VertexReferenceResult      VertexLabel = "referenceResult"
 	VertexImplementationResult VertexLabel = "implementationResult"
+
+	// Sourcegraph extensions
+	VertexSourcegraphDocumentationResult VertexLabel = "sourcegraph:documentationResult"
+	VertexSourcegraphDocumentationString VertexLabel = "sourcegraph:documentationString"
 )
 
 type Edge struct {
@@ -64,4 +68,9 @@ const (
 	EdgeTextDocumentHover          EdgeLabel = "textDocument/hover"
 	EdgeTextDocumentReferences     EdgeLabel = "textDocument/references"
 	EdgeTextDocumentImplementation EdgeLabel = "textDocument/implementation"
+
+	// Sourcegraph extensions
+	EdgeSourcegraphDocumentationResult   EdgeLabel = "sourcegraph:documentationResult"
+	EdgeSourcegraphDocumentationChildren EdgeLabel = "sourcegraph:documentationChildren"
+	EdgeSourcegraphDocumentationString   EdgeLabel = "sourcegraph:documentationString"
 )

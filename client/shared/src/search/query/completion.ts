@@ -278,7 +278,7 @@ async function completeFilter(
         staticSuggestions = resolvedFilter.definition.discreteValues(token.value).map(
             ({ label, insertText, asSnippet }, index): Monaco.languages.CompletionItem => ({
                 label,
-                sortText: index.toString(), // suggestions sort by order in the list, not alphabetically.
+                sortText: index.toString().padStart(2, '0'), // suggestions sort by order in the list, not alphabetically (up to 99 values).
                 kind: Monaco.languages.CompletionItemKind.Value,
                 insertText: `${insertText || label} `,
                 filterText: label,

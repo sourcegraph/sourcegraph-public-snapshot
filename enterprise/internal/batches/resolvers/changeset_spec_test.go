@@ -30,7 +30,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 	esStore := database.ExternalServicesWith(cstore)
 
 	// Creating user with matching email to the changeset spec author.

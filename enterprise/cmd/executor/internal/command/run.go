@@ -43,6 +43,31 @@ func runCommand(ctx context.Context, command command, logger *Logger) (err error
 		return err
 	}
 
+	go func() {
+		// There is a deadlock condition due the following strange decisions:
+		//
+		// 1. The pipes attached to a command are not closed if the context
+		//    attached to the command is canceled. The pipes are only closed
+		//    after Wait has been called.
+		// 2. According to the docs, we are not meant to call cmd.Wait() until
+		//    we have complete read the pipes attached to the command.
+		//
+		// Since we're following the expected usage, we block on a wait group
+		// tracking the consumption of stdout and stderr pipes in two separate
+		// goroutines between calls to Start and Wait. This means that if there
+		// is a reason the command is abandoned but the pipes are not closed
+		// (such as context cancellation), we will hang indefinitely.
+		//
+		// To be defensive, we'll forcibly close both pipes when the context has
+		// finished. These may return an ErrClosed condition, but we don't really
+		// care: the command package doesn't surface errors when closing the pipes
+		// either.
+
+		<-ctx.Done()
+		stdout.Close()
+		stderr.Close()
+	}()
+
 	startTime := time.Now()
 	pipeContents, pipeReaderWaitGroup := readProcessPipes(stdout, stderr)
 	exitCode, err := monitorCommand(cmd, pipeReaderWaitGroup)
@@ -61,6 +86,10 @@ func runCommand(ctx context.Context, command command, logger *Logger) (err error
 		return err
 	}
 	if exitCode != 0 {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		return errors.New("command failed")
 	}
 	return nil
@@ -89,7 +118,7 @@ func validateCommand(command []string) error {
 	return ErrIllegalCommand
 }
 
-func prepCommand(ctx context.Context, command command) (cmd *exec.Cmd, stdout io.Reader, stderr io.Reader, err error) {
+func prepCommand(ctx context.Context, command command) (cmd *exec.Cmd, stdout, stderr io.ReadCloser, err error) {
 	cmd = exec.CommandContext(ctx, command.Command[0], command.Command[1:]...)
 	cmd.Dir = command.Dir
 	cmd.Env = command.Env

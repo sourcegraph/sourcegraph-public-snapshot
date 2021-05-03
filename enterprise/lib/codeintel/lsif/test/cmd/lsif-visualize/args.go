@@ -15,6 +15,7 @@ var (
 	indexFile     *os.File
 	fromID        int
 	subgraphDepth int
+	exclude       []string
 )
 
 func init() {
@@ -24,6 +25,7 @@ func init() {
 
 	app.Flag("from-id", "The edge/vertex ID to visualize a subgraph from. Must be used in combination with '-depth'.").Default("2").IntVar(&fromID)
 	app.Flag("depth", "Depth limit of the subgraph to be output").Default("-1").IntVar(&subgraphDepth)
+	app.Flag("exclude", "Vertices to exclude from the visualization").StringsVar(&exclude)
 
 	app.Arg("index-file", "The LSIF index to visualize.").Default("dump.lsif").FileVar(&indexFile)
 }
