@@ -1,13 +1,91 @@
 # Language Server Index Format
 
-The purpose of the Language Server Index Format (LSIF) is it to define a standard format for language servers or other programming tools to dump their knowledge about a workspace. This dump can later be used to answer language server [LSP](https://microsoft.github.io/language-server-protocol/) requests for the same workspace without running the language server itself. Since much of the information would be invalidated by a change to the workspace, the dumped information typically excludes requests used when mutating a document. So, for example, the result of a code complete request is typically not part of such a dump.
+This document outlines the format of the precise code intelligence indexes ingested by a Sourcegraph instance.
 
-## Graph structure
+This format is based off of v0.5.0 of Microsoft's [LSIF specification](https://microsoft.github.io/language-server-protocol/specifications/lsif/0.5.0/specification/) and includes several backwards-compatible extensions (noted specifically below). Periodically, we will refresh our specification to include changes in Microsoft's specification in order to maintain the following design invariant:
+
+_An LSIF indexer built following Microsoft's specification should be ingestible by Sourcegraph, though it may be missing data required to power certain Sourcegraph-specific features, such as generation of API documentation._
+
+## Data model
+
+An LSIF index encodes a directed graph of vertices connected by edges. Vertices encode objects and facts about objects within a project (such source text locations and diagnostics). Edges encode relationships between these objects (such as linking references of a symbol to its definition).
+
+Every vertex and edge within an index have the following properties.
+
+```typescript
+type ID = string | int
+
+export interface Element {
+	ID: ID
+	Type: 'vertex' | 'edge'
+	Label: string
+}
+```
+
+The `ID` field uniquely defines an element within an index and is used by edges to refer to its incident vertices. An element identifier can be either a string or an integer. It is not recommended to mix types within the same index. The `Type` field identifies an element as either a vertex or an edge. The `Label` field further identifies an element as a particular subtype of a vertex or an edge. Subtypes of vertices and edges may define additional fields. Thus, an element is in practice a tagged union and the value of the `Label` field determines how to interpret the element payload.
+
+Edges can be classified into two distinct groups: single-target and multi-target edges. For an edge _x -> y_, we refer to _x_ as the `OutV` and _y_ as the `InV`. Single-target edges (1-to-1 edges) will have a single `InV` value, and multiple-target edges (1-to-n edges) will have one or more `InVs` values. Certain subtypes of 1-to-n edges may attribute meaning to the order of their `InVs` list.
+
+```typescript
+interface Edge1to1 extends Element {
+  Type: 'edge'
+  OutV: ID
+  InV: ID
+}
+```
+
+```typescript
+interface Edge1toN extends Element {
+  Type: 'edge'
+  OutV: ID
+  InVs: ID[]
+}
+```
+
+Unlike edges, there are no additional fields common to all vertex types.
+
+```typescript
+interface Vertex extends Element {
+  Type: 'vertex'
+}
+```
+
+Specific subtypes of vertices and edges are detailed in the following.
+
+### MetaData vertex
 
 TODO
 
-### Meta Data Vertex
+```typescript
+interface MetaData extends Vertex {
+  Type: 'metaData'
+  Version: string
+  ProjectRoot: string
+  ToolInfo?: ToolInfo
+}
 
+interface ToolInfo {
+  Name: string
+  Version?: string
+  Args?: string[]
+}
+```
+
+<!--
+	// We assume that the project root in the LSIF dump is either:
+	//
+	//   (1) the root of the LSIF dump, or
+	//   (2) the root of the repository
+	//
+	// These are the common cases and we don't explicitly support
+	// anything else. Here we normalize to (1) by appending the dump
+	// root if it's not already suffixed by it.
+-->
+
+TODO
+
+<!--
+REFERENCE
 To support versioning the LSIF defines a meta data vertex as follows:
 
 ```typescript
@@ -47,7 +125,9 @@ export interface MetaData {
   }
 }
 ```
+-->
 
+<!--
 ### Emitting constraints
 
 The following emitting constraints (some of which have already mean mentioned in the document) exists:
@@ -57,9 +137,54 @@ The following emitting constraints (some of which have already mean mentioned in
 - a `resultRange` can not be used as a target in a `contains` edge.
 - after a document end event has been emitted only result sets, reference or implementation results emitted through that document can be referenced in edges. It is for example not allowed to reference ranges or result ranges from that document. This also includes adding monikers to ranges or result sets. The document data so to speak can not be altered anymore.
 - if ranges point to result sets and monikers are emitted, they must be emitted on the result set and can't be emitted on individual ranges.
+-->
+
+### Documents
+
+TODO
+
+```typescript
+interface Document extends Vertex {
+  Label: 'document'
+  URI: string
+}
+```
+
+TODO
 
 ### Ranges
 
+TODO
+
+```typescript
+interface Range extends Vertex, RangeData {
+  Label: 'range'
+  Tag?: RangeTag
+}
+
+interface RangeData {
+  Start: Position
+  End: Position
+}
+
+interface Position {
+  Line: int
+  Character: int
+}
+
+interface RangeTag {
+  Type: string
+  Text: string
+  Kind: int
+  FullRange?: RangeData
+  Detail: string
+  Tags: int[]
+}
+```
+
+TODO
+
+<!--
 For requests that take a position as its input, we need to store the position as well. Usually LSP requests return the same result for positions that point to the same word / name in a document. Take the following TypeScript example:
 
 ```typescript
@@ -115,18 +240,36 @@ If a position in a document is mapped to a range and more than one range covers 
    1. if yes, use it
 1. end
 1. return `null`
+-->
 
 ### Result ranges
 
+TODO
+
+<!--
+REFERENCE
 Ranges in LSIF have currently two meanings:
 
 1. they act as LSP request sensitive areas in a document (e.g. we use them to decided of for a given position a corresponding LSP request result exists)
 1. they act as navigation targets (e.g. they are the result of a Go To declaration navigation).
 
 To fulfil the first LSIF specifies that ranges can't overlap or be the same. However this constraint is not necessary for the second meaning. To support equal or overlapping target ranges we introduce a vertex `resultRange`. It is not allowed to use a `resultRange` as a target in a `contains` edge.
+-->
+
 
 ### Result Set
 
+TODO
+
+```typescript
+interface ResultSet extends Vertex {
+}
+```
+
+TODO
+
+<!--
+REFERENCE
 Usually the hover result is the same whether you hover over a definition of a function or over a reference of that function. The same is actually true for many LSP requests like `textDocument/definition`, `textDocument/references` or `textDocument/typeDefinition`. In a naïve model, each range would have outgoing edges for all these LSP requests and would point to the corresponding results. To optimize this and to make the graph easier to understand, the concept of a `ResultSet` is introduced. A result set acts as a hub to be able to store information common to a lot of ranges. The `ResultSet` itself doesn't carry any information. So it looks like this:
 
 ```typescript
@@ -162,7 +305,9 @@ The pattern of storing the result with the `ResultSet` will be used for other re
    1. end
 1. end
 1. otherwise return `null`
+-->
 
+<!--
 ### The Project vertex
 
 Usually language servers operate in some sort of project context. In TypeScript, a project is defined using a `tsconfig.json` file. C# and C++ have their own means. The project file usually contains information about compile options and other parameters. Having these in the dump can be valuable. The LSIF therefore defines a project vertex. In addition, all documents that belong to that project are connected to the project using a `contains` edge. If there was a `tsconfig.json` in the previous examples, the first emitted edges and vertices would look like this:
@@ -200,13 +345,35 @@ export interface Project extends V {
 	contents?: string;
 }
 ```
+-->
 
-### Embedding contents
+### Monikers
 
-It can be valuable to embed the contents of a document or project file into the dump as well. For example, if the content of the document is a virtual document generated from program meta data. The index format therefore supports an optional `contents` property on the `document` and `project` vertex. If used the content needs to be `base64` encoded.
+TODO
 
-### Project exports and external imports (Monikers)
+```typescript
+interface Moniker extends Vertex {
+  Type: 'moniker'
+  Kind: string
+  Scheme: string
+  Identifier: string
+}
+```
 
+TODO
+
+```typescript
+interface PackageInformation extends Vertex {
+  Type: 'packageInformation'
+  Name: string
+  Version: string
+}
+```
+
+TODO
+
+<!--
+REFERENCE
 One use case of the LSIF is to create dumps for released versions of a product, either a library or a program. If a project **A** references a library **B**, it would also be useful if the information in these two dumps could be related. To make this possible, the LSIF introduces optional monikers which can be linked to ranges using a corresponding edge. The monikers can be used to describe what a project exports and what it imports. Let's first look at the export case.
 
 Consider the following TypeScript file called `index.ts`:
@@ -340,7 +507,7 @@ For tools processing the dump and importing it into a database it is sometime us
 For the following example
 
 ```ts
-funciton foo(x: number): void {
+function foo(x: number): void {
 }
 ```
 
@@ -355,11 +522,69 @@ The moniker for `x` looks like this:
 ```
 
 In addition to this moniker schemes starting with `$` are reserved and shouldn't be used by a LSIF tool.
+-->
 
-## Language Features
+### Language Features
 
-### Request: `textDocument/definition`
+TODO
 
+#### Hover text
+
+TODO
+
+```typescript
+interface HoverResult extends Vertex {
+  Label: 'hoverResult'
+  Result: HoverContents
+}
+
+interface HoverContents {
+  Contents: HoverPar[]
+}
+
+type HoverPart =
+  | { Value: string, Language: string }
+  | { Value: string, Kind: string }
+  | string
+```
+
+TODO
+
+<!--
+REFERENCE
+In the LSP, the hover is defined as follows:
+
+```typescript
+export interface Hover {
+  /**
+   * The hover's content
+   */
+  contents: MarkupContent | MarkedString | MarkedString[];
+
+  /**
+   * An optional range
+   */
+  range?: Range;
+}
+```
+
+where the optional range is the name range of the word hovered over.
+
+> **Side Note**: This is a pattern used for other LSP requests as well, where the result contains the word range of the word the position parameter pointed to.
+
+This makes the hover different for every location so we can't really store it with the result set. But wait, the range is the range of one of the `bar` references we already emitted and used to start to compute the result. To make the hover still reusable, we ask the index server to fill in the starting range if no range is defined in the result. So for a hover request executed on range `{ line: 4, character: 2 }, end: { line: 4, character: 5 }` the hover result will be:
+
+```typescript
+{ id: 6, type: "vertex", label: "hoverResult", result: { contents: [ { language: "typescript", value: "function bar(): void" } ], range: { line: 4, character: 2 }, end: { line: 4, character: 5 } } }
+```
+-->
+
+#### Definitions
+
+TODO
+
+<!--
+REFERENCE
 The same pattern of connecting a range, result set, or a document with a request edge to a method result is used for other requests as well. Let's next look at the `textDocument/definition` request using the following TypeScript sample:
 
 ```typescript
@@ -420,6 +645,7 @@ Running **Go to Definition** on `X` in `let x: X` will show a dialog which lets 
 ```
 
 The `item` edge as an additional property document which indicate in which document these declaration are. We added this information to still make it easy to emit the data but also make it easy to process the data to store it in a database. Without that information we would either need to specific an order in which data needs to be emitted (e.g. a item edge and only refer to a range that got already added to a document using a `containes` edge) or we force processing tools to keep a lot of vertices and edges in memory. The approach of having this `document` property looks like a fair balance.
+-->
 
 <!--
 ### Request: `textDocument/declaration`
@@ -427,36 +653,12 @@ The `item` edge as an additional property document which indicate in which docum
 There are programming languages that have the concept of declarations and definitions (like C/C++). If this is the case, the dump can contain a corresponding `declarationResult` vertex and a `textDocument/declaration` edge to store the information. They are handled analogously to the entities emitted for the `textDocument/definition` request.
 -->
 
-### More about Request: `textDocument/hover`
+#### References
 
-In the LSP, the hover is defined as follows:
+TODO
 
-```typescript
-export interface Hover {
-  /**
-   * The hover's content
-   */
-  contents: MarkupContent | MarkedString | MarkedString[];
-
-  /**
-   * An optional range
-   */
-  range?: Range;
-}
-```
-
-where the optional range is the name range of the word hovered over.
-
-> **Side Note**: This is a pattern used for other LSP requests as well, where the result contains the word range of the word the position parameter pointed to.
-
-This makes the hover different for every location so we can't really store it with the result set. But wait, the range is the range of one of the `bar` references we already emitted and used to start to compute the result. To make the hover still reusable, we ask the index server to fill in the starting range if no range is defined in the result. So for a hover request executed on range `{ line: 4, character: 2 }, end: { line: 4, character: 5 }` the hover result will be:
-
-```typescript
-{ id: 6, type: "vertex", label: "hoverResult", result: { contents: [ { language: "typescript", value: "function bar(): void" } ], range: { line: 4, character: 2 }, end: { line: 4, character: 5 } } }
-```
-
-### Request: `textDocument/references`
-
+<!--
+REFERENCE
 Storing references will be done in the same way as storing a hover or go to definition ranges. It uses a reference result vertex and `item` edges to add ranges to the result.
 
 Look at the following example:
@@ -639,6 +841,7 @@ In the above example, there will be three reference results
 ```
 
 For Typescript, method references are recorded at their most abstract declaration and if methods are merged (`B#foo`), they are combined using a reference result pointing to other results.
+-->
 
 <!--
 ### Request: `textDocument/implementation`
@@ -927,8 +1130,25 @@ Produces the following output:
 ```
 -->
 
-### Request: `textDocument/diagnostic`
+#### Diagnostics
 
+TODO
+
+```typescript
+interface Diagnostic extends Vertex {
+  Type: 'diagnosticResult'
+  Severity: int
+  Code: string
+  Message: string
+  Source: string
+  Range: RangeData
+}
+```
+
+TODO
+
+<!--
+REFERENCE
 The only information missing that is useful in a dump are the diagnostics associated with documents. Diagnostics in the LSP are modeled as a push notifications sent from the server to the client. This doesn't work well with a dump modeled on request method names. However, the push notification can be emulated as a request where the request's result is the value sent during the push as a parameter.
 
 In the dump, we model diagnostics as follows:
@@ -964,6 +1184,7 @@ Produces the following output:
 ```
 
 Since diagnostics are not very common in dumps, no effort has been made to reuse ranges in diagnostics.
+-->
 
 <!--
 ### Events
@@ -993,3 +1214,11 @@ The events for projects looks similar:
 { id: 55, type: "vertex", label: "$event", kind: "end", scope: "project", data: 2 }
 ```
 -->
+
+## Data schemas
+
+TODO
+
+### NDJSON
+
+TODO
