@@ -1,8 +1,8 @@
 import classnames from 'classnames'
-import React, { ReactElement, useCallback, useRef, useState } from 'react'
+import React, { ReactElement, useCallback, useState } from 'react'
 
 import { DataSeries } from '../../types'
-import { FormSeriesInput, FormSeriesInputAPI } from '../form-series-input/FormSeriesInput'
+import { FormSeriesInput } from '../form-series-input/FormSeriesInput'
 
 import styles from './FormSeries.module.scss'
 
@@ -22,8 +22,6 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
     // we use array of theses series indexes.
     const [editSeriesIndexes, setEditSeriesIndex] = useState<number[]>([])
     const [newSeriesEdit, setNewSeriesEdit] = useState(false)
-
-    const seriesInputReference = useRef<FormSeriesInputAPI>(null)
 
     // Add empty series form component that user be able to fill this form and create
     // another chart series.
@@ -68,7 +66,6 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
     if (series.length === 0) {
         return (
             <FormSeriesInput
-                innerRef={seriesInputReference}
                 className='card card-body p-3'
                 onSubmit={handleSubmitNewSeries}
             />
@@ -104,7 +101,6 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
             {newSeriesEdit && (
                 <FormSeriesInput
                     autofocus={true}
-                    innerRef={seriesInputReference}
                     cancel={true}
                     onSubmit={handleSubmitNewSeries}
                     onCancel={handleCancelNewSeries}

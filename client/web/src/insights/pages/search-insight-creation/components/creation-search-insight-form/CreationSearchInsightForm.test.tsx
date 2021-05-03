@@ -1,5 +1,4 @@
-import { render, RenderResult, within, BoundFunction, GetByRole, cleanup, fireEvent } from '@testing-library/react'
-import openColor from 'open-color'
+import { render, RenderResult, act, within, BoundFunction, GetByRole, cleanup, fireEvent } from '@testing-library/react'
 import * as React from 'react'
 import sinon from 'sinon'
 
@@ -127,7 +126,7 @@ describe('CreateInsightForm', () => {
                         name: 'First code insight series',
                         query: 'patternType:regex case:yes \\*\\sas\\sGQL',
                         // Open color value from our own css variables
-                        color: openColor.yellow[7],
+                        color: 'var(--oc-yellow-7)',
                     },
                 ],
                 stepValue: '2',
@@ -183,7 +182,7 @@ describe('CreateInsightForm', () => {
             expect(getByText(/series is empty/i)).toBeInTheDocument()
         })
 
-        it('when onSubmit threw submit error', () => {
+        it('when onSubmit threw submit error', async () => {
             const onSubmit = () => ({ [FORM_ERROR]: asError(new Error('Submit error')) })
             const { getByRole, getByText } = renderWithProps({ onSubmit })
             const {
@@ -216,7 +215,10 @@ describe('CreateInsightForm', () => {
 
             const submitButton = getByRole('button', { name: /create code insight/i })
 
-            fireEvent.click(submitButton)
+            // eslint-disable-next-line @typescript-eslint/require-await
+            await act( async () => {
+                fireEvent.click(submitButton)
+            })
 
             expect(getByText(/submit error/i)).toBeInTheDocument()
         })

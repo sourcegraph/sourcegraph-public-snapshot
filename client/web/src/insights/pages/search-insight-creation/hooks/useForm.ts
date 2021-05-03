@@ -103,7 +103,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
 
                 const submitResult = await onSubmitReference.current?.(values)
 
-                if (!isUnmounted) {
+                if (!isUnmounted.current) {
                     setSubmitting(false);
                     // eslint-disable-next-line no-unused-expressions
                     submitResult && setSubmitErrors(submitResult);

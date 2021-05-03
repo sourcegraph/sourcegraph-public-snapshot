@@ -1,6 +1,7 @@
 import classnames from 'classnames'
 import React from 'react'
 
+import { ErrorAlert } from '../../../../../components/alerts';
 import { FORM_ERROR, SubmissionErrors, useField, useForm, Validator } from '../../hooks/useForm';
 import { DataSeries } from '../../types'
 import { InputField } from '../form-field/FormField'
@@ -24,6 +25,9 @@ const INITIAL_VALUES: Partial<CreateInsightFormFields> = {
     visibility: 'personal',
     series: [],
     step: 'months',
+    stepValue: '',
+    title: '',
+    repositories: '',
 }
 
 /** Public API of code insight creation form. */
@@ -204,9 +208,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
 
             <div>
 
-                {formAPI.submitErrors?.[FORM_ERROR] && (
-                    <div className="alert alert-danger">{formAPI.submitErrors[FORM_ERROR]}</div>
-                )}
+                {formAPI.submitErrors?.[FORM_ERROR] && <ErrorAlert error={formAPI.submitErrors[FORM_ERROR]} />}
 
                 <button type="submit" className="btn btn-primary mr-2">
                     Create code insight

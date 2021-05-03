@@ -1,7 +1,7 @@
-import { of, EMPTY } from 'rxjs'
+import { of, EMPTY, throwError } from 'rxjs'
 
-import { InsightsAPI } from '@sourcegraph/web/src/insights/core/backend/insights-api'
 import {
+    ApiService,
     ViewInsightProviderResult,
     ViewInsightProviderSourceType,
 } from '@sourcegraph/web/src/insights/core/backend/types'
@@ -153,9 +153,9 @@ export const MOCK_VIEWS = [
     },
 ] as ViewInsightProviderResult[]
 
-export const createMockAPI = (): InsightsAPI => ({
+export const createMockAPI = (): ApiService => ({
     getCombinedViews: () => of(MOCK_VIEWS),
     getInsightCombinedViews: () => of(MOCK_VIEWS),
     getSubjectSettings: () => of({ id: 0, contents: '{}' }),
-    updateSubjectSettings: () => EMPTY,
+    updateSubjectSettings: () => throwError('Hello this is error block'),
 })

@@ -47,8 +47,8 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
 
     const { formAPI, handleSubmit, ref } = useForm({
         initialValues: {
-            seriesName: name,
-            seriesQuery: query,
+            seriesName: name ?? '',
+            seriesQuery: query ?? '',
             seriesColor: color ?? DEFAULT_ACTIVE_COLOR,
         },
         onSubmit: values =>
