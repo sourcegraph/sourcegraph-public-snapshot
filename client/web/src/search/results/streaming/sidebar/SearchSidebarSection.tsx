@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
 import styles from './SearchSidebarSection.module.scss'
