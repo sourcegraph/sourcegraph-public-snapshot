@@ -773,6 +773,8 @@ describe('Search', () => {
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts?tab=convert-version-contexts')
 
+            // Wait for individual nodes to load
+            await driver.page.waitForSelector('.test-convert-version-context-btn', { visible: true })
             await driver.page.waitForSelector('.test-convert-all-search-contexts-btn')
             await driver.page.click('.test-convert-all-search-contexts-btn')
 
