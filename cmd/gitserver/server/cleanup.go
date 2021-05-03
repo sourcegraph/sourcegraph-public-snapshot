@@ -75,12 +75,15 @@ const reposStatsName = "repos-stats.json"
 
 // cleanupRepos walks the repos directory and performs maintenance tasks:
 //
-// 1. Remove corrupt repos.
-// 2. Remove stale lock files.
-// 3. Remove repos based on disk pressure.
-// 4. Reclone repos after a while. (simulate git gc)
-// 5. Remove repos on disk that don't belong in this shard
-func (s *Server) cleanupRepos(addrs []string) {
+// 1. Compute the amount of space used by the repo
+// 2. Remove corrupt repos.
+// 3. Remove stale lock files.
+// 4. Ensure correct git attributes
+// 5. Scrub remote URLs
+// 6. Perform garbage collection
+// 7. Re-clone repos after a while. (simulate git gc)
+// 8. Remove repos based on disk pressure.
+func (s *Server) cleanupRepos() {
 	janitorRunning.Set(1)
 	defer janitorRunning.Set(0)
 
