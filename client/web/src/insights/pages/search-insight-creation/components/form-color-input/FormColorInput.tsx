@@ -1,4 +1,5 @@
 import classnames from 'classnames'
+import { startCase } from 'lodash'
 import openColor from 'open-color'
 import React, { ChangeEvent, ChangeEventHandler, useCallback, useRef, useState } from 'react'
 import { noop } from 'rxjs'
@@ -21,10 +22,10 @@ interface FormColorPickerProps {
 }
 
 const DEFAULT_COLOURS = Object.keys(openColor)
-    .filter(name => name !== 'white' && name !== 'black')
+    .filter(name => name !== 'white' && name !== 'black' && name !== 'gray')
     .map(name => ({ name: startCase(name), color: `var(--oc-${name}-7)` }))
 
-export const DEFAULT_ACTIVE_COLOR = openColor.grape[7]
+export const DEFAULT_ACTIVE_COLOR = 'var(--oc-grape-7)'
 
 /** Displays custom radio group for picking color of code insight chart line. */
 export const FormColorInput: React.FunctionComponent<FormColorPickerProps> = props => {

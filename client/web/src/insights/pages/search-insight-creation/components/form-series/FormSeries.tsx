@@ -69,7 +69,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
         return (
             <FormSeriesInput
                 innerRef={seriesInputReference}
-                className={styles.formSeriesInput}
+                className='card card-body p-3'
                 onSubmit={handleSubmitNewSeries}
             />
         )
@@ -87,7 +87,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                         onSubmit={series => handleEditSeriesCommit(index, series)}
                         /* eslint-disable-next-line react/jsx-no-bind */
                         onCancel={() => handleCancelEditSeries(index)}
-                        className={classnames(styles.formSeriesInput, styles.formSeriesItem)}
+                        className={classnames('card card-body p-3', styles.formSeriesItem)}
                         {...line}
                     />
                 ) : (
@@ -108,7 +108,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                     cancel={true}
                     onSubmit={handleSubmitNewSeries}
                     onCancel={handleCancelNewSeries}
-                    className={classnames(styles.formSeriesInput, styles.formSeriesItem)}
+                    className={classnames('card card-body p-3', styles.formSeriesItem)}
                 />
             )}
 
@@ -116,7 +116,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                 <button
                     type="button"
                     onClick={handleAddSeries}
-                    className={classnames(styles.formSeriesItem, styles.formSeriesAddButton, 'btn btn-link')}
+                    className={classnames(styles.formSeriesItem, styles.formSeriesAddButton, 'btn btn-link p-3')}
                 >
                     + Add another data series
                 </button>

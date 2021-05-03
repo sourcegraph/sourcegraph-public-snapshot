@@ -1,24 +1,24 @@
 import classnames from 'classnames'
 import React from 'react'
 
-import { FORM_ERROR, SubmissionErrors, useField, useForm } from '../../hooks/useForm';
+import { FORM_ERROR, SubmissionErrors, useField, useForm, Validator } from '../../hooks/useForm';
 import { DataSeries } from '../../types'
 import { InputField } from '../form-field/FormField'
 import { FormGroup } from '../form-group/FormGroup'
 import { FormRadioInput } from '../form-radio-input/FormRadioInput'
 import { FormSeries } from '../form-series/FormSeries'
-import { createRequiredValidator, composeValidators, ValidationResult } from '../validators'
+import { createRequiredValidator } from '../validators'
 
 import styles from './CreationSearchInsightForm.module.scss'
 
 const requiredTitleField = createRequiredValidator('Title is required field for code insight.')
-const repositoriesFieldValidator = composeValidators(
-    createRequiredValidator('Repositories is required field for code insight.')
-)
+const repositoriesFieldValidator = createRequiredValidator('Repositories is required field for code insight.')
 
 const requiredStepValueField = createRequiredValidator('Please specify a step between points.')
-const seriesRequired = (series: DataSeries[] | undefined): ValidationResult =>
-    series && series.length > 0 ? undefined : 'Series is empty. You must have at least one series for code insight.'
+const seriesRequired: Validator<DataSeries[]> = series =>
+    series && series.length > 0
+        ? undefined
+        : 'Series is empty. You must have at least one series for code insight.'
 
 const INITIAL_VALUES: Partial<CreateInsightFormFields> = {
     visibility: 'personal',
@@ -130,6 +130,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 title="Data series"
                 subtitle="Add any number of data series to your chart"
                 error={series.meta.touched && series.meta.error}
+                innerRef={series.input.ref}
                 className="mb-0"
             >
                 <FormSeries
@@ -150,6 +151,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
             >
                 <InputField
                     placeholder="ex. 2"
+                    required={true}
                     {...stepValue.input}
                     valid={stepValue.meta.touched && stepValue.meta.validState === 'VALID'}
                     errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}

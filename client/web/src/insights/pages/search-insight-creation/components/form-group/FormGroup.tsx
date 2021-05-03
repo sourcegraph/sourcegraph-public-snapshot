@@ -1,7 +1,4 @@
-import classnames from 'classnames'
-import React, { PropsWithChildren } from 'react'
-
-import styles from './FormGroup.module.scss'
+import React, { PropsWithChildren, RefObject } from 'react'
 
 interface FormGroupProps {
     /** Name attr value for root fieldset element. */
@@ -18,19 +15,23 @@ interface FormGroupProps {
     className?: string
     /** Custom class name for div children wrapper element. */
     contentClassName?: string
+    /** Reference to root fieldset element.*/
+    innerRef?: RefObject<HTMLFieldSetElement>
 }
 
 /** Displays fieldset (group) of fields for code insight creation form with error message. */
 export const FormGroup: React.FunctionComponent<PropsWithChildren<FormGroupProps>> = props => {
-    const { className, contentClassName, name, title, subtitle, children, description, error } = props
+    const { innerRef, className, contentClassName, name, title, subtitle, children, description, error } = props
 
     return (
-        <fieldset name={name} className={className}>
-            <legend className={classnames(styles.formGroupLegend, 'd-flex flex-column')}>
-                <div className="mb-1 font-weight-bold">{title}</div>
+        <fieldset ref={innerRef} name={name} className={className}>
+            <legend className='d-flex flex-column mb-3'>
+                <div className="font-weight-bold">{title}</div>
 
-                {subtitle && <small className="text-muted">{subtitle}</small>}
-                {error && <small role='alert' className="text-danger">{error}</small>}
+                {/* Since safari doesn't support flex column on legend element we have to set d-block*/}
+                {/* explicitly */}
+                {subtitle && <small className="d-block text-muted">{subtitle}</small>}
+                {error && <small role='alert' className="d-block text-danger">{error}</small>}
             </legend>
 
             <div className={contentClassName}>{children}</div>

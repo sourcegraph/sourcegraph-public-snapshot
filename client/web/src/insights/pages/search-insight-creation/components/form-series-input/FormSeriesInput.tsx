@@ -1,25 +1,15 @@
 import classnames from 'classnames'
-import React, { Ref } from 'react'
+import React from 'react'
 import { noop } from 'rxjs'
 
 import { useField, useForm } from '../../hooks/useForm'
 import { DataSeries } from '../../types'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
 import { InputField } from '../form-field/FormField'
-import { createRequiredValidator, createValidRegExpValidator, composeValidators } from '../validators'
+import { createRequiredValidator } from '../validators'
 
 const requiredNameField = createRequiredValidator('Name is required field for data series.')
-
-const validQuery = composeValidators(
-    createValidRegExpValidator('Query must be valid regular expression.'),
-    createRequiredValidator('Query is required field for data series.')
-)
-
-/** Mimic native input public API. */
-export interface FormSeriesInputAPI {
-    /** Mimic-function to native input focus. */
-    focus: () => void
-}
+const validQuery =  createRequiredValidator('Query is required field for data series.')
 
 interface FormSeriesProps {
     /** Name of series. */
@@ -32,8 +22,6 @@ interface FormSeriesProps {
     autofocus?: boolean
     /** Enable cancel button. */
     cancel?: boolean
-    /** Ref for mimic native behavior (focus function). */
-    innerRef?: Ref<FormSeriesInputAPI>
     /** Custom class name for root element of form series. */
     className?: string
     /** On submit handler of series form. */
@@ -79,6 +67,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
         <div ref={ref} className={classnames('d-flex flex-column', className)}>
             <InputField
                 title="Name"
+                required={true}
                 placeholder="Example: Function component"
                 description="Name shown in the legend and tooltip"
                 valid={(hasNameControlledValue || nameField.meta.touched) && nameField.meta.validState === 'VALID'}
@@ -88,6 +77,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
 
             <InputField
                 title="Query"
+                required={true}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 description={
                     <span>
@@ -110,7 +100,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
             />
 
             <div className="mt-4">
-                <button type="button" onClick={handleSubmit} className="btn btn-light">
+                <button type="button" onClick={handleSubmit} className="btn btn-secondary">
                     Done
                 </button>
 

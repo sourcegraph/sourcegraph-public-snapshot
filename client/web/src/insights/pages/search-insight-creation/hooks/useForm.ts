@@ -14,7 +14,7 @@ import { noop } from 'rxjs';
 export const FORM_ERROR = 'useForm/submissionErrors';
 
 export interface AnyObject {
-    [key: string]: never
+    [key: string]: any
 }
 
 export type SubmissionErrors = AnyObject | undefined
@@ -120,6 +120,9 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
     }
 }
 
+export type ValidationResult = string | undefined | void
+export type Validator<FieldValue> = (value: FieldValue | undefined, validity: ValidityState | null) => ValidationResult
+
 interface FieldState<Value> {
     value: Value | undefined,
     touched: boolean,
@@ -128,12 +131,9 @@ interface FieldState<Value> {
     validity: ValidityState | null
 }
 
-export type ValidationResult = string | undefined | void
-export type Validator<FieldValue> = (value: FieldValue | undefined) => ValidationResult
-
 export interface useFieldAPI<FieldValue> {
     input: {
-        ref: RefObject<HTMLInputElement>;
+        ref: RefObject<HTMLInputElement & HTMLFieldSetElement>;
         name: string;
         value: FieldValue | undefined
         onChange: (event: ChangeEvent<HTMLInputElement> | FieldValue) => void
@@ -149,7 +149,7 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
 {
     const { setFieldState, initialValues, submitted } = formApi;
 
-    const inputReference = useRef<HTMLInputElement>(null);
+    const inputReference = useRef<HTMLInputElement & HTMLFieldSetElement>(null);
     const [state, setState] = useState<FieldState<FormValues[FieldValueKey]>>({
         value: initialValues[name],
         touched: false,
@@ -160,31 +160,25 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
 
     useEffect(() => {
         const inputElement = inputReference.current;
-        if (!inputElement) {
-            return;
-        }
 
         // Clear custom validity from the last validation call.
-        inputElement.setCustomValidity?.('');
+        inputElement?.setCustomValidity?.('');
 
-        const nativeValidation = inputElement.checkValidity?.() ?? true;
-        const validity = inputElement.validity;
+        const nativeAttributeValidation = inputElement?.checkValidity?.() ?? true;
+        const validity = inputElement?.validity ?? null;
 
-        if (!nativeValidation) {
-            const validationMessage = inputElement.validationMessage ?? '';
+        // If we got error from native attr validation (required, pattern, type)
+        // we still run validator in order to get some custom error message for
+        // standard validation error if validator doesn't provide message we fallback
+        // on standard validationMessage string [1] (ex. Please fill in input.)
+        const nativeErrorMessage = inputElement?.validationMessage ?? ''
+        const customValidation = validator(state.value, validity);
 
-            return setState(state => ({
-                ...state,
-                validState: 'INVALID' as const,
-                error: validationMessage,
-                validity
-            }))
-        }
+        if (customValidation || !nativeAttributeValidation) {
+            // [1] Custom error message or fallback on native error message
+            const validationMessage = customValidation || nativeErrorMessage;
 
-        const customValidation = validator(state.value);
-
-        if (customValidation) {
-            inputElement.setCustomValidity?.(customValidation)
+            inputElement?.setCustomValidity?.(validationMessage)
 
             return setState(state => ({
                 ...state,

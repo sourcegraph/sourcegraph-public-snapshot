@@ -1,10 +1,11 @@
 import { render, RenderResult, within, BoundFunction, GetByRole, cleanup, fireEvent } from '@testing-library/react'
-import { FORM_ERROR } from 'final-form'
 import openColor from 'open-color'
 import * as React from 'react'
 import sinon from 'sinon'
 
 import { asError } from '@sourcegraph/shared/src/util/errors'
+
+import { FORM_ERROR } from '../../hooks/useForm';
 
 import { CreationSearchInsightForm, CreationSearchInsightFormProps } from './CreationSearchInsightForm'
 

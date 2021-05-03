@@ -1,7 +1,7 @@
 .form-color-picker {
     &__title {
-        // Bootstrap legend element's styles have 1.5rem font size
-        // for all legends on the page. Because of it we have to reset size explicitly.
+        // Global legend element's styles have 1rem font size as default.
+        // For color picker we have to style this legend element as label size
         font-size: inherit;
     }
 
