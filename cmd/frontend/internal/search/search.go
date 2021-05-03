@@ -462,17 +462,14 @@ func fromRepository(rm result.RepoMatch) *streamhttp.EventRepoMatch {
 }
 
 func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) *streamhttp.EventCommitMatch {
-	var content string
-	var ranges [][3]int32
-	if matches := commit.Matches(); len(matches) == 1 {
-		match := matches[0]
-		content = match.Body().Text()
-		highlights := match.Highlights()
-		ranges = make([][3]int32, len(highlights))
-		for i, h := range highlights {
-			ranges[i] = [3]int32{h.Line(), h.Character(), h.Length()}
-		}
+	content := commit.CommitMatch.Body.Value
+
+	highlights := commit.CommitMatch.Body.Highlights
+	ranges := make([][3]int32, len(highlights))
+	for i, h := range highlights {
+		ranges[i] = [3]int32{h.Line, h.Character, h.Length}
 	}
+
 	return &streamhttp.EventCommitMatch{
 		Type:    streamhttp.CommitMatchType,
 		Label:   commit.CommitMatch.Label(),
