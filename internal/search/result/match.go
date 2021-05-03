@@ -30,18 +30,15 @@ var (
 // Match types with lower ranks will be sorted before match types
 // with higher ranks.
 const (
-	FileMatchRank   = 0
-	CommitMatchRank = 1
-	DiffMatchRank   = 2
-	RepoMatchRank   = 3
+	rankFileMatch   = 0
+	rankCommitMatch = 1
+	rankDiffMatch   = 2
+	rankRepoMatch   = 3
 )
 
 // Key is a sorting or deduplicating key for a Match.
 // It contains all the identifying information for the Match.
 type Key struct {
-	// TypeRank is the sorting rank of the type this key belongs to.
-	TypeRank int
-
 	// Repo is the name of the repo the match belongs to
 	Repo api.RepoName
 
@@ -52,14 +49,13 @@ type Key struct {
 	// Path is the path of the file the match belongs to.
 	// Empty if there is no file associated with the match (e.g. RepoMatch or CommitMatch)
 	Path string
+
+	// TypeRank is the sorting rank of the type this key belongs to.
+	TypeRank int
 }
 
 // Less compares one key to another for sorting
 func (k Key) Less(other Key) bool {
-	if k.TypeRank != other.TypeRank {
-		return k.TypeRank < other.TypeRank
-	}
-
 	if k.Repo != other.Repo {
 		return k.Repo < other.Repo
 	}
@@ -68,5 +64,9 @@ func (k Key) Less(other Key) bool {
 		return k.Commit < other.Commit
 	}
 
-	return k.Path < other.Path
+	if k.Path != other.Path {
+		return k.Path < other.Path
+	}
+
+	return k.TypeRank < other.TypeRank
 }
