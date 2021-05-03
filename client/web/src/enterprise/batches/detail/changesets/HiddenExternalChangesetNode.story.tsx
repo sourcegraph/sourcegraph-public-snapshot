@@ -6,9 +6,18 @@ import { ChangesetState } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
+import gridStyles from './BatchChangeChangesets.module.scss'
+import classNames from 'classnames'
 
 const { add } = storiesOf('web/batches/HiddenExternalChangesetNode', module).addDecorator(story => (
-    <div className="p-3 container web-content batch-change-changesets__grid">{story()}</div>
+    <div
+        className={classNames(
+            gridStyles.batchChangeChangesetsGrid,
+            'p-3 container web-content batch-change-changesets__grid'
+        )}
+    >
+        {story()}
+    </div>
 ))
 
 add('All states', () => {

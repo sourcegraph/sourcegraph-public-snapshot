@@ -1,5 +1,6 @@
 import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
+import classNames from 'classnames'
 import { addHours } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
@@ -13,9 +14,10 @@ import {
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 import { ExternalChangesetNode } from './ExternalChangesetNode'
+import gridStyles from './BatchChangeChangesets.module.scss'
 
 const { add } = storiesOf('web/batches/ExternalChangesetNode', module).addDecorator(story => (
-    <div className="p-3 container web-content batch-change-changesets__grid">{story()}</div>
+    <div className={classNames(gridStyles.batchChangeChangesetsGrid, 'p-3 container web-content')}>{story()}</div>
 ))
 
 add('All states', () => {
