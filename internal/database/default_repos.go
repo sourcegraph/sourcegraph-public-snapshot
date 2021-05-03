@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -45,8 +44,6 @@ type DefaultRepoStore struct {
 	cacheAllRepos    atomic.Value
 	cachePublicRepos atomic.Value
 
-	once sync.Once
-
 	mu sync.Mutex
 }
 
@@ -69,17 +66,6 @@ func (s *DefaultRepoStore) Transact(ctx context.Context) (*DefaultRepoStore, err
 	return &DefaultRepoStore{Store: txBase}, err
 }
 
-// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
-// This function ensures access to dbconn happens after the rest of the code or tests have
-// initialized it.
-func (s *DefaultRepoStore) ensureStore() {
-	s.once.Do(func() {
-		if s.Store == nil {
-			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-		}
-	})
-}
-
 // List lists ALL default repos. These include anything in the default_repos
 // table, user added repos (both public and private) as well as any repos added
 // to the user_public_repos table.
@@ -96,8 +82,6 @@ func (s *DefaultRepoStore) ListPublic(ctx context.Context) (results []types.Repo
 }
 
 func (s *DefaultRepoStore) list(ctx context.Context, onlyPublic bool) (results []types.RepoName, err error) {
-	s.ensureStore()
-
 	cache := &(s.cacheAllRepos)
 	if onlyPublic {
 		cache = &(s.cachePublicRepos)
