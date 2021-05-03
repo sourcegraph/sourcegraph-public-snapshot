@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func testStoreBulkJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreBulkOperations(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	repoStore := database.ReposWith(s)
 	esStore := database.ExternalServicesWith(s)
 
@@ -34,7 +34,7 @@ func testStoreBulkJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 
 	failureMessage := "bad error"
 	jobs := make([]*btypes.ChangesetJob, 0, 3)
-	bulkJobs := make([]*btypes.BulkJob, 0, 2)
+	bulkOperations := make([]*btypes.BulkOperation, 0, 2)
 	for i := 0; i < cap(jobs); i++ {
 		groupID, err := RandomID()
 		if err != nil {
@@ -63,25 +63,25 @@ func testStoreBulkJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i := 0; i < cap(bulkJobs); i++ {
-		j := &btypes.BulkJob{
+	for i := 0; i < cap(bulkOperations); i++ {
+		j := &btypes.BulkOperation{
 			ID:        jobs[i].BulkGroup,
 			DBID:      jobs[i].ID,
-			State:     btypes.BulkJobStateProcessing,
+			State:     btypes.BulkOperationStateProcessing,
 			Type:      btypes.ChangesetJobTypeComment,
 			CreatedAt: clock.Now(),
 		}
 		if i == 0 {
 			j.Progress = 1
-			j.State = btypes.BulkJobStateFailed
+			j.State = btypes.BulkOperationStateFailed
 		}
-		bulkJobs = append(bulkJobs, j)
+		bulkOperations = append(bulkOperations, j)
 	}
 
 	t.Run("Get", func(t *testing.T) {
 		for i, job := range jobs {
 			t.Run(strconv.Itoa(i), func(t *testing.T) {
-				have, err := s.GetBulkJob(ctx, GetBulkJobOpts{ID: job.BulkGroup})
+				have, err := s.GetBulkOperation(ctx, GetBulkOperationOpts{ID: job.BulkGroup})
 				if i == cap(jobs)-1 {
 					if err != ErrNoResults {
 						t.Fatal("unexpected non-no-results error")
@@ -91,16 +91,16 @@ func testStoreBulkJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 					t.Fatal(err)
 				}
 
-				if diff := cmp.Diff(have, bulkJobs[i]); diff != "" {
+				if diff := cmp.Diff(have, bulkOperations[i]); diff != "" {
 					t.Fatal(diff)
 				}
 			})
 		}
 
 		t.Run("NoResults", func(t *testing.T) {
-			opts := GetBulkJobOpts{ID: "deadbeef"}
+			opts := GetBulkOperationOpts{ID: "deadbeef"}
 
-			_, have := s.GetBulkJob(ctx, opts)
+			_, have := s.GetBulkOperation(ctx, opts)
 			want := ErrNoResults
 
 			if have != want {
@@ -111,8 +111,8 @@ func testStoreBulkJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 
 	t.Run("Count", func(t *testing.T) {
 		t.Run("All", func(t *testing.T) {
-			want := len(bulkJobs)
-			have, err := s.CountBulkJobs(ctx, CountBulkJobsOpts{BatchChangeID: batchChangeID})
+			want := len(bulkOperations)
+			have, err := s.CountBulkOperations(ctx, CountBulkOperationsOpts{BatchChangeID: batchChangeID})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -123,9 +123,9 @@ func testStoreBulkJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 		})
 
 		t.Run("NoResults", func(t *testing.T) {
-			opts := CountBulkJobsOpts{BatchChangeID: -1}
+			opts := CountBulkOperationsOpts{BatchChangeID: -1}
 
-			have, err := s.CountBulkJobs(ctx, opts)
+			have, err := s.CountBulkOperations(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -140,8 +140,8 @@ func testStoreBulkJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 	t.Run("List", func(t *testing.T) {
 		t.Run("NoLimit", func(t *testing.T) {
 			// Empty limit should return all entries.
-			opts := ListBulkJobsOpts{BatchChangeID: batchChangeID}
-			ts, next, err := s.ListBulkJobs(ctx, opts)
+			opts := ListBulkOperationsOpts{BatchChangeID: batchChangeID}
+			ts, next, err := s.ListBulkOperations(ctx, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -150,9 +150,9 @@ func testStoreBulkJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 				t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
 			}
 
-			have, want := ts, bulkJobs
+			have, want := ts, bulkOperations
 			if len(have) != len(want) {
-				t.Fatalf("listed %d bulk jobs, want: %d", len(have), len(want))
+				t.Fatalf("listed %d bulk operations, want: %d", len(have), len(want))
 			}
 
 			if diff := cmp.Diff(have, want); diff != "" {
@@ -161,16 +161,16 @@ func testStoreBulkJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 		})
 
 		t.Run("WithLimit", func(t *testing.T) {
-			for i := 1; i <= len(bulkJobs); i++ {
-				cs, next, err := s.ListBulkJobs(ctx, ListBulkJobsOpts{BatchChangeID: batchChangeID, LimitOpts: LimitOpts{Limit: i}})
+			for i := 1; i <= len(bulkOperations); i++ {
+				cs, next, err := s.ListBulkOperations(ctx, ListBulkOperationsOpts{BatchChangeID: batchChangeID, LimitOpts: LimitOpts{Limit: i}})
 				if err != nil {
 					t.Fatal(err)
 				}
 
 				{
 					have, want := next, int64(0)
-					if i < len(bulkJobs) {
-						want = bulkJobs[i].DBID
+					if i < len(bulkOperations) {
+						want = bulkOperations[i].DBID
 					}
 
 					if have != want {
@@ -179,9 +179,9 @@ func testStoreBulkJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 				}
 
 				{
-					have, want := cs, bulkJobs[:i]
+					have, want := cs, bulkOperations[:i]
 					if len(have) != len(want) {
-						t.Fatalf("listed %d bulkJobs, want: %d", len(have), len(want))
+						t.Fatalf("listed %d bulkOperations, want: %d", len(have), len(want))
 					}
 
 					if diff := cmp.Diff(have, want); diff != "" {
@@ -193,14 +193,14 @@ func testStoreBulkJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 
 		t.Run("WithLimitAndCursor", func(t *testing.T) {
 			var cursor int64
-			for i := 1; i <= len(bulkJobs); i++ {
-				opts := ListBulkJobsOpts{BatchChangeID: batchChangeID, Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
-				have, next, err := s.ListBulkJobs(ctx, opts)
+			for i := 1; i <= len(bulkOperations); i++ {
+				opts := ListBulkOperationsOpts{BatchChangeID: batchChangeID, Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
+				have, next, err := s.ListBulkOperations(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				want := bulkJobs[i-1 : i]
+				want := bulkOperations[i-1 : i]
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}
@@ -210,10 +210,10 @@ func testStoreBulkJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 		})
 	})
 
-	t.Run("ListBulkJobErrors", func(t *testing.T) {
+	t.Run("ListBulkOperationErrors", func(t *testing.T) {
 		for i, job := range jobs {
-			errors, err := s.ListBulkJobErrors(ctx, ListBulkJobErrorsOpts{
-				BulkJobID: job.BulkGroup,
+			errors, err := s.ListBulkOperationErrors(ctx, ListBulkOperationErrorsOpts{
+				BulkOperationID: job.BulkGroup,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -225,7 +225,7 @@ func testStoreBulkJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 				continue
 			}
 			have := errors
-			want := []*btypes.BulkJobError{
+			want := []*btypes.BulkOperationError{
 				{
 					ChangesetID: changeset.ID,
 					Error:       failureMessage,

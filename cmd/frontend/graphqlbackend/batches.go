@@ -204,7 +204,7 @@ type DetachChangesetsArgs struct {
 	Changesets  []graphql.ID
 }
 
-type ListBatchChangeBulkJobArgs struct {
+type ListBatchChangeBulkOperationArgs struct {
 	First int32
 	After *string
 }
@@ -242,7 +242,7 @@ type BatchChangesResolver interface {
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
 	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (*EmptyResponse, error)
-	CreateChangesetComments(ctx context.Context, args *CreateChangesetCommentsArgs) (BulkJobResolver, error)
+	CreateChangesetComments(ctx context.Context, args *CreateChangesetCommentsArgs) (BulkOperationResolver, error)
 
 	// Queries
 
@@ -259,13 +259,13 @@ type BatchChangesResolver interface {
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
-type BulkJobConnectionResolver interface {
+type BulkOperationConnectionResolver interface {
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-	Nodes(ctx context.Context) ([]BulkJobResolver, error)
+	Nodes(ctx context.Context) ([]BulkOperationResolver, error)
 }
 
-type BulkJobResolver interface {
+type BulkOperationResolver interface {
 	ID() graphql.ID
 	Type() (string, error)
 	State() string
@@ -548,7 +548,7 @@ type BatchChangeResolver interface {
 	ClosedAt() *DateTime
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	CurrentSpec(ctx context.Context) (BatchSpecResolver, error)
-	BulkJobs(ctx context.Context, args *ListBatchChangeBulkJobArgs) (BulkJobConnectionResolver, error)
+	BulkOperations(ctx context.Context, args *ListBatchChangeBulkOperationArgs) (BulkOperationConnectionResolver, error)
 
 	// TODO(campaigns-deprecation): This should be removed once we remove batches.
 	// It's here so that in the NodeResolver we can have the same resolver,

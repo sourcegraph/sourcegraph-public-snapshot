@@ -14,47 +14,47 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-const bulkJobIDKind = "BulkJob"
+const bulkOperationIDKind = "BulkOperation"
 
-func marshalBulkJobID(id string) graphql.ID {
-	return relay.MarshalID(bulkJobIDKind, id)
+func marshalBulkOperationID(id string) graphql.ID {
+	return relay.MarshalID(bulkOperationIDKind, id)
 }
 
-func unmarshalBulkJobID(id graphql.ID) (bulkJobID string, err error) {
-	err = relay.UnmarshalSpec(id, &bulkJobID)
+func unmarshalBulkOperationID(id graphql.ID) (bulkOperationID string, err error) {
+	err = relay.UnmarshalSpec(id, &bulkOperationID)
 	return
 }
 
-type bulkJobResolver struct {
-	store   *store.Store
-	bulkJob *btypes.BulkJob
+type bulkOperationResolver struct {
+	store         *store.Store
+	bulkOperation *btypes.BulkOperation
 }
 
-var _ graphqlbackend.BulkJobResolver = &bulkJobResolver{}
+var _ graphqlbackend.BulkOperationResolver = &bulkOperationResolver{}
 
-func (r *bulkJobResolver) ID() graphql.ID {
-	return marshalBulkJobID(r.bulkJob.ID)
+func (r *bulkOperationResolver) ID() graphql.ID {
+	return marshalBulkOperationID(r.bulkOperation.ID)
 }
 
-func (r *bulkJobResolver) Type() (string, error) {
-	return changesetJobTypeToBulkJobType(r.bulkJob.Type)
+func (r *bulkOperationResolver) Type() (string, error) {
+	return changesetJobTypeToBulkOperationType(r.bulkOperation.Type)
 }
 
-func (r *bulkJobResolver) State() string {
-	return string(r.bulkJob.State)
+func (r *bulkOperationResolver) State() string {
+	return string(r.bulkOperation.State)
 }
 
-func (r *bulkJobResolver) Progress() float64 {
-	return r.bulkJob.Progress
+func (r *bulkOperationResolver) Progress() float64 {
+	return r.bulkOperation.Progress
 }
 
-func (r *bulkJobResolver) Errors(ctx context.Context) ([]graphqlbackend.ChangesetJobErrorResolver, error) {
-	errors, err := r.store.ListBulkJobErrors(ctx, store.ListBulkJobErrorsOpts{BulkJobID: r.bulkJob.ID})
+func (r *bulkOperationResolver) Errors(ctx context.Context) ([]graphqlbackend.ChangesetJobErrorResolver, error) {
+	errors, err := r.store.ListBulkOperationErrors(ctx, store.ListBulkOperationErrorsOpts{BulkOperationID: r.bulkOperation.ID})
 	if err != nil {
 		return nil, err
 	}
 
-	changesetIDs := uniqueChangesetIDsForBulkJobErrors(errors)
+	changesetIDs := uniqueChangesetIDsForBulkOperationErrors(errors)
 
 	changesetsByID := map[int64]*btypes.Changeset{}
 	reposByID := map[api.RepoID]*types.Repo{}
@@ -88,18 +88,18 @@ func (r *bulkJobResolver) Errors(ctx context.Context) ([]graphqlbackend.Changese
 	return res, nil
 }
 
-func (r *bulkJobResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.bulkJob.CreatedAt}
+func (r *bulkOperationResolver) CreatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.bulkOperation.CreatedAt}
 }
 
-func (r *bulkJobResolver) FinishedAt() *graphqlbackend.DateTime {
-	if r.bulkJob.FinishedAt.IsZero() {
+func (r *bulkOperationResolver) FinishedAt() *graphqlbackend.DateTime {
+	if r.bulkOperation.FinishedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.bulkJob.FinishedAt}
+	return &graphqlbackend.DateTime{Time: r.bulkOperation.FinishedAt}
 }
 
-func changesetJobTypeToBulkJobType(t btypes.ChangesetJobType) (string, error) {
+func changesetJobTypeToBulkOperationType(t btypes.ChangesetJobType) (string, error) {
 	switch t {
 	case btypes.ChangesetJobTypeComment:
 		return "COMMENT", nil
@@ -108,7 +108,7 @@ func changesetJobTypeToBulkJobType(t btypes.ChangesetJobType) (string, error) {
 	}
 }
 
-func uniqueChangesetIDsForBulkJobErrors(errors []*btypes.BulkJobError) []int64 {
+func uniqueChangesetIDsForBulkOperationErrors(errors []*btypes.BulkOperationError) []int64 {
 	changesetIDsMap := map[int64]struct{}{}
 	changesetIDs := []int64{}
 	for _, e := range errors {

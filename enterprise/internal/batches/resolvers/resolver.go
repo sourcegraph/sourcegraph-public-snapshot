@@ -139,8 +139,8 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 		batchChangesCredentialIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.batchChangesCredentialByID(ctx, id)
 		},
-		bulkJobIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.bulkJobByID(ctx, id)
+		bulkOperationIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.bulkOperationByID(ctx, id)
 		},
 	}
 }
@@ -331,12 +331,12 @@ func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64)
 	return &batchChangesSiteCredentialResolver{credential: cred}, nil
 }
 
-func (r *Resolver) bulkJobByID(ctx context.Context, id graphql.ID) (graphqlbackend.BulkJobResolver, error) {
+func (r *Resolver) bulkOperationByID(ctx context.Context, id graphql.ID) (graphqlbackend.BulkOperationResolver, error) {
 	if err := batchChangesEnabled(ctx); err != nil {
 		return nil, err
 	}
 
-	dbID, err := unmarshalBulkJobID(id)
+	dbID, err := unmarshalBulkOperationID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -345,18 +345,18 @@ func (r *Resolver) bulkJobByID(ctx context.Context, id graphql.ID) (graphqlbacke
 		return nil, nil
 	}
 
-	return r.bulkJobByIDString(ctx, dbID)
+	return r.bulkOperationByIDString(ctx, dbID)
 }
 
-func (r *Resolver) bulkJobByIDString(ctx context.Context, id string) (graphqlbackend.BulkJobResolver, error) {
-	bulkJob, err := r.store.GetBulkJob(ctx, store.GetBulkJobOpts{ID: id})
+func (r *Resolver) bulkOperationByIDString(ctx context.Context, id string) (graphqlbackend.BulkOperationResolver, error) {
+	bulkOperation, err := r.store.GetBulkOperation(ctx, store.GetBulkOperationOpts{ID: id})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &bulkJobResolver{store: r.store, bulkJob: bulkJob}, nil
+	return &bulkOperationResolver{store: r.store, bulkOperation: bulkOperation}, nil
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
@@ -1177,7 +1177,7 @@ func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.De
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) CreateChangesetComments(ctx context.Context, args *graphqlbackend.CreateChangesetCommentsArgs) (_ graphqlbackend.BulkJobResolver, err error) {
+func (r *Resolver) CreateChangesetComments(ctx context.Context, args *graphqlbackend.CreateChangesetCommentsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.CreateChangesetComments", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
 	defer func() {
 		tr.SetError(err)
@@ -1233,7 +1233,7 @@ func (r *Resolver) CreateChangesetComments(ctx context.Context, args *graphqlbac
 		return nil, err
 	}
 
-	return r.bulkJobByIDString(ctx, bulkGroupID)
+	return r.bulkOperationByIDString(ctx, bulkGroupID)
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {

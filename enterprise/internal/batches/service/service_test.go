@@ -932,7 +932,7 @@ func TestService(t *testing.T) {
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 				BatchChange:      batchChange.ID,
 			})
-			bulkJobID, err := svc.CreateChangesetJobs(
+			bulkOperationID, err := svc.CreateChangesetJobs(
 				adminCtx,
 				batchChange.ID,
 				[]int64{changeset1.ID, changeset2.ID},
@@ -942,8 +942,8 @@ func TestService(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			// Validate the bulk job exists.
-			if _, err = s.GetBulkJob(ctx, store.GetBulkJobOpts{ID: bulkJobID}); err != nil {
+			// Validate the bulk operation exists.
+			if _, err = s.GetBulkOperation(ctx, store.GetBulkOperationOpts{ID: bulkOperationID}); err != nil {
 				t.Fatal(err)
 			}
 		})

@@ -2083,7 +2083,7 @@ extend type Mutation {
 
     Experimental: This API is likely to change in the future.
     """
-    createChangesetComments(batchChange: ID!, changesets: [ID!]!, body: String!): BulkJob!
+    createChangesetComments(batchChange: ID!, changesets: [ID!]!, body: String!): BulkOperation!
 }
 
 extend type Query {
@@ -2308,9 +2308,9 @@ type BatchChange implements Node {
     currentSpec: BatchSpec!
 
     """
-    The bulk jobs that have been run over this batch change.
+    The bulk operations that have been run over this batch change.
     """
-    bulkJobs(
+    bulkOperations(
         """
         Returns the first n entries from the list.
         """
@@ -2319,15 +2319,15 @@ type BatchChange implements Node {
         Opaque pagination cursor.
         """
         after: String
-    ): BulkJobConnection!
+    ): BulkOperationConnection!
 }
 
 """
-A list of bulk jobs.
+A list of bulk operations.
 """
-type BulkJobConnection {
+type BulkOperationConnection {
     """
-    The total number of bulk jobs in the connection.
+    The total number of bulk operations in the connection.
     """
     totalCount: Int!
 
@@ -2337,15 +2337,15 @@ type BulkJobConnection {
     pageInfo: PageInfo!
 
     """
-    A list of bulk jobs.
+    A list of bulk operations.
     """
-    nodes: [BulkJob!]!
+    nodes: [BulkOperation!]!
 }
 
 """
 The available types of jobs that can be run over a batch change.
 """
-enum BulkJobType {
+enum BulkOperationType {
     """
     Bulk post comments over all involved changesets.
     """
@@ -2353,11 +2353,11 @@ enum BulkJobType {
 }
 
 """
-All valid states a bulk job can be in.
+All valid states a bulk operation can be in.
 """
-enum BulkJobState {
+enum BulkOperationState {
     """
-    The bulk job is still processing on some changesets.
+    The bulk operation is still processing on some changesets.
     """
     PROCESSING
 
@@ -2373,9 +2373,9 @@ enum BulkJobState {
 }
 
 """
-A bulk job represents a group of jobs run over a set of changesets in a batch change.
+A bulk operation represents a group of jobs run over a set of changesets in a batch change.
 """
-type BulkJob implements Node {
+type BulkOperation implements Node {
     """
     The unique ID for the campaign.
     """
@@ -2384,15 +2384,15 @@ type BulkJob implements Node {
     """
     The type of task that is run.
     """
-    type: BulkJobType!
+    type: BulkOperationType!
 
     """
-    The current state of the bulk job.
+    The current state of the bulk operation.
     """
-    state: BulkJobState!
+    state: BulkOperationState!
 
     """
-    The progress to completion of all executions involved in this bulk job. Value
+    The progress to completion of all executions involved in this bulk operation. Value
     ranges from 0.0 to 1.0.
     """
     progress: Float!
@@ -2403,19 +2403,19 @@ type BulkJob implements Node {
     errors: [ChangesetJobError!]!
 
     """
-    The time the bulk job was created at.
+    The time the bulk operation was created at.
     """
     createdAt: DateTime!
 
     """
-    The time the bulk job finished. Also set, when some operations failed. Null,
+    The time the bulk operation finished. Also set, when some operations failed. Null,
     when some operations are still processing.
     """
     finishedAt: DateTime
 }
 
 """
-A reported error on a changeset in a bulk job.
+A reported error on a changeset in a bulk operation.
 """
 type ChangesetJobError {
     """

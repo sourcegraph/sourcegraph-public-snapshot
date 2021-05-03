@@ -256,14 +256,14 @@ func (r *batchChangeResolver) CurrentSpec(ctx context.Context) (graphqlbackend.B
 	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
-func (r *batchChangeResolver) BulkJobs(
+func (r *batchChangeResolver) BulkOperations(
 	ctx context.Context,
-	args *graphqlbackend.ListBatchChangeBulkJobArgs,
-) (graphqlbackend.BulkJobConnectionResolver, error) {
+	args *graphqlbackend.ListBatchChangeBulkOperationArgs,
+) (graphqlbackend.BulkOperationConnectionResolver, error) {
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
-	opts := store.ListBulkJobsOpts{
+	opts := store.ListBulkOperationsOpts{
 		LimitOpts: store.LimitOpts{
 			Limit: int(args.First),
 		},
@@ -276,7 +276,7 @@ func (r *batchChangeResolver) BulkJobs(
 		opts.Cursor = int64(id)
 	}
 
-	return &bulkJobConnectionResolver{
+	return &bulkOperationConnectionResolver{
 		store:         r.store,
 		batchChangeID: r.batchChange.ID,
 		opts:          opts,

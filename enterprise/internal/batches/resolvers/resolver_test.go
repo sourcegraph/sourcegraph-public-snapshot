@@ -52,7 +52,7 @@ func TestNullIDResilience(t *testing.T) {
 		marshalChangesetSpecRandID(""),
 		marshalBatchChangesCredentialID(0, false),
 		marshalBatchChangesCredentialID(0, true),
-		marshalBulkJobID(""),
+		marshalBulkOperationID(""),
 	}
 
 	for _, id := range ids {
@@ -1064,7 +1064,7 @@ func TestCreateChangesetComments(t *testing.T) {
 
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
 	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-comments", userID)
@@ -1099,7 +1099,7 @@ func TestCreateChangesetComments(t *testing.T) {
 	}
 
 	var response struct {
-		CreateChangesetComments apitest.BulkJob
+		CreateChangesetComments apitest.BulkOperation
 	}
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
@@ -1147,7 +1147,7 @@ func TestCreateChangesetComments(t *testing.T) {
 		apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateChangesetComments)
 
 		if response.CreateChangesetComments.ID == "" {
-			t.Fatalf("expected bulk job to be created, but was not")
+			t.Fatalf("expected bulk operation to be created, but was not")
 		}
 	})
 }

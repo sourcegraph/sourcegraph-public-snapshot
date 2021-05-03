@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func TestBulkJobResolver(t *testing.T) {
+func TestBulkOperationResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -29,7 +29,7 @@ func TestBulkJobResolver(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, clock)
+	cstore := store.NewWithClock(db, nil, clock)
 
 	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test", userID)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test", userID, batchSpec.ID)
@@ -102,11 +102,11 @@ func TestBulkJobResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bulkJobAPIID := string(marshalBulkJobID(bulkGroupID))
-	wantBatchChange := apitest.BulkJob{
-		ID:       bulkJobAPIID,
+	bulkOperationAPIID := string(marshalBulkOperationID(bulkGroupID))
+	wantBatchChange := apitest.BulkOperation{
+		ID:       bulkOperationAPIID,
 		Type:     "COMMENT",
-		State:    string(btypes.BulkJobStateProcessing),
+		State:    string(btypes.BulkOperationStateProcessing),
 		Progress: 2.0 / 3.0,
 		Errors: []*apitest.ChangesetJobError{
 			{
@@ -124,19 +124,19 @@ func TestBulkJobResolver(t *testing.T) {
 		FinishedAt: "",
 	}
 
-	input := map[string]interface{}{"bulkJob": bulkJobAPIID}
-	var response struct{ Node apitest.BulkJob }
-	apitest.MustExec(actor.WithActor(ctx, actor.FromUser(userID)), t, s, input, &response, queryBulkJob)
+	input := map[string]interface{}{"bulkOperation": bulkOperationAPIID}
+	var response struct{ Node apitest.BulkOperation }
+	apitest.MustExec(actor.WithActor(ctx, actor.FromUser(userID)), t, s, input, &response, queryBulkOperation)
 
 	if diff := cmp.Diff(wantBatchChange, response.Node); diff != "" {
-		t.Fatalf("wrong bulk job response (-want +got):\n%s", diff)
+		t.Fatalf("wrong bulk operation response (-want +got):\n%s", diff)
 	}
 }
 
-const queryBulkJob = `
-query($bulkJob: ID!){
-  node(id: $bulkJob) {
-    ... on BulkJob {
+const queryBulkOperation = `
+query($bulkOperation: ID!){
+  node(id: $bulkOperation) {
+    ... on BulkOperation {
       id
       type
       state

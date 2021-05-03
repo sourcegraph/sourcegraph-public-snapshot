@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-var bulkJobColumns = []*sqlf.Query{
+var bulkOperationColumns = []*sqlf.Query{
 	sqlf.Sprintf("changeset_jobs.bulk_group AS id"),
 	sqlf.Sprintf("MIN(changeset_jobs.id) AS db_id"),
 	sqlf.Sprintf("changeset_jobs.job_type AS type"),
@@ -22,10 +22,10 @@ END AS state`,
 		btypes.ChangesetJobStateProcessing.ToDB(),
 		btypes.ChangesetJobStateQueued.ToDB(),
 		btypes.ChangesetJobStateErrored.ToDB(),
-		btypes.BulkJobStateProcessing,
+		btypes.BulkOperationStateProcessing,
 		btypes.ChangesetJobStateFailed.ToDB(),
-		btypes.BulkJobStateFailed,
-		btypes.BulkJobStateCompleted,
+		btypes.BulkOperationStateFailed,
+		btypes.BulkOperationStateCompleted,
 	),
 	sqlf.Sprintf(
 		"CAST(COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) AS float) / CAST(COUNT(*) AS float) AS progress",
@@ -40,18 +40,18 @@ END AS state`,
 	),
 }
 
-// GetBulkJobOpts captures the query options needed for getting a BulkJob.
-type GetBulkJobOpts struct {
+// GetBulkOperationOpts captures the query options needed for getting a BulkOperation.
+type GetBulkOperationOpts struct {
 	ID string
 }
 
-// GetBulkJob gets a BulkJob matching the given options.
-func (s *Store) GetBulkJob(ctx context.Context, opts GetBulkJobOpts) (*btypes.BulkJob, error) {
-	q := getBulkJobQuery(&opts)
+// GetBulkOperation gets a BulkOperation matching the given options.
+func (s *Store) GetBulkOperation(ctx context.Context, opts GetBulkOperationOpts) (*btypes.BulkOperation, error) {
+	q := getBulkOperationQuery(&opts)
 
-	var c btypes.BulkJob
+	var c btypes.BulkOperation
 	err := s.query(ctx, q, func(sc scanner) (err error) {
-		return scanBulkJob(&c, sc)
+		return scanBulkOperation(&c, sc)
 	})
 	if err != nil {
 		return nil, err
@@ -64,8 +64,8 @@ func (s *Store) GetBulkJob(ctx context.Context, opts GetBulkJobOpts) (*btypes.Bu
 	return &c, nil
 }
 
-var getBulkJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/bulk_jobs.go:GetBulkJob
+var getBulkOperationQueryFmtstr = `
+-- source: enterprise/internal/batches/store/bulk_operations.go:GetBulkOperation
 SELECT
     %s
 FROM changeset_jobs
@@ -78,35 +78,35 @@ GROUP BY
 LIMIT 1
 `
 
-func getBulkJobQuery(opts *GetBulkJobOpts) *sqlf.Query {
+func getBulkOperationQuery(opts *GetBulkOperationOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 		sqlf.Sprintf("changeset_jobs.bulk_group = %s", opts.ID),
 	}
 
 	return sqlf.Sprintf(
-		getBulkJobsQueryFmtstr,
-		sqlf.Join(bulkJobColumns, ","),
+		getBulkOperationQueryFmtstr,
+		sqlf.Join(bulkOperationColumns, ","),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-// ListBulkJobsOpts captures the query options needed for getting a list of bulk jobs.
-type ListBulkJobsOpts struct {
+// ListBulkOperationsOpts captures the query options needed for getting a list of bulk operations.
+type ListBulkOperationsOpts struct {
 	LimitOpts
 	Cursor int64
 
 	BatchChangeID int64
 }
 
-// ListBulkJobs gets a list of BulkJobs matching the given options.
-func (s *Store) ListBulkJobs(ctx context.Context, opts ListBulkJobsOpts) (bs []*btypes.BulkJob, next int64, err error) {
-	q := listBulkJobsQuery(&opts)
+// ListBulkOperations gets a list of BulkOperations matching the given options.
+func (s *Store) ListBulkOperations(ctx context.Context, opts ListBulkOperationsOpts) (bs []*btypes.BulkOperation, next int64, err error) {
+	q := listBulkOperationsQuery(&opts)
 
-	bs = make([]*btypes.BulkJob, 0, opts.DBLimit())
+	bs = make([]*btypes.BulkOperation, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) error {
-		var c btypes.BulkJob
-		if err := scanBulkJob(&c, sc); err != nil {
+		var c btypes.BulkOperation
+		if err := scanBulkOperation(&c, sc); err != nil {
 			return err
 		}
 		bs = append(bs, &c)
@@ -121,8 +121,8 @@ func (s *Store) ListBulkJobs(ctx context.Context, opts ListBulkJobsOpts) (bs []*
 	return bs, next, err
 }
 
-var listBulkJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/bulk_jobs.go:ListBulkJobs
+var listBulkOperationsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/bulk_operations.go:ListBulkOperations
 SELECT
     %s
 FROM changeset_jobs
@@ -135,7 +135,7 @@ GROUP BY
 ORDER BY MIN(changeset_jobs.id) ASC
 `
 
-func listBulkJobsQuery(opts *ListBulkJobsOpts) *sqlf.Query {
+func listBulkOperationsQuery(opts *ListBulkOperationsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 		sqlf.Sprintf("changeset_jobs.batch_change_id = %s", opts.BatchChangeID),
@@ -146,24 +146,24 @@ func listBulkJobsQuery(opts *ListBulkJobsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listBulkJobsQueryFmtstr+opts.LimitOpts.ToDB(),
-		sqlf.Join(bulkJobColumns, ","),
+		listBulkOperationsQueryFmtstr+opts.LimitOpts.ToDB(),
+		sqlf.Join(bulkOperationColumns, ","),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-// CountBulkJobsOpts captures the query options needed when counting BulkJobs.
-type CountBulkJobsOpts struct {
+// CountBulkOperationsOpts captures the query options needed when counting BulkOperations.
+type CountBulkOperationsOpts struct {
 	BatchChangeID int64
 }
 
-// CountBulkJobs gets the count of BulkJobs in the given batch change.
-func (s *Store) CountBulkJobs(ctx context.Context, opts CountBulkJobsOpts) (int, error) {
-	return s.queryCount(ctx, countBulkJobsQuery(&opts))
+// CountBulkOperations gets the count of BulkOperations in the given batch change.
+func (s *Store) CountBulkOperations(ctx context.Context, opts CountBulkOperationsOpts) (int, error) {
+	return s.queryCount(ctx, countBulkOperationsQuery(&opts))
 }
 
-var countBulkJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/bulk_jobs.go:CountBulkJobs
+var countBulkOperationsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/bulk_operations.go:CountBulkOperations
 SELECT
     COUNT(DISTINCT(changeset_jobs.bulk_group))
 FROM changeset_jobs
@@ -173,32 +173,32 @@ WHERE
     %s
 `
 
-func countBulkJobsQuery(opts *CountBulkJobsOpts) *sqlf.Query {
+func countBulkOperationsQuery(opts *CountBulkOperationsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 		sqlf.Sprintf("changeset_jobs.batch_change_id = %s", opts.BatchChangeID),
 	}
 
 	return sqlf.Sprintf(
-		countBulkJobsQueryFmtstr,
+		countBulkOperationsQueryFmtstr,
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-// ListBulkJobErrorsOpts captures the query options needed for getting a list of
-// BulkJobErrors.
-type ListBulkJobErrorsOpts struct {
-	BulkJobID string
+// ListBulkOperationErrorsOpts captures the query options needed for getting a list of
+// BulkOperationErrors.
+type ListBulkOperationErrorsOpts struct {
+	BulkOperationID string
 }
 
-// ListBulkJobErrors gets a list of BulkJobErrors in a given BulkJob.
-func (s *Store) ListBulkJobErrors(ctx context.Context, opts ListBulkJobErrorsOpts) (es []*btypes.BulkJobError, err error) {
-	q := listBulkJobErrorsQuery(&opts)
+// ListBulkOperationErrors gets a list of BulkOperationErrors in a given BulkOperation.
+func (s *Store) ListBulkOperationErrors(ctx context.Context, opts ListBulkOperationErrorsOpts) (es []*btypes.BulkOperationError, err error) {
+	q := listBulkOperationErrorsQuery(&opts)
 
-	es = make([]*btypes.BulkJobError, 0)
+	es = make([]*btypes.BulkOperationError, 0)
 	err = s.query(ctx, q, func(sc scanner) error {
-		var c btypes.BulkJobError
-		if err := scanBulkJobError(&c, sc); err != nil {
+		var c btypes.BulkOperationError
+		if err := scanBulkOperationError(&c, sc); err != nil {
 			return err
 		}
 		es = append(es, &c)
@@ -208,8 +208,8 @@ func (s *Store) ListBulkJobErrors(ctx context.Context, opts ListBulkJobErrorsOpt
 	return es, err
 }
 
-var listBulkJobErrorsQueryFmtstr = `
--- source: enterprise/internal/batches/store/bulk_jobs.go:ListBulkJobErrors
+var listBulkOperationErrorsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/bulk_operations.go:ListBulkOperationErrors
 SELECT
     changeset_jobs.changeset_id AS changeset_id,
     changeset_jobs.failure_message AS error
@@ -220,20 +220,20 @@ WHERE
     %s
 `
 
-func listBulkJobErrorsQuery(opts *ListBulkJobErrorsOpts) *sqlf.Query {
+func listBulkOperationErrorsQuery(opts *ListBulkOperationErrorsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 		sqlf.Sprintf("changeset_jobs.failure_message IS NOT NULL"),
-		sqlf.Sprintf("changeset_jobs.bulk_group = %s", opts.BulkJobID),
+		sqlf.Sprintf("changeset_jobs.bulk_group = %s", opts.BulkOperationID),
 	}
 
 	return sqlf.Sprintf(
-		listBulkJobErrorsQueryFmtstr,
+		listBulkOperationErrorsQueryFmtstr,
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-func scanBulkJob(b *btypes.BulkJob, s scanner) error {
+func scanBulkOperation(b *btypes.BulkOperation, s scanner) error {
 	return s.Scan(
 		&b.ID,
 		&b.DBID,
@@ -245,7 +245,7 @@ func scanBulkJob(b *btypes.BulkJob, s scanner) error {
 	)
 }
 
-func scanBulkJobError(b *btypes.BulkJobError, s scanner) error {
+func scanBulkOperationError(b *btypes.BulkOperationError, s scanner) error {
 	return s.Scan(
 		&b.ChangesetID,
 		&b.Error,
