@@ -14,8 +14,8 @@ func TestIndexableRepositories(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Hour)
@@ -64,8 +64,8 @@ func TestIndexableRepositoriesMinimumTimeSinceLastEnqueue(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Hour)
@@ -109,8 +109,8 @@ func TestIndexableRepositoriesMinimumSearchAndPreciseCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
 
 	updates := []UpdateableIndexableRepository{
 		{RepositoryID: 1, SearchCount: intptr(10), PreciseCount: intptr(30)},
@@ -150,8 +150,8 @@ func TestIndexableRepositoriesMinimumSearchRatio(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
 
 	updates := []UpdateableIndexableRepository{
 		{RepositoryID: 1, SearchCount: intptr(10)},                           // 100%
@@ -189,8 +189,8 @@ func TestIndexableRepositoriesEnabled(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
 
 	updates := []UpdateableIndexableRepository{
 		{RepositoryID: 1},
@@ -233,8 +233,8 @@ func TestResetIndexableRepositories(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Hour)

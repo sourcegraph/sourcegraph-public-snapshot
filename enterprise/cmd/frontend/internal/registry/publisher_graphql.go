@@ -34,7 +34,7 @@ func extensionRegistryViewerPublishers(ctx context.Context, db dbutil.DB) ([]gra
 	}
 	publishers = append(publishers, &registryPublisher{user: user})
 
-	orgs, err := database.Orgs(db).GetByUserID(ctx, user.DatabaseID())
+	orgs, err := database.GlobalOrgs.GetByUserID(ctx, user.DatabaseID())
 	if err != nil {
 		return nil, err
 	}

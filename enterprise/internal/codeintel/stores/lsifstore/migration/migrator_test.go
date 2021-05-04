@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -15,8 +16,8 @@ func TestMigratorRemovesBoundsWithoutData(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	store := lsifstore.NewStore(db, &observation.TestContext)
+	dbtesting.SetupGlobalTestDB(t)
+	store := lsifstore.NewStore(dbconn.Global, &observation.TestContext)
 	driver := &testMigrationDriver{}
 	migrator := newMigrator(store, driver, migratorOptions{
 		tableName:     "t_test",

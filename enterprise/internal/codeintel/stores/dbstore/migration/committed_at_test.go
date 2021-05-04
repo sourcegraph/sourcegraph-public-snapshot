@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	basegitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -21,8 +22,8 @@ func TestCommittedAtMigrator(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	store := dbstore.NewWithDB(db, &observation.TestContext)
+	dbtesting.SetupGlobalTestDB(t)
+	store := dbstore.NewWithDB(dbconn.Global, &observation.TestContext)
 	gitserverClient := NewMockGitserverClient()
 	migrator := NewCommittedAtMigrator(store, gitserverClient, 250)
 
@@ -114,8 +115,8 @@ func TestCommittedAtMigratorUnknownRepository(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	store := dbstore.NewWithDB(db, &observation.TestContext)
+	dbtesting.SetupGlobalTestDB(t)
+	store := dbstore.NewWithDB(dbconn.Global, &observation.TestContext)
 	gitserverClient := NewMockGitserverClient()
 	migrator := NewCommittedAtMigrator(store, gitserverClient, 250)
 
@@ -217,8 +218,8 @@ func TestCommittedAtMigratorUnknownCommits(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	store := dbstore.NewWithDB(db, &observation.TestContext)
+	dbtesting.SetupGlobalTestDB(t)
+	store := dbstore.NewWithDB(dbconn.Global, &observation.TestContext)
 	gitserverClient := NewMockGitserverClient()
 	migrator := NewCommittedAtMigrator(store, gitserverClient, 250)
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -12,9 +13,9 @@ func TestDatabaseExists(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	dbtesting.SetupGlobalTestDB(t)
 	populateTestStore(t)
-	store := NewStore(db, &observation.TestContext)
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	testCases := []struct {
 		path     string

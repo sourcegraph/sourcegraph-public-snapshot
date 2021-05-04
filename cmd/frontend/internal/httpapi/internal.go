@@ -424,22 +424,20 @@ func serveOrgsListUsers(db dbutil.DB) func(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func serveOrgsGetByName(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var orgName string
-		err := json.NewDecoder(r.Body).Decode(&orgName)
-		if err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-		org, err := database.Orgs(db).GetByName(r.Context(), orgName)
-		if err != nil {
-			return errors.Wrap(err, "Orgs.GetByName")
-		}
-		if err := json.NewEncoder(w).Encode(org.ID); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
+func serveOrgsGetByName(w http.ResponseWriter, r *http.Request) error {
+	var orgName string
+	err := json.NewDecoder(r.Body).Decode(&orgName)
+	if err != nil {
+		return errors.Wrap(err, "Decode")
 	}
+	org, err := database.GlobalOrgs.GetByName(r.Context(), orgName)
+	if err != nil {
+		return errors.Wrap(err, "Orgs.GetByName")
+	}
+	if err := json.NewEncoder(w).Encode(org.ID); err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+	return nil
 }
 
 func serveUsersGetByUsername(w http.ResponseWriter, r *http.Request) error {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -15,9 +16,9 @@ func TestDatabaseDefinitions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	dbtesting.SetupGlobalTestDB(t)
 	populateTestStore(t)
-	store := NewStore(db, &observation.TestContext)
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	// `\ts, err := indexer.Index()` -> `\t Index() (*Stats, error)`
 	//                      ^^^^^           ^^^^^
@@ -39,9 +40,9 @@ func TestDatabaseReferences(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	dbtesting.SetupGlobalTestDB(t)
 	populateTestStore(t)
-	store := NewStore(db, &observation.TestContext)
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	// `func (w *Writer) EmitRange(start, end Pos) (string, error) {`
 	//                   ^^^^^^^^^

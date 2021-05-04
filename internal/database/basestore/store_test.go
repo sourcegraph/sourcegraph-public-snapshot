@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -19,15 +20,14 @@ func init() {
 }
 
 func TestTransaction(t *testing.T) {
-	db := dbtesting.GetDB(t)
-	setupStoreTest(t, db)
-	store := testStore(db)
+	setupStoreTest(t)
+	store := testStore()
 
 	// Add record outside of transaction, ensure it's visible
 	if err := store.Exec(context.Background(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (1, 42)`)); err != nil {
 		t.Fatalf("unexpected error inserting count: %s", err)
 	}
-	assertCounts(t, db, map[int]int{1: 42})
+	assertCounts(t, dbconn.Global, map[int]int{1: 42})
 
 	// Add record inside of a transaction
 	tx1, err := store.Transact(context.Background())
@@ -48,7 +48,7 @@ func TestTransaction(t *testing.T) {
 	}
 
 	// Check what's visible pre-commit/rollback
-	assertCounts(t, db, map[int]int{1: 42})
+	assertCounts(t, dbconn.Global, map[int]int{1: 42})
 	assertCounts(t, tx1.handle.db, map[int]int{1: 42, 2: 43})
 	assertCounts(t, tx2.handle.db, map[int]int{1: 42, 3: 44})
 
@@ -62,31 +62,30 @@ func TestTransaction(t *testing.T) {
 	}
 
 	// Check what's visible post-commit/rollback
-	assertCounts(t, db, map[int]int{1: 42, 3: 44})
+	assertCounts(t, dbconn.Global, map[int]int{1: 42, 3: 44})
 }
 
 func TestSavepoints(t *testing.T) {
-	db := dbtesting.GetDB(t)
-	setupStoreTest(t, db)
+	setupStoreTest(t)
 
 	NumSavepointTests := 10
 
 	for i := 0; i < NumSavepointTests; i++ {
 		t.Run(fmt.Sprintf("i=%d", i), func(t *testing.T) {
-			if _, err := db.Exec(`TRUNCATE store_counts_test`); err != nil {
+			if _, err := dbconn.Global.Exec(`TRUNCATE store_counts_test`); err != nil {
 				t.Fatalf("unexpected error truncating table: %s", err)
 			}
 
 			// Make `NumSavepointTests` "nested transactions", where the transaction
 			// or savepoint at index `i` will be rolled back. Note that all of the
 			// actions in any savepoint after this index will also be rolled back.
-			recurSavepoints(t, testStore(db), NumSavepointTests, i)
+			recurSavepoints(t, testStore(), NumSavepointTests, i)
 
 			expected := map[int]int{}
 			for j := NumSavepointTests; j > i; j-- {
 				expected[j] = j * 2
 			}
-			assertCounts(t, db, expected)
+			assertCounts(t, dbconn.Global, expected)
 		})
 	}
 }
@@ -118,8 +117,8 @@ func recurSavepoints(t *testing.T, store *Store, index, rollbackAt int) {
 	recurSavepoints(t, tx, index-1, rollbackAt)
 }
 
-func testStore(db dbutil.DB) *Store {
-	return NewWithDB(db, sql.TxOptions{})
+func testStore() *Store {
+	return NewWithDB(dbconn.Global, sql.TxOptions{})
 }
 
 func assertCounts(t *testing.T, db dbutil.DB, expectedCounts map[int]int) {
@@ -146,12 +145,13 @@ func assertCounts(t *testing.T, db dbutil.DB, expectedCounts map[int]int) {
 
 // setupStoreTest creates a table used only for testing. This table does not need to be truncated
 // between tests as all tables in the test database are truncated by SetupGlobalTestDB.
-func setupStoreTest(t *testing.T, db dbutil.DB) {
+func setupStoreTest(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	dbtesting.SetupGlobalTestDB(t)
 
-	if _, err := db.ExecContext(context.Background(), `
+	if _, err := dbconn.Global.Exec(`
 		CREATE TABLE IF NOT EXISTS store_counts_test (
 			id    integer NOT NULL,
 			value integer NOT NULL
