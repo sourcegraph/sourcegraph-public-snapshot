@@ -1,0 +1,37 @@
+@import 'branded/src/global-styles/breakpoints';
+
+.page-header {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: space-between;
+
+    @include media-breakpoint-up(md) {
+        flex-direction: row;
+        align-items: flex-end;
+    }
+}
+
+.annotation {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.byline {
+    display: block;
+    margin-top: 0.5rem;
+}
+
+.description {
+    display: block;
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+}
+
+.actions {
+    margin-top: 1rem;
+
+    @include media-breakpoint-up(md) {
+        margin-top: 0;
+    }
+}

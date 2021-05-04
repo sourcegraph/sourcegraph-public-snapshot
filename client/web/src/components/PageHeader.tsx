@@ -3,6 +3,8 @@ import React from 'react'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 
+import styles from './PageHeader.module.scss'
+
 type BreadcrumbIcon = React.ComponentType<{ className?: string }>
 type BreadcrumbText = React.ReactNode
 type Breadcrumb = {
@@ -26,6 +28,8 @@ interface Props {
     path: Breadcrumb[]
     /** Renders small print below the heading */
     byline?: React.ReactNode
+    /** Renders description text below the heading */
+    description?: React.ReactNode
     /** Align additional content (e.g. buttons) alongside the heading */
     actions?: React.ReactNode
     /** Heading element to use, defaults to h1 */
@@ -37,6 +41,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({
     annotation,
     path,
     byline,
+    description,
     actions,
     className,
     headingElement: HeadingX = 'h1',
@@ -46,14 +51,9 @@ export const PageHeader: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <header
-            className={classNames(
-                'd-flex flex-column flex-md-row flex-wrap justify-content-between align-items-md-end',
-                className
-            )}
-        >
+        <header className={classNames(styles.pageHeader, className)}>
             <div>
-                {annotation && <small className="text-muted d-block mb-2">{annotation}</small>}
+                {annotation && <small className={styles.annotation}>{annotation}</small>}
                 <HeadingX className="flex-grow-1 d-block m-0">
                     {path.map(({ to, text, icon: Icon }, index) => (
                         <React.Fragment key={index}>
@@ -65,9 +65,10 @@ export const PageHeader: React.FunctionComponent<Props> = ({
                         </React.Fragment>
                     ))}
                 </HeadingX>
-                {byline && <small className="text-muted d-block mt-2">{byline}</small>}
+                {byline && <small className={styles.byline}>{byline}</small>}
+                {description && <p className={styles.description}>{description}</p>}
             </div>
-            {actions && <div className="mt-3 mt-md-0">{actions}</div>}
+            {actions && <div className={styles.actions}>{actions}</div>}
         </header>
     )
 }

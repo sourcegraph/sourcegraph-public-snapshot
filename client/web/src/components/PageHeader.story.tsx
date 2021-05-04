@@ -1,4 +1,3 @@
-import { Menu, MenuButton, MenuList, MenuLink, MenuPopover } from '@reach/menu-button'
 import { storiesOf } from '@storybook/react'
 import PlusIcon from 'mdi-react/PlusIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
@@ -57,6 +56,7 @@ add(
                     Created by <Link to="/page">user</Link> 3 months ago
                 </>
             }
+            description="Enter the description for your section here. This is useful on list and create pages."
             actions={
                 <div className="d-flex">
                     <Link to="/page" className="btn btn-secondary mr-2">
@@ -65,17 +65,6 @@ add(
                     <Link to="/page" className="btn btn-primary mr-2">
                         <PlusIcon className="icon-inline" /> Create
                     </Link>
-                    <Menu>
-                        <MenuButton className="btn btn-secondary dropdown-toggle">Actions</MenuButton>
-                        <MenuPopover className="dropdown-menu show" position={true}>
-                            <MenuLink className="dropdown-item" href="/">
-                                Import
-                            </MenuLink>
-                            <MenuLink className="dropdown-item" href="/">
-                                Export
-                            </MenuLink>
-                        </MenuPopover>
-                    </Menu>
                 </div>
             }
         />
