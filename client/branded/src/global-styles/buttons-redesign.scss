@@ -29,6 +29,7 @@
             &.focus,
             &:active,
             &.active {
+                color: $text-color;
                 background-color: $base-color;
                 border-color: var(--body-bg);
 
@@ -81,6 +82,7 @@
             &.focus,
             &:active,
             &.active {
+                color: var(--body-color);
                 border-color: var(--body-bg);
                 background-color: var(--body-bg);
                 @at-root #{selector-append('.theme-light', &)} {
