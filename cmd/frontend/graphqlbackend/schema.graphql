@@ -2419,6 +2419,10 @@ type SearchContext implements Node {
     Repositories and their revisions that will be searched when querying.
     """
     repositories: [SearchContextRepositoryRevisions!]!
+    """
+    Date and time the search context was last updated.
+    """
+    updatedAt: DateTime!
 }
 
 """

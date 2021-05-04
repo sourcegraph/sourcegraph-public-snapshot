@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -138,6 +139,8 @@ func TestSearchContexts_Update(t *testing.T) {
 				t.Fatalf("unexpected error: %s", err)
 			}
 
+			// Ignore updatedAt change
+			updated.UpdatedAt = tt.updated.UpdatedAt
 			if diff := cmp.Diff(tt.updated, updated); diff != "" {
 				t.Fatalf("unexpected result: %s", diff)
 			}

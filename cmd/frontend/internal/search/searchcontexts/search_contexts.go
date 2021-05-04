@@ -279,7 +279,7 @@ func IsGlobalSearchContext(searchContext *types.SearchContext) bool {
 }
 
 func GetUserSearchContext(name string, userID int32) *types.SearchContext {
-	return &types.SearchContext{Name: name, Public: true, Description: "Your repositories on Sourcegraph", NamespaceUserID: userID}
+	return &types.SearchContext{Name: name, Public: true, Description: "All repositories you've added to Sourcegraph", NamespaceUserID: userID}
 }
 
 func GetGlobalSearchContext() *types.SearchContext {

@@ -147,6 +147,10 @@ func (r *searchContextResolver) Spec(ctx context.Context) string {
 	return searchcontexts.GetSearchContextSpec(r.sc)
 }
 
+func (r *searchContextResolver) UpdatedAt(ctx context.Context) DateTime {
+	return DateTime{Time: r.sc.UpdatedAt}
+}
+
 func (r *searchContextResolver) Repositories(ctx context.Context) ([]*searchContextRepositoryRevisionsResolver, error) {
 	if searchcontexts.IsAutoDefinedSearchContext(r.sc) {
 		return []*searchContextRepositoryRevisionsResolver{}, nil
