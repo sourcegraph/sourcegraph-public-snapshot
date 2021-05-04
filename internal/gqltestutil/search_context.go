@@ -10,6 +10,12 @@ type CreateSearchContextInput struct {
 	Public      bool   `json:"public"`
 }
 
+type UpdateSearchContextInput struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Public      bool   `json:"public"`
+}
+
 type SearchContextRepositoryRevisionsInput struct {
 	RepositoryID string   `json:"repositoryID"`
 	Revisions    []string `json:"revisions"`
@@ -44,6 +50,80 @@ mutation CreateSearchContext($input: SearchContextInput!, $repositories: [Search
 	}
 
 	return resp.Data.CreateSearchContext.ID, nil
+}
+
+type GetSearchContextResult struct {
+	ID           string `json:"id"`
+	Description  string `json:"description"`
+	Spec         string `json:"spec"`
+	AutoDefined  bool   `json:"autoDefined"`
+	Repositories []struct {
+		Repository struct {
+			Name string `json:"name"`
+		} `json:"repository"`
+		Revisions []string `json:"revisions"`
+	} `json:"repositories"`
+}
+
+func (c *Client) GetSearchContext(id string) (*GetSearchContextResult, error) {
+	const query = `
+query GetSearchContext($id: ID!) {
+	node(id: $id) {
+		... on SearchContext {
+			id
+			description
+			spec
+			autoDefined
+			repositories {
+				repository{
+					name
+				}
+				revisions
+			}
+		}
+	}
+}
+`
+	variables := map[string]interface{}{
+		"id": id,
+	}
+	var resp struct {
+		Data struct {
+			Node GetSearchContextResult `json:"node"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	return &resp.Data.Node, nil
+}
+
+func (c *Client) UpdateSearchContext(id string, input UpdateSearchContextInput, repos []SearchContextRepositoryRevisionsInput) (string, error) {
+	const query = `
+mutation UpdateSearchContext($id: ID!, $input: SearchContextEditInput!, $repositories: [SearchContextRepositoryRevisionsInput!]!) {
+	updateSearchContext(id: $id, searchContext: $input, repositories: $repositories) {
+		id
+	}
+}
+`
+	variables := map[string]interface{}{
+		"id":           id,
+		"input":        input,
+		"repositories": repos,
+	}
+	var resp struct {
+		Data struct {
+			UpdateSearchContext GetSearchContextResult `json:"updateSearchContext"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return "", errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.UpdateSearchContext.ID, nil
 }
 
 // DeleteSearchContext deletes a search context with the given id.
