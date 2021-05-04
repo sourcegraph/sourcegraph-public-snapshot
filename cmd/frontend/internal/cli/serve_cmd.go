@@ -251,6 +251,20 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
 	globals.WatchPermissionsUserMapping()
 
+	// Pre-heat default repo cache.
+	// This loads the default repos at startup, so the cache is warm when the first
+	// search query comes in. The cache is busted after a minute, but it is regularly
+	// re-filled by the sentinel queries, so as a first stop gap for an issue where
+	// queries would regularly time out after startup. Issue
+	// https://github.com/sourcegraph/sourcegraph/issues/20651 tracks removing this
+	// again.
+	//
+	// TODO: Remove this.
+	_, err = backend.Repos.ListDefault(ctx)
+	if err != nil {
+		log15.Error("Failed to pre-populate default repos cache", "err", err)
+	}
+
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
