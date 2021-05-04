@@ -44,17 +44,19 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
 
     return (
         <div className={styles.searchSidebar}>
-            <SearchSidebarSection header="Search types">{getSearchTypeLinks(props)}</SearchSidebarSection>
-            <SearchSidebarSection header="Dynamic filters">
-                {getDynamicFilterLinks(props.filters, onFilterClicked)}
-            </SearchSidebarSection>
-            <SearchSidebarSection header="Repositories" showSearch={true}>
-                {getRepoFilterLinks(props.filters, onFilterClicked)}
-            </SearchSidebarSection>
-            <SearchSidebarSection header="Search snippets">
-                {getSearchScopeLinks(props.settingsCascade, onFilterClicked)}
-            </SearchSidebarSection>
-            <SearchSidebarSection header="Quicklinks">{getQuickLinks(props.settingsCascade)}</SearchSidebarSection>
+            <div>
+                <SearchSidebarSection header="Search types">{getSearchTypeLinks(props)}</SearchSidebarSection>
+                <SearchSidebarSection header="Dynamic filters">
+                    {getDynamicFilterLinks(props.filters, onFilterClicked)}
+                </SearchSidebarSection>
+                <SearchSidebarSection header="Repositories" showSearch={true}>
+                    {getRepoFilterLinks(props.filters, onFilterClicked)}
+                </SearchSidebarSection>
+                <SearchSidebarSection header="Search snippets">
+                    {getSearchScopeLinks(props.settingsCascade, onFilterClicked)}
+                </SearchSidebarSection>
+                <SearchSidebarSection header="Quicklinks">{getQuickLinks(props.settingsCascade)}</SearchSidebarSection>
+            </div>
         </div>
     )
 }
