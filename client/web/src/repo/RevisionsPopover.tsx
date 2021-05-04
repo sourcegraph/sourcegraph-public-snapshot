@@ -239,7 +239,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                 {isRedesignEnabled && (
                     <button
                         type="button"
-                        // onClick={handlePanelClose}
+                        // TODO: add onClick funcitonality
                         className="btn btn-icon"
                         title="Close panel"
                         data-tooltip="Close panel"
