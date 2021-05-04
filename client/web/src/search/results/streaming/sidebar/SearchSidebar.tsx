@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react'
 import { useHistory } from 'react-router'
+import StickyBox from 'react-sticky-box'
 
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -44,7 +45,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
 
     return (
         <div className={styles.searchSidebar}>
-            <div>
+            <StickyBox offsetTop={8} offsetBottom={8}>
                 <SearchSidebarSection header="Search types">{getSearchTypeLinks(props)}</SearchSidebarSection>
                 <SearchSidebarSection header="Dynamic filters">
                     {getDynamicFilterLinks(props.filters, onFilterClicked)}
@@ -56,7 +57,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     {getSearchScopeLinks(props.settingsCascade, onFilterClicked)}
                 </SearchSidebarSection>
                 <SearchSidebarSection header="Quicklinks">{getQuickLinks(props.settingsCascade)}</SearchSidebarSection>
-            </div>
+            </StickyBox>
         </div>
     )
 }
