@@ -1,4 +1,6 @@
+import { Menu, MenuButton, MenuList, MenuLink, MenuPopover } from '@reach/menu-button'
 import { storiesOf } from '@storybook/react'
+import PlusIcon from 'mdi-react/PlusIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
@@ -14,7 +16,7 @@ const { add } = storiesOf('web/PageHeader', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
         <div className="layout__app-router-container">
-            <div className="container web-content mt-3">{story()}</div>
+            <div className="container web-content my-3">{story()}</div>
         </div>
     </>
 ))
@@ -44,7 +46,7 @@ add(
     'Complex header',
     () => (
         <PageHeader
-            annotation={<FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />}
+            annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
             path={[
                 { to: '/level-0', icon: PuzzleOutlineIcon },
                 { to: '/level-1', text: 'Level 1' },
@@ -56,9 +58,25 @@ add(
                 </>
             }
             actions={
-                <Link to="/page" className="btn btn-secondary mr-1">
-                    <SearchIcon className="icon-inline" /> Button with icon
-                </Link>
+                <div className="d-flex">
+                    <Link to="/page" className="btn btn-secondary mr-2">
+                        Secondary
+                    </Link>
+                    <Link to="/page" className="btn btn-primary mr-2">
+                        <PlusIcon className="icon-inline" /> Create
+                    </Link>
+                    <Menu>
+                        <MenuButton className="btn btn-secondary dropdown-toggle">Actions</MenuButton>
+                        <MenuPopover className="dropdown-menu show" position={true}>
+                            <MenuLink className="dropdown-item" href="/">
+                                Import
+                            </MenuLink>
+                            <MenuLink className="dropdown-item" href="/">
+                                Export
+                            </MenuLink>
+                        </MenuPopover>
+                    </Menu>
+                </div>
             }
         />
     ),

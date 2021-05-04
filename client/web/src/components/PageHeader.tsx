@@ -48,7 +48,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({
     return (
         <header
             className={classNames(
-                'd-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center',
+                'd-flex flex-column flex-md-row flex-wrap justify-content-between align-items-md-end',
                 className
             )}
         >
@@ -65,7 +65,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({
                         </React.Fragment>
                     ))}
                 </HeadingX>
-                {byline && <small className="text-muted d-block mt-1">{byline}</small>}
+                {byline && <small className="text-muted d-block mt-2">{byline}</small>}
             </div>
             {actions && <div className="mt-3 mt-md-0">{actions}</div>}
         </header>
