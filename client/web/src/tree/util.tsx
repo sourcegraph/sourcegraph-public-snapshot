@@ -41,13 +41,11 @@ export function scrollIntoView(element: Element, scrollRoot: Element): void {
     scrollRoot.scrollLeft = 0
 }
 
-const isRedesingEnabled: string | null = localStorage.getItem('isRedesignEnabled')
-
 export const getDomElement = (path: string): Element | null =>
     document.querySelector(`[data-tree-path='${path.replace(/'/g, "\\'")}']`)
 
-export const treePadding = (depth: number, isTree: boolean): React.CSSProperties => ({
-    marginLeft: `${depth * 12 + (isTree ? 0 : 12) + (isRedesingEnabled ? 0 : 12)}px`,
+export const treePadding = (depth: number, isTree: boolean, isRedesignEnabled?: boolean): React.CSSProperties => ({
+    marginLeft: `${depth * 12 + (isTree ? 0 : 12) + (isRedesignEnabled ? 0 : 12)}px`,
     paddingRight: '1rem',
 })
 
