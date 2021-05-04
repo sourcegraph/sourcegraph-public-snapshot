@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - User credentials used in Batch Changes are now encrypted if encryption is enabled in the database with the `encryption.keys` config. [#19570](https://github.com/sourcegraph/sourcegraph/issues/19570)
 - Default reviewers are now added to Bitbucket Server PRs opened by Batch Changes. [#20551](https://github.com/sourcegraph/sourcegraph/pull/20551)
+- Only site admins can now list users on an instance. [#20619](https://github.com/sourcegraph/sourcegraph/pull/20619)
 
 ### Fixed
 
