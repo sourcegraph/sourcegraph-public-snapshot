@@ -13,8 +13,8 @@ import {
 } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
-import { ExternalChangesetNode } from './ExternalChangesetNode'
 import gridStyles from './BatchChangeChangesets.module.scss'
+import { ExternalChangesetNode } from './ExternalChangesetNode'
 
 const { add } = storiesOf('web/batches/ExternalChangesetNode', module).addDecorator(story => (
     <div className={classNames(gridStyles.batchChangeChangesetsGrid, 'p-3 container web-content')}>{story()}</div>
