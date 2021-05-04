@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -14,19 +15,19 @@ func TestStaleSourcedCommits(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
 
 	now := time.Unix(1587396557, 0).UTC()
 
-	insertUploads(t, db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
 		Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
 		Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
 		Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
 		Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
 	)
-	insertIndexes(t, db,
+	insertIndexes(t, dbconn.Global,
 		Index{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
 		Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
 		Index{ID: 3, RepositoryID: 50, Commit: makeCommit(3)},
@@ -73,19 +74,19 @@ func TestRefreshCommitResolvability(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
 
 	now := time.Unix(1587396557, 0).UTC()
 
-	insertUploads(t, db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
 		Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
 		Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
 		Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
 		Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
 	)
-	insertIndexes(t, db,
+	insertIndexes(t, dbconn.Global,
 		Index{ID: 1, RepositoryID: 50, Commit: makeCommit(3)},
 		Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
 		Index{ID: 3, RepositoryID: 52, Commit: makeCommit(7)},
@@ -115,7 +116,7 @@ func TestRefreshCommitResolvability(t *testing.T) {
 		t.Fatalf("unexpected indexes updated. want=%d have=%d", 1, indexesUpdated)
 	}
 
-	uploadStates, err := getUploadStates(db, 1, 2, 3, 4, 5)
+	uploadStates, err := getUploadStates(1, 2, 3, 4, 5)
 	if err != nil {
 		t.Fatalf("unexpected error fetching upload states: %s", err)
 	}
@@ -130,7 +131,7 @@ func TestRefreshCommitResolvability(t *testing.T) {
 		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
 	}
 
-	indexStates, err := getIndexStates(db, 1, 2, 3, 4, 5)
+	indexStates, err := getIndexStates(1, 2, 3, 4, 5)
 	if err != nil {
 		t.Fatalf("unexpected error fetching index states: %s", err)
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -15,9 +16,9 @@ func TestDatabasePackageInformation(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	dbtesting.SetupGlobalTestDB(t)
 	populateTestStore(t)
-	store := NewStore(db, &observation.TestContext)
+	store := NewStore(dbconn.Global, &observation.TestContext)
 
 	if actual, exists, err := store.PackageInformation(context.Background(), testBundleID, "protocol/protocol.go", "251"); err != nil {
 		t.Fatalf("unexpected error %s", err)

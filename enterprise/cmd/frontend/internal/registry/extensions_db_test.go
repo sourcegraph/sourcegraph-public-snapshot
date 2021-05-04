@@ -70,7 +70,7 @@ func TestRegistryExtensions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
 	testGetByID := func(t *testing.T, id int32, want *dbExtension, wantPublisherName string) {
@@ -117,11 +117,11 @@ func TestRegistryExtensions(t *testing.T) {
 		}
 	}
 
-	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
+	user, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	org, err := database.Orgs(db).Create(ctx, "o", nil)
+	org, err := database.GlobalOrgs.Create(ctx, "o", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

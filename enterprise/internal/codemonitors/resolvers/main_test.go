@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID int32) {
@@ -133,12 +133,12 @@ func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, 
 
 // newTestResolver returns a Resolver with stopped clock, which is useful to
 // compare input and outputs in tests.
-func newTestResolver(t *testing.T, db dbutil.DB) *Resolver {
+func newTestResolver(t *testing.T) *Resolver {
 	t.Helper()
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
-	return newResolverWithClock(db, clock).(*Resolver)
+	return newResolverWithClock(dbconn.Global, clock).(*Resolver)
 }
 
 func marshalDateTime(t testing.TB, ts time.Time) string {

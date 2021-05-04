@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -18,8 +19,8 @@ func TestDefinitionDumps(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
 
 	moniker1 := semantic.QualifiedMonikerData{
 		MonikerData: semantic.MonikerData{
@@ -81,8 +82,8 @@ func TestDefinitionDumps(t *testing.T) {
 		AssociatedIndexID: nil,
 	}
 
-	insertUploads(t, db, dumpToUpload(expected1), dumpToUpload(expected2))
-	insertVisibleAtTip(t, db, 50, 1)
+	insertUploads(t, dbconn.Global, dumpToUpload(expected1), dumpToUpload(expected2))
+	insertVisibleAtTip(t, dbconn.Global, 50, 1)
 
 	if err := store.UpdatePackages(context.Background(), 1, []semantic.Package{
 		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0"},
@@ -120,10 +121,10 @@ func TestReferenceIDsAndFilters(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
 
-	insertUploads(t, db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(2), Root: "sub1/"},
 		Upload{ID: 2, Commit: makeCommit(3), Root: "sub2/"},
 		Upload{ID: 3, Commit: makeCommit(4), Root: "sub3/"},
@@ -131,7 +132,7 @@ func TestReferenceIDsAndFilters(t *testing.T) {
 		Upload{ID: 5, Commit: makeCommit(2), Root: "sub5/"},
 	)
 
-	insertNearestUploads(t, db, 50, map[string][]commitgraph.UploadMeta{
+	insertNearestUploads(t, dbconn.Global, 50, map[string][]commitgraph.UploadMeta{
 		makeCommit(1): {
 			{UploadID: 1, Distance: 1},
 			{UploadID: 2, Distance: 2},
@@ -226,10 +227,10 @@ func TestReferenceIDsAndFiltersVisibility(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
 
-	insertUploads(t, db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(1), Root: "sub1/"}, // not visible
 		Upload{ID: 2, Commit: makeCommit(2), Root: "sub2/"}, // not visible
 		Upload{ID: 3, Commit: makeCommit(3), Root: "sub1/"},
@@ -237,7 +238,7 @@ func TestReferenceIDsAndFiltersVisibility(t *testing.T) {
 		Upload{ID: 5, Commit: makeCommit(5), Root: "sub5/"},
 	)
 
-	insertNearestUploads(t, db, 50, map[string][]commitgraph.UploadMeta{
+	insertNearestUploads(t, dbconn.Global, 50, map[string][]commitgraph.UploadMeta{
 		makeCommit(1): {{UploadID: 1, Distance: 0}},
 		makeCommit(2): {{UploadID: 2, Distance: 0}},
 		makeCommit(3): {{UploadID: 3, Distance: 0}},
@@ -292,10 +293,10 @@ func TestReferenceIDsAndFiltersRemoteVisibility(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	dbtesting.SetupGlobalTestDB(t)
+	store := testStore()
 
-	insertUploads(t, db,
+	insertUploads(t, dbconn.Global,
 		Upload{ID: 1, Commit: makeCommit(1)},
 		Upload{ID: 2, Commit: makeCommit(2), RepositoryID: 51},
 		Upload{ID: 3, Commit: makeCommit(3), RepositoryID: 52},
@@ -304,12 +305,12 @@ func TestReferenceIDsAndFiltersRemoteVisibility(t *testing.T) {
 		Upload{ID: 6, Commit: makeCommit(6), RepositoryID: 55},
 		Upload{ID: 7, Commit: makeCommit(6), RepositoryID: 56},
 	)
-	insertVisibleAtTip(t, db, 50, 1)
-	insertVisibleAtTip(t, db, 51, 2)
-	insertVisibleAtTip(t, db, 52, 3)
-	insertVisibleAtTip(t, db, 53, 4)
-	insertVisibleAtTip(t, db, 54, 5)
-	insertVisibleAtTip(t, db, 56, 7)
+	insertVisibleAtTip(t, dbconn.Global, 50, 1)
+	insertVisibleAtTip(t, dbconn.Global, 51, 2)
+	insertVisibleAtTip(t, dbconn.Global, 52, 3)
+	insertVisibleAtTip(t, dbconn.Global, 53, 4)
+	insertVisibleAtTip(t, dbconn.Global, 54, 5)
+	insertVisibleAtTip(t, dbconn.Global, 56, 7)
 
 	insertPackageReferences(t, store, []lsifstore.PackageReference{
 		{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0", Filter: []byte("f1")}, // same repo, not visible in git
