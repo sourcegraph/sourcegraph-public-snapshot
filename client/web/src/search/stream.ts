@@ -219,7 +219,6 @@ function toGQLFileMatchBase(fileMatch: FileMatch | FileSymbolMatch): GQL.IFileMa
         file,
         repository,
         revSpec: revisionSpec,
-        resource: fileMatch.name,
         symbols: [],
         lineMatches: [],
         limitHit: false,

@@ -185,20 +185,20 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if fm, ok := result.ToFileMatch(); ok {
 				display = fm.Limit(display)
 
-				if syms := fm.Symbols(); len(syms) > 0 {
-					// Inlining to avoid exporting a bunch of stuff from
-					// graphqlbackend
+				if syms := fm.FileMatch.Symbols; len(syms) > 0 {
 					symbols := make([]streamhttp.Symbol, 0, len(syms))
 					for _, sym := range syms {
-						u, err := sym.URL(ctx)
-						if err != nil {
-							continue
+						kind := sym.Symbol.LSPKind()
+						kindString := "UNKNOWN"
+						if kind != 0 {
+							kindString = strings.ToUpper(kind.String())
 						}
+
 						symbols = append(symbols, streamhttp.Symbol{
-							URL:           u,
-							Name:          sym.Name(),
-							ContainerName: fromStrPtr(sym.ContainerName()),
-							Kind:          sym.Kind(),
+							URL:           sym.URL().String(),
+							Name:          sym.Symbol.Name,
+							ContainerName: sym.Symbol.Parent,
+							Kind:          kindString,
 						})
 					}
 					matchesAppend(fromSymbolMatch(fm, symbols))

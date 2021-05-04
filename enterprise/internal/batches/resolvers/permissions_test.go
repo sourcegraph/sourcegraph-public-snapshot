@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -36,8 +37,9 @@ func TestPermissionLevels(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
 	db := dbtesting.GetDB(t)
+	key := et.TestKey{}
 
-	cstore := store.New(db)
+	cstore := store.New(db, key)
 	sr := New(cstore)
 	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil)
 	if err != nil {
@@ -286,7 +288,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db)
+					pruneUserCredentials(t, db, key)
 					pruneSiteCredentials(t, cstore)
 
 					graphqlID := string(graphqlbackend.MarshalUserID(tc.user))
@@ -353,7 +355,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db)
+					pruneUserCredentials(t, db, key)
 					pruneSiteCredentials(t, cstore)
 
 					var graphqlID graphql.ID
@@ -449,7 +451,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db)
+					pruneUserCredentials(t, db, key)
 					pruneSiteCredentials(t, cstore)
 
 					var res struct {
@@ -542,7 +544,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db)
+					pruneUserCredentials(t, db, key)
 					pruneSiteCredentials(t, cstore)
 
 					var batchChangesCredentialID graphql.ID
@@ -726,6 +728,12 @@ func TestPermissionLevels(t *testing.T) {
 				name: "moveBatchChange",
 				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
 					return fmt.Sprintf(`mutation { moveBatchChange(batchChange: %q, newName: "foobar") { id } }`, batchChangeID)
+				},
+			},
+			{
+				name: "createChangesetComments",
+				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+					return fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [%q], body: "test") { id } }`, batchChangeID, changesetID)
 				},
 			},
 		}
@@ -919,7 +927,7 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	db := dbtesting.GetDB(t)
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 	sr := &Resolver{store: cstore}
 	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil)
 	if err != nil {

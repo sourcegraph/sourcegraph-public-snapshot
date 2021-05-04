@@ -33,7 +33,7 @@ func TestBatchChangeResolver(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, clock)
+	cstore := store.NewWithClock(db, nil, clock)
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec:        ct.TestRawBatchSpec,

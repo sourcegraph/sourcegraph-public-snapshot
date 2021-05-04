@@ -10,7 +10,6 @@ import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
 import { flow } from 'lodash'
 import SearchIcon from 'mdi-react/SearchIcon'
-import openColor from 'open-color'
 import React, { useState } from 'react'
 import 'storybook-addon-designs'
 
@@ -22,7 +21,9 @@ import { CodeSnippet } from '../../components/CodeSnippet'
 import { Form } from '../../components/Form'
 
 import { ButtonVariants } from './ButtonVariants'
+import { ColorVariants } from './ColorVariants'
 import { SEMANTIC_COLORS } from './constants'
+import { FormFieldVariants } from './FormFieldVariants'
 import { TextStory } from './TextStory'
 import { preventDefault } from './utils'
 
@@ -36,7 +37,7 @@ add(
         <>
             <h1>Typography</h1>
 
-            <TextStory semanticColors={SEMANTIC_COLORS} />
+            <TextStory />
         </>
     ),
     {
@@ -68,7 +69,7 @@ add(
                 areas.
             </p>
 
-            <TextStory semanticColors={SEMANTIC_COLORS} />
+            <TextStory />
         </div>
     ),
     {
@@ -163,52 +164,23 @@ add(
             <h1>Colors</h1>
 
             <h2>Semantic colors</h2>
-            <p>
-                These can be used to give semantic clues and always work both in light and dark theme. They are
-                available on most CSS components and the <code>border-</code> and <code>bg-</code> utility classes.
-            </p>
-            <div className="d-flex flex-wrap">
-                {SEMANTIC_COLORS.map(semantic => (
-                    <div className="m-2 text-center" key={semantic}>
-                        <div className={`bg-${semantic} rounded`} style={{ width: '5rem', height: '5rem' }} />
-                        {semantic}
-                    </div>
-                ))}
-            </div>
-
-            <h2>Color Palette</h2>
-            <p>
-                Our color palette is the <a href="https://yeun.github.io/open-color/">Open Color</a> palette. All colors
-                are available as SCSS and CSS variables. It's generally not advised to use these directly, but they may
-                be used in rare cases, like charts. In other cases, rely on CSS components, utilities for borders and
-                background, and dynamic CSS variables.
-            </p>
-            {Object.entries(openColor).map(
-                ([name, colors]) =>
-                    Array.isArray(colors) && (
-                        <div key={name}>
-                            <h5>{name}</h5>
-                            <div className="d-flex flex-wrap">
-                                {colors.map((color, number) => (
-                                    <div key={color} className="m-2 text-right">
-                                        <div
-                                            className="rounded"
-                                            style={{ background: color, width: '3rem', height: '3rem' }}
-                                        />
-                                        {number}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )
-            )}
+            <p>These can be used to give semantic clues and always work both in light and dark theme.</p>
+            <ColorVariants />
         </>
     ),
     {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/P2M4QrgIxeUsjE80MHP8TmY3/Sourcegraph-Colors?node-id=0%3A2',
-        },
+        design: [
+            {
+                type: 'figma',
+                url: 'https://www.figma.com/file/P2M4QrgIxeUsjE80MHP8TmY3/Sourcegraph-Colors?node-id=0%3A2',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Redesign',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A7608',
+            },
+        ],
     }
 )
 
@@ -788,7 +760,7 @@ add(
                 </div>
                 <div className="form-group">
                     <label htmlFor="example-example-select">Example select</label>
-                    <select id="example-select" className="form-control">
+                    <select id="example-select" className="custom-select">
                         <option>Option A</option>
                         <option>Option B</option>
                         <option>Option C</option>
@@ -823,7 +795,7 @@ add(
                     </div>
                     <div className="form-group">
                         <label htmlFor="disabledSelect">Disabled select menu</label>
-                        <select id="disabledSelect" className="form-control">
+                        <select id="disabledSelect" className="custom-select">
                             <option>Disabled select</option>
                         </select>
                     </div>
@@ -850,25 +822,20 @@ add(
             <input className="form-control" type="text" value="I'm a readonly value" readOnly={true} />
 
             <h2 className="mt-3">Sizing</h2>
-            <p>Form controls can be made smaller or larger for rare use cases, like a select inside a dropdown menu.</p>
+            <p>Form fields can be made smaller</p>
             <div className="d-flex">
-                <div>
-                    <input className="form-control form-control-lg mb-1" type="text" placeholder="Large input" />
-                    <input className="form-control mb-1" type="text" placeholder="Default input" />
-                    <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
-                </div>
-                <div className="ml-2">
-                    <select className="form-control form-control-lg mb-1">
-                        <option>Large select</option>
-                    </select>
-                    <select className="form-control mb-1">
-                        <option>Default select</option>
-                    </select>
-                    <select className="form-control form-control-sm mb-1">
-                        <option>Small select</option>
-                    </select>
-                </div>
+                <fieldset>
+                    <div className="form-group">
+                        <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
+                        <textarea className="form-control form-control-sm mb-1" placeholder="Small textarea" />
+                        <select className="custom-select custom-select-sm mb-1">
+                            <option>Small select</option>
+                        </select>
+                    </div>
+                </fieldset>
             </div>
+            <h2 className="mt-3">Field reference</h2>
+            <FormFieldVariants />
         </>
     ),
     {

@@ -1,0 +1,42 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`QuickLink should have correct links when quicklinks present 1`] = `
+Array [
+  <AnchorLink
+    className="sidebarSectionListItem"
+    data-placement="right"
+    key="0"
+    to="/"
+  >
+    <a
+      className="sidebarSectionListItem"
+      data-placement="right"
+      href="/"
+    >
+      <Memo(LinkIcon)
+        className="icon-inline pr-1 flex-shrink-0"
+      />
+      Home
+    </a>
+  </AnchorLink>,
+  <AnchorLink
+    className="sidebarSectionListItem"
+    data-placement="right"
+    data-tooltip="Example QuickLink"
+    key="1"
+    to="http://example.com"
+  >
+    <a
+      className="sidebarSectionListItem"
+      data-placement="right"
+      data-tooltip="Example QuickLink"
+      href="http://example.com"
+    >
+      <Memo(LinkIcon)
+        className="icon-inline pr-1 flex-shrink-0"
+      />
+      This is a quicklink with a very long name lorem ipsum dolor sit amet
+    </a>
+  </AnchorLink>,
+]
+`;

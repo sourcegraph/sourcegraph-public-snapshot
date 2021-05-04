@@ -51,7 +51,6 @@ func TestSiteConfig(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		var lastErr error
 		// Retry because the configuration update endpoint is eventually consistent
 		err = gqltestutil.Retry(5*time.Second, func() error {
 			// Sign up a new user should fail.
@@ -72,7 +71,7 @@ func TestSiteConfig(t *testing.T) {
 			return gqltestutil.ErrContinueRetry
 		})
 		if err != nil {
-			t.Fatal(err, "lastErr:", lastErr)
+			t.Fatal(err)
 		}
 	})
 }

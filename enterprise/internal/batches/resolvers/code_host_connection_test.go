@@ -29,12 +29,12 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	db := dbtesting.GetDB(t)
 
-	pruneUserCredentials(t, db)
+	pruneUserCredentials(t, db, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 
 	ghRepos, _ := ct.CreateTestRepos(t, ctx, db, 1)
 	ghRepo := ghRepos[0]

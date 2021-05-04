@@ -51,6 +51,7 @@ func TestIndexEnqueuerUpdateIndexConfigurationInDatabase(t *testing.T) {
 
 	mockDBStore := NewMockDBStore()
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
 	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(indexConfiguration, true, nil)
 
@@ -172,6 +173,7 @@ index_jobs:
 func TestIndexEnqueuerUpdateIndexConfigurationInRepository(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
@@ -261,6 +263,7 @@ func TestIndexEnqueuerUpdateIndexConfigurationInRepository(t *testing.T) {
 func TestIndexEnqueuerUpdateIndexConfigurationInferred(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	mockDBStore.IndexableRepositoriesFunc.SetDefaultReturn([]store.IndexableRepository{
 		{RepositoryID: 41},
 		{RepositoryID: 42},
@@ -335,6 +338,7 @@ func TestIndexEnqueuerUpdateIndexConfigurationInferred(t *testing.T) {
 func TestIndexEnqueuerUpdateIndexConfigurationInferredTooLarge(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	mockDBStore.IndexableRepositoriesFunc.SetDefaultReturn([]store.IndexableRepository{
 		{RepositoryID: 42},
 	}, nil)

@@ -2,8 +2,46 @@
 version: 1
 interactions:
 - request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/default-reviewers/1.0/projects/SOUR/repos/automation-testing/reviewers?sourceRefId=refs%2Fheads%2Falways-open-pr-bbs&sourceRepoId=10070&targetRefId=refs%2Fheads%2Fmaster&targetRepoId=10070
+    method: GET
+  response:
+    body: '[{"name":"erik","emailAddress":"erik@sourcegraph.com","id":152,"displayName":"Erik
+      Seliger","active":true,"slug":"erik","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/erik"}]}},{"name":"thorsten","emailAddress":"thorsten@sourcegraph.com","id":104,"displayName":"thorsten","active":true,"slug":"thorsten","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/thorsten"}]}}]'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 30 Apr 2021 11:57:47 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@TO58QJx717x103587x0'
+      X-Asessionid:
+      - 1bolhxl
+      X-Auserid:
+      - "152"
+      X-Ausername:
+      - erik
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
     body: |
-      {"title":"This is a test PR","description":"This is the body of a test PR","state":"OPEN","open":true,"closed":false,"fromRef":{"id":"refs/heads/always-open-pr-bbs","repository":{"id":0,"slug":"automation-testing","project":{"key":"SOUR"}}},"toRef":{"id":"refs/heads/master","repository":{"id":0,"slug":"automation-testing","project":{"key":"SOUR"}}},"locked":false}
+      {"title":"This is a test PR","description":"This is the body of a test PR","state":"OPEN","open":true,"closed":false,"fromRef":{"id":"refs/heads/always-open-pr-bbs","repository":{"id":10070,"slug":"automation-testing","project":{"key":"SOUR"}}},"toRef":{"id":"refs/heads/master","repository":{"id":10070,"slug":"automation-testing","project":{"key":"SOUR"}}},"locked":false,"reviewers":[{"user":{"name":"erik"}},{"user":{"name":"thorsten"}}]}
     form: {}
     headers:
       Content-Type:
@@ -12,39 +50,31 @@ interactions:
     method: POST
   response:
     body: '{"errors":[{"context":null,"message":"Only one pull request may be open
-      for a given source and target branch","exceptionName":"com.atlassian.bitbucket.pull.DuplicatePullRequestException","existingPullRequest":{"id":3,"version":4,"title":"This
-      testing PR is always open","description":"Ignore this. This is a testing PR
-      that is always open.","state":"OPEN","open":true,"closed":false,"createdDate":1573644199945,"updatedDate":1573644199945,"fromRef":{"id":"refs/heads/always-open-pr-bbs","displayId":"always-open-pr-bbs","latestCommit":"b939ea0debe88e145c5409230b29e7dbbedcb9da","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"toRef":{"id":"refs/heads/master","displayId":"master","latestCommit":"e833db3fe2bdbc28b58cd72def1b0078e77aa171","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"locked":false,"author":{"user":{"name":"thorsten","emailAddress":"thorsten@sourcegraph.com","id":104,"displayName":"thorsten","active":true,"slug":"thorsten","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/thorsten"}]}},"role":"AUTHOR","approved":false,"status":"UNAPPROVED"},"reviewers":[],"participants":[],"links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/3"}]}}}]}'
+      for a given source and target branch","exceptionName":"com.atlassian.bitbucket.pull.DuplicatePullRequestException","existingPullRequest":{"id":132,"version":0,"title":"This
+      is a test PR","description":"This is a test PR. Feel free to ignore.","state":"OPEN","open":true,"closed":false,"createdDate":1618447968146,"updatedDate":1618447968146,"fromRef":{"id":"refs/heads/always-open-pr-bbs","displayId":"always-open-pr-bbs","latestCommit":"b939ea0debe88e145c5409230b29e7dbbedcb9da","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","hierarchyId":"1c17e4711a8a022d0a9a","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sour/automation-testing.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"toRef":{"id":"refs/heads/master","displayId":"master","latestCommit":"db0a6e3b7bcd9963cfaa69bd3f87e04a803900ac","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","hierarchyId":"1c17e4711a8a022d0a9a","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sour/automation-testing.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"locked":false,"author":{"user":{"name":"erik","emailAddress":"erik@sourcegraph.com","id":152,"displayName":"Erik
+      Seliger","active":true,"slug":"erik","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/erik"}]}},"role":"AUTHOR","approved":false,"status":"UNAPPROVED"},"reviewers":[],"participants":[],"links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/132"}]}}}]}'
     headers:
       Cache-Control:
       - private, no-cache
       - no-cache, no-transform
-      Cf-Cache-Status:
-      - DYNAMIC
-      Cf-Ray:
-      - 57c281c9ceec4931-CPT
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Mon, 30 Mar 2020 14:26:41 GMT
-      Expect-Ct:
-      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      - Fri, 30 Apr 2021 11:57:47 GMT
       Pragma:
       - no-cache
       Server:
-      - cloudflare
+      - Caddy
       Vary:
-      - X-AUSERNAME,Accept-Encoding
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@MWNSEUx866x614755x0'
-      X-Asen:
-      - SEN-11363689
+      - '@TO58QJx717x103588x0'
       X-Asessionid:
-      - 1tekham
+      - 1vcto7r
       X-Auserid:
-      - "1"
+      - "152"
       X-Ausername:
-      - milton
+      - erik
       X-Content-Type-Options:
       - nosniff
     status: 409 Conflict
@@ -56,40 +86,33 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/3/activities?limit=1000
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/132/activities?limit=1000
     method: GET
   response:
-    body: '{"size":1,"limit":500,"isLastPage":true,"values":[{"id":95,"createdDate":1573644199954,"user":{"name":"thorsten","emailAddress":"thorsten@sourcegraph.com","id":104,"displayName":"thorsten","active":true,"slug":"thorsten","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/thorsten"}]}},"action":"OPENED"}],"start":0}'
+    body: '{"size":1,"limit":500,"isLastPage":true,"values":[{"id":3867,"createdDate":1618447968165,"user":{"name":"erik","emailAddress":"erik@sourcegraph.com","id":152,"displayName":"Erik
+      Seliger","active":true,"slug":"erik","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/erik"}]}},"action":"OPENED"}],"start":0}'
     headers:
       Cache-Control:
       - private, no-cache
       - no-cache, no-transform
-      Cf-Cache-Status:
-      - DYNAMIC
-      Cf-Ray:
-      - 57c281cffa914931-CPT
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Mon, 30 Mar 2020 14:26:41 GMT
-      Expect-Ct:
-      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      - Fri, 30 Apr 2021 11:57:47 GMT
       Pragma:
       - no-cache
       Server:
-      - cloudflare
+      - Caddy
       Vary:
-      - X-AUSERNAME,Accept-Encoding
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@MWNSEUx866x614756x0'
-      X-Asen:
-      - SEN-11363689
+      - '@TO58QJx717x103590x0'
       X-Asessionid:
-      - 15uqxat
+      - 1hj0gl5
       X-Auserid:
-      - "1"
+      - "152"
       X-Ausername:
-      - milton
+      - erik
       X-Content-Type-Options:
       - nosniff
     status: 200 OK
@@ -101,7 +124,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/3/commits?limit=1000
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/132/commits?limit=1000
     method: GET
   response:
     body: '{"values":[{"id":"b939ea0debe88e145c5409230b29e7dbbedcb9da","displayId":"b939ea0debe","author":{"name":"Thorsten
@@ -112,32 +135,24 @@ interactions:
       Cache-Control:
       - private, no-cache
       - no-cache, no-transform
-      Cf-Cache-Status:
-      - DYNAMIC
-      Cf-Ray:
-      - 57c281d28f5f4931-CPT
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Mon, 30 Mar 2020 14:26:42 GMT
-      Expect-Ct:
-      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      - Fri, 30 Apr 2021 11:57:48 GMT
       Pragma:
       - no-cache
       Server:
-      - cloudflare
+      - Caddy
       Vary:
-      - X-AUSERNAME,Accept-Encoding
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@MWNSEUx866x614757x0'
-      X-Asen:
-      - SEN-11363689
+      - '@TO58QJx717x103591x0'
       X-Asessionid:
-      - 10y5pmo
+      - 148wu5w
       X-Auserid:
-      - "1"
+      - "152"
       X-Ausername:
-      - milton
+      - erik
       X-Content-Type-Options:
       - nosniff
     status: 200 OK
@@ -152,37 +167,29 @@ interactions:
     url: https://bitbucket.sgdev.org/rest/build-status/1.0/commits/b939ea0debe88e145c5409230b29e7dbbedcb9da?limit=1000
     method: GET
   response:
-    body: '{"size":0,"limit":100,"isLastPage":true,"values":[],"start":0}'
+    body: '{"size":0,"limit":500,"isLastPage":true,"values":[],"start":0}'
     headers:
       Cache-Control:
       - private, no-cache
       - no-cache, no-transform
-      Cf-Cache-Status:
-      - DYNAMIC
-      Cf-Ray:
-      - 57c281d8fae04931-CPT
       Content-Type:
       - application/json
       Date:
-      - Mon, 30 Mar 2020 14:26:43 GMT
-      Expect-Ct:
-      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      - Fri, 30 Apr 2021 11:57:48 GMT
       Pragma:
       - no-cache
       Server:
-      - cloudflare
+      - Caddy
       Vary:
-      - X-AUSERNAME,Accept-Encoding
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@MWNSEUx866x614758x0'
-      X-Asen:
-      - SEN-11363689
+      - '@TO58QJx717x103592x0'
       X-Asessionid:
-      - 1624byt
+      - 1sibx0z
       X-Auserid:
-      - "1"
+      - "152"
       X-Ausername:
-      - milton
+      - erik
       X-Content-Type-Options:
       - nosniff
     status: 200 OK

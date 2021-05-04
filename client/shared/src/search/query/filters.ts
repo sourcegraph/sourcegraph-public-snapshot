@@ -140,28 +140,40 @@ interface NegatableFilterDefinition extends Omit<BaseFilterDefinition, 'descript
 export type FilterDefinition = BaseFilterDefinition | NegatableFilterDefinition
 
 export const LANGUAGES: string[] = [
-    'c',
-    'cpp',
-    'csharp',
-    'css',
-    'go',
-    'graphql',
-    'haskell',
-    'html',
-    'java',
-    'javascript',
-    'json',
-    'lua',
-    'markdown',
-    'php',
-    'powershell',
-    'python',
-    'r',
-    'ruby',
-    'rust',
-    'sass',
-    'swift',
-    'typescript',
+    'Assembly',
+    'Bash',
+    'C',
+    'C++',
+    'C#',
+    'CSS',
+    'Dart',
+    'Go',
+    'GraphQL',
+    'Haskell',
+    'HTML',
+    'Java',
+    'JavaScript',
+    'Kotlin',
+    'JSON',
+    'Julia',
+    'Lua',
+    'Markdown',
+    'Objective-C',
+    'OCaml',
+    'PHP',
+    'PowerShell',
+    'Python',
+    'R',
+    'Ruby',
+    'Rust',
+    'Sass',
+    'Scala',
+    'SQL',
+    'Swift',
+    'TypeScript',
+    'VBA',
+    'XML',
+    'Zig',
 ]
 
 export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
@@ -393,6 +405,12 @@ export const validateFilter = (
         // Repo filter is made exempt from checking discrete valid values, since a valid `contain` predicate
         // has infinite valid discrete values. TODO(rvantonder): value validation should be separated to
         // account for finite discrete values and exemption of checks.
+        return { valid: true }
+    }
+    if (typeAndDefinition.type === FilterType.lang) {
+        // Lang filter is exempt because our discrete completion values are only a subset of all valid
+        // language values, which are captured by a Go library. The backend takes care of returning an
+        // alert for invalid values.
         return { valid: true }
     }
     const { definition } = typeAndDefinition

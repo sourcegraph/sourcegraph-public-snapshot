@@ -7,6 +7,7 @@ import (
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
@@ -17,10 +18,24 @@ type SearchEvent struct {
 	Stats   streaming.Stats
 }
 
+// SearchMatchEvent is a temporary struct that takes matches rather than
+// SearchResultResolvers. Once the transition is complete, this will replace SearchEvent.
+type SearchMatchEvent struct {
+	Results []result.Match
+	Stats   streaming.Stats
+}
+
 // Sender is the interface that wraps the basic Send method. Send must not
 // mutate the event.
 type Sender interface {
 	Send(SearchEvent)
+}
+
+// MatchSender is a temporary interface that adds the SendMatches method to the
+// Sender interface. Eventually, Sender.Send() will be replaced with MatchSender.SendMatches
+type MatchSender interface {
+	Sender
+	SendMatches(SearchMatchEvent)
 }
 
 type limitStream struct {
