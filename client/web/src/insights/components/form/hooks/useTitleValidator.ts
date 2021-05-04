@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 
 import { composeValidators, createRequiredValidator } from '../validators'
 
-import { Validator } from './useForm'
+import { Validator } from './useField'
 
 export interface useTitleValidatorProps {
     insightType: 'searchInsights' | 'codeStatsInsights'
