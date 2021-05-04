@@ -63,6 +63,7 @@ export const FormColorInput: React.FunctionComponent<FormColorPickerProps> = pro
                         <input
                             type="radio"
                             name={name}
+                            aria-label={colorInfo.name}
                             value={colorInfo.color}
                             checked={value === colorInfo.color}
                             className={styles.formColorPickerNativeRadioControl}

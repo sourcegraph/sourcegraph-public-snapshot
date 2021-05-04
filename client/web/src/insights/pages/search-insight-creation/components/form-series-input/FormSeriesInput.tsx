@@ -93,7 +93,12 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
             />
 
             <div className="mt-4">
-                <button type="button" onClick={handleSubmit} className="btn btn-secondary">
+                <button
+                    aria-label="Submit button for data series"
+                    type="button"
+                    onClick={handleSubmit}
+                    className="btn btn-secondary"
+                >
                     Done
                 </button>
 
