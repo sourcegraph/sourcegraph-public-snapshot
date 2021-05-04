@@ -1,20 +1,57 @@
-import React from 'react'
+import classNames from 'classnames'
+import React, { useEffect, useMemo, useState } from 'react'
 
+import { FilterLink, FilterLinkProps } from './FilterLink'
 import styles from './SearchSidebarSection.module.scss'
 
-export const SearchSidebarSection: React.FunctionComponent<{ header: string; children?: React.ReactElement[] }> = ({
-    header,
-    children = [],
-}) =>
-    children.length > 0 ? (
-        <div>
-            <h5>{header}</h5>
-            <div>
-                <ul className={styles.sidebarSectionList}>
-                    {children.map((child, index) => (
-                        <li key={child.key || index}>{child}</li>
-                    ))}
-                </ul>
-            </div>
+export const SearchSidebarSection: React.FunctionComponent<{
+    header: string
+    children?: React.ReactElement[]
+    showSearch?: boolean // Search only works if children are FilterLink
+}> = ({ header, children = [], showSearch = false }) => {
+    const [filter, setFilter] = useState('')
+
+    // Clear filter when children change
+    useEffect(() => setFilter(''), [children])
+
+    const filteredChildren = useMemo(
+        () =>
+            children.filter(child => {
+                if (child.type === FilterLink) {
+                    const props: FilterLinkProps = child.props as FilterLinkProps
+                    return (
+                        (props?.label).toLowerCase().includes(filter.toLowerCase()) ||
+                        (props?.value).toLowerCase().includes(filter.toLowerCase())
+                    )
+                }
+                return true
+            }),
+        [children, filter]
+    )
+
+    return children.length > 0 ? (
+        <div className="mb-4">
+            <h5 className="pb-2">{header}</h5>
+            {showSearch && children.length > 1 && (
+                <input
+                    type="search"
+                    placeholder="Find..."
+                    aria-label="Find filters"
+                    value={filter}
+                    onChange={event => setFilter(event.currentTarget.value)}
+                    data-testid="sidebar-section-search-box"
+                    className={classNames('form-control', styles.sidebarSectionSearchBox)}
+                />
+            )}
+
+            <ul className={styles.sidebarSectionList}>
+                {filteredChildren.map((child, index) => (
+                    <li key={child.key || index}>{child}</li>
+                ))}
+                {filteredChildren.length === 0 && (
+                    <li className={classNames('text-muted', styles.sidebarSectionNoResults)}>No results</li>
+                )}
+            </ul>
         </div>
     ) : null
+}
