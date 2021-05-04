@@ -1,21 +1,12 @@
 .form-color-picker {
-    display: flex;
-    flex-direction: column;
-
     &__title {
-        margin: 0;
+        // Global legend element's styles have 1rem font size as default.
+        // For color picker we have to style this legend element as label size
+        font-size: inherit;
     }
 
-    &__colour-content {
-        display: flex;
-        flex-wrap: wrap;
-        margin-bottom: 0.75rem;
-    }
-
-    &__label {
-        flex-grow: 0;
-    }
-
+    // We need to hide native radio button visually but still need to have it
+    // for keyboard navigation and voice over support.
     &__native-radio-control {
         width: 0;
         height: 0;
@@ -69,8 +60,8 @@
         }
     }
 
-    &__color-block + &__color-block {
-        margin-left: 0.75rem;
+    &__color-block {
+        margin-right: 0.75rem;
     }
 
     &__custom-color {

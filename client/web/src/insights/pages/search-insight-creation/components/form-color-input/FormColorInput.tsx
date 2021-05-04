@@ -1,4 +1,6 @@
 import classnames from 'classnames'
+import { startCase } from 'lodash'
+import openColor from 'open-color'
 import React, { ChangeEvent, ChangeEventHandler, useCallback, useRef, useState } from 'react'
 import { noop } from 'rxjs'
 
@@ -19,20 +21,9 @@ interface FormColorPickerProps {
     className?: string
 }
 
-const DEFAULT_COLOURS = [
-    { color: 'var(--oc-red-7)', name: 'Red' },
-    { color: 'var(--oc-pink-7)', name: 'Pink' },
-    { color: 'var(--oc-grape-7)', name: 'Grape' },
-    { color: 'var(--oc-violet-7)', name: 'Violet' },
-    { color: 'var(--oc-indigo-7)', name: 'Indigo' },
-    { color: 'var(--oc-blue-7)', name: 'Blue' },
-    { color: 'var(--oc-cyan-7)', name: 'Cyan' },
-    { color: 'var(--oc-teal-7)', name: 'Teal' },
-    { color: 'var(--oc-green-7)', name: 'Green' },
-    { color: 'var(--oc-lime-7)', name: 'Lime' },
-    { color: 'var(--oc-yellow-7)', name: 'Yellow' },
-    { color: 'var(--oc-orange-7)', name: 'Orange' },
-]
+const DEFAULT_COLOURS = Object.keys(openColor)
+    .filter(name => name !== 'white' && name !== 'black' && name !== 'gray')
+    .map(name => ({ name: startCase(name), color: `var(--oc-${name}-7)` }))
 
 export const DEFAULT_ACTIVE_COLOR = 'var(--oc-grape-7)'
 
@@ -57,12 +48,10 @@ export const FormColorInput: React.FunctionComponent<FormColorPickerProps> = pro
     const value = isControlled.current ? propertyValue : internalValue
 
     return (
-        <fieldset className={classnames(styles.formColorPicker, className)}>
-            <legend>
-                <h4 className={styles.formColorPickerTitle}>{title}</h4>
-            </legend>
+        <fieldset className={classnames('d-flex flex-column', className)}>
+            <legend className={classnames('mb-3', styles.formColorPickerTitle)}>{title}</legend>
 
-            <div className={styles.formColorPickerColourContent}>
+            <div>
                 {colours.map(colorInfo => (
                     <label
                         key={colorInfo.color}

@@ -1,26 +1,4 @@
 .creation-insight-form {
-    display: flex;
-    flex-direction: column;
-
-    &__field {
-        max-width: 100%;
-    }
-
-    &__field + &__field {
-        margin-top: 2rem;
-    }
-
-    &__radio-group-content {
-        display: flex;
-        flex-wrap: wrap;
-        margin-bottom: -1rem;
-    }
-
-    &__radio {
-        margin-bottom: 1rem;
-        margin-right: 1rem;
-    }
-
     &__separator {
         margin-top: 2rem;
         margin-bottom: 2rem;
@@ -28,29 +6,7 @@
     }
 
     &__step-input {
-        flex-basis: 100px;
+        flex-basis: 6rem;
         margin-right: 1rem;
-    }
-
-    &__button {
-        align-self: flex-start;
-        padding: 0.5rem 0.875rem;
-        border-radius: 4px;
-        background-color: transparent;
-        border: 1px solid var(--border-color);
-
-        &--active {
-            background-color: var(--primary);
-            color: var(--color-bg-1);
-            border: none;
-        }
-    }
-
-    &__button + &__button {
-        margin-left: 0.5rem;
-    }
-
-    &__buttons {
-        margin-top: 2rem;
     }
 }

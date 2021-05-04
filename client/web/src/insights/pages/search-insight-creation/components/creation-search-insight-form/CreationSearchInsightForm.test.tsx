@@ -1,13 +1,15 @@
-import { render, RenderResult, within, BoundFunction, GetByRole, cleanup, fireEvent } from '@testing-library/react'
-import { FORM_ERROR } from 'final-form'
+import { render, RenderResult, act, within, BoundFunction, GetByRole, cleanup, fireEvent } from '@testing-library/react'
 import * as React from 'react'
 import sinon from 'sinon'
 
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
+import { FORM_ERROR } from '../../hooks/useForm'
+
 import { CreationSearchInsightForm, CreationSearchInsightFormProps } from './CreationSearchInsightForm'
 
 describe('CreateInsightForm', () => {
+    const DEFAULT_FINAL_SETTINGS = {}
     const renderWithProps = (props: CreationSearchInsightFormProps): RenderResult =>
         render(<CreationSearchInsightForm {...props} />)
     const onSubmitMock = sinon.spy()
@@ -32,7 +34,7 @@ describe('CreateInsightForm', () => {
 
         const stepGroup = getByRole('group', { name: /step/i })
 
-        const stepValue = within(stepGroup).getByRole('textbox')
+        const stepValue = within(stepGroup).getByRole('spinbutton')
 
         const stepRadioButtons = within(stepGroup).getAllByRole('radio')
 
@@ -52,7 +54,7 @@ describe('CreateInsightForm', () => {
 
     describe('with common fill flow', () => {
         it('will render standard package of form fields', () => {
-            const { getByRole } = renderWithProps({ onSubmit: onSubmitMock })
+            const { getByRole } = renderWithProps({ onSubmit: onSubmitMock, settings: DEFAULT_FINAL_SETTINGS })
 
             const {
                 title,
@@ -81,8 +83,8 @@ describe('CreateInsightForm', () => {
             expect(stepRadioButtons.length).toBe(5)
         })
 
-        it('will fire onSubmit if all fields have been filled with valid value', () => {
-            const { getByRole } = renderWithProps({ onSubmit: onSubmitMock })
+        it('will fire onSubmit if all fields have been filled with valid value', async () => {
+            const { getByRole } = renderWithProps({ onSubmit: onSubmitMock, settings: DEFAULT_FINAL_SETTINGS })
             const {
                 title,
                 repositories,
@@ -113,7 +115,10 @@ describe('CreateInsightForm', () => {
 
             const submitButton = getByRole('button', { name: /create code insight/i })
 
-            fireEvent.click(submitButton)
+            // eslint-disable-next-line @typescript-eslint/require-await
+            await act(async () => {
+                fireEvent.click(submitButton)
+            })
 
             sinon.assert.calledOnce(onSubmitMock)
             sinon.assert.calledWith(onSubmitMock, {
@@ -135,12 +140,18 @@ describe('CreateInsightForm', () => {
     })
 
     describe('show error massage', () => {
-        it('with invalid title field', () => {
-            const { getByRole, getByText } = renderWithProps({ onSubmit: onSubmitMock })
+        it('with invalid title field', async () => {
+            const { getByRole, getByText } = renderWithProps({
+                onSubmit: onSubmitMock,
+                settings: DEFAULT_FINAL_SETTINGS,
+            })
             const title = getByRole('textbox', { name: /title/i })
             const submitButton = getByRole('button', { name: /create code insight/i })
 
-            fireEvent.click(submitButton)
+            // eslint-disable-next-line @typescript-eslint/require-await
+            await act(async () => {
+                fireEvent.click(submitButton)
+            })
 
             sinon.assert.notCalled(onSubmitMock)
 
@@ -148,14 +159,21 @@ describe('CreateInsightForm', () => {
             expect(getByText(/title is required/i)).toBeInTheDocument()
         })
 
-        it('with invalid repository field', () => {
-            const { getByRole, getByText } = renderWithProps({ onSubmit: onSubmitMock })
+        it('with invalid repository field', async () => {
+            const { getByRole, getByText } = renderWithProps({
+                onSubmit: onSubmitMock,
+                settings: DEFAULT_FINAL_SETTINGS,
+            })
             const title = getByRole('textbox', { name: /title/i })
             const repositories = getByRole('textbox', { name: /repositories/i })
             const submitButton = getByRole('button', { name: /create code insight/i })
 
             fireEvent.change(title, { target: { value: 'First code insight' } })
-            fireEvent.click(submitButton)
+
+            // eslint-disable-next-line @typescript-eslint/require-await
+            await act(async () => {
+                fireEvent.click(submitButton)
+            })
 
             sinon.assert.notCalled(onSubmitMock)
 
@@ -163,8 +181,11 @@ describe('CreateInsightForm', () => {
             expect(getByText(/repositories is required/i)).toBeInTheDocument()
         })
 
-        it('with invalid data series field', () => {
-            const { getByRole, getByText } = renderWithProps({ onSubmit: onSubmitMock })
+        it('with invalid data series field', async () => {
+            const { getByRole, getByText } = renderWithProps({
+                onSubmit: onSubmitMock,
+                settings: DEFAULT_FINAL_SETTINGS,
+            })
             const title = getByRole('textbox', { name: /title/i })
             const repositories = getByRole('textbox', { name: /repositories/i })
             const submitButton = getByRole('button', { name: /create code insight/i })
@@ -173,7 +194,11 @@ describe('CreateInsightForm', () => {
 
             fireEvent.change(title, { target: { value: 'First code insight' } })
             fireEvent.change(repositories, { target: { value: 'github.com/sourcegraph/sourcegraph' } })
-            fireEvent.click(submitButton)
+
+            // eslint-disable-next-line @typescript-eslint/require-await
+            await act(async () => {
+                fireEvent.click(submitButton)
+            })
 
             sinon.assert.notCalled(onSubmitMock)
 
@@ -181,9 +206,9 @@ describe('CreateInsightForm', () => {
             expect(getByText(/series is empty/i)).toBeInTheDocument()
         })
 
-        it('when onSubmit threw submit error', () => {
+        it('when onSubmit threw submit error', async () => {
             const onSubmit = () => ({ [FORM_ERROR]: asError(new Error('Submit error')) })
-            const { getByRole, getByText } = renderWithProps({ onSubmit })
+            const { getByRole, getByText } = renderWithProps({ onSubmit, settings: DEFAULT_FINAL_SETTINGS })
             const {
                 title,
                 repositories,
@@ -214,7 +239,10 @@ describe('CreateInsightForm', () => {
 
             const submitButton = getByRole('button', { name: /create code insight/i })
 
-            fireEvent.click(submitButton)
+            // eslint-disable-next-line @typescript-eslint/require-await
+            await act(async () => {
+                fireEvent.click(submitButton)
+            })
 
             expect(getByText(/submit error/i)).toBeInTheDocument()
         })
