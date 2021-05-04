@@ -214,7 +214,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if commit, ok := result.ToCommitSearchResult(); ok {
 				display = commit.Limit(display)
 
-				matchesAppend(fromCommit(commit))
+				matchesAppend(fromCommit(&commit.CommitMatch))
 			}
 		}
 
@@ -461,23 +461,20 @@ func fromRepository(rm result.RepoMatch) *streamhttp.EventRepoMatch {
 	}
 }
 
-func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) *streamhttp.EventCommitMatch {
-	var content string
-	var ranges [][3]int32
-	if matches := commit.Matches(); len(matches) == 1 {
-		match := matches[0]
-		content = match.Body().Text()
-		highlights := match.Highlights()
-		ranges = make([][3]int32, len(highlights))
-		for i, h := range highlights {
-			ranges[i] = [3]int32{h.Line(), h.Character(), h.Length()}
-		}
+func fromCommit(commit *result.CommitMatch) *streamhttp.EventCommitMatch {
+	content := commit.Body.Value
+
+	highlights := commit.Body.Highlights
+	ranges := make([][3]int32, len(highlights))
+	for i, h := range highlights {
+		ranges[i] = [3]int32{h.Line, h.Character, h.Length}
 	}
+
 	return &streamhttp.EventCommitMatch{
 		Type:    streamhttp.CommitMatchType,
-		Label:   commit.Label().Text(),
-		URL:     commit.URL(),
-		Detail:  commit.Detail().Text(),
+		Label:   commit.Label(),
+		URL:     commit.URL().String(),
+		Detail:  commit.Detail(),
 		Content: content,
 		Ranges:  ranges,
 	}
