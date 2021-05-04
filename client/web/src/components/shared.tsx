@@ -74,6 +74,7 @@ export const WebCommandListPopoverButton: React.FunctionComponent<CommandListPop
         noResultsClassName="list-group-item text-muted"
     />
 )
+
 WebCommandListPopoverButton.displayName = 'WebCommandListPopoverButton'
 
 export const WebActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = ({
