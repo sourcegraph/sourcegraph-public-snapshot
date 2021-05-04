@@ -1,0 +1,22 @@
+.search-context-node {
+    &:first-child {
+        border-top: 1px solid var(--border-color);
+    }
+    border-bottom: 1px solid var(--border-color);
+
+    &__left {
+        // Enables responsive ellipsis text truncation
+        min-width: 0;
+
+        &__description {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+
+    &__right {
+        margin-left: 1rem;
+        flex-shrink: 0;
+    }
+}

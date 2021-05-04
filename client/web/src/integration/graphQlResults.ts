@@ -152,6 +152,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
                 spec: 'global',
                 autoDefined: true,
                 description: 'All repositories on Sourcegraph',
+                updatedAt: '2021-03-15T19:39:11Z',
                 repositories: [],
             },
             {
@@ -160,6 +161,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
                 spec: '@username',
                 autoDefined: true,
                 description: 'Your repositories on Sourcegraph',
+                updatedAt: '2021-03-15T19:39:11Z',
                 repositories: [],
             },
         ],

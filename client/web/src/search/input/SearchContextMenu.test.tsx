@@ -22,6 +22,7 @@ const mockFetchAutoDefinedSearchContexts = () =>
             autoDefined: true,
             description: 'All repositories on Sourcegraph',
             repositories: [],
+            updatedAt: '2021-03-15T19:39:11Z',
         },
         {
             __typename: 'SearchContext',
@@ -30,6 +31,7 @@ const mockFetchAutoDefinedSearchContexts = () =>
             autoDefined: true,
             description: 'Your repositories on Sourcegraph',
             repositories: [],
+            updatedAt: '2021-03-15T19:39:11Z',
         },
     ] as ISearchContext[])
 
@@ -53,6 +55,7 @@ const mockFetchSearchContexts = ({
             spec: '@username/test-version-1.5',
             autoDefined: false,
             description: 'Only code in version 1.5',
+            updatedAt: '2021-03-15T19:39:11Z',
             repositories: [],
         },
         {
@@ -61,6 +64,7 @@ const mockFetchSearchContexts = ({
             spec: '@org/test-version-1.6',
             autoDefined: false,
             description: 'Only code in version 1.6',
+            updatedAt: '2021-03-15T19:39:11Z',
             repositories: [],
         },
     ].filter(context => !query || context.spec.toLowerCase().includes(query.toLowerCase())) as SearchContextFields[]

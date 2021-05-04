@@ -23,6 +23,7 @@ const mockFetchAutoDefinedSearchContexts = () =>
             autoDefined: true,
             description: 'All repositories on Sourcegraph',
             repositories: [],
+            updatedAt: '2021-03-15T19:39:11Z',
         },
     ] as ISearchContext[])
 

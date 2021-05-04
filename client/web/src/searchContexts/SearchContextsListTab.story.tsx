@@ -1,22 +1,18 @@
 import { storiesOf } from '@storybook/react'
+import { subDays } from 'date-fns'
+import { createMemoryHistory } from 'history'
 import React from 'react'
 import { Observable, of } from 'rxjs'
 
-import { Scalars, SearchContextsNamespaceFilterType } from '@sourcegraph/shared/src/graphql-operations'
+import { WebStory } from '../components/WebStory'
+import { ListSearchContextsResult, Scalars, SearchContextsNamespaceFilterType } from '../graphql-operations'
 
-import { WebStory } from '../../components/WebStory'
-import { ListSearchContextsResult } from '../../graphql-operations'
-import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+import { SearchContextsListTab, SearchContextsListTabProps } from './SearchContextsListTab'
+import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from './testHelpers'
 
-import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
-
-const { add } = storiesOf('web/search/input/SearchContextMenu', module)
+const { add } = storiesOf('web/searchContexts/SearchContextsListTab', module)
     .addParameters({
-        chromatic: { viewports: [500] },
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/4Fy9rURbfF2bsl4BvYunUO/RFC-261-Search-Contexts?node-id=581%3A4754',
-        },
+        chromatic: { viewports: [1200] },
     })
     .addDecorator(story => (
         <div className="dropdown-menu show" style={{ position: 'static' }}>
@@ -24,8 +20,17 @@ const { add } = storiesOf('web/search/input/SearchContextMenu', module)
         </div>
     ))
 
-const defaultProps: SearchContextMenuProps = {
-    showSearchContextManagement: false,
+const history = createMemoryHistory()
+const defaultProps: SearchContextsListTabProps = {
+    history,
+    location: history.location,
+    authenticatedUser: null,
+    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+    fetchSearchContexts: mockFetchSearchContexts,
+}
+
+const propsWithContexts: SearchContextsListTabProps = {
+    ...defaultProps,
     fetchAutoDefinedSearchContexts: of([
         {
             __typename: 'SearchContext',
@@ -34,7 +39,7 @@ const defaultProps: SearchContextMenuProps = {
             autoDefined: true,
             description: 'All repositories on Sourcegraph',
             repositories: [],
-            updatedAt: '2021-03-15T19:39:11Z',
+            updatedAt: subDays(new Date(), 1).toISOString(),
         },
         {
             __typename: 'SearchContext',
@@ -43,7 +48,7 @@ const defaultProps: SearchContextMenuProps = {
             autoDefined: true,
             description: 'Your repositories on Sourcegraph',
             repositories: [],
-            updatedAt: '2021-03-15T19:39:11Z',
+            updatedAt: subDays(new Date(), 1).toISOString(),
         },
     ]),
     fetchSearchContexts: ({
@@ -67,7 +72,7 @@ const defaultProps: SearchContextMenuProps = {
                     spec: '@username/test-version-1.5',
                     autoDefined: false,
                     description: 'Only code in version 1.5',
-                    updatedAt: '2021-03-15T19:39:11Z',
+                    updatedAt: subDays(new Date(), 1).toISOString(),
                     repositories: [],
                 },
             ],
@@ -77,23 +82,8 @@ const defaultProps: SearchContextMenuProps = {
             },
             totalCount: 1,
         }),
-    defaultSearchContextSpec: 'global',
-    selectedSearchContextSpec: 'global',
-    selectSearchContextSpec: () => {},
-    closeMenu: () => {},
 }
 
-const emptySearchContexts = {
-    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
-    fetchSearchContexts: mockFetchSearchContexts,
-}
+add('default', () => <WebStory>{() => <SearchContextsListTab {...defaultProps} />}</WebStory>, {})
 
-add('default', () => <WebStory>{() => <SearchContextMenu {...defaultProps} />}</WebStory>, {})
-
-add('empty', () => <WebStory>{() => <SearchContextMenu {...defaultProps} {...emptySearchContexts} />}</WebStory>, {})
-
-add(
-    'with manage link',
-    () => <WebStory>{() => <SearchContextMenu {...defaultProps} showSearchContextManagement={true} />}</WebStory>,
-    {}
-)
+add('with contexts', () => <WebStory>{() => <SearchContextsListTab {...propsWithContexts} />}</WebStory>, {})

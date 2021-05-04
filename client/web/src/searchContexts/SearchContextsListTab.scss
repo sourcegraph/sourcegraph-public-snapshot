@@ -1,0 +1,13 @@
+.search-contexts-list-tab {
+    &__auto-defined-search-contexts {
+        flex-wrap: wrap;
+
+        .badge {
+            cursor: default;
+        }
+    }
+
+    &__filter-input {
+        max-width: 30%;
+    }
+}

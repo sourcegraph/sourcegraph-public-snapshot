@@ -240,6 +240,7 @@ const searchContextFragment = gql`
         spec
         description
         autoDefined
+        updatedAt
         repositories {
             __typename
             repository {
