@@ -3,16 +3,20 @@ package database
 import (
 	"context"
 	"database/sql"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type QueryRunnerStateStore struct {
 	*basestore.Store
+
+	once sync.Once
 }
 
 // QueryRunnerState instantiates and returns a new QueryRunnerStateStore with prepared statements.
@@ -34,6 +38,17 @@ func (s *QueryRunnerStateStore) Transact(ctx context.Context) (*QueryRunnerState
 	return &QueryRunnerStateStore{Store: txBase}, err
 }
 
+// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
+// This function ensures access to dbconn happens after the rest of the code or tests have
+// initialized it.
+func (s *QueryRunnerStateStore) ensureStore() {
+	s.once.Do(func() {
+		if s.Store == nil {
+			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+		}
+	})
+}
+
 type SavedQueryInfo struct {
 	Query        string
 	LastExecuted time.Time
@@ -44,6 +59,8 @@ type SavedQueryInfo struct {
 // Get gets the saved query information for the given query. nil
 // is returned if there is no existing saved query info.
 func (s *QueryRunnerStateStore) Get(ctx context.Context, query string) (*SavedQueryInfo, error) {
+	s.ensureStore()
+
 	info := &SavedQueryInfo{
 		Query: query,
 	}
@@ -68,6 +85,8 @@ func (s *QueryRunnerStateStore) Get(ctx context.Context, query string) (*SavedQu
 // It is not safe to call concurrently for the same info.Query, as it uses a
 // poor man's upsert implementation.
 func (s *QueryRunnerStateStore) Set(ctx context.Context, info *SavedQueryInfo) error {
+	s.ensureStore()
+
 	res, err := s.Handle().DB().ExecContext(
 		ctx,
 		"UPDATE query_runner_state SET last_executed=$1, latest_result=$2, exec_duration_ns=$3 WHERE query=$4",
@@ -101,6 +120,8 @@ func (s *QueryRunnerStateStore) Set(ctx context.Context, info *SavedQueryInfo) e
 }
 
 func (s *QueryRunnerStateStore) Delete(ctx context.Context, query string) error {
+	s.ensureStore()
+
 	_, err := s.Handle().DB().ExecContext(
 		ctx,
 		"DELETE FROM query_runner_state WHERE query=$1",

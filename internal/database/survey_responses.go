@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"math"
+	"sync"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -20,6 +22,8 @@ type SurveyResponseListOptions struct {
 
 type SurveyResponseStore struct {
 	*basestore.Store
+
+	once sync.Once
 }
 
 // SurveyResponses instantiates and returns a new SurveyResponseStore with prepared statements.
@@ -41,8 +45,21 @@ func (s *SurveyResponseStore) Transact(ctx context.Context) (*SurveyResponseStor
 	return &SurveyResponseStore{Store: txBase}, err
 }
 
+// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
+// This function ensures access to dbconn happens after the rest of the code or tests have
+// initialized it.
+func (s *SurveyResponseStore) ensureStore() {
+	s.once.Do(func() {
+		if s.Store == nil {
+			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+		}
+	})
+}
+
 // Create creates a survey response.
 func (s *SurveyResponseStore) Create(ctx context.Context, userID *int32, email *string, score int, reason *string, better *string) (id int64, err error) {
+	s.ensureStore()
+
 	err = s.Handle().DB().QueryRowContext(ctx,
 		"INSERT INTO survey_responses(user_id, email, score, reason, better) VALUES($1, $2, $3, $4, $5) RETURNING id",
 		userID, email, score, reason, better,
@@ -51,6 +68,8 @@ func (s *SurveyResponseStore) Create(ctx context.Context, userID *int32, email *
 }
 
 func (s *SurveyResponseStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.SurveyResponse, error) {
+	s.ensureStore()
+
 	rows, err := s.Handle().DB().QueryContext(ctx, "SELECT id, user_id, email, score, reason, better, created_at FROM survey_responses "+query, args...)
 	if err != nil {
 		return nil, err
@@ -83,6 +102,8 @@ func (s *SurveyResponseStore) GetByUserID(ctx context.Context, userID int32) ([]
 
 // Count returns the count of all survey responses.
 func (s *SurveyResponseStore) Count(ctx context.Context) (int, error) {
+	s.ensureStore()
+
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM survey_responses")
 
 	var count int
@@ -92,6 +113,8 @@ func (s *SurveyResponseStore) Count(ctx context.Context) (int, error) {
 
 // Last30DaysAverageScore returns the average score for all surveys submitted in the last 30 days.
 func (s *SurveyResponseStore) Last30DaysAverageScore(ctx context.Context) (float64, error) {
+	s.ensureStore()
+
 	q := sqlf.Sprintf("SELECT AVG(score) FROM survey_responses WHERE created_at>%s", thirtyDaysAgo())
 
 	var avg sql.NullFloat64
@@ -102,6 +125,8 @@ func (s *SurveyResponseStore) Last30DaysAverageScore(ctx context.Context) (float
 // Last30DaysNPS returns the net promoter score for all surveys submitted in the last 30 days.
 // This is calculated as 100*((% of responses that are >= 9) - (% of responses that are <= 6))
 func (s *SurveyResponseStore) Last30DaysNetPromoterScore(ctx context.Context) (int, error) {
+	s.ensureStore()
+
 	since := thirtyDaysAgo()
 	promotersQ := sqlf.Sprintf("SELECT COUNT(*) FROM survey_responses WHERE created_at>%s AND score>8", since)
 	detractorsQ := sqlf.Sprintf("SELECT COUNT(*) FROM survey_responses WHERE created_at>%s AND score<7", since)
@@ -126,6 +151,8 @@ func (s *SurveyResponseStore) Last30DaysNetPromoterScore(ctx context.Context) (i
 
 // Last30Count returns the count of surveys submitted in the last 30 days.
 func (s *SurveyResponseStore) Last30DaysCount(ctx context.Context) (int, error) {
+	s.ensureStore()
+
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM survey_responses WHERE created_at>%s", thirtyDaysAgo())
 
 	var count int
