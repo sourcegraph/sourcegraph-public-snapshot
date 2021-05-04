@@ -73,6 +73,10 @@ const PER_PAGE = 25
 const SIX_SECONDS = 6000
 const EIGHT_SECONDS = 8000
 
+// project queries that are used when user syncs all repos from a code host
+const GITLAB_SYNC_ALL_PROJECT_QUERY = 'projects?membership=true&archived=no'
+const GITHUB_SYNC_ALL_PROJECT_QUERY = 'affiliated'
+
 // initial state constants
 const emptyRepos: Repo[] = []
 const initialRepoState = {
@@ -241,7 +245,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             hosts: externalServices,
         })
 
-        let allCodeHostsSyncAffiliatedRepos: boolean | undefined = false
+        const codeHostsHaveSyncAllQuery = []
 
         // if external services may return code hosts with errors or warnings -
         // we can't safely continue
@@ -270,16 +274,21 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 case ExternalServiceKind.GITLAB: {
                     const gitLabCfg = cfg as GitLabConfig
 
-                    allCodeHostsSyncAffiliatedRepos =
-                        gitLabCfg.projectQuery && gitLabCfg.projectQuery[0] === 'affiliated'
+                    if (Array.isArray(gitLabCfg.projectQuery)) {
+                        codeHostsHaveSyncAllQuery.push(gitLabCfg.projectQuery.includes(GITLAB_SYNC_ALL_PROJECT_QUERY))
+                    }
 
                     break
                 }
 
                 case ExternalServiceKind.GITHUB: {
                     const gitHubCfg = cfg as GitHubConfig
-                    allCodeHostsSyncAffiliatedRepos =
-                        gitHubCfg.repositoryQuery && gitHubCfg.repositoryQuery[0] === 'affiliated'
+
+                    if (Array.isArray(gitHubCfg.repositoryQuery)) {
+                        codeHostsHaveSyncAllQuery.push(
+                            gitHubCfg.repositoryQuery.includes(GITHUB_SYNC_ALL_PROJECT_QUERY)
+                        )
+                    }
 
                     break
                 }
@@ -305,7 +314,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             )
 
             if (foundInSelected) {
+                // save off only selected repos
                 selectedAffiliatedRepos.set(affiliatedRepo.name, affiliatedRepo)
+
+                // add mirror info object where it exists - will be used for filters
                 return { ...affiliatedRepo, mirrorInfo: foundInSelected.mirrorInfo }
             }
 
@@ -332,13 +344,16 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         setOnloadSelectedRepos(previousValue => [...previousValue, ...selectedAffiliatedRepos.keys()])
 
         /**
-         * 1. if the number of all affiliated repos is equal to the number
-         * of the repos in all of the code hosts - set radio to 'all'
-         * 2. if some repos were selected - set radio to 'selected'
-         * 3. no repos selected - empty state
+         * 1. if every code host has a project query to sync all repos or the
+         * number of affiliated repos equals to the number of selected repos -
+         * set radio to 'all'
+         * 2. if only some repos were selected - set radio to 'selected'
+         * 3. if no repos selected - empty state
          */
         const radioSelectOption =
-            ALLOW_SYNC_ALL && allCodeHostsSyncAffiliatedRepos
+            ALLOW_SYNC_ALL &&
+            (codeHostsHaveSyncAllQuery.every(Boolean) ||
+                affiliatedReposWithMirrorInfo.length === selectedAffiliatedRepos.size)
                 ? 'all'
                 : selectedAffiliatedRepos.size > 0
                 ? 'selected'
@@ -347,7 +362,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         // set sorted repos and mark as loaded
         setRepoState(previousRepoState => ({
             ...previousRepoState,
-            repos: affiliatedRepos,
+            repos: affiliatedReposWithMirrorInfo,
             loaded: true,
         }))
 
