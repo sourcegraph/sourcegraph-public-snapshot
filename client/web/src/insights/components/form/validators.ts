@@ -1,4 +1,4 @@
-import { ValidationResult, Validator } from '../hooks/useForm'
+import { ValidationResult, Validator } from './hooks/useForm'
 
 /** Validator for required form field which returns error massage as a sign of invalid state. */
 export const createRequiredValidator = <Value>(errorMessage: string): Validator<Value> => (value, validity) => {

@@ -41,7 +41,7 @@ export const CreationIntroPage: React.FunctionComponent = () => (
                 </p>
 
                 <Link
-                    to="/insights/create"
+                    to="/insights/create-search-insight"
                     className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
                 >
                     Create custom insight
@@ -63,7 +63,7 @@ export const CreationIntroPage: React.FunctionComponent = () => (
                 <p>Shows usage of languages in your repository based on number of lines of code.</p>
 
                 <Link
-                    to="/user/settings"
+                    to="/insights/create-lang-stats-insight"
                     className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
                 >
                     Set up language usage insight

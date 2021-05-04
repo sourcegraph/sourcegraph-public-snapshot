@@ -4,20 +4,20 @@ import React, { useCallback, useContext } from 'react'
 import { Redirect } from 'react-router'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { PlatformContextProps } from '@sourcegraph/shared/out/src/platform/context'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { asError } from '@sourcegraph/shared/out/src/util/errors'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
+import { FORM_ERROR } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
 
 import {
     CreationSearchInsightForm,
     CreationSearchInsightFormProps,
 } from './components/creation-search-insight-form/CreationSearchInsightForm'
-import { FORM_ERROR } from './hooks/useForm'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
     eol: '\n',

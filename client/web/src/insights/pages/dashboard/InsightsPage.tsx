@@ -44,7 +44,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
         props.telemetryService.log('InsightAddMoreClick')
     }, [props.telemetryService])
 
-    const configureURL = isCreationUIEnabled ? '/insights/create' : '/user/settings'
+    const configureURL = isCreationUIEnabled ? '/insights/create-intro' : '/user/settings'
 
     return (
         <div className="w-100">

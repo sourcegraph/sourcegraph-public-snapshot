@@ -2,9 +2,9 @@ import { render, RenderResult, act, within, BoundFunction, GetByRole, cleanup, f
 import * as React from 'react'
 import sinon from 'sinon'
 
-import { asError } from '@sourcegraph/shared/out/src/util/errors'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 
-import { FORM_ERROR } from '../../hooks/useForm'
+import { FORM_ERROR } from '../../../../../components/form/hooks/useForm'
 
 import { CreationSearchInsightForm, CreationSearchInsightFormProps } from './CreationSearchInsightForm'
 
@@ -99,7 +99,7 @@ describe('CreateInsightForm', () => {
             fireEvent.change(repositories, { target: { value: 'github.com/sourcegraph/sourcegraph' } })
             fireEvent.click(organisationVisibility)
 
-            const submitSeriesButton = within(dataSeriesGroup).getByRole('button', { name: /done/i })
+            const submitSeriesButton = within(dataSeriesGroup).getByRole('button', { name: /submit/i })
 
             const yellowColorRadio = within(dataSeriesGroup).getByRole('radio', { name: /yellow/i })
 
@@ -223,7 +223,7 @@ describe('CreateInsightForm', () => {
             fireEvent.change(repositories, { target: { value: 'github.com/sourcegraph/sourcegraph' } })
             fireEvent.click(organisationVisibility)
 
-            const submitSeriesButton = within(dataSeriesGroup).getByRole('button', { name: /done/i })
+            const submitSeriesButton = within(dataSeriesGroup).getByRole('button', { name: /submit/i })
 
             const yellowColorRadio = within(dataSeriesGroup).getByRole('radio', { name: /yellow/i })
 

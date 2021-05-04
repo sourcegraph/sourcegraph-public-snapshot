@@ -2,11 +2,11 @@ import classnames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
-import { useField, useForm } from '../../hooks/useForm'
 import { InputField } from '../../../../../components/form/form-field/FormField'
+import { useField, useForm } from '../../../../../components/form/hooks/useForm'
+import { createRequiredValidator } from '../../../../../components/form/validators'
 import { DataSeries } from '../../types'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
-import { createRequiredValidator } from '../../../../../components/form/validators'
 
 const requiredNameField = createRequiredValidator('Name is required field for data series.')
 const validQuery = createRequiredValidator('Query is required field for data series.')

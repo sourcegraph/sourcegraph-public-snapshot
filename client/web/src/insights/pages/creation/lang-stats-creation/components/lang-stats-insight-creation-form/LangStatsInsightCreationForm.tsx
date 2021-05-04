@@ -1,154 +1,149 @@
-import classnames from 'classnames';
-import { FORM_ERROR, FormApi, SubmissionErrors } from 'final-form';
-import createFocusDecorator from 'final-form-focus';
-import React, { useEffect, useMemo, useRef } from 'react';
-import { useField, useForm } from 'react-final-form-hooks';
-import { noop } from 'rxjs';
+import classnames from 'classnames'
+import React from 'react'
 
-import { InputField } from '../../../../../components/form/form-field/FormField';
-import { FormGroup } from '../../../../../components/form/form-group/FormGroup';
-import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput';
-import { composeValidators, createRequiredValidator } from '../../../../../components/form/validators';
+import { ErrorAlert } from '../../../../../../components/alerts'
+import { LoaderButton } from '../../../../../../components/LoaderButton'
+import { InputField } from '../../../../../components/form/form-field/FormField'
+import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
+import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
+import { SubmissionErrors, useForm, useField, FORM_ERROR } from '../../../../../components/form/hooks/useForm'
+import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
+import { createRequiredValidator } from '../../../../../components/form/validators'
 
-import styles from './LangStatsInsightCreationForm.module.scss';
+import styles from './LangStatsInsightCreationForm.module.scss'
 
-const requiredTitleField = createRequiredValidator('Title is required field for code insight.')
-const repositoriesFieldValidator = composeValidators(
-    createRequiredValidator('Repositories is required field for code insight.')
-)
+const repositoriesFieldValidator = createRequiredValidator('Repositories is required field for code insight.')
+const thresholdFieldValidator = createRequiredValidator('Threshold is required field for code insight.')
 
 export interface LangStatsInsightCreationFormProps {
-    className?: string;
-    onSubmit: (
-        values: LangStatsCreationFormFields,
-        form: FormApi<LangStatsCreationFormFields, Partial<LangStatsCreationFormFields>>
-    ) => SubmissionErrors | Promise<SubmissionErrors> | void
+    settings: { [key: string]: unknown }
+    className?: string
+    onSubmit: (values: LangStatsCreationFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
+    onCancel: () => void
 }
 
 export interface LangStatsCreationFormFields {
-    title: string;
-    repository: string;
-    threshold: number;
+    title: string
+    repository: string
+    threshold: number
     visibility: 'personal' | 'organisation'
 }
 
 const INITIAL_VALUES: Partial<LangStatsCreationFormFields> = {
-    threshold: 2,
-    visibility: 'personal'
+    repository: '',
+    title: '',
+    threshold: 10,
+    visibility: 'personal',
 }
 
 export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsightCreationFormProps> = props => {
-    const { className, onSubmit } = props;
+    const { className, onSubmit, onCancel, settings } = props
 
-    const titleReference = useRef<HTMLInputElement>(null);
-    const repositoryReference = useRef<HTMLInputElement>(null);
-    const thresholdReference = useRef<HTMLInputElement>(null);
-
-    const focusOnErrorsDecorator = useMemo(() => {
-        const noopFocus = { focus: noop, name: '' }
-
-        return createFocusDecorator<LangStatsCreationFormFields>(() => [
-            repositoryReference.current ?? noopFocus,
-            titleReference.current ?? noopFocus,
-            thresholdReference.current ?? noopFocus,
-        ])
-    }, [])
-
-    const { handleSubmit, form, submitErrors } = useForm<LangStatsCreationFormFields>({
+    const { handleSubmit, formAPI, ref } = useForm<LangStatsCreationFormFields>({
         initialValues: INITIAL_VALUES,
-        onSubmit
-    });
+        onSubmit,
+    })
 
-    const repository = useField('repository', form, repositoriesFieldValidator);
-    const title = useField('title', form, requiredTitleField);
-    const threshold = useField('threshold', form)
-    const visibility = useField('visibility', form);
+    const titleValidator = useTitleValidator({ settings, insightType: 'codeStatsInsights' })
 
-    useEffect(() => focusOnErrorsDecorator(form), [form, focusOnErrorsDecorator])
+    const repository = useField('repository', formAPI, repositoriesFieldValidator)
+    const title = useField('title', formAPI, titleValidator)
+    const threshold = useField('threshold', formAPI, thresholdFieldValidator)
+    const visibility = useField('visibility', formAPI)
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form className={classnames(className, styles.form)} onSubmit={handleSubmit}>
-
+        <form
+            ref={ref}
+            noValidate={true}
+            className={classnames(className, 'd-flex flex-column')}
+            onSubmit={handleSubmit}
+        >
             <InputField
-                autofocus={true}
+                required={true}
+                autoFocus={true}
                 title="Repository"
                 description="This insight is limited to one repository. You can set up muliple language usage charts for many repositories."
                 placeholder="Add or search for repository"
-                valid={repository.meta.touched && repository.meta.valid}
+                valid={repository.meta.touched && repository.meta.validState === 'VALID'}
                 error={repository.meta.touched && repository.meta.error}
                 {...repository.input}
-                ref={repositoryReference}
-                className={styles.formField}
+                className="mb-0"
             />
 
             <InputField
+                required={true}
                 title="Title"
                 description="Shown as title for your insight"
                 placeholder="ex. Migration to React function components"
-                valid={title.meta.touched && title.meta.valid}
+                valid={title.meta.touched && title.meta.validState === 'VALID'}
                 error={title.meta.touched && title.meta.error}
                 {...title.input}
-                ref={titleReference}
-                className={styles.formField}
+                className="mb-0 mt-4"
             />
 
             <InputField
+                required={true}
+                min={10}
+                max={100}
+                type="number"
                 title="Threshold of ‘Other’ category"
-                description="the threshold for grouping all other languages into an 'other' category"
-                valid={threshold.meta.touched && threshold.meta.valid}
+                description="The threshold for grouping all other languages into an 'other' category"
+                valid={threshold.meta.touched && threshold.meta.validState === 'VALID'}
                 error={threshold.meta.touched && threshold.meta.error}
                 {...threshold.input}
-                ref={thresholdReference}
-                className={classnames(styles.formField)}
+                className="mb-0 mt-4"
                 inputClassName={styles.formThresholdInput}
-                inputSymbol={<span className={styles.formThresholdInputSymbol}>%</span>}/>
+                inputSymbol={<span className={styles.formThresholdInputSymbol}>%</span>}
+            />
 
             <FormGroup
                 name="visibility"
                 title="Visibility"
                 description="This insight will be visible only on your personal dashboard. It will not be show to other
                             users in your organisation."
-                className={styles.formField}
+                className="mb-0 mt-4"
+                contentClassName="d-flex flex-wrap mb-n2"
             >
-                <div className={styles.formRadioGroupContent}>
-                    <FormRadioInput
-                        name="visibility"
-                        value="personal"
-                        title="Personal"
-                        description="only for you"
-                        checked={visibility.input.value === 'personal'}
-                        className={styles.formRadio}
-                        onChange={visibility.input.onChange}
-                    />
+                <FormRadioInput
+                    name="visibility"
+                    value="personal"
+                    title="Personal"
+                    description="only for you"
+                    checked={visibility.input.value === 'personal'}
+                    className="mr-3"
+                    onChange={visibility.input.onChange}
+                />
 
-                    <FormRadioInput
-                        name="visibility"
-                        value="organization"
-                        title="Organization"
-                        description="to all users in your organization"
-                        checked={visibility.input.value === 'organization'}
-                        onChange={visibility.input.onChange}
-                        className={styles.formRadio}
-                    />
-                </div>
+                <FormRadioInput
+                    name="visibility"
+                    value="organization"
+                    title="Organization"
+                    description="to all users in your organization"
+                    checked={visibility.input.value === 'organisation'}
+                    onChange={visibility.input.onChange}
+                    className="mr-3"
+                />
             </FormGroup>
 
-            <div className={styles.formButtons}>
-                {submitErrors?.[FORM_ERROR] && (
-                    <div className="alert alert-danger">{submitErrors[FORM_ERROR].toString()}</div>
-                )}
+            <hr className={styles.formSeparator} />
 
-                <button
+            <div>
+                {formAPI.submitErrors?.[FORM_ERROR] && <ErrorAlert error={formAPI.submitErrors[FORM_ERROR]} />}
+
+                <LoaderButton
+                    alwaysShowLabel={true}
+                    loading={formAPI.submitting}
+                    label={formAPI.submitting ? 'Submitting' : 'Create code insight'}
                     type="submit"
-                    className={classnames(styles.formButton, 'btn btn-primary')}
-                >
-                    Create code insight
-                </button>
-                <button type="button" className={classnames(styles.formButton, 'btn btn-outline-secondary')}>
+                    disabled={formAPI.submitting}
+                    className="btn btn-primary mr-2"
+                />
+
+                <button type="button" className="btn btn-outline-secondary" onClick={onCancel}>
                     Cancel
                 </button>
             </div>
         </form>
-    );
+    )
 }

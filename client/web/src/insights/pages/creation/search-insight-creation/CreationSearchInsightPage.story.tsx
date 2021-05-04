@@ -4,8 +4,8 @@ import React from 'react'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
-import { WebStory } from '../../../components/WebStory'
-import { authUser } from '../../../search/panels/utils'
+import { WebStory } from '../../../../components/WebStory'
+import { authUser } from '../../../../search/panels/utils'
 
 import { CreationSearchInsightPage, CreationSearchInsightPageProps } from './CreationSearchInsightPage'
 
