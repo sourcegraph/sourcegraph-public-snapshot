@@ -9,7 +9,6 @@ import React, { useState, useCallback, useEffect } from 'react'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { BatchChangeFields } from '../../../graphql-operations'
 
@@ -24,11 +23,7 @@ import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
 
 type SelectedTab = 'changesets' | 'chart' | 'spec' | 'archived'
 
-export interface BatchChangeTabsProps
-    extends ExtensionsControllerProps,
-        ThemeProps,
-        PlatformContextProps,
-        TelemetryProps {
+export interface BatchChangeTabsProps extends ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
     batchChange: BatchChangeFields
     changesetsCount: number
     archivedCount: number
@@ -45,7 +40,6 @@ export interface BatchChangeTabsProps
 export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
     extensionsController,
     history,
-    isLightTheme,
     location,
     platformContext,
     telemetryService,
@@ -182,7 +176,6 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                     viewerCanAdminister={batchChange.viewerCanAdminister}
                     history={history}
                     location={location}
-                    isLightTheme={isLightTheme}
                     extensionsController={extensionsController}
                     platformContext={platformContext}
                     telemetryService={telemetryService}
@@ -200,7 +193,6 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                     viewerCanAdminister={batchChange.viewerCanAdminister}
                     history={history}
                     location={location}
-                    isLightTheme={isLightTheme}
                     extensionsController={extensionsController}
                     platformContext={platformContext}
                     telemetryService={telemetryService}

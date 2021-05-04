@@ -25,7 +25,7 @@ export interface LineDecoratorProps extends ThemeProps {
  * Component that decorates lines of code and appends line attachments set by extensions
  */
 export const LineDecorator = React.memo<LineDecoratorProps>(
-    ({ getCodeElementFromLineNumber, line, decorations, portalID, isLightTheme, codeViewElements }) => {
+    ({ getCodeElementFromLineNumber, line, decorations, portalID, codeViewElements }) => {
         const [portalNode, setPortalNode] = React.useState<HTMLDivElement | null>(null)
 
         // `LineDecorator` uses `useLayoutEffect` instead of `useEffect` in order to synchronously re-render

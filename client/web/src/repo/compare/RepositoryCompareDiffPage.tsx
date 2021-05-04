@@ -11,7 +11,6 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -28,18 +27,10 @@ export function queryRepositoryComparisonFileDiffs(args: {
     head: string | null
     first?: number
     after?: string
-    isLightTheme: boolean
 }): Observable<GQL.IFileDiffConnection> {
     return queryGraphQL(
         gql`
-            query RepositoryComparisonDiff(
-                $repo: ID!
-                $base: String
-                $head: String
-                $first: Int
-                $after: String
-                $isLightTheme: Boolean!
-            ) {
+            query RepositoryComparisonDiff($repo: ID!, $base: String, $head: String, $first: Int, $after: String) {
                 node(id: $repo) {
                     ... on Repository {
                         comparison(base: $base, head: $head) {
@@ -84,8 +75,7 @@ interface RepositoryCompareDiffPageProps
     extends RepositoryCompareAreaPageProps,
         RouteComponentProps<{}>,
         PlatformContextProps,
-        ExtensionsControllerProps,
-        ThemeProps {
+        ExtensionsControllerProps {
     /** The base of the comparison. */
     base: { repoName: string; repoID: Scalars['ID']; revision: string | null; commitID: string }
 
@@ -115,7 +105,6 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                         },
                         lineNumbers: true,
                     }}
-                    updateOnChange={String(this.props.isLightTheme)}
                     defaultFirst={15}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
@@ -133,6 +122,5 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
             repo: this.props.repo.id,
             base: this.props.base.commitID,
             head: this.props.head.commitID,
-            isLightTheme: this.props.isLightTheme,
         })
 }

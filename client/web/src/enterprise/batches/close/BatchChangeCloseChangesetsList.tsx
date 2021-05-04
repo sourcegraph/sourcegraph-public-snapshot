@@ -12,7 +12,6 @@ import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -36,7 +35,7 @@ import {
 import { ChangesetCloseNodeProps, ChangesetCloseNode } from './ChangesetCloseNode'
 import { CloseChangesetsListEmptyElement } from './CloseChangesetsListEmptyElement'
 
-interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
+interface Props extends PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     batchChangeID: Scalars['ID']
     viewerCanAdminister: boolean
     history: H.History
@@ -60,7 +59,6 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
     viewerCanAdminister,
     history,
     location,
-    isLightTheme,
     extensionsController,
     platformContext,
     telemetryService,
@@ -153,7 +151,6 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                 className="mt-2"
                 nodeComponent={ChangesetCloseNode}
                 nodeComponentProps={{
-                    isLightTheme,
                     viewerCanAdminister,
                     history,
                     location,
@@ -183,7 +180,6 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                     {...hoverState.hoverOverlayProps}
                     telemetryService={telemetryService}
                     extensionsController={extensionsController}
-                    isLightTheme={isLightTheme}
                     location={location}
                     platformContext={platformContext}
                     hoverRef={nextOverlayElement}

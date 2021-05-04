@@ -139,7 +139,7 @@ const domFunctions = {
  * in this state, hovers can lead to errors like `DocumentNotFoundError`.
  */
 export const Blob: React.FunctionComponent<BlobProps> = props => {
-    const { location, isLightTheme, extensionsController, blobInfo, platformContext } = props
+    const { location, extensionsController, blobInfo, platformContext } = props
 
     // Element reference subjects passed to `hoverifier`
     const blobElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
@@ -536,7 +536,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                             const portalID = toPortalID(line)
                             return (
                                 <LineDecorator
-                                    isLightTheme={isLightTheme}
                                     key={`${portalID}-${blobInfo.filePath}`}
                                     portalID={portalID}
                                     getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}

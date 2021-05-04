@@ -7,7 +7,6 @@ import { Hoverifier } from '@sourcegraph/codeintellify'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
@@ -16,7 +15,7 @@ import { FilteredConnectionQueryArguments } from '../../../../components/Filtere
 import { ExternalChangesetFileDiffsFields, GitRefSpecFields, Scalars } from '../../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../backend'
 
-export interface ChangesetFileDiffProps extends ThemeProps {
+export interface ChangesetFileDiffProps {
     changesetID: Scalars['ID']
     history: H.History
     location: H.Location
@@ -31,7 +30,6 @@ export interface ChangesetFileDiffProps extends ThemeProps {
 }
 
 export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> = ({
-    isLightTheme,
     changesetID,
     history,
     location,
@@ -53,7 +51,6 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
                 after: args.after ?? null,
                 first: args.first ?? null,
                 externalChangeset: changesetID,
-                isLightTheme,
             }).pipe(
                 map(changeset => changeset.diff),
                 tap(diff => {
@@ -75,7 +72,7 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
                         }
                 )
             ),
-        [changesetID, isLightTheme, queryExternalChangesetWithFileDiffs]
+        [changesetID, queryExternalChangesetWithFileDiffs]
     )
 
     const hydratedExtensionInfo = useMemo(() => {
@@ -115,7 +112,6 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
             nodeComponentProps={{
                 history,
                 location,
-                isLightTheme,
                 persistLines: true,
                 extensionInfo: hydratedExtensionInfo,
                 lineNumbers: true,

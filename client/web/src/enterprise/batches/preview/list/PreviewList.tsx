@@ -3,8 +3,6 @@ import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import React, { useCallback, useState } from 'react'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
@@ -16,7 +14,7 @@ import { PreviewFilterRow, PreviewFilters } from './PreviewFilterRow'
 import styles from './PreviewList.module.scss'
 import { PreviewListHeader } from './PreviewListHeader'
 
-interface Props extends ThemeProps {
+interface Props {
     batchSpecID: Scalars['ID']
     history: H.History
     location: H.Location
@@ -38,7 +36,6 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     history,
     location,
     authenticatedUser,
-    isLightTheme,
 
     queryChangesetApplyPreview = _queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
@@ -72,7 +69,6 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                 className="mt-2"
                 nodeComponent={ChangesetApplyPreviewNode}
                 nodeComponentProps={{
-                    isLightTheme,
                     history,
                     location,
                     authenticatedUser,

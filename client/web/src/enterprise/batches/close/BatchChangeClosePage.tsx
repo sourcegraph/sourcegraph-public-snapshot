@@ -6,7 +6,6 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard'
@@ -26,11 +25,7 @@ import { closeBatchChange as _closeBatchChange } from './backend'
 import { BatchChangeCloseAlert } from './BatchChangeCloseAlert'
 import { BatchChangeCloseChangesetsList } from './BatchChangeCloseChangesetsList'
 
-export interface BatchChangeClosePageProps
-    extends ThemeProps,
-        TelemetryProps,
-        PlatformContextProps,
-        ExtensionsControllerProps {
+export interface BatchChangeClosePageProps extends TelemetryProps, PlatformContextProps, ExtensionsControllerProps {
     /**
      * The namespace ID.
      */
@@ -58,7 +53,6 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
     history,
     location,
     extensionsController,
-    isLightTheme,
     platformContext,
     telemetryService,
     fetchBatchChangeByNamespace = _fetchBatchChangeByNamespace,
@@ -143,7 +137,6 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
                 location={location}
                 viewerCanAdminister={batchChange.viewerCanAdminister}
                 extensionsController={extensionsController}
-                isLightTheme={isLightTheme}
                 platformContext={platformContext}
                 telemetryService={telemetryService}
                 queryChangesets={queryChangesets}

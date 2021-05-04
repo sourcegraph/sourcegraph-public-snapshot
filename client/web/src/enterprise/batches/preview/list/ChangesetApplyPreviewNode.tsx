@@ -1,8 +1,6 @@
 import * as H from 'history'
 import React from 'react'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-
 import { ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 
@@ -11,7 +9,7 @@ import styles from './ChangesetApplyPreviewNode.module.scss'
 import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNode'
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
 
-export interface ChangesetApplyPreviewNodeProps extends ThemeProps {
+export interface ChangesetApplyPreviewNodeProps {
     node: ChangesetApplyPreviewFields
     history: H.History
     location: H.Location
@@ -28,7 +26,6 @@ export const ChangesetApplyPreviewNode: React.FunctionComponent<ChangesetApplyPr
     history,
     location,
     authenticatedUser,
-    isLightTheme,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
 }) => {
@@ -47,7 +44,6 @@ export const ChangesetApplyPreviewNode: React.FunctionComponent<ChangesetApplyPr
                 node={node}
                 history={history}
                 location={location}
-                isLightTheme={isLightTheme}
                 authenticatedUser={authenticatedUser}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                 expandChangesetDescriptions={expandChangesetDescriptions}

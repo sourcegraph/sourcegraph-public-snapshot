@@ -11,7 +11,6 @@ import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -31,7 +30,7 @@ import { DownloadDiffButton } from './DownloadDiffButton'
 import { ExternalChangesetInfoCell } from './ExternalChangesetInfoCell'
 import styles from './ExternalChangesetNode.module.scss'
 
-export interface ExternalChangesetNodeProps extends ThemeProps {
+export interface ExternalChangesetNodeProps {
     node: ExternalChangesetFields
     viewerCanAdminister: boolean
     enableSelect?: boolean
@@ -54,7 +53,6 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     enableSelect,
     onSelect,
     isSelected,
-    isLightTheme,
     history,
     location,
     extensionInfo,
@@ -199,7 +197,6 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                         <ChangesetError node={node} />
                         <ChangesetFileDiff
                             changesetID={node.id}
-                            isLightTheme={isLightTheme}
                             history={history}
                             location={location}
                             repositoryID={node.repository.id}

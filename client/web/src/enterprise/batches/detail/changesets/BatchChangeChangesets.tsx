@@ -11,7 +11,6 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { property, isDefined } from '@sourcegraph/shared/src/util/types'
@@ -38,7 +37,7 @@ import { EmptyArchivedChangesetListElement } from './EmptyArchivedChangesetListE
 import { EmptyChangesetListElement } from './EmptyChangesetListElement'
 import { EmptyChangesetSearchElement } from './EmptyChangesetSearchElement'
 
-interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
+interface Props extends PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     batchChangeID: Scalars['ID']
     viewerCanAdminister: boolean
     history: H.History
@@ -65,7 +64,6 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     viewerCanAdminister,
     history,
     location,
-    isLightTheme,
     extensionsController,
     platformContext,
     telemetryService,
@@ -252,7 +250,6 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     className="mt-2"
                     nodeComponent={ChangesetNode}
                     nodeComponentProps={{
-                        isLightTheme,
                         viewerCanAdminister,
                         history,
                         location,
@@ -301,7 +298,6 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                         {...hoverState.hoverOverlayProps}
                         telemetryService={telemetryService}
                         extensionsController={extensionsController}
-                        isLightTheme={isLightTheme}
                         location={location}
                         platformContext={platformContext}
                         hoverRef={nextOverlayElement}

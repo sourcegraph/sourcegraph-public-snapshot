@@ -8,7 +8,6 @@ import { Hoverifier } from '@sourcegraph/codeintellify'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { ErrorAlert } from '../../../components/alerts'
@@ -23,7 +22,7 @@ import { ExternalChangesetInfoCell } from '../detail/changesets/ExternalChangese
 import { ChangesetCloseActionClose, ChangesetCloseActionKept } from './ChangesetCloseAction'
 import styles from './ExternalChangesetCloseNode.module.scss'
 
-export interface ExternalChangesetCloseNodeProps extends ThemeProps {
+export interface ExternalChangesetCloseNodeProps {
     node: ExternalChangesetFields
     willClose: boolean
     viewerCanAdminister: boolean
@@ -40,7 +39,6 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
     node,
     willClose,
     viewerCanAdminister,
-    isLightTheme,
     history,
     location,
     extensionInfo,
@@ -120,7 +118,6 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
                     {node.error && <ErrorAlert error={node.error} />}
                     <ChangesetFileDiff
                         changesetID={node.id}
-                        isLightTheme={isLightTheme}
                         history={history}
                         location={location}
                         repositoryID={node.repository.id}

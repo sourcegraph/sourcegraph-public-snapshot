@@ -8,7 +8,6 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard'
 
@@ -34,11 +33,7 @@ import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
 
-export interface BatchChangeDetailsPageProps
-    extends ThemeProps,
-        ExtensionsControllerProps,
-        PlatformContextProps,
-        TelemetryProps {
+export interface BatchChangeDetailsPageProps extends ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
     /**
      * The namespace ID.
      */
@@ -70,7 +65,6 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
     batchChangeName,
     history,
     location,
-    isLightTheme,
     extensionsController,
     platformContext,
     telemetryService,
@@ -160,7 +154,6 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 archivedCount={batchChange.changesetsStats.archived}
                 extensionsController={extensionsController}
                 history={history}
-                isLightTheme={isLightTheme}
                 location={location}
                 platformContext={platformContext}
                 telemetryService={telemetryService}

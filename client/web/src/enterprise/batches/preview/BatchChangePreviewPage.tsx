@@ -6,7 +6,6 @@ import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard'
 
@@ -27,7 +26,7 @@ import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 
 export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
 
-export interface BatchChangePreviewPageProps extends ThemeProps, TelemetryProps {
+export interface BatchChangePreviewPageProps extends TelemetryProps {
     batchSpecID: string
     history: H.History
     location: H.Location
@@ -48,7 +47,6 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
     history,
     location,
     authenticatedUser,
-    isLightTheme,
     telemetryService,
     fetchBatchSpecById = _fetchBatchSpecById,
     queryChangesetApplyPreview,
@@ -116,7 +114,6 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                 history={history}
                 location={location}
                 authenticatedUser={authenticatedUser}
-                isLightTheme={isLightTheme}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                 expandChangesetDescriptions={expandChangesetDescriptions}
