@@ -84,7 +84,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                 )
                             }
                             path={[{ to: '/extensions', icon: PuzzleOutlineIcon }, { text: publisher }, { text: name }]}
-                            byline={
+                            description={
                                 manifest &&
                                 (manifest.description || isWorkInProgress) && (
                                     <p className="mt-1 mb-0">{manifest.description}</p>

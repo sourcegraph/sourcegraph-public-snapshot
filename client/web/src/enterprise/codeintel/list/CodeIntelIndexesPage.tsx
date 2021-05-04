@@ -80,7 +80,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
             <PageTitle title="Precise code intelligence auto-index records" />
             <PageHeader
                 path={[{ text: 'Precise code intelligence auto-index records' }]}
-                byline={
+                description={
                     <p>
                         Popular repositories are indexed automatically on{' '}
                         <a href="https://sourcegraph.com" target="_blank" rel="noreferrer noopener">

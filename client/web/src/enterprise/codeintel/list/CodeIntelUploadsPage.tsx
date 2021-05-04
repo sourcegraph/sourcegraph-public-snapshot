@@ -107,7 +107,7 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
             <PageTitle title="Precise code intelligence uploads" />
             <PageHeader
                 path={[{ text: 'Precise code intelligence upload' }]}
-                byline={
+                description={
                     <>
                         <p>
                             Enable precise code intelligence by{' '}
