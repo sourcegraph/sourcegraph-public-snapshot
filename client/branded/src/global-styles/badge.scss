@@ -38,21 +38,26 @@
             border-color: var(--body-bg);
 
             @at-root #{selector-append('.theme-light', &)} {
-                box-shadow: 0 0 0 2px $light-color-variant;
+                box-shadow: 0 0 0 0.125rem $light-color-variant;
             }
             @at-root #{selector-append('.theme-dark', &)} {
-                box-shadow: 0 0 0 2px $dark-color-variant;
+                box-shadow: 0 0 0 0.125rem $dark-color-variant;
             }
         }
     }
 }
 
-.theme-light.theme-redesign,
-.theme-dark.theme-redesign {
+.theme-redesign {
     .badge {
         background-color: var(--subtle-bg);
         color: var(--link-color);
         border: 1px solid var(--subtle-bg);
+
+        &:focus,
+        &.focus {
+            outline: 0;
+            border-color: var(--body-bg);
+        }
     }
 
     @include redesign-badge-variant(
@@ -111,9 +116,18 @@
         $light-color-variant: var(--info-3),
         $dark-color-variant: var(--info-3) // TODO: No darker variant?
     );
+}
 
-    // Use default focus state for better contrast
-    .badge-secondary {
+.theme-light.theme-redesign,
+.theme-dark.theme-redesign {
+    // Update secondary text color and focus state for better contrast
+    a.badge-secondary {
+        &:hover,
+        &:focus,
+        &.focus {
+            color: var(--body-color);
+        }
+
         &:focus,
         &.focus {
             box-shadow: var(--focus-box-shadow);
