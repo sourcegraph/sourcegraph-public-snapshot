@@ -575,7 +575,7 @@ var ErrChangesetsToDetachNotFound = errors.New("some changesets that should be d
 // by checking whether the actor in the context has permission to enqueue a
 // reconciler run and then enqueues it by calling ResetReconcilerState.
 func (s *Service) DetachChangesets(ctx context.Context, batchChangeID int64, ids []int64) (err error) {
-	traceTitle := fmt.Sprintf("batchChangeID: %d, changeset: %d", batchChangeID, ids)
+	traceTitle := fmt.Sprintf("batchChangeID: %d, len(changeset): %d", batchChangeID, len(ids))
 	tr, ctx := trace.New(ctx, "service.DetachChangesets", traceTitle)
 	defer func() {
 		tr.SetError(err)
@@ -635,4 +635,85 @@ func (s *Service) DetachChangesets(ctx context.Context, batchChangeID int64, ids
 	}
 
 	return nil
+}
+
+// ErrChangesetsForJobNotFound can be returned by (*Service).CreateChangesetJobs
+// if the number of changesets returned from the database doesn't match the
+// number if IDs passed in. That can happen if some of the changesets are not
+// published.
+var ErrChangesetsForJobNotFound = errors.New("some changesets could not be found")
+
+// CreateChangesetJobs creates one changeset job for each given Changeset in the
+// given BatchChange, checking whether the actor in the context has permission to
+// trigger a job, and enqueues it.
+func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, ids []int64, jobType btypes.ChangesetJobType, payload interface{}) (bulkGroupID string, err error) {
+	traceTitle := fmt.Sprintf("batchChangeID: %d, len(changesets): %d", batchChangeID, len(ids))
+	tr, ctx := trace.New(ctx, "service.CreateChangesetJobs", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// Load the BatchChange to check for write permissions.
+	batchChange, err := s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChangeID})
+	if err != nil {
+		return bulkGroupID, errors.Wrap(err, "loading batch change")
+	}
+
+	// 🚨 SECURITY: Only the author of the batch change can create jobs.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, batchChange.InitialApplierID); err != nil {
+		return bulkGroupID, err
+	}
+
+	published := btypes.ChangesetPublicationStatePublished
+	cs, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
+		IDs:           ids,
+		BatchChangeID: batchChangeID,
+		// We can only run jobs on published changesets.
+		PublicationState: &published,
+		// TODO: Do we want to allow this on imported changesets?
+		// OwnedByBatchChangeID: batchChangeID,
+
+		// We only want to allow changesets the user has access to.
+		EnforceAuthz: true,
+	})
+	if err != nil {
+		return bulkGroupID, errors.Wrap(err, "listing changesets")
+	}
+
+	if len(cs) != len(ids) {
+		return bulkGroupID, ErrChangesetsForJobNotFound
+	}
+
+	bulkGroupID, err = store.RandomID()
+	if err != nil {
+		return bulkGroupID, errors.Wrap(err, "creating bulkGroupID failed")
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return bulkGroupID, errors.Wrap(err, "starting transaction")
+	}
+	defer func() { err = tx.Done(err) }()
+
+	userID := actor.FromContext(ctx).UID
+	changesetJobs := make([]*btypes.ChangesetJob, 0, len(cs))
+	for _, changeset := range cs {
+		changesetJobs = append(changesetJobs, &btypes.ChangesetJob{
+			BulkGroup:     bulkGroupID,
+			ChangesetID:   changeset.ID,
+			BatchChangeID: batchChangeID,
+			UserID:        userID,
+			State:         btypes.ChangesetJobStateQueued,
+			JobType:       jobType,
+			Payload:       payload,
+		})
+	}
+
+	// Bulk-insert all changeset jobs into the database.
+	if err := tx.CreateChangesetJob(ctx, changesetJobs...); err != nil {
+		return bulkGroupID, errors.Wrap(err, "creating changeset jobs")
+	}
+
+	return bulkGroupID, nil
 }

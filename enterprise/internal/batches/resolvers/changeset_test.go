@@ -34,7 +34,7 @@ func TestChangesetResolver(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, clock)
+	cstore := store.NewWithClock(db, nil, clock)
 	esStore := database.ExternalServicesWith(cstore)
 	repoStore := database.ReposWith(cstore)
 
@@ -156,7 +156,10 @@ func TestChangesetResolver(t *testing.T) {
 			UpdatedAt: now,
 		},
 	})
-	events := syncedGitHubChangeset.Events()
+	events, err := syncedGitHubChangeset.Events()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := cstore.UpsertChangesetEvents(ctx, events...); err != nil {
 		t.Fatal(err)
 	}

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/dineshappavoo/basex"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
@@ -99,7 +98,7 @@ func (s *Store) createChangesetSpecQuery(c *btypes.ChangesetSpec) (*sqlf.Query, 
 	}
 
 	if c.RandID == "" {
-		if c.RandID, err = basex.Encode(strconv.Itoa(seededRand.Int())); err != nil {
+		if c.RandID, err = RandomID(); err != nil {
 			return nil, errors.Wrap(err, "creating RandID failed")
 		}
 	}

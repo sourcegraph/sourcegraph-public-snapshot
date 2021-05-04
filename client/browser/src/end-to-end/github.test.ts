@@ -52,15 +52,20 @@ describe('Sourcegraph browser extension on github.com', function () {
         base: {
             token: 'varsN',
             lineId: 'diff-a609417fa264c6aed88fb8cfe2d9b4fb24226ffdf7db1f685e344d5239783d46L244',
-            goToDefinitionURL:
+            goToDefinitionURLs: [
                 'https://github.com/gorilla/mux/blob/f15e0c49460fd49eebe2bcc8486b05d1bef68d3a/regexp.go#L139:2',
+            ],
         },
         // https://github.com/gorilla/mux/pull/117/files#diff-9ef8a22c4ce5141c30a501c542fb1adeR247
         head: {
             token: 'host',
             lineId: 'diff-a609417fa264c6aed88fb8cfe2d9b4fb24226ffdf7db1f685e344d5239783d46R247',
-            goToDefinitionURL:
-                'https://github.com/gorilla/mux/blob/e73f183699f8ab7d54609771e1fa0ab7ffddc21b/mux_test.go#L20:2',
+            // There are multiple passing go to definition URLs:
+            // https://github.com/sourcegraph/sourcegraph/pull/20520
+            goToDefinitionURLs: [
+                'https://github.com/gorilla/mux/blob/e73f183699f8ab7d54609771e1fa0ab7ffddc21b/regexp.go#L233:2',
+                'https://sourcegraph.com/github.com/gorilla/mux@e73f183699f8ab7d54609771e1fa0ab7ffddc21b/-/blob/regexp.go#L247:24&tab=def',
+            ],
         },
     }
 
@@ -68,7 +73,7 @@ describe('Sourcegraph browser extension on github.com', function () {
         for (const diffType of ['unified', 'split']) {
             describe(`${startCase(diffType)} view`, () => {
                 for (const side of ['base', 'head'] as const) {
-                    const { token, lineId, goToDefinitionURL } = tokens[side]
+                    const { token, lineId, goToDefinitionURLs } = tokens[side]
                     it(`provides hover tooltips on token "${token}" in the ${side} part`, async () => {
                         await driver.page.goto(`https://github.com/gorilla/mux/pull/117/files?diff=${diffType}`)
                         await closeInstallPageTab(driver.browser)
@@ -107,12 +112,28 @@ describe('Sourcegraph browser extension on github.com', function () {
                         })
 
                         // Check go-to-definition jumps to the right place
+                        let goToDefinitionURL = ''
                         await retry(async () => {
-                            const href = await driver.page.evaluate(
-                                () => document.querySelector<HTMLAnchorElement>('.test-tooltip-go-to-definition')?.href
+                            const href =
+                                (await driver.page.evaluate(
+                                    () =>
+                                        document.querySelector<HTMLAnchorElement>('.test-tooltip-go-to-definition')
+                                            ?.href
+                                )) ?? ''
+
+                            assert.strictEqual(
+                                goToDefinitionURLs.includes(href),
+                                true,
+                                `Expected goToDefinitionURL (${href}) to be one of:\n\t${goToDefinitionURLs.join(
+                                    '\n\t'
+                                )}`
                             )
-                            assert.strictEqual(href, goToDefinitionURL)
+                            goToDefinitionURL = href
                         })
+                        if (!goToDefinitionURL) {
+                            throw new Error('Expected goToDefinitionURL to be truthy')
+                        }
+
                         let page: Page = driver.page
                         if (new URL(goToDefinitionURL).hostname !== 'github.com') {
                             ;[page] = await Promise.all([

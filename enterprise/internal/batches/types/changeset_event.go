@@ -77,6 +77,8 @@ const (
 	ChangesetEventKindGitLabUnapproved           ChangesetEventKind = "gitlab:unapproved"
 	ChangesetEventKindGitLabMarkWorkInProgress   ChangesetEventKind = "gitlab:mark_wip"
 	ChangesetEventKindGitLabUnmarkWorkInProgress ChangesetEventKind = "gitlab:unmark_wip"
+
+	ChangesetEventKindInvalid ChangesetEventKind = "invalid"
 )
 
 // A ChangesetEvent is an event that happened in the lifetime

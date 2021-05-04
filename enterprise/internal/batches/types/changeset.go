@@ -469,7 +469,7 @@ func (c *Changeset) URL() (s string, err error) {
 }
 
 // Events returns the deduplicated list of ChangesetEvents from the Changeset's metadata.
-func (c *Changeset) Events() (events []*ChangesetEvent) {
+func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
 	uniqueEvents := make(map[string]struct{})
 
 	appendEvent := func(e *ChangesetEvent) {
@@ -493,7 +493,9 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 				for _, c := range e.Comments {
 					ev := ev
 					ev.Key = c.Key()
-					ev.Kind = ChangesetEventKindFor(c)
+					if ev.Kind, err = ChangesetEventKindFor(c); err != nil {
+						return
+					}
 					ev.Metadata = c
 					appendEvent(&ev)
 				}
@@ -506,13 +508,17 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 					continue
 				}
 				ev.Key = e.Key()
-				ev.Kind = ChangesetEventKindFor(e)
+				if ev.Kind, err = ChangesetEventKindFor(e); err != nil {
+					return
+				}
 				ev.Metadata = e
 				appendEvent(&ev)
 
 			default:
 				ev.Key = ti.Item.(Keyer).Key()
-				ev.Kind = ChangesetEventKindFor(ti.Item)
+				if ev.Kind, err = ChangesetEventKindFor(ti.Item); err != nil {
+					return
+				}
 				ev.Metadata = ti.Item
 				appendEvent(&ev)
 			}
@@ -520,30 +526,45 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 
 	case *bitbucketserver.PullRequest:
 		events = make([]*ChangesetEvent, 0, len(m.Activities)+len(m.CommitStatus))
-		addEvent := func(e Keyer) {
+
+		addEvent := func(e Keyer) error {
+			kind, err := ChangesetEventKindFor(e)
+			if err != nil {
+				return err
+			}
+
 			appendEvent(&ChangesetEvent{
 				ChangesetID: c.ID,
 				Key:         e.Key(),
-				Kind:        ChangesetEventKindFor(e),
+				Kind:        kind,
 				Metadata:    e,
 			})
+			return nil
 		}
 		for _, a := range m.Activities {
-			addEvent(a)
+			if err = addEvent(a); err != nil {
+				return
+			}
 		}
 		for _, s := range m.CommitStatus {
-			addEvent(s)
+			if err = addEvent(s); err != nil {
+				return
+			}
 		}
 
 	case *gitlab.MergeRequest:
 		events = make([]*ChangesetEvent, 0, len(m.Notes)+len(m.ResourceStateEvents)+len(m.Pipelines))
+		var kind ChangesetEventKind
 
 		for _, note := range m.Notes {
 			if event := note.ToEvent(); event != nil {
+				if kind, err = ChangesetEventKindFor(event); err != nil {
+					return
+				}
 				appendEvent(&ChangesetEvent{
 					ChangesetID: c.ID,
 					Key:         event.(Keyer).Key(),
-					Kind:        ChangesetEventKindFor(event),
+					Kind:        kind,
 					Metadata:    event,
 				})
 			}
@@ -551,25 +572,31 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 
 		for _, e := range m.ResourceStateEvents {
 			if event := e.ToEvent(); event != nil {
+				if kind, err = ChangesetEventKindFor(event); err != nil {
+					return
+				}
 				appendEvent(&ChangesetEvent{
 					ChangesetID: c.ID,
 					Key:         event.(Keyer).Key(),
-					Kind:        ChangesetEventKindFor(event),
+					Kind:        kind,
 					Metadata:    event,
 				})
 			}
 		}
 
 		for _, pipeline := range m.Pipelines {
+			if kind, err = ChangesetEventKindFor(pipeline); err != nil {
+				return
+			}
 			appendEvent(&ChangesetEvent{
 				ChangesetID: c.ID,
 				Key:         pipeline.Key(),
-				Kind:        ChangesetEventKindFor(pipeline),
+				Kind:        kind,
 				Metadata:    pipeline,
 			})
 		}
 	}
-	return events
+	return events, nil
 }
 
 // HeadRefOid returns the git ObjectID of the HEAD reference associated with
@@ -831,76 +858,75 @@ type ChangesetsStats struct {
 
 // ChangesetEventKindFor returns the ChangesetEventKind for the given
 // specific code host event.
-func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
+func ChangesetEventKindFor(e interface{}) (ChangesetEventKind, error) {
 	switch e := e.(type) {
 	case *github.AssignedEvent:
-		return ChangesetEventKindGitHubAssigned
+		return ChangesetEventKindGitHubAssigned, nil
 	case *github.ClosedEvent:
-		return ChangesetEventKindGitHubClosed
+		return ChangesetEventKindGitHubClosed, nil
 	case *github.IssueComment:
-		return ChangesetEventKindGitHubCommented
+		return ChangesetEventKindGitHubCommented, nil
 	case *github.RenamedTitleEvent:
-		return ChangesetEventKindGitHubRenamedTitle
+		return ChangesetEventKindGitHubRenamedTitle, nil
 	case *github.MergedEvent:
-		return ChangesetEventKindGitHubMerged
+		return ChangesetEventKindGitHubMerged, nil
 	case *github.PullRequestReview:
-		return ChangesetEventKindGitHubReviewed
+		return ChangesetEventKindGitHubReviewed, nil
 	case *github.PullRequestReviewComment:
-		return ChangesetEventKindGitHubReviewCommented
+		return ChangesetEventKindGitHubReviewCommented, nil
 	case *github.ReopenedEvent:
-		return ChangesetEventKindGitHubReopened
+		return ChangesetEventKindGitHubReopened, nil
 	case *github.ReviewDismissedEvent:
-		return ChangesetEventKindGitHubReviewDismissed
+		return ChangesetEventKindGitHubReviewDismissed, nil
 	case *github.ReviewRequestRemovedEvent:
-		return ChangesetEventKindGitHubReviewRequestRemoved
+		return ChangesetEventKindGitHubReviewRequestRemoved, nil
 	case *github.ReviewRequestedEvent:
-		return ChangesetEventKindGitHubReviewRequested
+		return ChangesetEventKindGitHubReviewRequested, nil
 	case *github.ReadyForReviewEvent:
-		return ChangesetEventKindGitHubReadyForReview
+		return ChangesetEventKindGitHubReadyForReview, nil
 	case *github.ConvertToDraftEvent:
-		return ChangesetEventKindGitHubConvertToDraft
+		return ChangesetEventKindGitHubConvertToDraft, nil
 	case *github.UnassignedEvent:
-		return ChangesetEventKindGitHubUnassigned
+		return ChangesetEventKindGitHubUnassigned, nil
 	case *github.PullRequestCommit:
-		return ChangesetEventKindGitHubCommit
+		return ChangesetEventKindGitHubCommit, nil
 	case *github.LabelEvent:
 		if e.Removed {
-			return ChangesetEventKindGitHubUnlabeled
+			return ChangesetEventKindGitHubUnlabeled, nil
 		}
-		return ChangesetEventKindGitHubLabeled
+		return ChangesetEventKindGitHubLabeled, nil
 	case *github.CommitStatus:
-		return ChangesetEventKindCommitStatus
+		return ChangesetEventKindCommitStatus, nil
 	case *github.CheckSuite:
-		return ChangesetEventKindCheckSuite
+		return ChangesetEventKindCheckSuite, nil
 	case *github.CheckRun:
-		return ChangesetEventKindCheckRun
+		return ChangesetEventKindCheckRun, nil
 	case *bitbucketserver.Activity:
-		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action)))
+		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action))), nil
 	case *bitbucketserver.ParticipantStatusEvent:
-		return ChangesetEventKind("bitbucketserver:participant_status:" + strings.ToLower(string(e.Action)))
+		return ChangesetEventKind("bitbucketserver:participant_status:" + strings.ToLower(string(e.Action))), nil
 	case *bitbucketserver.CommitStatus:
-		return ChangesetEventKindBitbucketServerCommitStatus
+		return ChangesetEventKindBitbucketServerCommitStatus, nil
 	case *gitlab.Pipeline:
-		return ChangesetEventKindGitLabPipeline
+		return ChangesetEventKindGitLabPipeline, nil
 	case *gitlab.ReviewApprovedEvent:
-		return ChangesetEventKindGitLabApproved
+		return ChangesetEventKindGitLabApproved, nil
 	case *gitlab.ReviewUnapprovedEvent:
-		return ChangesetEventKindGitLabUnapproved
+		return ChangesetEventKindGitLabUnapproved, nil
 	case *gitlab.MarkWorkInProgressEvent:
-		return ChangesetEventKindGitLabMarkWorkInProgress
+		return ChangesetEventKindGitLabMarkWorkInProgress, nil
 	case *gitlab.UnmarkWorkInProgressEvent:
-		return ChangesetEventKindGitLabUnmarkWorkInProgress
+		return ChangesetEventKindGitLabUnmarkWorkInProgress, nil
 
 	case *gitlab.MergeRequestClosedEvent:
-		return ChangesetEventKindGitLabClosed
+		return ChangesetEventKindGitLabClosed, nil
 	case *gitlab.MergeRequestReopenedEvent:
-		return ChangesetEventKindGitLabReopened
+		return ChangesetEventKindGitLabReopened, nil
 	case *gitlab.MergeRequestMergedEvent:
-		return ChangesetEventKindGitLabMerged
-
-	default:
-		panic(errors.Errorf("unknown changeset event kind for %T", e))
+		return ChangesetEventKindGitLabMerged, nil
 	}
+
+	return ChangesetEventKindInvalid, errors.Errorf("unknown changeset event kind for %T", e)
 }
 
 // NewChangesetEventMetadata returns a new metadata object for the given
