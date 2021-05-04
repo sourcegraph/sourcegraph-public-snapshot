@@ -10,9 +10,27 @@
 ) {
     .alert-#{$name} {
         border-color: $border-color;
+        // Apply `background-color` and `padding` only to `.alert-#{$name}` because we also use `.alert` elements without variants.
+        background-color: var(--color-bg-1);
+        padding: var(--alert-content-padding) var(--alert-content-padding) var(--alert-content-padding)
+            calc(var(--alert-icon-block-width) + var(--alert-content-padding));
+
+        &::before,
+        &::after {
+            display: block;
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: var(--alert-icon-block-width);
+            height: 100%;
+        }
 
         // Alert icon background.
         &::before {
+            border: 2px solid var(--color-bg-1);
+            border-top-left-radius: var(--border-radius);
+            border-bottom-left-radius: var(--border-radius);
             @include color-scheme-rule(
                 $rule: background-color,
                 $light-value: $icon-background-light,
@@ -21,8 +39,8 @@
         }
 
         &::after {
-            // We cannot render SVG in HTML because then we will need to add it to every .alert element manually.
-            // We can use it as a mask-image to apply CSS variables as a fill color.
+            // We cannot render SVG in HTML because then we will need to add it to every `.alert` element manually.
+            // We can use it as a `mask-image` to apply CSS variables as a fill color.
             // Icon: mdi-react/InformationOutline
             mask-image: url(escape-svg(
                 "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M11 9h2V7h-2m1 13c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8m0-18A10 10 0 002 12a10 10 0 0010 10 10 10 0 0010-10A10 10 0 0012 2m-1 15h2v-6h-2v6z'/></svg>"
@@ -48,26 +66,6 @@
 
         overflow: hidden;
         color: var(--body-color);
-        background-color: var(--color-bg-1);
-        padding: var(--alert-content-padding) var(--alert-content-padding) var(--alert-content-padding)
-            calc(var(--alert-icon-block-width) + var(--alert-content-padding));
-
-        &::before {
-            border: 2px solid var(--color-bg-1);
-            border-top-left-radius: var(--border-radius);
-            border-bottom-left-radius: var(--border-radius);
-        }
-
-        &::before,
-        &::after {
-            display: block;
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: var(--alert-icon-block-width);
-            height: 100%;
-        }
     }
 
     @include redesign-alert-variant(

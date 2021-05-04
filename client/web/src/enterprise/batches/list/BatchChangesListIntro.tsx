@@ -90,13 +90,8 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
 )
 
 const BatchChangesRenameAlert: React.FunctionComponent = () => (
-    // Unlike the other alerts in this file, the spacing below the alert is
-    // handled as padding within the element here to avoid extra margin being
-    // included once this alert is dismissed. (The other alerts in this file
-    // have margin that is used for more than just the alerts. Structural
-    // margin?)
     <DismissibleAlert
-        className="batch-changes-list-intro__alert pb-4"
+        className="batch-changes-list-intro__alert mb-4"
         partialStorageKey="batch-changes-list-intro-rename"
     >
         <div className="batch-changes-list-intro__card card h-100 p-2">
