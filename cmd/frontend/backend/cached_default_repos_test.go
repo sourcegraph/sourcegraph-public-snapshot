@@ -1,4 +1,4 @@
-package database
+package backend
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -62,7 +63,7 @@ func TestListDefaultRepos(t *testing.T) {
 			DisplayName: "GITHUB #1",
 			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 		}
-		err := ExternalServices(db).Create(ctx, confGet, es)
+		err := database.ExternalServices(db).Create(ctx, confGet, es)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -91,9 +92,9 @@ func TestListDefaultRepos(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			DefaultRepos(db).resetCache()
 
-			repos, err := DefaultRepos(db).List(ctx)
+			listr := &CachedDefaultRepoLister{}
+			repos, err := listr.List(ctx, db)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -152,119 +153,60 @@ func TestListDefaultRepos(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// List ALL repos
-		DefaultRepos(db).resetCache()
-		repos, err := DefaultRepos(db).List(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		want := []types.RepoName{
-			{
-				ID:   api.RepoID(10),
-				Name: "github.com/foo/bar10",
-			},
-			{
-				ID:   api.RepoID(11),
-				Name: "github.com/foo/bar11",
-			},
-			{
-				ID:   api.RepoID(15),
-				Name: "github.com/foo/bar15",
-			},
-			{
-				ID:   api.RepoID(14),
-				Name: "github.com/foo/bar14",
-			},
-		}
-		if diff := cmp.Diff(want, repos, cmpopts.EquateEmpty()); diff != "" {
-			t.Errorf("mismatch (-want +got):\n%s", diff)
-		}
+		t.Run("List ALL repos", func(t *testing.T) {
+			listr := &CachedDefaultRepoLister{}
+			repos, err := listr.List(ctx, db)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := []types.RepoName{
+				{
+					ID:   api.RepoID(10),
+					Name: "github.com/foo/bar10",
+				},
+				{
+					ID:   api.RepoID(11),
+					Name: "github.com/foo/bar11",
+				},
+				{
+					ID:   api.RepoID(15),
+					Name: "github.com/foo/bar15",
+				},
+				{
+					ID:   api.RepoID(14),
+					Name: "github.com/foo/bar14",
+				},
+			}
+			if diff := cmp.Diff(want, repos, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("mismatch (-want +got):\n%s", diff)
+			}
+		})
 
-		// List only public default repos
-		DefaultRepos(db).resetCache()
-		repos, err = DefaultRepos(db).ListPublic(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		want = []types.RepoName{
-			{
-				ID:   api.RepoID(10),
-				Name: "github.com/foo/bar10",
-			},
-			{
-				ID:   api.RepoID(11),
-				Name: "github.com/foo/bar11",
-			},
-			{
-				ID:   api.RepoID(14),
-				Name: "github.com/foo/bar14",
-			},
-		}
-		if diff := cmp.Diff(want, repos, cmpopts.EquateEmpty()); diff != "" {
-			t.Errorf("mismatch (-want +got):\n%s", diff)
-		}
+		t.Run("List only public default repos", func(t *testing.T) {
+			listr := &CachedDefaultRepoLister{}
+			repos, err := listr.ListPublic(ctx, db)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := []types.RepoName{
+				{
+					ID:   api.RepoID(10),
+					Name: "github.com/foo/bar10",
+				},
+				{
+					ID:   api.RepoID(11),
+					Name: "github.com/foo/bar11",
+				},
+				{
+					ID:   api.RepoID(14),
+					Name: "github.com/foo/bar14",
+				},
+			}
+			if diff := cmp.Diff(want, repos, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("mismatch (-want +got):\n%s", diff)
+			}
+		})
 	})
-}
-
-func TestListDefaultReposUncloned(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	reposToAdd := []types.RepoName{
-		{
-			ID:   api.RepoID(1),
-			Name: "github.com/foo/bar1",
-		},
-		{
-			ID:   api.RepoID(2),
-			Name: "github.com/baz/bar2",
-		},
-		{
-			ID:   api.RepoID(3),
-			Name: "github.com/foo/bar3",
-		},
-	}
-
-	db := dbtesting.GetDB(t)
-	ctx := context.Background()
-	// Add an external service
-	_, err := db.ExecContext(ctx, `INSERT INTO external_services(id, kind, display_name, config, cloud_default) VALUES (1, 'github', 'github', '{}', true);`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, r := range reposToAdd {
-		cloned := int(r.ID) > 1
-		if _, err := db.ExecContext(ctx, `INSERT INTO repo(id, name, cloned) VALUES ($1, $2, $3)`, r.ID, r.Name, cloned); err != nil {
-			t.Fatal(err)
-		}
-		if _, err := db.ExecContext(ctx, `INSERT INTO default_repos(repo_id) VALUES ($1)`, r.ID); err != nil {
-			t.Fatal(err)
-		}
-		if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES (1, $1, 'https://github.com/foo/bar13');`, r.ID); err != nil {
-			t.Fatal(err)
-		}
-		cloneStatus := types.CloneStatusCloned
-		if !cloned {
-			cloneStatus = types.CloneStatusNotCloned
-		}
-		if _, err := db.ExecContext(ctx, `INSERT INTO gitserver_repos(repo_id, clone_status, shard_id) VALUES ($1, $2, 'test');`, r.ID, cloneStatus); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	repos, err := Repos(db).ListDefaultRepos(ctx, ListDefaultReposOptions{
-		OnlyUncloned: true,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	sort.Sort(types.RepoNames(repos))
-	sort.Sort(types.RepoNames(reposToAdd))
-	if diff := cmp.Diff(reposToAdd[:1], repos, cmpopts.EquateEmpty()); diff != "" {
-		t.Errorf("mismatch (-want +got):\n%s", diff)
-	}
 }
 
 func BenchmarkDefaultRepos_List_Empty(b *testing.B) {
@@ -278,7 +220,8 @@ func BenchmarkDefaultRepos_List_Empty(b *testing.B) {
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err := DefaultRepos(db).List(ctx)
+		listr := &CachedDefaultRepoLister{}
+		_, err := listr.List(ctx, db)
 		if err != nil {
 			b.Fatal(err)
 		}

@@ -367,3 +367,64 @@ func TestRepos_Create(t *testing.T) {
 		}
 	})
 }
+
+func TestListDefaultReposUncloned(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	reposToAdd := []types.RepoName{
+		{
+			ID:   api.RepoID(1),
+			Name: "github.com/foo/bar1",
+		},
+		{
+			ID:   api.RepoID(2),
+			Name: "github.com/baz/bar2",
+		},
+		{
+			ID:   api.RepoID(3),
+			Name: "github.com/foo/bar3",
+		},
+	}
+
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+	// Add an external service
+	_, err := db.ExecContext(ctx, `INSERT INTO external_services(id, kind, display_name, config, cloud_default) VALUES (1, 'github', 'github', '{}', true);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range reposToAdd {
+		cloned := int(r.ID) > 1
+		if _, err := db.ExecContext(ctx, `INSERT INTO repo(id, name, cloned) VALUES ($1, $2, $3)`, r.ID, r.Name, cloned); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.ExecContext(ctx, `INSERT INTO default_repos(repo_id) VALUES ($1)`, r.ID); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES (1, $1, 'https://github.com/foo/bar13');`, r.ID); err != nil {
+			t.Fatal(err)
+		}
+		cloneStatus := types.CloneStatusCloned
+		if !cloned {
+			cloneStatus = types.CloneStatusNotCloned
+		}
+		if _, err := db.ExecContext(ctx, `INSERT INTO gitserver_repos(repo_id, clone_status, shard_id) VALUES ($1, $2, 'test');`, r.ID, cloneStatus); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	repos, err := Repos(db).ListDefaultRepos(ctx, ListDefaultReposOptions{
+		OnlyUncloned: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sort.Sort(types.RepoNames(repos))
+	sort.Sort(types.RepoNames(reposToAdd))
+	if diff := cmp.Diff(reposToAdd[:1], repos, cmpopts.EquateEmpty()); diff != "" {
+		t.Errorf("mismatch (-want +got):\n%s", diff)
+	}
+}

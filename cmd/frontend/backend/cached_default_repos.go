@@ -1,8 +1,7 @@
-package database
+package backend
 
 import (
 	"context"
-	"database/sql"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -10,8 +9,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -37,47 +35,12 @@ func (c *cachedRepos) Repos() ([]types.RepoName, bool) {
 	return append([]types.RepoName{}, c.repos...), time.Since(c.fetched) > defaultReposMaxAge
 }
 
-// DefaultRepoStore holds the list of default repos which are cached for
+// CachedDefaultRepoLister holds the list of default repos which are cached for
 // defaultReposMaxAge.
-type DefaultRepoStore struct {
-	*basestore.Store
-
+type CachedDefaultRepoLister struct {
 	cacheAllRepos    atomic.Value
 	cachePublicRepos atomic.Value
-
-	once sync.Once
-
-	mu sync.Mutex
-}
-
-// DefaultRepos instantiates and returns a new DefaultRepoStore with prepared statements.
-func DefaultRepos(db dbutil.DB) *DefaultRepoStore {
-	return &DefaultRepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-// DefaultReposWith instantiates and returns a new DefaultRepoStore using the other store handle.
-func DefaultReposWith(other basestore.ShareableStore) *DefaultRepoStore {
-	return &DefaultRepoStore{Store: basestore.NewWithHandle(other.Handle())}
-}
-
-func (s *DefaultRepoStore) With(other basestore.ShareableStore) *DefaultRepoStore {
-	return &DefaultRepoStore{Store: s.Store.With(other)}
-}
-
-func (s *DefaultRepoStore) Transact(ctx context.Context) (*DefaultRepoStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &DefaultRepoStore{Store: txBase}, err
-}
-
-// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
-// This function ensures access to dbconn happens after the rest of the code or tests have
-// initialized it.
-func (s *DefaultRepoStore) ensureStore() {
-	s.once.Do(func() {
-		if s.Store == nil {
-			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-		}
-	})
+	mu               sync.Mutex
 }
 
 // List lists ALL default repos. These include anything in the default_repos
@@ -86,18 +49,16 @@ func (s *DefaultRepoStore) ensureStore() {
 //
 // The values are cached for up to defaultReposMaxAge. If the cache has expired, we return
 // stale data and start a background refresh.
-func (s *DefaultRepoStore) List(ctx context.Context) (results []types.RepoName, err error) {
-	return s.list(ctx, false)
+func (s *CachedDefaultRepoLister) List(ctx context.Context, db dbutil.DB) (results []types.RepoName, err error) {
+	return s.list(ctx, db, false)
 }
 
 // ListPublic is similar to List except that it only includes public repos.
-func (s *DefaultRepoStore) ListPublic(ctx context.Context) (results []types.RepoName, err error) {
-	return s.list(ctx, true)
+func (s *CachedDefaultRepoLister) ListPublic(ctx context.Context, db dbutil.DB) (results []types.RepoName, err error) {
+	return s.list(ctx, db, true)
 }
 
-func (s *DefaultRepoStore) list(ctx context.Context, onlyPublic bool) (results []types.RepoName, err error) {
-	s.ensureStore()
-
+func (s *CachedDefaultRepoLister) list(ctx context.Context, db dbutil.DB, onlyPublic bool) (results []types.RepoName, err error) {
 	cache := &(s.cacheAllRepos)
 	if onlyPublic {
 		cache = &(s.cachePublicRepos)
@@ -111,7 +72,7 @@ func (s *DefaultRepoStore) list(ctx context.Context, onlyPublic bool) (results [
 
 	// We don't have any repos yet, fetch them
 	if len(repos) == 0 {
-		return s.refreshCache(ctx, onlyPublic)
+		return s.refreshCache(ctx, db, onlyPublic)
 	}
 
 	// We have existing repos, return the stale data and start background refresh
@@ -119,7 +80,7 @@ func (s *DefaultRepoStore) list(ctx context.Context, onlyPublic bool) (results [
 		newCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
 
-		_, err := s.refreshCache(newCtx, onlyPublic)
+		_, err := s.refreshCache(newCtx, db, onlyPublic)
 		if err != nil {
 			log15.Error("Refreshing default repos cache", "error", err)
 		}
@@ -127,7 +88,7 @@ func (s *DefaultRepoStore) list(ctx context.Context, onlyPublic bool) (results [
 	return repos, nil
 }
 
-func (s *DefaultRepoStore) refreshCache(ctx context.Context, onlyPublic bool) ([]types.RepoName, error) {
+func (s *CachedDefaultRepoLister) refreshCache(ctx context.Context, db dbutil.DB, onlyPublic bool) ([]types.RepoName, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -143,11 +104,11 @@ func (s *DefaultRepoStore) refreshCache(ctx context.Context, onlyPublic bool) ([
 		return repos, nil
 	}
 
-	opts := ListDefaultReposOptions{}
+	opts := database.ListDefaultReposOptions{}
 	if !onlyPublic {
 		opts.IncludePrivate = true
 	}
-	repos, err := ReposWith(s).ListDefaultRepos(ctx, opts)
+	repos, err := database.Repos(db).ListDefaultRepos(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying for default repos")
 	}
@@ -159,9 +120,4 @@ func (s *DefaultRepoStore) refreshCache(ctx context.Context, onlyPublic bool) ([
 	})
 
 	return repos, nil
-}
-
-func (s *DefaultRepoStore) resetCache() {
-	s.cacheAllRepos.Store(&cachedRepos{})
-	s.cachePublicRepos.Store(&cachedRepos{})
 }
