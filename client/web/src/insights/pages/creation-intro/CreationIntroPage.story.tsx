@@ -3,7 +3,7 @@ import React from 'react'
 
 import { WebStory } from '../../../components/WebStory'
 
-import { CreationIntroPage } from './CreationIntroPage';
+import { CreationIntroPage } from './CreationIntroPage'
 
 const { add } = storiesOf('web/insights/CreationInsightIntroPage', module)
     .addDecorator(story => <WebStory>{() => story()}</WebStory>)
@@ -13,6 +13,4 @@ const { add } = storiesOf('web/insights/CreationInsightIntroPage', module)
         },
     })
 
-add('Page', () => (
-    <CreationIntroPage />
-))
+add('Page', () => <CreationIntroPage />)

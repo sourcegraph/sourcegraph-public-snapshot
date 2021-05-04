@@ -16,7 +16,7 @@ export const CreationIntroPage: React.FunctionComponent = () => (
     <Page className="col-8">
         <PageTitle title="Create code insights" />
 
-        <div className='mb-5'>
+        <div className="mb-5">
             <h2>Create new insight</h2>
 
             <p className="text-muted">
@@ -47,11 +47,9 @@ export const CreationIntroPage: React.FunctionComponent = () => (
                     Create custom insight
                 </Link>
 
-                <hr className='ml-n3 mr-n3 mt-4 mb-3'/>
+                <hr className="ml-n3 mr-n3 mt-4 mb-3" />
 
-                <p className='text-muted'>
-                    How your insight would look like:
-                </p>
+                <p className="text-muted">How your insight would look like:</p>
                 <div className={styles.createIntroPageChartContainer}>
                     <ParentSize className={styles.createIntroPageChart}>
                         {({ width, height }) => <LineChart width={width} height={height} {...LINE_CHART_DATA} />}
@@ -71,11 +69,9 @@ export const CreationIntroPage: React.FunctionComponent = () => (
                     Set up language usage insight
                 </Link>
 
-                <hr className='ml-n3 mr-n3 mt-4 mb-3'/>
+                <hr className="ml-n3 mr-n3 mt-4 mb-3" />
 
-                <p className='text-muted'>
-                    How your insight would look like:
-                </p>
+                <p className="text-muted">How your insight would look like:</p>
                 <div className={styles.createIntroPageChartContainer}>
                     <ParentSize className={styles.createIntroPageChart}>
                         {({ width, height }) => <PieChart width={width} height={height} {...PIE_CHART_DATA} />}
