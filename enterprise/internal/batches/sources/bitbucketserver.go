@@ -107,10 +107,12 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 	pr := &bitbucketserver.PullRequest{Title: c.Title, Description: c.Body}
 
 	pr.ToRef.Repository.Slug = repo.Slug
+	pr.ToRef.Repository.ID = repo.ID
 	pr.ToRef.Repository.Project.Key = repo.Project.Key
 	pr.ToRef.ID = git.EnsureRefPrefix(c.BaseRef)
 
 	pr.FromRef.Repository.Slug = repo.Slug
+	pr.FromRef.Repository.ID = repo.ID
 	pr.FromRef.Repository.Project.Key = repo.Project.Key
 	pr.FromRef.ID = git.EnsureRefPrefix(c.HeadRef)
 
