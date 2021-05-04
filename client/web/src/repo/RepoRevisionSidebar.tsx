@@ -54,7 +54,6 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
         )
     }
 
-    // TODO: check redesign status and add or remove classes on parent div
     return (
         <Resizable
             defaultSize={256}
