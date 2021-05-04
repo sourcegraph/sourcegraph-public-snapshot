@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"sync"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -13,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -35,6 +37,8 @@ var ErrAccessTokenNotFound = errors.New("access token not found")
 // AccessTokenStore implements autocert.Cache
 type AccessTokenStore struct {
 	*basestore.Store
+
+	once sync.Once
 }
 
 // AccessTokens instantiates and returns a new AccessTokenStore with prepared statements.
@@ -56,6 +60,17 @@ func (s *AccessTokenStore) Transact(ctx context.Context) (*AccessTokenStore, err
 	return &AccessTokenStore{Store: txBase}, err
 }
 
+// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
+// This function ensures access to dbconn happens after the rest of the code or tests have
+// initialized it.
+func (s *AccessTokenStore) ensureStore() {
+	s.once.Do(func() {
+		if s.Store == nil {
+			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+		}
+	})
+}
+
 // Create creates an access token for the specified user. The secret token value itself is
 // returned. The caller is responsible for presenting this value to the end user; Sourcegraph does
 // not retain it (only a hash of it).
@@ -75,6 +90,7 @@ func (s *AccessTokenStore) Create(ctx context.Context, subjectUserID int32, scop
 	if Mocks.AccessTokens.Create != nil {
 		return Mocks.AccessTokens.Create(subjectUserID, scopes, note, creatorUserID)
 	}
+	s.ensureStore()
 
 	var b [20]byte
 	if _, err := rand.Read(b[:]); err != nil {
@@ -122,6 +138,7 @@ func (s *AccessTokenStore) Lookup(ctx context.Context, tokenHexEncoded, required
 	if Mocks.AccessTokens.Lookup != nil {
 		return Mocks.AccessTokens.Lookup(tokenHexEncoded, requiredScope)
 	}
+	s.ensureStore()
 
 	if requiredScope == "" {
 		return 0, errors.New("no scope provided in access token lookup")
@@ -179,6 +196,8 @@ func (s *AccessTokenStore) GetByToken(ctx context.Context, tokenHexEncoded strin
 }
 
 func (s *AccessTokenStore) get(ctx context.Context, conds []*sqlf.Query) (*AccessToken, error) {
+	s.ensureStore()
+
 	results, err := s.list(ctx, conds, nil)
 	if err != nil {
 		return nil, err
@@ -220,6 +239,8 @@ func (s *AccessTokenStore) List(ctx context.Context, opt AccessTokensListOptions
 }
 
 func (s *AccessTokenStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*AccessToken, error) {
+	s.ensureStore()
+
 	q := sqlf.Sprintf(`
 SELECT id, subject_user_id, scopes, note, creator_user_id, created_at, last_used_at FROM access_tokens
 WHERE (%s)
@@ -256,6 +277,8 @@ created_at DESC
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to count the tokens.
 func (s *AccessTokenStore) Count(ctx context.Context, opt AccessTokensListOptions) (int, error) {
+	s.ensureStore()
+
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_tokens WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int
 	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
@@ -271,6 +294,8 @@ func (s *AccessTokenStore) DeleteByID(ctx context.Context, id int64, subjectUser
 	if Mocks.AccessTokens.DeleteByID != nil {
 		return Mocks.AccessTokens.DeleteByID(id, subjectUserID)
 	}
+	s.ensureStore()
+
 	return s.delete(ctx, sqlf.Sprintf("id=%d AND subject_user_id=%d", id, subjectUserID))
 }
 
@@ -286,6 +311,8 @@ func (s *AccessTokenStore) DeleteByToken(ctx context.Context, tokenHexEncoded st
 }
 
 func (s *AccessTokenStore) delete(ctx context.Context, cond *sqlf.Query) error {
+	s.ensureStore()
+
 	conds := []*sqlf.Query{cond, sqlf.Sprintf("deleted_at IS NULL")}
 	q := sqlf.Sprintf("UPDATE access_tokens SET deleted_at=now() WHERE (%s)", sqlf.Join(conds, ") AND ("))
 

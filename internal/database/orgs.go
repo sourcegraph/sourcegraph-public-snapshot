@@ -5,11 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgconn"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
@@ -33,6 +35,8 @@ var errOrgNameAlreadyExists = errors.New("organization name is already taken (by
 
 type OrgStore struct {
 	*basestore.Store
+
+	once sync.Once
 }
 
 // Orgs instantiates and returns a new OrgStore with prepared statements.
@@ -54,9 +58,22 @@ func (o *OrgStore) Transact(ctx context.Context) (*OrgStore, error) {
 	return &OrgStore{Store: txBase}, err
 }
 
+// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
+// This function ensures access to dbconn happens after the rest of the code or tests have
+// initialized it.
+func (o *OrgStore) ensureStore() {
+	o.once.Do(func() {
+		if o.Store == nil {
+			o.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
+		}
+	})
+}
+
 // GetByUserID returns a list of all organizations for the user. An empty slice is
 // returned if the user is not authenticated or is not a member of any org.
 func (o *OrgStore) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
+	o.ensureStore()
+
 	rows, err := o.Handle().DB().QueryContext(ctx, "SELECT orgs.id, orgs.name, orgs.display_name,  orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1 AND orgs.deleted_at IS NULL", userID)
 	if err != nil {
 		return []*types.Org{}, err
@@ -112,6 +129,7 @@ func (o *OrgStore) Count(ctx context.Context, opt OrgsListOptions) (int, error) 
 	if Mocks.Orgs.Count != nil {
 		return Mocks.Orgs.Count(ctx, opt)
 	}
+	o.ensureStore()
 
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM orgs WHERE %s", o.listSQL(opt))
 
@@ -152,6 +170,8 @@ func (*OrgStore) listSQL(opt OrgsListOptions) *sqlf.Query {
 }
 
 func (o *OrgStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.Org, error) {
+	o.ensureStore()
+
 	rows, err := o.Handle().DB().QueryContext(ctx, "SELECT id, name, display_name, created_at, updated_at FROM orgs "+query, args...)
 	if err != nil {
 		return nil, err
@@ -175,6 +195,8 @@ func (o *OrgStore) getBySQL(ctx context.Context, query string, args ...interface
 }
 
 func (o *OrgStore) Create(ctx context.Context, name string, displayName *string) (newOrg *types.Org, err error) {
+	o.ensureStore()
+
 	tx, err := o.Transact(ctx)
 	if err != nil {
 		return nil, err

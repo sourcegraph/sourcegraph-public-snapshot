@@ -387,21 +387,19 @@ func serveSavedQueriesDeleteInfo(db dbutil.DB) func(w http.ResponseWriter, r *ht
 	}
 }
 
-func serveSettingsGetForSubject(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var subject api.SettingsSubject
-		if err := json.NewDecoder(r.Body).Decode(&subject); err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-		settings, err := database.Settings(db).GetLatest(r.Context(), subject)
-		if err != nil {
-			return errors.Wrap(err, "Settings.GetLatest")
-		}
-		if err := json.NewEncoder(w).Encode(settings); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
+func serveSettingsGetForSubject(w http.ResponseWriter, r *http.Request) error {
+	var subject api.SettingsSubject
+	if err := json.NewDecoder(r.Body).Decode(&subject); err != nil {
+		return errors.Wrap(err, "Decode")
 	}
+	settings, err := database.GlobalSettings.GetLatest(r.Context(), subject)
+	if err != nil {
+		return errors.Wrap(err, "Settings.GetLatest")
+	}
+	if err := json.NewEncoder(w).Encode(settings); err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+	return nil
 }
 
 func serveOrgsListUsers(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
