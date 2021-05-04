@@ -68,7 +68,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
     }
 
     return (
-        <div className="d-flex flex-column">
+        <div role="list" className="d-flex flex-column">
             {series.map((line, index) =>
                 editSeriesIndexes.includes(index) ? (
                     <FormSeriesInput
@@ -137,6 +137,7 @@ function SeriesCard(props: SeriesCardProps): ReactElement {
         <button
             type="button"
             onClick={onEdit}
+            aria-label={`Edit button for ${name} data series`}
             className={classnames(styles.formSeriesCard, className, 'd-flex p-3 btn btn-outline-secondary')}
         >
             <div className="flex-grow-1 d-flex flex-column align-items-start">
