@@ -3,7 +3,7 @@ import React from 'react'
 import { noop } from 'rxjs'
 
 import { InputField } from '../../../../../components/form/form-field/FormField'
-import { useField } from '../../hooks/useField'
+import { useField } from '../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../../components/form/validators'
 import { DataSeries } from '../../types'
