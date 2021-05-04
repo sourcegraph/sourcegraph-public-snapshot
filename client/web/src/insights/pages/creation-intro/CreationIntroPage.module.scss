@@ -1,7 +1,4 @@
 .create-intro-page {
-    &__sub-title-container {
-        margin-bottom: 2rem;
-    }
 
     &__insights {
         display: grid;
@@ -12,8 +9,6 @@
     &__insight-card {
         display: flex;
         flex-direction: column;
-        padding: 1rem;
-        border: 1px solid var(--border-color);
     }
 
     &__insight-button {
@@ -34,9 +29,5 @@
         top: 0;
         width: 100%;
         height: 100%;
-    }
-
-    &__chart-description {
-        margin-top: 2rem;
     }
 }

@@ -9,7 +9,7 @@ import { authUser } from '../../../search/panels/utils'
 
 import { CreationSearchInsightPage, CreationSearchInsightPageProps } from './CreationSearchInsightPage'
 
-const { add } = storiesOf('web/CreationSearchInsightPage', module)
+const { add } = storiesOf('web/insights/CreationSearchInsightPage', module)
     .addDecorator(story => <WebStory>{() => story()}</WebStory>)
     .addParameters({
         chromatic: {
