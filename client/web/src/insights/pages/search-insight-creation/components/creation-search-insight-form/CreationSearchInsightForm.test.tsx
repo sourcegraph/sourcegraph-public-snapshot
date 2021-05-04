@@ -99,7 +99,7 @@ describe('CreateInsightForm', () => {
             fireEvent.change(repositories, { target: { value: 'github.com/sourcegraph/sourcegraph' } })
             fireEvent.click(organisationVisibility)
 
-            const submitSeriesButton = within(dataSeriesGroup).getByRole('button', { name: /done/i })
+            const submitSeriesButton = within(dataSeriesGroup).getByRole('button', { name: /submit/i })
 
             const yellowColorRadio = within(dataSeriesGroup).getByRole('radio', { name: /yellow/i })
 
@@ -223,7 +223,7 @@ describe('CreateInsightForm', () => {
             fireEvent.change(repositories, { target: { value: 'github.com/sourcegraph/sourcegraph' } })
             fireEvent.click(organisationVisibility)
 
-            const submitSeriesButton = within(dataSeriesGroup).getByRole('button', { name: /done/i })
+            const submitSeriesButton = within(dataSeriesGroup).getByRole('button', { name: /submit/i })
 
             const yellowColorRadio = within(dataSeriesGroup).getByRole('radio', { name: /yellow/i })
 
