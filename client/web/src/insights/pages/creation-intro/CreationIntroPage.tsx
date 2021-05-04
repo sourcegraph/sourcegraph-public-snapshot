@@ -20,7 +20,7 @@ export const CreationIntroPage: React.FunctionComponent = () => (
             <h2>Create new insight</h2>
 
             <p className="text-muted">
-                Code insights analyse your code based on any search query.{' '}
+                Code insights analyze your code based on any search query.{' '}
                 <a
                     href="https://docs.sourcegraph.com/dev/background-information/insights"
                     target="_blank"
