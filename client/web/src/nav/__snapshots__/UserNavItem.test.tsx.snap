@@ -9,6 +9,7 @@ exports[`UserNavItem simple 1`] = `
       authenticatedUser={
         Object {
           "avatarURL": null,
+          "displayName": "alice doe",
           "organizations": Object {
             "nodes": Array [
               Object {
@@ -98,6 +99,7 @@ exports[`UserNavItem simple 1`] = `
                             user={
                               Object {
                                 "avatarURL": null,
+                                "displayName": "alice doe",
                                 "organizations": Object {
                                   "nodes": Array [
                                     Object {
