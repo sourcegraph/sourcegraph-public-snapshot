@@ -1,3 +1,4 @@
+/* eslint-disable no-template-curly-in-string */
 import { Omit } from 'utility-types'
 
 import { SearchSuggestion } from '../suggestions'
@@ -125,7 +126,7 @@ export interface Completion {
 interface BaseFilterDefinition {
     alias?: string
     description: string
-    discreteValues?: (value: Literal | undefined) => Completion[]
+    discreteValues?: (value: Literal | undefined, isSourcegraphDotCom?: boolean) => Completion[]
     suggestions?: SearchSuggestion['__typename']
     default?: string
     /** Whether the filter may only be used 0 or 1 times in a query. */
@@ -174,6 +175,24 @@ export const LANGUAGES: string[] = [
     'VBA',
     'XML',
     'Zig',
+]
+
+const SOURCEGRAPH_DOT_COM_REPO_COMPLETION: Completion[] = [
+    {
+        label: 'Search a GitHub organization',
+        insertText: 'github\\.com/${1:ORGANIZATION}/.*',
+        asSnippet: true,
+    },
+    {
+        label: 'Search a single GitHub repository',
+        insertText: '^github\\.com/${1:ORGANIZATION}/${2:REPO-NAME}$',
+        asSnippet: true,
+    },
+    {
+        label: 'Search for repositories with fuzzy string search',
+        insertText: '${1:STRING}',
+        asSnippet: true,
+    },
 ]
 
 export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
@@ -254,7 +273,10 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterType.repo]: {
         alias: 'r',
         negatable: true,
-        discreteValues: () => predicateCompletion('repo'),
+        discreteValues: (_value, isSourcegraphDotCom) => [
+            ...(isSourcegraphDotCom === true ? SOURCEGRAPH_DOT_COM_REPO_COMPLETION : []),
+            ...predicateCompletion('repo'),
+        ],
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from repositories matching the given search pattern.`,
         suggestions: 'Repository',
