@@ -2,10 +2,6 @@
 
 // Override tabs component styles (see: https://reach.tech/styling/#including-base-styles)
 
-[data-reach-tabs] {
-    background: var(--color-bg-2);
-}
-
 [data-reach-tab-list] {
     background: transparent;
 }
@@ -29,7 +25,7 @@
 }
 
 .tablist-wrapper {
-    background: var(--body-bg);
+    // background: var(--body-bg);
     border-bottom: 3px solid var(--border-color);
     align-items: center;
     &__full-width {
@@ -63,8 +59,7 @@
         color: var(--body-color);
         text-transform: none;
         &:hover {
-            color: var(--color-text-3);
-            border-bottom: 3px solid transparent;
+            border-bottom: 3px solid var(--border-color);
         }
         &[data-selected] {
             color: var(--body-color);
@@ -85,7 +80,6 @@
     .tablist-wrapper {
         min-height: 2rem;
         border-bottom: 1px solid var(--border-color);
-        margin: 0 1rem;
         padding-bottom: 0;
         display: flex;
         align-items: stretch;
@@ -93,9 +87,5 @@
         &__full-width {
             display: flex;
         }
-    }
-
-    .tablist-content-wrapper {
-        padding: 0.5rem 1rem;
     }
 }
