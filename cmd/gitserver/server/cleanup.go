@@ -156,7 +156,7 @@ func (s *Server) cleanupRepos() {
 		}
 
 		// We believe converting a Perforce depot to a Git repository is generally a
-		// very expensive operation, therefore we do not try to reclone/redo the
+		// very expensive operation, therefore we do not try to re-clone/redo the
 		// conversion only because it is old or slow to do "git gc".
 		if repoType == "perforce" && reason != maybeCorrupt {
 			reason = ""
@@ -259,7 +259,7 @@ func (s *Server) cleanupRepos() {
 		// repository. We don't do this if DisableAutoGitUpdates is set as it could
 		// potentially kick off a clone operation.
 		cleanups = append(cleanups, cleanupFn{
-			Name: "maybe reclone",
+			Name: "maybe re-clone",
 			Do:   maybeReclone,
 		})
 	}
@@ -654,8 +654,8 @@ func setRecloneTime(dir GitDir, now time.Time) error {
 }
 
 // getRecloneTime returns an approximate time a repository is cloned. If the
-// value is not stored in the repository, the reclone time for the repository
-// is set to now.
+// value is not stored in the repository, the re-clone time for the repository is
+// set to now.
 func getRecloneTime(dir GitDir) (time.Time, error) {
 	// We store the time we re-cloned the repository. If the value is missing,
 	// we store the current time. This decouples this timestamp from the
