@@ -1027,9 +1027,8 @@ func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externa
 	cred := &btypes.SiteCredential{
 		ExternalServiceID:   externalServiceURL,
 		ExternalServiceType: externalServiceType,
-		Credential:          a,
 	}
-	if err := r.store.CreateSiteCredential(ctx, cred); err != nil {
+	if err := r.store.CreateSiteCredential(ctx, cred, a); err != nil {
 		return nil, err
 	}
 

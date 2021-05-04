@@ -994,9 +994,8 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	siteCred := &btypes.SiteCredential{
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalServiceID:   "https://github.com/",
-		Credential:          authenticator,
 	}
-	if err := cstore.CreateSiteCredential(ctx, siteCred); err != nil {
+	if err := cstore.CreateSiteCredential(ctx, siteCred, authenticator); err != nil {
 		t.Fatal(err)
 	}
 

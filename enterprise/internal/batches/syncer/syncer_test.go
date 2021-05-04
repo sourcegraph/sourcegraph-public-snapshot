@@ -300,7 +300,9 @@ func TestLoadChangesetSource(t *testing.T) {
 	syncStore := &MockSyncStore{
 		getSiteCredential: func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
 			if hasCredential {
-				return &btypes.SiteCredential{Credential: &auth.OAuthBearerToken{Token: "456"}}, nil
+				cred := &btypes.SiteCredential{}
+				cred.SetAuthenticator(ctx, &auth.OAuthBearerToken{Token: "456"})
+				return cred, nil
 			}
 			return nil, store.ErrNoResults
 		},

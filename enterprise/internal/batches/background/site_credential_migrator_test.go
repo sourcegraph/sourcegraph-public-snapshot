@@ -2,15 +2,14 @@ package background
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
@@ -18,13 +17,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
-func TestUserCredentialMigrator(t *testing.T) {
+func TestSiteCredentialMigrator(t *testing.T) {
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 
 	cstore := store.New(db, et.TestKey{})
 
-	migrator := &userCredentialMigrator{cstore}
+	migrator := &siteCredentialMigrator{cstore}
 	a := &auth.BasicAuth{Username: "foo", Password: "bar"}
 
 	t.Run("no user credentials", func(t *testing.T) {
@@ -33,14 +32,21 @@ func TestUserCredentialMigrator(t *testing.T) {
 
 	// Now we'll set up enough users to validate that it takes multiple Up
 	// invocations.
-	for i := 0; i < userCredentialMigrationCountPerRun*2; i++ {
-		user := ct.CreateTestUser(t, db, false)
-		createUnencryptedUserCredential(t, ctx, cstore, database.UserCredentialScope{
-			Domain:              database.UserCredentialDomainBatches,
-			UserID:              user.ID,
+	for i := 0; i < siteCredentialMigrationCountPerRun*2; i++ {
+		cred := &btypes.SiteCredential{
 			ExternalServiceType: extsvc.TypeGitLab,
-			ExternalServiceID:   "https://gitlab.com/",
-		}, a)
+			ExternalServiceID:   fmt.Sprintf("https://%d.gitlab.com/", i),
+		}
+		if err := cstore.CreateSiteCredential(ctx, cred, a); err != nil {
+			t.Fatal(err)
+		}
+
+		// Override the saved credential to only include the unencrypted
+		// authenticator.
+		cred.SetRawCredential(a, nil)
+		if err := cstore.UpdateSiteCredential(ctx, cred); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	t.Run("completely unmigrated", func(t *testing.T) {
@@ -62,9 +68,7 @@ func TestUserCredentialMigrator(t *testing.T) {
 	})
 
 	t.Run("check credentials", func(t *testing.T) {
-		credentials, _, err := cstore.UserCredentials().List(ctx, database.UserCredentialsListOpts{
-			Scope: database.UserCredentialScope{Domain: database.UserCredentialDomainBatches},
-		})
+		credentials, _, err := cstore.ListSiteCredentials(ctx, store.ListSiteCredentialsOpts{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -95,52 +99,4 @@ func TestUserCredentialMigrator(t *testing.T) {
 			t.Error("unexpected nil error as down migrations are unsupported")
 		}
 	})
-}
-
-func assertProgress(t *testing.T, ctx context.Context, want float64, migrator interface {
-	Progress(context.Context) (float64, error)
-}) {
-	t.Helper()
-
-	if have, err := migrator.Progress(ctx); err != nil {
-		t.Errorf("unexpected error: %v", err)
-	} else if have != want {
-		t.Errorf("unexpected progress: have=%f want=%f", have, want)
-	}
-}
-
-func createUnencryptedUserCredential(
-	t *testing.T,
-	ctx context.Context,
-	store *store.Store,
-	scope database.UserCredentialScope,
-	a auth.Authenticator) *database.UserCredential {
-	cred, err := store.UserCredentials().Create(ctx, scope, a)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	raw, err := json.Marshal(struct {
-		Type database.AuthenticatorType
-		Auth auth.Authenticator
-	}{
-		Type: database.AuthenticatorTypeBasicAuth,
-		Auth: a,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if err := store.Exec(
-		ctx,
-		sqlf.Sprintf(
-			"UPDATE user_credentials SET credential = %s, credential_enc = NULL WHERE id = %s",
-			raw,
-			cred.ID,
-		),
-	); err != nil {
-		t.Fatal(err)
-	}
-
-	return cred
 }
