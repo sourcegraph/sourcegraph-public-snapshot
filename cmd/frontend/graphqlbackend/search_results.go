@@ -520,10 +520,10 @@ func union(left, right *SearchResultsResolver) *SearchResultsResolver {
 // intersectMerge performs a merge of file match results, merging line matches
 // for files contained in both result sets, and updating counts.
 func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
-	rightFileMatches := make(map[string]*FileMatchResolver)
+	rightFileMatches := make(map[result.Key]*FileMatchResolver)
 	for _, r := range right.SearchResults {
 		if fileMatch, ok := r.ToFileMatch(); ok {
-			rightFileMatches[fileMatch.URL()] = fileMatch
+			rightFileMatches[fileMatch.FileMatch.Key()] = fileMatch
 		}
 	}
 
@@ -534,7 +534,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 			continue
 		}
 
-		rightFileMatch := rightFileMatches[leftFileMatch.URL()]
+		rightFileMatch := rightFileMatches[leftFileMatch.FileMatch.Key()]
 		if rightFileMatch == nil {
 			continue
 		}

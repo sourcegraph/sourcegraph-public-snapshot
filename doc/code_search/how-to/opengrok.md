@@ -23,9 +23,9 @@ Sourcegraph, [provides full regular expression search](../reference/queries.md#r
 
 Oracle OpenGrok provides a multi-select dropdown box to allow users to select which repositories to include in a search. This scope is stored across sessions, until the user changes it.
 
-Sourcegraph provides a search keyword (`repo:`) that supports regexp and partial matches for selecting repositories. As examples: 
+Sourcegraph provides a search keyword (`repo:`) that supports regexp and partial matches for selecting repositories. As examples:
 
-- To search for the string "pattern" in all repositories in the github.com/org org, search for `pattern repo:github.com/org`. 
+- To search for the string "pattern" in all repositories in the github.com/org org, search for `pattern repo:github.com/org`.
 - To search in a distinct list of repositories, you can use a `|` character as a regexp OR operator: `pattern repo:github.com/org/repository1|github.com/org/repository2`.
   - Note this query could be simplified further using more advanced regexp matching if the two repos share part of their names, such as: `pattern repo:github.com/org/repository(1|2)`.
 
@@ -51,29 +51,30 @@ The only exceptions are colon characters, which are by default used for specifyi
 
 Oracle OpenGrok provides three boolean operators — `AND`, `OR`, and `NOT` — for scoping searches to files that contain strings that match multiple patterns.
 
-Sourcegraph also provides [`AND`, `OR`, and `NOT` operators](../reference/queries.md#operators).
+Sourcegraph also provides [`AND`, `OR`, and `NOT` operators](../reference/queries.md#boolean-operators).
 
-> NOTE: Operators are available as of Sourcegraph 3.15 and enabled with `{"experimentalFeatures": {"andOrQuery": "enabled"}}` in the site configuration. Built-in operator support is planned for an upcoming release.
+> NOTE: Operators are available as of Sourcegraph 3.17
 
 ### Search keywords
 
 Both Sourcegraph and OpenGrok allow users to add keywords for scoping searches. Below is a mapping from OpenGrok syntax to Sourcegraph.
 
-| | OpenGrok | Sourcegraph |
-|-------------------|------------|--------|
-| Search text | `full:pattern` | `pattern` |
-| Search symbol definitions | `def:pattern` | `pattern type:symbol` |
-| Search symbol references | `def:pattern` | Available through hover tooltips and `Find references` panels on code pages |
-| Search for repository names | Not supported | `pattern type:repo` |
-| Search for file names | `file:pattern` | `file:pattern` |
-| Search commit messages | `hist:pattern` | `pattern type:commit` |
-| Search code changes (diff search) | Not supported | `pattern type:diff` |
-| Scope searches to a language | `pattern type:c` | `pattern lang:c` |
-| Case sensitivity | Not supported | `case:yes` or `case:no` |
-| Scope searches to forked repositories | Supported through the repository selector | `fork:yes`, `fork:no`, or `fork:only` |
-| Scope searches to archived repositories | Supported through the repository selector | `archived:yes`, `archived:no`, or `archived:only` |
-| Scope searches to repositories that contain a file | Not supported | `pattern repohasfile:foo` |
-| Scope searches to recently updated repositories | Not supported | `pattern repohascommitafter:"3 months"` or `pattern repohascommitafter:"june 25 2017"` |
+|                                                          | OpenGrok                                  | Sourcegraph                                                                                          |
+|----------------------------------------------------------|-------------------------------------------|------------------------------------------------------------------------------------------------------|
+| Search text                                              | `full:pattern`                            | `pattern`                                                                                            |
+| Search symbol definitions                                | `def:pattern`                             | `pattern type:symbol`                                                                                |
+| Search symbol references                                 | `def:pattern`                             | Available through hover tooltips and `Find references` panels on code pages                          |
+| Search for repository names                              | Not supported                             | `pattern type:repo`                                                                                  |
+| Search for file names                                    | `file:pattern`                            | `file:pattern`                                                                                       |
+| Search commit messages                                   | `hist:pattern`                            | `pattern type:commit`                                                                                |
+| Search code changes (diff search)                        | Not supported                             | `pattern type:diff`                                                                                  |
+| Scope searches to a language                             | `pattern type:c`                          | `pattern lang:c`                                                                                     |
+| Case sensitivity                                         | Not supported                             | `case:yes` or `case:no`                                                                              |
+| Scope searches to forked repositories                    | Supported through the repository selector | `fork:yes`, `fork:no`, or `fork:only`                                                                |
+| Scope searches to archived repositories                  | Supported through the repository selector | `archived:yes`, `archived:no`, or `archived:only`                                                    |
+| Scope searches to repositories that contain a file       | Not supported                             | `pattern repo:contains.file(README)`                                                                 |
+| Scope searches to repositories that contain file content | Not supported                             | `pattern repo:contains.content(TODO)`                                                                |
+| Scope searches to recently updated repositories          | Not supported                             | `pattern repo:contains.commit.after(3 months)` or `pattern repo:contains.commit.after(june 25 2017)` |
 
 Sourcegraph also provides keywords to [scope commit message and diff searches](../reference/queries.md#keywords-diff-and-commit-searches-only) to specific authors or timeframes in which a change was made.
 

@@ -139,6 +139,9 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 		batchChangesCredentialIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.batchChangesCredentialByID(ctx, id)
 		},
+		bulkOperationIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.bulkOperationByID(ctx, id)
+		},
 	}
 }
 
@@ -326,6 +329,34 @@ func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64)
 	}
 
 	return &batchChangesSiteCredentialResolver{credential: cred}, nil
+}
+
+func (r *Resolver) bulkOperationByID(ctx context.Context, id graphql.ID) (graphqlbackend.BulkOperationResolver, error) {
+	if err := batchChangesEnabled(ctx); err != nil {
+		return nil, err
+	}
+
+	dbID, err := unmarshalBulkOperationID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if dbID == "" {
+		return nil, nil
+	}
+
+	return r.bulkOperationByIDString(ctx, dbID)
+}
+
+func (r *Resolver) bulkOperationByIDString(ctx context.Context, id string) (graphqlbackend.BulkOperationResolver, error) {
+	bulkOperation, err := r.store.GetBulkOperation(ctx, store.GetBulkOperationOpts{ID: id})
+	if err != nil {
+		if err == store.ErrNoResults {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &bulkOperationResolver{store: r.store, bulkOperation: bulkOperation}, nil
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
@@ -1105,7 +1136,7 @@ func (r *Resolver) deleteBatchChangesSiteCredential(ctx context.Context, credent
 }
 
 func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.DetachChangesetsArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.DetachChangesets", fmt.Sprintf("BatchChange: %q, Changesets: %s", args.BatchChange, args.Changesets))
+	tr, ctx := trace.New(ctx, "Resolver.DetachChangesets", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -1144,6 +1175,65 @@ func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.De
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) CreateChangesetComments(ctx context.Context, args *graphqlbackend.CreateChangesetCommentsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CreateChangesetComments", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := batchChangesEnabled(ctx); err != nil {
+		return nil, err
+	}
+
+	if args.Body == "" {
+		return nil, errors.New("empty comment body is not allowed")
+	}
+
+	batchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchChangeID == 0 {
+		return nil, ErrIDIsZero{}
+	}
+
+	var changesetIDs []int64
+	for _, raw := range args.Changesets {
+		id, err := unmarshalChangesetID(raw)
+		if err != nil {
+			return nil, err
+		}
+
+		if id == 0 {
+			return nil, ErrIDIsZero{}
+		}
+
+		changesetIDs = append(changesetIDs, id)
+	}
+
+	if len(changesetIDs) == 0 {
+		return nil, errors.New("specify at least one changeset")
+	}
+
+	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
+	svc := service.New(r.store)
+	bulkGroupID, err := svc.CreateChangesetJobs(
+		ctx,
+		batchChangeID,
+		changesetIDs,
+		btypes.ChangesetJobTypeComment,
+		&btypes.ChangesetJobCommentPayload{
+			Message: args.Body,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.bulkOperationByIDString(ctx, bulkGroupID)
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {

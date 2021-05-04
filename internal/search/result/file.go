@@ -20,24 +20,18 @@ type File struct {
 	Path     string
 }
 
-// URL generates a git URL for the file. This seems to currently only be used
-// as a unique key for the File, and may be removed in the future.
-func (fm *File) URL() string {
-	var b strings.Builder
-	var ref string
-	if fm.InputRev != nil {
-		ref = url.QueryEscape(*fm.InputRev)
+func (f *File) URL() *url.URL {
+	var path strings.Builder
+	path.Grow(len("/@/-/blob/") + len(f.Repo.Name) + len(f.Path) + 20)
+	path.WriteRune('/')
+	path.WriteString(string(f.Repo.Name))
+	if f.InputRev != nil && len(*f.InputRev) > 0 {
+		path.WriteRune('@')
+		path.WriteString(*f.InputRev)
 	}
-	b.Grow(len(fm.Repo.Name) + len(ref) + len(fm.Path) + len("git://?#"))
-	b.WriteString("git://")
-	b.WriteString(string(fm.Repo.Name))
-	if ref != "" {
-		b.WriteByte('?')
-		b.WriteString(ref)
-	}
-	b.WriteByte('#')
-	b.WriteString(fm.Path)
-	return b.String()
+	path.WriteString("/-/blob/")
+	path.WriteString(f.Path)
+	return &url.URL{Path: path.String()}
 }
 
 // FileMatch represents either:
@@ -136,6 +130,15 @@ func (fm *FileMatch) Limit(limit int) int {
 
 	fm.Symbols = fm.Symbols[:limit]
 	return 0
+}
+
+func (fm *FileMatch) Key() Key {
+	return Key{
+		TypeRank: rankFileMatch,
+		Repo:     fm.Repo.Name,
+		Commit:   fm.CommitID,
+		Path:     fm.Path,
+	}
 }
 
 // LineMatch is the struct used by vscode to receive search results for a line

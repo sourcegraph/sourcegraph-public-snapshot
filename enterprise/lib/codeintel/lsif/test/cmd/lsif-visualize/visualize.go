@@ -6,8 +6,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/test/cmd/lsif-visualize/internal/visualization"
 )
 
-func visualize(indexFile *os.File, fromID, subgraphDepth int) error {
+func visualize(indexFile *os.File, fromID, subgraphDepth int, exclude []string) error {
 	ctx := visualization.NewVisualizationContext()
 	visualizer := &visualization.Visualizer{Context: ctx}
-	return visualizer.Visualize(indexFile, fromID, subgraphDepth)
+	return visualizer.Visualize(indexFile, fromID, subgraphDepth, exclude)
 }

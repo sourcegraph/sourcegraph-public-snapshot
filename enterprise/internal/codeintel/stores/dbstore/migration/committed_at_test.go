@@ -70,13 +70,17 @@ func TestCommittedAtMigrator(t *testing.T) {
 		}
 	}
 
+	if err := store.Exec(context.Background(), sqlf.Sprintf("INSERT INTO repo (id, name) VALUES (42, 'foo'), (43, 'bar')")); err != nil {
+		t.Fatalf("unexpected error inserting repo: %s", err)
+	}
+
 	for i := 0; i < n; i++ {
 		if err := store.Exec(context.Background(), sqlf.Sprintf(
 			"INSERT INTO lsif_uploads (repository_id, commit, state, indexer, num_parts, uploaded_parts) VALUES (%s, %s, 'completed', 'lsif-go', 0, '{}')",
 			42+i/(n/2), // 50% id=42, 50% id=43
 			fmt.Sprintf("%040d", i),
 		)); err != nil {
-			t.Fatalf("unexpected error inserting row: %s", err)
+			t.Fatalf("unexpected error inserting upload: %s", err)
 		}
 	}
 
@@ -169,13 +173,17 @@ func TestCommittedAtMigratorUnknownRepository(t *testing.T) {
 		}
 	}
 
+	if err := store.Exec(context.Background(), sqlf.Sprintf("INSERT INTO repo (id, name) VALUES (42, 'foo'), (43, 'bar')")); err != nil {
+		t.Fatalf("unexpected error inserting repo: %s", err)
+	}
+
 	for i := 0; i < n; i++ {
 		if err := store.Exec(context.Background(), sqlf.Sprintf(
 			"INSERT INTO lsif_uploads (repository_id, commit, state, indexer, num_parts, uploaded_parts) VALUES (%s, %s, 'completed', 'lsif-go', 0, '{}')",
 			42+i/(n/2), // 50% id=42, 50% id=43
 			fmt.Sprintf("%040d", i),
 		)); err != nil {
-			t.Fatalf("unexpected error inserting row: %s", err)
+			t.Fatalf("unexpected error inserting upload: %s", err)
 		}
 	}
 
@@ -268,13 +276,17 @@ func TestCommittedAtMigratorUnknownCommits(t *testing.T) {
 		}
 	}
 
+	if err := store.Exec(context.Background(), sqlf.Sprintf("INSERT INTO repo (id, name) VALUES (42, 'foo'), (43, 'bar')")); err != nil {
+		t.Fatalf("unexpected error inserting repo: %s", err)
+	}
+
 	for i := 0; i < n; i++ {
 		if err := store.Exec(context.Background(), sqlf.Sprintf(
 			"INSERT INTO lsif_uploads (repository_id, commit, state, indexer, num_parts, uploaded_parts) VALUES (%s, %s, 'completed', 'lsif-go', 0, '{}')",
 			42+i/(n/2), // 50% id=42, 50% id=43
 			fmt.Sprintf("%040d", i),
 		)); err != nil {
-			t.Fatalf("unexpected error inserting row: %s", err)
+			t.Fatalf("unexpected error inserting upload: %s", err)
 		}
 	}
 
@@ -284,15 +296,14 @@ func TestCommittedAtMigratorUnknownCommits(t *testing.T) {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
 	assertProgress(0.5)
-	assertDirty([]int{42})
 	assertCommitDates(expectedCommitDates[:n/3]) // (2/3*n)/2 = n/3
 
 	if err := migrator.Up(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing up migration: %s", err)
 	}
 	assertProgress(1)
-	assertDirty([]int{42, 43})
 	assertCommitDates(expectedCommitDates)
+	assertDirty([]int{42, 43})
 
 	if err := migrator.Down(context.Background()); err != nil {
 		t.Fatalf("unexpected error performing down migration: %s", err)

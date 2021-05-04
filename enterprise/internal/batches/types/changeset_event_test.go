@@ -307,7 +307,10 @@ func TestChangesetEvent(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			have := tc.changeset.Events()
+			have, err := tc.changeset.Events()
+			if err != nil {
+				t.Fatal(err)
+			}
 			want := tc.events
 
 			if diff := cmp.Diff(have, want); diff != "" {

@@ -205,7 +205,9 @@ ComplexDiagram(
     Choice(0,
         Terminal("repo:"),
         Terminal("r:")),
+    Choice(0,
         Terminal("regex", {href: "#regular-expression"}),
+        Terminal("built-in", {href: "#built-in-predicate"})),
     Choice(0,
         Skip(),
         Sequence(
@@ -217,10 +219,10 @@ ComplexDiagram(
             Terminal("revision", {href: "#revision"})))).addTo();
 </script>
 
-Search repositories that match the regular expression.
-A `-` before `repo` excludes the repository. By default
-the repository will be searched at the `HEAD` commit of the default
-branch. You can optionally change the [revision](#revision).
+Search repositories that match the regular expression. A `-` before `repo`
+excludes the repository. By default the repository will be searched at the
+`HEAD` commit of the default branch. You can optionally change the
+[revision](#revision).
 
 **Example:** `repo:gorilla/mux testroute` [↗](https://sourcegraph.com/search?q=repo:gorilla/mux+testroute&patternType=regexp) `-repo:gorilla/mux testroute` [↗](https://sourcegraph.com/search?q=-repo:gorilla/mux+testroute&patternType=regexp)
 
@@ -501,7 +503,7 @@ ComplexDiagram(
     Terminal("regular expression", {href: "#regular-expression"})).addTo();
 </script>
 
-Only include results from repositories that contain a matching file. This
+_Deprecated. Prefer [Repo contains file](#repo-contains-file)._ Only include results from repositories that contain a matching file. This
 keyword is a pure filter, so it requires at least one other search term in the
 query. Note: this filter currently only works on text matches and file path
 matches.
@@ -516,8 +518,8 @@ ComplexDiagram(
     Terminal("quoted string", {href: "#quoted-string"})).addTo();
 </script>
 
-Filter out stale repositories that don’t contain commits past the specified time
-frame. This parameter is experimental.
+_Deprecated. Prefer [Repo contains commit after](#repo-contains-commit-after)._ Filter out stale repositories that don’t
+contain commits past the specified time frame. This parameter is experimental.
 
 **Example:** `repo:github\.com/sourcegraph repohascommitafter:"1 week ago"` [↗](https://sourcegraph.com/search?q=context:global+repo:github%5C.com/sourcegraph+repohascommitafter:%221+week+ago%22&patternType=literal)
 
@@ -587,6 +589,78 @@ Set whether the pattern should run a literal search, regular expression search,
 or a structural search pattern. This parameter is available as a command-line and
 accessibility option, and synonymous with the visual [search pattern](#search-pattern) toggles.
 in [search pattern](#search-pattern).
+
+## Built-in predicate
+
+<script>
+ComplexDiagram(
+    Choice(0,
+        Terminal("contains.content(...)", {href: "#repo-contains-content"}),
+        Terminal("contains.file(...)", {href: "#repo-contains-file"}),
+        Terminal("contains(...)", {href: "#repo-contains-file-and-content"}),
+        Terminal("contains.commit.after(...)", {href: "#repo-contains-commit-after"}))).addTo();
+</script>
+
+### Repo contains file
+
+<script>
+ComplexDiagram(
+    Terminal("contains.file"),
+    Terminal("("),
+    Terminal("regexp", {href: "#regexp"}),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositories that contain a file path matching the regular expression.
+
+**Example:** `repo:contains.file(README)` [↗](https://sourcegraph.com/search?q=repo:contains%28file:README%29&patternType=literal)
+
+### Repo contains content
+
+<script>
+ComplexDiagram(
+    Terminal("contains.content"),
+    Terminal("("),
+    Terminal("regexp", {href: "#regular-expression"}),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositories that contain file content matching the regular expression.
+
+**Example:** `repo:contains.content(TODO)` [↗](https://sourcegraph.com/search?q=repo:contains.content%28TODO%29&patternType=literal)
+
+### Repo contains file and content
+
+<script>
+ComplexDiagram(
+    Terminal("contains"),
+    Terminal("("),
+    Stack(
+        Sequence(Terminal("file:"), Terminal("regexp", {href: "#regular-expression"}), Terminal("space", {href: "#whitespace"})),
+        Sequence(Terminal("content:"),Terminal("regexp", {href: "#regular-expression"}))),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositories that contain a file matching the `file:` with `content:` filters.
+
+**Example:** `repo:contains(file:CHANGELOG content:fix)` [↗](https://sourcegraph.com/search?q=repo:contains%28file:CHANGELOG+content:fix%29&patternType=literal)
+
+### Repo contains commit after
+
+<script>
+ComplexDiagram(
+    Terminal("contains.commit.after"),
+    Terminal("("),
+    Terminal("string", {href: "#string"}),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositories that contain a a commit after some specified
+time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt)
+for accepted formats. Use this to filter out stale repositories that don’t contain
+commits past the specified time frame. This parameter is experimental.
+
+**Example:** `repo:contains.commit.after(1 month ago)` [↗](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph+repo:contains.commit.after%281+month+ago%29&patternType=literal)
 
 ## Regular expression
 

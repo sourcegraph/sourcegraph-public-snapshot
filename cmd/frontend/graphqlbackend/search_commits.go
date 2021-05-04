@@ -12,7 +12,6 @@ import (
 	"unicode/utf8"
 
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/xeonx/timeago"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/pkg/errors"
@@ -107,25 +106,15 @@ func (r *CommitSearchResultResolver) Icon() string {
 }
 
 func (r *CommitSearchResultResolver) Label() Markdown {
-	message := r.CommitMatch.Commit.Message.Subject()
-	author := r.CommitMatch.Commit.Author.Name
-	repoName := displayRepoName(r.Commit().Repository().Name())
-	repoURL := r.Commit().Repository().URL()
-	url := r.Commit().URL()
-
-	label := fmt.Sprintf("[%s](%s) › [%s](%s): [%s](%s)", repoName, repoURL, author, url, message, url)
-	return Markdown(label)
+	return Markdown(r.CommitMatch.Label())
 }
 
 func (r *CommitSearchResultResolver) URL() string {
-	return r.Commit().URL()
+	return r.CommitMatch.URL().String()
 }
 
 func (r *CommitSearchResultResolver) Detail() Markdown {
-	commitHash := r.CommitMatch.Commit.ID.Short()
-	timeagoConfig := timeago.NoMax(timeago.English)
-	detail := fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(r.CommitMatch.Commit.Author.Date), r.Commit().URL())
-	return Markdown(detail)
+	return Markdown(r.CommitMatch.Detail())
 }
 
 func (r *CommitSearchResultResolver) Matches() []*searchResultMatchResolver {
@@ -466,14 +455,6 @@ func cleanDiffPreview(highlights []result.HighlightedRange, rawDiffResult string
 
 	body := fmt.Sprintf("```diff\n%v```", strings.Join(finalLines, "\n"))
 	return body, highlights
-}
-
-func displayRepoName(repoPath string) string {
-	parts := strings.Split(repoPath, "/")
-	if len(parts) >= 3 && strings.Contains(parts[0], ".") {
-		parts = parts[1:] // remove hostname from repo path (reduce visual noise)
-	}
-	return strings.Join(parts, "/")
 }
 
 func highlightMatches(pattern *regexp.Regexp, data []byte) *result.HighlightedString {

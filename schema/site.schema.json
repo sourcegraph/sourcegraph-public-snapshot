@@ -976,6 +976,9 @@
       "description": "Configuration for encryption keys used to encrypt data at rest in the database.",
       "type": "object",
       "properties": {
+        "batchChangesCredentialKey": {
+          "$ref": "#/definitions/EncryptionKey"
+        },
         "externalServiceKey": {
           "$ref": "#/definitions/EncryptionKey"
         },

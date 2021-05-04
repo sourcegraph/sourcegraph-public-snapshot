@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	validateSearchContextNameRegexp   = lazyregexp.New(`^[a-zA-Z0-9_\-\/]+$`)
+	validateSearchContextNameRegexp   = lazyregexp.New(`^[a-zA-Z0-9_\-\/\.]+$`)
 	namespacedSearchContextSpecRegexp = lazyregexp.New(searchContextSpecPrefix + `(.*?)\/(.*)`)
 )
 
@@ -180,6 +180,38 @@ func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.D
 	}
 
 	searchContext, err = database.SearchContexts(db).CreateSearchContextWithRepositoryRevisions(ctx, searchContext, repositoryRevisions)
+	if err != nil {
+		return nil, err
+	}
+	return searchContext, nil
+}
+
+func UpdateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.DB, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
+	if IsGlobalSearchContext(searchContext) {
+		return nil, errors.New("cannot update global search context")
+	}
+
+	err := validateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateSearchContextName(searchContext.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateSearchContextDescription(searchContext.Description)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateSearchContextRepositoryRevisions(repositoryRevisions)
+	if err != nil {
+		return nil, err
+	}
+
+	searchContext, err = database.SearchContexts(db).UpdateSearchContextWithRepositoryRevisions(ctx, searchContext, repositoryRevisions)
 	if err != nil {
 		return nil, err
 	}
