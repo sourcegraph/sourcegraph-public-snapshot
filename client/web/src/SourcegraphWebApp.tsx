@@ -7,7 +7,7 @@ import { hot } from 'react-hot-loader/root'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
-import { bufferCount, startWith, switchMap } from 'rxjs/operators'
+import { bufferCount, catchError, startWith, switchMap } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -23,6 +23,7 @@ import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { REDESIGN_CLASS_NAME, getIsRedesignEnabled } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
@@ -352,18 +353,25 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 .pipe(
                     switchMap(([, authenticatedUser]) =>
                         authenticatedUser ? listUserRepositories({ id: authenticatedUser.id, first: 1 }) : of(null)
-                    )
+                    ),
+                    catchError(error => [asError(error)])
                 )
-                .subscribe(userRepositories => {
-                    const hasUserAddedRepositories = userRepositories !== null && userRepositories.nodes.length > 0
-                    this.setState({ hasUserAddedRepositories })
+                .subscribe(result => {
+                    if (!isErrorLike(result)) {
+                        const hasUserAddedRepositories = result !== null && result.nodes.length > 0
+                        this.setState({ hasUserAddedRepositories })
+                    }
                 })
         )
 
         this.subscriptions.add(
-            fetchSearchContexts({ first: 1 }).subscribe(({ totalCount }) =>
-                this.setState({ hasUserDefinedContexts: totalCount > 0 })
-            )
+            fetchSearchContexts({ first: 1 })
+                .pipe(catchError(error => [asError(error)]))
+                .subscribe(result => {
+                    if (!isErrorLike(result)) {
+                        this.setState({ hasUserDefinedContexts: result.totalCount > 0 })
+                    }
+                })
         )
 
         /**

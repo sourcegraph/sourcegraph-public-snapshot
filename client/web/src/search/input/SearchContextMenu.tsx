@@ -229,12 +229,16 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         return () => subscription.unsubscribe()
     }, [loadNextPageUpdates, setSearchContexts, setLastPageInfo, fetchSearchContexts])
 
-    const autoDefinedSearchContexts = useObservable(fetchAutoDefinedSearchContexts)
+    const autoDefinedSearchContexts = useObservable(
+        fetchAutoDefinedSearchContexts.pipe(catchError(error => [asError(error)]))
+    )
     const filteredAutoDefinedSearchContexts = useMemo(
         () =>
-            autoDefinedSearchContexts?.filter(context =>
-                context.spec.toLowerCase().includes(searchFilter.toLowerCase())
-            ) ?? [],
+            autoDefinedSearchContexts && !isErrorLike(autoDefinedSearchContexts)
+                ? autoDefinedSearchContexts.filter(context =>
+                      context.spec.toLowerCase().includes(searchFilter.toLowerCase())
+                  )
+                : [],
         [autoDefinedSearchContexts, searchFilter]
     )
 

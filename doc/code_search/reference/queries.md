@@ -98,9 +98,9 @@ The following keywords can be used on all searches (using [RE2 syntax](https://g
 
 Multiple or combined **repo:** and **file:** keywords are intersected. For example, `repo:foo repo:bar` limits your search to repositories whose path contains **both** _foo_ and _bar_ (such as _github.com/alice/foobar_). To include results from repositories whose path contains **either** _foo_ or _bar_, use `repo:foo|bar`.
 
-## Operators
+## Boolean operators
 
-Use operators to create more expressive searches.
+Use boolean operators to create more expressive searches.
 
 | Operator | Example |
 | --- | --- |
