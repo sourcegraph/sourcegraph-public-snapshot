@@ -243,3 +243,8 @@ func (r *NodeResolver) ToOutOfBandMigration() (*outOfBandMigrationResolver, bool
 	n, ok := r.Node.(*outOfBandMigrationResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToBulkOperation() (BulkOperationResolver, bool) {
+	n, ok := r.Node.(BulkOperationResolver)
+	return n, ok
+}

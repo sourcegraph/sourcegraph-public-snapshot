@@ -1,13 +1,13 @@
 {
-  "id": 71,
+  "id": 140,
   "version": 0,
   "title": "This is a test PR",
   "description": "This is a test PR. Feel free to ignore.",
   "state": "OPEN",
   "open": true,
   "closed": false,
-  "createdDate": 1585577904728,
-  "updatedDate": 1585577904728,
+  "createdDate": 1619784741907,
+  "updatedDate": 1619784741907,
   "fromRef": {
    "id": "refs/heads/test-pr-bbs-3",
    "repository": {
@@ -31,24 +31,40 @@
   "locked": false,
   "author": {
    "user": {
-    "name": "milton",
-    "emailAddress": "dev@sourcegraph.com",
-    "id": 1,
-    "displayName": "milton woof",
+    "name": "erik",
+    "emailAddress": "erik@sourcegraph.com",
+    "id": 152,
+    "displayName": "Erik Seliger",
     "active": true,
-    "slug": "milton",
+    "slug": "erik",
     "type": "NORMAL"
    },
    "role": "AUTHOR",
    "approved": false,
    "status": "UNAPPROVED"
   },
-  "reviewers": [],
+  "reviewers": [
+   {
+    "user": {
+     "name": "thorsten",
+     "emailAddress": "thorsten@sourcegraph.com",
+     "id": 104,
+     "displayName": "thorsten",
+     "active": true,
+     "slug": "thorsten",
+     "type": "NORMAL"
+    },
+    "lastReviewedCommit": "",
+    "role": "REVIEWER",
+    "approved": false,
+    "status": "UNAPPROVED"
+   }
+  ],
   "participants": [],
   "links": {
    "self": [
     {
-     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/71"
+     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/140"
     }
    ]
   }

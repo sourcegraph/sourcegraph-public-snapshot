@@ -256,3 +256,7 @@ func pruneSiteCredentials(t *testing.T, cstore *store.Store) {
 		}
 	}
 }
+
+func strPtr(s string) *string {
+	return &s
+}
