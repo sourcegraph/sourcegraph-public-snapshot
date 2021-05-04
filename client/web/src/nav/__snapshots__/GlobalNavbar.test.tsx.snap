@@ -78,7 +78,6 @@ exports[`GlobalNavbar default 1`] = `
       }
       isExtensionAlertAnimating={false}
       isLightTheme={true}
-      isSearchRelatedPage={true}
       isSourcegraphDotCom={false}
       keyboardShortcuts={Array []}
       location={

@@ -4,13 +4,11 @@ import React from 'react'
 
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
+import { UserProfileFormFieldsValue } from './settings/profile/UserProfileFormFields'
+
 interface Props {
     size?: number
-    user: {
-        avatarURL: string | null
-        displayName?: string
-        username?: string
-    }
+    user: UserProfileFormFieldsValue
     className?: string
     ['data-tooltip']?: string
     targetID?: string

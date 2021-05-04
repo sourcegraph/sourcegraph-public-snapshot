@@ -92,7 +92,7 @@ export const NavLink: React.FunctionComponent<NavLinkProps> = ({ icon: Icon, chi
         <span className={navItemStyles.linkContent}>
             {Icon ? <Icon className={classNames('icon-inline', navItemStyles.icon)} /> : null}
             <span
-                className={classNames(navItemStyles.text, navItemStyles.focusVisible, {
+                className={classNames(navItemStyles.text, {
                     [navItemStyles.iconIncluded]: Icon,
                 })}
             >
