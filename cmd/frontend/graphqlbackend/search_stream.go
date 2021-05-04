@@ -6,9 +6,11 @@ import (
 
 	"go.uber.org/atomic"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // SearchEvent is an event on a search stream. It contains fields which can be
@@ -36,6 +38,50 @@ type Sender interface {
 type MatchSender interface {
 	Sender
 	SendMatches(SearchMatchEvent)
+}
+
+// Temporary conversion function from SearchEvent to SearchMatchEvent
+func SearchEventToSearchMatchEvent(se SearchEvent) SearchMatchEvent {
+	matches := make([]result.Match, 0, len(se.Results))
+	for _, resolver := range se.Results {
+		if fmr, ok := resolver.ToFileMatch(); ok {
+			matches = append(matches, &fmr.FileMatch)
+		} else if rr, ok := resolver.ToRepository(); ok {
+			matches = append(matches, &rr.RepoMatch)
+		} else if csr, ok := resolver.ToCommitSearchResult(); ok {
+			matches = append(matches, &csr.CommitMatch)
+		}
+	}
+	return SearchMatchEvent{
+		Results: matches,
+		Stats:   se.Stats,
+	}
+}
+
+// Temporary conversion function from SearchMatchEvent to SearchEvent
+func SearchMatchEventToSearchEvent(db dbutil.DB, sme SearchMatchEvent) SearchEvent {
+	srrs := make([]SearchResultResolver, 0, len(sme.Results))
+	for _, match := range sme.Results {
+		switch v := match.(type) {
+		case *result.FileMatch:
+			srrs = append(srrs, &FileMatchResolver{
+				db:           db,
+				FileMatch:    *v,
+				RepoResolver: NewRepositoryResolver(db, v.Repo.ToRepo()),
+			})
+		case *result.RepoMatch:
+			srrs = append(srrs, NewRepositoryResolver(db, &types.Repo{Name: v.Name, ID: v.ID}))
+		case *result.CommitMatch:
+			srrs = append(srrs, &CommitSearchResultResolver{
+				db:          db,
+				CommitMatch: *v,
+			})
+		}
+	}
+	return SearchEvent{
+		Results: srrs,
+		Stats:   sme.Stats,
+	}
 }
 
 type limitStream struct {
