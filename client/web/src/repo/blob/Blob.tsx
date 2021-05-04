@@ -49,9 +49,13 @@ import { HoverThresholdProps } from '../RepoContainer'
 
 import { LineDecorator } from './LineDecorator'
 import { Shortcut } from '@slimsag/react-shortcuts'
-import { KEYBOARD_SHORTCUT_FUZZY_FILES } from '../../keyboardShortcuts/keyboardShortcuts'
+import {
+    KEYBOARD_SHORTCUT_FUZZY_FILES,
+    KEYBOARD_SHORTCUT_FUZZY_SYMBOLS,
+} from '../../keyboardShortcuts/keyboardShortcuts'
 import { requestGraphQL } from '../../backend/graphql'
-import { FuzzyFiles } from './FuzzyFiles'
+import { FuzzySearch } from './fuzzy/FuzzySearch'
+import { FuzzyFiles } from './fuzzy/FuzzyFiles'
 // import { graphQL } from 'sourcegraph'
 
 /**
@@ -220,6 +224,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | undefined>()
     const [fuzzyFiles, setFuzzyFiles] = useState<string[]>([])
+    const [focusIndex, setFocusIndex] = useState<number>(0)
 
     const hoverifier = useMemo(
         () =>
@@ -519,19 +524,18 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         [viewerUpdates]
     )
 
-
+    const search = new FuzzySearch(fuzzyFiles)
     return (
         <>
-            <Shortcut {...KEYBOARD_SHORTCUT_FUZZY_FILES.keybindings[0]} onMatch={async e => {
-                console.log("POOOP")
-                console.log(props.blobInfo.repoName)
-                console.log(props.blobInfo.commitID)
-                        let variables = {
-                            repository: props.blobInfo.repoName,
-                            commit: props.blobInfo.commitID
-                        }
-                        let files = await requestGraphQL(
-                            `query Files($repository: String!, $commit: String!) {
+            <Shortcut
+                {...KEYBOARD_SHORTCUT_FUZZY_FILES.keybindings[0]}
+                onMatch={async e => {
+                    let variables = {
+                        repository: props.blobInfo.repoName,
+                        commit: props.blobInfo.commitID,
+                    }
+                    let files = await requestGraphQL(
+                        `query Files($repository: String!, $commit: String!) {
                                repository(name: $repository) {
                                  commit(rev: $commit) {
                                    tree(recursive:true) {
@@ -542,17 +546,55 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                                  }
                                }
                              }`,
-                            variables
-                        )
-                        console.log(files.subscribe((e: any) => {
-                            const files = e.data.repository.commit.tree.files.map((f: any) => f.path)
+                        variables
+                    )
+                    files.subscribe((e: any) => {
+                        const files = e.data.repository.commit.tree.files.map((f: any) => f.path)
+                        setFuzzyFiles(files)
+                        const input = document.getElementById('fuzzy-files-input') as any
+                        input?.focus()
+                        input?.select()
+                    })
+                }}
+            />
+            <Shortcut
+                {...KEYBOARD_SHORTCUT_FUZZY_SYMBOLS.keybindings[0]}
+                onMatch={async e => {
+                    console.log('SYMBOLS')
+                    let variables = {
+                        repository: props.blobInfo.repoName,
+                        commit: props.blobInfo.commitID,
+                    }
+                    let files = await requestGraphQL(
+                        `query Symbols($repository: String!, $commit: String!) {
+                            repository(name: $repository) {
+                              commit(rev: $commit) {
+                                symbols(first: 1000) {
+                                  nodes {
+                                    name
+                                  }
+                                }
+                              }
+                            }
+                          }
+                          `,
+                        variables
+                    )
+                    console.log(files)
+                    files.subscribe((e: any) => {
+                        console.log(e)
+                        const files = e.data?.repository?.commit?.symbols?.nodes.map((f: any) => f.name)
+                        if (files) {
                             setFuzzyFiles(files)
-                        }))
-                        // files.then(f => {
-                        //     console.log(f)
-                        // })
-            }} />
-            {fuzzyFiles && <FuzzyFiles files={fuzzyFiles}/>}
+                            const input = document.getElementById('fuzzy-files-input') as any
+                            input?.focus()
+                            input?.select()
+                        }
+                    })
+                }}
+            />
+
+            {fuzzyFiles.length > 0 && <FuzzyFiles blobInfo={props.blobInfo} search={e => search.search(e)} />}
             <div className={`blob ${props.className}`} ref={nextBlobElement}>
                 <code
                     className={`blob__code ${props.wrapCode ? ' blob__code--wrapped' : ''} test-blob`}

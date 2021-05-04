@@ -63,3 +63,16 @@
         }
     }
 }
+
+.fuzzy-files-results {
+    text-align: left;
+    font-family: monospace;
+}
+
+.fuzzy-files-highlighted {
+    text-decoration: underline;
+}
+
+.fuzzy-files-focused {
+    background-color: #eeeeee52;
+}
