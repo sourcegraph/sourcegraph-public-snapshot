@@ -21,11 +21,13 @@
     a.badge-#{$name} {
         background-color: $base-color;
         color: $text-color;
+        border: 1px solid $base-color;
     }
 
     a.badge-#{$name} {
         &:hover,
-        &:focus {
+        &:focus,
+        &.focus {
             color: $text-color;
             background-color: $dark-color-variant;
         }
@@ -33,6 +35,7 @@
         &:focus,
         &.focus {
             outline: 0;
+            border-color: var(--body-bg);
 
             @at-root #{selector-append('.theme-light', &)} {
                 box-shadow: 0 0 0 2px $light-color-variant;
@@ -107,4 +110,12 @@
         $light-color-variant: var(--info-3),
         $dark-color-variant: var(--info-3) // TODO: No darker variant?
     );
+
+    // Use default focus state for better contrast
+    .badge-secondary {
+        &:focus,
+        &.focus {
+            box-shadow: var(--focus-box-shadow);
+        }
+    }
 }
