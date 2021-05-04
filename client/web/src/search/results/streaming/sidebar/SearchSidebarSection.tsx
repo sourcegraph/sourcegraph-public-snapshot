@@ -36,13 +36,11 @@ export const SearchSidebarSection: React.FunctionComponent<{
                 <input
                     type="search"
                     placeholder="Find..."
+                    aria-label="Find filters"
                     value={filter}
                     onChange={event => setFilter(event.currentTarget.value)}
-                    className={classNames(
-                        'form-control',
-                        styles.sidebarSectionSearchBox,
-                        'test-sidebar-section-search-box'
-                    )}
+                    data-testid="sidebar-section-search-box"
+                    className={classNames('form-control', styles.sidebarSectionSearchBox)}
                 />
             )}
 

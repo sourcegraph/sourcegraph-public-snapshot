@@ -30,7 +30,7 @@ describe('SearchSidebarSection', () => {
         const items = element.find(FilterLink)
         expect(items.length).toBe(9)
 
-        const searchbox = element.find('.test-sidebar-section-search-box')
+        const searchbox = element.find('[data-testid="sidebar-section-search-box"]')
         expect(searchbox.length).toBe(1)
     })
 
@@ -41,7 +41,7 @@ describe('SearchSidebarSection', () => {
             </SearchSidebarSection>
         )
 
-        const searchbox = element.find('.test-sidebar-section-search-box')
+        const searchbox = element.find('[data-testid="sidebar-section-search-box"]')
         searchbox.getDOMNode().setAttribute('value', 'Script')
         searchbox.simulate('change', { currentTarget: searchbox })
 
@@ -56,7 +56,7 @@ describe('SearchSidebarSection', () => {
             </SearchSidebarSection>
         )
 
-        let searchbox = element.find('.test-sidebar-section-search-box')
+        let searchbox = element.find('[data-testid="sidebar-section-search-box"]')
         searchbox.getDOMNode().setAttribute('value', 'Script')
         searchbox.simulate('change', { currentTarget: searchbox })
 
@@ -66,7 +66,7 @@ describe('SearchSidebarSection', () => {
         const items = element.find(FilterLink)
         expect(items.length).toBe(3)
 
-        searchbox = element.find('.test-sidebar-section-search-box')
+        searchbox = element.find('[data-testid="sidebar-section-search-box"]')
         const searchFilter = searchbox.getDOMNode().getAttribute('value')
         expect(searchFilter).toBe('')
     })
@@ -81,7 +81,7 @@ describe('SearchSidebarSection', () => {
         const items = element.find(FilterLink)
         expect(items.length).toBe(1)
 
-        const searchbox = element.find('.test-sidebar-section-search-box')
+        const searchbox = element.find('[data-testid="sidebar-section-search-box"]')
         expect(searchbox.length).toBe(0)
     })
 
@@ -95,7 +95,7 @@ describe('SearchSidebarSection', () => {
         const items = element.find(FilterLink)
         expect(items.length).toBe(9)
 
-        const searchbox = element.find('.test-sidebar-section-search-box')
+        const searchbox = element.find('[data-testid="sidebar-section-search-box"]')
         expect(searchbox.length).toBe(0)
     })
 })
