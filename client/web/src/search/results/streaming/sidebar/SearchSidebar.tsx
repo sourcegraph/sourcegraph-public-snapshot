@@ -45,7 +45,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     return (
         <div className={styles.searchSidebar}>
             <SearchSidebarSection header="Search types">{getSearchTypeLinks(props)}</SearchSidebarSection>
-            <SearchSidebarSection header="Dynamic filters" showSearch={true}>
+            <SearchSidebarSection header="Dynamic filters">
                 {getDynamicFilterLinks(props.filters, onFilterClicked)}
             </SearchSidebarSection>
             <SearchSidebarSection header="Repositories" showSearch={true}>
