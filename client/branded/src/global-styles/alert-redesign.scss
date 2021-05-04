@@ -1,0 +1,129 @@
+@import './color-scheme-mixins';
+
+@mixin redesign-alert-variant(
+    $name,
+    $border-color,
+    $icon-color-light,
+    $icon-color-dark,
+    $icon-background-light,
+    $icon-background-dark: $icon-background-light
+) {
+    .alert-#{$name} {
+        border-color: $border-color;
+
+        // Alert icon background.
+        &::before {
+            @include color-scheme-rule(
+                $rule: background-color,
+                $light-value: $icon-background-light,
+                $dark-value: $icon-background-dark
+            );
+        }
+
+        &::after {
+            // We cannot render SVG in HTML because then we will need to add it to every .alert element manually.
+            // We can use it as a mask-image to apply CSS variables as a fill color.
+            // Icon: mdi-react/InformationOutline
+            mask-image: url(escape-svg(
+                "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M11 9h2V7h-2m1 13c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8m0-18A10 10 0 002 12a10 10 0 0010 10 10 10 0 0010-10A10 10 0 0012 2m-1 15h2v-6h-2v6z'/></svg>"
+            ));
+            mask-repeat: no-repeat;
+            mask-size: 1.25rem;
+            mask-position: 50% 50%;
+            // Applied as a fill color for SVG icon because of the mask-image.
+            @include color-scheme-rule(
+                $rule: background-color,
+                $light-value: $icon-color-light,
+                $dark-value: $icon-color-dark
+            );
+        }
+    }
+}
+
+.theme-redesign {
+    .alert {
+        --alert-secondary-color: var(--icon-color);
+        --alert-icon-block-width: 2.5rem;
+        --alert-content-padding: 0.5rem;
+
+        overflow: hidden;
+        color: var(--body-color);
+        background-color: var(--color-bg-1);
+        padding: var(--alert-content-padding) var(--alert-content-padding) var(--alert-content-padding)
+            calc(var(--alert-icon-block-width) + var(--alert-content-padding));
+
+        &::before {
+            border: 2px solid var(--color-bg-1);
+            border-top-left-radius: var(--border-radius);
+            border-bottom-left-radius: var(--border-radius);
+        }
+
+        &::before,
+        &::after {
+            display: block;
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: var(--alert-icon-block-width);
+            height: 100%;
+        }
+    }
+
+    @include redesign-alert-variant(
+        $name: 'info',
+        $border-color: var(--info),
+        $icon-background-light: var(--info-4),
+        $icon-background-dark: var(--info-3),
+        $icon-color-light: var(--info-3),
+        $icon-color-dark: var(--info)
+    );
+
+    @include redesign-alert-variant(
+        $name: 'warning',
+        $border-color: var(--warning),
+        $icon-background-light: var(--warning-4),
+        $icon-color-light: var(--warning-3),
+        $icon-color-dark: var(--warning)
+    );
+
+    @include redesign-alert-variant(
+        $name: 'danger',
+        $border-color: var(--danger),
+        $icon-background-light: var(--danger-4),
+        $icon-color-light: var(--danger-3),
+        $icon-color-dark: var(--danger)
+    );
+
+    @include redesign-alert-variant(
+        $name: 'success',
+        $border-color: var(--success),
+        $icon-background-light: var(--success-4),
+        $icon-color-light: var(--success-3),
+        $icon-color-dark: var(--success)
+    );
+
+    @include redesign-alert-variant(
+        $name: 'primary',
+        $border-color: var(--primary),
+        $icon-background-light: var(--primary-4),
+        $icon-color-light: var(--primary-3),
+        $icon-color-dark: var(--primary)
+    );
+
+    @include redesign-alert-variant(
+        $name: 'secondary',
+        $border-color: var(--alert-secondary-color),
+        $icon-background-light: var(--secondary-4),
+        $icon-color-light: var(--alert-secondary-color),
+        $icon-color-dark: var(--alert-secondary-color)
+    );
+
+    @include redesign-alert-variant(
+        $name: 'merged',
+        $border-color: var(--merged),
+        $icon-background-light: var(--merged-4),
+        $icon-color-light: var(--merged-3),
+        $icon-color-dark: var(--merged)
+    );
+}
