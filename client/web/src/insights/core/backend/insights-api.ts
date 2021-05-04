@@ -12,58 +12,66 @@ import { fetchBackendInsights, fetchLatestSubjectSettings } from './requests/fet
 import { ApiService, SubjectSettingsResult, ViewInsightProviderResult, ViewInsightProviderSourceType } from './types'
 import { createViewContent } from './utils/create-view-content'
 
-/** Main API service to get data for code insights */
-export class InsightsAPI implements ApiService {
-    /** Get combined (backend and extensions) code insights */
-    public getCombinedViews = (
-        getExtensionsInsights: () => Observable<ViewProviderResult[]>
-    ): Observable<ViewInsightProviderResult[]> =>
-        combineLatest([
-            getExtensionsInsights().pipe(
-                map(extensionInsights =>
-                    extensionInsights.map(insight => ({ ...insight, source: ViewInsightProviderSourceType.Extension }))
-                )
-            ),
-            fetchBackendInsights().pipe(
-                map(backendInsights =>
-                    backendInsights.map(
-                        (insight, index): ViewInsightProviderResult => ({
-                            id: `Backend insight ${index + 1}`,
-                            view: {
-                                title: insight.title,
-                                subtitle: insight.description,
-                                content: [createViewContent(insight)],
-                            },
-                            source: ViewInsightProviderSourceType.Backend,
-                        })
-                    )
-                ),
-                catchError(error =>
-                    of<ViewInsightProviderResult[]>([
-                        {
-                            id: 'Backend insight',
-                            view: asError(error),
-                            source: ViewInsightProviderSourceType.Backend,
-                        },
-                    ])
-                )
-            ),
-        ]).pipe(map(([extensionViews, backendInsights]) => [...backendInsights, ...extensionViews]))
-
-    public getInsightCombinedViews = (
-        extensionApi: Promise<Remote<FlatExtensionHostAPI>>
-    ): Observable<ViewInsightProviderResult[]> =>
-        this.getCombinedViews(() =>
-            from(extensionApi).pipe(
-                switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightsViews({})))
+/** Get combined (backend and extensions) code insights */
+const getCombinedViews = (
+    getExtensionsInsights: () => Observable<ViewProviderResult[]>
+): Observable<ViewInsightProviderResult[]> =>
+    combineLatest([
+        getExtensionsInsights().pipe(
+            map(extensionInsights =>
+                extensionInsights.map(insight => ({ ...insight, source: ViewInsightProviderSourceType.Extension }))
             )
-        )
+        ),
+        fetchBackendInsights().pipe(
+            map(backendInsights =>
+                backendInsights.map(
+                    (insight, index): ViewInsightProviderResult => ({
+                        id: `Backend insight ${index + 1}`,
+                        view: {
+                            title: insight.title,
+                            subtitle: insight.description,
+                            content: [createViewContent(insight)],
+                        },
+                        source: ViewInsightProviderSourceType.Backend,
+                    })
+                )
+            ),
+            catchError(error =>
+                of<ViewInsightProviderResult[]>([
+                    {
+                        id: 'Backend insight',
+                        view: asError(error),
+                        source: ViewInsightProviderSourceType.Backend,
+                    },
+                ])
+            )
+        ),
+    ]).pipe(map(([extensionViews, backendInsights]) => [...backendInsights, ...extensionViews]))
 
-    public getSubjectSettings = (id: string): Observable<SubjectSettingsResult> =>
-        fetchLatestSubjectSettings(id).pipe(
-            map(settings => settings.settingsSubject?.latestSettings ?? { id: null, contents: '' })
+const getInsightCombinedViews = (
+    extensionApi: Promise<Remote<FlatExtensionHostAPI>>
+): Observable<ViewInsightProviderResult[]> =>
+    getCombinedViews(() =>
+        from(extensionApi).pipe(
+            switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightsViews({})))
         )
+    )
 
-    public updateSubjectSettings = (context: PlatformContext, subjectId: string, content: string): Observable<void> =>
-        from(context.updateSettings(subjectId, content))
-}
+const getSubjectSettings = (id: string): Observable<SubjectSettingsResult> =>
+    fetchLatestSubjectSettings(id).pipe(
+        map(settings => settings.settingsSubject?.latestSettings ?? { id: null, contents: '' })
+    )
+
+const updateSubjectSettings = (
+    context: Pick<PlatformContext, 'updateSettings'>,
+    subjectId: string,
+    content: string
+): Observable<void> => from(context.updateSettings(subjectId, content))
+
+/** Main API service to get data for code insights */
+export const createInsightAPI = (): ApiService => ({
+    getCombinedViews,
+    getInsightCombinedViews,
+    getSubjectSettings,
+    updateSubjectSettings,
+})

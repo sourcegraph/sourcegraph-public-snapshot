@@ -1,10 +1,11 @@
-import { FORM_ERROR } from 'final-form'
+import * as jsonc from '@sqs/jsonc-parser'
+import { camelCase } from 'lodash'
 import React, { useCallback, useContext } from 'react'
 import { Redirect } from 'react-router'
 import { RouteComponentProps } from 'react-router-dom'
-import * as uuid from 'uuid'
 
 import { PlatformContextProps } from '@sourcegraph/shared/out/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError } from '@sourcegraph/shared/out/src/util/errors'
 
 import { AuthenticatedUser } from '../../../../auth'
@@ -12,20 +13,34 @@ import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
 
-import { CreationSearchInsightForm, CreationSearchInsightFormProps } from './components/creation-search-insight-form/CreationSearchInsightForm'
-import styles from './CreationSearchInsightPage.module.scss'
+import {
+    CreationSearchInsightForm,
+    CreationSearchInsightFormProps,
+} from './components/creation-search-insight-form/CreationSearchInsightForm'
+import { FORM_ERROR } from './hooks/useForm'
 
-export interface CreationSearchInsightPageProps extends PlatformContextProps, RouteComponentProps {
+const defaultFormattingOptions: jsonc.FormattingOptions = {
+    eol: '\n',
+    insertSpaces: true,
+    tabSize: 2,
+}
+
+const DEFAULT_FINAL_SETTINGS = {}
+
+export interface CreationSearchInsightPageProps
+    extends PlatformContextProps<'updateSettings'>,
+        Pick<RouteComponentProps, 'history'>,
+        SettingsCascadeProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
      * */
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations'> | null
 }
 
 /** Displays create insight page with creation form. */
 export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchInsightPageProps> = props => {
-    const { platformContext, authenticatedUser, history } = props
+    const { platformContext, authenticatedUser, history, settingsCascade } = props
     const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
 
     const handleSubmit = useCallback<CreationSearchInsightFormProps['onSubmit']>(
@@ -41,39 +56,40 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
             const subjectID =
                 values.visibility === 'personal'
                     ? userID
-                    : // TODO [VK] Add orgs picker in creation UI and not just pick first organization
+                    : // TODO [VK] Add org picker in creation UI and not just pick first organization
                       orgs[0].id
 
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
-                const content = JSON.parse(settings.contents) as object
-                const insightID = uuid.v4()
 
-                const newSettings = {
-                    ...content,
-                    [`searchInsights.insight.${insightID}`]: {
-                        title: values.title,
-                        repositories: values.repositories.split(','),
-                        series: values.series.map(line => ({
-                            name: line.name,
-                            // Query field is a reg exp field for code insight query setting
-                            // Native html input element adds escape symbols by himself
-                            // to prevent this behavior below we replace double escaping
-                            // with just one series of escape characters e.g. - //
-                            query: line.query.replace(/\\\\/g, '\\'),
-                            stroke: line.color,
-                        })),
-                        step: {
-                            [values.step]: +values.stepValue,
-                        },
+                const newSettingsString = {
+                    title: values.title,
+                    repositories: values.repositories.trim().split(/\s*,\s*/),
+                    series: values.series.map(line => ({
+                        name: line.name,
+                        // Query field is a reg exp field for code insight query setting
+                        // Native html input element adds escape symbols by itself
+                        // to prevent this behavior below we replace double escaping
+                        // with just one series of escape characters e.g. - //
+                        query: line.query.replace(/\\\\/g, '\\'),
+                        stroke: line.color,
+                    })),
+                    step: {
+                        [values.step]: +values.stepValue,
                     },
                 }
 
-                await updateSubjectSettings(
-                    platformContext,
-                    subjectID,
-                    JSON.stringify(newSettings, null, 2)
-                ).toPromise()
+                const edits = jsonc.modify(
+                    settings.contents,
+                    // According to our naming convention <type>.insight.<name>
+                    [`searchInsights.insight.${camelCase(values.title)}`],
+                    newSettingsString,
+                    { formattingOptions: defaultFormattingOptions }
+                )
+
+                const editedSettings = jsonc.applyEdits(settings.contents, edits)
+
+                await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
 
                 history.push('/insights')
             } catch (error) {
@@ -85,6 +101,10 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
         [history, updateSubjectSettings, getSubjectSettings, platformContext, authenticatedUser]
     )
 
+    const handleCancel = useCallback(() => {
+        history.push('/insights')
+    }, [history])
+
     if (authenticatedUser === null) {
         return <Redirect to="/" />
     }
@@ -93,7 +113,7 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
         <Page className="col-8">
             <PageTitle title="Create new code insight" />
 
-            <div className={styles.createInsightPageSubTitleContainer}>
+            <div className="mb-5">
                 <h2>Create new code insight</h2>
 
                 <p className="text-muted">
@@ -108,7 +128,12 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
                 </p>
             </div>
 
-            <CreationSearchInsightForm onSubmit={handleSubmit} />
+            <CreationSearchInsightForm
+                className="pb-5"
+                settings={settingsCascade.final ?? DEFAULT_FINAL_SETTINGS}
+                onSubmit={handleSubmit}
+                onCancel={handleCancel}
+            />
         </Page>
     )
 }

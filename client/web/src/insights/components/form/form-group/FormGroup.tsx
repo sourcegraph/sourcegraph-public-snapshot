@@ -1,7 +1,4 @@
-import classnames from 'classnames'
-import React, { PropsWithChildren } from 'react'
-
-import styles from './FormGroup.module.scss'
+import React, { PropsWithChildren, RefObject } from 'react'
 
 interface FormGroupProps {
     /** Name attr value for root fieldset element. */
@@ -16,31 +13,34 @@ interface FormGroupProps {
     description?: string
     /** Custom class name for root fieldset element. */
     className?: string
+    /** Custom class name for div children wrapper element. */
+    contentClassName?: string
+    /** Reference to root fieldset element.*/
+    innerRef?: RefObject<HTMLFieldSetElement>
 }
 
 /** Displays fieldset (group) of fields for code insight creation form with error message. */
 export const FormGroup: React.FunctionComponent<PropsWithChildren<FormGroupProps>> = props => {
-    const { className, name, title, subtitle, children, description, error } = props
+    const { innerRef, className, contentClassName, name, title, subtitle, children, description, error } = props
 
     return (
-        <fieldset
-            name={name}
-            className={classnames(styles.formGroup, className, {
-                [styles.formGroupWithSubtitle]: !!subtitle,
-            })}
-        >
-            <legend className={styles.formGroupNameBlock}>
-                <h4 className={styles.formGroupName}>{title}</h4>
+        <fieldset ref={innerRef} name={name} className={className}>
+            <legend className="d-flex flex-column mb-3">
+                <div className="font-weight-bold">{title}</div>
 
-                {subtitle && <span className="text-muted">{subtitle}</span>}
-                {error && <span className={styles.formGroupError}>*{error}</span>}
+                {/* Since safari doesn't support flex column on legend element we have to set d-block*/}
+                {/* explicitly */}
+                {subtitle && <small className="d-block text-muted">{subtitle}</small>}
+                {error && (
+                    <small role="alert" className="d-block text-danger">
+                        {error}
+                    </small>
+                )}
             </legend>
 
-            <div>{children}</div>
+            <div className={contentClassName}>{children}</div>
 
-            {description && (
-                <span className={classnames(styles.formGroupDescription, 'text-muted')}>{description}</span>
-            )}
+            {description && <small className="d-block mt-3 text-muted">{description}</small>}
         </fieldset>
     )
 }

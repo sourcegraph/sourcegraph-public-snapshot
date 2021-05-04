@@ -1,43 +1,52 @@
 import classnames from 'classnames'
-import { FORM_ERROR, FormApi, SubmissionErrors } from 'final-form'
-import createFocusDecorator from 'final-form-focus'
-import React, { useEffect, useMemo, useRef } from 'react'
-import { useField, useForm } from 'react-final-form-hooks'
+import { camelCase } from 'lodash'
+import React, { useMemo } from 'react'
 import { noop } from 'rxjs'
 
 import { InputField } from '../../../../../components/form/form-field/FormField'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { createRequiredValidator, composeValidators, ValidationResult } from '../../../../../components/form/validators'
+import { ErrorAlert } from '../../../../../components/alerts'
+import { LoaderButton } from '../../../../../components/LoaderButton'
+import { FORM_ERROR, SubmissionErrors, useField, useForm, Validator } from '../../hooks/useForm'
 import { DataSeries } from '../../types'
 import { FormSeries, FormSeriesReferenceAPI } from '../form-series/FormSeries'
+import { InputField } from '../form-field/FormField'
+import { FormGroup } from '../form-group/FormGroup'
+import { FormRadioInput } from '../form-radio-input/FormRadioInput'
+import { FormSeries } from '../form-series/FormSeries'
+import { createRequiredValidator, composeValidators } from '../validators'
 
 import styles from './CreationSearchInsightForm.module.scss'
 
-const requiredTitleField = createRequiredValidator('Title is required field for code insight.')
-const repositoriesFieldValidator = composeValidators(
-    createRequiredValidator('Repositories is required field for code insight.')
-)
-
+const repositoriesFieldValidator = createRequiredValidator('Repositories is required field for code insight.')
 const requiredStepValueField = createRequiredValidator('Please specify a step between points.')
-const seriesRequired = (series: DataSeries[]): ValidationResult =>
+/**
+ * Custom validator for chart series. Since series has complex type
+ * we can't validate this with standard validators.
+ * */
+const seriesRequired: Validator<DataSeries[]> = series =>
     series && series.length > 0 ? undefined : 'Series is empty. You must have at least one series for code insight.'
 
 const INITIAL_VALUES: Partial<CreateInsightFormFields> = {
     visibility: 'personal',
     series: [],
     step: 'months',
+    stepValue: '2',
+    title: '',
+    repositories: '',
 }
 
 /** Public API of code insight creation form. */
 export interface CreationSearchInsightFormProps {
+    /** Final settings cascade. Used for title field validation. */
+    settings: { [key: string]: any }
     /** Custom class name for root form element. */
     className?: string
     /** Submit handler for form element. */
-    onSubmit: (
-        values: CreateInsightFormFields,
-        form: FormApi<CreateInsightFormFields, Partial<CreateInsightFormFields>>
-    ) => SubmissionErrors | Promise<SubmissionErrors> | void
+    onSubmit: (values: CreateInsightFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
+    onCancel?: () => void
 }
 
 /** Creation form fields. */
@@ -53,67 +62,71 @@ export interface CreateInsightFormFields {
     /** Setting for set chart step - how often do we collect data. */
     step: 'hours' | 'days' | 'weeks' | 'months' | 'years'
     /** Value for insight step setting */
-    stepValue: number
+    stepValue: string
 }
 
 /** Displays creation code insight form (title, visibility, series, etc.) */
 export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchInsightFormProps> = props => {
-    const { className, onSubmit } = props
+    const { settings, className, onSubmit, onCancel = noop } = props
 
-    const titleReference = useRef<HTMLInputElement>(null)
-    const repositoriesReference = useRef<HTMLInputElement>(null)
-    const seriesReference = useRef<FormSeriesReferenceAPI>(null)
-    const stepValueReference = useRef<HTMLInputElement>(null)
-
-    const focusOnErrorsDecorator = useMemo(() => {
-        const noopFocus = { focus: noop, name: '' }
-
-        return createFocusDecorator<CreateInsightFormFields>(() => [
-            titleReference.current ?? noopFocus,
-            repositoriesReference.current ?? noopFocus,
-            seriesReference.current ?? noopFocus,
-            stepValueReference.current ?? noopFocus,
-        ])
-    }, [])
-
-    const { form, handleSubmit, submitErrors } = useForm<CreateInsightFormFields>({
+    const { formAPI, ref, handleSubmit } = useForm<CreateInsightFormFields>({
         initialValues: INITIAL_VALUES,
         onSubmit,
     })
 
-    useEffect(() => focusOnErrorsDecorator(form), [form, focusOnErrorsDecorator])
+    // We can't have two or more insights with the same name, since we rely on name as on id of insights.
+    const titleValidator = useMemo(() => {
+        const alreadyExistsInsightNames = new Set(
+            Object.keys(settings)
+                // According to our convention about insights name <insight type>.insight.<insight name>
+                .filter(key => key.startsWith('searchInsights.insight'))
+                .map(key => camelCase(key.split('.').pop()))
+        )
 
-    const title = useField('title', form, requiredTitleField)
-    const repositories = useField('repositories', form, repositoriesFieldValidator)
-    const visibility = useField('visibility', form)
-    const series = useField<DataSeries[], CreateInsightFormFields>('series', form, seriesRequired)
-    const step = useField('step', form)
-    const stepValue = useField('stepValue', form, requiredStepValueField)
+        return composeValidators<string>(createRequiredValidator('Title is required field for code insight.'), value =>
+            alreadyExistsInsightNames.has(camelCase(value))
+                ? 'An insight with this name already exists. Please set a different name for the new insight.'
+                : undefined
+        )
+    }, [settings])
+
+    const title = useField('title', formAPI, titleValidator)
+    const repositories = useField('repositories', formAPI, repositoriesFieldValidator)
+    const visibility = useField('visibility', formAPI)
+
+    const series = useField('series', formAPI, seriesRequired)
+    const step = useField('step', formAPI)
+    const stepValue = useField('stepValue', formAPI, requiredStepValueField)
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form onSubmit={handleSubmit} className={classnames(className, styles.creationInsightForm)}>
+        <form
+            noValidate={true}
+            ref={ref}
+            onSubmit={handleSubmit}
+            className={classnames(className, 'd-flex flex-column')}
+        >
             <InputField
                 title="Title"
-                autofocus={true}
+                autoFocus={true}
+                required={true}
                 description="Shown as title for your insight"
                 placeholder="ex. Migration to React function components"
-                valid={title.meta.touched && title.meta.valid}
+                valid={title.meta.touched && title.meta.validState === 'VALID'}
                 error={title.meta.touched && title.meta.error}
                 {...title.input}
-                ref={titleReference}
-                className={styles.creationInsightFormField}
+                className="mb-0"
             />
 
             <InputField
                 title="Repositories"
+                required={true}
                 description="Create a list of repositories to run your search over. Separate them with comas."
                 placeholder="Add or search for repositories"
-                valid={repositories.meta.touched && repositories.meta.valid}
+                valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
                 error={repositories.meta.touched && repositories.meta.error}
                 {...repositories.input}
-                ref={repositoriesReference}
-                className={styles.creationInsightFormField}
+                className="mb-0 mt-4"
             />
 
             <FormGroup
@@ -121,117 +134,121 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 title="Visibility"
                 description="This insigh will be visible only on your personal dashboard. It will not be show to other
                             users in your organisation."
-                className={styles.creationInsightFormField}
+                className="mb-0 mt-4"
+                contentClassName="d-flex flex-wrap mb-n2"
             >
-                <div className={styles.creationInsightFormRadioGroupContent}>
-                    <FormRadioInput
-                        name="visibility"
-                        value="personal"
-                        title="Personal"
-                        description="only for you"
-                        checked={visibility.input.value === 'personal'}
-                        className={styles.creationInsightFormRadio}
-                        onChange={visibility.input.onChange}
-                    />
+                <FormRadioInput
+                    name="visibility"
+                    value="personal"
+                    title="Personal"
+                    description="only for you"
+                    checked={visibility.input.value === 'personal'}
+                    className="mr-3"
+                    onChange={visibility.input.onChange}
+                />
 
-                    <FormRadioInput
-                        name="visibility"
-                        value="organization"
-                        title="Organization"
-                        description="to all users in your organization"
-                        checked={visibility.input.value === 'organization'}
-                        onChange={visibility.input.onChange}
-                        className={styles.creationInsightFormRadio}
-                    />
-                </div>
+                <FormRadioInput
+                    name="visibility"
+                    value="organization"
+                    title="Organization"
+                    description="to all users in your organization"
+                    checked={visibility.input.value === 'organization'}
+                    onChange={visibility.input.onChange}
+                    className="mr-3"
+                />
             </FormGroup>
+
+            <hr className={styles.creationInsightFormSeparator} />
 
             <FormGroup
                 name="data series group"
                 title="Data series"
                 subtitle="Add any number of data series to your chart"
                 error={series.meta.touched && series.meta.error}
-                className={styles.creationInsightFormField}
+                innerRef={series.input.ref}
+                className="mb-0"
             >
-                <FormSeries
-                    name={series.input.name}
-                    ref={seriesReference}
-                    series={series.input.value}
-                    onChange={series.input.onChange}
-                />
+                <FormSeries series={series.input.value} onChange={series.input.onChange} />
             </FormGroup>
+
+            <hr className={styles.creationInsightFormSeparator} />
 
             <FormGroup
                 name="insight step group"
                 title="Step between data points"
                 description="The distance between two data points on the chart"
                 error={stepValue.meta.touched && stepValue.meta.error}
-                className={styles.creationInsightFormField}
+                className="mb-0"
+                contentClassName="d-flex flex-wrap mb-n2"
             >
-                <div className={styles.creationInsightFormRadioGroupContent}>
-                    <InputField
-                        placeholder="ex. 2"
-                        {...stepValue.input}
-                        valid={stepValue.meta.touched && stepValue.meta.valid}
-                        ref={stepValueReference}
-                        className={classnames(styles.creationInsightFormStepInput)}
-                    />
+                <InputField
+                    placeholder="ex. 2"
+                    required={true}
+                    type="number"
+                    min={1}
+                    {...stepValue.input}
+                    valid={stepValue.meta.touched && stepValue.meta.validState === 'VALID'}
+                    errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
+                    className={classnames(styles.creationInsightFormStepInput)}
+                />
 
-                    <FormRadioInput
-                        title="Hours"
-                        name="step"
-                        value="hours"
-                        checked={step.input.value === 'hours'}
-                        onChange={step.input.onChange}
-                        className={styles.creationInsightFormRadio}
-                    />
-                    <FormRadioInput
-                        title="Days"
-                        name="step"
-                        value="days"
-                        checked={step.input.value === 'days'}
-                        onChange={step.input.onChange}
-                        className={styles.creationInsightFormRadio}
-                    />
-                    <FormRadioInput
-                        title="Weeks"
-                        name="step"
-                        value="weeks"
-                        checked={step.input.value === 'weeks'}
-                        onChange={step.input.onChange}
-                        className={styles.creationInsightFormRadio}
-                    />
-                    <FormRadioInput
-                        title="Months"
-                        name="step"
-                        value="months"
-                        checked={step.input.value === 'months'}
-                        onChange={step.input.onChange}
-                        className={styles.creationInsightFormRadio}
-                    />
-                    <FormRadioInput
-                        title="Years"
-                        name="step"
-                        value="years"
-                        checked={step.input.value === 'years'}
-                        onChange={step.input.onChange}
-                        className={styles.creationInsightFormRadio}
-                    />
-                </div>
+                <FormRadioInput
+                    title="Hours"
+                    name="step"
+                    value="hours"
+                    checked={step.input.value === 'hours'}
+                    onChange={step.input.onChange}
+                    className="mr-3"
+                />
+                <FormRadioInput
+                    title="Days"
+                    name="step"
+                    value="days"
+                    checked={step.input.value === 'days'}
+                    onChange={step.input.onChange}
+                    className="mr-3"
+                />
+                <FormRadioInput
+                    title="Weeks"
+                    name="step"
+                    value="weeks"
+                    checked={step.input.value === 'weeks'}
+                    onChange={step.input.onChange}
+                    className="mr-3"
+                />
+                <FormRadioInput
+                    title="Months"
+                    name="step"
+                    value="months"
+                    checked={step.input.value === 'months'}
+                    onChange={step.input.onChange}
+                    className="mr-3"
+                />
+                <FormRadioInput
+                    title="Years"
+                    name="step"
+                    value="years"
+                    checked={step.input.value === 'years'}
+                    onChange={step.input.onChange}
+                    className="mr-3"
+                />
             </FormGroup>
 
-            <div className={styles.creationInsightFormButtons}>
-                {submitErrors?.[FORM_ERROR] && (
-                    <div className="alert alert-danger">{submitErrors[FORM_ERROR].toString()}</div>
-                )}
+            <hr className={styles.creationInsightFormSeparator} />
 
-                <button
+            <div>
+                {formAPI.submitErrors?.[FORM_ERROR] && <ErrorAlert error={formAPI.submitErrors[FORM_ERROR]} />}
+
+                <LoaderButton
+                    alwaysShowLabel={true}
+                    loading={formAPI.submitting}
+                    label={formAPI.submitting ? 'Submitting' : 'Create code insight'}
                     type="submit"
-                    className={classnames(styles.creationInsightFormButton, styles.creationInsightFormButtonActive)}
-                >
-                    Create code insight
-                </button>
-                <button type="button" className={classnames(styles.creationInsightFormButton)}>
+                    disabled={formAPI.submitting}
+                    className="btn btn-primary mr-2"
+                />
+
+                <button type="button" className="btn btn-outline-secondary" onClick={onCancel}>
                     Cancel
                 </button>
             </div>

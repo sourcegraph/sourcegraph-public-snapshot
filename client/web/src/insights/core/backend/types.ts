@@ -28,5 +28,9 @@ export interface ApiService {
         extensionApi: Promise<Remote<FlatExtensionHostAPI>>
     ) => Observable<ViewInsightProviderResult[]>
     getSubjectSettings: (id: string) => Observable<SubjectSettingsResult>
-    updateSubjectSettings: (context: PlatformContext, subjectId: string, content: string) => Observable<void>
+    updateSubjectSettings: (
+        context: Pick<PlatformContext, 'updateSettings'>,
+        subjectId: string,
+        content: string
+    ) => Observable<void>
 }

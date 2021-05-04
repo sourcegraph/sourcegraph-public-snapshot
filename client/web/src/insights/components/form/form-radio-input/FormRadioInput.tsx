@@ -1,8 +1,6 @@
 import classnames from 'classnames'
 import React, { InputHTMLAttributes } from 'react'
 
-import styles from './FormRadioInput.module.scss'
-
 interface RadioInputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Title of radio input. */
     title: string
@@ -17,10 +15,10 @@ export const FormRadioInput: React.FunctionComponent<RadioInputProps> = props =>
     const { title, description, className, ...otherProps } = props
 
     return (
-        <label className={classnames(styles.radioInput, className)}>
-            <input type="radio" className={classnames(styles.radioInputInput, 'form-control')} {...otherProps} />
+        <label className={classnames('d-flex align-items-center', className)}>
+            <input type="radio" {...otherProps} />
 
-            <div className={classnames(styles.radioInputDescriptionContent)}>
+            <div className="pl-2">
                 <span>{title}</span>
                 {description && <span className="text-muted"> – {description}</span>}
             </div>

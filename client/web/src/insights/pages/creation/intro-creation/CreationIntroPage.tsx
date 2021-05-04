@@ -16,13 +16,13 @@ export const CreationIntroPage: React.FunctionComponent = () => (
     <Page className="col-8">
         <PageTitle title="Create code insights" />
 
-        <div className={styles.createIntroPageSubTitleContainer}>
+        <div className="mb-5">
             <h2>Create new insight</h2>
 
             <p className="text-muted">
-                Code insights analyse your code based on any search query.{' '}
+                Code insights analyze your code based on any search query.{' '}
                 <a
-                    href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
+                    href="https://docs.sourcegraph.com/dev/background-information/insights"
                     target="_blank"
                     rel="noopener"
                 >
@@ -31,12 +31,12 @@ export const CreationIntroPage: React.FunctionComponent = () => (
             </p>
         </div>
 
-        <div className={styles.createIntroPageInsights}>
-            <section className={styles.createIntroPageInsightCard}>
+        <div className={classnames(styles.createIntroPageInsights, 'pb-5')}>
+            <section className={classnames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
                 <h3>Based on your search query</h3>
 
                 <p>
-                    Search-based insights let you create any data visualisation about your code based on a custom search
+                    Search-based insights let you create any data visualization about your code based on a custom search
                     query.
                 </p>
 
@@ -47,9 +47,9 @@ export const CreationIntroPage: React.FunctionComponent = () => (
                     Create custom insight
                 </Link>
 
-                <p className={classnames(styles.createIntroPageChartDescription, 'text-muted')}>
-                    How your insight would look like:
-                </p>
+                <hr className="ml-n3 mr-n3 mt-4 mb-3" />
+
+                <p className="text-muted">How your insight would look like:</p>
                 <div className={styles.createIntroPageChartContainer}>
                     <ParentSize className={styles.createIntroPageChart}>
                         {({ width, height }) => <LineChart width={width} height={height} {...LINE_CHART_DATA} />}
@@ -57,7 +57,7 @@ export const CreationIntroPage: React.FunctionComponent = () => (
                 </div>
             </section>
 
-            <section className={styles.createIntroPageInsightCard}>
+            <section className={classnames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
                 <h3>Language usage</h3>
 
                 <p>Shows usage of languages in your repository based on number of lines of code.</p>
@@ -69,9 +69,9 @@ export const CreationIntroPage: React.FunctionComponent = () => (
                     Set up language usage insight
                 </Link>
 
-                <p className={classnames(styles.createIntroPageChartDescription, 'text-muted')}>
-                    How your insight would look like:
-                </p>
+                <hr className="ml-n3 mr-n3 mt-4 mb-3" />
+
+                <p className="text-muted">How your insight would look like:</p>
                 <div className={styles.createIntroPageChartContainer}>
                     <ParentSize className={styles.createIntroPageChart}>
                         {({ width, height }) => <PieChart width={width} height={height} {...PIE_CHART_DATA} />}
@@ -79,7 +79,7 @@ export const CreationIntroPage: React.FunctionComponent = () => (
                 </div>
             </section>
 
-            <section className={styles.createIntroPageInsightCard}>
+            <section className={classnames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
                 <h3>Based on Sourcegraph extensions</h3>
 
                 <p>
