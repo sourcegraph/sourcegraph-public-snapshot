@@ -1,6 +1,6 @@
 @import 'branded/src/global-styles/breakpoints';
 
-.page-header {
+.container {
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
@@ -9,6 +9,33 @@
     @include media-breakpoint-up(md) {
         flex-direction: row;
         align-items: flex-end;
+    }
+}
+
+.heading {
+    display: flex;
+    flex-grow: 1;
+    align-items: center;
+    margin: 0;
+}
+
+.divider {
+    color: var(--text-muted);
+    margin-right: 0.5rem;
+}
+
+.path {
+    display: inline-flex;
+
+    &-icon {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        height: 1em;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        width: 1em;
+        margin-right: 0.25rem;
+    }
+    &-text {
+        margin-right: 0.5rem;
     }
 }
 

@@ -51,16 +51,16 @@ export const PageHeader: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <header className={classNames(styles.pageHeader, className)}>
+        <header className={classNames(styles.container, className)}>
             <div>
                 {annotation && <small className={styles.annotation}>{annotation}</small>}
-                <HeadingX className="flex-grow-1 d-block m-0">
+                <HeadingX className={styles.heading}>
                     {path.map(({ to, text, icon: Icon }, index) => (
                         <React.Fragment key={index}>
-                            {index !== 0 && <span className="mr-2 text-muted">/</span>}
-                            <LinkOrSpan to={to}>
-                                {Icon && <Icon className="icon-inline py-1 mr-1" />}
-                                {text && <span className="mr-2">{text}</span>}
+                            {index !== 0 && <span className={styles.divider}>/</span>}
+                            <LinkOrSpan to={to} className={styles.path}>
+                                {Icon && <Icon className={styles.pathIcon} />}
+                                {text && <span className={styles.pathText}>{text}</span>}
                             </LinkOrSpan>
                         </React.Fragment>
                     ))}
