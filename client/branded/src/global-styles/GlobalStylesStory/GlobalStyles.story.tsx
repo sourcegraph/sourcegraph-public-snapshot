@@ -169,10 +169,18 @@ add(
         </>
     ),
     {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/P2M4QrgIxeUsjE80MHP8TmY3/Sourcegraph-Colors?node-id=0%3A2',
-        },
+        design: [
+            {
+                type: 'figma',
+                url: 'https://www.figma.com/file/P2M4QrgIxeUsjE80MHP8TmY3/Sourcegraph-Colors?node-id=0%3A2',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Redesign',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A7608',
+            },
+        ],
     }
 )
 
