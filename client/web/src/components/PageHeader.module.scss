@@ -1,12 +1,10 @@
-@import 'branded/src/global-styles/breakpoints';
-
 .container {
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
     justify-content: space-between;
 
-    @include media-breakpoint-up(md) {
+    @media (min-width: 768px) {
         flex-direction: row;
         align-items: flex-end;
     }
@@ -26,6 +24,7 @@
 
 .path {
     display: inline-flex;
+    align-items: center;
 
     &-icon {
         // stylelint-disable-next-line declaration-property-unit-whitelist
@@ -58,7 +57,7 @@
 .actions {
     margin-top: 1rem;
 
-    @include media-breakpoint-up(md) {
+    @media (min-width: 768px) {
         margin-top: 0;
     }
 }
