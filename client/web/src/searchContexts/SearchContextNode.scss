@@ -1,8 +1,8 @@
 .search-context-node {
     &:first-child {
-        border-top: 1px solid var(--border-color);
+        border-top: 1px solid var(--border-color-2);
     }
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color-2);
 
     &__left {
         // Enables responsive ellipsis text truncation
@@ -16,6 +16,7 @@
     }
 
     &__right {
+        font-size: 0.75rem;
         margin-left: 1rem;
         flex-shrink: 0;
     }

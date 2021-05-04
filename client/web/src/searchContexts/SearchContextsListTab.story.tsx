@@ -31,26 +31,7 @@ const defaultProps: SearchContextsListTabProps = {
 
 const propsWithContexts: SearchContextsListTabProps = {
     ...defaultProps,
-    fetchAutoDefinedSearchContexts: of([
-        {
-            __typename: 'SearchContext',
-            id: '1',
-            spec: 'global',
-            autoDefined: true,
-            description: 'All repositories on Sourcegraph',
-            repositories: [],
-            updatedAt: subDays(new Date(), 1).toISOString(),
-        },
-        {
-            __typename: 'SearchContext',
-            id: '2',
-            spec: '@username',
-            autoDefined: true,
-            description: 'Your repositories on Sourcegraph',
-            repositories: [],
-            updatedAt: subDays(new Date(), 1).toISOString(),
-        },
-    ]),
+    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(1),
     fetchSearchContexts: ({
         first,
         namespaceFilterType,
@@ -86,4 +67,53 @@ const propsWithContexts: SearchContextsListTabProps = {
 
 add('default', () => <WebStory>{() => <SearchContextsListTab {...defaultProps} />}</WebStory>, {})
 
-add('with contexts', () => <WebStory>{() => <SearchContextsListTab {...propsWithContexts} />}</WebStory>, {})
+add(
+    'with 1 auto-defined context',
+    () => <WebStory>{() => <SearchContextsListTab {...propsWithContexts} />}</WebStory>,
+    {}
+)
+
+add(
+    'with 2 auto-defined contexts',
+    () => (
+        <WebStory>
+            {() => (
+                <SearchContextsListTab
+                    {...propsWithContexts}
+                    fetchAutoDefinedSearchContexts={mockFetchAutoDefinedSearchContexts(2)}
+                />
+            )}
+        </WebStory>
+    ),
+    {}
+)
+
+add(
+    'with 3 auto-defined contexts',
+    () => (
+        <WebStory>
+            {() => (
+                <SearchContextsListTab
+                    {...propsWithContexts}
+                    fetchAutoDefinedSearchContexts={mockFetchAutoDefinedSearchContexts(3)}
+                />
+            )}
+        </WebStory>
+    ),
+    {}
+)
+
+add(
+    'with 4 auto-defined contexts',
+    () => (
+        <WebStory>
+            {() => (
+                <SearchContextsListTab
+                    {...propsWithContexts}
+                    fetchAutoDefinedSearchContexts={mockFetchAutoDefinedSearchContexts(4)}
+                />
+            )}
+        </WebStory>
+    ),
+    {}
+)

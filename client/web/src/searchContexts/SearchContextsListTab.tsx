@@ -1,9 +1,9 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback } from 'react'
 import { catchError } from 'rxjs/operators'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser } from '../auth'
@@ -49,9 +49,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
         [fetchSearchContexts]
     )
 
-    const autoDefinedSearchContexts = useObservable(
-        fetchAutoDefinedSearchContexts.pipe(catchError(error => [asError(error)]))
-    )
+    const autoDefinedSearchContexts = useObservable(fetchAutoDefinedSearchContexts.pipe(catchError(() => [])))
 
     const ownerNamespaceFilterValues: FilterValue[] = authenticatedUser
         ? [
@@ -97,23 +95,31 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
 
     return (
         <>
-            <div className="d-flex search-contexts-list-tab__auto-defined-search-contexts mb-4">
-                {autoDefinedSearchContexts &&
-                    !isErrorLike(autoDefinedSearchContexts) &&
-                    autoDefinedSearchContexts.map(context => (
-                        <div key={context.spec} className="card p-3 mr-2 mb-2">
-                            <div>
-                                <Link to={`/contexts/${context.id}`}>{context.spec}</Link>
-                                <span
-                                    className="badge badge-pill badge-secondary ml-1"
-                                    data-tooltip="Automatic contexts are created by Sourcegraph."
-                                >
-                                    auto
-                                </span>
-                            </div>
-                            <div className="text-muted mt-1">{context.description}</div>
+            <div
+                className={classNames(
+                    'search-contexts-list-tab__auto-defined-search-contexts',
+                    'mb-4',
+                    autoDefinedSearchContexts && autoDefinedSearchContexts.length >= 3
+                        ? 'search-contexts-list-tab__auto-defined-search-contexts--repeat-3'
+                        : 'search-contexts-list-tab__auto-defined-search-contexts--repeat-2'
+                )}
+            >
+                {autoDefinedSearchContexts?.map(context => (
+                    <div key={context.spec} className="card p-3">
+                        <div>
+                            <Link to={`/contexts/${context.id}`}>
+                                <strong>{context.spec}</strong>
+                            </Link>
+                            <span
+                                className="badge badge-pill badge-secondary ml-1"
+                                data-tooltip="Automatic contexts are created by Sourcegraph."
+                            >
+                                auto
+                            </span>
                         </div>
-                    ))}
+                        <div className="text-muted mt-1">{context.description}</div>
+                    </div>
+                ))}
             </div>
 
             <FilteredConnection<
@@ -138,6 +144,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                 noSummaryIfAllNodesVisible={true}
                 cursorPaging={true}
                 inputClassName="search-contexts-list-tab__filter-input"
+                inputPlaceholder="Filter search contexts..."
             />
         </>
     )

@@ -15,9 +15,11 @@ export interface SearchContextNodeProps {
 export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> = ({
     node,
 }: SearchContextNodeProps) => (
-    <div className="search-context-node pb-4 pt-4 d-flex align-items-center">
+    <div className="search-context-node py-3 d-flex align-items-center">
         <div className="search-context-node__left flex-grow-1">
-            <Link to={`/contexts/${node.id}`}>{node.spec}</Link>
+            <Link to={`/contexts/${node.id}`}>
+                <strong>{node.spec}</strong>
+            </Link>
             {node.description.length > 0 && (
                 <div className="text-muted search-context-node__left__description mt-1">{node.description}</div>
             )}
