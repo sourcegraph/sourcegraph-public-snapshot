@@ -25,7 +25,7 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     location: H.Location
     authenticatedUser: Pick<
         AuthenticatedUser,
-        'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session'
+        'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
     >
     showDotComMarketing: boolean
     keyboardShortcutForSwitchTheme?: KeyboardShortcut

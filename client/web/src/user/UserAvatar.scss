@@ -6,6 +6,7 @@
     .user-avatar {
         display: inline-flex;
         border-radius: 50%;
+        text-transform: capitalize;
         background: linear-gradient(
             90deg,
             var(--logo-purple) 0%,
