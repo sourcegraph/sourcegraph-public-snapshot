@@ -4103,10 +4103,6 @@ type FileMatch {
     """
     revSpec: GitRevSpec
     """
-    The resource.
-    """
-    resource: String! @deprecated(reason: "use the file field instead")
-    """
     The symbols found in this file that match the query.
     """
     symbols: [Symbol!]!

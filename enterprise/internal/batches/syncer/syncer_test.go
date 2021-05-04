@@ -381,7 +381,7 @@ func (m MockSyncStore) ExternalServices() *database.ExternalServiceStore {
 
 func (m MockSyncStore) UserCredentials() *database.UserCredentialsStore {
 	// Return a UserCredentialsStore with a nil DB, so tests will fail when a mock is missing.
-	return database.UserCredentials(nil)
+	return database.UserCredentials(nil, nil)
 }
 
 func (m MockSyncStore) DB() dbutil.DB {

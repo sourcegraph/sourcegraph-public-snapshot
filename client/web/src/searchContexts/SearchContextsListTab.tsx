@@ -1,6 +1,8 @@
 import * as H from 'history'
 import React, { useCallback } from 'react'
+import { catchError } from 'rxjs/operators'
 
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -27,20 +29,23 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
         []
     )
 
-    const autoDefinedSearchContexts = useObservable(fetchAutoDefinedSearchContexts)
+    const autoDefinedSearchContexts = useObservable(
+        fetchAutoDefinedSearchContexts.pipe(catchError(error => [asError(error)]))
+    )
 
     return (
         <>
             <div className="mb-3">
                 <h3>Auto-defined</h3>
-                {autoDefinedSearchContexts?.map(context => (
-                    <SearchContextNode
-                        key={context.id}
-                        node={context}
-                        location={props.location}
-                        history={props.history}
-                    />
-                ))}
+                {!isErrorLike(autoDefinedSearchContexts) &&
+                    autoDefinedSearchContexts?.map(context => (
+                        <SearchContextNode
+                            key={context.id}
+                            node={context}
+                            location={props.location}
+                            history={props.history}
+                        />
+                    ))}
             </div>
 
             <h3>User-defined</h3>

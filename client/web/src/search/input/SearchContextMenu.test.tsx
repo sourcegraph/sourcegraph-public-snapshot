@@ -2,7 +2,7 @@ import { mount } from 'enzyme'
 import React, { ChangeEvent } from 'react'
 import { act } from 'react-dom/test-utils'
 import { DropdownItem, DropdownMenu, UncontrolledDropdown } from 'reactstrap'
-import { of } from 'rxjs'
+import { Observable, of, throwError } from 'rxjs'
 import sinon from 'sinon'
 
 import { Scalars, SearchContextsNamespaceFilterType } from '@sourcegraph/shared/src/graphql-operations'
@@ -247,5 +247,31 @@ describe('SearchContextMenu', () => {
 
         const items = root.find(DropdownItem)
         expect(items.at(items.length - 1).text()).toBe('Error occured while loading search contexts')
+    })
+
+    it('should default to empty array if fetching auto-defined contexts fails', () => {
+        const errorFetchAutoDefinedSearchContexts: () => Observable<ISearchContext[]> = () =>
+            throwError(new Error('unknown error'))
+
+        const root = mount(
+            <UncontrolledDropdown>
+                <DropdownMenu>
+                    <SearchContextMenu
+                        {...defaultProps}
+                        fetchAutoDefinedSearchContexts={errorFetchAutoDefinedSearchContexts()}
+                    />
+                </DropdownMenu>
+            </UncontrolledDropdown>
+        )
+
+        act(() => {
+            // Wait for debounce
+            clock.tick(50)
+        })
+        root.update()
+
+        const items = root.find(DropdownItem)
+        // With no auto-defined contexts, the first context should be a user-defined context
+        expect(items.at(0).text()).toBe('@username/test-version-1.5 Only code in version 1.5')
     })
 })
