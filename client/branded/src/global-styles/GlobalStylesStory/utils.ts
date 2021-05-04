@@ -10,17 +10,13 @@ const isStyleRule = (rule: CSSRule): rule is CSSStyleRule => rule.type === 1
 // https://css-tricks.com/how-to-get-all-custom-properties-on-a-page-in-javascript/
 const getCSSCustomProperties = (): string[] => [
     ...new Set(
-        [...document.styleSheets].reduce<string[]>(
-            (finalArray, sheet) =>
-                finalArray.concat(
-                    [...sheet.cssRules].filter(isStyleRule).reduce<string[]>((totalVariables, rule) => {
-                        const variables = [...rule.style]
-                            .map(propertyName => propertyName.trim())
-                            .filter(propertyName => propertyName.startsWith('--'))
-                        return [...totalVariables, ...variables]
-                    }, [])
-                ),
-            []
+        [...document.styleSheets].flatMap(sheet =>
+            [...sheet.cssRules].filter(isStyleRule).flatMap(rule => {
+                const variables = [...rule.style]
+                    .map(propertyName => propertyName.trim())
+                    .filter(propertyName => propertyName.startsWith('--'))
+                return variables
+            })
         )
     ),
 ]
