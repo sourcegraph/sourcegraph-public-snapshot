@@ -47,3 +47,9 @@
         }
     }
 }
+
+:global(.theme-dark) .external-changeset-node {
+    &__bg-expanded {
+        background-color: var(--oc-gray-9);
+    }
+}
