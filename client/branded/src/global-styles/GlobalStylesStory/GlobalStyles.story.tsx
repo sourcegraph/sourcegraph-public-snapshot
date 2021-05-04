@@ -13,7 +13,6 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useState } from 'react'
 import 'storybook-addon-designs'
 
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
 
 import { BrandedStory } from '../../components/BrandedStory'
