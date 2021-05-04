@@ -52,6 +52,7 @@
     .badge {
         background-color: var(--subtle-bg);
         color: var(--link-color);
+        border: 1px solid var(--subtle-bg);
     }
 
     @include redesign-badge-variant(
