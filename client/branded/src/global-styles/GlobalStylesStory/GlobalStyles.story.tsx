@@ -20,6 +20,7 @@ import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
 import { Form } from '../../components/Form'
 
+import { BadgeVariants } from './BadgeVariants/BadgeVariants'
 import { ButtonVariants } from './ButtonVariants'
 import { ColorVariants } from './ColorVariants'
 import { SEMANTIC_COLORS } from './constants'
@@ -389,58 +390,8 @@ add(
                 </tbody>
             </table>
 
-            <h2>Semantic variations</h2>
-            <p>Change the appearance of any badge with modifier classes for semantic colors.</p>
-            <p>
-                {SEMANTIC_COLORS.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <span className={classNames('badge', `badge-${semantic}`)}>{semantic}</span>{' '}
-                    </React.Fragment>
-                ))}
-            </p>
-
-            <h2>Uppercase</h2>
-            <p>
-                Badges can be visually uppercased by combining them with the <code>text-uppercase</code> class.
-                Examples:
-            </p>
-            <div>
-                <h1>
-                    Blockchain support{' '}
-                    <sup>
-                        <span className="badge badge-warning text-uppercase">Beta</span>
-                    </sup>
-                </h1>
-                <h1>
-                    Blockchain support{' '}
-                    <sup>
-                        <span className="badge badge-info text-uppercase">Preview</span>
-                    </sup>
-                </h1>
-                <h1>
-                    Blockchain support{' '}
-                    <sup>
-                        <span className="badge badge-info text-uppercase">Experimental</span>
-                    </sup>
-                </h1>
-                <h1>
-                    Blockchain support{' '}
-                    <sup>
-                        <span className="badge badge-info text-uppercase">Prototype</span>
-                    </sup>
-                </h1>
-            </div>
-            <p>
-                <span className="badge badge-success text-uppercase">added</span> <code>path/to/file.ts</code>
-            </p>
-            <p>
-                <span className="badge badge-danger text-uppercase">deleted</span> <code>path/to/file.ts</code>
-            </p>
-            <p>
-                <span className="badge badge-warning text-uppercase">moved</span> <code>path/to/file.ts</code>
-            </p>
-            <p>Do not use it for user-supplied text like labels (tags) or usernames.</p>
-
+            <h2>Reference</h2>
+            <BadgeVariants variants={SEMANTIC_COLORS} />
             <h2>Pill badges</h2>
             <p>Pill badges are commonly used to display counts.</p>
             <div className="mb-4">
@@ -473,10 +424,25 @@ add(
         </>
     ),
     {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=486%3A0',
-        },
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma',
+                url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=486%3A0',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Redesign - Light',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6149',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Redesign - Dark',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6448',
+            },
+        ],
     }
 )
 
