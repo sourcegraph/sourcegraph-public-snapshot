@@ -106,6 +106,10 @@
         margin-right: 0.75rem;
     }
 
+    &__chevron {
+        fill: currentColor !important;
+    }
+
     &--warn {
         // Not needed once .theme-redesign is removed
         .streaming-skipped-item__icon {

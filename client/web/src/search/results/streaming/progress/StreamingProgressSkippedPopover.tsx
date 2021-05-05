@@ -84,9 +84,9 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
 
                     {skipped.message &&
                         (isOpen ? (
-                            <ChevronDownIcon className="icon-inline flex-shrink-0" />
+                            <ChevronDownIcon className="icon-inline flex-shrink-0 streaming-skipped-item__chevron" />
                         ) : (
-                            <ChevronLeftIcon className="icon-inline flex-shrink-0" />
+                            <ChevronLeftIcon className="icon-inline flex-shrink-0 streaming-skipped-item__chevron" />
                         ))}
                 </h4>
             </Button>
