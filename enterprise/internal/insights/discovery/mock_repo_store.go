@@ -4,10 +4,10 @@ package discovery
 
 import (
 	"context"
-	database "github.com/sourcegraph/sourcegraph/internal/database"
-	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	types "github.com/sourcegraph/sourcegraph/internal/types"
 	"sync"
+
+	database "github.com/sourcegraph/sourcegraph/internal/database"
+	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // MockRepoStore is a mock implementation of the RepoStore interface (from
@@ -15,9 +15,6 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery)
 // used for unit testing.
 type MockRepoStore struct {
-	// HandleFunc is an instance of a mock function object controlling the
-	// behavior of the method Handle.
-	HandleFunc *RepoStoreHandleFunc
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *RepoStoreListFunc
@@ -27,11 +24,6 @@ type MockRepoStore struct {
 // methods return zero values for all results, unless overwritten.
 func NewMockRepoStore() *MockRepoStore {
 	return &MockRepoStore{
-		HandleFunc: &RepoStoreHandleFunc{
-			defaultHook: func() *basestore.TransactableHandle {
-				return nil
-			},
-		},
 		ListFunc: &RepoStoreListFunc{
 			defaultHook: func(context.Context, database.ReposListOptions) ([]*types.Repo, error) {
 				return nil, nil
@@ -44,112 +36,10 @@ func NewMockRepoStore() *MockRepoStore {
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockRepoStoreFrom(i RepoStore) *MockRepoStore {
 	return &MockRepoStore{
-		HandleFunc: &RepoStoreHandleFunc{
-			defaultHook: i.Handle,
-		},
 		ListFunc: &RepoStoreListFunc{
 			defaultHook: i.List,
 		},
 	}
-}
-
-// RepoStoreHandleFunc describes the behavior when the Handle method of the
-// parent MockRepoStore instance is invoked.
-type RepoStoreHandleFunc struct {
-	defaultHook func() *basestore.TransactableHandle
-	hooks       []func() *basestore.TransactableHandle
-	history     []RepoStoreHandleFuncCall
-	mutex       sync.Mutex
-}
-
-// Handle delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockRepoStore) Handle() *basestore.TransactableHandle {
-	r0 := m.HandleFunc.nextHook()()
-	m.HandleFunc.appendCall(RepoStoreHandleFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Handle method of the
-// parent MockRepoStore instance is invoked and the hook queue is empty.
-func (f *RepoStoreHandleFunc) SetDefaultHook(hook func() *basestore.TransactableHandle) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Handle method of the parent MockRepoStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *RepoStoreHandleFunc) PushHook(hook func() *basestore.TransactableHandle) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *RepoStoreHandleFunc) SetDefaultReturn(r0 *basestore.TransactableHandle) {
-	f.SetDefaultHook(func() *basestore.TransactableHandle {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *RepoStoreHandleFunc) PushReturn(r0 *basestore.TransactableHandle) {
-	f.PushHook(func() *basestore.TransactableHandle {
-		return r0
-	})
-}
-
-func (f *RepoStoreHandleFunc) nextHook() func() *basestore.TransactableHandle {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *RepoStoreHandleFunc) appendCall(r0 RepoStoreHandleFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of RepoStoreHandleFuncCall objects describing
-// the invocations of this function.
-func (f *RepoStoreHandleFunc) History() []RepoStoreHandleFuncCall {
-	f.mutex.Lock()
-	history := make([]RepoStoreHandleFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// RepoStoreHandleFuncCall is an object that describes an invocation of
-// method Handle on an instance of MockRepoStore.
-type RepoStoreHandleFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *basestore.TransactableHandle
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c RepoStoreHandleFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c RepoStoreHandleFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // RepoStoreListFunc describes the behavior when the List method of the

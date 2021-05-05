@@ -40,7 +40,7 @@ func (e ErrRepoSeeOther) Error() string {
 
 var Repos = &repos{
 	store: database.GlobalRepos,
-	cache: &CachedDefaultRepoLister{},
+	cache: NewCachedDefaultRepoLister(database.GlobalRepos),
 }
 
 type repos struct {
@@ -169,7 +169,7 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err 
 		}
 		done()
 	}()
-	return s.cache.List(ctx, s.store.Handle().DB())
+	return s.cache.List(ctx)
 }
 
 // ListDefault calls database.DefaultRepos.ListPublic, with tracing.
@@ -187,7 +187,7 @@ func (s *repos) ListDefault(ctx context.Context) (repos []types.RepoName, err er
 
 	span := opentracing.SpanFromContext(ctx)
 	span.LogFields(otlog.String("ListPublic", "start"))
-	repos, err = s.cache.ListPublic(ctx, s.store.Handle().DB())
+	repos, err = s.cache.ListPublic(ctx)
 	if err != nil {
 		span.LogFields(otlog.String("ListPublic", "failed"))
 		return nil, errors.Wrap(err, "listing default public repos")

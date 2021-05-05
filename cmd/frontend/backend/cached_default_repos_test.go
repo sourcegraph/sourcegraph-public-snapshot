@@ -93,8 +93,7 @@ func TestListDefaultRepos(t *testing.T) {
 				}
 			}
 
-			listr := &CachedDefaultRepoLister{}
-			repos, err := listr.List(ctx, db)
+			repos, err := NewCachedDefaultRepoLister(database.Repos(db)).List(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -154,8 +153,7 @@ func TestListDefaultRepos(t *testing.T) {
 		}
 
 		t.Run("List ALL repos", func(t *testing.T) {
-			listr := &CachedDefaultRepoLister{}
-			repos, err := listr.List(ctx, db)
+			repos, err := NewCachedDefaultRepoLister(database.Repos(db)).List(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -183,8 +181,7 @@ func TestListDefaultRepos(t *testing.T) {
 		})
 
 		t.Run("List only public default repos", func(t *testing.T) {
-			listr := &CachedDefaultRepoLister{}
-			repos, err := listr.ListPublic(ctx, db)
+			repos, err := NewCachedDefaultRepoLister(database.Repos(db)).ListPublic(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -220,8 +217,7 @@ func BenchmarkDefaultRepos_List_Empty(b *testing.B) {
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		listr := &CachedDefaultRepoLister{}
-		_, err := listr.List(ctx, db)
+		_, err := NewCachedDefaultRepoLister(database.Repos(db)).List(ctx)
 		if err != nil {
 			b.Fatal(err)
 		}

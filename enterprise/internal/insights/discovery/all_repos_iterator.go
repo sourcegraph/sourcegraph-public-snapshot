@@ -7,20 +7,17 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // DefaultRepoLister is a subset of the API exposed by the backend.CachedDefaultRepoLister.
 type DefaultRepoLister interface {
-	List(ctx context.Context, db dbutil.DB) ([]types.RepoName, error)
+	List(ctx context.Context) ([]types.RepoName, error)
 }
 
 // RepoStore is a subset of the API exposed by the database.Repos() store.
 type RepoStore interface {
 	List(ctx context.Context, opt database.ReposListOptions) (results []*types.Repo, err error)
-	Handle() *basestore.TransactableHandle
 }
 
 // AllReposIterator implements an efficient way to iterate over every single repository on
@@ -66,7 +63,7 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 			// We shouldn't try to fill historical data for ALL repos on Sourcegraph.com, it would take
 			// forever. Instead, we use the same list of default repositories used when you do a global
 			// search on Sourcegraph.com.
-			res, err := a.DefaultRepoLister.List(ctx, a.RepoStore.Handle().DB())
+			res, err := a.DefaultRepoLister.List(ctx)
 			if err != nil {
 				return errors.Wrap(err, "DefaultRepoLister.List")
 			}

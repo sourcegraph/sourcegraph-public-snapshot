@@ -72,6 +72,8 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		Metrics: metrics,
 	})
 
+	repoStore := database.Repos(workerBaseStore.Handle().DB())
+
 	historicalEnqueuer := &historicalEnqueuer{
 		now:           time.Now,
 		sleep:         time.Sleep,
@@ -104,8 +106,8 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		},
 
 		allReposIterator: (&discovery.AllReposIterator{
-			DefaultRepoLister:     &backend.CachedDefaultRepoLister{},
-			RepoStore:             database.Repos(workerBaseStore.Handle().DB()),
+			DefaultRepoLister:     backend.NewCachedDefaultRepoLister(repoStore),
+			RepoStore:             repoStore,
 			Clock:                 time.Now,
 			SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 

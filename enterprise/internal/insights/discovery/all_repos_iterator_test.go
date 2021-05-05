@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -170,7 +169,7 @@ func TestAllReposIterator_DotCom(t *testing.T) {
 		defaultRepoStoreListCalls int // There is no pagination with this store! We'll probably want that, eventually.
 		nextRepoID                api.RepoID
 	)
-	defaultRepoLister.ListFunc.SetDefaultHook(func(ctx context.Context, db dbutil.DB) ([]types.RepoName, error) {
+	defaultRepoLister.ListFunc.SetDefaultHook(func(ctx context.Context) ([]types.RepoName, error) {
 		defaultRepoStoreListCalls++
 		var result []types.RepoName
 		for i := 0; i < 9; i++ {

@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -35,9 +34,17 @@ func (c *cachedRepos) Repos() ([]types.RepoName, bool) {
 	return append([]types.RepoName{}, c.repos...), time.Since(c.fetched) > defaultReposMaxAge
 }
 
+func NewCachedDefaultRepoLister(store *database.RepoStore) *CachedDefaultRepoLister {
+	return &CachedDefaultRepoLister{
+		store: store,
+	}
+}
+
 // CachedDefaultRepoLister holds the list of default repos which are cached for
 // defaultReposMaxAge.
 type CachedDefaultRepoLister struct {
+	store *database.RepoStore
+
 	cacheAllRepos    atomic.Value
 	cachePublicRepos atomic.Value
 	mu               sync.Mutex
@@ -49,16 +56,16 @@ type CachedDefaultRepoLister struct {
 //
 // The values are cached for up to defaultReposMaxAge. If the cache has expired, we return
 // stale data and start a background refresh.
-func (s *CachedDefaultRepoLister) List(ctx context.Context, db dbutil.DB) (results []types.RepoName, err error) {
-	return s.list(ctx, db, false)
+func (s *CachedDefaultRepoLister) List(ctx context.Context) (results []types.RepoName, err error) {
+	return s.list(ctx, false)
 }
 
 // ListPublic is similar to List except that it only includes public repos.
-func (s *CachedDefaultRepoLister) ListPublic(ctx context.Context, db dbutil.DB) (results []types.RepoName, err error) {
-	return s.list(ctx, db, true)
+func (s *CachedDefaultRepoLister) ListPublic(ctx context.Context) (results []types.RepoName, err error) {
+	return s.list(ctx, true)
 }
 
-func (s *CachedDefaultRepoLister) list(ctx context.Context, db dbutil.DB, onlyPublic bool) (results []types.RepoName, err error) {
+func (s *CachedDefaultRepoLister) list(ctx context.Context, onlyPublic bool) (results []types.RepoName, err error) {
 	cache := &(s.cacheAllRepos)
 	if onlyPublic {
 		cache = &(s.cachePublicRepos)
@@ -72,7 +79,7 @@ func (s *CachedDefaultRepoLister) list(ctx context.Context, db dbutil.DB, onlyPu
 
 	// We don't have any repos yet, fetch them
 	if len(repos) == 0 {
-		return s.refreshCache(ctx, db, onlyPublic)
+		return s.refreshCache(ctx, onlyPublic)
 	}
 
 	// We have existing repos, return the stale data and start background refresh
@@ -80,7 +87,7 @@ func (s *CachedDefaultRepoLister) list(ctx context.Context, db dbutil.DB, onlyPu
 		newCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
 
-		_, err := s.refreshCache(newCtx, db, onlyPublic)
+		_, err := s.refreshCache(newCtx, onlyPublic)
 		if err != nil {
 			log15.Error("Refreshing default repos cache", "error", err)
 		}
@@ -88,7 +95,7 @@ func (s *CachedDefaultRepoLister) list(ctx context.Context, db dbutil.DB, onlyPu
 	return repos, nil
 }
 
-func (s *CachedDefaultRepoLister) refreshCache(ctx context.Context, db dbutil.DB, onlyPublic bool) ([]types.RepoName, error) {
+func (s *CachedDefaultRepoLister) refreshCache(ctx context.Context, onlyPublic bool) ([]types.RepoName, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -108,7 +115,7 @@ func (s *CachedDefaultRepoLister) refreshCache(ctx context.Context, db dbutil.DB
 	if !onlyPublic {
 		opts.IncludePrivate = true
 	}
-	repos, err := database.Repos(db).ListDefaultRepos(ctx, opts)
+	repos, err := s.store.ListDefaultRepos(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying for default repos")
 	}
