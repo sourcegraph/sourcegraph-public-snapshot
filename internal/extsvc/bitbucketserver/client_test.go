@@ -454,7 +454,7 @@ func TestClient_CreatePullRequest(t *testing.T) {
 			name: "timeout",
 			pr:   func() *PullRequest { return pr },
 			ctx:  timeout,
-			err:  "fetching default reviewers: context deadline exceeded",
+			err:  "context deadline exceeded",
 		},
 		{
 			name: "ToRef repo not set",
