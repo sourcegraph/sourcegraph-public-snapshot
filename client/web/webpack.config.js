@@ -26,6 +26,10 @@ const shouldServeIndexHTML = process.env.WEBPACK_SERVE_INDEX === 'true'
 if (shouldServeIndexHTML) {
   logger.info('Serving index.html with HTMLWebpackPlugin')
 }
+const webServerEnvironmentVariables = {
+  WEBPACK_SERVE_INDEX: JSON.stringify(process.env.WEBPACK_SERVE_INDEX),
+  SOURCEGRAPH_API_URL: JSON.stringify(process.env.SOURCEGRAPH_API_URL),
+}
 
 const shouldAnalyze = process.env.WEBPACK_ANALYZER === '1'
 if (shouldAnalyze) {
@@ -127,6 +131,7 @@ const config = {
     new webpack.DefinePlugin({
       'process.env': {
         NODE_ENV: JSON.stringify(mode),
+        ...(shouldServeIndexHTML && webServerEnvironmentVariables),
       },
     }),
     new MiniCssExtractPlugin({
