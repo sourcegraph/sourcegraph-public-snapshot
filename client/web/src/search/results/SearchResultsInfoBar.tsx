@@ -74,6 +74,9 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInf
  * and a few actions like expand all and save query
  */
 export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => {
+    const [isRedesignEnabled] = useRedesignToggle()
+    const buttonClass = isRedesignEnabled ? 'btn-outline-secondary mr-2' : 'btn-link'
+
     const createCodeMonitorButton = useMemo(() => {
         if (!props.enableCodeMonitoring || !props.query || !props.authenticatedUser) {
             return null
@@ -96,14 +99,21 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 <ButtonLink
                     disabled={!canCreateMonitorFromQuery}
                     to={toURL}
-                    className="btn btn-sm btn-link nav-link text-decoration-none"
+                    className={classNames('btn btn-sm nav-link text-decoration-none', buttonClass)}
                 >
                     <CodeMonitoringLogo className="icon-inline mr-1" />
                     Monitor
                 </ButtonLink>
             </li>
         )
-    }, [props.enableCodeMonitoring, props.query, props.authenticatedUser, props.location.search, props.patternType])
+    }, [
+        buttonClass,
+        props.enableCodeMonitoring,
+        props.query,
+        props.authenticatedUser,
+        props.location.search,
+        props.patternType,
+    ])
 
     const saveSearchButton = useMemo(() => {
         if (props.showSavedQueryButton === false || !props.authenticatedUser) {
@@ -115,23 +125,23 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 <button
                     type="button"
                     onClick={props.onSaveQueryClick}
-                    className="btn btn-sm btn-link nav-link text-decoration-none test-save-search-link"
+                    className={classNames(
+                        'btn btn-sm nav-link text-decoration-none test-save-search-link',
+                        buttonClass
+                    )}
                 >
                     <DownloadIcon className="icon-inline mr-1" />
                     Save search
                 </button>
             </li>
         )
-    }, [props.authenticatedUser, props.onSaveQueryClick, props.showSavedQueryButton])
+    }, [buttonClass, props.authenticatedUser, props.onSaveQueryClick, props.showSavedQueryButton])
 
     const extraContext = useMemo(() => ({ searchQuery: props.query || null }), [props.query])
 
-    const [isRedesignEnabled] = useRedesignToggle()
-    const Container = isRedesignEnabled ? 'div' : 'small'
-
     return (
         <div className={classNames(props.className, 'search-results-info-bar')} data-testid="results-info-bar">
-            <Container className="search-results-info-bar__row">
+            <div className="search-results-info-bar__row">
                 {props.stats}
                 <QuotesInterpretedLiterallyNotice {...props} />
 
@@ -142,7 +152,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         menu={ContributableMenu.SearchResultsToolbar}
                         wrapInList={false}
                         showLoadingSpinnerDuringExecution={true}
-                        actionItemClass="btn btn-sm btn-link nav-link text-decoration-none"
+                        actionItemClass={classNames('btn nav-link text-decoration-none btn-sm', buttonClass)}
                     />
 
                     {(createCodeMonitorButton || saveSearchButton) && (
@@ -158,7 +168,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                 <button
                                     type="button"
                                     onClick={props.onExpandAllResultsToggle}
-                                    className="btn btn-sm btn-link nav-link text-decoration-none"
+                                    className={classNames('btn btn-sm nav-link text-decoration-none', buttonClass)}
                                     data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                                 >
                                     {props.allExpanded ? (
@@ -171,7 +181,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         </>
                     )}
                 </ul>
-            </Container>
+            </div>
         </div>
     )
 }
