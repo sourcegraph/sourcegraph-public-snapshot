@@ -182,40 +182,9 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 
-			if fm, ok := result.ToFileMatch(); ok {
-				display = fm.Limit(display)
-
-				if syms := fm.FileMatch.Symbols; len(syms) > 0 {
-					symbols := make([]streamhttp.Symbol, 0, len(syms))
-					for _, sym := range syms {
-						kind := sym.Symbol.LSPKind()
-						kindString := "UNKNOWN"
-						if kind != 0 {
-							kindString = strings.ToUpper(kind.String())
-						}
-
-						symbols = append(symbols, streamhttp.Symbol{
-							URL:           sym.URL().String(),
-							Name:          sym.Symbol.Name,
-							ContainerName: sym.Symbol.Parent,
-							Kind:          kindString,
-						})
-					}
-					matchesAppend(fromSymbolMatch(fm, symbols))
-				} else {
-					matchesAppend(fromFileMatch(&fm.FileMatch))
-				}
-			}
-			if repo, ok := result.ToRepository(); ok {
-				display = repo.Limit(display)
-
-				matchesAppend(fromRepository(repo.RepoMatch))
-			}
-			if commit, ok := result.ToCommitSearchResult(); ok {
-				display = commit.Limit(display)
-
-				matchesAppend(fromCommit(&commit.CommitMatch))
-			}
+			match := toMatch(result)
+			display = match.Limit(display)
+			matchesAppend(fromMatch(match))
 		}
 
 		// Instantly send results if we have not sent any yet.
@@ -407,7 +376,42 @@ func fromStrPtr(s *string) string {
 	return *s
 }
 
-func fromFileMatch(fm *result.FileMatch) *streamhttp.EventFileMatch {
+// Temporary function to convert to SearchResultResolvers to Matches until
+// streaming search takes matches directly
+func toMatch(srr graphqlbackend.SearchResultResolver) result.Match {
+	if fmr, ok := srr.ToFileMatch(); ok {
+		return &fmr.FileMatch
+	}
+
+	if csr, ok := srr.ToCommitSearchResult(); ok {
+		return &csr.CommitMatch
+	}
+
+	if rr, ok := srr.ToRepository(); ok {
+		return &rr.RepoMatch
+	}
+
+	panic(fmt.Sprintf("unknown concrete type %T behind SearchResultResolver", srr))
+}
+
+func fromMatch(match result.Match) streamhttp.EventMatch {
+	switch v := match.(type) {
+	case *result.FileMatch:
+		return fromFileMatch(v)
+	case *result.RepoMatch:
+		return fromRepository(v)
+	case *result.CommitMatch:
+		return fromCommit(v)
+	default:
+		panic(fmt.Sprintf("unknown match type %T", v))
+	}
+}
+
+func fromFileMatch(fm *result.FileMatch) streamhttp.EventMatch {
+	if syms := fm.Symbols; len(syms) > 0 {
+		return fromSymbolMatch(fm)
+	}
+
 	lineMatches := make([]streamhttp.EventLineMatch, 0, len(fm.LineMatches))
 	for _, lm := range fm.LineMatches {
 		lineMatches = append(lineMatches, streamhttp.EventLineMatch{
@@ -432,7 +436,23 @@ func fromFileMatch(fm *result.FileMatch) *streamhttp.EventFileMatch {
 	}
 }
 
-func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []streamhttp.Symbol) *streamhttp.EventSymbolMatch {
+func fromSymbolMatch(fm *result.FileMatch) *streamhttp.EventSymbolMatch {
+	symbols := make([]streamhttp.Symbol, 0, len(fm.Symbols))
+	for _, sym := range fm.Symbols {
+		kind := sym.Symbol.LSPKind()
+		kindString := "UNKNOWN"
+		if kind != 0 {
+			kindString = strings.ToUpper(kind.String())
+		}
+
+		symbols = append(symbols, streamhttp.Symbol{
+			URL:           sym.URL().String(),
+			Name:          sym.Symbol.Name,
+			ContainerName: sym.Symbol.Parent,
+			Kind:          kindString,
+		})
+	}
+
 	var branches []string
 	if fm.InputRev != nil {
 		branches = []string{*fm.InputRev}
@@ -448,7 +468,7 @@ func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []streamhttp.
 	}
 }
 
-func fromRepository(rm result.RepoMatch) *streamhttp.EventRepoMatch {
+func fromRepository(rm *result.RepoMatch) *streamhttp.EventRepoMatch {
 	var branches []string
 	if rev := rm.Rev; rev != "" {
 		branches = []string{rev}

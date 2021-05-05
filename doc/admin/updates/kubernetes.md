@@ -14,6 +14,8 @@ Upgrades **must** happen across consecutive minor versions of Sourcegraph. For e
 and any manual migration steps you must perform.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
+## Unreleased
+All Sourcegraph images now have a registry prefix. [#2901](https://github.com/sourcegraph/deploy-sourcegraph/pull/2901)
 
 ## 3.26 -> 3.27
 

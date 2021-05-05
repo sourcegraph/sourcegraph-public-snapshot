@@ -12,6 +12,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -371,17 +372,17 @@ func (m MockSyncStore) Transact(ctx context.Context) (*store.Store, error) {
 
 func (m MockSyncStore) Repos() *database.RepoStore {
 	// Return a RepoStore with a nil DB, so tests will fail when a mock is missing.
-	return database.Repos(nil)
+	return database.Repos(&dbtesting.MockDB{})
 }
 
 func (m MockSyncStore) ExternalServices() *database.ExternalServiceStore {
 	// Return a ExternalServiceStore with a nil DB, so tests will fail when a mock is missing.
-	return database.ExternalServices(nil)
+	return database.ExternalServices(&dbtesting.MockDB{})
 }
 
 func (m MockSyncStore) UserCredentials() *database.UserCredentialsStore {
 	// Return a UserCredentialsStore with a nil DB, so tests will fail when a mock is missing.
-	return database.UserCredentials(nil, nil)
+	return database.UserCredentials(&dbtesting.MockDB{}, nil)
 }
 
 func (m MockSyncStore) DB() dbutil.DB {
