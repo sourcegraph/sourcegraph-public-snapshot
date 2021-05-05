@@ -115,6 +115,11 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 }
 
 func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	// 🚨 SECURITY: Only site admins can count users.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return 0, err
+	}
+
 	var count int
 	var err error
 	if r.useCache() {
