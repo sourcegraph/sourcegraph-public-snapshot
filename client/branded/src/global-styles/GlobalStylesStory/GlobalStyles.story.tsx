@@ -8,7 +8,6 @@ import { action } from '@storybook/addon-actions'
 import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
-import { flow } from 'lodash'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useState } from 'react'
 import 'storybook-addon-designs'
@@ -20,6 +19,7 @@ import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
 import { Form } from '../../components/Form'
 
+import { AlertsStory } from './AlertsStory'
 import { BadgeVariants } from './BadgeVariants/BadgeVariants'
 import { ButtonVariants } from './ButtonVariants'
 import { ColorVariants } from './ColorVariants'
@@ -276,44 +276,27 @@ add('Layout', () => (
     </>
 ))
 
-add(
-    'Alerts',
-    () => (
-        <>
-            <h1>Alerts</h1>
-            <p>
-                Provide contextual feedback messages for typical user actions with the handful of available and flexible
-                alert messages.
-            </p>
-            {SEMANTIC_COLORS.map(semantic => (
-                <div key={semantic} className={classNames('alert', `alert-${semantic}`)}>
-                    A simple {semantic} alert — check it out! It can also contain{' '}
-                    <a href="/" onClick={flow(preventDefault, action('alert link clicked'))}>
-                        links like this
-                    </a>
-                    .
-                </div>
-            ))}
-            <div className="alert alert-info d-flex align-items-center">
-                <div className="flex-grow-1">An alert with a button</div>
-                {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus */}
-                <a
-                    role="button"
-                    className="btn btn-info"
-                    onClick={flow(preventDefault, action('alert button clicked'))}
-                >
-                    Call to action
-                </a>
-            </div>
-        </>
-    ),
-    {
-        design: {
+add('Alerts', AlertsStory, {
+    design: [
+        {
             type: 'figma',
+            name: 'Figma',
             url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=127%3A4',
         },
-    }
-)
+        {
+            type: 'figma',
+            name: 'Figma Redesign Light',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A196',
+        },
+        {
+            type: 'figma',
+            name: 'Figma Redesign Dark',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A525',
+        },
+    ],
+})
 
 add(
     'Badges',
