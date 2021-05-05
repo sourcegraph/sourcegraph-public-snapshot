@@ -20,7 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- User and site credentials used in Batch Changes are now encrypted if encryption is enabled in the database with the `encryption.keys` config. [#19570](https://github.com/sourcegraph/sourcegraph/issues/19570)
+- User and site credentials used in Batch Changes are now encrypted in the database if encryption is enabled with the `encryption.keys` config. [#19570](https://github.com/sourcegraph/sourcegraph/issues/19570)
 - Default reviewers are now added to Bitbucket Server PRs opened by Batch Changes. [#20551](https://github.com/sourcegraph/sourcegraph/pull/20551)
 
 ### Fixed
