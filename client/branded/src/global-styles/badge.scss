@@ -10,7 +10,18 @@
     }
 }
 
+:root {
+    --badge-font-weight: 600;
+    --badge-padding-y: 0.34em;
+    --badge-padding-x: 0.6em;
+    --badge-border-radius: 2px;
+}
+
 .theme-redesign {
+    --badge-font-weight: 500;
+    --badge-padding-y: 0.25em;
+    --badge-padding-x: 0.5em;
+
     .badge {
         background-color: var(--subtle-bg);
         color: var(--link-color);

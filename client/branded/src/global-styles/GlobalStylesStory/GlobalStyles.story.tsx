@@ -13,6 +13,7 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useState } from 'react'
 import 'storybook-addon-designs'
 
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
 
 import { BrandedStory } from '../../components/BrandedStory'
@@ -391,6 +392,35 @@ add(
 
             <h2>Reference</h2>
             <BadgeVariants variants={SEMANTIC_COLORS} />
+            <h2>Pill badges</h2>
+            <p>Pill badges are commonly used to display counts.</p>
+            <div className="mb-4">
+                Matches <span className="badge badge-pill badge-secondary">321+</span>
+            </div>
+            <div>
+                <ul className="nav nav-tabs mb-2">
+                    <li className="nav-item">
+                        <a className="nav-link active" href="/" onClick={preventDefault}>
+                            Comments <span className="badge badge-pill badge-secondary">14</span>
+                        </a>
+                    </li>
+                    <li className="nav-item">
+                        <a className="nav-link" href="/" onClick={preventDefault}>
+                            Changed files <span className="badge badge-pill badge-secondary">6</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <span>No content here!</span>
+            </div>
+
+            <h2>Links</h2>
+
+            <p>
+                <LinkOrSpan className="badge badge-secondary" to="http://google.com">
+                    Tooltip
+                </LinkOrSpan>
+            </p>
         </>
     ),
     {
