@@ -57,7 +57,7 @@ func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator
 		raw = string(uc.encryptedCredential)
 	}
 
-	a, err := unmarshalAuthenticator(raw)
+	a, err := UnmarshalAuthenticator(raw)
 	if err != nil {
 		return nil, errors.Wrap(err, "unmarshalling authenticator")
 	}
@@ -68,7 +68,7 @@ func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator
 // SetAuthenticator encrypts and sets the authenticator within the user
 // credential.
 func (uc *UserCredential) SetAuthenticator(ctx context.Context, a auth.Authenticator) error {
-	secret, err := encryptAuthenticator(ctx, uc.key, a)
+	secret, err := EncryptAuthenticator(ctx, uc.key, a)
 	if err != nil {
 		return err
 	}
@@ -145,7 +145,7 @@ func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 		return Mocks.UserCredentials.Create(ctx, scope, credential)
 	}
 
-	enc, err := encryptAuthenticator(ctx, s.key, credential)
+	enc, err := EncryptAuthenticator(ctx, s.key, credential)
 	if err != nil {
 		return nil, err
 	}

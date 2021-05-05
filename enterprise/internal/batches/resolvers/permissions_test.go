@@ -374,9 +374,9 @@ func TestPermissionLevels(t *testing.T) {
 						cred := &btypes.SiteCredential{
 							ExternalServiceID:   "https://github.com/",
 							ExternalServiceType: extsvc.TypeGitHub,
-							Credential:          &auth.OAuthBearerToken{Token: "SOSECRET"},
 						}
-						if err := cstore.CreateSiteCredential(ctx, cred); err != nil {
+						token := &auth.OAuthBearerToken{Token: "SOSECRET"}
+						if err := cstore.CreateSiteCredential(ctx, cred, token); err != nil {
 							t.Fatal(err)
 						}
 						graphqlID = marshalBatchChangesCredentialID(cred.ID, true)
@@ -563,9 +563,9 @@ func TestPermissionLevels(t *testing.T) {
 						cred := &btypes.SiteCredential{
 							ExternalServiceID:   "https://github.com/",
 							ExternalServiceType: extsvc.TypeGitHub,
-							Credential:          &auth.OAuthBearerToken{Token: "SOSECRET"},
 						}
-						if err := cstore.CreateSiteCredential(ctx, cred); err != nil {
+						token := &auth.OAuthBearerToken{Token: "SOSECRET"}
+						if err := cstore.CreateSiteCredential(ctx, cred, token); err != nil {
 							t.Fatal(err)
 						}
 						batchChangesCredentialID = marshalBatchChangesCredentialID(cred.ID, true)
