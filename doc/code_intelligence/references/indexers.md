@@ -206,8 +206,8 @@ We may lack the language expertise or bandwidth to implement certain features on
 
 #### lsif-java
 
-- Native Gradle and Maven integration.
-- The solution is compatible with Java 8, Java 11 and Java 15.
+- Supports Gradle and Maven.
+- Supports Java 8 and Java 11.
 
 #### lsif-cpp
 
