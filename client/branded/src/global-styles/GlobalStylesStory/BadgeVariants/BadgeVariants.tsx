@@ -7,13 +7,17 @@ import { SEMANTIC_COLORS } from '../constants'
 
 import styles from './BadgeVariants.module.scss'
 
-const Badge: React.FunctionComponent<{ variant?: string }> = ({ variant }) => {
+interface BadgeProps {
+    variant?: string
+}
+
+const Badge: React.FunctionComponent<BadgeProps> = ({ variant }) => {
     const className = classNames('badge', variant && `badge-${variant}`)
     return (
         <>
             <span className={className}>{startCase(variant || 'Default')}</span>
             <span className={classNames(className, 'text-uppercase')}>Uppercase</span>
-            <a href="/" className={classNames(className)}>
+            <a href="/" className={className}>
                 Link
             </a>
         </>

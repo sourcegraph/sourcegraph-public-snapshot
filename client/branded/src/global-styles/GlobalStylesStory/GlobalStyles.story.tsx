@@ -394,10 +394,25 @@ add(
         </>
     ),
     {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=486%3A0',
-        },
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma',
+                url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=486%3A0',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Redesign - Light',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6149',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Redesign - Dark',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6448',
+            },
+        ],
     }
 )
 

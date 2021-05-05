@@ -108,14 +108,6 @@
         $light-color-variant: var(--merged-2),
         $dark-color-variant: var(--merged-3)
     );
-
-    // TODO: Confirm we want this variant, and hover/focus color
-    @include redesign-badge-variant(
-        $name: 'new',
-        $base-color: var(--info-3),
-        $light-color-variant: var(--info-3),
-        $dark-color-variant: var(--info-3) // TODO: No darker variant?
-    );
 }
 
 .theme-light.theme-redesign,
