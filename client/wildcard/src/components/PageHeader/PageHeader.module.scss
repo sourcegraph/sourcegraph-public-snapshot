@@ -1,3 +1,6 @@
+// Scale icon size with heading size. 26px font size (h1) -> 22px icon size
+$path-icon-size: (22em / 26);
+
 .container {
     display: flex;
     flex-direction: column;
@@ -27,10 +30,9 @@
     align-items: center;
 
     &-icon {
-        margin-right: 0.25rem;
-        // Scale icon size with heading
-        height: 1em; // stylelint-disable-line declaration-property-unit-whitelist
-        width: 1em; // stylelint-disable-line declaration-property-unit-whitelist
+        margin-right: 0.5rem;
+        height: $path-icon-size;
+        width: $path-icon-size;
     }
     &-text {
         margin-right: 0.5rem;
