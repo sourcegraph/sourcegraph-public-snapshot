@@ -1,4 +1,3 @@
-/* eslint-disable no-template-curly-in-string */
 import { Omit } from 'utility-types'
 
 import { SearchSuggestion } from '../suggestions'
@@ -180,16 +179,19 @@ export const LANGUAGES: string[] = [
 const SOURCEGRAPH_DOT_COM_REPO_COMPLETION: Completion[] = [
     {
         label: 'Search a GitHub organization',
-        insertText: 'github\\.com/${1:ORGANIZATION}/.*',
+        // eslint-disable-next-line no-template-curly-in-string
+        insertText: '^github\\.com/${1:ORGANIZATION}/.*',
         asSnippet: true,
     },
     {
         label: 'Search a single GitHub repository',
+        // eslint-disable-next-line no-template-curly-in-string
         insertText: '^github\\.com/${1:ORGANIZATION}/${2:REPO-NAME}$',
         asSnippet: true,
     },
     {
         label: 'Search for repositories with fuzzy string search',
+        // eslint-disable-next-line no-template-curly-in-string
         insertText: '${1:STRING}',
         asSnippet: true,
     },

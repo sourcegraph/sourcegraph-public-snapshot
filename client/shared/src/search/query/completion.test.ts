@@ -512,7 +512,7 @@ describe('getCompletionItems()', () => {
             )?.suggestions.map(({ insertText }) => insertText)
         ).toMatchInlineSnapshot(`
             [
-              "github\\\\.com/\${1:ORGANIZATION}/.* ",
+              "^github\\\\.com/\${1:ORGANIZATION}/.* ",
               "^github\\\\.com/\${1:ORGANIZATION}/\${2:REPO-NAME}$ ",
               "\${1:STRING} ",
               "contains.file(\${1:CHANGELOG}) ",
