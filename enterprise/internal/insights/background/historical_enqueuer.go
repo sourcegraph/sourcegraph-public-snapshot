@@ -13,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	str2duration "github.com/xhit/go-str2duration/v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -106,7 +106,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		},
 
 		allReposIterator: (&discovery.AllReposIterator{
-			DefaultRepoLister:     backend.NewCachedDefaultRepoLister(repoStore),
+			DefaultRepoLister:     dbcache.NewCachedDefaultRepoLister(repoStore),
 			RepoStore:             repoStore,
 			Clock:                 time.Now,
 			SourcegraphDotComMode: envvar.SourcegraphDotComMode(),

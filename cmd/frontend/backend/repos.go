@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -40,12 +41,12 @@ func (e ErrRepoSeeOther) Error() string {
 
 var Repos = &repos{
 	store: database.GlobalRepos,
-	cache: NewCachedDefaultRepoLister(database.GlobalRepos),
+	cache: dbcache.NewCachedDefaultRepoLister(database.GlobalRepos),
 }
 
 type repos struct {
 	store *database.RepoStore
-	cache *CachedDefaultRepoLister
+	cache *dbcache.CachedDefaultRepoLister
 }
 
 func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error) {
