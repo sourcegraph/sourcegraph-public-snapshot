@@ -46,7 +46,7 @@ export const StreamingProgressCount: React.FunctionComponent<
             )}
         </small>
         {showTrace && progress.trace && (
-            <small className="d-flex">
+            <small className="d-flex ml-2">
                 <a href={progress.trace}>
                     <ClipboardPulseOutlineIcon className="mr-2 icon-inline" />
                     View trace
