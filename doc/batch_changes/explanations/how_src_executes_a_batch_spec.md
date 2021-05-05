@@ -144,6 +144,7 @@ In the workspace:
 `src` adds the produced diff to the local cache, so that re-executing the same steps in the same repository can be skipped if the base branch has not changed.
 
 `src` then creates a changeset spec from:
+
 - the diff
 - information about the repository in which the changes have been made (the name and ID of the repository, the revision of its base branch)
 - the `changesetTemplate`
