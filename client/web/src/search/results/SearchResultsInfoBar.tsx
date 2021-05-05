@@ -58,7 +58,7 @@ export interface SearchResultsInfoBarProps
  */
 const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInfoBarProps> = props =>
     props.patternType === SearchPatternType.literal && props.query && props.query.includes('"') ? (
-        <div
+        <small
             className="search-results-info-bar__notice"
             data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
         >
@@ -66,7 +66,7 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInf
                 <FormatQuoteOpenIcon className="icon-inline" />
                 Searching literally <strong>(including quotes)</strong>
             </span>
-        </div>
+        </small>
     ) : null
 
 /**
