@@ -2,9 +2,10 @@ import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject } from 'rxjs'
 
+import { PageHeader } from '@sourcegraph/wildcard'
+
 import { BatchChangesIconFlushLeft } from '../../../batches/icons'
 import { FilteredConnection } from '../../../components/FilteredConnection'
-import { PageHeader } from '../../../components/PageHeader'
 import {
     BatchChangesCodeHostFields,
     BatchChangesCodeHostsFields,

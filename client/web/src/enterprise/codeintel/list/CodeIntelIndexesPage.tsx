@@ -2,13 +2,13 @@ import React, { FunctionComponent, useCallback, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
 } from '../../../components/FilteredConnection'
-import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
 

@@ -7,10 +7,10 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { FeedbackBadge } from '../../components/FeedbackBadge'
 import { Page } from '../../components/Page'
-import { PageHeader } from '../../components/PageHeader'
 import { InsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../components'
 import { InsightsApiContext } from '../core/backend/api-provider'
 

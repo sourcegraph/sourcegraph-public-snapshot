@@ -4,20 +4,15 @@ import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { FeedbackBadge } from '@sourcegraph/web/src/components/FeedbackBadge'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import webStyles from '../SourcegraphWebApp.scss'
-
-import { FeedbackBadge } from './FeedbackBadge'
 import { PageHeader } from './PageHeader'
 
-const { add } = storiesOf('web/PageHeader', module).addDecorator(story => (
-    <>
-        <style>{webStyles}</style>
-        <div className="layout__app-router-container">
-            <div className="container web-content my-3">{story()}</div>
-        </div>
-    </>
+const { add } = storiesOf('wildcard/PageHeader', module).addDecorator(story => (
+    <BrandedStory styles={webStyles}>{() => <div className="container web-content mt-3">{story()}</div>}</BrandedStory>
 ))
 
 add(

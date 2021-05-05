@@ -8,10 +8,10 @@ import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
-import { PageHeader } from '../../../components/PageHeader'
 import {
     ListBatchChange,
     Scalars,

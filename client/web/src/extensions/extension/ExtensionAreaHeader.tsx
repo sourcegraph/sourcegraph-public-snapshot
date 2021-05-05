@@ -7,8 +7,8 @@ import { isExtensionEnabled, splitExtensionID } from '@sourcegraph/shared/src/ex
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
+import { PageHeader } from '@sourcegraph/wildcard'
 
-import { PageHeader } from '../../components/PageHeader'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
 

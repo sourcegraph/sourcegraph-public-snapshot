@@ -27,11 +27,10 @@
     align-items: center;
 
     &-icon {
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        height: 1em;
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        width: 1em;
         margin-right: 0.25rem;
+        // Scale icon size with heading
+        height: 1em; // stylelint-disable-line declaration-property-unit-whitelist
+        width: 1em; // stylelint-disable-line declaration-property-unit-whitelist
     }
     &-text {
         margin-right: 0.5rem;
