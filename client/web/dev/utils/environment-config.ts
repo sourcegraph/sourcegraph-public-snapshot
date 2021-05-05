@@ -11,6 +11,7 @@ export const environmentConfig = {
     SOURCEGRAPH_HTTPS_PORT: Number(process.env.SOURCEGRAPH_HTTPS_PORT) || 3443,
     WEBPACK_SERVE_INDEX: process.env.WEBPACK_SERVE_INDEX === 'true',
     SITE_CONFIG_PATH: process.env.SITE_CONFIG_PATH || DEFAULT_SITE_CONFIG_PATH,
+    ENTERPRISE: Boolean(process.env.ENTERPRISE),
 
     // TODO: do we use process.env.NO_HOT anywhere?
     IS_HOT_RELOAD_ENABLED: process.env.NO_HOT !== 'true',

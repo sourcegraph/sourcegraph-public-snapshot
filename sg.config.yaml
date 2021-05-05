@@ -177,7 +177,6 @@ commands:
     cmd: ./node_modules/.bin/gulp --silent --color dev
     install: yarn --no-progress
     env:
-      WEBPACK_DEV_SERVER: 1
       NODE_ENV: development
       NODE_OPTIONS: "--max_old_space_size=4096"
 
@@ -186,9 +185,52 @@ commands:
     install: yarn --no-progress
     env:
       ENTERPRISE: 1
-      WEBPACK_DEV_SERVER: 1
       NODE_ENV: development
       NODE_OPTIONS: "--max_old_space_size=4096"
+
+  web-standalone:
+    cmd: yarn workspace @sourcegraph/web serve:dev
+    env:
+      NODE_ENV: development
+      NODE_OPTIONS: "--max_old_space_size=4096"
+      WEBPACK_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+      SOURCEGRAPH_HTTPS_DOMAIN: sourcegraph.test
+      SOURCEGRAPH_HTTPS_PORT: 3443
+
+  enterprise-web-standalone:
+    cmd: yarn workspace @sourcegraph/web serve:dev
+    env:
+      ENTERPRISE: 1
+      NODE_ENV: development
+      NODE_OPTIONS: "--max_old_space_size=4096"
+      WEBPACK_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+      SOURCEGRAPH_HTTPS_DOMAIN: sourcegraph.test
+      SOURCEGRAPH_HTTPS_PORT: 3443
+
+  web-standalone-prod:
+    cmd: yarn workspace @sourcegraph/web serve:prod
+    install: yarn workspace @sourcegraph/web run build
+    env:
+      NODE_ENV: production
+      NODE_OPTIONS: "--max_old_space_size=4096"
+      WEBPACK_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+      SOURCEGRAPH_HTTPS_DOMAIN: sourcegraph.test
+      SOURCEGRAPH_HTTPS_PORT: 3443
+
+  enterprise-web-standalone-prod:
+    cmd: yarn workspace @sourcegraph/web serve:prod
+    install: yarn workspace @sourcegraph/web run build
+    env:
+      ENTERPRISE: 1
+      NODE_ENV: production
+      NODE_OPTIONS: "--max_old_space_size=4096"
+      WEBPACK_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+      SOURCEGRAPH_HTTPS_DOMAIN: sourcegraph.test
+      SOURCEGRAPH_HTTPS_PORT: 3443
 
   docsite:
     cmd: .bin/docsite_${VERSION} -config doc/docsite.json serve -http=localhost:5080

@@ -1,5 +1,3 @@
-import 'dotenv/config'
-
 import chalk from 'chalk'
 import signale from 'signale'
 import createWebpackCompiler, { Configuration } from 'webpack'

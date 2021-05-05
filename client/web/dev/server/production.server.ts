@@ -1,5 +1,3 @@
-import 'dotenv/config'
-
 import chalk from 'chalk'
 import historyApiFallback from 'connect-history-api-fallback'
 import express, { RequestHandler } from 'express'
