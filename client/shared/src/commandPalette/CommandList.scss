@@ -9,6 +9,13 @@
 
 .theme-redesign {
     .command-list {
+        .list-group-item {
+            &.active {
+                &:hover {
+                    color: var(--body-color);
+                }
+            }
+        }
         .list-group-item-action {
             &:hover {
                 background-color: var(--color-bg-3);
