@@ -9,13 +9,3 @@
         @content;
     }
 }
-
-@mixin color-scheme-rule($rule, $light-value, $dark-value) {
-    @include theme-light-rule {
-        #{$rule}: $light-value;
-    }
-
-    @include theme-dark-rule {
-        #{$rule}: $dark-value;
-    }
-}

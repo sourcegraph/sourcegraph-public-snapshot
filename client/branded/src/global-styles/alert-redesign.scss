@@ -1,15 +1,113 @@
 @import './color-scheme-mixins';
 
-@mixin redesign-alert-variant(
-    $name,
-    $border-color,
-    $icon-color-light,
-    $icon-color-dark,
-    $icon-background-light,
-    $icon-background-dark: $icon-background-light
-) {
-    .alert-#{$name} {
-        border-color: $border-color;
+.theme-redesign {
+    .alert-info {
+        --alert-border-color: var(--info);
+
+        @include theme-light-rule {
+            --alert-icon-color: var(--info-3);
+            --alert-icon-background-color: var(--info-4);
+        }
+
+        @include theme-dark-rule {
+            --alert-icon-color: var(--info);
+            --alert-icon-background-color: var(--info-3);
+        }
+    }
+
+    .alert-warning {
+        --alert-border-color: var(--warning);
+        --alert-icon-background-color: var(--warning-4);
+
+        @include theme-light-rule {
+            --alert-icon-color: var(--warning-3);
+        }
+
+        @include theme-dark-rule {
+            --alert-icon-color: var(--warning);
+        }
+    }
+
+    .alert-danger {
+        --alert-border-color: var(--danger);
+        --alert-icon-background-color: var(--danger-4);
+
+        @include theme-light-rule {
+            --alert-icon-color: var(--danger-3);
+        }
+
+        @include theme-dark-rule {
+            --alert-icon-color: var(--danger);
+        }
+    }
+
+    .alert-success {
+        --alert-border-color: var(--success);
+        --alert-icon-background-color: var(--success-4);
+
+        @include theme-light-rule {
+            --alert-icon-color: var(--success-3);
+        }
+
+        @include theme-dark-rule {
+            --alert-icon-color: var(--success);
+        }
+    }
+
+    .alert-primary {
+        --alert-border-color: var(--primary);
+        --alert-icon-background-color: var(--primary-4);
+
+        @include theme-light-rule {
+            --alert-icon-color: var(--primary-3);
+        }
+
+        @include theme-dark-rule {
+            --alert-icon-color: var(--primary);
+        }
+    }
+
+    .alert-secondary {
+        // TODO: use root color palette CSS variable: https://github.com/sourcegraph/sourcegraph/issues/20665
+        --alert-secondary-color: var(--icon-color);
+        --alert-border-color: var(--alert-secondary-color);
+        --alert-icon-background-color: var(--secondary-4);
+
+        @include theme-light-rule {
+            --alert-icon-color: var(--alert-secondary-color);
+        }
+
+        @include theme-dark-rule {
+            --alert-icon-color: var(--alert-secondary-color);
+        }
+    }
+
+    .alert-merged {
+        --alert-border-color: var(--merged);
+        --alert-icon-background-color: var(--merged-4);
+
+        @include theme-light-rule {
+            --alert-icon-color: var(--merged-3);
+        }
+
+        @include theme-dark-rule {
+            --alert-icon-color: var(--merged);
+        }
+    }
+
+    .alert-primary,
+    .alert-secondary,
+    .alert-success,
+    .alert-danger,
+    .alert-warning,
+    .alert-info,
+    .alert-merged {
+        --alert-icon-block-width: 2.5rem;
+        --alert-content-padding: 0.5rem;
+
+        color: var(--body-color);
+        overflow: hidden;
+        border-color: var(--alert-border-color);
         // Apply `background-color` and `padding` only to `.alert-#{$name}` because we also use `.alert` elements without variants.
         background-color: var(--color-bg-1);
         padding: var(--alert-content-padding) var(--alert-content-padding) var(--alert-content-padding)
@@ -31,11 +129,7 @@
             border: 2px solid var(--color-bg-1);
             border-top-left-radius: var(--border-radius);
             border-bottom-left-radius: var(--border-radius);
-            @include color-scheme-rule(
-                $rule: background-color,
-                $light-value: $icon-background-light,
-                $dark-value: $icon-background-dark
-            );
+            background-color: var(--alert-icon-background-color);
         }
 
         &::after {
@@ -49,79 +143,7 @@
             mask-size: 1.25rem;
             mask-position: 50% 50%;
             // Applied as a fill color for SVG icon because of the mask-image.
-            @include color-scheme-rule(
-                $rule: background-color,
-                $light-value: $icon-color-light,
-                $dark-value: $icon-color-dark
-            );
+            background-color: var(--alert-icon-color);
         }
     }
-}
-
-.theme-redesign {
-    .alert {
-        --alert-secondary-color: var(--icon-color);
-        --alert-icon-block-width: 2.5rem;
-        --alert-content-padding: 0.5rem;
-
-        overflow: hidden;
-        color: var(--body-color);
-    }
-
-    @include redesign-alert-variant(
-        $name: 'info',
-        $border-color: var(--info),
-        $icon-background-light: var(--info-4),
-        $icon-background-dark: var(--info-3),
-        $icon-color-light: var(--info-3),
-        $icon-color-dark: var(--info)
-    );
-
-    @include redesign-alert-variant(
-        $name: 'warning',
-        $border-color: var(--warning),
-        $icon-background-light: var(--warning-4),
-        $icon-color-light: var(--warning-3),
-        $icon-color-dark: var(--warning)
-    );
-
-    @include redesign-alert-variant(
-        $name: 'danger',
-        $border-color: var(--danger),
-        $icon-background-light: var(--danger-4),
-        $icon-color-light: var(--danger-3),
-        $icon-color-dark: var(--danger)
-    );
-
-    @include redesign-alert-variant(
-        $name: 'success',
-        $border-color: var(--success),
-        $icon-background-light: var(--success-4),
-        $icon-color-light: var(--success-3),
-        $icon-color-dark: var(--success)
-    );
-
-    @include redesign-alert-variant(
-        $name: 'primary',
-        $border-color: var(--primary),
-        $icon-background-light: var(--primary-4),
-        $icon-color-light: var(--primary-3),
-        $icon-color-dark: var(--primary)
-    );
-
-    @include redesign-alert-variant(
-        $name: 'secondary',
-        $border-color: var(--alert-secondary-color),
-        $icon-background-light: var(--secondary-4),
-        $icon-color-light: var(--alert-secondary-color),
-        $icon-color-dark: var(--alert-secondary-color)
-    );
-
-    @include redesign-alert-variant(
-        $name: 'merged',
-        $border-color: var(--merged),
-        $icon-background-light: var(--merged-4),
-        $icon-color-light: var(--merged-3),
-        $icon-color-dark: var(--merged)
-    );
 }
