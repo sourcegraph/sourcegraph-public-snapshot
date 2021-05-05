@@ -1,3 +1,5 @@
+@import 'branded/src/global-styles/breakpoints';
+
 .external-changeset-node {
     &__statuses {
         @include media-breakpoint-down(xs) {
@@ -10,7 +12,7 @@
         }
     }
     &__bg-expanded {
-        background-color: rgba($oc-blue-0, 0.5);
+        background-color: var(--oc-blue-0);
     }
     &__expanded-section {
         // Make it full width in the current row.
@@ -43,5 +45,11 @@
                 }
             }
         }
+    }
+}
+
+:global(.theme-dark) .external-changeset-node {
+    &__bg-expanded {
+        background-color: var(--oc-gray-9);
     }
 }

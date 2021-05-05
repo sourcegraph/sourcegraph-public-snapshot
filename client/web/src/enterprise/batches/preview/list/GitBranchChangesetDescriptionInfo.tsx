@@ -4,6 +4,8 @@ import { VisibleChangesetApplyPreviewFields } from '../../../../graphql-operatio
 import { formatPersonName, PersonLink } from '../../../../person/PersonLink'
 import { UserAvatar } from '../../../../user/UserAvatar'
 
+import styles from './GitBranchChangesetDescriptionInfo.module.scss'
+
 interface Props {
     node: VisibleChangesetApplyPreviewFields
 }
@@ -29,7 +31,7 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<Props> =
         node.targets.changeset.currentSpec.description.commits?.[0]
 
     return (
-        <div className="git-branch-changeset-description-info__grid">
+        <div className={styles.gitBranchChangesetDescriptionInfoGrid}>
             {(node.delta.authorEmailChanged || node.delta.authorNameChanged || node.delta.commitMessageChanged) &&
                 previousCommit && (
                     <>
