@@ -51,10 +51,10 @@ type DocumentationChildrenEdge struct {
 	Edge
 
 	// The ordered children "documentationResult" vertex IDs.
-	InVs []uint64 `json:"inV"`
+	InVs []uint64 `json:"inVs"`
 
 	// The parent "documentationResult" vertex ID.
-	OutV uint64 `json:"outVs"`
+	OutV uint64 `json:"outV"`
 }
 
 func NewDocumentationChildrenEdge(id uint64, inVs []uint64, outV uint64) DocumentationChildrenEdge {
