@@ -22,12 +22,14 @@ export interface SearchContextsListTabProps
     extends Pick<SearchContextProps, 'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts'> {
     location: H.Location
     history: H.History
+    isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
 }
 
 export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTabProps> = ({
     history,
     location,
+    isSourcegraphDotCom,
     authenticatedUser,
     fetchSearchContexts,
     fetchAutoDefinedSearchContexts,
@@ -95,32 +97,34 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
 
     return (
         <>
-            <div
-                className={classNames(
-                    'search-contexts-list-tab__auto-defined-search-contexts',
-                    'mb-4',
-                    autoDefinedSearchContexts && autoDefinedSearchContexts.length >= 3
-                        ? 'search-contexts-list-tab__auto-defined-search-contexts--repeat-3'
-                        : 'search-contexts-list-tab__auto-defined-search-contexts--repeat-2'
-                )}
-            >
-                {autoDefinedSearchContexts?.map(context => (
-                    <div key={context.spec} className="card p-3">
-                        <div>
-                            <Link to={`/contexts/${context.id}`}>
-                                <strong>{context.spec}</strong>
-                            </Link>
-                            <span
-                                className="badge badge-pill badge-secondary ml-1"
-                                data-tooltip="Automatic contexts are created by Sourcegraph."
-                            >
-                                auto
-                            </span>
+            {isSourcegraphDotCom && (
+                <div
+                    className={classNames(
+                        'search-contexts-list-tab__auto-defined-search-contexts',
+                        'mb-4',
+                        autoDefinedSearchContexts && autoDefinedSearchContexts.length >= 3
+                            ? 'search-contexts-list-tab__auto-defined-search-contexts--repeat-3'
+                            : 'search-contexts-list-tab__auto-defined-search-contexts--repeat-2'
+                    )}
+                >
+                    {autoDefinedSearchContexts?.map(context => (
+                        <div key={context.spec} className="card p-3">
+                            <div>
+                                <Link to={`/contexts/${context.id}`}>
+                                    <strong>{context.spec}</strong>
+                                </Link>
+                                <span
+                                    className="badge badge-pill badge-secondary ml-1"
+                                    data-tooltip="Automatic contexts are created by Sourcegraph."
+                                >
+                                    auto
+                                </span>
+                            </div>
+                            <div className="text-muted mt-1">{context.description}</div>
                         </div>
-                        <div className="text-muted mt-1">{context.description}</div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
 
             <FilteredConnection<
                 SearchContextFields,

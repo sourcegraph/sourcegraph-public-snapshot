@@ -16,6 +16,7 @@ export interface SearchContextsListPageProps
     extends Pick<SearchContextProps, 'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts'> {
     location: H.Location
     history: H.History
+    isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
     availableVersionContexts: VersionContext[] | undefined
 }

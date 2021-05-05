@@ -25,6 +25,7 @@ const defaultProps: SearchContextsListTabProps = {
     history,
     location: history.location,
     authenticatedUser: null,
+    isSourcegraphDotCom: true,
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
 }
@@ -66,6 +67,12 @@ const propsWithContexts: SearchContextsListTabProps = {
 }
 
 add('default', () => <WebStory>{() => <SearchContextsListTab {...defaultProps} />}</WebStory>, {})
+
+add(
+    'with SourcegraphDotCom disabled',
+    () => <WebStory>{() => <SearchContextsListTab {...propsWithContexts} isSourcegraphDotCom={false} />}</WebStory>,
+    {}
+)
 
 add(
     'with 1 auto-defined context',
