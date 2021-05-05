@@ -36,14 +36,14 @@ func unmarshalDocumentationString(line []byte) (interface{}, error) {
 type DocumentationStringEdge struct {
 	OutV int
 	InV  int
-	Type protocol.DocumentationStringType
+	Kind protocol.DocumentationStringKind
 }
 
 func unmarshalDocumentationStringEdge(line []byte) (interface{}, error) {
 	var payload struct {
 		OutV int    `json:"outV"`
 		InV  int    `json:"inV"`
-		Type string `json:"type"`
+		Kind string `json:"kind"`
 	}
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return DocumentationStringEdge{}, err
@@ -51,6 +51,6 @@ func unmarshalDocumentationStringEdge(line []byte) (interface{}, error) {
 	return DocumentationStringEdge{
 		OutV: payload.OutV,
 		InV:  payload.InV,
-		Type: protocol.DocumentationStringType(payload.Type),
+		Kind: protocol.DocumentationStringKind(payload.Kind),
 	}, nil
 }

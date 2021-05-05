@@ -26,9 +26,9 @@ func (e *Emitter) EmitDocumentationResult(result protocol.Documentation) uint64 
 }
 
 // EmitDocumentationStringEdge emits a "documentationString" edge, see protocol.DocumentationStringEdge for info.
-func (e *Emitter) EmitDocumentationStringEdge(inV, outV uint64, typ protocol.DocumentationStringType) uint64 {
+func (e *Emitter) EmitDocumentationStringEdge(inV, outV uint64, kind protocol.DocumentationStringKind) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewDocumentationStringEdge(id, inV, outV, typ))
+	e.writer.Write(protocol.NewDocumentationStringEdge(id, inV, outV, kind))
 	return id
 }
 
