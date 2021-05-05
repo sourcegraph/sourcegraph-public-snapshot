@@ -1,9 +1,11 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { HiddenExternalChangesetFields } from '../../../../graphql-operations'
 
 import { ChangesetStatusCell } from './ChangesetStatusCell'
 import { HiddenExternalChangesetInfoCell } from './HiddenExternalChangesetInfoCell'
+import styles from './HiddenExternalChangesetNode.module.scss'
 
 export interface HiddenExternalChangesetNodeProps {
     node: Pick<HiddenExternalChangesetFields, 'id' | 'nextSyncAt' | 'updatedAt' | 'state' | '__typename'>
@@ -31,9 +33,12 @@ export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternal
         <ChangesetStatusCell
             id={node.id}
             state={node.state}
-            className="p-2 hidden-external-changeset-node__status text-muted d-block d-sm-flex"
+            className={classNames(styles.hiddenExternalChangesetNodeStatus, 'p-2 text-muted d-block d-sm-flex')}
         />
-        <HiddenExternalChangesetInfoCell node={node} className="p-2 hidden-external-changeset-node__information" />
+        <HiddenExternalChangesetInfoCell
+            node={node}
+            className={classNames(styles.hiddenExternalChangesetNodeInformation, 'p-2')}
+        />
         <span className="d-none d-sm-block" />
         <span className="d-none d-sm-block" />
         <span className="d-none d-sm-block" />

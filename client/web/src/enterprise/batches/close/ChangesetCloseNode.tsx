@@ -11,6 +11,7 @@ import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourceg
 import { ChangesetFields } from '../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs } from '../detail/backend'
 
+import styles from './ChangesetCloseNode.module.scss'
 import { ExternalChangesetCloseNode } from './ExternalChangesetCloseNode'
 import { HiddenExternalChangesetCloseNode } from './HiddenExternalChangesetCloseNode'
 
@@ -30,14 +31,14 @@ export const ChangesetCloseNode: React.FunctionComponent<ChangesetCloseNodeProps
     if (node.__typename === 'ExternalChangeset') {
         return (
             <>
-                <span className="changeset-close-node__separator" />
+                <span className={styles.changesetCloseNodeSeparator} />
                 <ExternalChangesetCloseNode node={node} {...props} />
             </>
         )
     }
     return (
         <>
-            <span className="changeset-close-node__separator" />
+            <span className={styles.changesetCloseNodeSeparator} />
             <HiddenExternalChangesetCloseNode node={node} {...props} />
         </>
     )

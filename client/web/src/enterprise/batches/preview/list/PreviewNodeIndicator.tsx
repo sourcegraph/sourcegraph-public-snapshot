@@ -1,10 +1,15 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { ChangesetAddedIcon, ChangesetModifiedIcon, ChangesetRemovedIcon } from '../icons'
 
-const containerClassName =
-    'preview-node-indicator__container d-none d-sm-flex flex-column align-items-center justify-content-center align-self-stretch'
+import styles from './PreviewNodeIndicator.module.scss'
+
+const containerClassName = classNames(
+    styles.previewNodeIndicatorContainer,
+    'd-none d-sm-flex flex-column align-items-center justify-content-center align-self-stretch'
+)
 
 export interface PreviewNodeIndicatorProps {
     node: ChangesetApplyPreviewFields
@@ -16,11 +21,16 @@ export const PreviewNodeIndicator: React.FunctionComponent<PreviewNodeIndicatorP
         case 'VisibleApplyPreviewTargetsAttach':
             return (
                 <div className={containerClassName}>
-                    <span className="preview-node-indicator__attach-bar">&nbsp;</span>
-                    <span className="preview-node-indicator__attach-icon d-flex justify-content-center align-items-center">
+                    <span className={styles.previewNodeIndicatorAttachBar}>&nbsp;</span>
+                    <span
+                        className={classNames(
+                            styles.previewNodeIndicatorAttachIcon,
+                            'd-flex justify-content-center align-items-center'
+                        )}
+                    >
                         <ChangesetAddedIcon />
                     </span>
-                    <span className="preview-node-indicator__attach-bar">&nbsp;</span>
+                    <span className={styles.previewNodeIndicatorAttachBar}>&nbsp;</span>
                 </div>
             )
         case 'HiddenApplyPreviewTargetsUpdate':
@@ -31,22 +41,32 @@ export const PreviewNodeIndicator: React.FunctionComponent<PreviewNodeIndicatorP
             }
             return (
                 <div className={containerClassName}>
-                    <span className="preview-node-indicator__update-bar">&nbsp;</span>
-                    <span className="preview-node-indicator__update-icon d-flex justify-content-center align-items-center">
+                    <span className={styles.previewNodeIndicatorUpdateBar}>&nbsp;</span>
+                    <span
+                        className={classNames(
+                            styles.previewNodeIndicatorUpdateIcon,
+                            'd-flex justify-content-center align-items-center'
+                        )}
+                    >
                         <ChangesetModifiedIcon />
                     </span>
-                    <span className="preview-node-indicator__update-bar">&nbsp;</span>
+                    <span className={styles.previewNodeIndicatorUpdateBar}>&nbsp;</span>
                 </div>
             )
         case 'HiddenApplyPreviewTargetsDetach':
         case 'VisibleApplyPreviewTargetsDetach':
             return (
                 <div className={containerClassName}>
-                    <span className="preview-node-indicator__detach-bar">&nbsp;</span>
-                    <span className="preview-node-indicator__detach-icon d-flex justify-content-center align-items-center">
+                    <span className={styles.previewNodeIndicatorDetachBar}>&nbsp;</span>
+                    <span
+                        className={classNames(
+                            styles.previewNodeIndicatorDetachIcon,
+                            'd-flex justify-content-center align-items-center'
+                        )}
+                    >
                         <ChangesetRemovedIcon />
                     </span>
-                    <span className="preview-node-indicator__detach-bar">&nbsp;</span>
+                    <span className={styles.previewNodeIndicatorDetachBar}>&nbsp;</span>
                 </div>
             )
     }

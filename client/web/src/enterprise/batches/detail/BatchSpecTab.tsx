@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import React, { useMemo } from 'react'
 
@@ -6,6 +7,8 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 
 import { Timestamp } from '../../../components/time/Timestamp'
 import { BatchChangeFields } from '../../../graphql-operations'
+
+import styles from './BatchSpecTab.module.scss'
 
 export interface BatchSpecTabProps {
     batchChange: Pick<BatchChangeFields, 'name' | 'createdAt' | 'lastApplier' | 'lastAppliedAt'>
@@ -42,12 +45,12 @@ export const BatchSpecTab: React.FunctionComponent<BatchSpecTabProps> = ({
     return (
         <>
             <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
-                <p className="mb-2 batch-spec-tab__header-col">
+                <p className={classNames(styles.batchSpecTabHeaderCol, 'mb-2')}>
                     {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
                     {createdAt === lastAppliedAt ? 'created' : 'updated'} this batch change{' '}
                     <Timestamp date={lastAppliedAt} /> by applying the following batch spec:
                 </p>
-                <div className="batch-spec-tab__header-col">
+                <div className={styles.batchSpecTabHeaderCol}>
                     <a
                         download={`${batchChangeName}.batch.yaml`}
                         href={downloadUrl}

@@ -4,14 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -102,8 +100,7 @@ func (UserCredentialNotFoundErr) NotFound() bool {
 // UserCredentialsStore provides access to the `user_credentials` table.
 type UserCredentialsStore struct {
 	*basestore.Store
-	key  encryption.Key
-	once sync.Once
+	key encryption.Key
 }
 
 // NewUserStoreWithDB instantiates and returns a new UserCredentialsStore with prepared statements.
@@ -127,21 +124,8 @@ func (s *UserCredentialsStore) With(other basestore.ShareableStore) *UserCredent
 }
 
 func (s *UserCredentialsStore) Transact(ctx context.Context) (*UserCredentialsStore, error) {
-	s.ensureStore()
-
 	txBase, err := s.Store.Transact(ctx)
 	return &UserCredentialsStore{Store: txBase}, err
-}
-
-// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
-// This function ensures access to dbconn happens after the rest of the code or tests have
-// initialized it.
-func (s *UserCredentialsStore) ensureStore() {
-	s.once.Do(func() {
-		if s.Store == nil {
-			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-		}
-	})
 }
 
 // UserCredentialScope represents the unique scope for a credential. Only one
@@ -160,7 +144,6 @@ func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 	if Mocks.UserCredentials.Create != nil {
 		return Mocks.UserCredentials.Create(ctx, scope, credential)
 	}
-	s.ensureStore()
 
 	enc, err := EncryptAuthenticator(ctx, s.key, credential)
 	if err != nil {
@@ -192,7 +175,6 @@ func (s *UserCredentialsStore) Update(ctx context.Context, credential *UserCrede
 	if Mocks.UserCredentials.Update != nil {
 		return Mocks.UserCredentials.Update(ctx, credential)
 	}
-	s.ensureStore()
 
 	credential.UpdatedAt = timeutil.Now()
 
@@ -225,7 +207,6 @@ func (s *UserCredentialsStore) Delete(ctx context.Context, id int64) error {
 	if Mocks.UserCredentials.Delete != nil {
 		return Mocks.UserCredentials.Delete(ctx, id)
 	}
-	s.ensureStore()
 
 	q := sqlf.Sprintf("DELETE FROM user_credentials WHERE id = %s", id)
 	res, err := s.ExecResult(ctx, q)
@@ -248,7 +229,6 @@ func (s *UserCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCred
 	if Mocks.UserCredentials.GetByID != nil {
 		return Mocks.UserCredentials.GetByID(ctx, id)
 	}
-	s.ensureStore()
 
 	q := sqlf.Sprintf(
 		"SELECT %s FROM user_credentials WHERE id = %s",
@@ -273,7 +253,6 @@ func (s *UserCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 	if Mocks.UserCredentials.GetByScope != nil {
 		return Mocks.UserCredentials.GetByScope(ctx, scope)
 	}
-	s.ensureStore()
 
 	q := sqlf.Sprintf(
 		userCredentialsGetByScopeQueryFmtstr,
@@ -326,7 +305,6 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 	if Mocks.UserCredentials.List != nil {
 		return Mocks.UserCredentials.List(ctx, opts)
 	}
-	s.ensureStore()
 
 	preds := []*sqlf.Query{}
 	if opts.Scope.Domain != "" {

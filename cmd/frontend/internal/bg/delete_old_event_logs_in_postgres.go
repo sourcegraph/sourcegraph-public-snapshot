@@ -6,12 +6,12 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func DeleteOldEventLogsInPostgres(ctx context.Context) {
+func DeleteOldEventLogsInPostgres(ctx context.Context, db dbutil.DB) {
 	for {
-		_, err := dbconn.Global.ExecContext(
+		_, err := db.ExecContext(
 			ctx,
 			`DELETE FROM event_logs WHERE "timestamp" < now() - interval '93' day`,
 		)

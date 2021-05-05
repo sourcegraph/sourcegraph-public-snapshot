@@ -4,9 +4,9 @@ import { of } from 'rxjs'
 
 import { WebStory } from '../components/WebStory'
 
-import { ConvertVersionContextsTabProps, ConvertVersionContextsTab } from './ConvertVersionContextsTab'
+import { ConvertVersionContextsPageProps, ConvertVersionContextsPage } from './ConvertVersionContextsPage'
 
-const { add } = storiesOf('web/searchContexts/ConvertVersionContextsTab', module)
+const { add } = storiesOf('web/searchContexts/ConvertVersionContextsPage', module)
     .addParameters({
         chromatic: { viewports: [500] },
     })
@@ -16,7 +16,7 @@ const { add } = storiesOf('web/searchContexts/ConvertVersionContextsTab', module
         </div>
     ))
 
-const defaultProps: ConvertVersionContextsTabProps = {
+const defaultProps: ConvertVersionContextsPageProps = {
     availableVersionContexts: [
         {
             name: 'version context 1',
@@ -38,13 +38,13 @@ const defaultProps: ConvertVersionContextsTabProps = {
     convertVersionContextToSearchContext: (name: string) => of({ id: name, spec: name }),
 }
 
-add('default', () => <WebStory>{() => <ConvertVersionContextsTab {...defaultProps} />}</WebStory>, {})
+add('default', () => <WebStory>{() => <ConvertVersionContextsPage {...defaultProps} />}</WebStory>, {})
 
 add(
     'all converted',
     () => (
         <WebStory>
-            {() => <ConvertVersionContextsTab {...defaultProps} isSearchContextSpecAvailable={() => of(true)} />}
+            {() => <ConvertVersionContextsPage {...defaultProps} isSearchContextSpecAvailable={() => of(true)} />}
         </WebStory>
     ),
     {}
