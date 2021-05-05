@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"go.uber.org/goleak"
 )
 
 func TestNormalizeRepo(t *testing.T) {
@@ -29,4 +30,8 @@ func TestNormalizeRepo(t *testing.T) {
 			t.Errorf("NormalizeRepo(%q): got %q want %q", k, got, want)
 		}
 	}
+}
+
+func TestMain(m *testing.M) {
+	goleak.VerifyTestMain(m)
 }

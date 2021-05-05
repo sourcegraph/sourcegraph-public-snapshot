@@ -186,6 +186,7 @@ require (
 	go.opencensus.io v0.22.6 // indirect
 	go.uber.org/atomic v1.7.0
 	go.uber.org/automaxprocs v1.3.0
+	go.uber.org/goleak v1.1.10
 	go.uber.org/ratelimit v0.2.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
