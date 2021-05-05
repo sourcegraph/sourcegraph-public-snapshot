@@ -29,10 +29,13 @@ export const AlertsStory: StoryFn<ReactElement> = () => (
                 <h4>A shiny info alert with a button - check it out!</h4>
                 It can also contain text without links.
             </div>
-            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus */}
-            <a role="button" className="btn btn-info" onClick={flow(preventDefault, action('alert button clicked'))}>
+            <button
+                type="button"
+                className="btn btn-info"
+                onClick={flow(preventDefault, action('alert button clicked'))}
+            >
                 Call to action
-            </a>
+            </button>
         </div>
     </>
 )
