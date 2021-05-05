@@ -15,6 +15,7 @@ $path-icon-size: (22em / 26);
 
 .heading {
     display: flex;
+    flex-wrap: wrap;
     flex-grow: 1;
     align-items: center;
     margin: 0;
