@@ -62,9 +62,14 @@
     &__button {
         &:disabled {
             opacity: 1;
+
+            .theme-redesign & {
+                color: var(--body-color);
+            }
         }
     }
 
+    // Not needed once .theme-redesign is removed
     &__icon {
         color: var(--primary);
     }
@@ -102,6 +107,7 @@
     }
 
     &--warn {
+        // Not needed once .theme-redesign is removed
         .streaming-skipped-item__icon {
             color: var(--danger);
         }
