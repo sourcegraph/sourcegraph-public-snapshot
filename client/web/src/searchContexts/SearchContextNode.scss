@@ -8,7 +8,7 @@
         // Enables responsive ellipsis text truncation
         min-width: 0;
 
-        &__description {
+        &-description {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;

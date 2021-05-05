@@ -21,7 +21,7 @@ export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> 
                 <strong>{node.spec}</strong>
             </Link>
             {node.description.length > 0 && (
-                <div className="text-muted search-context-node__left__description mt-1">{node.description}</div>
+                <div className="text-muted search-context-node__left-description mt-1">{node.description}</div>
             )}
         </div>
         <div className="search-context-node__right text-muted d-flex">
