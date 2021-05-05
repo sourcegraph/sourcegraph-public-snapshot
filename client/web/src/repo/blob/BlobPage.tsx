@@ -12,6 +12,7 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { AbsoluteRepoFile, makeRepoURI, ModeSpec, ParsedRepoURI, parseHash } from '@sourcegraph/shared/src/util/url'
@@ -80,6 +81,7 @@ interface Props
         SettingsCascadeProps,
         PlatformContextProps,
         TelemetryProps,
+        ThemeProps,
         ExtensionsControllerProps,
         HoverThresholdProps,
         BreadcrumbSetters {
@@ -319,6 +321,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     history={props.history}
                     telemetryService={props.telemetryService}
                     location={props.location}
+                    isLightTheme={props.isLightTheme}
                 />
             )}
         </>

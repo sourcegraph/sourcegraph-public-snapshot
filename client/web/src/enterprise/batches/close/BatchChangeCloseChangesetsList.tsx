@@ -12,6 +12,7 @@ import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -35,7 +36,7 @@ import {
 import { ChangesetCloseNodeProps, ChangesetCloseNode } from './ChangesetCloseNode'
 import { CloseChangesetsListEmptyElement } from './CloseChangesetsListEmptyElement'
 
-interface Props extends PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
+interface Props extends PlatformContextProps, TelemetryProps, ExtensionsControllerProps, ThemeProps {
     batchChangeID: Scalars['ID']
     viewerCanAdminister: boolean
     history: H.History
@@ -63,6 +64,7 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
     platformContext,
     telemetryService,
     willClose,
+    isLightTheme,
     onUpdate,
     queryChangesets = _queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -157,6 +159,7 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                     extensionInfo: { extensionsController, hoverifier },
                     queryExternalChangesetWithFileDiffs,
                     willClose,
+                    isLightTheme,
                 }}
                 queryConnection={queryChangesetsConnection}
                 hideSearch={true}
@@ -182,6 +185,7 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                     extensionsController={extensionsController}
                     location={location}
                     platformContext={platformContext}
+                    isLightTheme={isLightTheme}
                     hoverRef={nextOverlayElement}
                     onCloseButtonClick={nextCloseButtonClick}
                 />

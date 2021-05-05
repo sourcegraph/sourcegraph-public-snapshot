@@ -11,6 +11,7 @@ import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -30,7 +31,7 @@ import { DownloadDiffButton } from './DownloadDiffButton'
 import { ExternalChangesetInfoCell } from './ExternalChangesetInfoCell'
 import styles from './ExternalChangesetNode.module.scss'
 
-export interface ExternalChangesetNodeProps {
+export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ExternalChangesetFields
     viewerCanAdminister: boolean
     enableSelect?: boolean
@@ -56,6 +57,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     history,
     location,
     extensionInfo,
+    isLightTheme,
     queryExternalChangesetWithFileDiffs,
     expandByDefault,
 }) => {
@@ -204,6 +206,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                             extensionInfo={extensionInfo}
                             queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                             updateOnChange={node.updatedAt}
+                            isLightTheme={isLightTheme}
                         />
                     </div>
                 </>

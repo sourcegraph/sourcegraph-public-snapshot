@@ -6,6 +6,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -48,7 +49,12 @@ const RedirectToMarketing: React.FunctionComponent<{}> = () => {
     return null
 }
 
-interface Props extends RouteComponentProps<{}>, ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
+interface Props
+    extends RouteComponentProps<{}>,
+        ExtensionsControllerProps,
+        TelemetryProps,
+        PlatformContextProps,
+        ThemeProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }

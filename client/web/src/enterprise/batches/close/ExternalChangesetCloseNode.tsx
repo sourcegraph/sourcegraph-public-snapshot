@@ -8,6 +8,7 @@ import { Hoverifier } from '@sourcegraph/codeintellify'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { ErrorAlert } from '../../../components/alerts'
@@ -22,7 +23,7 @@ import { ExternalChangesetInfoCell } from '../detail/changesets/ExternalChangese
 import { ChangesetCloseActionClose, ChangesetCloseActionKept } from './ChangesetCloseAction'
 import styles from './ExternalChangesetCloseNode.module.scss'
 
-export interface ExternalChangesetCloseNodeProps {
+export interface ExternalChangesetCloseNodeProps extends ThemeProps {
     node: ExternalChangesetFields
     willClose: boolean
     viewerCanAdminister: boolean
@@ -42,6 +43,7 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
     history,
     location,
     extensionInfo,
+    isLightTheme,
     queryExternalChangesetWithFileDiffs,
 }) => {
     const [isExpanded, setIsExpanded] = useState(false)
@@ -123,6 +125,7 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
                         repositoryID={node.repository.id}
                         repositoryName={node.repository.name}
                         extensionInfo={extensionInfo}
+                        isLightTheme={isLightTheme}
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                     />
                 </div>

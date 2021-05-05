@@ -7,6 +7,7 @@ import { Hoverifier } from '@sourcegraph/codeintellify'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
@@ -15,7 +16,7 @@ import { FilteredConnectionQueryArguments } from '../../../../components/Filtere
 import { ExternalChangesetFileDiffsFields, GitRefSpecFields, Scalars } from '../../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../backend'
 
-export interface ChangesetFileDiffProps {
+export interface ChangesetFileDiffProps extends ThemeProps {
     changesetID: Scalars['ID']
     history: H.History
     location: H.Location
@@ -37,6 +38,7 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
     repositoryID,
     repositoryName,
     updateOnChange,
+    isLightTheme,
     queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
 }) => {
     const [isNotImplemented, setIsNotImplemented] = useState<boolean>(false)
@@ -115,6 +117,7 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
                 persistLines: true,
                 extensionInfo: hydratedExtensionInfo,
                 lineNumbers: true,
+                isLightTheme,
             }}
             updateOnChange={`${repositoryID}-${updateOnChange ?? ''}`}
             defaultFirst={15}

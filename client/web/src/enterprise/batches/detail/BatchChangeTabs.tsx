@@ -9,6 +9,7 @@ import React, { useState, useCallback, useEffect } from 'react'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { BatchChangeFields } from '../../../graphql-operations'
 
@@ -23,7 +24,11 @@ import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
 
 type SelectedTab = 'changesets' | 'chart' | 'spec' | 'archived'
 
-export interface BatchChangeTabsProps extends ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
+export interface BatchChangeTabsProps
+    extends ExtensionsControllerProps,
+        PlatformContextProps,
+        TelemetryProps,
+        ThemeProps {
     batchChange: BatchChangeFields
     changesetsCount: number
     archivedCount: number
@@ -46,6 +51,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
     batchChange,
     changesetsCount,
     archivedCount,
+    isLightTheme,
     queryChangesets,
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
@@ -179,6 +185,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                     extensionsController={extensionsController}
                     platformContext={platformContext}
                     telemetryService={telemetryService}
+                    isLightTheme={isLightTheme}
                     queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                     onlyArchived={false}
@@ -196,6 +203,7 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                     extensionsController={extensionsController}
                     platformContext={platformContext}
                     telemetryService={telemetryService}
+                    isLightTheme={isLightTheme}
                     queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                     onlyArchived={true}

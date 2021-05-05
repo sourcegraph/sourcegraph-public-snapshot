@@ -9,6 +9,7 @@ import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
 import React, { useCallback, useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { DiffStat } from '../../../../components/diff/DiffStat'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
@@ -30,7 +31,7 @@ import { PreviewActions } from './PreviewActions'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
 import styles from './VisibleChangesetApplyPreviewNode.module.scss'
 
-export interface VisibleChangesetApplyPreviewNodeProps {
+export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     node: VisibleChangesetApplyPreviewFields
     history: H.History
     location: H.Location
@@ -46,6 +47,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
     node,
     history,
     location,
+    isLightTheme,
     authenticatedUser,
 
     queryChangesetSpecFileDiffs,
@@ -179,6 +181,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                             node={node}
                             history={history}
                             location={location}
+                            isLightTheme={isLightTheme}
                             authenticatedUser={authenticatedUser}
                             queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                         />
@@ -195,11 +198,12 @@ const ExpandedSection: React.FunctionComponent<{
     node: VisibleChangesetApplyPreviewFields
     history: H.History
     location: H.Location
+    isLightTheme: boolean
     authenticatedUser: PreviewPageAuthenticatedUser
 
     /** Used for testing. **/
     queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
-}> = ({ node, history, location, authenticatedUser, queryChangesetSpecFileDiffs }) => {
+}> = ({ node, history, location, isLightTheme, authenticatedUser, queryChangesetSpecFileDiffs }) => {
     const [selectedTab, setSelectedTab] = useState<SelectedTab>('diff')
     const onSelectDiff = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()
@@ -323,6 +327,7 @@ const ExpandedSection: React.FunctionComponent<{
                     <ChangesetSpecFileDiffConnection
                         history={history}
                         location={location}
+                        isLightTheme={isLightTheme}
                         spec={node.targets.changesetSpec}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                     />
@@ -376,10 +381,11 @@ const ChangesetSpecFileDiffConnection: React.FunctionComponent<{
     spec: VisibleChangesetSpecFields
     history: H.History
     location: H.Location
+    isLightTheme: boolean
 
     /** Used for testing. **/
     queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
-}> = ({ spec, history, location, queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs }) => {
+}> = ({ spec, history, location, isLightTheme, queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs }) => {
     /** Fetches the file diffs for the changeset */
     const queryFileDiffs = useCallback(
         (args: FilteredConnectionQueryArguments) =>
@@ -400,6 +406,7 @@ const ChangesetSpecFileDiffConnection: React.FunctionComponent<{
             nodeComponentProps={{
                 history,
                 location,
+                isLightTheme,
                 persistLines: true,
                 lineNumbers: true,
             }}

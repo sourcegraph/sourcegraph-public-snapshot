@@ -11,6 +11,7 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -75,6 +76,7 @@ interface RepositoryCompareDiffPageProps
     extends RepositoryCompareAreaPageProps,
         RouteComponentProps<{}>,
         PlatformContextProps,
+        ThemeProps,
         ExtensionsControllerProps {
     /** The base of the comparison. */
     base: { repoName: string; repoID: Scalars['ID']; revision: string | null; commitID: string }

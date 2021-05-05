@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard'
 
@@ -33,7 +34,11 @@ import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
 
-export interface BatchChangeDetailsPageProps extends ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
+export interface BatchChangeDetailsPageProps
+    extends ExtensionsControllerProps,
+        PlatformContextProps,
+        TelemetryProps,
+        ThemeProps {
     /**
      * The namespace ID.
      */
@@ -68,6 +73,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
     extensionsController,
     platformContext,
     telemetryService,
+    isLightTheme,
     fetchBatchChangeByNamespace: fetchBatchChangeByNamespace = _fetchBatchChangeByNamespace,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -156,6 +162,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 history={history}
                 location={location}
                 platformContext={platformContext}
+                isLightTheme={isLightTheme}
                 telemetryService={telemetryService}
                 queryChangesets={queryChangesets}
                 queryChangesetCountsOverTime={queryChangesetCountsOverTime}
