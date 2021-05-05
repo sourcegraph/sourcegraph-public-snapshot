@@ -79,15 +79,16 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
         <div className="code-intel-indexes web-content">
             <PageTitle title="Precise code intelligence auto-index records" />
             <PageHeader
+                className="mb-3"
                 path={[{ text: 'Precise code intelligence auto-index records' }]}
                 description={
-                    <p>
+                    <>
                         Popular repositories are indexed automatically on{' '}
                         <a href="https://sourcegraph.com" target="_blank" rel="noreferrer noopener">
                             Sourcegraph.com
                         </a>
                         .
-                    </p>
+                    </>
                 }
             />
             <div className="list-group position-relative">
