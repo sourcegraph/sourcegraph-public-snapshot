@@ -7,7 +7,7 @@ import "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protoco
 // EmitDocumentationResultEdge emits a "documentationResult" edge, see protocol.DocumentationResultEdge for info.
 func (e *Emitter) EmitDocumentationResultEdge(inV, outV uint64) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewDocumentationResultEdge(id, outV, inV))
+	e.writer.Write(protocol.NewDocumentationResultEdge(id, inV, outV))
 	return id
 }
 
