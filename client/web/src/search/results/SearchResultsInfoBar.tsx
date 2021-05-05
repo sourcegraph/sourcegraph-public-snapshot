@@ -12,6 +12,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { PatternTypeProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -125,9 +126,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
 
     const extraContext = useMemo(() => ({ searchQuery: props.query || null }), [props.query])
 
+    const [isRedesignEnabled] = useRedesignToggle()
+    const Container = isRedesignEnabled ? 'div' : 'small'
+
     return (
         <div className={classNames(props.className, 'search-results-info-bar')} data-testid="results-info-bar">
-            <small className="search-results-info-bar__row">
+            <Container className="search-results-info-bar__row">
                 {props.stats}
                 <QuotesInterpretedLiterallyNotice {...props} />
 
@@ -167,7 +171,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         </>
                     )}
                 </ul>
-            </small>
+            </Container>
         </div>
     )
 }

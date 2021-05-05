@@ -28,7 +28,7 @@ export const StreamingProgressCount: React.FunctionComponent<
     Pick<StreamingProgressProps, 'progress' | 'state' | 'showTrace'> & { className?: string }
 > = ({ progress, state, showTrace, className = '' }) => (
     <>
-        <div
+        <small
             className={classNames(className, 'streaming-progress__count d-flex align-items-center', {
                 'streaming-progress__count--in-progress': state === 'loading',
             })}
@@ -44,14 +44,14 @@ export const StreamingProgressCount: React.FunctionComponent<
                     {pluralize('repository', progress.repositoriesCount, 'repositories')}
                 </>
             )}
-        </div>
+        </small>
         {showTrace && progress.trace && (
-            <div className="d-flex">
+            <small className="d-flex">
                 <a href={progress.trace}>
                     <ClipboardPulseOutlineIcon className="mr-2 icon-inline" />
                     View trace
                 </a>
-            </div>
+            </small>
         )}
     </>
 )
