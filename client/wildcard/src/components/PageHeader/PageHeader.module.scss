@@ -21,8 +21,14 @@ $path-icon-size: (22em / 26);
 }
 
 .divider {
-    color: var(--text-muted);
+    --divider-color: var(--text-muted);
     margin-right: 0.5rem;
+
+    :global(.theme-redesign) & {
+        --divider-color: var(--icon-color);
+    }
+
+    color: var(--divider-color);
 }
 
 .path {
