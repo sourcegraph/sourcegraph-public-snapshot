@@ -70,7 +70,6 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
 			return nil, err
 		}
 		authenticatedUserID = currentUser.ID
-		bypassAuthz = currentUser.SiteAdmin
 	}
 
 	q := sqlf.Sprintf(authzQueryCondsFmtstr,

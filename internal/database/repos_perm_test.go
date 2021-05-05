@@ -114,7 +114,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				}
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			},
-			wantQuery: sqlf.Sprintf(authzQueryCondsFmtstr, true, false, int32(1), authz.Read.String()),
+			wantQuery: sqlf.Sprintf(authzQueryCondsFmtstr, false, false, int32(1), authz.Read.String()),
 		},
 		{
 			name: "authenticated user is not a site admin",
@@ -296,6 +296,7 @@ VALUES
 	defer authz.SetProviders(true, nil)
 
 	// Alice should see "alice_public_repo", "alice_private_repo", "bob_public_repo", "cindy_private_repo"
+	// "cindy_private_repos" comes from an unrestricted external service
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
 	repos, err := Repos(db).List(aliceCtx, ReposListOptions{})
 	if err != nil {
@@ -307,6 +308,7 @@ VALUES
 	}
 
 	// Bob should see "alice_public_repo", "bob_private_repo", "bob_public_repo", "cindy_private_repo"
+	// "cindy_private_repos" comes from an unrestricted external service
 	bobCtx := actor.WithActor(ctx, &actor.Actor{UID: bob.ID})
 	repos, err = Repos(db).List(bobCtx, ReposListOptions{})
 	if err != nil {
@@ -317,18 +319,20 @@ VALUES
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
-	// Admin should see all repositories
+	// Admin should only see public repos and their own private repos
+	// "cindy_private_repos" comes from an unrestricted external service
 	adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
 	repos, err = Repos(db).List(adminCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantRepos = []*types.Repo{alicePublicRepo, alicePrivateRepo, bobPublicRepo, bobPrivateRepo, cindyPrivateRepo}
+	wantRepos = []*types.Repo{alicePublicRepo, bobPublicRepo, cindyPrivateRepo}
 	if diff := cmp.Diff(wantRepos, repos); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
 	// A random user should only see "alice_public_repo", "bob_public_repo", "cindy_private_repo"
+	// "cindy_private_repos" comes from an unrestricted external service
 	repos, err = Repos(db).List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
@@ -390,7 +394,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 
 	// Set up some repositories: public and private for both alice and bob
 	internalCtx := actor.WithInternalActor(ctx)
-	alicePublicRepo := mustCreate(internalCtx, t, db,
+	_ = mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name: "alice_public_repo",
 			ExternalRepo: api.ExternalRepoSpec{
@@ -411,7 +415,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 			},
 		}, types.CloneStatusNotCloned,
 	)[0]
-	bobPublicRepo := mustCreate(internalCtx, t, db,
+	_ = mustCreate(internalCtx, t, db,
 		&types.Repo{
 			Name: "bob_public_repo",
 			ExternalRepo: api.ExternalRepoSpec{
@@ -474,13 +478,13 @@ VALUES
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
-	// Admin should see all repositories
+	// Admin should not see anything as they have not been granted permissions
 	adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
 	repos, err = Repos(db).List(adminCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantRepos = []*types.Repo{alicePublicRepo, alicePrivateRepo, bobPublicRepo, bobPrivateRepo}
+	wantRepos = ([]*types.Repo)(nil)
 	if diff := cmp.Diff(wantRepos, repos); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
