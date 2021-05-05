@@ -28,8 +28,9 @@ func TestRepository(t *testing.T) {
 						"sgtest/go-diff",
 						"sgtest/private", // Private
 					},
-					Token: *githubToken,
-					Url:   "https://github.com/",
+					RepositoryPathPattern: "github.com/{nameWithOwner}",
+					Token:                 *githubToken,
+					Url:                   "https://ghe.sgdev.org/",
 				},
 			),
 		},
@@ -53,6 +54,16 @@ func TestRepository(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Proactively schedule a permissions syncing.
+	repo, err := client.Repository(privateRepo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = client.ScheduleRepositoryPermissionsSync(repo.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Wait up to 30 seconds for the private repository to have permissions synced
 	// from the code host at least once.
 	err = gqltestutil.Retry(30*time.Second, func() error {
@@ -61,13 +72,13 @@ func TestRepository(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if !permsInfo.SyncedAt.IsZero() {
+		if permsInfo != nil && !permsInfo.SyncedAt.IsZero() {
 			return nil
 		}
 		return gqltestutil.ErrContinueRetry
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal("Waiting for repository permissions to be synced:", err)
 	}
 
 	// Create a test user (authtest-user-repository) which is not a site admin, the
