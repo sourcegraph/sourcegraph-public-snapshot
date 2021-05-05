@@ -271,6 +271,13 @@ func (c *Changeset) Closeable() bool {
 		c.ExternalState != ChangesetExternalStateMerged
 }
 
+// Complete returns whether the Changeset has been published and its
+// ExternalState is in a final state.
+func (c *Changeset) Complete() bool {
+	return c.Published() && c.ExternalState != ChangesetExternalStateOpen &&
+		c.ExternalState != ChangesetExternalStateDraft
+}
+
 // Published returns whether the Changeset's PublicationState is Published.
 func (c *Changeset) Published() bool { return c.PublicationState.Published() }
 
@@ -279,6 +286,15 @@ func (c *Changeset) Unpublished() bool { return c.PublicationState.Unpublished()
 
 // IsImporting returns whether the Changeset is being imported but it's not finished yet.
 func (c *Changeset) IsImporting() bool { return c.Unpublished() && c.CurrentSpecID == 0 }
+
+// SetCurrentSpec sets the CurrentSpecID field and copies the diff stat over from the spec.
+func (c *Changeset) SetCurrentSpec(spec *ChangesetSpec) {
+	c.CurrentSpecID = spec.ID
+
+	// Copy over diff stat from the spec.
+	diffStat := spec.DiffStat()
+	c.SetDiffStat(&diffStat)
+}
 
 // DiffStat returns a *diff.Stat if DiffStatAdded, DiffStatChanged, and
 // DiffStatDeleted are set, or nil if one or more is not.
