@@ -33,6 +33,7 @@ interface Props
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
+    isSourcegraphDotCom: boolean
     onChange: (newValue: QueryState) => void
     globbing: boolean
     enableSmartQuery: boolean

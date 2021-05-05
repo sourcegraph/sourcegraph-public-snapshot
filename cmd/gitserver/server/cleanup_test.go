@@ -61,7 +61,7 @@ func TestCleanup_computeStats(t *testing.T) {
 	// the correct file in the correct place.
 	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
-	s.cleanupRepos(nil)
+	s.cleanupRepos()
 
 	// we hardcode the name here so the tests break if someone changes the
 	// value of reposStatsName. We don't want it to change without good reason
@@ -108,7 +108,7 @@ func TestCleanupInactive(t *testing.T) {
 
 	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
-	s.cleanupRepos(nil)
+	s.cleanupRepos()
 
 	if _, err := os.Stat(repoA); os.IsNotExist(err) {
 		t.Error("expected repoA not to be removed")
@@ -165,7 +165,7 @@ func TestGitGCAuto(t *testing.T) {
 	// Handler must be invoked for Server side-effects.
 	s := &Server{ReposDir: root}
 	s.Handler()
-	s.cleanupRepos(nil)
+	s.cleanupRepos()
 
 	// Verify that there are no more GC-able objects in the repository.
 	if !strings.Contains(countObjects(), "count: 0") {
@@ -279,9 +279,9 @@ func TestCleanupExpired(t *testing.T) {
 		},
 	}
 	s.Handler() // Handler as a side-effect sets up Server
-	s.cleanupRepos(nil)
+	s.cleanupRepos()
 
-	// repos that shouldn't be recloned
+	// repos that shouldn't be re-cloned
 	if repoNewTime.Before(modTime(repoNew)) {
 		t.Error("expected repoNew to not be modified")
 	}
@@ -308,7 +308,7 @@ func TestCleanupExpired(t *testing.T) {
 
 	// repos that fail to clone need to have recloneTime updated
 	if repoBoomTime.Before(modTime(repoBoom)) {
-		t.Fatal("expected repoBoom to fail to reclone due to hardcoding getRemoteURL failure")
+		t.Fatal("expected repoBoom to fail to re-clone due to hardcoding getRemoteURL failure")
 	}
 	if !repoBoomRecloneTime.Before(recloneTime(repoBoom)) {
 		t.Error("expected repoBoom reclone time to be updated")
@@ -363,7 +363,7 @@ func TestCleanupOldLocks(t *testing.T) {
 
 	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
-	s.cleanupRepos(nil)
+	s.cleanupRepos()
 
 	assertPaths(t, root,
 		"repos-stats.json",

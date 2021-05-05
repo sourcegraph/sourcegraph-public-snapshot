@@ -122,7 +122,7 @@ type RepoInfo struct {
 	LastChanged     *time.Time // timestamp of the most recent ref in the git repository
 
 	// CloneTime is the time the clone occurred. Note: Repositories may be
-	// recloned automatically, so this time is likely to move forward
+	// re-cloned automatically, so this time is likely to move forward
 	// periodically.
 	CloneTime *time.Time
 }
