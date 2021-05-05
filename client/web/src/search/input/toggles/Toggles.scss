@@ -50,6 +50,10 @@
         &:active {
             // stylelint-disable-next-line declaration-property-unit-whitelist
             border: 2px solid var(--color-border-active);
+
+            .theme-redesign & {
+                border-color: var(--primary);
+            }
         }
 
         &.disabled,
@@ -72,8 +76,16 @@
             background-color: var(--color-border-active);
             color: #ffffff !important;
 
+            .theme-redesign & {
+                background-color: var(--primary);
+            }
+
             &:hover {
                 background-color: var(--color-border-active);
+
+                .theme-redesign & {
+                    background-color: var(--primary);
+                }
             }
         }
     }
