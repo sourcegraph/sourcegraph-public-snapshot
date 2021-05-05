@@ -4,12 +4,12 @@
     .alert-info {
         --alert-border-color: var(--info);
 
-        @include theme-light-rule {
+        @include theme-light-rules {
             --alert-icon-color: var(--info-3);
             --alert-icon-background-color: var(--info-4);
         }
 
-        @include theme-dark-rule {
+        @include theme-dark-rules {
             --alert-icon-color: var(--info);
             --alert-icon-background-color: var(--info-3);
         }
@@ -19,11 +19,11 @@
         --alert-border-color: var(--warning);
         --alert-icon-background-color: var(--warning-4);
 
-        @include theme-light-rule {
+        @include theme-light-rules {
             --alert-icon-color: var(--warning-3);
         }
 
-        @include theme-dark-rule {
+        @include theme-dark-rules {
             --alert-icon-color: var(--warning);
         }
     }
@@ -32,11 +32,11 @@
         --alert-border-color: var(--danger);
         --alert-icon-background-color: var(--danger-4);
 
-        @include theme-light-rule {
+        @include theme-light-rules {
             --alert-icon-color: var(--danger-3);
         }
 
-        @include theme-dark-rule {
+        @include theme-dark-rules {
             --alert-icon-color: var(--danger);
         }
     }
@@ -45,11 +45,11 @@
         --alert-border-color: var(--success);
         --alert-icon-background-color: var(--success-4);
 
-        @include theme-light-rule {
+        @include theme-light-rules {
             --alert-icon-color: var(--success-3);
         }
 
-        @include theme-dark-rule {
+        @include theme-dark-rules {
             --alert-icon-color: var(--success);
         }
     }
@@ -58,11 +58,11 @@
         --alert-border-color: var(--primary);
         --alert-icon-background-color: var(--primary-4);
 
-        @include theme-light-rule {
+        @include theme-light-rules {
             --alert-icon-color: var(--primary-3);
         }
 
-        @include theme-dark-rule {
+        @include theme-dark-rules {
             --alert-icon-color: var(--primary);
         }
     }
@@ -73,11 +73,11 @@
         --alert-border-color: var(--alert-secondary-color);
         --alert-icon-background-color: var(--secondary-4);
 
-        @include theme-light-rule {
+        @include theme-light-rules {
             --alert-icon-color: var(--alert-secondary-color);
         }
 
-        @include theme-dark-rule {
+        @include theme-dark-rules {
             --alert-icon-color: var(--alert-secondary-color);
         }
     }
@@ -86,11 +86,11 @@
         --alert-border-color: var(--merged);
         --alert-icon-background-color: var(--merged-4);
 
-        @include theme-light-rule {
+        @include theme-light-rules {
             --alert-icon-color: var(--merged-3);
         }
 
-        @include theme-dark-rule {
+        @include theme-dark-rules {
             --alert-icon-color: var(--merged);
         }
     }

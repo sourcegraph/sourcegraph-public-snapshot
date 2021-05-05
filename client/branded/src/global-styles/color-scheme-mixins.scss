@@ -1,10 +1,10 @@
-@mixin theme-light-rule() {
+@mixin theme-light-rules() {
     @at-root #{selector-append('.theme-light', &)} {
         @content;
     }
 }
 
-@mixin theme-dark-rule() {
+@mixin theme-dark-rules() {
     @at-root #{selector-append('.theme-dark', &)} {
         @content;
     }
