@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -160,7 +159,7 @@ func TestAllReposIterator(t *testing.T) {
 func TestAllReposIterator_DotCom(t *testing.T) {
 	ctx := context.Background()
 	defaultRepoLister := NewMockDefaultRepoLister()
-	repoStore := database.Repos(&dbtesting.MockDB{})
+	repoStore := NewMockRepoStore()
 	var timeOffset time.Duration
 	clock := func() time.Time { return time.Now().Add(timeOffset) }
 
