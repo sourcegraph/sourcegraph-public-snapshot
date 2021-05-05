@@ -682,7 +682,6 @@ func (s *GithubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 		cost  int
 		err   error
 	)
-	hasNextPage := true
 	defer func() {
 		remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
 		log15.Debug(
@@ -695,6 +694,7 @@ func (s *GithubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 		)
 	}()
 	out := make([]types.CodeHostRepository, 0)
+	hasNextPage := true
 	for hasNextPage {
 		select {
 		case <-ctx.Done():
