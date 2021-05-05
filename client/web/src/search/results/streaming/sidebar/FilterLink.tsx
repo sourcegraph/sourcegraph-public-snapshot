@@ -9,7 +9,7 @@ import { Filter } from '../../../stream'
 
 import styles from './SearchSidebarSection.module.scss'
 
-interface FilterLinkProps {
+export interface FilterLinkProps {
     label: string
     value: string
     count?: number
@@ -17,7 +17,13 @@ interface FilterLinkProps {
     onFilterChosen: (value: string) => void
 }
 
-const FilterLink: React.FunctionComponent<FilterLinkProps> = ({ label, value, count, limitHit, onFilterChosen }) => (
+export const FilterLink: React.FunctionComponent<FilterLinkProps> = ({
+    label,
+    value,
+    count,
+    limitHit,
+    onFilterChosen,
+}) => (
     <button
         type="button"
         className={classNames('test-sidebar-filter-link btn btn-link', styles.sidebarSectionListItem)}

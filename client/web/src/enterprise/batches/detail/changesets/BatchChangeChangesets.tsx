@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { Subject } from 'rxjs'
@@ -28,6 +29,7 @@ import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
 } from '../backend'
 
+import styles from './BatchChangeChangesets.module.scss'
 import { BatchChangeChangesetsHeader, BatchChangeChangesetsHeaderProps } from './BatchChangeChangesetsHeader'
 import { ChangesetFilters, ChangesetFilterRow } from './ChangesetFilterRow'
 import { ChangesetNodeProps, ChangesetNode } from './ChangesetNode'
@@ -270,11 +272,11 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     location={location}
                     useURLQuery={true}
                     listComponent="div"
-                    listClassName={
-                        enableSelect
-                            ? 'batch-change-changesets__grid--with-checkboxes mb-3'
-                            : 'batch-change-changesets__grid mb-3'
-                    }
+                    listClassName={classNames(
+                        enableSelect && styles.batchChangeChangesetsGridWithCheckboxes,
+                        !enableSelect && styles.batchChangeChangesetsGrid,
+                        'mb-3'
+                    )}
                     headComponent={BatchChangeChangesetsHeader}
                     headComponentProps={{
                         enableSelect,

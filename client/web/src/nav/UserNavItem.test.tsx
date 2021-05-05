@@ -10,6 +10,7 @@ import { UserNavItem, UserNavItemProps } from './UserNavItem'
 describe('UserNavItem', () => {
     const USER: UserNavItemProps['authenticatedUser'] = {
         username: 'alice',
+        displayName: 'alice doe',
         avatarURL: null,
         session: { canSignOut: true },
         settingsURL: '#',
