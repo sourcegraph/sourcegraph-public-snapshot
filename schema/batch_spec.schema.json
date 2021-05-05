@@ -163,7 +163,7 @@
             }
           },
           "if": {
-            "type": "string",
+            "oneOf": [{ "type": "boolean" }, { "type": "string" }],
             "description": "A condition to check before executing steps. Supports templating. The value 'true' is interpreted as true.",
             "examples": [
               "true",
