@@ -46,7 +46,7 @@ func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 		}
 
 		if cloneTime, err := getRecloneTime(dir); err != nil {
-			log15.Warn("error getting reclone time", "repo", repo, "err", err)
+			log15.Warn("error getting re-clone time", "repo", repo, "err", err)
 		} else {
 			resp.CloneTime = &cloneTime
 		}

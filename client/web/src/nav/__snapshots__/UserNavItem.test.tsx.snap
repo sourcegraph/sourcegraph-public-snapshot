@@ -9,6 +9,7 @@ exports[`UserNavItem simple 1`] = `
       authenticatedUser={
         Object {
           "avatarURL": null,
+          "displayName": "alice doe",
           "organizations": Object {
             "nodes": Array [
               Object {
@@ -93,11 +94,12 @@ exports[`UserNavItem simple 1`] = `
                           className="align-items-center d-flex"
                         >
                           <UserAvatar
-                            className="icon-inline"
+                            className="icon-inline user-nav-item__avatar"
                             targetID="target-user-avatar"
                             user={
                               Object {
                                 "avatarURL": null,
+                                "displayName": "alice doe",
                                 "organizations": Object {
                                   "nodes": Array [
                                     Object {
@@ -126,13 +128,15 @@ exports[`UserNavItem simple 1`] = `
                             }
                           >
                             <Memo(AccountCircleIcon)
-                              className="user-avatar icon-inline"
+                              className="user-avatar icon-inline user-nav-item__avatar"
                               id="target-user-avatar"
                             />
                           </UserAvatar>
-                          <Memo(MenuDownIcon)
-                            className="icon-inline"
-                          />
+                          <MenuDropdownIcon>
+                            <Memo(MenuDownIcon)
+                              className="icon-inline"
+                            />
+                          </MenuDropdownIcon>
                         </div>
                       </div>
                     </a>

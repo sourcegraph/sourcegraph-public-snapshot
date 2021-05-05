@@ -86,7 +86,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<BatchChangeStatsCardP
                     />
                     <ChangesetStatusMerged
                         label={<span className="text-muted">{stats.merged} merged</span>}
-                        className="d-flex flex-grow-0 pl-2 text-truncate batch-change-stats-card__stat"
+                        className="d-flex flex-grow-0 px-2 text-truncate batch-change-stats-card__stat"
                     />
                     <ChangesetStatusArchived
                         label={<span className="text-muted">{stats.archived} archived</span>}
