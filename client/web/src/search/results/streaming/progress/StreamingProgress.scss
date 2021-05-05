@@ -13,7 +13,7 @@
         color: var(--link-color);
 
         .theme-redesign & {
-            color: inherit;
+            color: var(--body-color);
             padding-left: 0.5rem;
             padding-right: 0.5rem;
 
@@ -34,6 +34,12 @@
         }
     }
 
+    &__count-icon {
+        .theme-redesign & {
+            display: none;
+        }
+    }
+
     &__skipped {
         margin-left: 0.25rem;
 
@@ -44,6 +50,10 @@
         &-popover {
             width: 20rem;
             padding: 0;
+        }
+
+        .theme-redesign & {
+            font-size: 0.75rem;
         }
     }
 

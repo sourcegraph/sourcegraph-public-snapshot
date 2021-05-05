@@ -4,6 +4,8 @@ import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+
 import { StreamingProgressProps } from './StreamingProgress'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
@@ -26,19 +28,28 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<
         [setIsOpen, onSearchAgain]
     )
 
+    const [isRedesignEnabled] = useRedesignToggle()
+
     return (
         <>
             {progress.skipped.length > 0 && (
                 <ButtonDropdown isOpen={isOpen} toggle={toggleOpen}>
                     <DropdownToggle
                         className={classNames(
-                            'streaming-progress__skipped mb-0 ml-2 d-flex align-items-center text-decoration-none btn-sm',
+                            'streaming-progress__skipped mb-0 ml-2 d-flex align-items-center text-decoration-none',
                             {
-                                'streaming-progress__skipped--warning': skippedWithWarningOrError,
+                                'streaming-progress__skipped--warning': !isRedesignEnabled && skippedWithWarningOrError,
+                                'btn-sm': !isRedesignEnabled,
                             }
                         )}
                         caret={true}
-                        color="link"
+                        color={
+                            isRedesignEnabled
+                                ? skippedWithWarningOrError
+                                    ? 'outline-danger'
+                                    : 'outline-secondary'
+                                : 'link'
+                        }
                     >
                         {skippedWithWarningOrError ? (
                             <AlertCircleIcon className="mr-2 icon-inline" />

@@ -33,7 +33,7 @@ export const StreamingProgressCount: React.FunctionComponent<
                 'streaming-progress__count--in-progress': state === 'loading',
             })}
         >
-            <CalculatorIcon className="mr-2 icon-inline" />
+            <CalculatorIcon className="mr-2 icon-inline streaming-progress__count-icon" />
             {abbreviateNumber(progress.matchCount)}
             {limitHit(progress) ? '+' : ''} {pluralize('result', progress.matchCount)} in{' '}
             {(progress.durationMs / 1000).toFixed(2)}s
