@@ -40,10 +40,10 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
     node,
     willClose,
     viewerCanAdminister,
+    isLightTheme,
     history,
     location,
     extensionInfo,
-    isLightTheme,
     queryExternalChangesetWithFileDiffs,
 }) => {
     const [isExpanded, setIsExpanded] = useState(false)
@@ -120,12 +120,12 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
                     {node.error && <ErrorAlert error={node.error} />}
                     <ChangesetFileDiff
                         changesetID={node.id}
+                        isLightTheme={isLightTheme}
                         history={history}
                         location={location}
                         repositoryID={node.repository.id}
                         repositoryName={node.repository.name}
                         extensionInfo={extensionInfo}
-                        isLightTheme={isLightTheme}
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                     />
                 </div>

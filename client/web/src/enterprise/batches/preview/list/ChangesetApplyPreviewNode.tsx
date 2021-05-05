@@ -27,8 +27,8 @@ export const ChangesetApplyPreviewNode: React.FunctionComponent<ChangesetApplyPr
     node,
     history,
     location,
-    isLightTheme,
     authenticatedUser,
+    isLightTheme,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
 }) => {
@@ -47,8 +47,8 @@ export const ChangesetApplyPreviewNode: React.FunctionComponent<ChangesetApplyPr
                 node={node}
                 history={history}
                 location={location}
-                authenticatedUser={authenticatedUser}
                 isLightTheme={isLightTheme}
+                authenticatedUser={authenticatedUser}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                 expandChangesetDescriptions={expandChangesetDescriptions}
             />

@@ -54,10 +54,10 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
     enableSelect,
     onSelect,
     isSelected,
+    isLightTheme,
     history,
     location,
     extensionInfo,
-    isLightTheme,
     queryExternalChangesetWithFileDiffs,
     expandByDefault,
 }) => {
@@ -199,6 +199,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                         <ChangesetError node={node} />
                         <ChangesetFileDiff
                             changesetID={node.id}
+                            isLightTheme={isLightTheme}
                             history={history}
                             location={location}
                             repositoryID={node.repository.id}
@@ -206,7 +207,6 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                             extensionInfo={extensionInfo}
                             queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                             updateOnChange={node.updatedAt}
-                            isLightTheme={isLightTheme}
                         />
                     </div>
                 </>

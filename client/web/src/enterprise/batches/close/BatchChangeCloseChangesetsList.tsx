@@ -36,7 +36,7 @@ import {
 import { ChangesetCloseNodeProps, ChangesetCloseNode } from './ChangesetCloseNode'
 import { CloseChangesetsListEmptyElement } from './CloseChangesetsListEmptyElement'
 
-interface Props extends PlatformContextProps, TelemetryProps, ExtensionsControllerProps, ThemeProps {
+interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     batchChangeID: Scalars['ID']
     viewerCanAdminister: boolean
     history: H.History
@@ -60,11 +60,11 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
     viewerCanAdminister,
     history,
     location,
+    isLightTheme,
     extensionsController,
     platformContext,
     telemetryService,
     willClose,
-    isLightTheme,
     onUpdate,
     queryChangesets = _queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -153,13 +153,13 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                 className="mt-2"
                 nodeComponent={ChangesetCloseNode}
                 nodeComponentProps={{
+                    isLightTheme,
                     viewerCanAdminister,
                     history,
                     location,
                     extensionInfo: { extensionsController, hoverifier },
                     queryExternalChangesetWithFileDiffs,
                     willClose,
-                    isLightTheme,
                 }}
                 queryConnection={queryChangesetsConnection}
                 hideSearch={true}
@@ -183,9 +183,9 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                     {...hoverState.hoverOverlayProps}
                     telemetryService={telemetryService}
                     extensionsController={extensionsController}
+                    isLightTheme={isLightTheme}
                     location={location}
                     platformContext={platformContext}
-                    isLightTheme={isLightTheme}
                     hoverRef={nextOverlayElement}
                     onCloseButtonClick={nextCloseButtonClick}
                 />

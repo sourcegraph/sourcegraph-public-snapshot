@@ -35,10 +35,10 @@ import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
 
 export interface BatchChangeDetailsPageProps
-    extends ExtensionsControllerProps,
+    extends ThemeProps,
+        ExtensionsControllerProps,
         PlatformContextProps,
-        TelemetryProps,
-        ThemeProps {
+        TelemetryProps {
     /**
      * The namespace ID.
      */
@@ -70,10 +70,10 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
     batchChangeName,
     history,
     location,
+    isLightTheme,
     extensionsController,
     platformContext,
     telemetryService,
-    isLightTheme,
     fetchBatchChangeByNamespace: fetchBatchChangeByNamespace = _fetchBatchChangeByNamespace,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -160,9 +160,9 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 archivedCount={batchChange.changesetsStats.archived}
                 extensionsController={extensionsController}
                 history={history}
+                isLightTheme={isLightTheme}
                 location={location}
                 platformContext={platformContext}
-                isLightTheme={isLightTheme}
                 telemetryService={telemetryService}
                 queryChangesets={queryChangesets}
                 queryChangesetCountsOverTime={queryChangesetCountsOverTime}

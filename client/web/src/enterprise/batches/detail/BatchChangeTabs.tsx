@@ -26,9 +26,9 @@ type SelectedTab = 'changesets' | 'chart' | 'spec' | 'archived'
 
 export interface BatchChangeTabsProps
     extends ExtensionsControllerProps,
+        ThemeProps,
         PlatformContextProps,
-        TelemetryProps,
-        ThemeProps {
+        TelemetryProps {
     batchChange: BatchChangeFields
     changesetsCount: number
     archivedCount: number
@@ -45,13 +45,13 @@ export interface BatchChangeTabsProps
 export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
     extensionsController,
     history,
+    isLightTheme,
     location,
     platformContext,
     telemetryService,
     batchChange,
     changesetsCount,
     archivedCount,
-    isLightTheme,
     queryChangesets,
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
@@ -182,10 +182,10 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                     viewerCanAdminister={batchChange.viewerCanAdminister}
                     history={history}
                     location={location}
+                    isLightTheme={isLightTheme}
                     extensionsController={extensionsController}
                     platformContext={platformContext}
                     telemetryService={telemetryService}
-                    isLightTheme={isLightTheme}
                     queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                     onlyArchived={false}
@@ -200,10 +200,10 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                     viewerCanAdminister={batchChange.viewerCanAdminister}
                     history={history}
                     location={location}
+                    isLightTheme={isLightTheme}
                     extensionsController={extensionsController}
                     platformContext={platformContext}
                     telemetryService={telemetryService}
-                    isLightTheme={isLightTheme}
                     queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                     onlyArchived={true}

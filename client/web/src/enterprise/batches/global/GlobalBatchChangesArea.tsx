@@ -51,10 +51,10 @@ const RedirectToMarketing: React.FunctionComponent<{}> = () => {
 
 interface Props
     extends RouteComponentProps<{}>,
+        ThemeProps,
         ExtensionsControllerProps,
         TelemetryProps,
-        PlatformContextProps,
-        ThemeProps {
+        PlatformContextProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }

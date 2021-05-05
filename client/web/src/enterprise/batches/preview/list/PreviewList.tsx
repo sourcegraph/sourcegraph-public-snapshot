@@ -37,8 +37,8 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     batchSpecID,
     history,
     location,
-    isLightTheme,
     authenticatedUser,
+    isLightTheme,
 
     queryChangesetApplyPreview = _queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
@@ -72,9 +72,9 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                 className="mt-2"
                 nodeComponent={ChangesetApplyPreviewNode}
                 nodeComponentProps={{
+                    isLightTheme,
                     history,
                     location,
-                    isLightTheme,
                     authenticatedUser,
                     queryChangesetSpecFileDiffs,
                     expandChangesetDescriptions,

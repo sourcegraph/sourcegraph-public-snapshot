@@ -27,7 +27,7 @@ import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 
 export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
 
-export interface BatchChangePreviewPageProps extends TelemetryProps, ThemeProps {
+export interface BatchChangePreviewPageProps extends ThemeProps, TelemetryProps {
     batchSpecID: string
     history: H.History
     location: H.Location
@@ -47,8 +47,8 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
     batchSpecID: specID,
     history,
     location,
-    isLightTheme,
     authenticatedUser,
+    isLightTheme,
     telemetryService,
     fetchBatchSpecById = _fetchBatchSpecById,
     queryChangesetApplyPreview,

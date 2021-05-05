@@ -27,10 +27,10 @@ import { BatchChangeCloseAlert } from './BatchChangeCloseAlert'
 import { BatchChangeCloseChangesetsList } from './BatchChangeCloseChangesetsList'
 
 export interface BatchChangeClosePageProps
-    extends TelemetryProps,
+    extends ThemeProps,
+        TelemetryProps,
         PlatformContextProps,
-        ExtensionsControllerProps,
-        ThemeProps {
+        ExtensionsControllerProps {
     /**
      * The namespace ID.
      */
@@ -58,9 +58,9 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
     history,
     location,
     extensionsController,
+    isLightTheme,
     platformContext,
     telemetryService,
-    isLightTheme,
     fetchBatchChangeByNamespace = _fetchBatchChangeByNamespace,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -143,10 +143,10 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
                 location={location}
                 viewerCanAdminister={batchChange.viewerCanAdminister}
                 extensionsController={extensionsController}
+                isLightTheme={isLightTheme}
                 platformContext={platformContext}
                 telemetryService={telemetryService}
                 queryChangesets={queryChangesets}
-                isLightTheme={isLightTheme}
                 queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                 willClose={closeChangesets}
                 onUpdate={onFetchChangesets}
