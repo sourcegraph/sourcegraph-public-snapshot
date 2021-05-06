@@ -65,7 +65,7 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
 	// Authz is bypassed when the request is coming from an internal actor or there
 	// is no authz provider configured and access to all repositories are allowed by
 	// default. Authz can be bypassed by site admins unless
-	// conf.AuthEnforceForSiteAdmins is set.
+	// conf.AuthEnforceForSiteAdmins is set to "true".
 	bypassAuthz := isInternalActor(ctx) || (authzAllowByDefault && len(authzProviders) == 0)
 	if !bypassAuthz && actor.FromContext(ctx).IsAuthenticated() {
 		currentUser, err := Users(db).GetByCurrentAuthUser(ctx)
