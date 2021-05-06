@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/conversion"
@@ -28,6 +29,7 @@ type handler struct {
 	dbStore         DBStore
 	lsifStore       LSIFStore
 	uploadStore     uploadstore.Store
+	enqueuer        enqueuer.Enqueuer
 	gitserverClient GitserverClient
 	enableBudget    bool
 	budgetRemaining int64
@@ -142,6 +144,13 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 			return err
 		}
 
+		if upload.RepositoryID == sourcegraphRepositoryID {
+			err = h.enqueuer.QueueIndexesForPackages(ctx, groupedBundleData.PackageReferences)
+			if err != nil {
+				return errors.Wrap(err, "enqueuer.QueueIndexesForPackages")
+			}
+		}
+
 		if _, err := workerStore.MarkComplete(ctx, upload.ID); err != nil {
 			return errors.Wrap(err, "store.MarkComplete")
 		}
@@ -149,6 +158,9 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 		return nil
 	})
 }
+
+// sourcegraphRepositoryID is the repository id of sg/sg on Cloud
+const sourcegraphRepositoryID = 36809250
 
 func inTransaction(ctx context.Context, dbStore DBStore, fn func(tx DBStore) error) (err error) {
 	tx, err := dbStore.Transact(ctx)
