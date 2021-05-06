@@ -13,6 +13,7 @@ export function mockFetchAutoDefinedSearchContexts(numberContexts = 0): Observab
             __typename: 'SearchContext',
             id: index.toString(),
             spec: `auto-defined-${index}`,
+            public: true,
             autoDefined: true,
             description: 'Repositories on Sourcegraph',
             repositories: [],

@@ -139,6 +139,10 @@ func (r *searchContextResolver) Description(ctx context.Context) string {
 	return r.sc.Description
 }
 
+func (r *searchContextResolver) Public(ctx context.Context) bool {
+	return r.sc.Public
+}
+
 func (r *searchContextResolver) AutoDefined(ctx context.Context) bool {
 	return searchcontexts.IsAutoDefinedSearchContext(r.sc)
 }

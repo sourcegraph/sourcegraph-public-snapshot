@@ -49,6 +49,7 @@ const propsWithContexts: SearchContextsListTabProps = {
                     id: '3',
                     spec: '@username/test-version-1.5',
                     autoDefined: false,
+                    public: true,
                     description: 'Only code in version 1.5',
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     repositories: [],

@@ -239,6 +239,7 @@ const searchContextFragment = gql`
         id
         spec
         description
+        public
         autoDefined
         updatedAt
         repositories {

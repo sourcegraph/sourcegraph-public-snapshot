@@ -3,10 +3,10 @@ import * as H from 'history'
 import React, { useCallback, useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { Page } from '../components/Page'
-import { PageHeader } from '../components/PageHeader'
 import { VersionContext } from '../schema/site.schema'
 import { SearchContextProps } from '../search'
 
