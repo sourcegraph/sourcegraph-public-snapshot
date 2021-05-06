@@ -12,7 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-const userCredentialMigrationCountPerRun = 5
+const (
+	userCredentialMigrationCountPerRun      = 5
+	userCredentialMigrationPlaceholderKeyID = "previously-migrated"
+)
 
 type userCredentialMigrator struct {
 	store *store.Store
@@ -21,10 +24,18 @@ type userCredentialMigrator struct {
 var _ oobmigration.Migrator = &userCredentialMigrator{}
 
 func (m *userCredentialMigrator) Progress(ctx context.Context) (float64, error) {
+	// What is progress, anyway?
+	//
+	// In this case, there are two things we're trying to do in this migrator.
+	// If encryption is enabled, then we want to pick up and encrypt any
+	// unencrypted credentials. We also want to replace any
+	// "previously-migrated" encryption key IDs with real key ID values.
+
 	progress, _, err := basestore.ScanFirstFloat(
 		m.store.Query(ctx, sqlf.Sprintf(
 			userCredentialMigratorProgressQuery,
 			database.UserCredentialDomainBatches,
+			userCredentialMigrationPlaceholderKeyID,
 			database.UserCredentialDomainBatches,
 		)))
 	if err != nil {
@@ -37,7 +48,7 @@ func (m *userCredentialMigrator) Progress(ctx context.Context) (float64, error) 
 const userCredentialMigratorProgressQuery = `
 -- source: enterprise/internal/batches/user_credential_migrator.go:Progress
 SELECT CASE c2.count WHEN 0 THEN 1 ELSE CAST((c2.count - c1.count) AS float) / CAST(c2.count AS float) END FROM
-	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s AND credential_enc IS NULL) c1,
+	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s AND encryption_key_id IN ('', %s)) c1,
 	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s) c2
 `
 
@@ -55,8 +66,8 @@ func (m *userCredentialMigrator) Up(ctx context.Context) error {
 			LimitOffset: &database.LimitOffset{
 				Limit: userCredentialMigrationCountPerRun,
 			},
-			ForUpdate:       true,
-			OnlyUnencrypted: true,
+			ForUpdate:         true,
+			RequiresMigration: true,
 		})
 		if err != nil {
 			return errors.Wrap(err, "listing user credentials")

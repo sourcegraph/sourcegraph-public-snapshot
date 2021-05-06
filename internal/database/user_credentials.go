@@ -23,6 +23,7 @@ type UserCredential struct {
 	UserID              int32
 	ExternalServiceType string
 	ExternalServiceID   string
+	EncryptedCredential []byte
 	EncryptionKeyID     string
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
@@ -30,8 +31,6 @@ type UserCredential struct {
 	// TODO(batch-change-credential-encryption): On or after Sourcegraph 3.30,
 	// we should remove the credential and SSHMigrationApplied fields.
 	SSHMigrationApplied bool
-	credential          auth.Authenticator
-	encryptedCredential []byte
 
 	key encryption.Key
 }
@@ -39,25 +38,17 @@ type UserCredential struct {
 // Authenticator decrypts and creates the authenticator associated with the user
 // credential.
 func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator, error) {
-	if uc.credential != nil {
-		return uc.credential, nil
-	}
-
-	if uc.encryptedCredential == nil {
-		return nil, errors.New("no unencrypted or encrypted credential found")
-	}
-
 	// The record includes a field indicating the encryption key ID. We don't
 	// really have a way to look up a key by ID right now, so this is used as a
 	// marker of whether we should expect a key or not.
 	if uc.EncryptionKeyID == "" {
-		return UnmarshalAuthenticator(string(uc.encryptedCredential))
+		return UnmarshalAuthenticator(string(uc.EncryptedCredential))
 	}
 	if uc.key == nil {
 		return nil, errors.New("user credential is encrypted, but no key is available to decrypt it")
 	}
 
-	secret, err := uc.key.Decrypt(ctx, uc.encryptedCredential)
+	secret, err := uc.key.Decrypt(ctx, uc.EncryptedCredential)
 	if err != nil {
 		return nil, errors.Wrap(err, "decrypting credential")
 	}
@@ -86,10 +77,7 @@ func (uc *UserCredential) SetAuthenticator(ctx context.Context, a auth.Authentic
 		return errors.Wrap(err, "encrypting authenticator")
 	}
 
-	// We must set credential to nil here: if we're in the middle of migrating
-	// when this is called, we don't want the unencrypted credential to remain.
-	uc.credential = nil
-	uc.encryptedCredential = secret
+	uc.EncryptedCredential = secret
 	uc.EncryptionKeyID = id
 
 	return nil
@@ -205,8 +193,7 @@ func (s *UserCredentialsStore) Update(ctx context.Context, credential *UserCrede
 		credential.UserID,
 		credential.ExternalServiceType,
 		credential.ExternalServiceID,
-		&NullAuthenticator{A: &credential.credential},
-		credential.encryptedCredential,
+		credential.EncryptedCredential,
 		credential.EncryptionKeyID,
 		credential.UpdatedAt,
 		credential.SSHMigrationApplied,
@@ -309,7 +296,7 @@ type UserCredentialsListOpts struct {
 
 	// TODO(batch-change-credential-encryption): this should be removed once the
 	// OOB user credential migration is removed.
-	OnlyUnencrypted bool
+	RequiresMigration bool
 }
 
 // sql overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
@@ -348,8 +335,8 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 	}
 	// TODO(batch-change-credential-encryption): remove once the OOB user
 	// credential migration is removed.
-	if opts.OnlyUnencrypted {
-		preds = append(preds, sqlf.Sprintf("credential_enc IS NULL"))
+	if opts.RequiresMigration {
+		preds = append(preds, sqlf.Sprintf("encryption_key_id IN ('', 'previously-migrated')"))
 	}
 
 	if len(preds) == 0 {
@@ -406,7 +393,6 @@ var userCredentialsColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_service_type"),
 	sqlf.Sprintf("external_service_id"),
 	sqlf.Sprintf("credential"),
-	sqlf.Sprintf("credential_enc"),
 	sqlf.Sprintf("encryption_key_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
@@ -445,7 +431,7 @@ INSERT INTO
 		user_id,
 		external_service_type,
 		external_service_id,
-		credential_enc,
+		credential,
 		encryption_key_id,
 		created_at,
 		updated_at,
@@ -474,7 +460,6 @@ SET
 	external_service_type = %s,
 	external_service_id = %s,
 	credential = %s,
-	credential_enc = %s,
 	encryption_key_id = %s,
 	updated_at = %s,
 	ssh_migration_applied = %s
@@ -497,8 +482,7 @@ func scanUserCredential(cred *UserCredential, s interface {
 		&cred.UserID,
 		&cred.ExternalServiceType,
 		&cred.ExternalServiceID,
-		&NullAuthenticator{A: &cred.credential},
-		&cred.encryptedCredential,
+		&cred.EncryptedCredential,
 		&cred.EncryptionKeyID,
 		&cred.CreatedAt,
 		&cred.UpdatedAt,

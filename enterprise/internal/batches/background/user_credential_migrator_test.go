@@ -33,9 +33,18 @@ func TestUserCredentialMigrator(t *testing.T) {
 
 	// Now we'll set up enough users to validate that it takes multiple Up
 	// invocations.
-	for i := 0; i < userCredentialMigrationCountPerRun*2; i++ {
+	for i := 0; i < userCredentialMigrationCountPerRun; i++ {
 		user := ct.CreateTestUser(t, db, false)
 		createUnencryptedUserCredential(t, ctx, cstore, database.UserCredentialScope{
+			Domain:              database.UserCredentialDomainBatches,
+			UserID:              user.ID,
+			ExternalServiceType: extsvc.TypeGitLab,
+			ExternalServiceID:   "https://gitlab.com/",
+		}, a)
+	}
+	for i := 0; i < userCredentialMigrationCountPerRun; i++ {
+		user := ct.CreateTestUser(t, db, false)
+		createPreviouslyEncryptedUserCredential(t, ctx, cstore, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainBatches,
 			UserID:              user.ID,
 			ExternalServiceType: extsvc.TypeGitLab,
@@ -81,9 +90,14 @@ func TestUserCredentialMigrator(t *testing.T) {
 			}
 		}
 
-		// Let's get down into the weeds and verify that there are no non-NULL
-		// credential fields.
-		if count, _, err := basestore.ScanFirstInt(cstore.Query(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM user_credentials WHERE credential IS NOT NULL"))); err != nil {
+		// Let's get down into the weeds and verify that there are no records
+		// with empty or placeholder encryption_key_id fields.
+		if count, _, err := basestore.ScanFirstInt(
+			cstore.Query(ctx, sqlf.Sprintf(
+				"SELECT COUNT(*) FROM user_credentials WHERE encryption_key_id IN ('', %s)",
+				userCredentialMigrationPlaceholderKeyID,
+			)),
+		); err != nil {
 			t.Errorf("cannot check unencrypted credentials: %v", err)
 		} else if count != 0 {
 			t.Errorf("unexpected number of unencrypted credentials: have=%d want=0", count)
@@ -114,7 +128,8 @@ func createUnencryptedUserCredential(
 	ctx context.Context,
 	store *store.Store,
 	scope database.UserCredentialScope,
-	a auth.Authenticator) *database.UserCredential {
+	a auth.Authenticator,
+) *database.UserCredential {
 	cred, err := store.UserCredentials().Create(ctx, scope, a)
 	if err != nil {
 		t.Fatal(err)
@@ -134,8 +149,34 @@ func createUnencryptedUserCredential(
 	if err := store.Exec(
 		ctx,
 		sqlf.Sprintf(
-			"UPDATE user_credentials SET credential = %s, credential_enc = NULL WHERE id = %s",
+			"UPDATE user_credentials SET credential = %s, encryption_key_id = '' WHERE id = %s",
 			raw,
+			cred.ID,
+		),
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	return cred
+}
+
+func createPreviouslyEncryptedUserCredential(
+	t *testing.T,
+	ctx context.Context,
+	store *store.Store,
+	scope database.UserCredentialScope,
+	a auth.Authenticator,
+) *database.UserCredential {
+	cred, err := store.UserCredentials().Create(ctx, scope, a)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := store.Exec(
+		ctx,
+		sqlf.Sprintf(
+			"UPDATE user_credentials SET encryption_key_id = %s WHERE id = %s",
+			userCredentialMigrationPlaceholderKeyID,
 			cred.ID,
 		),
 	); err != nil {
