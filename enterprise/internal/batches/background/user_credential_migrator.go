@@ -12,10 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-const (
-	userCredentialMigrationCountPerRun      = 5
-	userCredentialMigrationPlaceholderKeyID = "previously-migrated"
-)
+const userCredentialMigrationCountPerRun = 5
 
 type userCredentialMigrator struct {
 	store *store.Store
@@ -35,7 +32,7 @@ func (m *userCredentialMigrator) Progress(ctx context.Context) (float64, error) 
 		m.store.Query(ctx, sqlf.Sprintf(
 			userCredentialMigratorProgressQuery,
 			database.UserCredentialDomainBatches,
-			userCredentialMigrationPlaceholderKeyID,
+			database.UserCredentialPlaceholderEncryptionKeyID,
 			database.UserCredentialDomainBatches,
 		)))
 	if err != nil {

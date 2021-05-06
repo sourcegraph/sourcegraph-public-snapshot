@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -90,17 +89,14 @@ func TestUserCredentialMigrator(t *testing.T) {
 			}
 		}
 
-		// Let's get down into the weeds and verify that there are no records
-		// with empty or placeholder encryption_key_id fields.
-		if count, _, err := basestore.ScanFirstInt(
-			cstore.Query(ctx, sqlf.Sprintf(
-				"SELECT COUNT(*) FROM user_credentials WHERE encryption_key_id IN ('', %s)",
-				userCredentialMigrationPlaceholderKeyID,
-			)),
-		); err != nil {
-			t.Errorf("cannot check unencrypted credentials: %v", err)
-		} else if count != 0 {
-			t.Errorf("unexpected number of unencrypted credentials: have=%d want=0", count)
+		// Finally, let's ensure there's nothing left to be migrated.
+		if creds, _, err := cstore.UserCredentials().List(ctx, database.UserCredentialsListOpts{
+			Scope:             database.UserCredentialScope{Domain: database.UserCredentialDomainBatches},
+			RequiresMigration: true,
+		}); err != nil {
+			t.Fatal(err)
+		} else if len(creds) > 0 {
+			t.Errorf("unexpected unmigrated user credentials: %d", len(creds))
 		}
 	})
 
@@ -176,7 +172,7 @@ func createPreviouslyEncryptedUserCredential(
 		ctx,
 		sqlf.Sprintf(
 			"UPDATE user_credentials SET encryption_key_id = %s WHERE id = %s",
-			userCredentialMigrationPlaceholderKeyID,
+			database.UserCredentialPlaceholderEncryptionKeyID,
 			cred.ID,
 		),
 	); err != nil {

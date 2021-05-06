@@ -85,7 +85,8 @@ func (uc *UserCredential) SetAuthenticator(ctx context.Context, a auth.Authentic
 
 // This const block contains the valid domain values for user credentials.
 const (
-	UserCredentialDomainBatches = "batches"
+	UserCredentialDomainBatches              = "batches"
+	UserCredentialPlaceholderEncryptionKeyID = "previously-migrated"
 )
 
 // UserCredentialNotFoundErr is returned when a credential cannot be found from
@@ -336,7 +337,7 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 	// TODO(batch-change-credential-encryption): remove once the OOB user
 	// credential migration is removed.
 	if opts.RequiresMigration {
-		preds = append(preds, sqlf.Sprintf("encryption_key_id IN ('', 'previously-migrated')"))
+		preds = append(preds, sqlf.Sprintf("encryption_key_id IN ('', %s)", UserCredentialPlaceholderEncryptionKeyID))
 	}
 
 	if len(preds) == 0 {
