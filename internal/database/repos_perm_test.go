@@ -71,7 +71,7 @@ func TestAuthzQueryConds(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := sqlf.Sprintf(authzQueryCondsFmtstr, false, true, int32(0), authz.Read.String())
+		want := authzQuery(false, true, int32(0), authz.Read)
 		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
@@ -91,19 +91,19 @@ func TestAuthzQueryConds(t *testing.T) {
 			setup: func() context.Context {
 				return actor.WithInternalActor(context.Background())
 			},
-			wantQuery: sqlf.Sprintf(authzQueryCondsFmtstr, true, false, int32(0), authz.Read.String()),
+			wantQuery: authzQuery(true, false, int32(0), authz.Read),
 		},
 
 		{
 			name:      "no authz provider and not allow by default",
 			setup:     context.Background,
-			wantQuery: sqlf.Sprintf(authzQueryCondsFmtstr, false, false, int32(0), authz.Read.String()),
+			wantQuery: authzQuery(false, false, int32(0), authz.Read),
 		},
 		{
 			name:                "no authz provider but allow by default",
 			setup:               context.Background,
 			authzAllowByDefault: true,
-			wantQuery:           sqlf.Sprintf(authzQueryCondsFmtstr, true, false, int32(0), authz.Read.String()),
+			wantQuery:           authzQuery(true, false, int32(0), authz.Read),
 		},
 
 		{
@@ -114,7 +114,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				}
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			},
-			wantQuery: sqlf.Sprintf(authzQueryCondsFmtstr, true, false, int32(1), authz.Read.String()),
+			wantQuery: authzQuery(true, false, int32(1), authz.Read),
 		},
 		{
 			name: "authenticated user is not a site admin",
@@ -124,7 +124,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				}
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			},
-			wantQuery: sqlf.Sprintf(authzQueryCondsFmtstr, false, false, int32(1), authz.Read.String()),
+			wantQuery: authzQuery(false, false, int32(1), authz.Read),
 		},
 	}
 	for _, test := range tests {
