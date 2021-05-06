@@ -2,6 +2,7 @@
   "$schema": "http://json.schemastore.org/renovate",
   "extends": ["github>sourcegraph/renovate-config"],
   "semanticCommits": false,
+  "rebaseWhen": "never",
   "packageRules": [
     {
       "matchDepTypes": ["engines"],

@@ -1,17 +1,17 @@
-FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d as libsqlite3-pcre
+FROM sourcegraph/alpine:3.12@sha256:ce099fbcd3cf70b338fc4cb2a4e1fa9ae847de21afdb0a849a393b87d94fb174 as libsqlite3-pcre
 
 COPY libsqlite3-pcre-install-alpine.sh /libsqlite3-pcre-install-alpine.sh
 RUN /libsqlite3-pcre-install-alpine.sh
 
 # Install p4 CLI (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d AS p4cli
+FROM sourcegraph/alpine:3.12@sha256:ce099fbcd3cf70b338fc4cb2a4e1fa9ae847de21afdb0a849a393b87d94fb174 AS p4cli
 
 # hadolint ignore=DL3003
 RUN wget http://cdist2.perforce.com/perforce/r20.1/bin.linux26x86_64/p4 && \
     mv p4 /usr/local/bin/p4 && \
     chmod +x /usr/local/bin/p4
 
-FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d
+FROM sourcegraph/alpine:3.12@sha256:ce099fbcd3cf70b338fc4cb2a4e1fa9ae847de21afdb0a849a393b87d94fb174
 # TODO(security): This container should not be running as root!
 #
 # The default user in sourcegraph/alpine is a non-root `sourcegraph` user but because old deployments
@@ -51,11 +51,11 @@ RUN apk update && apk add --no-cache \
 # hadolint ignore=DL3022
 COPY --from=comby/comby:0.18.4@sha256:b47ce282778bfea7f80d45f5ef0cc546ba0d6347baccebaf171a7866143b2593 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/syntect_server:3f75b2d@sha256:a5f9b8d8a78107310d17bd2041102a89324ff35ccf6769807084747912ea7eda /syntect_server /usr/local/bin/
+COPY --from=sourcegraph/syntect_server:dd97058@sha256:d7163842f41388f41d19ce04833ac5f6d4e41d212869e7d2aea9c38ba6e77261 /syntect_server /usr/local/bin/
 
 
 # install minio (keep this up to date with docker-images/minio/Dockerfile)
-ENV MINIO_VERSION=RELEASE.2021-04-06T23-11-00Z
+ENV MINIO_VERSION=RELEASE.2021-04-22T15-44-28Z
 RUN wget "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.$MINIO_VERSION" && \
     chmod +x "minio.$MINIO_VERSION" && \
     mv "minio.$MINIO_VERSION" /usr/local/bin/minio

@@ -276,7 +276,7 @@ func (r symbolResolver) ContainerName() *string {
 }
 
 func (r symbolResolver) Kind() string /* enum SymbolKind */ {
-	kind := ctagsKindToLSPSymbolKind(r.Symbol.Kind)
+	kind := r.Symbol.LSPKind()
 	if kind == 0 {
 		return "UNKNOWN"
 	}
@@ -287,7 +287,7 @@ func (r symbolResolver) Language() string { return r.Symbol.Language }
 
 func (r symbolResolver) Location() *locationResolver {
 	stat := CreateFileInfo(r.Symbol.Path, false)
-	sr := symbolRange(r.Symbol)
+	sr := r.Symbol.Range()
 	return &locationResolver{
 		resource: NewGitTreeEntryResolver(r.commit, r.db, stat),
 		lspRange: &sr,
@@ -296,6 +296,6 @@ func (r symbolResolver) Location() *locationResolver {
 
 func (r symbolResolver) URL(ctx context.Context) (string, error) { return r.Location().URL(ctx) }
 
-func (r symbolResolver) CanonicalURL() (string, error) { return r.Location().CanonicalURL() }
+func (r symbolResolver) CanonicalURL() string { return r.Location().CanonicalURL() }
 
 func (r symbolResolver) FileLocal() bool { return r.Symbol.FileLimited }

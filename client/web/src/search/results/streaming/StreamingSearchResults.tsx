@@ -201,11 +201,11 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             <PageTitle key="page-title" title={query} />
 
             {isRedesignEnabled ? (
-                <SearchSidebar {...props} query={props.navbarSearchQueryState.query} />
+                <SearchSidebar {...props} query={props.navbarSearchQueryState.query} filters={results?.filters} />
             ) : (
                 <StreamingSearchResultsFilterBars {...props} results={results} />
             )}
-            <div className="search-results-list">
+            <div className={classNames('search-results-list', styles.streamingSearchResultsContainer)}>
                 <div className="d-lg-flex mb-2 align-items-end flex-wrap">
                     {!isRedesignEnabled && (
                         <SearchResultTypeTabs

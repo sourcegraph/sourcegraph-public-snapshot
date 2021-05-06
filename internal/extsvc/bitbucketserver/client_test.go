@@ -435,9 +435,11 @@ func TestClient_CreatePullRequest(t *testing.T) {
 	pr := &PullRequest{}
 	pr.Title = "This is a test PR"
 	pr.Description = "This is a test PR. Feel free to ignore."
+	pr.ToRef.Repository.ID = 10070
 	pr.ToRef.Repository.Slug = "automation-testing"
 	pr.ToRef.Repository.Project.Key = "SOUR"
 	pr.ToRef.ID = "refs/heads/master"
+	pr.FromRef.Repository.ID = 10070
 	pr.FromRef.Repository.Slug = "automation-testing"
 	pr.FromRef.Repository.Project.Key = "SOUR"
 	pr.FromRef.ID = "refs/heads/test-pr-bbs-1"
@@ -562,6 +564,151 @@ func TestClient_CreatePullRequest(t *testing.T) {
 			}
 
 			checkGolden(t, name, pr)
+		})
+	}
+}
+
+func TestClient_FetchDefaultReviewers(t *testing.T) {
+	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
+	if instanceURL == "" {
+		instanceURL = "https://bitbucket.sgdev.org"
+	}
+
+	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+
+	pr := &PullRequest{}
+	pr.Title = "This is a test PR"
+	pr.Description = "This is a test PR. Feel free to ignore."
+	pr.ToRef.Repository.ID = 10070
+	pr.ToRef.Repository.Slug = "automation-testing"
+	pr.ToRef.Repository.Project.Key = "SOUR"
+	pr.ToRef.ID = "refs/heads/master"
+	pr.FromRef.Repository.ID = 10070
+	pr.FromRef.Repository.Slug = "automation-testing"
+	pr.FromRef.Repository.Project.Key = "SOUR"
+	pr.FromRef.ID = "refs/heads/test-pr-bbs-1"
+
+	for _, tc := range []struct {
+		name string
+		ctx  context.Context
+		pr   func() *PullRequest
+		err  string
+	}{
+		{
+			name: "timeout",
+			pr:   func() *PullRequest { return pr },
+			ctx:  timeout,
+			err:  "context deadline exceeded",
+		},
+		{
+			name: "ToRef repo id not set",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.ToRef.Repository.ID = 0
+				return &pr
+			},
+			err: "ToRef repository id empty",
+		},
+		{
+			name: "ToRef repo slug not set",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.ToRef.Repository.Slug = ""
+				return &pr
+			},
+			err: "ToRef repository slug empty",
+		},
+		{
+			name: "ToRef project not set",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.ToRef.Repository.Project.Key = ""
+				return &pr
+			},
+			err: "ToRef project key empty",
+		},
+		{
+			name: "ToRef ID not set",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.ToRef.ID = ""
+				return &pr
+			},
+			err: "ToRef id empty",
+		},
+		{
+			name: "FromRef repo id not set",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.FromRef.Repository.ID = 0
+				return &pr
+			},
+			err: "FromRef repository id empty",
+		},
+		{
+			name: "FromRef repo slug not set",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.FromRef.Repository.Slug = ""
+				return &pr
+			},
+			err: "FromRef repository slug empty",
+		},
+		{
+			name: "FromRef project not set",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.FromRef.Repository.Project.Key = ""
+				return &pr
+			},
+			err: "FromRef project key empty",
+		},
+		{
+			name: "FromRef ID not set",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.FromRef.ID = ""
+				return &pr
+			},
+			err: "FromRef id empty",
+		},
+		{
+			name: "success",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.FromRef.ID = "refs/heads/test-pr-bbs-3"
+				return &pr
+			},
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			name := "FetchDefaultReviewers-" + strings.ReplaceAll(tc.name, " ", "-")
+
+			cli, save := NewTestClient(t, name, *update)
+			defer save()
+
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+			tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", instanceURL)
+
+			pr := tc.pr()
+			reviewers, err := cli.FetchDefaultReviewers(tc.ctx, pr)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Fatalf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil || tc.err != "<nil>" {
+				return
+			}
+
+			checkGolden(t, name, reviewers)
 		})
 	}
 }

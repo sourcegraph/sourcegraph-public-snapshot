@@ -66,9 +66,9 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*codem
 
 func NewTestStoreWithStore(t *testing.T, store *codemonitors.Store) (context.Context, *TestStore) {
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	now := time.Now().Truncate(time.Microsecond)
-	return ctx, &TestStore{codemonitors.NewStoreWithClock(dbconn.Global, func() time.Time { return now })}
+	return ctx, &TestStore{codemonitors.NewStoreWithClock(db, func() time.Time { return now })}
 }
 
 func NewTestUser(ctx context.Context, t *testing.T) (name string, id int32, namespace graphql.ID, userContext context.Context) {

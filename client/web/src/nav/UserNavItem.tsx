@@ -1,6 +1,8 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import * as H from 'history'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
@@ -10,6 +12,7 @@ import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle, Tooltip } f
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
 
 import { AuthenticatedUser } from '../auth'
@@ -22,7 +25,7 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     location: H.Location
     authenticatedUser: Pick<
         AuthenticatedUser,
-        'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session'
+        'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
     >
     showDotComMarketing: boolean
     keyboardShortcutForSwitchTheme?: KeyboardShortcut
@@ -101,8 +104,17 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
         onThemePreferenceChange(themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark)
     }, [onThemePreferenceChange, themePreference])
 
+    const [isRedesignEnabled] = useRedesignToggle()
+
     // Target ID for tooltip
     const targetID = 'target-user-avatar'
+
+    const MenuDropdownIcon = (): JSX.Element => {
+        const UpIcon = isRedesignEnabled ? ChevronUpIcon : MenuUpIcon
+        const DownIcon = isRedesignEnabled ? ChevronDownIcon : MenuDownIcon
+
+        return isOpen ? <UpIcon className="icon-inline" /> : <DownIcon className="icon-inline" />
+    }
 
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="py-0" aria-label="User. Open menu">
@@ -113,8 +125,12 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                             'user-nav-item__avatar-background': isExtensionAlertAnimating,
                         })}
                     >
-                        <UserAvatar user={props.authenticatedUser} targetID={targetID} className="icon-inline" />
-                        {isOpen ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
+                        <UserAvatar
+                            user={props.authenticatedUser}
+                            targetID={targetID}
+                            className="icon-inline user-nav-item__avatar"
+                        />
+                        <MenuDropdownIcon />
                     </div>
                 </div>
                 {isExtensionAlertAnimating && (

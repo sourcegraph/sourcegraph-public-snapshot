@@ -116,10 +116,9 @@ func (s symbolSuggestionResolver) Label() string {
 }
 func (s symbolSuggestionResolver) ToSymbol() (*symbolResolver, bool) { return &s.symbol, true }
 func (s symbolSuggestionResolver) Key() suggestionKey {
-	url, _ := s.symbol.CanonicalURL() // err always nil
 	return suggestionKey{
 		symbol: s.symbol.Symbol.Name + s.symbol.Symbol.Parent,
-		url:    url,
+		url:    s.symbol.CanonicalURL(),
 	}
 }
 
@@ -396,7 +395,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				if len(sr.Symbol.Name) < 12 {
 					score++
 				}
-				switch ctagsKindToLSPSymbolKind(sr.Symbol.Kind) {
+				switch sr.Symbol.LSPKind() {
 				case lsp.SKFunction, lsp.SKMethod:
 					score += 2
 				case lsp.SKClass:

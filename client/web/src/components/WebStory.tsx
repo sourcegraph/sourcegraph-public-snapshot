@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
 import { useDarkMode } from 'storybook-dark-mode'
 
+import { prependCSSToDocumentHead } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -28,11 +29,19 @@ export const WebStory: React.FunctionComponent<
     const isLightTheme = !useDarkMode()
     const breadcrumbSetters = useBreadcrumbs()
     const Children = useMemo(() => withRouter(children), [children])
+
+    useEffect(() => {
+        const styleTag = prependCSSToDocumentHead(webStyles)
+
+        return () => {
+            styleTag.remove()
+        }
+    }, [webStyles])
+
     return (
         <MemoryRouter {...memoryRouterProps}>
             <Tooltip />
             <Children {...breadcrumbSetters} isLightTheme={isLightTheme} telemetryService={NOOP_TELEMETRY_SERVICE} />
-            <style title="Webapp CSS">{webStyles}</style>
         </MemoryRouter>
     )
 }

@@ -148,6 +148,8 @@ commands:
       - cmd/searcher
 
   caddy:
+    ignoreStdout: true
+    ignoreStderr: true
     cmd: .bin/caddy run --watch --config=dev/Caddyfile
     install: |
       case "$(go env GOOS)" in
@@ -200,10 +202,12 @@ commands:
       VERSION: v1.7.0
 
   syntect_server:
+    ignoreStdout: true
+    ignoreStderr: true
     cmd: |
       docker run --name=syntect_server --rm -p9238:9238 \
       -e WORKERS=1 -e ROCKET_ADDRESS=0.0.0.0 \
-      sourcegraph/syntect_server:3f75b2d@sha256:a5f9b8d8a78107310d17bd2041102a89324ff35ccf6769807084747912ea7eda
+      sourcegraph/syntect_server:dd97058@sha256:d7163842f41388f41d19ce04833ac5f6d4e41d212869e7d2aea9c38ba6e77261
     install: docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
     env:
       # This is not needed actually
@@ -228,6 +232,7 @@ commands:
     env:
       GOGC: 50
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
+      PATH: .bin:$PATH
 
   zoekt-indexserver-1:
     cmd: |
@@ -250,6 +255,7 @@ commands:
     env:
       GOGC: 50
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
+      PATH: .bin:$PATH
 
   zoekt-webserver-0:
     cmd: |
@@ -262,6 +268,7 @@ commands:
     env:
       JAEGER_DISABLED: false
       GOGC: 50
+      PATH: .bin:$PATH
 
   zoekt-webserver-1:
     cmd: |
@@ -274,6 +281,7 @@ commands:
     env:
       JAEGER_DISABLED: false
       GOGC: 50
+      PATH: .bin:$PATH
 
 commandsets:
   default:

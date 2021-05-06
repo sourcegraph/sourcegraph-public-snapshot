@@ -95,7 +95,7 @@ type CampaignsCredentialResolver interface {
 	ID() graphql.ID
 	ExternalServiceKind() string
 	ExternalServiceURL() string
-	SSHPublicKey() *string
+	SSHPublicKey(ctx context.Context) (*string, error)
 	CreatedAt() DateTime
 }
 
@@ -204,6 +204,17 @@ type DetachChangesetsArgs struct {
 	Changesets  []graphql.ID
 }
 
+type ListBatchChangeBulkOperationArgs struct {
+	First int32
+	After *string
+}
+
+type CreateChangesetCommentsArgs struct {
+	BatchChange graphql.ID
+	Changesets  []graphql.ID
+	Body        string
+}
+
 type BatchChangesResolver interface {
 	//
 	// MUTATIONS
@@ -231,29 +242,42 @@ type BatchChangesResolver interface {
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
 	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (*EmptyResponse, error)
+	CreateChangesetComments(ctx context.Context, args *CreateChangesetCommentsArgs) (BulkOperationResolver, error)
 
 	// Queries
 
 	// TODO(campaigns-deprecation)
 	Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
-	CampaignByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error)
-	CampaignSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error)
-	CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error)
 	CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
 	// New:
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
-	BatchChangeByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error)
 	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
-	BatchSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error)
 
-	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
-	ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error)
-
-	BatchChangesCredentialByID(ctx context.Context, id graphql.ID) (BatchChangesCredentialResolver, error)
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
+}
+
+type BulkOperationConnectionResolver interface {
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Nodes(ctx context.Context) ([]BulkOperationResolver, error)
+}
+
+type BulkOperationResolver interface {
+	ID() graphql.ID
+	Type() (string, error)
+	State() string
+	Progress() float64
+	Errors(ctx context.Context) ([]ChangesetJobErrorResolver, error)
+	CreatedAt() DateTime
+	FinishedAt() *DateTime
+}
+
+type ChangesetJobErrorResolver interface {
+	Changeset() ChangesetResolver
+	Error() *string
 }
 
 type BatchSpecResolver interface {
@@ -470,7 +494,7 @@ type BatchChangesCredentialResolver interface {
 	ID() graphql.ID
 	ExternalServiceKind() string
 	ExternalServiceURL() string
-	SSHPublicKey() *string
+	SSHPublicKey(ctx context.Context) (*string, error)
 	CreatedAt() DateTime
 	IsSiteCredential() bool
 }
@@ -524,6 +548,7 @@ type BatchChangeResolver interface {
 	ClosedAt() *DateTime
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	CurrentSpec(ctx context.Context) (BatchSpecResolver, error)
+	BulkOperations(ctx context.Context, args *ListBatchChangeBulkOperationArgs) (BulkOperationConnectionResolver, error)
 
 	// TODO(campaigns-deprecation): This should be removed once we remove batches.
 	// It's here so that in the NodeResolver we can have the same resolver,

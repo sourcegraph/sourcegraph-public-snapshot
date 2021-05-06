@@ -8,13 +8,17 @@ In this guide, you'll install the Sourcegraph CLI, `src`, connect it to your Sou
 
 ## Installation
 
-`src` is shipped as a single, standalone binary. You can get the latest release by following the instructions for your operating system below:
+`src` is shipped as a single, standalone binary. You can get the latest release by following the instructions for your operating system below (check out the [GitHub page](https://github.com/sourcegraph/src-cli) for additional documentation):
 
 ### macOS
 
 ```sh
 curl -L https://sourcegraph.com/.api/src-cli/src_darwin_amd64 -o /usr/local/bin/src
 chmod +x /usr/local/bin/src
+```
+or
+```
+brew install sourcegraph/src-cli/src-cli
 ```
 
 ### Linux

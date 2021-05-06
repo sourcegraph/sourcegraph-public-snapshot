@@ -7,11 +7,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
+const (
+	// BatchChangesSSHMigrationID is the ID of row holding the ssh migration. It
+	// is defined in `1528395788_campaigns_ssh_key_migration.up`.
+	BatchChangesSSHMigrationID = 2
+
+	// BatchChangesUserCredentialMigrationID is the ID of the row holding the
+	// user credential migration. It is defined in
+	// `1528395819_oob_credential_encryption_up.sql`.
+	BatchChangesUserCredentialMigrationID = 9
+
+	// BatchChangesSiteCredentialMigrationID is the ID of the row holding the
+	// site credential migration. It is defined in
+	// `1528395821_oob_site_credential_encryption_up.sql`.
+	BatchChangesSiteCredentialMigrationID = 10
+)
+
 // RegisterMigrations registers all currently implemented out of band migrations
 // by batch changes with the migration runner.
 func RegisterMigrations(cstore *store.Store, outOfBandMigrationRunner *oobmigration.Runner) error {
 	migrations := map[int]oobmigration.Migrator{
-		BatchChangesSSHMigrationID: &sshMigrator{store: cstore},
+		BatchChangesSSHMigrationID:            &sshMigrator{store: cstore},
+		BatchChangesUserCredentialMigrationID: &userCredentialMigrator{store: cstore},
+		BatchChangesSiteCredentialMigrationID: &siteCredentialMigrator{store: cstore},
 	}
 
 	for id, migrator := range migrations {

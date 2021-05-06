@@ -1,4 +1,5 @@
 import { storiesOf } from '@storybook/react'
+import classNames from 'classnames'
 import React from 'react'
 import { of } from 'rxjs'
 
@@ -12,10 +13,11 @@ import {
 } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
+import styles from './PreviewList.module.scss'
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
 
 const { add } = storiesOf('web/batches/preview/VisibleChangesetApplyPreviewNode', module).addDecorator(story => (
-    <div className="p-3 container web-content preview-list__grid">{story()}</div>
+    <div className={classNames(styles.previewListGrid, 'p-3 container web-content')}>{story()}</div>
 ))
 
 const testRepo = { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' }

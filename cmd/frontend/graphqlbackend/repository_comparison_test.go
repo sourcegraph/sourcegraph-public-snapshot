@@ -224,20 +224,14 @@ func TestRepositoryComparison(t *testing.T) {
 			if mostRelevant == nil {
 				t.Fatalf("MostRelevantFile is nil")
 			}
-			relevantURL, err := mostRelevant.CanonicalURL()
-			if err != nil {
-				t.Fatal(err)
-			}
+			relevantURL := mostRelevant.CanonicalURL()
 
 			wantRelevantURL := fmt.Sprintf("/%s@%s/-/blob/%s", repo.Name, wantHeadRevision, "INSTALL.md")
 			if relevantURL != wantRelevantURL {
 				t.Fatalf("MostRelevantFile.CanonicalURL() is wrong. have=%q, want=%q", relevantURL, wantRelevantURL)
 			}
 
-			newFileURL, err := newFile.CanonicalURL()
-			if err != nil {
-				t.Fatal(err)
-			}
+			newFileURL := newFile.CanonicalURL()
 			// NewFile should be the most relevant file
 			if newFileURL != wantRelevantURL {
 				t.Fatalf(
@@ -629,8 +623,8 @@ func (d *dummyFileResolver) URL(ctx context.Context) (string, error) {
 	return d.url, nil
 }
 
-func (d *dummyFileResolver) CanonicalURL() (string, error) {
-	return d.canonicalURL, nil
+func (d *dummyFileResolver) CanonicalURL() string {
+	return d.canonicalURL
 }
 
 func (d *dummyFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {

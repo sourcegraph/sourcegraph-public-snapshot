@@ -35,9 +35,7 @@ $theme-colors-redesign: (
     merged: $redesign-purple,
 );
 
-:root.theme-redesign,
-// Descendant selector is required for Storybook `addRedesignVariants` helper.
-:root .theme-redesign {
+.theme-redesign {
     --primary: #{map-get($theme-colors-redesign, 'primary')};
     --primary-3: #{$redesign-indigo};
     --brand-secondary: #a305e1;
@@ -62,28 +60,36 @@ $theme-colors-redesign: (
     --tooltip-bg: #{$redesign-gray-08};
     // Assumption: Uses light-mode body-color, which matches current behavior
     --box-shadow: 0 0.25rem 0.5rem #{rgba($redesign-gray-08, 0.07)};
-    --btn-focus-box-shadow: 0 0 0 2px var(--primary-2);
+    --focus-box-shadow: 0 0 0 0.125rem var(--primary-2);
     --btn-link-disabled-color: var(--primary-2);
 }
 
 .theme-light.theme-redesign {
     --primary-2: #a3d0ff;
+    --primary-4: #e1f0ff;
     --secondary: #{$redesign-gray-04};
     --secondary-2: #eef1f7;
     --secondary-3: #c6cfe1;
+    --secondary-4: #f1f4f9;
     --success-3: #319e44;
+    --success-4: #ebfaee;
     --info-2: #a8dbe2;
     --info-3: #0bb3ca;
+    --info-4: #eafafc;
     --warning-3: #e09200;
+    --warning-4: #fff7e1;
     --danger-3: #b52626;
+    --danger-4: #fbeaea;
     --body-color: #{$redesign-gray-08};
     --body-bg: #{$redesign-gray-01};
     --color-bg-1: #{$white};
     --color-bg-2: #{$redesign-gray-03};
     --color-bg-3: #{$redesign-gray-04};
     --mark-bg: rgba(255, 218, 30, 0.5);
+    --merged-4: #eee9fd;
     --text-muted: #{$redesign-gray-07};
     --link-color: var(--primary);
+    --link-color-2: #0766cc;
     --link-active-color: #0c7bf0;
     --link-hover-color: #0c7bf0;
     --border-color: #{$redesign-gray-03};
@@ -91,11 +97,12 @@ $theme-colors-redesign: (
     --border-active-color: var(--primary);
     --search-query-text-color: #{$redesign-gray-12};
     --search-filter-keyword-color: var(--primary);
-    --search-keyword-color: var(--secondary);
+    --search-keyword-color: #{$oc-grape-7};
     --infobar-warning-color: #{$oc-red-8};
     --icon-color: #{$redesign-gray-06};
     --code-bg: #{$redesign-gray-03};
     --intel-bg: #{$white};
+    --subtle-bg: #{$redesign-gray-02};
 
     // TODO: Remove from use, replace with the variables referenced here
     // Issue: https://github.com/sourcegraph/sourcegraph/issues/19973
@@ -107,22 +114,30 @@ $theme-colors-redesign: (
 
 .theme-dark.theme-redesign {
     --primary-2: #0f59aa;
+    --primary-4: #03284f;
     --secondary: #{$redesign-gray-08};
     --secondary-2: #242936;
     --secondary-3: #1f232e;
+    --secondary-4: #545967;
     --success-3: #237332;
+    --success-4: #054410;
     --info-2: #b8e3e8;
     --info-3: #005766;
+    --info-4: #025762;
     --warning-3: #9c6500;
+    --warning-4: #3d2904;
     --danger-3: #801b1b;
+    --danger-4: #3d0a0a;
     --body-color: #{$redesign-gray-04};
     --body-bg: #{$redesign-gray-12};
     --color-bg-1: #{$redesign-gray-11};
     --color-bg-2: #{$redesign-gray-10};
     --color-bg-3: #{$redesign-gray-08};
     --mark-bg: rgba(16, 104, 2, 0.5);
+    --merged-4: #1f0a5c;
     --text-muted: #{$redesign-gray-05};
     --link-color: #4393e7;
+    --link-color-2: #70b0f3;
     --link-active-color: #489ffa;
     --link-hover-color: #489ffa;
     --border-color: #{$redesign-gray-09};
@@ -130,11 +145,12 @@ $theme-colors-redesign: (
     --border-active-color: #4393e7;
     --search-query-text-color: #{$redesign-gray-04};
     --search-filter-keyword-color: #4393e7;
-    --search-keyword-color: var(--secondary-2);
+    --search-keyword-color: #{$oc-grape-4};
     --infobar-warning-color: #f05151;
     --icon-color: #{$redesign-gray-05};
     --code-bg: #{$redesign-gray-10};
     --intel-bg: #{$redesign-gray-12};
+    --subtle-bg: #{$redesign-gray-09};
 
     // TODO: Remove from use, replace with the variables referenced here
     // Issue: https://github.com/sourcegraph/sourcegraph/issues/19973

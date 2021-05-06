@@ -256,7 +256,8 @@ async function completeFilter(
     serverSuggestions: Observable<SearchSuggestion[]>,
     token: Filter,
     column: number,
-    globbing: boolean
+    globbing: boolean,
+    isSourcegraphDotCom?: boolean
 ): Promise<Monaco.languages.CompletionList | null> {
     const defaultRange = {
         startLineNumber: 1,
@@ -275,10 +276,10 @@ async function completeFilter(
     }
     let staticSuggestions: Monaco.languages.CompletionItem[] = []
     if (resolvedFilter.definition.discreteValues) {
-        staticSuggestions = resolvedFilter.definition.discreteValues(token.value).map(
+        staticSuggestions = resolvedFilter.definition.discreteValues(token.value, isSourcegraphDotCom).map(
             ({ label, insertText, asSnippet }, index): Monaco.languages.CompletionItem => ({
                 label,
-                sortText: index.toString(), // suggestions sort by order in the list, not alphabetically.
+                sortText: index.toString().padStart(2, '0'), // suggestions sort by order in the list, not alphabetically (up to 99 values).
                 kind: Monaco.languages.CompletionItemKind.Value,
                 insertText: `${insertText || label} `,
                 filterText: label,
@@ -287,6 +288,10 @@ async function completeFilter(
                 command: COMPLETION_ITEM_SELECTED,
             })
         )
+    }
+    if (isSourcegraphDotCom === true && (value === undefined || (value.type === 'literal' && value.value === ''))) {
+        // On Sourcegraph.com, prompt only static suggestions if there is no value to use for generating dynamic suggestions yet.
+        return { suggestions: staticSuggestions }
     }
     let dynamicSuggestions: Monaco.languages.CompletionItem[] = []
     if (resolvedFilter.definition.suggestions) {
@@ -319,7 +324,8 @@ export async function getCompletionItems(
     tokens: Token[],
     { column }: Pick<Monaco.Position, 'column'>,
     dynamicSuggestions: Observable<SearchSuggestion[]>,
-    globbing: boolean
+    globbing: boolean,
+    isSourcegraphDotCom?: boolean
 ): Promise<Monaco.languages.CompletionList | null> {
     if (column === 1) {
         // Show all filter suggestions on the first column.
@@ -336,7 +342,7 @@ export async function getCompletionItems(
         return completeDefault(dynamicSuggestions, token, globbing)
     }
     if (token.type === 'filter') {
-        return completeFilter(dynamicSuggestions, token, column, globbing)
+        return completeFilter(dynamicSuggestions, token, column, globbing, isSourcegraphDotCom)
     }
     return null
 }

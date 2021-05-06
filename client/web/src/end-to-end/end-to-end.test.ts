@@ -273,8 +273,8 @@ describe('e2e test suite', () => {
 
         const awsAccessKeyID = process.env.AWS_ACCESS_KEY_ID
         const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
-        const awsCodeCommitUsername = process.env.AWS_CODE_COMMIT_GIT_USERNAME
-        const awsCodeCommitPassword = process.env.AWS_CODE_COMMIT_GIT_PASSWORD
+        const awsCodeCommitUsername = process.env.AWS_CODE_COMMIT_USERNAME
+        const awsCodeCommitPassword = process.env.AWS_CODE_COMMIT_PASSWORD
 
         const testIfAwsCredentialsSet =
             awsSecretAccessKey && awsAccessKeyID && awsCodeCommitUsername && awsCodeCommitPassword
@@ -927,7 +927,7 @@ describe('e2e test suite', () => {
                     )
                     await driver.page.waitForSelector(blobTableSelector)
 
-                    const selector = `${blobTableSelector} tr:nth-child(24) > td.code > span:nth-child(1) > span:nth-child(8) > span:nth-child(1) > span:nth-child(1) `
+                    const selector = 'td[data-line="24"] + td .hl-storage.hl-type.hl-go:not(.hl-keyword)'
                     await driver.page.waitForSelector(selector, { visible: true })
                     await driver.page.click(selector)
 

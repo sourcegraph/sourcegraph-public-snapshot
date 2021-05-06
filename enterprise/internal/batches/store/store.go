@@ -6,40 +6,65 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
+	"github.com/dineshappavoo/basex"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-// seededRand is used to populate the RandID fields on BatchSpec and
-// ChangesetSpec when creating them.
+// SQLColumns is a slice of column names, that can be converted to a slice of
+// *sqlf.Query.
+type SQLColumns []string
+
+// ToSqlf returns all the columns wrapped in a *sqlf.Query.
+func (s SQLColumns) ToSqlf() []*sqlf.Query {
+	columns := []*sqlf.Query{}
+	for _, col := range s {
+		columns = append(columns, sqlf.Sprintf(col))
+	}
+	return columns
+}
+
+// seededRand is used in RandomID() to generate a "random" number.
 var seededRand *rand.Rand = rand.New(rand.NewSource(timeutil.Now().UnixNano()))
 
 // ErrNoResults is returned by Store method calls that found no results.
 var ErrNoResults = errors.New("no results")
 
+// RandomID generates a random ID to be used for identifiers in the database.
+func RandomID() (string, error) {
+	return basex.Encode(strconv.Itoa(seededRand.Int()))
+}
+
 // Store exposes methods to read and write batches domain models
 // from persistent storage.
 type Store struct {
 	*basestore.Store
+	key encryption.Key
 	now func() time.Time
 }
 
 // New returns a new Store backed by the given database.
-func New(db dbutil.DB) *Store {
-	return NewWithClock(db, timeutil.Now)
+func New(db dbutil.DB, key encryption.Key) *Store {
+	return NewWithClock(db, key, timeutil.Now)
 }
 
 // NewWithClock returns a new Store backed by the given database and
 // clock for timestamps.
-func NewWithClock(db dbutil.DB, clock func() time.Time) *Store {
-	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock}
+func NewWithClock(db dbutil.DB, key encryption.Key, clock func() time.Time) *Store {
+	return &Store{
+		Store: basestore.NewWithDB(db, sql.TxOptions{}),
+		key:   key,
+		now:   clock,
+	}
 }
 
 // Clock returns the clock used by the Store.
@@ -61,7 +86,7 @@ func (s *Store) Handle() *basestore.TransactableHandle { return s.Store.Handle()
 // underlying basestore.Store.
 // Needed to implement the basestore.Store interface
 func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{Store: s.Store.With(other), now: s.now}
+	return &Store{Store: s.Store.With(other), key: s.key, now: s.now}
 }
 
 // Transact creates a new transaction.
@@ -72,7 +97,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Store{Store: txBase, now: s.now}, nil
+	return &Store{Store: txBase, key: s.key, now: s.now}, nil
 }
 
 // Repos returns a database.RepoStore using the same connection as this store.
@@ -87,7 +112,7 @@ func (s *Store) ExternalServices() *database.ExternalServiceStore {
 
 // UserCredentials returns a database.UserCredentialsStore using the same connection as this store.
 func (s *Store) UserCredentials() *database.UserCredentialsStore {
-	return database.UserCredentialsWith(s)
+	return database.UserCredentialsWith(s, s.key)
 }
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {

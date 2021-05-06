@@ -1,6 +1,9 @@
 import { ThemeVars, themes } from '@storybook/theming'
 import openColor from 'open-color'
 
+export const THEME_DARK_CLASS = 'theme-dark'
+export const THEME_LIGHT_CLASS = 'theme-light'
+
 // Themes use the colors from our webapp.
 const common: Omit<ThemeVars, 'base'> = {
     colorPrimary: openColor.blue[6],
@@ -13,7 +16,7 @@ const common: Omit<ThemeVars, 'base'> = {
     fontCode: 'sfmono-regular, consolas, menlo, dejavu sans mono, monospace',
 }
 
-export const dark: ThemeVars = {
+export const themeDark: ThemeVars = {
     ...themes.dark,
     ...common,
     appBg: '#1c2736',
@@ -25,7 +28,7 @@ export const dark: ThemeVars = {
     inputTextColor: '#ffffff',
 }
 
-export const light: ThemeVars = {
+export const themeLight: ThemeVars = {
     ...themes.light,
     ...common,
     appBg: '#fbfdff',
