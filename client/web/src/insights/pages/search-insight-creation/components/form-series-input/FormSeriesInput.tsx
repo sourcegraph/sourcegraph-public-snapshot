@@ -10,7 +10,7 @@ import { InputField } from '../form-field/FormField'
 import { createRequiredValidator } from '../validators'
 
 const requiredNameField = createRequiredValidator('Name is required field for data series.')
-const validQuery = createRequiredValidator('Query is required field for data series.')
+const validQuery = createRequiredValidator('Query is a required field for data series.')
 
 interface FormSeriesProps {
     /** Name of series. */
