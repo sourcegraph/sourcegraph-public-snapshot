@@ -20,9 +20,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- User credentials used in Batch Changes are now encrypted if encryption is enabled in the database with the `encryption.keys` config. [#19570](https://github.com/sourcegraph/sourcegraph/issues/19570)
+- User and site credentials used in Batch Changes are now encrypted in the database if encryption is enabled with the `encryption.keys` config. [#19570](https://github.com/sourcegraph/sourcegraph/issues/19570)
 - All Sourcegraph images within [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) now specify the registry. Thanks! @k24dizzle [#2901](https://github.com/sourcegraph/deploy-sourcegraph/pull/2901).
 - Default reviewers are now added to Bitbucket Server PRs opened by Batch Changes. [#20551](https://github.com/sourcegraph/sourcegraph/pull/20551)
+- Only site admins can now list users on an instance. [#20619](https://github.com/sourcegraph/sourcegraph/pull/20619)
 
 ### Fixed
 

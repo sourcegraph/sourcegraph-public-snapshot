@@ -5,14 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -37,8 +35,6 @@ func (oi *OrgInvitation) Pending() bool {
 
 type OrgInvitationStore struct {
 	*basestore.Store
-
-	once sync.Once
 }
 
 // OrgInvitations instantiates and returns a new OrgInvitationStore with prepared statements.
@@ -60,17 +56,6 @@ func (s *OrgInvitationStore) Transact(ctx context.Context) (*OrgInvitationStore,
 	return &OrgInvitationStore{Store: txBase}, err
 }
 
-// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
-// This function ensures access to dbconn happens after the rest of the code or tests have
-// initialized it.
-func (s *OrgInvitationStore) ensureStore() {
-	s.once.Do(func() {
-		if s.Store == nil {
-			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-		}
-	})
-}
-
 // OrgInvitationNotFoundError occurs when an org invitation is not found.
 type OrgInvitationNotFoundError struct {
 	args []interface{}
@@ -87,7 +72,6 @@ func (s *OrgInvitationStore) Create(ctx context.Context, orgID, senderUserID, re
 	if Mocks.OrgInvitations.Create != nil {
 		return Mocks.OrgInvitations.Create(orgID, senderUserID, recipientUserID)
 	}
-	s.ensureStore()
 
 	t := &OrgInvitation{
 		OrgID:           orgID,
@@ -175,8 +159,6 @@ func (s *OrgInvitationStore) List(ctx context.Context, opt OrgInvitationsListOpt
 }
 
 func (s *OrgInvitationStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*OrgInvitation, error) {
-	s.ensureStore()
-
 	q := sqlf.Sprintf(`
 SELECT id, org_id, sender_user_id, recipient_user_id, created_at, notified_at, responded_at, response_type, revoked_at FROM org_invitations
 WHERE (%s) AND deleted_at IS NULL
@@ -207,8 +189,6 @@ ORDER BY id ASC
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to count the invitations.
 func (s *OrgInvitationStore) Count(ctx context.Context, opt OrgInvitationsListOptions) (int, error) {
-	s.ensureStore()
-
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM org_invitations WHERE (%s) AND deleted_at IS NULL", sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int
 	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
@@ -220,8 +200,6 @@ func (s *OrgInvitationStore) Count(ctx context.Context, opt OrgInvitationsListOp
 // UpdateEmailSentTimestamp updates the email-sent timestam[ for the org invitation to the current
 // time.
 func (s *OrgInvitationStore) UpdateEmailSentTimestamp(ctx context.Context, id int64) error {
-	s.ensureStore()
-
 	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE org_invitations SET notified_at=now() WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
@@ -240,8 +218,6 @@ func (s *OrgInvitationStore) UpdateEmailSentTimestamp(ctx context.Context, id in
 // which the recipient was invited. If the recipient user ID given is incorrect, an
 // OrgInvitationNotFoundError error is returned.
 func (s *OrgInvitationStore) Respond(ctx context.Context, id int64, recipientUserID int32, accept bool) (orgID int32, err error) {
-	s.ensureStore()
-
 	if err := s.Handle().DB().QueryRowContext(ctx, "UPDATE org_invitations SET responded_at=now(), response_type=$3 WHERE id=$1 AND recipient_user_id=$2 AND responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL RETURNING org_id", id, recipientUserID, accept).Scan(&orgID); err == sql.ErrNoRows {
 		return 0, OrgInvitationNotFoundError{[]interface{}{fmt.Sprintf("id %d recipient %d", id, recipientUserID)}}
 	} else if err != nil {
@@ -256,7 +232,6 @@ func (s *OrgInvitationStore) Revoke(ctx context.Context, id int64) error {
 	if Mocks.OrgInvitations.Revoke != nil {
 		return Mocks.OrgInvitations.Revoke(id)
 	}
-	s.ensureStore()
 
 	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE org_invitations SET revoked_at=now() WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL", id)
 	if err != nil {

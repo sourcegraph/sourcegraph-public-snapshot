@@ -97,7 +97,9 @@ func TestUserCredentialMigrator(t *testing.T) {
 	})
 }
 
-func assertProgress(t *testing.T, ctx context.Context, want float64, migrator *userCredentialMigrator) {
+func assertProgress(t *testing.T, ctx context.Context, want float64, migrator interface {
+	Progress(context.Context) (float64, error)
+}) {
 	t.Helper()
 
 	if have, err := migrator.Progress(ctx); err != nil {

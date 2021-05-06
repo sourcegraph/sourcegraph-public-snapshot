@@ -1,4 +1,5 @@
 import { storiesOf } from '@storybook/react'
+import classNames from 'classnames'
 import React from 'react'
 import { of } from 'rxjs'
 
@@ -6,10 +7,11 @@ import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 import { ChangesetApplyPreviewNode } from './ChangesetApplyPreviewNode'
 import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
+import styles from './PreviewList.module.scss'
 import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
 
 const { add } = storiesOf('web/batches/preview/ChangesetApplyPreviewNode', module).addDecorator(story => (
-    <div className="p-3 container web-content preview-list__grid">{story()}</div>
+    <div className={classNames(styles.previewListGrid, 'p-3 container web-content')}>{story()}</div>
 ))
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
