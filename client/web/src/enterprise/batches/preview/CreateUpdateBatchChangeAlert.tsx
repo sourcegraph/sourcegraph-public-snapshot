@@ -11,6 +11,7 @@ import { ErrorAlert } from '../../../components/alerts'
 import { BatchSpecFields } from '../../../graphql-operations'
 
 import { createBatchChange, applyBatchChange } from './backend'
+import styles from './CreateUpdateBatchChangeAlert.module.scss'
 
 export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
     specID: string
@@ -53,7 +54,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
     return (
         <>
             <div className="alert alert-info p-3 mb-3 d-block d-md-flex align-items-center body-lead">
-                <div className="flex-grow-1 mr-3 create-update-batch-change-alert__copy">
+                <div className={classNames(styles.createUpdateBatchChangeAlertCopy, 'flex-grow-1 mr-3')}>
                     <InfoCircleOutlineIcon className="icon-inline mr-2" />
                     {!batchChange && (
                         <>
@@ -71,7 +72,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                         </>
                     )}
                 </div>
-                <div className="create-update-batch-change-alert__btn">
+                <div className={styles.createUpdateBatchChangeAlertBtn}>
                     <button
                         type="button"
                         className={classNames(

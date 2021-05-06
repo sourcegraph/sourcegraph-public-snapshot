@@ -191,8 +191,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/insights',
-        exact: true,
-        render: lazyComponent(() => import('./insights/pages/InsightsPage'), 'InsightsPage'),
+        render: lazyComponent(() => import('./insights/InsightsRouter'), 'InsightsRouter'),
         condition: props =>
             !isErrorLike(props.settingsCascade.final) &&
             !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
@@ -210,6 +209,19 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             !isErrorLike(props.settingsCascade.final) &&
             !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
             !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
+    },
+    {
+        path: '/contexts/convert-version-contexts',
+        render: lazyComponent(
+            () => import('./searchContexts/ConvertVersionContextsPage'),
+            'ConvertVersionContextsPage'
+        ),
+        exact: true,
+        condition: props =>
+            !isErrorLike(props.settingsCascade.final) &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement &&
+            !!props.authenticatedUser?.siteAdmin,
     },
     {
         path: '/contexts/:id',

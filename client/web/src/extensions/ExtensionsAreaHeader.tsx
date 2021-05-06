@@ -2,7 +2,8 @@ import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 
-import { PageHeader } from '../components/PageHeader'
+import { PageHeader } from '@sourcegraph/wildcard'
+
 import { ActionButtonDescriptor } from '../util/contributions'
 
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'

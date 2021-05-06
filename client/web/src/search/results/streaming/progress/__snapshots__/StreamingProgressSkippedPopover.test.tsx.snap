@@ -104,7 +104,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               Error loading results
             </span>
             <Memo(ChevronDownIcon)
-              className="icon-inline flex-shrink-0"
+              className="icon-inline flex-shrink-0 streaming-skipped-item__chevron"
             />
           </h4>
         </button>
@@ -218,7 +218,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               Search timed out
             </span>
             <Memo(ChevronLeftIcon)
-              className="icon-inline flex-shrink-0"
+              className="icon-inline flex-shrink-0 streaming-skipped-item__chevron"
             />
           </h4>
         </button>
@@ -332,7 +332,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               10k forked repositories excluded
             </span>
             <Memo(ChevronLeftIcon)
-              className="icon-inline flex-shrink-0"
+              className="icon-inline flex-shrink-0 streaming-skipped-item__chevron"
             />
           </h4>
         </button>
@@ -446,7 +446,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               60k archived repositories excluded
             </span>
             <Memo(ChevronLeftIcon)
-              className="icon-inline flex-shrink-0"
+              className="icon-inline flex-shrink-0 streaming-skipped-item__chevron"
             />
           </h4>
         </button>
@@ -560,7 +560,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               1 archived
             </span>
             <Memo(ChevronLeftIcon)
-              className="icon-inline flex-shrink-0"
+              className="icon-inline flex-shrink-0 streaming-skipped-item__chevron"
             />
           </h4>
         </button>

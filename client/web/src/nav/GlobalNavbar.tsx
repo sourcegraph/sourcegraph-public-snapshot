@@ -72,7 +72,7 @@ interface Props
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        SearchContextProps,
+        Omit<SearchContextProps, 'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable'>,
         CodeMonitoringProps,
         OnboardingTourProps {
     history: H.History
@@ -336,7 +336,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         )}
                     </NavActions>
                 </NavBar>
-                {showSearchBox && <div className="d-flex w-100">{searchNavBar}</div>}
+                {showSearchBox && <div className="d-flex w-100 px-3 py-2 border-bottom">{searchNavBar}</div>}
             </>
         )
     }
