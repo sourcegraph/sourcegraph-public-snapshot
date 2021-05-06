@@ -1,3 +1,5 @@
+@import '../../styles/variables.scss';
+
 // Scale icon size with heading size. 26px font size (h1) -> 22px icon size
 $path-icon-size: (22em / 26);
 
@@ -7,7 +9,7 @@ $path-icon-size: (22em / 26);
     flex-wrap: wrap;
     justify-content: space-between;
 
-    @media (min-width: 768px) {
+    @media (--md-viewport) {
         flex-direction: row;
         align-items: flex-end;
     }
@@ -65,7 +67,7 @@ $path-icon-size: (22em / 26);
 .actions {
     margin-top: 1rem;
 
-    @media (min-width: 768px) {
+    @media (--md-viewport) {
         margin-top: 0;
     }
 }
