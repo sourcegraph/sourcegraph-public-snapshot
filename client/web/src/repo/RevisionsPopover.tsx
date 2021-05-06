@@ -1,6 +1,5 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import * as H from 'history'
-import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
@@ -12,7 +11,6 @@ import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { requestGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../components/FilteredConnection'
@@ -208,8 +206,6 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
 
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
-
-    const [isRedesignEnabled] = useRedesignToggle()
 
     const queryGitBranches = (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
         queryGitReferences({ ...args, repo: props.repo, type: GitRefType.GIT_BRANCH, withBehindAhead: false })
