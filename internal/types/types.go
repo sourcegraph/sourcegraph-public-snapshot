@@ -1232,35 +1232,47 @@ type SearchUsageStatistics struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type SearchUsagePeriod struct {
-	StartTime          time.Time
-	TotalUsers         int32
-	Literal            *SearchEventStatistics
-	Regexp             *SearchEventStatistics
-	After              *SearchCountStatistics
-	Archived           *SearchCountStatistics
-	Author             *SearchCountStatistics
-	Before             *SearchCountStatistics
-	Case               *SearchCountStatistics
-	Commit             *SearchEventStatistics
-	Committer          *SearchCountStatistics
-	Content            *SearchCountStatistics
-	Count              *SearchCountStatistics
-	Diff               *SearchEventStatistics
-	File               *SearchEventStatistics
-	Fork               *SearchCountStatistics
-	Index              *SearchCountStatistics
-	Lang               *SearchCountStatistics
-	Message            *SearchCountStatistics
-	PatternType        *SearchCountStatistics
-	Repo               *SearchEventStatistics
-	Repohascommitafter *SearchCountStatistics
-	Repohasfile        *SearchCountStatistics
-	Repogroup          *SearchCountStatistics
-	Structural         *SearchEventStatistics
-	Symbol             *SearchEventStatistics
-	Timeout            *SearchCountStatistics
-	Type               *SearchCountStatistics
-	SearchModes        *SearchModeUsageStatistics
+	StartTime               time.Time
+	TotalUsers              int32
+	Literal                 *SearchEventStatistics
+	Regexp                  *SearchEventStatistics
+	After                   *SearchCountStatistics
+	Archived                *SearchCountStatistics
+	Author                  *SearchCountStatistics
+	Before                  *SearchCountStatistics
+	Case                    *SearchCountStatistics
+	Commit                  *SearchEventStatistics
+	Committer               *SearchCountStatistics
+	Content                 *SearchCountStatistics
+	Count                   *SearchCountStatistics
+	Diff                    *SearchEventStatistics
+	File                    *SearchEventStatistics
+	Fork                    *SearchCountStatistics
+	Index                   *SearchCountStatistics
+	Lang                    *SearchCountStatistics
+	Message                 *SearchCountStatistics
+	OperatorAnd             *SearchCountStatistics
+	OperatorNot             *SearchCountStatistics
+	OperatorOr              *SearchCountStatistics
+	PatternType             *SearchCountStatistics
+	Repo                    *SearchEventStatistics
+	Repohascommitafter      *SearchCountStatistics
+	Repohasfile             *SearchCountStatistics
+	Repogroup               *SearchCountStatistics
+	RepoContains            *SearchCountStatistics
+	RepoContainsCommitAfter *SearchCountStatistics
+	RepoContainsContent     *SearchCountStatistics
+	RepoContainsFile        *SearchCountStatistics
+	SelectRepo              *SearchCountStatistics
+	SelectFile              *SearchCountStatistics
+	SelectSymbol            *SearchCountStatistics
+	SelectCommitDiffAdded   *SearchCountStatistics
+	SelectCommitDiffRemoved *SearchCountStatistics
+	Structural              *SearchEventStatistics
+	Symbol                  *SearchEventStatistics
+	Timeout                 *SearchCountStatistics
+	Type                    *SearchCountStatistics
+	SearchModes             *SearchModeUsageStatistics
 }
 
 type SearchModeUsageStatistics struct {
