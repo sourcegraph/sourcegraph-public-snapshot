@@ -79,7 +79,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 .map(key => camelCase(key.split('.').pop()))
         )
 
-        return composeValidators<string>(createRequiredValidator('Title is required field for code insight.'), value =>
+        return composeValidators<string>(createRequiredValidator('Title is a required field.'), value =>
             alreadyExistsInsightNames.has(camelCase(value))
                 ? 'An insight with this name already exists. Please set a different name for the new insight.'
                 : undefined
