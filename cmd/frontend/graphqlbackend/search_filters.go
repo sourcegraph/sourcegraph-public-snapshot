@@ -67,11 +67,6 @@ var commonFileFilters = []struct {
 
 // Update internal state for the results in event.
 func (s *SearchFilters) Update(event SearchEvent) {
-	// Avoid work if nothing to observe.
-	if len(event.Results) == 0 {
-		return
-	}
-
 	// Initialize state on first call.
 	if s.filters == nil {
 		s.filters = make(streaming.Filters)
@@ -127,13 +122,14 @@ func (s *SearchFilters) Update(event SearchEvent) {
 	}
 
 	if event.Stats.ExcludedForks > 0 {
-		s.filters.Add("fork:yes", "fork:yes", int32(event.Stats.ExcludedForks), event.Stats.IsLimitHit, "repo")
+		s.filters.Add("fork:yes", "fork:yes", int32(event.Stats.ExcludedForks), event.Stats.IsLimitHit, "dynamic")
 		s.filters.MarkImportant("fork:yes")
 	}
 	if event.Stats.ExcludedArchived > 0 {
-		s.filters.Add("archived:yes", "archived:yes", int32(event.Stats.ExcludedArchived), event.Stats.IsLimitHit, "repo")
+		s.filters.Add("archived:yes", "archived:yes", int32(event.Stats.ExcludedArchived), event.Stats.IsLimitHit, "dynamic")
 		s.filters.MarkImportant("archived:yes")
 	}
+
 	for _, result := range event.Results {
 		if fm, ok := result.ToFileMatch(); ok {
 			rev := ""
