@@ -2,7 +2,7 @@
     position: relative;
     border: 1px solid $input-border-color;
     border-right-color: transparent;
-    background-color: var(--color-bg-1);
+    background-color: var(--input-bg);
     display: flex;
     align-items: center;
     flex: 1 1 auto;
@@ -11,6 +11,7 @@
     .theme-redesign & {
         border-top-left-radius: 3px;
         border-bottom-left-radius: 3px;
+        background-color: var(--color-bg-1);
     }
 
     &:focus-within {

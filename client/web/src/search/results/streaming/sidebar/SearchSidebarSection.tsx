@@ -17,20 +17,16 @@ export const SearchSidebarSection: React.FunctionComponent<{
     // Clear filter when children change
     useEffect(() => setFilter(''), [children])
 
-    const filteredChildren = useMemo(
-        () =>
-            children.filter(child => {
-                if (child.type === FilterLink) {
-                    const props: FilterLinkProps = child.props as FilterLinkProps
-                    return (
-                        (props?.label).toLowerCase().includes(filter.toLowerCase()) ||
-                        (props?.value).toLowerCase().includes(filter.toLowerCase())
-                    )
-                }
-                return true
-            }),
-        [children, filter]
-    )
+    const filteredChildren = children.filter(child => {
+        if (child.type === FilterLink) {
+            const props: FilterLinkProps = child.props as FilterLinkProps
+            return (
+                (props?.label).toLowerCase().includes(filter.toLowerCase()) ||
+                (props?.value).toLowerCase().includes(filter.toLowerCase())
+            )
+        }
+        return true
+    })
 
     const [collapsed, setCollapsed] = useState(false)
 
