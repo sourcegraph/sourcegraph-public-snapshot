@@ -1126,7 +1126,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			},
 			{
 				name:   `search diffs with file start anchor`,
-				query:  `repo:go-diff patterntype:literal type:diff file:^README.md$ sourcegraph.com`,
+				query:  `repo:go-diff patterntype:literal type:diff file:^README.md$ installing`,
 				counts: counts{Commit: 1},
 			},
 			{
