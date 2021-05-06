@@ -3,6 +3,8 @@
 set -euf -o pipefail
 pushd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null
 
+echo "Compiling..."
+
 go install .
 
 echo "          _____                    _____          "

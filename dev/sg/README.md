@@ -41,10 +41,10 @@
 
 ## Quickstart
 
-Run the following to install `sg` from the `main` branch:
+Run the following to install `sg` from inside `sourcegraph/sourcegraph`:
 
 ```
-go install github.com/sourcegraph/sourcegraph/dev/sg@latest
+./dev/sg/install.sh
 ```
 
 Make sure that `$HOME/go/bin` is in your `$PATH`. (If you use `$GOPATH` then `$GOPATH/bin` needs to be in the `$PATH`)
