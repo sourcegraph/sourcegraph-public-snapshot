@@ -85,7 +85,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
 
             <InputField
                 required={true}
-                min={10}
+                min={1}
                 max={100}
                 type="number"
                 title="Threshold of ‘Other’ category"

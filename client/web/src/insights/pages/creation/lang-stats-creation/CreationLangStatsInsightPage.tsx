@@ -66,7 +66,7 @@ export const CreationLangStatsInsightPage: React.FunctionComponent<CreationLangS
                 const newSettingsString = {
                     title: values.title,
                     repository: values.repository.trim(),
-                    threshold: values.threshold,
+                    otherThreshold: values.threshold / 100,
                 }
 
                 const edits = jsonc.modify(
