@@ -288,7 +288,10 @@ func TestGroupBundleData(t *testing.T) {
 		t.Fatalf("unexpected error creating bloom filter: %s", err)
 	}
 	expectedPackageReferences := []semantic.PackageReference{
-		{Scheme: "scheme A", Name: "pkg A", Version: "0.1.0", Filter: expectedFilter},
+		{
+			Package: semantic.Package{Scheme: "scheme A", Name: "pkg A", Version: "0.1.0"},
+			Filter:  expectedFilter,
+		},
 	}
 	if diff := cmp.Diff(expectedPackageReferences, actualBundleData.PackageReferences); diff != "" {
 		t.Errorf("unexpected package references (-want +got):\n%s", diff)
