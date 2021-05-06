@@ -148,7 +148,8 @@ commands:
       - cmd/searcher
 
   caddy:
-    ignoreOutput: true
+    ignoreStdout: true
+    ignoreStderr: true
     cmd: .bin/caddy run --watch --config=dev/Caddyfile
     install: |
       case "$(go env GOOS)" in
@@ -201,7 +202,8 @@ commands:
       VERSION: v1.7.0
 
   syntect_server:
-    ignoreOutput: true
+    ignoreStdout: true
+    ignoreStderr: true
     cmd: |
       docker run --name=syntect_server --rm -p9238:9238 \
       -e WORKERS=1 -e ROCKET_ADDRESS=0.0.0.0 \

@@ -41,7 +41,8 @@ type Command struct {
 	Watch            []string          `yaml:"watch"`
 	InstallDocDarwin string            `yaml:"installDoc.darwin"`
 	InstallDocLinux  string            `yaml:"installDoc.linux"`
-	IgnoreOutput     bool              `yaml:"ignoreOutput"`
+	IgnoreStdout     bool              `yaml:"ignoreStdout"`
+	IgnoreStderr     bool              `yaml:"ignoreStderr"`
 }
 
 type Config struct {
