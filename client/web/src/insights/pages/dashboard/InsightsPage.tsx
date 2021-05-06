@@ -1,3 +1,4 @@
+import { uniqBy } from 'lodash'
 import GearIcon from 'mdi-react/GearIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useEffect, useMemo, useContext } from 'react'
@@ -46,6 +47,16 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
 
     const configureURL = isCreationUIEnabled ? '/insights/create' : '/user/settings'
 
+    // Remove uniqBy when this extension api issue will be resolved
+    // https://github.com/sourcegraph/sourcegraph/issues/20442
+    const filteredViews = useMemo(() => {
+        if (!views) {
+            return views;
+        }
+
+        return uniqBy(views, view => view.id);
+    }, [views])
+
     return (
         <div className="w-100">
             <Page>
@@ -68,12 +79,12 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
                     }
                     className="mb-3"
                 />
-                {views === undefined ? (
+                {filteredViews === undefined ? (
                     <div className="d-flex w-100">
                         <LoadingSpinner className="my-4" />
                     </div>
                 ) : (
-                    <InsightsViewGrid {...props} views={views} />
+                    <InsightsViewGrid {...props} views={filteredViews} />
                 )}
             </Page>
         </div>
