@@ -1,0 +1,23 @@
+.search-context-page {
+    &__repo-revs-row {
+        border-bottom: 1px solid var(--border-color-2);
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+
+        &-repo {
+            word-break: break-word;
+        }
+
+        &-rev {
+            padding-bottom: 0.25rem;
+            margin-bottom: 0.25rem;
+            border-bottom: 1px solid var(--border-color-2);
+            word-break: break-word;
+
+            &:last-child {
+                border-bottom: none;
+                margin-bottom: 0;
+            }
+        }
+    }
+}

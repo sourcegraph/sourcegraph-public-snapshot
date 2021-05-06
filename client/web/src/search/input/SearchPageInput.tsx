@@ -46,7 +46,10 @@ interface Props
         CopyQueryButtonProps,
         Pick<SubmitSearchParameters, 'source'>,
         VersionContextProps,
-        Omit<SearchContextProps, 'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable'>,
+        Omit<
+            SearchContextProps,
+            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
+        >,
         OnboardingTourProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
