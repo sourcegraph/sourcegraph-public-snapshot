@@ -51,10 +51,10 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
     // https://github.com/sourcegraph/sourcegraph/issues/20442
     const filteredViews = useMemo(() => {
         if (!views) {
-            return views;
+            return views
         }
 
-        return uniqBy(views, view => view.id);
+        return uniqBy(views, view => view.id)
     }, [views])
 
     return (
