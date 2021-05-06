@@ -2,6 +2,7 @@
 
 This document with take you through how to resolve a 'dirty database' error. During an upgrade, the database has to be migrated. If the upgrade was interrupted during the migration, this can result in a 'dirty database' error.
 
+The error will look something like this:
 
 ```
 ERROR: Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance: Dirty database version 1528395797. Fix and force version.
