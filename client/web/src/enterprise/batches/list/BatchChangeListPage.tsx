@@ -8,10 +8,10 @@ import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
-import { PageHeader } from '../../../components/PageHeader'
 import {
     ListBatchChange,
     Scalars,
@@ -126,7 +126,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                 path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 className="test-batches-list-page mb-3"
                 actions={<NewBatchChangeButton location={location} />}
-                byline="Run custom code over hundreds of repositories and manage the resulting changesets"
+                description="Run custom code over hundreds of repositories and manage the resulting changesets"
             />
             <BatchChangesListIntro licensed={licensed} />
             <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
