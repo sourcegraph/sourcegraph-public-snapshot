@@ -65,7 +65,7 @@ func TestUserCredential_Authenticator(t *testing.T) {
 		key := et.TestKey{}
 		a := &auth.BasicAuth{Username: "foo", Password: "bar"}
 
-		enc, err := encryptAuthenticator(ctx, key, a)
+		enc, err := EncryptAuthenticator(ctx, key, a)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -82,7 +82,7 @@ func TestUserCredential_Authenticator(t *testing.T) {
 	t.Run("nil key", func(t *testing.T) {
 		a := &auth.BasicAuth{Username: "foo", Password: "bar"}
 
-		enc, err := encryptAuthenticator(ctx, nil, a)
+		enc, err := EncryptAuthenticator(ctx, nil, a)
 		if err != nil {
 			t.Fatal(err)
 		}

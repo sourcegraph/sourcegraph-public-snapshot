@@ -570,7 +570,10 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 
 	defaultReviewers, err := c.FetchDefaultReviewers(ctx, pr)
 	if err != nil {
-		return errors.Wrap(err, "fetching default reviewers")
+		log15.Error("Failed to fetch default reviewers", "err", err)
+		// TODO: Once validated this works alright, we want to properly throw
+		// an error here. For now, we log an error and continue.
+		// return errors.Wrap(err, "fetching default reviewers")
 	}
 
 	reviewers := make([]reviewer, 0, len(defaultReviewers))
