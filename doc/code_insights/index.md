@@ -42,8 +42,8 @@ Code Insights turn your codebase into a database: you can track over time the us
 <p>[TODO ADD CODE INSIGHTS IMAGE]</p>
 
 <div class="cta-group">
-<a class="btn btn-primary" href="quickstart">★ TODO Quickstart</a>
-<a class="btn" href="explanations/introduction_to_batch_changes">TODO</a>
+<a class="btn btn-primary" href="quickstart">★ Quickstart</a>
+<a class="btn" href="explanations/introduction_to_code_insights">Introduction to Code Insights</a>
 <a class="btn" href="references/requirements">TODO</a>
 </div>
 
@@ -75,7 +75,7 @@ Code Insights turn your codebase into a database: you can track over time the us
 - [Types of Code Insights]
 - [User viewing permissions of Code Insights]
 - [Administration and Security of Code Insights]
-- [How Code Insights works]
+- [How Code Insights work]
 
 ## How-tos
 
