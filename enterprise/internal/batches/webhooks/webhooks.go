@@ -109,6 +109,11 @@ func (h Webhook) upsertChangesetEvent(
 		return nil
 	}
 
+	var kind btypes.ChangesetEventKind
+	if kind, err = btypes.ChangesetEventKindFor(ev); err != nil {
+		return err
+	}
+
 	cs, err := tx.GetChangeset(ctx, store.GetChangesetOpts{
 		RepoID:              r.ID,
 		ExternalID:          strconv.FormatInt(pr.ID, 10),
@@ -124,7 +129,7 @@ func (h Webhook) upsertChangesetEvent(
 	now := h.Store.Clock()()
 	event := &btypes.ChangesetEvent{
 		ChangesetID: cs.ID,
-		Kind:        btypes.ChangesetEventKindFor(ev),
+		Kind:        kind,
 		Key:         ev.Key(),
 		CreatedAt:   now,
 		UpdatedAt:   now,

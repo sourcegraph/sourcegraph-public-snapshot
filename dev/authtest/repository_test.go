@@ -1,7 +1,6 @@
 package authtest
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -56,27 +55,19 @@ func TestRepository(t *testing.T) {
 
 	// Wait up to 30 seconds for the private repository to have permissions synced
 	// from the code host at least once.
-	timeout := 30 * time.Second
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	for {
-		select {
-		case <-ctx.Done():
-			t.Fatalf("timed out in %s when waiting for permissions to be synced for %q", timeout, privateRepo)
-		default:
-		}
-
+	err = gqltestutil.Retry(30*time.Second, func() error {
 		permsInfo, err := client.RepositoryPermissionsInfo(privateRepo)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		if !permsInfo.SyncedAt.IsZero() {
-			break
+			return nil
 		}
-
-		time.Sleep(100 * time.Millisecond)
+		return gqltestutil.ErrContinueRetry
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	// Create a test user (authtest-user-repository) which is not a site admin, the

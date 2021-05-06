@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -27,7 +28,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 
 	setupKey := func() func() {
 		keyring.MockDefault(keyring.Ring{
-			ExternalServiceKey: testKey{},
+			ExternalServiceKey: et.TestKey{},
 		})
 
 		return func() {
@@ -145,7 +146,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		}
 		defer rows.Close()
 
-		key := testKey{}
+		key := et.TestKey{}
 
 		var i int
 		for rows.Next() {
@@ -363,7 +364,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 
 	setupKey := func() func() {
 		keyring.MockDefault(keyring.Ring{
-			UserExternalAccountKey: testKey{},
+			UserExternalAccountKey: et.TestKey{},
 		})
 
 		return func() {
@@ -494,7 +495,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 		}
 		defer rows.Close()
 
-		key := &testKey{}
+		key := &et.TestKey{}
 
 		var i int
 		for rows.Next() {

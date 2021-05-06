@@ -22,7 +22,9 @@ type DBStore interface {
 	DeleteOldIndexes(ctx context.Context, maxAge time.Duration, now time.Time) (int, error)
 	DirtyRepositories(ctx context.Context) (map[int]int, error)
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
-	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
+	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (int, error)
+	StaleSourcedCommits(ctx context.Context, threshold time.Duration, limit int, now time.Time) ([]dbstore.SourcedCommits, error)
+	RefreshCommitResolvability(ctx context.Context, repositoryID int, commit string, delete bool, now time.Time) (int, int, error)
 }
 
 type DBStoreShim struct {

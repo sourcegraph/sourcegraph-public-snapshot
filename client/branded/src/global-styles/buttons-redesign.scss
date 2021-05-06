@@ -20,7 +20,7 @@
         }
 
         &:not(:disabled):not(.disabled) {
-            &:hover {
+            &:hover:not(.focus):not(:focus) {
                 color: $text-color;
                 background-color: $dark-color-variant;
             }
@@ -29,6 +29,7 @@
             &.focus,
             &:active,
             &.active {
+                color: $text-color;
                 background-color: $base-color;
                 border-color: var(--body-bg);
 
@@ -61,7 +62,7 @@
                 fill: $base-color;
             }
 
-            &:hover {
+            &:hover:not(.focus):not(:focus) {
                 background-color: var(--body-bg);
                 @at-root #{selector-append('.theme-light', &)} {
                     color: $dark-color-variant;
@@ -81,6 +82,9 @@
             &.focus,
             &:active,
             &.active {
+                color: var(--body-color);
+                border-color: var(--body-bg);
+                background-color: var(--body-bg);
                 @at-root #{selector-append('.theme-light', &)} {
                     box-shadow: 0 0 0 2px $light-color-variant;
                 }
@@ -180,7 +184,7 @@
         }
 
         &:not(:disabled):not(.disabled) {
-            &:hover {
+            &:hover:not(.focus):not(:focus) {
                 color: var(--body-color);
             }
 

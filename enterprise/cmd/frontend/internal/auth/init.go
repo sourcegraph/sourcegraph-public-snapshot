@@ -14,16 +14,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/saml"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func init() {
+// Init must be called by the frontend to initialize the auth middlewares.
+func Init(db dbutil.DB) {
 	// Register enterprise auth middleware
 	auth.RegisterMiddlewares(
 		openidconnect.Middleware,
 		saml.Middleware,
 		httpheader.Middleware,
-		githuboauth.Middleware,
-		gitlaboauth.Middleware,
+		githuboauth.Middleware(db),
+		gitlaboauth.Middleware(db),
 	)
 	// Register app-level sign-out handler
 	app.RegisterSSOSignOutHandler(ssoSignOutHandler)

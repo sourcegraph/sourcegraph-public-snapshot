@@ -216,7 +216,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
         aria-expanded="false"
         aria-haspopup="true"
         aria-label="Feedback"
-        class="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle nav-link"
+        class="btn btn-sm text-decoration-none feedback-prompt__toggle btn-link"
       >
         <svg
           class="mdi-icon d-lg-none icon-inline"
@@ -537,7 +537,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button test-command-list-button btn btn-link "
+      class="test-command-list-button command-list__popover-button btn btn-link"
       id="command-list-popover-button-7"
       role="button"
     >
@@ -585,7 +585,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
             class="align-items-center d-flex"
           >
             <svg
-              class="mdi-icon user-avatar icon-inline"
+              class="mdi-icon user-avatar icon-inline user-nav-item__avatar"
               fill="currentColor"
               height="24"
               id="target-user-avatar"
@@ -995,7 +995,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
         aria-expanded="false"
         aria-haspopup="true"
         aria-label="Feedback"
-        class="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle nav-link"
+        class="btn btn-sm text-decoration-none feedback-prompt__toggle btn-link"
       >
         <svg
           class="mdi-icon d-lg-none icon-inline"
@@ -1316,7 +1316,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button test-command-list-button btn btn-link "
+      class="test-command-list-button command-list__popover-button btn btn-link"
       id="command-list-popover-button-8"
       role="button"
     >
@@ -1364,7 +1364,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
             class="align-items-center d-flex"
           >
             <svg
-              class="mdi-icon user-avatar icon-inline"
+              class="mdi-icon user-avatar icon-inline user-nav-item__avatar"
               fill="currentColor"
               height="24"
               id="target-user-avatar"
@@ -1784,7 +1784,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
         aria-expanded="false"
         aria-haspopup="true"
         aria-label="Feedback"
-        class="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle nav-link"
+        class="btn btn-sm text-decoration-none feedback-prompt__toggle btn-link"
       >
         <svg
           class="mdi-icon d-lg-none icon-inline"
@@ -2105,7 +2105,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button test-command-list-button btn btn-link "
+      class="test-command-list-button command-list__popover-button btn btn-link"
       id="command-list-popover-button-5"
       role="button"
     >
@@ -2153,7 +2153,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
             class="align-items-center d-flex"
           >
             <svg
-              class="mdi-icon user-avatar icon-inline"
+              class="mdi-icon user-avatar icon-inline user-nav-item__avatar"
               fill="currentColor"
               height="24"
               id="target-user-avatar"
@@ -2544,7 +2544,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
         aria-expanded="false"
         aria-haspopup="true"
         aria-label="Feedback"
-        class="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle nav-link"
+        class="btn btn-sm text-decoration-none feedback-prompt__toggle btn-link"
       >
         <svg
           class="mdi-icon d-lg-none icon-inline"
@@ -2865,7 +2865,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button test-command-list-button btn btn-link "
+      class="test-command-list-button command-list__popover-button btn btn-link"
       id="command-list-popover-button-6"
       role="button"
     >
@@ -2913,7 +2913,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
             class="align-items-center d-flex"
           >
             <svg
-              class="mdi-icon user-avatar icon-inline"
+              class="mdi-icon user-avatar icon-inline user-nav-item__avatar"
               fill="currentColor"
               height="24"
               id="target-user-avatar"
@@ -3394,7 +3394,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button test-command-list-button btn btn-link "
+      class="test-command-list-button command-list__popover-button btn btn-link"
       id="command-list-popover-button-3"
       role="button"
     >
@@ -3731,7 +3731,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button test-command-list-button btn btn-link "
+      class="test-command-list-button command-list__popover-button btn btn-link"
       id="command-list-popover-button-4"
       role="button"
     >
@@ -4035,7 +4035,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button test-command-list-button btn btn-link "
+      class="test-command-list-button command-list__popover-button btn btn-link"
       id="command-list-popover-button-1"
       role="button"
     >
@@ -4329,7 +4329,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
     class="nav-item"
   >
     <span
-      class="command-list__popover-button test-command-list-button btn btn-link "
+      class="test-command-list-button command-list__popover-button btn btn-link"
       id="command-list-popover-button-2"
       role="button"
     >

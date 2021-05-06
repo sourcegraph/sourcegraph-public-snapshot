@@ -13,7 +13,7 @@ export interface WebStoryProps extends MemoryRouterProps {
 }
 
 // Prepend global CSS styles to document head to keep them before CSS modules
-function prependCSSToDocumentHead(css: string): HTMLStyleElement {
+export function prependCSSToDocumentHead(css: string): HTMLStyleElement {
     const styleTag = document.createElement('style')
     styleTag.textContent = css
     document.head.prepend(styleTag)

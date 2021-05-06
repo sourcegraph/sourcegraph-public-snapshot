@@ -1,3 +1,10 @@
+.theme-redesign {
+    .user-nav-item__avatar {
+        height: 1.5rem;
+        width: 1.5rem;
+    }
+}
+
 .user-nav-item {
     &__dropdown-menu {
         min-width: 12rem;

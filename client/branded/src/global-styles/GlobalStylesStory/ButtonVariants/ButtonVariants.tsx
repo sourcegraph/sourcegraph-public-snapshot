@@ -4,9 +4,10 @@ import { flow, startCase } from 'lodash'
 import React from 'react'
 import 'storybook-addon-designs'
 
+import { SEMANTIC_COLORS } from '../constants'
+import { preventDefault } from '../utils'
+
 import styles from './ButtonVariants.module.scss'
-import { SEMANTIC_COLORS } from './constants'
-import { preventDefault } from './utils'
 
 interface ButtonVariantsProps {
     variantType?: 'btn' | 'btn-outline'

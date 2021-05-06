@@ -114,6 +114,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 
 	repo := &types.Repo{
 		Metadata: &bitbucketserver.Repo{
+			ID:      10070,
 			Slug:    "automation-testing",
 			Project: &bitbucketserver.Project{Key: "SOUR"},
 		},

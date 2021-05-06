@@ -14,7 +14,7 @@ export const getIsRedesignEnabled = (): boolean => localStorage.getItem(REDESIGN
  */
 export const useRedesignToggle = (initialValue = false): [boolean, (value: boolean) => void] => {
     const subject = useMemo(() => new LocalStorageSubject<boolean>(REDESIGN_TOGGLE_KEY, initialValue), [initialValue])
-    const value = useObservable(subject) as boolean // Since subject has an initial value, the observable should never be undefined
+    const value = useObservable(subject) ?? subject.value
     const setValue = useCallback((value: boolean) => subject.next(value), [subject])
     return [value, setValue]
 }

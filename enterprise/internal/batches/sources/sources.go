@@ -315,7 +315,7 @@ func loadUserCredential(ctx context.Context, s SourcerStore, userID int32, repo 
 		return nil, err
 	}
 	if cred != nil {
-		return cred.Credential, nil
+		return cred.Authenticator(ctx)
 	}
 	return nil, nil
 }

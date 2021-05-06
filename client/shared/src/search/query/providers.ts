@@ -41,6 +41,7 @@ export function getProviders(
         globbing: boolean
         enableSmartQuery: boolean
         interpretComments?: boolean
+        isSourcegraphDotCom?: boolean
     }
 ): SearchFieldProviders {
     const scannedQueries = searchQueries.pipe(
@@ -96,7 +97,8 @@ export function getProviders(
                                       scannedQuery.scanned.term,
                                       position,
                                       debouncedDynamicSuggestions,
-                                      options.globbing
+                                      options.globbing,
+                                      options.isSourcegraphDotCom
                                   )
                         ),
                         takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))

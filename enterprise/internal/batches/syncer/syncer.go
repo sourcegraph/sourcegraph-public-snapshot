@@ -456,7 +456,10 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source sources.Chan
 		}
 	}
 
-	events := c.Events()
+	events, err := c.Events()
+	if err != nil {
+		return err
+	}
 	state.SetDerivedState(ctx, syncStore.Repos(), c, events)
 
 	tx, err := syncStore.Transact(ctx)
