@@ -1121,3 +1121,15 @@ type SearchContextRepositoryRevisions struct {
 	Repo      RepoName
 	Revisions []string
 }
+
+type FeatureFlag struct {
+	Name string
+
+	// Rollout is the number of users per 10000 for which this feature flag
+	// will be enabled.
+	Rollout int
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt *time.Time
+}

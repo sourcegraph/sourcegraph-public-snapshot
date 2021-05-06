@@ -67,6 +67,7 @@ func newExternalHTTPHandler(db dbutil.DB, schema *graphql.Schema, gitHubWebhook 
 	appHandler = authMiddlewares.App(appHandler)                           // 🚨 SECURITY: auth middleware
 	appHandler = session.CookieMiddleware(appHandler)                      // app accepts cookies
 	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, appHandler) // app accepts access tokens
+	appHandler = featureflag.Feature(db, appHandler)                       // app accepts access tokens
 
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
