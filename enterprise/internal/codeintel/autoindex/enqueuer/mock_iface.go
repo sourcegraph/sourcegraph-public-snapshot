@@ -9,12 +9,13 @@ import (
 	"time"
 
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	semantic "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/autoindex/enqueuer)
+// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer)
 // used for unit testing.
 type MockDBStore struct {
 	// DirtyRepositoriesFunc is an instance of a mock function object
@@ -1468,7 +1469,7 @@ func (c DBStoreUpdateIndexableRepositoryFuncCall) Results() []interface{} {
 
 // MockEnqueuer is a mock implementation of the Enqueuer interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/autoindex/enqueuer)
+// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer)
 // used for unit testing.
 type MockEnqueuer struct {
 	// ForceQueueIndexFunc is an instance of a mock function object
@@ -1477,6 +1478,9 @@ type MockEnqueuer struct {
 	// QueueIndexFunc is an instance of a mock function object controlling
 	// the behavior of the method QueueIndex.
 	QueueIndexFunc *EnqueuerQueueIndexFunc
+	// QueueIndexesForPackagesFunc is an instance of a mock function object
+	// controlling the behavior of the method QueueIndexesForPackages.
+	QueueIndexesForPackagesFunc *EnqueuerQueueIndexesForPackagesFunc
 }
 
 // NewMockEnqueuer creates a new mock of the Enqueuer interface. All methods
@@ -1493,6 +1497,11 @@ func NewMockEnqueuer() *MockEnqueuer {
 				return nil
 			},
 		},
+		QueueIndexesForPackagesFunc: &EnqueuerQueueIndexesForPackagesFunc{
+			defaultHook: func(context.Context, []semantic.PackageReference) error {
+				return nil
+			},
+		},
 	}
 }
 
@@ -1505,6 +1514,9 @@ func NewMockEnqueuerFrom(i Enqueuer) *MockEnqueuer {
 		},
 		QueueIndexFunc: &EnqueuerQueueIndexFunc{
 			defaultHook: i.QueueIndex,
+		},
+		QueueIndexesForPackagesFunc: &EnqueuerQueueIndexesForPackagesFunc{
+			defaultHook: i.QueueIndexesForPackages,
 		},
 	}
 }
@@ -1720,9 +1732,118 @@ func (c EnqueuerQueueIndexFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// EnqueuerQueueIndexesForPackagesFunc describes the behavior when the
+// QueueIndexesForPackages method of the parent MockEnqueuer instance is
+// invoked.
+type EnqueuerQueueIndexesForPackagesFunc struct {
+	defaultHook func(context.Context, []semantic.PackageReference) error
+	hooks       []func(context.Context, []semantic.PackageReference) error
+	history     []EnqueuerQueueIndexesForPackagesFuncCall
+	mutex       sync.Mutex
+}
+
+// QueueIndexesForPackages delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockEnqueuer) QueueIndexesForPackages(v0 context.Context, v1 []semantic.PackageReference) error {
+	r0 := m.QueueIndexesForPackagesFunc.nextHook()(v0, v1)
+	m.QueueIndexesForPackagesFunc.appendCall(EnqueuerQueueIndexesForPackagesFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// QueueIndexesForPackages method of the parent MockEnqueuer instance is
+// invoked and the hook queue is empty.
+func (f *EnqueuerQueueIndexesForPackagesFunc) SetDefaultHook(hook func(context.Context, []semantic.PackageReference) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// QueueIndexesForPackages method of the parent MockEnqueuer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnqueuerQueueIndexesForPackagesFunc) PushHook(hook func(context.Context, []semantic.PackageReference) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerQueueIndexesForPackagesFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []semantic.PackageReference) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerQueueIndexesForPackagesFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []semantic.PackageReference) error {
+		return r0
+	})
+}
+
+func (f *EnqueuerQueueIndexesForPackagesFunc) nextHook() func(context.Context, []semantic.PackageReference) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerQueueIndexesForPackagesFunc) appendCall(r0 EnqueuerQueueIndexesForPackagesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnqueuerQueueIndexesForPackagesFuncCall
+// objects describing the invocations of this function.
+func (f *EnqueuerQueueIndexesForPackagesFunc) History() []EnqueuerQueueIndexesForPackagesFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerQueueIndexesForPackagesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerQueueIndexesForPackagesFuncCall is an object that describes an
+// invocation of method QueueIndexesForPackages on an instance of
+// MockEnqueuer.
+type EnqueuerQueueIndexesForPackagesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []semantic.PackageReference
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerQueueIndexesForPackagesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerQueueIndexesForPackagesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // MockGitserverClient is a mock implementation of the GitserverClient
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/autoindex/enqueuer)
+// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer)
 // used for unit testing.
 type MockGitserverClient struct {
 	// FileExistsFunc is an instance of a mock function object controlling

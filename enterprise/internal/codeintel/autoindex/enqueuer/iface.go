@@ -6,12 +6,14 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
 type Enqueuer interface {
 	QueueIndex(ctx context.Context, repositoryID int) (err error)
 	ForceQueueIndex(ctx context.Context, repositoryID int) (err error)
+	QueueIndexesForPackages(ctx context.Context, packages []semantic.PackageReference) error
 }
 
 type DBStore interface {
