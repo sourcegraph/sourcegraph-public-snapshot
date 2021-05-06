@@ -3,18 +3,21 @@ import { camelCase } from 'lodash'
 import React, { useMemo } from 'react'
 import { noop } from 'rxjs'
 
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
+
 import { ErrorAlert } from '../../../../../components/alerts'
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import { useField, Validator } from '../../hooks/useField'
 import { FORM_ERROR, SubmissionErrors, useForm } from '../../hooks/useForm'
 import { DataSeries } from '../../types'
-import { InputField } from '../form-field/FormField'
 import { FormGroup } from '../form-group/FormGroup'
+import { InputField } from '../form-input-field/InputField'
 import { FormRadioInput } from '../form-radio-input/FormRadioInput'
 import { FormSeries } from '../form-series/FormSeries'
 import { createRequiredValidator, composeValidators } from '../validators'
 
 import styles from './CreationSearchInsightForm.module.scss'
+import { InsightTypeSuffix } from '../../../../core/types'
 
 const repositoriesFieldValidator = createRequiredValidator('Repositories is a required field.')
 const requiredStepValueField = createRequiredValidator('Please specify a step between points.')
@@ -34,10 +37,13 @@ const INITIAL_VALUES: Partial<CreateInsightFormFields> = {
     repositories: '',
 }
 
+/** Default value for final user/org settings cascade */
+const DEFAULT_FINAL_SETTINGS = {}
+
 /** Public API of code insight creation form. */
 export interface CreationSearchInsightFormProps {
     /** Final settings cascade. Used for title field validation. */
-    settings: { [key: string]: any }
+    settings?: Settings | null
     /** Custom class name for root form element. */
     className?: string
     /** Submit handler for form element. */
@@ -73,9 +79,9 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
     // We can't have two or more insights with the same name, since we rely on name as on id of insights.
     const titleValidator = useMemo(() => {
         const alreadyExistsInsightNames = new Set(
-            Object.keys(settings)
+            Object.keys(settings ?? DEFAULT_FINAL_SETTINGS)
                 // According to our convention about insights name <insight type>.insight.<insight name>
-                .filter(key => key.startsWith('searchInsights.insight'))
+                .filter(key => key.startsWith(InsightTypeSuffix.search))
                 .map(key => camelCase(key.split('.').pop()))
         )
 

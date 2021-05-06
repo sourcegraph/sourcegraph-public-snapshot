@@ -6,7 +6,7 @@ import { useField } from '../../hooks/useField'
 import { useForm } from '../../hooks/useForm'
 import { DataSeries } from '../../types'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
-import { InputField } from '../form-field/FormField'
+import { InputField } from '../form-input-field/InputField'
 import { createRequiredValidator } from '../validators'
 
 const requiredNameField = createRequiredValidator('Name is a required field for data series.')

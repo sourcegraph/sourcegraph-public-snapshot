@@ -1,5 +1,5 @@
 import * as jsonc from '@sqs/jsonc-parser'
-import classnames from 'classnames';
+import classnames from 'classnames'
 import { camelCase } from 'lodash'
 import React, { useCallback, useContext } from 'react'
 import { Redirect } from 'react-router'
@@ -20,14 +20,13 @@ import {
 } from './components/creation-search-insight-form/CreationSearchInsightForm'
 import styles from './CreationSearchInsightPage.module.scss'
 import { FORM_ERROR } from './hooks/useForm'
+import { InsightTypeSuffix } from '../../core/types'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
     eol: '\n',
     insertSpaces: true,
     tabSize: 2,
 }
-
-const DEFAULT_FINAL_SETTINGS = {}
 
 export interface CreationSearchInsightPageProps
     extends PlatformContextProps<'updateSettings'>,
@@ -84,7 +83,7 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
                 const edits = jsonc.modify(
                     settings.contents,
                     // According to our naming convention <type>.insight.<name>
-                    [`searchInsights.insight.${camelCase(values.title)}`],
+                    [`${InsightTypeSuffix.search}.${camelCase(values.title)}`],
                     newSettingsString,
                     { formattingOptions: defaultFormattingOptions }
                 )
@@ -107,6 +106,7 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
         history.push('/insights')
     }, [history])
 
+    // TODO [VK] Move this logic to high order component to simplify logic here
     if (authenticatedUser === null) {
         return <Redirect to="/" />
     }
@@ -132,7 +132,7 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
 
             <CreationSearchInsightForm
                 className="pb-5"
-                settings={settingsCascade.final ?? DEFAULT_FINAL_SETTINGS}
+                settings={settingsCascade.final}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
             />
