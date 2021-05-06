@@ -69,6 +69,7 @@ Triggers:
  created_at            | timestamp with time zone |           | not null | now()
  updated_at            | timestamp with time zone |           | not null | now()
  credential_enc        | bytea                    |           |          | 
+ encryption_key_id     | text                     |           | not null | ''::text
 Indexes:
     "batch_changes_site_credentials_pkey" PRIMARY KEY, btree (id)
     "batch_changes_site_credentials_unique" UNIQUE, btree (external_service_type, external_service_id)
@@ -1493,6 +1494,7 @@ Foreign-key constraints:
  updated_at            | timestamp with time zone |           | not null | now()
  credential_enc        | bytea                    |           |          | 
  ssh_migration_applied | boolean                  |           | not null | false
+ encryption_key_id     | text                     |           | not null | ''::text
 Indexes:
     "user_credentials_pkey" PRIMARY KEY, btree (id)
     "user_credentials_domain_user_id_external_service_type_exter_key" UNIQUE CONSTRAINT, btree (domain, user_id, external_service_type, external_service_id)

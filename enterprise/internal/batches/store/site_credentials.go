@@ -33,10 +33,17 @@ func (s *Store) CreateSiteCredential(ctx context.Context, c *btypes.SiteCredenti
 
 var createSiteCredentialQueryFmtstr = `
 -- source: enterprise/internal/batches/store/site_credentials.go:CreateSiteCredential
-INSERT INTO
-	batch_changes_site_credentials (external_service_type, external_service_id, credential, credential_enc, created_at, updated_at)
+INSERT INTO	batch_changes_site_credentials (
+	external_service_type,
+	external_service_id,
+	credential,
+	credential_enc,
+	encryption_key_id,
+	created_at,
+	updated_at
+)
 VALUES
-	(%s, %s, %s, %s, %s, %s)
+	(%s, %s, %s, %s, %s, %s, %s)
 RETURNING
 	%s
 `
@@ -49,6 +56,7 @@ func createSiteCredentialQuery(c *btypes.SiteCredential) *sqlf.Query {
 		c.ExternalServiceID,
 		&database.NullAuthenticator{A: &unencrypted},
 		encrypted,
+		c.EncryptionKeyID,
 		c.CreatedAt,
 		c.UpdatedAt,
 		sqlf.Join(siteCredentialColumns, ","),
@@ -213,6 +221,7 @@ SET
 	external_service_id = %s,
 	credential = %s,
 	credential_enc = %s,
+	encryption_key_id = %s,
 	created_at = %s,
 	updated_at = %s
 WHERE
@@ -229,6 +238,7 @@ func (s *Store) updateSiteCredentialQuery(c *btypes.SiteCredential) *sqlf.Query 
 		c.ExternalServiceID,
 		&database.NullAuthenticator{A: &unencrypted},
 		encrypted,
+		c.EncryptionKeyID,
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
@@ -242,6 +252,7 @@ var siteCredentialColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_service_id"),
 	sqlf.Sprintf("credential"),
 	sqlf.Sprintf("credential_enc"),
+	sqlf.Sprintf("encryption_key_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
@@ -259,6 +270,7 @@ func scanSiteCredential(c *btypes.SiteCredential, sc scanner) error {
 		&c.ExternalServiceID,
 		&na,
 		&encrypted,
+		&c.EncryptionKeyID,
 		&dbutil.NullTime{Time: &c.CreatedAt},
 		&dbutil.NullTime{Time: &c.UpdatedAt},
 	); err != nil {
