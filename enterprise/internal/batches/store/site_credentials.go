@@ -33,7 +33,7 @@ func (s *Store) CreateSiteCredential(ctx context.Context, c *btypes.SiteCredenti
 
 var createSiteCredentialQueryFmtstr = `
 -- source: enterprise/internal/batches/store/site_credentials.go:CreateSiteCredential
-INSERT INTO	batch_changes_site_credentials (
+INSERT INTO batch_changes_site_credentials (
 	external_service_type,
 	external_service_id,
 	credential,
