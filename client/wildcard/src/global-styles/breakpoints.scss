@@ -1,3 +1,6 @@
+// To use breakpoints mixins in CSS modules import this file via:
+// @import 'wildcard/src/global-styles/breakpoints';
+
 @custom-media --xs-breakpoint-up (min-width: none);
 @custom-media --sm-breakpoint-up (min-width: 576px);
 @custom-media --md-breakpoint-up (min-width: 768px);
