@@ -6,7 +6,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
@@ -37,25 +36,22 @@ INSERT INTO	batch_changes_site_credentials (
 	external_service_type,
 	external_service_id,
 	credential,
-	credential_enc,
 	encryption_key_id,
 	created_at,
 	updated_at
 )
 VALUES
-	(%s, %s, %s, %s, %s, %s, %s)
+	(%s, %s, %s, %s, %s, %s)
 RETURNING
 	%s
 `
 
 func createSiteCredentialQuery(c *btypes.SiteCredential) *sqlf.Query {
-	unencrypted, encrypted := c.GetRawCredential()
 	return sqlf.Sprintf(
 		createSiteCredentialQueryFmtstr,
 		c.ExternalServiceType,
 		c.ExternalServiceID,
-		&database.NullAuthenticator{A: &unencrypted},
-		encrypted,
+		c.EncryptedCredential,
 		c.EncryptionKeyID,
 		c.CreatedAt,
 		c.UpdatedAt,
@@ -148,7 +144,7 @@ type ListSiteCredentialsOpts struct {
 
 	// TODO(batch-changes-site-credential-encryption): remove when no longer
 	// needed.
-	OnlyUnencrypted bool
+	RequiresMigration bool
 }
 
 func (s *Store) ListSiteCredentials(ctx context.Context, opts ListSiteCredentialsOpts) (cs []*btypes.SiteCredential, next int64, err error) {
@@ -183,8 +179,8 @@ ORDER BY external_service_type ASC, external_service_id ASC
 
 func listSiteCredentialsQuery(opts ListSiteCredentialsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	if opts.OnlyUnencrypted {
-		preds = append(preds, sqlf.Sprintf("credential_enc IS NULL"))
+	if opts.RequiresMigration {
+		preds = append(preds, sqlf.Sprintf("encryption_key_id IN ('', %s)", btypes.SiteCredentialPlaceholderEncryptionKeyID))
 	}
 
 	return sqlf.Sprintf(
@@ -220,7 +216,6 @@ SET
 	external_service_type = %s,
 	external_service_id = %s,
 	credential = %s,
-	credential_enc = %s,
 	encryption_key_id = %s,
 	created_at = %s,
 	updated_at = %s
@@ -231,13 +226,11 @@ RETURNING
 `
 
 func (s *Store) updateSiteCredentialQuery(c *btypes.SiteCredential) *sqlf.Query {
-	unencrypted, encrypted := c.GetRawCredential()
 	return sqlf.Sprintf(
 		updateSiteCredentialQueryFmtstr,
 		c.ExternalServiceType,
 		c.ExternalServiceID,
-		&database.NullAuthenticator{A: &unencrypted},
-		encrypted,
+		c.EncryptedCredential,
 		c.EncryptionKeyID,
 		c.CreatedAt,
 		c.UpdatedAt,
@@ -251,32 +244,19 @@ var siteCredentialColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_service_type"),
 	sqlf.Sprintf("external_service_id"),
 	sqlf.Sprintf("credential"),
-	sqlf.Sprintf("credential_enc"),
 	sqlf.Sprintf("encryption_key_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
 
 func scanSiteCredential(c *btypes.SiteCredential, sc scanner) error {
-	var (
-		encrypted   []byte
-		unencrypted auth.Authenticator
-	)
-	na := database.NullAuthenticator{A: &unencrypted}
-
-	if err := sc.Scan(
+	return sc.Scan(
 		&c.ID,
 		&c.ExternalServiceType,
 		&c.ExternalServiceID,
-		&na,
-		&encrypted,
+		&c.EncryptedCredential,
 		&c.EncryptionKeyID,
 		&dbutil.NullTime{Time: &c.CreatedAt},
 		&dbutil.NullTime{Time: &c.UpdatedAt},
-	); err != nil {
-		return err
-	}
-
-	c.SetRawCredential(unencrypted, encrypted)
-	return nil
+	)
 }

@@ -83,9 +83,10 @@ func (uc *UserCredential) SetAuthenticator(ctx context.Context, a auth.Authentic
 	return nil
 }
 
-// This const block contains the valid domain values for user credentials.
 const (
-	UserCredentialDomainBatches              = "batches"
+	// Valid domain values for user credentials.
+	UserCredentialDomainBatches = "batches"
+
 	UserCredentialPlaceholderEncryptionKeyID = "previously-migrated"
 )
 

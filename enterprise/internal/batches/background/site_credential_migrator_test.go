@@ -6,11 +6,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -32,7 +31,7 @@ func TestSiteCredentialMigrator(t *testing.T) {
 
 	// Now we'll set up enough users to validate that it takes multiple Up
 	// invocations.
-	for i := 0; i < siteCredentialMigrationCountPerRun*2; i++ {
+	for i := 0; i < siteCredentialMigrationCountPerRun; i++ {
 		cred := &btypes.SiteCredential{
 			ExternalServiceType: extsvc.TypeGitLab,
 			ExternalServiceID:   fmt.Sprintf("https://%d.gitlab.com/", i),
@@ -43,7 +42,29 @@ func TestSiteCredentialMigrator(t *testing.T) {
 
 		// Override the saved credential to only include the unencrypted
 		// authenticator.
-		cred.SetRawCredential(a, nil)
+		enc, err := database.EncryptAuthenticator(ctx, nil, a)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		cred.EncryptedCredential = enc
+		cred.EncryptionKeyID = ""
+		if err := cstore.UpdateSiteCredential(ctx, cred); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for i := 0; i < siteCredentialMigrationCountPerRun; i++ {
+		cred := &btypes.SiteCredential{
+			ExternalServiceType: extsvc.TypeGitLab,
+			ExternalServiceID:   fmt.Sprintf("https://%d.gitlab.com/", i+siteCredentialMigrationCountPerRun),
+		}
+		if err := cstore.CreateSiteCredential(ctx, cred, a); err != nil {
+			t.Fatal(err)
+		}
+
+		// Override the saved credential to only include the placeholder
+		// encryption key ID.
+		cred.EncryptionKeyID = btypes.SiteCredentialPlaceholderEncryptionKeyID
 		if err := cstore.UpdateSiteCredential(ctx, cred); err != nil {
 			t.Fatal(err)
 		}
@@ -87,10 +108,12 @@ func TestSiteCredentialMigrator(t *testing.T) {
 
 		// Let's get down into the weeds and verify that there are no non-NULL
 		// credential fields.
-		if count, _, err := basestore.ScanFirstInt(cstore.Query(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM user_credentials WHERE credential IS NOT NULL"))); err != nil {
-			t.Errorf("cannot check unencrypted credentials: %v", err)
-		} else if count != 0 {
-			t.Errorf("unexpected number of unencrypted credentials: have=%d want=0", count)
+		if creds, _, err := cstore.ListSiteCredentials(ctx, store.ListSiteCredentialsOpts{
+			RequiresMigration: true,
+		}); err != nil {
+			t.Fatal(err)
+		} else if len(creds) > 0 {
+			t.Errorf("unexpected number of unencrypted credentials: have=%d want=0", len(creds))
 		}
 	})
 

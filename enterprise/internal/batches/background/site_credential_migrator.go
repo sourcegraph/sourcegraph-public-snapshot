@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -21,7 +22,10 @@ var _ oobmigration.Migrator = &siteCredentialMigrator{}
 
 func (m *siteCredentialMigrator) Progress(ctx context.Context) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(
-		m.store.Query(ctx, sqlf.Sprintf(siteCredentialMigratorProgressQuery)),
+		m.store.Query(ctx, sqlf.Sprintf(
+			siteCredentialMigratorProgressQuery,
+			btypes.SiteCredentialPlaceholderEncryptionKeyID,
+		)),
 	)
 	if err != nil {
 		return 0, err
@@ -33,7 +37,7 @@ func (m *siteCredentialMigrator) Progress(ctx context.Context) (float64, error) 
 const siteCredentialMigratorProgressQuery = `
 -- source: enterprise/internal/batches/site_credential_migrator.go:Progress
 SELECT CASE c2.count WHEN 0 THEN 1 ELSE CAST((c2.count - c1.count) AS float) / CAST(c2.count AS float) END FROM
-	(SELECT COUNT(*) as count FROM batch_changes_site_credentials WHERE credential_enc IS NULL) c1,
+	(SELECT COUNT(*) as count FROM batch_changes_site_credentials WHERE encryption_key_id IN ('', %s)) c1,
 	(SELECT COUNT(*) as count FROM batch_changes_site_credentials) c2
 `
 
@@ -45,8 +49,8 @@ func (m *siteCredentialMigrator) Up(ctx context.Context) error {
 
 	f := func() error {
 		credentials, _, err := tx.ListSiteCredentials(ctx, store.ListSiteCredentialsOpts{
-			LimitOpts:       store.LimitOpts{Limit: siteCredentialMigrationCountPerRun},
-			OnlyUnencrypted: true,
+			LimitOpts:         store.LimitOpts{Limit: siteCredentialMigrationCountPerRun},
+			RequiresMigration: true,
 		})
 		if err != nil {
 			return errors.Wrap(err, "listing site credentials")
