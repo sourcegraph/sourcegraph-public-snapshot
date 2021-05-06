@@ -106,7 +106,7 @@ changesetTemplate:
     <td>The deployment controller (part of the Kubernetes cluster) consults the DeploymentSpec and continuously computes the desired state.</td>
     <td>
       <p>The <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> (running on your local machine, not on the Sourcegraph server) consults the batch spec and computes the desired state when you invoke <code>src batch apply</code>.</p>
-      <p><strong>Difference vs. Kubernetes:</strong> A batch change's desired state is computed locally, not on the server. It requires executing arbitrary commands, which is not yet supported by the Sourcegraph server. See Batch Changes known issue "<a href="../../../batch_changes#server-execution">Batch Changes steps are run locally...</a>".</p>
+      <p><strong>Difference vs. Kubernetes:</strong> A batch change's desired state is computed locally, not on the server. It requires executing arbitrary commands, which is not yet supported by the Sourcegraph server. See Batch Changes known issue "<a href="../../../batch_changes/explanations/introduction_to_batch_changes#server-execution">Batch Changes steps are run locally...</a>".</p>
     </td>
   </tr>
   <tr>
