@@ -14,7 +14,7 @@ const { add } = storiesOf('web/searchContexts/SearchContextsListTab', module)
         chromatic: { viewports: [1200] },
     })
     .addDecorator(story => (
-        <div className="dropdown-menu show" style={{ position: 'static' }}>
+        <div className="p-3 container web-content" style={{ position: 'static' }}>
             {story()}
         </div>
     ))
@@ -51,6 +51,16 @@ const propsWithContexts: SearchContextsListTabProps = {
                     autoDefined: false,
                     public: true,
                     description: 'Only code in version 1.5',
+                    updatedAt: subDays(new Date(), 1).toISOString(),
+                    repositories: [],
+                },
+                {
+                    __typename: 'SearchContext',
+                    id: '4',
+                    spec: '@username/test-version-1.6',
+                    autoDefined: false,
+                    public: false,
+                    description: 'Only code in version 1.6',
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     repositories: [],
                 },
