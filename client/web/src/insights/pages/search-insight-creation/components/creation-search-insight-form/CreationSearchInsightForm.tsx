@@ -147,7 +147,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                     name="visibility"
                     value="organization"
                     title="Organization"
-                    description="to all users in your organization"
+                    description="all users in your organization"
                     checked={visibility.input.value === 'organization'}
                     onChange={visibility.input.onChange}
                     className="mr-3"
