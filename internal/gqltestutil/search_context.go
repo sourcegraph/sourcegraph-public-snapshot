@@ -105,6 +105,15 @@ func (c *Client) UpdateSearchContext(id string, input UpdateSearchContextInput, 
 mutation UpdateSearchContext($id: ID!, $input: SearchContextEditInput!, $repositories: [SearchContextRepositoryRevisionsInput!]!) {
 	updateSearchContext(id: $id, searchContext: $input, repositories: $repositories) {
 		id
+		description
+		spec
+		autoDefined
+		repositories {
+			repository {
+				name
+			}
+			revisions
+		}
 	}
 }
 `
