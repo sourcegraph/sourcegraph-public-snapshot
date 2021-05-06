@@ -25,7 +25,25 @@ module.exports = {
         use: ['babel-loader'],
       },
       {
+        test: /\.module\.(sass|scss)$/,
+        use: [
+          'style-loader',
+          {
+            loader: 'css-loader',
+            options: {
+              sourceMap: true,
+              modules: {
+                localIdentName: '[name]__[local]_[hash:base64:5]',
+                exportLocalsConvention: 'camelCase',
+              },
+            },
+          },
+          'sass-loader',
+        ],
+      },
+      {
         test: /\.(scss)$/i,
+        exclude: /\.module\.(sass|scss)$/,
         use: [
           'style-loader',
           {
@@ -47,4 +65,7 @@ module.exports = {
       template: './src/index.html',
     }),
   ],
+  devServer: {
+    historyApiFallback: true,
+  },
 }
