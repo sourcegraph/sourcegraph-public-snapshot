@@ -41,12 +41,12 @@ func (e ErrRepoSeeOther) Error() string {
 
 var Repos = &repos{
 	store: database.GlobalRepos,
-	cache: dbcache.NewCachedDefaultRepoLister(database.GlobalRepos),
+	cache: dbcache.NewDefaultRepoLister(database.GlobalRepos),
 }
 
 type repos struct {
 	store *database.RepoStore
-	cache *dbcache.CachedDefaultRepoLister
+	cache *dbcache.DefaultRepoLister
 }
 
 func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error) {

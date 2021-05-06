@@ -34,15 +34,15 @@ func (c *cachedRepos) Repos() ([]types.RepoName, bool) {
 	return append([]types.RepoName{}, c.repos...), time.Since(c.fetched) > defaultReposMaxAge
 }
 
-func NewCachedDefaultRepoLister(store *database.RepoStore) *CachedDefaultRepoLister {
-	return &CachedDefaultRepoLister{
+func NewDefaultRepoLister(store *database.RepoStore) *DefaultRepoLister {
+	return &DefaultRepoLister{
 		store: store,
 	}
 }
 
-// CachedDefaultRepoLister holds the list of default repos which are cached for
+// DefaultRepoLister holds the list of default repos which are cached for
 // defaultReposMaxAge.
-type CachedDefaultRepoLister struct {
+type DefaultRepoLister struct {
 	store *database.RepoStore
 
 	cacheAllRepos    atomic.Value
@@ -56,16 +56,16 @@ type CachedDefaultRepoLister struct {
 //
 // The values are cached for up to defaultReposMaxAge. If the cache has expired, we return
 // stale data and start a background refresh.
-func (s *CachedDefaultRepoLister) List(ctx context.Context) (results []types.RepoName, err error) {
+func (s *DefaultRepoLister) List(ctx context.Context) (results []types.RepoName, err error) {
 	return s.list(ctx, false)
 }
 
 // ListPublic is similar to List except that it only includes public repos.
-func (s *CachedDefaultRepoLister) ListPublic(ctx context.Context) (results []types.RepoName, err error) {
+func (s *DefaultRepoLister) ListPublic(ctx context.Context) (results []types.RepoName, err error) {
 	return s.list(ctx, true)
 }
 
-func (s *CachedDefaultRepoLister) list(ctx context.Context, onlyPublic bool) (results []types.RepoName, err error) {
+func (s *DefaultRepoLister) list(ctx context.Context, onlyPublic bool) (results []types.RepoName, err error) {
 	cache := &(s.cacheAllRepos)
 	if onlyPublic {
 		cache = &(s.cachePublicRepos)
@@ -95,7 +95,7 @@ func (s *CachedDefaultRepoLister) list(ctx context.Context, onlyPublic bool) (re
 	return repos, nil
 }
 
-func (s *CachedDefaultRepoLister) refreshCache(ctx context.Context, onlyPublic bool) ([]types.RepoName, error) {
+func (s *DefaultRepoLister) refreshCache(ctx context.Context, onlyPublic bool) ([]types.RepoName, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

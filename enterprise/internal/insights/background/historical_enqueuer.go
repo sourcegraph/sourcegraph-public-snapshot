@@ -106,7 +106,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		},
 
 		allReposIterator: (&discovery.AllReposIterator{
-			DefaultRepoLister:     dbcache.NewCachedDefaultRepoLister(repoStore),
+			DefaultRepoLister:     dbcache.NewDefaultRepoLister(repoStore),
 			RepoStore:             repoStore,
 			Clock:                 time.Now,
 			SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
