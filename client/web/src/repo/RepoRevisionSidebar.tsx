@@ -74,10 +74,10 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                         <div className="tablist-wrapper d-flex flex-1">
                             <TabList>
                                 <Tab data-test-tab="files">
-                                    <span className="tablist-label">Files</span>
+                                    <span className="tablist-wrapper--tab-label">Files</span>
                                 </Tab>
                                 <Tab data-test-tab="symbols">
-                                    <span className="tablist-label">Symbols</span>
+                                    <span className="tablist-wrapper--tab-label">Symbols</span>
                                 </Tab>
                             </TabList>
                             <Button

@@ -240,7 +240,7 @@ export const Panel = React.memo<Props>(props => {
                     <div className="border-bottom d-flex w-100">
                         {items.map(({ label, id }) => (
                             <Tab key={id}>
-                                <span className="tablist-label">{label}</span>
+                                <span className="tablist-wrapper--tab-label">{label}</span>
                             </Tab>
                         ))}
                     </div>
