@@ -7,6 +7,7 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { ErrorAlert } from '../../../../../components/alerts'
 import { LoaderButton } from '../../../../../components/LoaderButton'
+import { InsightTypeSuffix } from '../../../../core/types'
 import { useField, Validator } from '../../hooks/useField'
 import { FORM_ERROR, SubmissionErrors, useForm } from '../../hooks/useForm'
 import { DataSeries } from '../../types'
@@ -17,7 +18,6 @@ import { FormSeries } from '../form-series/FormSeries'
 import { createRequiredValidator, composeValidators } from '../validators'
 
 import styles from './CreationSearchInsightForm.module.scss'
-import { InsightTypeSuffix } from '../../../../core/types'
 
 const repositoriesFieldValidator = createRequiredValidator('Repositories is a required field.')
 const requiredStepValueField = createRequiredValidator('Please specify a step between points.')

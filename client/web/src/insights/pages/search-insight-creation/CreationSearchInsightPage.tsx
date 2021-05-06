@@ -13,6 +13,7 @@ import { AuthenticatedUser } from '../../../auth'
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { InsightsApiContext } from '../../core/backend/api-provider'
+import { InsightTypeSuffix } from '../../core/types'
 
 import {
     CreationSearchInsightForm,
@@ -20,7 +21,6 @@ import {
 } from './components/creation-search-insight-form/CreationSearchInsightForm'
 import styles from './CreationSearchInsightPage.module.scss'
 import { FORM_ERROR } from './hooks/useForm'
-import { InsightTypeSuffix } from '../../core/types'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
     eol: '\n',
