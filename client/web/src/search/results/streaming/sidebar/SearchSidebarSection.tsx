@@ -52,11 +52,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
                             value={filter}
                             onChange={event => setFilter(event.currentTarget.value)}
                             data-testid="sidebar-section-search-box"
-                            className={classNames(
-                                'form-control',
-                                styles.sidebarSectionSearchBox,
-                                'test-sidebar-section-search-box'
-                            )}
+                            className={classNames('form-control form-control-sm', styles.sidebarSectionSearchBox)}
                         />
                     )}
 
