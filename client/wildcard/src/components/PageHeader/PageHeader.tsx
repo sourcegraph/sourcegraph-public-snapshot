@@ -3,6 +3,8 @@ import React from 'react'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 
+import styles from './PageHeader.module.scss'
+
 type BreadcrumbIcon = React.ComponentType<{ className?: string }>
 type BreadcrumbText = React.ReactNode
 type Breadcrumb = {
@@ -26,6 +28,8 @@ interface Props {
     path: Breadcrumb[]
     /** Renders small print below the heading */
     byline?: React.ReactNode
+    /** Renders description text below the heading */
+    description?: React.ReactNode
     /** Align additional content (e.g. buttons) alongside the heading */
     actions?: React.ReactNode
     /** Heading element to use, defaults to h1 */
@@ -37,6 +41,7 @@ export const PageHeader: React.FunctionComponent<Props> = ({
     annotation,
     path,
     byline,
+    description,
     actions,
     className,
     headingElement: HeadingX = 'h1',
@@ -46,28 +51,24 @@ export const PageHeader: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <header
-            className={classNames(
-                'd-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center',
-                className
-            )}
-        >
+        <header className={classNames(styles.container, className)}>
             <div>
-                {annotation && <small className="text-muted d-block mb-2">{annotation}</small>}
-                <HeadingX className="flex-grow-1 d-block m-0">
+                {annotation && <small className={styles.annotation}>{annotation}</small>}
+                <HeadingX className={styles.heading}>
                     {path.map(({ to, text, icon: Icon }, index) => (
                         <React.Fragment key={index}>
-                            {index !== 0 && <span className="mr-2 text-muted">/</span>}
-                            <LinkOrSpan to={to}>
-                                {Icon && <Icon className="icon-inline py-1 mr-1" />}
-                                {text && <span className="mr-2">{text}</span>}
+                            {index !== 0 && <span className={styles.divider}>/</span>}
+                            <LinkOrSpan to={to} className={styles.path}>
+                                {Icon && <Icon className={styles.pathIcon} />}
+                                {text && <span className={styles.pathText}>{text}</span>}
                             </LinkOrSpan>
                         </React.Fragment>
                     ))}
                 </HeadingX>
-                {byline && <small className="text-muted d-block mt-1">{byline}</small>}
+                {byline && <small className={styles.byline}>{byline}</small>}
+                {description && <p className={styles.description}>{description}</p>}
             </div>
-            {actions && <div className="mt-3 mt-md-0">{actions}</div>}
+            {actions && <div className={styles.actions}>{actions}</div>}
         </header>
     )
 }

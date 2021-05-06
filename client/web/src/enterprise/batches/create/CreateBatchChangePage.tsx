@@ -2,9 +2,9 @@ import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
-import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
 
 import combySample from './samples/comby.batch.yaml'

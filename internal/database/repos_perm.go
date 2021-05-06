@@ -13,35 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-const authzQueryCondsFmtstr = `(
-    %s                            -- TRUE or FALSE to indicate whether to bypass the check
-OR  (
-	NOT %s                        -- Disregard unrestricted state when permissions user mapping is enabled
-	AND (
-		NOT repo.private          -- Happy path of non-private repositories
-		OR  EXISTS (              -- Each external service defines if repositories are unrestricted
-			SELECT
-			FROM external_services AS es
-			JOIN external_service_repos AS esr ON (
-					esr.external_service_id = es.id
-				AND esr.repo_id = repo.id
-				AND es.unrestricted = TRUE
-				AND es.deleted_at IS NULL
-			)
-			LIMIT 1
-		)
-	)
-) OR (                             -- Restricted repositories require checking permissions
-	SELECT object_ids_ints @> INTSET(repo.id)
-	FROM user_permissions
-	WHERE
-		user_id = %s
-	AND permission = %s
-	AND object_type = 'repos'
-)
-)
-`
-
 var errPermissionsUserMappingConflict = errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
 
 // AuthzQueryConds returns a query clause for enforcing repository permissions.
@@ -76,13 +47,50 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
 		bypassAuthz = currentUser.SiteAdmin && !conf.Get().AuthzEnforceForSiteAdmins
 	}
 
-	q := sqlf.Sprintf(authzQueryCondsFmtstr,
+	q := authzQuery(bypassAuthz,
+		usePermissionsUserMapping,
+		authenticatedUserID,
+		authz.Read, // Note: We currently only support read for repository permissions.
+	)
+	return q, nil
+}
+
+func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32, perms authz.Perms) *sqlf.Query {
+	const queryFmtString = `(
+    %s                            -- TRUE or FALSE to indicate whether to bypass the check
+OR  (
+	NOT %s                        -- Disregard unrestricted state when permissions user mapping is enabled
+	AND (
+		NOT repo.private          -- Happy path of non-private repositories
+		OR  EXISTS (              -- Each external service defines if repositories are unrestricted
+			SELECT
+			FROM external_services AS es
+			JOIN external_service_repos AS esr ON (
+					esr.external_service_id = es.id
+				AND esr.repo_id = repo.id
+				AND es.unrestricted = TRUE
+				AND es.deleted_at IS NULL
+			)
+			LIMIT 1
+		)
+	)
+) OR (                             -- Restricted repositories require checking permissions
+	SELECT object_ids_ints @> INTSET(repo.id)
+	FROM user_permissions
+	WHERE
+		user_id = %s
+	AND permission = %s
+	AND object_type = 'repos'
+)
+)
+`
+
+	return sqlf.Sprintf(queryFmtString,
 		bypassAuthz,
 		usePermissionsUserMapping,
 		authenticatedUserID,
-		authz.Read.String(), // Note: We currently only support read for repository permissions.
+		perms.String(),
 	)
-	return q, nil
 }
 
 // isInternalActor returns true if the actor represents an internal agent (i.e., non-user-bound
