@@ -18,7 +18,7 @@ describe('CreateInsightForm', () => {
 
     const getFormFields = (getByRole: BoundFunction<GetByRole>) => {
         const title = getByRole('textbox', { name: /title/i })
-        const repositories = getByRole('textbox', { name: /repositories/i })
+        const repositories = getByRole('textbox', { name: /list of repositories/i })
 
         const personalVisibility = getByRole('radio', { name: /personal/i })
         const organisationVisibility = getByRole('radio', { name: /organization/i })
@@ -154,7 +154,7 @@ describe('CreateInsightForm', () => {
             sinon.assert.notCalled(onSubmitMock)
 
             expect(title).toHaveFocus()
-            expect(getByText(/title is required/i)).toBeInTheDocument()
+            expect(getByText(/title is a required/i)).toBeInTheDocument()
         })
 
         it('with invalid repository field', async () => {
@@ -162,7 +162,7 @@ describe('CreateInsightForm', () => {
                 onSubmit: onSubmitMock,
             })
             const title = getByRole('textbox', { name: /title/i })
-            const repositories = getByRole('textbox', { name: /repositories/i })
+            const repositories = getByRole('textbox', { name: /list of repositories/i })
             const submitButton = getByRole('button', { name: /create code insight/i })
 
             fireEvent.change(title, { target: { value: 'First code insight' } })
@@ -175,7 +175,7 @@ describe('CreateInsightForm', () => {
             sinon.assert.notCalled(onSubmitMock)
 
             expect(repositories).toHaveFocus()
-            expect(getByText(/repositories is required/i)).toBeInTheDocument()
+            expect(getByText(/repositories is a required/i)).toBeInTheDocument()
         })
 
         it('with invalid data series field', async () => {
@@ -183,7 +183,7 @@ describe('CreateInsightForm', () => {
                 onSubmit: onSubmitMock,
             })
             const title = getByRole('textbox', { name: /title/i })
-            const repositories = getByRole('textbox', { name: /repositories/i })
+            const repositories = getByRole('textbox', { name: /list of repositories/i })
             const submitButton = getByRole('button', { name: /create code insight/i })
             const dataSeriesGroup = getByRole('group', { name: /data series/i })
             const seriesName = within(dataSeriesGroup).getByRole('textbox', { name: /name/i })
