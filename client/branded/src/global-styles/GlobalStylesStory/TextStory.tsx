@@ -19,7 +19,7 @@ export const TextStory: React.FunctionComponent = () => (
                             </code>
                         </td>
                         <td>
-                            <Heading>This is an {Heading.toUpperCase()}</Heading>
+                            <Heading>This is {Heading}</Heading>
                         </td>
                     </tr>
                 ))}
