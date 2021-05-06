@@ -75,8 +75,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 description={
                     <span>
-                        Do not include the <code>repo:</code> filter as it will be added automatically for the current
-                        repository
+                        Do not include the <code>repo:</code> filter as it will be added automatically for the repositories you included above.
                     </span>
                 }
                 valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.validState === 'VALID'}
