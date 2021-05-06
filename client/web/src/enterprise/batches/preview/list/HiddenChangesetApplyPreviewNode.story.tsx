@@ -1,13 +1,15 @@
 import { storiesOf } from '@storybook/react'
+import classNames from 'classnames'
 import React from 'react'
 
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNode'
+import styles from './PreviewList.module.scss'
 
 const { add } = storiesOf('web/batches/preview/HiddenChangesetApplyPreviewNode', module).addDecorator(story => (
-    <div className="p-3 container web-content preview-list__grid">{story()}</div>
+    <div className={classNames(styles.previewListGrid, 'p-3 container web-content')}>{story()}</div>
 ))
 
 export const hiddenChangesetApplyPreviewStories: Record<string, HiddenChangesetApplyPreviewFields> = {

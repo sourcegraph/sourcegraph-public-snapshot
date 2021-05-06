@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -350,7 +349,7 @@ func normalizeVisibleUploads(uploadMetas map[string][]commitgraph.UploadMeta) ma
 	return uploadMetas
 }
 
-func getUploadStates(ids ...int) (map[int]string, error) {
+func getUploadStates(db dbutil.DB, ids ...int) (map[int]string, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
@@ -360,10 +359,10 @@ func getUploadStates(ids ...int) (map[int]string, error) {
 		sqlf.Join(intsToQueries(ids), ", "),
 	)
 
-	return scanStates(dbconn.Global.Query(q.Query(sqlf.PostgresBindVar), q.Args()...))
+	return scanStates(db.QueryContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...))
 }
 
-func getIndexStates(ids ...int) (map[int]string, error) {
+func getIndexStates(db dbutil.DB, ids ...int) (map[int]string, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
@@ -373,7 +372,7 @@ func getIndexStates(ids ...int) (map[int]string, error) {
 		sqlf.Join(intsToQueries(ids), ", "),
 	)
 
-	return scanStates(dbconn.Global.Query(q.Query(sqlf.PostgresBindVar), q.Args()...))
+	return scanStates(db.QueryContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...))
 }
 
 // scanStates scans pairs of id/states from the return value of `*Store.query`.

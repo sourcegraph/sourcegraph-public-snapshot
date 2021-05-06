@@ -344,6 +344,7 @@
     "react-grid-layout": "^0.18.3",
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
+    "react-sticky-box": "^0.9.3",
     "react-stripe-elements": "^6.1.2",
     "react-textarea-autosize": "^8.3.0",
     "react-visibility-sensor": "^5.1.1",

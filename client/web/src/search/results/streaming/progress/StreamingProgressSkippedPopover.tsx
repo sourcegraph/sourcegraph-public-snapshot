@@ -10,6 +10,7 @@ import { Button, Collapse, Form, FormGroup, Input, Label } from 'reactstrap'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
 import { Skipped } from '../../../stream'
@@ -52,6 +53,8 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
         }
     }, [])
 
+    const [isRedesignEnabled] = useRedesignToggle()
+
     return (
         <div
             className={classNames('streaming-skipped-item pt-2 w-100', {
@@ -63,6 +66,13 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
                 onClick={toggleIsOpen}
                 onKeyDown={onKeyDown}
                 disabled={!skipped.message}
+                color={
+                    !isRedesignEnabled
+                        ? 'secondary'
+                        : skipped.severity !== 'info'
+                        ? 'outline-danger'
+                        : 'outline-primary'
+                }
             >
                 <h4 className="d-flex align-items-center mb-0 w-100">
                     {skipped.severity === 'info' ? (
@@ -74,9 +84,9 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
 
                     {skipped.message &&
                         (isOpen ? (
-                            <ChevronDownIcon className="icon-inline flex-shrink-0" />
+                            <ChevronDownIcon className="icon-inline flex-shrink-0 streaming-skipped-item__chevron" />
                         ) : (
-                            <ChevronLeftIcon className="icon-inline flex-shrink-0" />
+                            <ChevronLeftIcon className="icon-inline flex-shrink-0 streaming-skipped-item__chevron" />
                         ))}
                 </h4>
             </Button>

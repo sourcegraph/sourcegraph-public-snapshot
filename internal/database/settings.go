@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
@@ -13,15 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type SettingStore struct {
 	*basestore.Store
-
-	once sync.Once
 }
 
 // Settings instantiates and returns a new SettingStore with prepared statements.
@@ -43,22 +39,10 @@ func (s *SettingStore) Transact(ctx context.Context) (*SettingStore, error) {
 	return &SettingStore{Store: txBase}, err
 }
 
-// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
-// This function ensures access to dbconn happens after the rest of the code or tests have
-// initialized it.
-func (s *SettingStore) ensureStore() {
-	s.once.Do(func() {
-		if s.Store == nil {
-			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-		}
-	})
-}
-
 func (o *SettingStore) CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
 	if Mocks.Settings.CreateIfUpToDate != nil {
 		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastID, authorUserID, contents)
 	}
-	o.ensureStore()
 
 	if strings.TrimSpace(contents) == "" {
 		return nil, fmt.Errorf("blank settings are invalid (you can clear the settings by entering an empty JSON object: {})")
@@ -116,7 +100,6 @@ func (o *SettingStore) GetLatest(ctx context.Context, subject api.SettingsSubjec
 	if Mocks.Settings.GetLatest != nil {
 		return Mocks.Settings.GetLatest(ctx, subject)
 	}
-	o.ensureStore()
 
 	return o.getLatest(ctx, subject)
 }
@@ -138,7 +121,6 @@ func (o *SettingStore) ListAll(ctx context.Context, impreciseSubstring string) (
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	o.ensureStore()
 
 	q := sqlf.Sprintf(`
 		WITH q AS (

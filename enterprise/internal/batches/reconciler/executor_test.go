@@ -665,8 +665,7 @@ func TestLoadChangesetSource(t *testing.T) {
 		if err := cstore.CreateSiteCredential(ctx, &btypes.SiteCredential{
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
 			ExternalServiceID:   repo.ExternalRepo.ServiceID,
-			Credential:          token,
-		}); err != nil {
+		}, token); err != nil {
 			t.Fatal(err)
 		}
 		t.Cleanup(func() {
@@ -774,8 +773,7 @@ func TestLoadChangesetSource(t *testing.T) {
 		if err := cstore.CreateSiteCredential(ctx, &btypes.SiteCredential{
 			ExternalServiceType: repo.ExternalRepo.ServiceType,
 			ExternalServiceID:   repo.ExternalRepo.ServiceID,
-			Credential:          token,
-		}); err != nil {
+		}, token); err != nil {
 			t.Fatal(err)
 		}
 		t.Cleanup(func() {

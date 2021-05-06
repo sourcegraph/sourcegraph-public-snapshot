@@ -5,5 +5,13 @@
 
     :global(.theme-redesign) & {
         flex-direction: row;
+        height: min-content;
+    }
+
+    &-container {
+        :global(.theme-redesign) & {
+            overflow-y: visible;
+            overflow-x: hidden;
+        }
     }
 }

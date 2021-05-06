@@ -9,7 +9,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -18,8 +17,8 @@ func TestGetIndexByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	// Index does not exist initially
 	if _, exists, err := store.GetIndexByID(context.Background(), 1); err != nil {
@@ -58,7 +57,7 @@ func TestGetIndexByID(t *testing.T) {
 		Rank: nil,
 	}
 
-	insertIndexes(t, dbconn.Global, expected)
+	insertIndexes(t, db, expected)
 
 	if index, exists, err := store.GetIndexByID(context.Background(), 1); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
@@ -73,8 +72,8 @@ func TestGetQueuedIndexRank(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(+time.Minute * 6)
@@ -84,7 +83,7 @@ func TestGetQueuedIndexRank(t *testing.T) {
 	t6 := t1.Add(+time.Minute * 2)
 	t7 := t1.Add(+time.Minute * 5)
 
-	insertIndexes(t, dbconn.Global,
+	insertIndexes(t, db,
 		Index{ID: 1, QueuedAt: t1, State: "queued"},
 		Index{ID: 2, QueuedAt: t2, State: "queued"},
 		Index{ID: 3, QueuedAt: t3, State: "queued"},
@@ -125,8 +124,8 @@ func TestGetIndexes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Minute * 1)
@@ -140,7 +139,7 @@ func TestGetIndexes(t *testing.T) {
 	t10 := t1.Add(-time.Minute * 9)
 	failureMessage := "unlucky 333"
 
-	insertIndexes(t, dbconn.Global,
+	insertIndexes(t, db,
 		Index{ID: 1, Commit: makeCommit(3331), QueuedAt: t1, State: "queued"},
 		Index{ID: 2, QueuedAt: t2, State: "errored", FailureMessage: &failureMessage},
 		Index{ID: 3, Commit: makeCommit(3333), QueuedAt: t3, State: "queued"},
@@ -215,12 +214,12 @@ func TestIsQueued(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
-	insertIndexes(t, dbconn.Global, Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
-	insertUploads(t, dbconn.Global, Upload{ID: 2, RepositoryID: 2, Commit: makeCommit(2)})
-	insertUploads(t, dbconn.Global, Upload{ID: 3, RepositoryID: 3, Commit: makeCommit(3), State: "deleted"})
+	insertIndexes(t, db, Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
+	insertUploads(t, db, Upload{ID: 2, RepositoryID: 2, Commit: makeCommit(2)})
+	insertUploads(t, db, Upload{ID: 3, RepositoryID: 3, Commit: makeCommit(3), State: "deleted"})
 
 	testCases := []struct {
 		repositoryID int
@@ -255,10 +254,10 @@ func TestInsertIndex(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
-	insertRepo(t, dbconn.Global, 50, "")
+	insertRepo(t, db, 50, "")
 
 	id, err := store.InsertIndex(context.Background(), Index{
 		State:        "queued",
@@ -331,10 +330,10 @@ func TestDeleteIndexByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
-	insertIndexes(t, dbconn.Global,
+	insertIndexes(t, db,
 		Index{ID: 1},
 	)
 
@@ -356,8 +355,8 @@ func TestDeleteIndexByIDMissingRow(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	if found, err := store.DeleteIndexByID(context.Background(), 1); err != nil {
 		t.Fatalf("unexpected error deleting index: %s", err)
@@ -370,8 +369,8 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	var indexes []Index
 	for i := 0; i < 25; i++ {
@@ -379,7 +378,7 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 			indexes = append(indexes, Index{ID: len(indexes) + 1, RepositoryID: 50 + i})
 		}
 	}
-	insertIndexes(t, dbconn.Global, indexes...)
+	insertIndexes(t, db, indexes...)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-DeletedRepositoryGracePeriod + time.Minute)
@@ -393,7 +392,7 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 	for repositoryID, deletedAt := range deletions {
 		query := sqlf.Sprintf(`UPDATE repo SET deleted_at=%s WHERE id=%s`, deletedAt, repositoryID)
 
-		if _, err := dbconn.Global.Query(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.Query(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("Failed to update repository: %s", err)
 		}
 	}
@@ -417,15 +416,15 @@ func TestDeleteOldIndexes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(time.Minute)
 	t3 := t1.Add(time.Minute * 4)
 	t4 := t1.Add(time.Minute * 6)
 
-	insertIndexes(t, dbconn.Global,
+	insertIndexes(t, db,
 		Index{ID: 1, State: "completed", QueuedAt: t1},
 		Index{ID: 2, State: "errored", QueuedAt: t2},
 		Index{ID: 3, State: "completed", QueuedAt: t3},

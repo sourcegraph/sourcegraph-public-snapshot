@@ -2,11 +2,16 @@
     position: relative;
     border: 1px solid $input-border-color;
     border-right-color: transparent;
-    background-color: var(--input-bg);
+    background-color: var(--color-bg-1);
     display: flex;
     align-items: center;
     flex: 1 1 auto;
     min-width: 12rem;
+
+    .theme-redesign & {
+        border-top-left-radius: 3px;
+        border-bottom-left-radius: 3px;
+    }
 
     &:focus-within {
         .search-context-dropdown__separator {
