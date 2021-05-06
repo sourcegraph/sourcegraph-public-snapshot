@@ -119,7 +119,7 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
                 <h2>Create new code insight</h2>
 
                 <p className="text-muted">
-                    Search-based code insights analyse your code based on any search query.{' '}
+                    Search-based code insights analyze your code based on any search query.{' '}
                     <a
                         href="https://docs.sourcegraph.com/dev/background-information/insights"
                         target="_blank"
