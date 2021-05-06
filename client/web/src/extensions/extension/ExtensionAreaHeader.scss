@@ -20,7 +20,7 @@
         display: none;
     }
 
-    @include media-breakpoint-up(md) {
+    @media (--md-breakpoint-up) {
         &__wrapper {
             display: grid;
             grid-template-columns: auto 7.5rem 7.5rem;

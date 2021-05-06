@@ -1,8 +1,8 @@
-@import 'branded/src/global-styles/breakpoints';
+@import 'wildcard/src/global-styles/breakpoints';
 
 .batch-spec-tab {
     &__header-col {
-        @include media-breakpoint-down(sm) {
+        @media (--sm-breakpoint-down) {
             flex-basis: 100%;
         }
     }

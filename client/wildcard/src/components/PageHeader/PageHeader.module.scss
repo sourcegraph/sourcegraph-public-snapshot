@@ -1,4 +1,4 @@
-@import '../../styles/variables.scss';
+@import '../../global-styles/breakpoints';
 
 // Scale icon size with heading size. 26px font size (h1) -> 22px icon size
 $path-icon-size: (22em / 26);
@@ -9,7 +9,7 @@ $path-icon-size: (22em / 26);
     flex-wrap: wrap;
     justify-content: space-between;
 
-    @media (--md-viewport) {
+    @media (--md-breakpoint-up) {
         flex-direction: row;
         align-items: flex-end;
     }
@@ -67,7 +67,7 @@ $path-icon-size: (22em / 26);
 .actions {
     margin-top: 1rem;
 
-    @media (--md-viewport) {
+    @media (--md-breakpoint-up) {
         margin-top: 0;
     }
 }

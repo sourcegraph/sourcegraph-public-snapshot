@@ -22,7 +22,7 @@
 
     // In narrow windows, make the results flush with the left/right sides,
     // but we still need padding for the header and alerts.
-    @include media-breakpoint-down(lg) {
+    @media (--lg-breakpoint-down) {
         &__list {
             padding-left: 0;
             padding-right: 0;
