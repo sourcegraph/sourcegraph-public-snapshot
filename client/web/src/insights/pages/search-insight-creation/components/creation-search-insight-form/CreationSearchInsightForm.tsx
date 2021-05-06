@@ -128,7 +128,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
             <FormGroup
                 name="visibility"
                 title="Visibility"
-                description="This insigh will be visible only on your personal dashboard. It will not be show to other
+                description="This insight will be visible only on your personal dashboard. It will not be show to other
                             users in your organisation."
                 className="mb-0 mt-4"
                 contentClassName="d-flex flex-wrap mb-n2"
