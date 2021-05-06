@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
