@@ -228,6 +228,7 @@ commands:
     env:
       GOGC: 50
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
+      PATH: .bin:$PATH
 
   zoekt-indexserver-1:
     cmd: |
@@ -250,6 +251,7 @@ commands:
     env:
       GOGC: 50
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
+      PATH: .bin:$PATH
 
   zoekt-webserver-0:
     cmd: |
@@ -262,6 +264,7 @@ commands:
     env:
       JAEGER_DISABLED: false
       GOGC: 50
+      PATH: .bin:$PATH
 
   zoekt-webserver-1:
     cmd: |
@@ -274,6 +277,7 @@ commands:
     env:
       JAEGER_DISABLED: false
       GOGC: 50
+      PATH: .bin:$PATH
 
 commandsets:
   default:

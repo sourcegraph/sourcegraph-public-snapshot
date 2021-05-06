@@ -229,6 +229,12 @@ func makeEnv(envs ...map[string]string) []string {
 			// TODO: using range to iterate over the env is not stable and thus
 			// this won't work
 			expanded := os.Expand(v, func(lookup string) string {
+				// If we're looking up the key that we're trying to define, we
+				// skip the self-reference and look in the OS
+				if lookup == k {
+					return os.Getenv(lookup)
+				}
+
 				if e, ok := env[lookup]; ok {
 					return e
 				}
