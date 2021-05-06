@@ -141,10 +141,15 @@ func getSiteCredentialQuery(opts GetSiteCredentialOpts) *sqlf.Query {
 
 type ListSiteCredentialsOpts struct {
 	LimitOpts
+	ForUpdate bool
 
 	// TODO(batch-changes-site-credential-encryption): remove when no longer
 	// needed.
 	RequiresMigration bool
+
+	// TODO(batch-changes-site-credential-encryption): remove when no longer
+	// needed.
+	OnlyEncrypted bool
 }
 
 func (s *Store) ListSiteCredentials(ctx context.Context, opts ListSiteCredentialsOpts) (cs []*btypes.SiteCredential, next int64, err error) {
@@ -175,6 +180,7 @@ SELECT
 FROM batch_changes_site_credentials
 WHERE %s
 ORDER BY external_service_type ASC, external_service_id ASC
+%s  -- optional FOR UPDATE
 `
 
 func listSiteCredentialsQuery(opts ListSiteCredentialsOpts) *sqlf.Query {
@@ -182,11 +188,20 @@ func listSiteCredentialsQuery(opts ListSiteCredentialsOpts) *sqlf.Query {
 	if opts.RequiresMigration {
 		preds = append(preds, sqlf.Sprintf("encryption_key_id IN ('', %s)", btypes.SiteCredentialPlaceholderEncryptionKeyID))
 	}
+	if opts.OnlyEncrypted {
+		preds = append(preds, sqlf.Sprintf("encryption_key_id <> ''"))
+	}
+
+	forUpdate := &sqlf.Query{}
+	if opts.ForUpdate {
+		forUpdate = sqlf.Sprintf("FOR UPDATE")
+	}
 
 	return sqlf.Sprintf(
 		listSiteCredentialsQueryFmtstr+opts.ToDB(),
 		sqlf.Join(siteCredentialColumns, ","),
 		sqlf.Join(preds, "AND"),
+		forUpdate,
 	)
 }
 

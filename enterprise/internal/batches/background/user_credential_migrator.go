@@ -3,6 +3,7 @@ package background
 import (
 	"context"
 
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
@@ -15,7 +16,8 @@ import (
 const userCredentialMigrationCountPerRun = 5
 
 type userCredentialMigrator struct {
-	store *store.Store
+	store        *store.Store
+	allowDecrypt bool
 }
 
 var _ oobmigration.Migrator = &userCredentialMigrator{}
@@ -90,5 +92,49 @@ func (m *userCredentialMigrator) Up(ctx context.Context) error {
 }
 
 func (m *userCredentialMigrator) Down(ctx context.Context) error {
-	return errors.New("down migration is not supported for encrypting user credentials")
+	if !m.allowDecrypt {
+		log15.Warn("cannot run userCredentialMigrator.Down when decryption isn't allowed")
+		return nil
+	}
+
+	tx, err := m.store.Transact(ctx)
+	if err != nil {
+		return errors.Wrap(err, "starting transaction")
+	}
+
+	f := func() error {
+		credentials, _, err := tx.UserCredentials().List(ctx, database.UserCredentialsListOpts{
+			Scope: database.UserCredentialScope{
+				Domain: database.UserCredentialDomainBatches,
+			},
+			LimitOffset: &database.LimitOffset{
+				Limit: userCredentialMigrationCountPerRun,
+			},
+			ForUpdate:     true,
+			OnlyEncrypted: true,
+		})
+		if err != nil {
+			return errors.Wrap(err, "listing user credentials")
+		}
+		for _, cred := range credentials {
+			a, err := cred.Authenticator(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "retrieving authenticator for ID %d", cred.ID)
+			}
+
+			raw, err := database.EncryptAuthenticator(ctx, nil, a)
+			if err != nil {
+				return errors.Wrapf(err, "marshalling authenticator without an encrypter")
+			}
+
+			cred.EncryptedCredential = raw
+			cred.EncryptionKeyID = ""
+			if err := tx.UserCredentials().Update(ctx, cred); err != nil {
+				return errors.Wrapf(err, "upserting user credential %d", cred.ID)
+			}
+		}
+
+		return nil
+	}
+	return tx.Done(f())
 }

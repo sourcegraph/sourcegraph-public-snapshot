@@ -23,7 +23,7 @@ func TestUserCredentialMigrator(t *testing.T) {
 
 	cstore := store.New(db, et.TestKey{})
 
-	migrator := &userCredentialMigrator{cstore}
+	migrator := &userCredentialMigrator{cstore, true}
 	a := &auth.BasicAuth{Username: "foo", Password: "bar"}
 
 	t.Run("no user credentials", func(t *testing.T) {
@@ -100,9 +100,59 @@ func TestUserCredentialMigrator(t *testing.T) {
 		}
 	})
 
-	t.Run("down", func(t *testing.T) {
-		if err := migrator.Down(ctx); err == nil {
-			t.Error("unexpected nil error as down migrations are unsupported")
+	t.Run("migrate down without allowing", func(t *testing.T) {
+		migrator.allowDecrypt = false
+		t.Cleanup(func() { migrator.allowDecrypt = true })
+
+		if err := migrator.Down(ctx); err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		// Nothing should have changed.
+		assertProgress(t, ctx, 1.0, migrator)
+	})
+
+	t.Run("first migrate down", func(t *testing.T) {
+		if err := migrator.Down(ctx); err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		assertProgress(t, ctx, 0.5, migrator)
+	})
+
+	t.Run("second migrate down", func(t *testing.T) {
+		if err := migrator.Down(ctx); err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		assertProgress(t, ctx, 0.0, migrator)
+	})
+
+	t.Run("check credentials", func(t *testing.T) {
+		credentials, _, err := cstore.UserCredentials().List(ctx, database.UserCredentialsListOpts{
+			Scope: database.UserCredentialScope{Domain: database.UserCredentialDomainBatches},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, cred := range credentials {
+			have, err := cred.Authenticator(ctx)
+			if err != nil {
+				t.Logf("cred: %+v", cred)
+				t.Errorf("cannot get authenticator: %v", err)
+			}
+
+			if diff := cmp.Diff(have, a); diff != "" {
+				t.Errorf("unexpected authenticator (-have +want):\n%s", diff)
+			}
+		}
+
+		// Finally, let's ensure there's nothing left to be migrated.
+		if creds, _, err := cstore.UserCredentials().List(ctx, database.UserCredentialsListOpts{
+			Scope:             database.UserCredentialScope{Domain: database.UserCredentialDomainBatches},
+			RequiresMigration: true,
+		}); err != nil {
+			t.Fatal(err)
+		} else if want := siteCredentialMigrationCountPerRun * 2; len(creds) != want {
+			t.Errorf("unexpected number of unencrypted credentials: have=%d want=%d", len(creds), want)
 		}
 	})
 }

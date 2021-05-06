@@ -299,6 +299,10 @@ type UserCredentialsListOpts struct {
 	// TODO(batch-change-credential-encryption): this should be removed once the
 	// OOB user credential migration is removed.
 	RequiresMigration bool
+
+	// TODO(batch-change-credential-encryption): this should be removed once the
+	// OOB user credential migration is removed.
+	OnlyEncrypted bool
 }
 
 // sql overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
@@ -330,15 +334,16 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 	if opts.Scope.ExternalServiceID != "" {
 		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opts.Scope.ExternalServiceID))
 	}
-	// TODO(batch-change-credential-encryption): remove once the OOB SSH
-	// migration is removed.
+	// TODO(batch-change-credential-encryption): remove the remaining predicates
+	// once the OOB SSH migration is removed.
 	if opts.SSHMigrationApplied != nil {
 		preds = append(preds, sqlf.Sprintf("ssh_migration_applied = %s", *opts.SSHMigrationApplied))
 	}
-	// TODO(batch-change-credential-encryption): remove once the OOB user
-	// credential migration is removed.
 	if opts.RequiresMigration {
 		preds = append(preds, sqlf.Sprintf("encryption_key_id IN ('', %s)", UserCredentialPlaceholderEncryptionKeyID))
+	}
+	if opts.OnlyEncrypted {
+		preds = append(preds, sqlf.Sprintf("encryption_key_id <> ''"))
 	}
 
 	if len(preds) == 0 {

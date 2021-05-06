@@ -3,11 +3,13 @@ package background
 import (
 	"context"
 
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -15,7 +17,8 @@ import (
 const siteCredentialMigrationCountPerRun = 5
 
 type siteCredentialMigrator struct {
-	store *store.Store
+	store        *store.Store
+	allowDecrypt bool
 }
 
 var _ oobmigration.Migrator = &siteCredentialMigrator{}
@@ -51,6 +54,7 @@ func (m *siteCredentialMigrator) Up(ctx context.Context) error {
 		credentials, _, err := tx.ListSiteCredentials(ctx, store.ListSiteCredentialsOpts{
 			LimitOpts:         store.LimitOpts{Limit: siteCredentialMigrationCountPerRun},
 			RequiresMigration: true,
+			ForUpdate:         true,
 		})
 		if err != nil {
 			return errors.Wrap(err, "listing site credentials")
@@ -76,5 +80,44 @@ func (m *siteCredentialMigrator) Up(ctx context.Context) error {
 }
 
 func (m *siteCredentialMigrator) Down(ctx context.Context) error {
-	return errors.New("down migration is not supported for encrypting site credentials")
+	if !m.allowDecrypt {
+		log15.Warn("cannot run siteCredentialMigrator.Down when decryption isn't allowed")
+		return nil
+	}
+
+	tx, err := m.store.Transact(ctx)
+	if err != nil {
+		return errors.Wrap(err, "starting transaction")
+	}
+
+	f := func() error {
+		credentials, _, err := tx.ListSiteCredentials(ctx, store.ListSiteCredentialsOpts{
+			LimitOpts:     store.LimitOpts{Limit: siteCredentialMigrationCountPerRun},
+			OnlyEncrypted: true,
+			ForUpdate:     true,
+		})
+		if err != nil {
+			return errors.Wrap(err, "listing user credentials")
+		}
+		for _, cred := range credentials {
+			a, err := cred.Authenticator(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "retrieving authenticator for ID %d", cred.ID)
+			}
+
+			raw, err := database.EncryptAuthenticator(ctx, nil, a)
+			if err != nil {
+				return errors.Wrapf(err, "marshalling authenticator without an encrypter")
+			}
+
+			cred.EncryptedCredential = raw
+			cred.EncryptionKeyID = ""
+			if err := tx.UpdateSiteCredential(ctx, cred); err != nil {
+				return errors.Wrapf(err, "upserting user credential %d", cred.ID)
+			}
+		}
+
+		return nil
+	}
+	return tx.Done(f())
 }
