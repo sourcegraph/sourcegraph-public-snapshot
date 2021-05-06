@@ -343,6 +343,77 @@ The format of the corresponding [`steps.outputs.<name>.value`](#outputs-value). 
 
 Possible values: `text`, `yaml`, `json`. Default is `text`.
 
+## [`steps.if`](#steps-if)
+
+> NOTE: This feature is only available in Sourcegraph 3.28 and later with Sourcegraph CLI 3.28 and later.
+
+Condition to check before executing the step. If the value of the `if:` attribute is `true` (boolean) or `"true"` (string) then the step is executed in the given repository (or workspace, in case [workspaces](#workspaces) are used). Otherwise the step is skipped.
+
+As an optimization, the [Sourcegraph CLI](../../cli) tries to evaluate the condition _before_ starting to execute any `steps`. If the condition can be evaluated ahead of time the execution of the step won't be attempted for the repository, which leads to better cache utilization.
+
+Ahead-of-time evaluation is possible if the condition contains only static data. Example: `if: ${{ eq repository.name "github.com/my-org/my-repo" }}`. The repository name is known before the execution of the steps, so evaluation succeeds and Sourcegraph CLI will not include the given step in the list of steps to execute for repositories that don't have the matching name. That in turn allows the modification of this step's `run` attribute, for example, without invalidating the cache for the repositories in which it's never executed.
+
+<aside class="note">
+<span class="badge badge-feature">Templating</span> The <code>steps.if</code> condition can make use of <a href="batch_spec_templating">templating</a>.
+</aside>
+
+### Examples
+
+```yaml
+steps:
+  # `if:` is true, step always executes.
+  - run: echo "name of repository is ${{ repository.name }}" >> message.txt
+    if: true
+    container: alpine:3
+```
+
+```yaml
+steps:
+  # `if:` is a static string that's not "true", step never executes.
+  - run: echo "name of repository is ${{ repository.name }}" >> message.txt
+    if: "random string"
+    container: alpine:3
+```
+
+```yaml
+steps:
+  # `if:` uses templating to check for repository name and produce a "true". Only runs in github.com/sourcegraph/automation-testing
+  - run: echo "hello from automation-testing" >> message.txt
+    if: ${{ eq repository.name "github.com/sourcegraph/automation-testing" }}
+    container: alpine:3
+```
+
+```yaml
+steps:
+  # `if:` uses glob pattern to match repository name and produce "true" on match.
+  - run: echo "name contains sourcegraph-testing" >> message.txt
+    if: ${{ matches repository.name "*sourcegraph-testing*" }}
+    container: alpine:3
+```
+
+```yaml
+steps:
+  # First step prints to standard out and saves to outputs
+  - run:  if [[ -f "go.mod" ]]; then echo "true"; else echo "false"; fi
+    container: alpine:3
+    outputs:
+      goModExists:
+        value: ${{ step.stdout }}
+
+  # `if:` uses the just-set `outputs.goModExists` value as condition
+  - run: go fmt ./...
+    container: golang
+    if: ${{ outputs.goModExists }}
+```
+
+```yaml
+steps:
+  # `if:` checks for path, in case steps are executed in workspace.
+  - run: echo "hello workspace" >> workspace.txt
+    container: golang
+    if: ${{ eq steps.path "sub/directory/in/repo" }}
+```
+
 ## [`importChangesets`](#importchangesets)
 
 An array describing which already-existing changesets should be imported from the code host into the batch change.

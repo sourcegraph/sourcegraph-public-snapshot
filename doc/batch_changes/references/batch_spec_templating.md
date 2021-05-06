@@ -54,6 +54,7 @@ Templating is supported in the following fields:
 - [`steps.env`](batch_spec_yaml_reference.md#steps-run) values
 - [`steps.files`](batch_spec_yaml_reference.md#steps-run) values
 - [`steps.outputs.<name>.value`](batch_spec_yaml_reference.md#steps-outputs)
+- [`steps.if`](batch_spec_yaml_reference.md#steps-if)
 
 Additionally, with Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later:
 
@@ -94,6 +95,10 @@ They are evaluated before the execution of each entry in `steps`, except for the
 | `step.deleted_files` | `list of strings` | Only in `steps.outputs`: List of files that have been deleted by the just-executed step. Empty list if no files have been deleted. </br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
 | `step.stdout` | `string` | Only in `steps.outputs`: The complete output of the just-executed step on standard output.</br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
 | `step.stderr` | `string` | Only in `steps.outputs`: The complete output of the just-executed step on standard error. </br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
+| `steps.modified_files` | `list of strings` | List of files that have been modified by the `steps`. Empty list if no files have been modified. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.28 or later</small></i>. |
+| `steps.added_files` | `list of strings` | List of files that have been added by the `steps`. Empty list if no files have been added. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.28 or later</small></i>. |
+| `steps.deleted_files` | `list of strings` | List of files that have been deleted by the `steps`. Empty list if no files have been deleted. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.28 or later</small></i>. |
+| `steps.path` | `string` | Path (relative to the root of the directory, no leading `/` or `.`) in which the `steps` have been executed. Empty if no workspaces have been used and the `steps` were executed in the root of the repository. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.28 or later</small></i>. |
 
 ### `changesetTemplate` context
 
@@ -106,12 +111,13 @@ They are evaluated after the execution of all entries in `steps`.
 | Template variable | Type | Description |
 | --- | --- | --- |
 | `batch_change.name` | `string` | The `name` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>. |
-| `batch_change.description` | `string` | The `description` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>. 
+| `batch_change.description` | `string` | The `description` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>.  |
 | `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `repositoriesMatchingQuery`s have been found. |
 | `repository.name` | `string` | Full name of the repository in which the step is being executed. |
 | `steps.modified_files` | `list of strings` | List of files that have been modified by the `steps`. Empty list if no files have been modified. |
 | `steps.added_files` | `list of strings` | List of files that have been added by the `steps`. Empty list if no files have been added. |
 | `steps.deleted_files` | `list of strings` | List of files that have been deleted by the `steps`. Empty list if no files have been deleted. |
+| `steps.path` | `string` | Path (relative to the root of the directory, no leading `/` or `.`) in which the `steps` have been executed. Empty if no workspaces have been used and the `steps` were executed in the root of the repository. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.25 or later</small></i> |
 | `outputs.<name>` | depends on `outputs.<name>.format`, default: `string`| Value of an [`output`](batch_spec_yaml_reference.md#steps-outputs) set by `steps`. If the [`outputs.<name>.format`](batch_spec_yaml_reference.md#steps-outputs-format) is `yaml` or `json` and the `value` a data structure (i.e. array, object, ...), then subfields can be accessed too. See "[Examples](#examples)" below. |
 
 ## Template helper functions
@@ -249,4 +255,41 @@ changesetTemplate:
     ${{ range $index, $hook := outputs.goreleaserConfig.before.hooks }}
     - `${{ $hook }}`
     ${{ end }}
+```
+
+Using the [`steps.if`](batch_spec_yaml_reference.md#steps-if) field to conditionally execute different steps in different repositories:
+
+```yaml
+steps:
+  # `if:` is true, step always executes.
+  - run: echo "name of repository is ${{ repository.name }}" >> message.txt
+    if: true
+    container: alpine:3
+
+  # `if:` checks for repository name. Only runs in github.com/sourcegraph/automation-testing
+  - run: echo "hello from automation-testing" >> message.txt
+    if: ${{ eq repository.name "github.com/sourcegraph/automation-testing" }}
+    container: alpine:3
+
+  # `if:` uses glob pattern to match repository name.
+  - run: echo "name contains sourcegraph-testing" >> message.txt
+    if: ${{ matches repository.name "*sourcegraph-testing*" }}
+    container: alpine:3
+
+  # Checks for go.mod existance and saves to outputs
+  - run:  if [[ -f "go.mod" ]]; then echo "true"; else echo "false"; fi
+    container: alpine:3
+    outputs:
+      goModExists:
+        value: ${{ step.stdout }}
+
+  # `if:` uses the just-set `outputs.goModExists` value as condition
+  - run: go fmt ./...
+    container: golang
+    if: ${{ outputs.goModExists }}
+
+  # `if:` checks for path, in case steps are executed in workspace.
+  - run: echo "hello workspace" >> workspace.txt
+    container: golang
+    if: ${{ eq steps.path "sub/directory/in/repo" }}
 ```
