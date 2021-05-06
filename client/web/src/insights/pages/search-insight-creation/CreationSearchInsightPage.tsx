@@ -121,7 +121,7 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
                 <p className="text-muted">
                     Search-based code insights analyse your code based on any search query.{' '}
                     <a
-                        href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
+                        href="https://docs.sourcegraph.com/dev/background-information/insights"
                         target="_blank"
                         rel="noopener"
                     >
