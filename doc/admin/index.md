@@ -59,3 +59,5 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - [FAQ](faq.md)
 
 ## [How-tos](how-to/index.md)
+
+- [How to troubleshoot a dirty database](how-to/dirty_database.md)
