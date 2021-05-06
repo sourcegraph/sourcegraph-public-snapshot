@@ -21,22 +21,37 @@ ADD COLUMN IF NOT EXISTS
 DROP CONSTRAINT IF EXISTS
     user_credentials_there_can_be_only_one;
 
--- Previously upgraded credentials need a placeholder encryption ID so that we
--- can replace it with a real one later in the OOB migrator.
+-- Previously upgraded credentials with encryption need a placeholder encryption
+-- ID so that we can replace it with a real one later in the OOB migrator.
+--
+-- Unfortunately, the lack of inline metadata means that we have to use a
+-- heuristic to determine if the credential was _actually_ encrypted or not.
+-- Practically speaking, this only matters for users who (a) enabled encryption
+-- for Batch Changes, and (b) ran a version of Sourcegraph between May 4 and May
+-- 6. That's only going to be two developers on the Batch Changes team, so this
+-- leaky heuristic should be fine.
 
 UPDATE
     batch_changes_site_credentials
 SET
     encryption_key_id = 'previously-migrated'
 WHERE
-    credential_enc IS NOT NULL;
+    credential_enc IS NOT NULL
+    AND NOT (
+        LEFT(ENCODE(credential_enc, 'escape'), 1) = '{'
+        AND RIGHT(ENCODE(credential_enc, 'escape'), 1) = '}'
+    );
 
 UPDATE
     user_credentials
 SET
     encryption_key_id = 'previously-migrated'
 WHERE
-    credential_enc IS NOT NULL;
+    credential_enc IS NOT NULL
+    AND NOT (
+        LEFT(ENCODE(credential_enc, 'escape'), 1) = '{'
+        AND RIGHT(ENCODE(credential_enc, 'escape'), 1) = '}'
+    );
 
 -- Now we shift credentials into the new field.
 
