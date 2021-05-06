@@ -1,6 +1,6 @@
 import classNames from 'classnames'
-import * as H from 'history'
 import React, { useCallback } from 'react'
+import { useHistory, useLocation } from 'react-router'
 import { catchError } from 'rxjs/operators'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -20,15 +20,11 @@ import { SearchContextNode, SearchContextNodeProps } from './SearchContextNode'
 
 export interface SearchContextsListTabProps
     extends Pick<SearchContextProps, 'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts'> {
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
 }
 
 export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTabProps> = ({
-    history,
-    location,
     isSourcegraphDotCom,
     authenticatedUser,
     fetchSearchContexts,
@@ -84,8 +80,8 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                     args: {},
                 },
                 {
-                    value: 'instance',
-                    label: 'Instance',
+                    value: 'no-owner',
+                    label: 'No owner',
                     args: {
                         namespaceFilterType: SearchContextsNamespaceFilterType.INSTANCE,
                     },
@@ -95,6 +91,8 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
         },
     ]
 
+    const history = useHistory()
+    const location = useLocation()
     return (
         <>
             {isSourcegraphDotCom && (

@@ -1,6 +1,5 @@
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
-import { createMemoryHistory } from 'history'
 import React from 'react'
 import { Observable, of } from 'rxjs'
 
@@ -20,10 +19,7 @@ const { add } = storiesOf('web/searchContexts/SearchContextsListTab', module)
         </div>
     ))
 
-const history = createMemoryHistory()
 const defaultProps: SearchContextsListTabProps = {
-    history,
-    location: history.location,
     authenticatedUser: null,
     isSourcegraphDotCom: true,
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
