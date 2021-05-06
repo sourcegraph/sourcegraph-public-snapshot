@@ -70,7 +70,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
             />
 
             <InputField
-                title="Query"
+                title="Search query"
                 required={true}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 description={
