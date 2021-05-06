@@ -187,8 +187,8 @@ commands:
     install: go install github.com/sourcegraph/sourcegraph/cmd/searcher -o .bin/gitserver
 
   caddy:
-    install_doc.darwin: 'use brew install'
-    install_doc.linux: 'use apt install'
+    installDoc.darwin: 'use brew install'
+    installDoc.linux: 'use apt install'
 
   web:
     cmd: ./node_modules/.bin/gulp --silent --color dev

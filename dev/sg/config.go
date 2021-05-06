@@ -39,8 +39,9 @@ type Command struct {
 	Install          string            `yaml:"install"`
 	Env              map[string]string `yaml:"env"`
 	Watch            []string          `yaml:"watch"`
-	InstallDocDarwin string            `yaml:"install_doc.darwin"`
-	InstallDocLinux  string            `yaml:"install_doc.linux"`
+	InstallDocDarwin string            `yaml:"installDoc.darwin"`
+	InstallDocLinux  string            `yaml:"installDoc.linux"`
+	IgnoreOutput     bool              `yaml:"ignoreOutput"`
 }
 
 type Config struct {

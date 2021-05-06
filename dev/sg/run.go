@@ -172,7 +172,11 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 		c.Env = makeEnv(conf.Env, cmd.Env)
 
 		logger := newCmdLogger(cmd.Name, out)
-		c.Stdout = logger
+		if !cmd.IgnoreOutput {
+			c.Stdout = logger
+		} else {
+			out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
+		}
 		c.Stderr = logger
 
 		if err := c.Start(); err != nil {
