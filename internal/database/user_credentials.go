@@ -23,6 +23,7 @@ type UserCredential struct {
 	UserID              int32
 	ExternalServiceType string
 	ExternalServiceID   string
+	EncryptionKeyID     string
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 
@@ -46,18 +47,22 @@ func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator
 		return nil, errors.New("no unencrypted or encrypted credential found")
 	}
 
-	var raw string
-	if uc.key != nil {
-		secret, err := uc.key.Decrypt(ctx, uc.encryptedCredential)
-		if err != nil {
-			return nil, errors.Wrap(err, "decrypting credential")
-		}
-		raw = secret.Secret()
-	} else {
-		raw = string(uc.encryptedCredential)
+	// The record includes a field indicating the encryption key ID. We don't
+	// really have a way to look up a key by ID right now, so this is used as a
+	// marker of whether we should expect a key or not.
+	if uc.EncryptionKeyID == "" {
+		return UnmarshalAuthenticator(string(uc.encryptedCredential))
+	}
+	if uc.key == nil {
+		return nil, errors.New("user credential is encrypted, but no key is available to decrypt it")
 	}
 
-	a, err := UnmarshalAuthenticator(raw)
+	secret, err := uc.key.Decrypt(ctx, uc.encryptedCredential)
+	if err != nil {
+		return nil, errors.Wrap(err, "decrypting credential")
+	}
+
+	a, err := UnmarshalAuthenticator(secret.Secret())
 	if err != nil {
 		return nil, errors.Wrap(err, "unmarshalling authenticator")
 	}
@@ -68,15 +73,25 @@ func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator
 // SetAuthenticator encrypts and sets the authenticator within the user
 // credential.
 func (uc *UserCredential) SetAuthenticator(ctx context.Context, a auth.Authenticator) error {
+	// Set the key ID. This is cargo culted from external_accounts.go, and the
+	// key ID doesn't appear to be actually useful as anything other than a
+	// marker of whether the data is expected to be encrypted or not.
+	id, err := keyID(ctx, uc.key)
+	if err != nil {
+		return errors.Wrap(err, "getting key version")
+	}
+
 	secret, err := EncryptAuthenticator(ctx, uc.key, a)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "encrypting authenticator")
 	}
 
 	// We must set credential to nil here: if we're in the middle of migrating
 	// when this is called, we don't want the unencrypted credential to remain.
 	uc.credential = nil
 	uc.encryptedCredential = secret
+	uc.EncryptionKeyID = id
+
 	return nil
 }
 
@@ -145,6 +160,11 @@ func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 		return Mocks.UserCredentials.Create(ctx, scope, credential)
 	}
 
+	id, err := keyID(ctx, s.key)
+	if err != nil {
+		return nil, err
+	}
+
 	enc, err := EncryptAuthenticator(ctx, s.key, credential)
 	if err != nil {
 		return nil, err
@@ -157,6 +177,7 @@ func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 		scope.ExternalServiceType,
 		scope.ExternalServiceID,
 		enc,
+		id,
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
 
@@ -186,6 +207,7 @@ func (s *UserCredentialsStore) Update(ctx context.Context, credential *UserCrede
 		credential.ExternalServiceID,
 		&NullAuthenticator{A: &credential.credential},
 		credential.encryptedCredential,
+		credential.EncryptionKeyID,
 		credential.UpdatedAt,
 		credential.SSHMigrationApplied,
 		credential.ID,
@@ -385,6 +407,7 @@ var userCredentialsColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_service_id"),
 	sqlf.Sprintf("credential"),
 	sqlf.Sprintf("credential_enc"),
+	sqlf.Sprintf("encryption_key_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("ssh_migration_applied"),
@@ -423,11 +446,13 @@ INSERT INTO
 		external_service_type,
 		external_service_id,
 		credential_enc,
+		encryption_key_id,
 		created_at,
 		updated_at,
 		ssh_migration_applied
 	)
 	VALUES (
+		%s,
 		%s,
 		%s,
 		%s,
@@ -450,6 +475,7 @@ SET
 	external_service_id = %s,
 	credential = %s,
 	credential_enc = %s,
+	encryption_key_id = %s,
 	updated_at = %s,
 	ssh_migration_applied = %s
 WHERE
@@ -473,8 +499,21 @@ func scanUserCredential(cred *UserCredential, s interface {
 		&cred.ExternalServiceID,
 		&NullAuthenticator{A: &cred.credential},
 		&cred.encryptedCredential,
+		&cred.EncryptionKeyID,
 		&cred.CreatedAt,
 		&cred.UpdatedAt,
 		&cred.SSHMigrationApplied,
 	)
+}
+
+func keyID(ctx context.Context, key encryption.Key) (string, error) {
+	if key != nil {
+		version, err := key.Version(ctx)
+		if err != nil {
+			return "", errors.Wrap(err, "getting key version")
+		}
+		return version.JSON(), nil
+	}
+
+	return "", nil
 }
