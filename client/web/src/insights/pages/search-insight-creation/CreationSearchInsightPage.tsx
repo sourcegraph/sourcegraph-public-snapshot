@@ -1,4 +1,5 @@
 import * as jsonc from '@sqs/jsonc-parser'
+import classnames from 'classnames';
 import { camelCase } from 'lodash'
 import React, { useCallback, useContext } from 'react'
 import { Redirect } from 'react-router'
@@ -17,6 +18,7 @@ import {
     CreationSearchInsightForm,
     CreationSearchInsightFormProps,
 } from './components/creation-search-insight-form/CreationSearchInsightForm'
+import styles from './CreationSearchInsightPage.module.scss'
 import { FORM_ERROR } from './hooks/useForm'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
@@ -110,7 +112,7 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
     }
 
     return (
-        <Page className="col-8">
+        <Page className={classnames('col-8', styles.creationPage)}>
             <PageTitle title="Create new code insight" />
 
             <div className="mb-5">
