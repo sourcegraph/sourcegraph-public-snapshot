@@ -39,16 +39,6 @@
         background: var(--body-bg);
     }
 
-    [data-reach-tab-list] {
-        padding: 0;
-        &:first-child {
-            padding-left: 0;
-        }
-        &:last-child {
-            padding-right: 0;
-        }
-    }
-
     [data-reach-tab] {
         align-items: center;
         letter-spacing: normal;
@@ -68,7 +58,7 @@
         &:focus-visible {
             outline: none;
             box-shadow: none;
-            .tablist-label {
+            > .tablist-wrapper--tab-label {
                 border-radius: 3px;
                 outline: 1px solid transparent;
                 box-shadow: var(--focus-box-shadow);
@@ -83,8 +73,5 @@
         display: flex;
         align-items: stretch;
         justify-content: space-between;
-        &__full-width {
-            display: flex;
-        }
     }
 }

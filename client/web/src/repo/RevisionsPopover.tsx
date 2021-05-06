@@ -231,23 +231,11 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
             <div className="tablist-wrapper flex-1">
                 <TabList>
                     {TABS.map(({ label, id }) => (
-                        <Tab className="tablist-wrapper__full-width" key={id} data-test-tab={id}>
-                            <span className="tablist-label">{label}</span>
+                        <Tab key={id} data-test-tab={id}>
+                            <span className="tablist-wrapper--tab-label">{label}</span>
                         </Tab>
                     ))}
                 </TabList>
-                {isRedesignEnabled && (
-                    <button
-                        type="button"
-                        // TODO: add onClick funcitonality
-                        className="btn btn-icon"
-                        title="Close panel"
-                        data-tooltip="Close panel"
-                        data-placement="left"
-                    >
-                        <CloseIcon className="icon-inline" />
-                    </button>
-                )}
             </div>
             <TabPanels className="revisions-popover__tabs">
                 {TABS.map(tab => (
