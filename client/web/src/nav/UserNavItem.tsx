@@ -20,6 +20,7 @@ import { ThemePreference, ThemePreferenceProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 
 import { RedesignToggle } from './RedesignToggle'
+import { Badge } from '../components/Badge'
 
 export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, ExtensionAlertAnimationProps {
     location: H.Location
@@ -31,6 +32,7 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     keyboardShortcutForSwitchTheme?: KeyboardShortcut
     testIsOpen?: boolean
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
+    showRepositorySection: boolean
 }
 
 export interface ExtensionAlertAnimationProps {
@@ -157,6 +159,14 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                 <Link to={props.authenticatedUser.settingsURL!} className="dropdown-item">
                     Settings
                 </Link>
+                {props.showRepositorySection && (
+                    <Link
+                        to={`/users/${props.authenticatedUser.username}/settings/repositories`}
+                        className="dropdown-item"
+                    >
+                        Repositories <Badge className="ml-1" status="new" />
+                    </Link>
+                )}
                 <Link to="/extensions" className="dropdown-item">
                     Extensions
                 </Link>
