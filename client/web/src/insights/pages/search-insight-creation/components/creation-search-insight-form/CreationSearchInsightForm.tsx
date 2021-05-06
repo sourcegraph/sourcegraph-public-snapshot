@@ -16,7 +16,7 @@ import { createRequiredValidator, composeValidators } from '../validators'
 
 import styles from './CreationSearchInsightForm.module.scss'
 
-const repositoriesFieldValidator = createRequiredValidator('Repositories is required field for code insight.')
+const repositoriesFieldValidator = createRequiredValidator('Repositories is a required field.')
 const requiredStepValueField = createRequiredValidator('Please specify a step between points.')
 /**
  * Custom validator for chart series. Since series has complex type
