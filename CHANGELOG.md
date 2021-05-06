@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- Starting with Sourcegraph 3.28.0 batch spec `steps` can contain an `if: <template string>` attribute that determines whether the given step will be executed. [#520](https://github.com/sourcegraph/src-cli/pull/520)
+
 ### Changed
 
 ### Fixed

@@ -6,22 +6,61 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/gobwas/glob"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
 
+const startDelim = "${{"
+const endDelim = "}}"
+
+var builtins = template.FuncMap{
+	"join":    strings.Join,
+	"split":   strings.Split,
+	"replace": strings.ReplaceAll,
+	"join_if": func(sep string, elems ...string) string {
+		var nonBlank []string
+		for _, e := range elems {
+			if e != "" {
+				nonBlank = append(nonBlank, e)
+			}
+		}
+		return strings.Join(nonBlank, sep)
+	},
+	"matches": func(in, pattern string) (bool, error) {
+		g, err := glob.Compile(pattern)
+		if err != nil {
+			return false, err
+		}
+		return g.Match(in), nil
+	},
+}
+
+func isTrueOutput(output interface{ String() string }) bool {
+	return strings.TrimSpace(output.String()) == "true"
+}
+
+func evalStepCondition(condition string, stepCtx *StepContext) (bool, error) {
+	if condition == "" {
+		return true, nil
+	}
+
+	var out bytes.Buffer
+	if err := renderStepTemplate("step-condition", condition, &out, stepCtx); err != nil {
+		return false, errors.Wrap(err, "parsing step if")
+	}
+
+	return isTrueOutput(&out), nil
+}
+
 func renderStepTemplate(name, tmpl string, out io.Writer, stepCtx *StepContext) error {
-	t, err := parseAsTemplate(name, tmpl, stepCtx)
+	t, err := template.New(name).Delims(startDelim, endDelim).Funcs(builtins).Funcs(stepCtx.ToFuncMap()).Parse(tmpl)
 	if err != nil {
 		return errors.Wrap(err, "parsing step run")
 	}
 
 	return t.Execute(out, stepCtx)
-}
-
-func parseAsTemplate(name, input string, stepCtx *StepContext) (*template.Template, error) {
-	return template.New(name).Delims("${{", "}}").Funcs(stepCtx.ToFuncMap()).Parse(input)
 }
 
 func renderStepMap(m map[string]string, stepCtx *StepContext) (map[string]string, error) {
@@ -56,6 +95,9 @@ type StepContext struct {
 	// Step is the result of the current step. Empty when evaluating the "run" field
 	// but filled when evaluating the "outputs" field.
 	Step StepResult
+	// Steps contains the path in which the steps are being executed and the
+	// changes made by all steps that were executed up until the current step.
+	Steps StepsContext
 	// PreviousStep is the result of the previous step. Empty when there is no
 	// previous step.
 	PreviousStep StepResult
@@ -96,23 +138,16 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 	}
 
 	return template.FuncMap{
-		"join":    strings.Join,
-		"split":   strings.Split,
-		"replace": strings.ReplaceAll,
-		"join_if": func(sep string, elems ...string) string {
-			var nonBlank []string
-			for _, e := range elems {
-				if e != "" {
-					nonBlank = append(nonBlank, e)
-				}
-			}
-			return strings.Join(nonBlank, sep)
-		},
 		"previous_step": func() map[string]interface{} {
 			return newStepResult(&stepCtx.PreviousStep)
 		},
 		"step": func() map[string]interface{} {
 			return newStepResult(&stepCtx.Step)
+		},
+		"steps": func() map[string]interface{} {
+			res := newStepResult(&StepResult{files: stepCtx.Steps.Changes})
+			res["path"] = stepCtx.Steps.Path
+			return res
 		},
 		"outputs": func() map[string]interface{} {
 			return stepCtx.Outputs
@@ -204,18 +239,6 @@ type ChangesetTemplateContext struct {
 // text/template.
 func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 	return template.FuncMap{
-		"join":    strings.Join,
-		"split":   strings.Split,
-		"replace": strings.ReplaceAll,
-		"join_if": func(sep string, elems ...string) string {
-			var nonBlank []string
-			for _, e := range elems {
-				if e != "" {
-					nonBlank = append(nonBlank, e)
-				}
-			}
-			return strings.Join(nonBlank, sep)
-		},
 		"repository": func() map[string]interface{} {
 			return map[string]interface{}{
 				"search_result_paths": tmplCtx.Repository.SearchResultPaths(),
@@ -250,7 +273,7 @@ func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 func renderChangesetTemplateField(name, tmpl string, tmplCtx *ChangesetTemplateContext) (string, error) {
 	var out bytes.Buffer
 
-	t, err := template.New(name).Delims("${{", "}}").Funcs(tmplCtx.ToFuncMap()).Parse(tmpl)
+	t, err := template.New(name).Delims(startDelim, endDelim).Funcs(builtins).Funcs(tmplCtx.ToFuncMap()).Parse(tmpl)
 	if err != nil {
 		return "", err
 	}

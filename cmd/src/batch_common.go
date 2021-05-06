@@ -201,6 +201,7 @@ type executeBatchSpecOpts struct {
 // Sourcegraph, including execution as needed and applying the resulting batch
 // spec if specified.
 func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) error {
+	batches.DebugOut = opts.out
 	svc := service.New(&service.Opts{
 		AllowUnsupported: opts.flags.allowUnsupported,
 		AllowIgnored:     opts.flags.allowIgnored,
@@ -285,11 +286,15 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) error {
 	}
 
 	pending = batchCreatePending(opts.out, "Determining workspaces")
-	tasks, err := svc.BuildTasks(ctx, repos, batchSpec)
+	tb, err := executor.NewTaskBuilder(batchSpec, svc)
 	if err != nil {
-		return errors.Wrap(err, "Calculating execution plan")
+		return errors.Wrap(err, "Parsing batch spec to determine workspaces")
 	}
-	batchCompletePending(pending, fmt.Sprintf("Found %d workspaces", len(tasks)))
+	tasks, err := tb.BuildAll(ctx, repos)
+	if err != nil {
+		return err
+	}
+	batchCompletePending(pending, fmt.Sprintf("Found %d workspaces with steps to execute", len(tasks)))
 
 	execOpts := executor.Opts{
 		CacheDir:    opts.flags.cacheDir,

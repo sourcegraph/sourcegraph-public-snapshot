@@ -149,7 +149,9 @@ const BatchSpecJSON = `{
                     {
                       "type": "object",
                       "description": "An environment variable to set in the step environment: the value will be passed through from the environment src is running within.",
-                      "additionalProperties": { "type": "string" },
+                      "additionalProperties": {
+                        "type": "string"
+                      },
                       "minProperties": 1,
                       "maxProperties": 1
                     }
@@ -161,7 +163,19 @@ const BatchSpecJSON = `{
           "files": {
             "type": "object",
             "description": "Files that should be mounted into or be created inside the Docker container.",
-            "additionalProperties": { "type": "string" }
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "if": {
+            "oneOf": [{ "type": "boolean" }, { "type": "string" }],
+            "description": "A condition to check before executing steps. Supports templating. The value 'true' is interpreted as true.",
+            "examples": [
+              "true",
+              "${{ matches repository.name \"github.com/my-org/my-repo*\" }}",
+              "${{ outputs.goModFileExists }}",
+              "${{ eq previous_step.stdout \"success\" }}"
+            ]
           }
         }
       }
@@ -213,7 +227,14 @@ const BatchSpecJSON = `{
             "description": "The changesets to import from the code host. For GitHub this is the PR number, for GitLab this is the MR number, for Bitbucket Server this is the PR number.",
             "uniqueItems": true,
             "items": {
-              "oneOf": [{ "type": "string" }, { "type": "integer" }]
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
             },
             "examples": [120, "120"]
           }
@@ -273,7 +294,15 @@ const BatchSpecJSON = `{
           "description": "Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.",
           "oneOf": [
             {
-              "oneOf": [{ "type": "boolean" }, { "type": "string", "pattern": "^draft$" }],
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^draft$"
+                }
+              ],
               "description": "A single flag to control the publishing state for the entire batch change."
             },
             {
@@ -283,7 +312,15 @@ const BatchSpecJSON = `{
                 "type": "object",
                 "description": "An object with one field: the key is the glob pattern to match against repository names; the value will be used as the published flag for matching repositories.",
                 "additionalProperties": {
-                  "oneOf": [{ "type": "boolean" }, { "type": "string", "pattern": "^draft$" }]
+                  "oneOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^draft$"
+                    }
+                  ]
                 },
                 "minProperties": 1,
                 "maxProperties": 1

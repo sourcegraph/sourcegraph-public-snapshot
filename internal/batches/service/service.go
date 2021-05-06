@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gobwas/glob"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/src-cli/internal/api"
@@ -185,96 +184,12 @@ func (svc *Service) EnsureImage(ctx context.Context, name string) (docker.Image,
 }
 
 func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository, spec *batches.BatchSpec) ([]*executor.Task, error) {
-	workspaceConfigs := []batches.WorkspaceConfiguration{}
-	for _, conf := range spec.Workspaces {
-		g, err := glob.Compile(conf.In)
-		if err != nil {
-			return nil, err
-		}
-		conf.SetGlob(g)
-		workspaceConfigs = append(workspaceConfigs, conf)
+	builder, err := executor.NewTaskBuilder(spec, svc)
+	if err != nil {
+		return nil, err
 	}
 
-	// rootWorkspace contains all the repositories that didn't match a
-	// `workspaces` configuration.
-	rootWorkspace := map[*graphql.Repository]struct{}{}
-	// reposByWorkspaceConfig maps workspace config to repositories in which
-	// the workspace config should be used.
-	reposByWorkspaceConfig := make(map[int][]*graphql.Repository, len(workspaceConfigs))
-
-	for _, repo := range repos {
-		matched := false
-
-		for i, conf := range workspaceConfigs {
-			if !conf.Matches(repo.Name) {
-				continue
-			}
-
-			if matched {
-				return nil, fmt.Errorf("repository %s matches multiple workspaces.in globs in the batch spec. glob: %q", repo.Name, conf.In)
-			}
-
-			if rs, ok := reposByWorkspaceConfig[i]; ok {
-				reposByWorkspaceConfig[i] = append(rs, repo)
-			} else {
-				reposByWorkspaceConfig[i] = []*graphql.Repository{repo}
-			}
-			matched = true
-		}
-
-		if !matched {
-			rootWorkspace[repo] = struct{}{}
-		}
-	}
-
-	var tasks []*executor.Task
-
-	attr := &executor.BatchChangeAttributes{Name: spec.Name, Description: spec.Description}
-
-	for configIndex, repos := range reposByWorkspaceConfig {
-		workspaceConfig := workspaceConfigs[configIndex]
-		repoDirs, err := svc.FindDirectoriesInRepos(ctx, workspaceConfig.RootAtLocationOf, repos...)
-		if err != nil {
-			return nil, err
-		}
-
-		for repo, dirs := range repoDirs {
-			for _, d := range dirs {
-				// Directory is root.
-				if d == "." {
-					// This shouldn't happen, but sanity check:
-					if _, ok := rootWorkspace[repo]; ok {
-						continue
-					} else {
-						d = ""
-					}
-				}
-
-				tasks = append(tasks, &executor.Task{
-					Repository:            repo,
-					Path:                  d,
-					Steps:                 spec.Steps,
-					TransformChanges:      spec.TransformChanges,
-					Template:              spec.ChangesetTemplate,
-					BatchChangeAttributes: attr,
-					OnlyFetchWorkspace:    workspaceConfig.OnlyFetchWorkspace,
-				})
-			}
-		}
-	}
-
-	for r := range rootWorkspace {
-		tasks = append(tasks, &executor.Task{
-			Repository:            r,
-			Path:                  "",
-			Steps:                 spec.Steps,
-			TransformChanges:      spec.TransformChanges,
-			Template:              spec.ChangesetTemplate,
-			BatchChangeAttributes: attr,
-		})
-	}
-
-	return tasks, nil
+	return builder.BuildAll(ctx, repos)
 }
 
 func (svc *Service) RunExecutor(ctx context.Context, opts executor.Opts, tasks []*executor.Task, spec *batches.BatchSpec, progress func([]*executor.TaskStatus), skipErrors bool) ([]*batches.ChangesetSpec, []string, error) {

@@ -305,7 +305,6 @@ output4=integration-test-batch-change`,
 			wantAuthorName:    "myOutputName1=main.go",
 			wantAuthorEmail:   "myOutputName1=main.go",
 		},
-
 		{
 			name: "workspaces",
 			archives: []mock.RepoArchive{
@@ -371,6 +370,40 @@ output4=integration-test-batch-change`,
 					"workspace-root-dir": []string{"hello.txt", "gitignore-exists"},
 					"workspace-a-dir":    []string{"a/hello.txt", "a/gitignore-exists"},
 					"workspace-b-dir":    []string{"a/b/hello.txt", "a/b/gitignore-exists", "a/b/gitignore-exists-in-a"},
+				},
+			},
+		},
+		{
+			name: "step condition",
+			archives: []mock.RepoArchive{
+				{Repo: srcCLIRepo, Files: map[string]string{
+					"README.md": "# Welcome to the README\n",
+				}},
+				{Repo: sourcegraphRepo, Files: map[string]string{
+					"README.md": "# Sourcegraph README\n",
+				}},
+			},
+			steps: []batches.Step{
+				{Run: `echo -e "foobar\n" >> README.md`},
+				{
+					Run: `echo "foobar" >> hello.txt`,
+					If:  `${{ matches repository.name "github.com/sourcegraph/sourcegra*" }}`,
+				},
+				{
+					Run: `echo "foobar" >> in-path.txt`,
+					If:  `${{ matches steps.path "sub/directory/of/repo" }}`,
+				},
+			},
+			tasks: []*Task{
+				{Repository: srcCLIRepo},
+				{Repository: sourcegraphRepo, Path: "sub/directory/of/repo"},
+			},
+			wantFilesChanged: filesByRepository{
+				srcCLIRepo.ID: filesByBranch{
+					changesetTemplateBranch: []string{"README.md"},
+				},
+				sourcegraphRepo.ID: {
+					changesetTemplateBranch: []string{"README.md", "hello.txt", "in-path.txt"},
 				},
 			},
 		},
@@ -949,5 +982,6 @@ func featuresAllEnabled() batches.FeatureFlags {
 		UseGzipCompression:       true,
 		AllowTransformChanges:    true,
 		AllowWorkspaces:          true,
+		AllowConditionalExec:     true,
 	}
 }
