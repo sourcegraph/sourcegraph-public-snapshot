@@ -24,7 +24,7 @@ const defaultProps = (
     props: ThemeProps
 ): Omit<
     React.ComponentProps<typeof GlobalNavbar>,
-    'authenticatedUser' | 'variant' | 'isSearchRelatedPage' | 'authRequired'
+    'authenticatedUser' | 'variant' | 'showSearchBox' | 'authRequired'
 > => ({
     isSourcegraphDotCom: false,
     settingsCascade: {
@@ -79,7 +79,7 @@ add('Anonymous viewer', () => (
                 authRequired={false}
                 authenticatedUser={null}
                 variant="default"
-                isSearchRelatedPage={false}
+                showSearchBox={false}
             />
         )}
     </WebStory>
@@ -93,7 +93,7 @@ add('Auth required', () => (
                 authRequired={true}
                 authenticatedUser={null}
                 variant="default"
-                isSearchRelatedPage={false}
+                showSearchBox={false}
             />
         )}
     </WebStory>
@@ -111,7 +111,7 @@ add(
                         { username: 'alice', organizations: { nodes: [{ name: 'acme' }] } } as AuthenticatedUser
                     }
                     variant="default"
-                    isSearchRelatedPage={false}
+                    showSearchBox={false}
                 />
             )}
         </WebStory>

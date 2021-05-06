@@ -10,7 +10,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -23,8 +22,8 @@ func TestList(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore(t)
+	db := dbtesting.GetDB(t)
+	store := testStore(t, db)
 
 	migrations, err := store.List(context.Background())
 	if err != nil {
@@ -46,8 +45,8 @@ func TestUpdateDirection(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore(t)
+	db := dbtesting.GetDB(t)
+	store := testStore(t, db)
 
 	if err := store.UpdateDirection(context.Background(), 3, true); err != nil {
 		t.Fatalf("unexpected error updating direction: %s", err)
@@ -74,8 +73,8 @@ func TestUpdateProgress(t *testing.T) {
 		t.Skip()
 	}
 	now := testTime.Add(time.Hour * 7)
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore(t)
+	db := dbtesting.GetDB(t)
+	store := testStore(t, db)
 
 	if err := store.updateProgress(context.Background(), 3, 0.7, now); err != nil {
 		t.Fatalf("unexpected error updating migration: %s", err)
@@ -104,8 +103,8 @@ func TestAddError(t *testing.T) {
 	}
 
 	now := testTime.Add(time.Hour * 8)
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore(t)
+	db := dbtesting.GetDB(t)
+	store := testStore(t, db)
 
 	if err := store.addError(context.Background(), 2, "oops", now); err != nil {
 		t.Fatalf("unexpected error updating migration: %s", err)
@@ -138,8 +137,8 @@ func TestAddErrorBounded(t *testing.T) {
 	}
 
 	now := testTime.Add(time.Hour * 9)
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore(t)
+	db := dbtesting.GetDB(t)
+	store := testStore(t, db)
 
 	var expectedErrors []MigrationError
 	for i := 0; i < MaxMigrationErrors*1.5; i++ {
@@ -236,8 +235,8 @@ var testMigrations = []Migration{
 func strPtr(s string) *string        { return &s }
 func timePtr(t time.Time) *time.Time { return &t }
 
-func testStore(t *testing.T) *Store {
-	store := NewStoreWithDB(dbconn.Global)
+func testStore(t *testing.T, db dbutil.DB) *Store {
+	store := NewStoreWithDB(db)
 
 	for i := range testMigrations {
 		if err := insertMigration(store, testMigrations[i]); err != nil {

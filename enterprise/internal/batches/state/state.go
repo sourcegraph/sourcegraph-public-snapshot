@@ -53,7 +53,7 @@ func SetDerivedState(ctx context.Context, repoStore *database.RepoStore, c *btyp
 	// synced, and it's still complete, then we don't need to do any further
 	// work: the diffstat should still be correct, and this way we don't need to
 	// rely on gitserver having the head OID still available.
-	if c.SyncState.IsComplete && c.ExternalState != btypes.ChangesetExternalStateOpen {
+	if c.SyncState.IsComplete && c.Complete() {
 		return
 	}
 
@@ -584,7 +584,7 @@ func computeSyncState(ctx context.Context, c *btypes.Changeset, repo api.RepoNam
 	return &btypes.ChangesetSyncState{
 		BaseRefOid: base,
 		HeadRefOid: head,
-		IsComplete: c.ExternalState != btypes.ChangesetExternalStateOpen,
+		IsComplete: c.Complete(),
 	}, nil
 }
 

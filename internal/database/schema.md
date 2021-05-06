@@ -65,12 +65,16 @@ Triggers:
  id                    | bigint                   |           | not null | nextval('batch_changes_site_credentials_id_seq'::regclass)
  external_service_type | text                     |           | not null | 
  external_service_id   | text                     |           | not null | 
- credential            | text                     |           | not null | 
+ credential            | text                     |           |          | 
  created_at            | timestamp with time zone |           | not null | now()
  updated_at            | timestamp with time zone |           | not null | now()
+ credential_enc        | bytea                    |           |          | 
 Indexes:
     "batch_changes_site_credentials_pkey" PRIMARY KEY, btree (id)
     "batch_changes_site_credentials_unique" UNIQUE, btree (external_service_type, external_service_id)
+    "batch_changes_site_credentials_credential_enc_idx" btree ((credential_enc IS NULL))
+Check constraints:
+    "batch_changes_site_credentials_there_can_be_only_one" CHECK (num_nonnulls(credential, credential_enc) = 1)
 
 ```
 

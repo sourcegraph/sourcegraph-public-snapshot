@@ -29,10 +29,11 @@ export interface MonacoQueryInputProps
         ThemeProps,
         CaseSensitivityProps,
         PatternTypeProps,
-        SearchContextProps,
+        Omit<SearchContextProps, 'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable'>,
         CopyQueryButtonProps {
     location: H.Location
     history: H.History
+    isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
     onChange: (newState: QueryState) => void
     onSubmit: () => void
@@ -76,6 +77,7 @@ export function addSourcegraphSearchCodeIntelligence(
         globbing: boolean
         interpretComments?: boolean
         enableSmartQuery: boolean
+        isSourcegraphDotCom?: boolean
     }
 ): Subscription {
     const subscriptions = new Subscription()
@@ -205,7 +207,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     useLayoutEffect(() => {
         searchQueries.next(queryState.query)
     }, [queryState.query, searchQueries])
-    const { patternType, globbing, enableSmartQuery, interpretComments } = props
+    const { patternType, globbing, enableSmartQuery, interpretComments, isSourcegraphDotCom } = props
     useEffect(() => {
         if (!monacoInstance) {
             return
@@ -219,6 +221,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 globbing,
                 enableSmartQuery,
                 interpretComments,
+                isSourcegraphDotCom,
             }
         )
         return () => subscription.unsubscribe()
@@ -230,6 +233,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         globbing,
         enableSmartQuery,
         interpretComments,
+        isSourcegraphDotCom,
     ])
 
     // Register suggestions handle

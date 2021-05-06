@@ -73,6 +73,7 @@ const filters: Filter[] = [
         limitHit: false,
         kind: 'lang',
     },
+
     {
         label: '-file:_test\\.go$',
         value: '-file:_test\\.go$',
@@ -80,6 +81,14 @@ const filters: Filter[] = [
         limitHit: false,
         kind: 'file',
     },
+
+    ...['typescript', 'javascript', 'c++', 'c', 'c#', 'python', 'ruby', 'haskell', 'java'].map(lang => ({
+        label: `lang:${lang}`,
+        value: `lang:${lang}`,
+        count: 10,
+        limitHit: true,
+        kind: 'lang',
+    })),
 ]
 
 add('empty sidebar', () => <WebStory>{() => <SearchSidebar {...defaultProps} />}</WebStory>)

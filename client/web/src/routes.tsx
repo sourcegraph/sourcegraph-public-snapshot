@@ -212,6 +212,19 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
     },
     {
+        path: '/contexts/convert-version-contexts',
+        render: lazyComponent(
+            () => import('./searchContexts/ConvertVersionContextsPage'),
+            'ConvertVersionContextsPage'
+        ),
+        exact: true,
+        condition: props =>
+            !isErrorLike(props.settingsCascade.final) &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement &&
+            !!props.authenticatedUser?.siteAdmin,
+    },
+    {
         path: '/contexts/:id',
         render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
         condition: props =>

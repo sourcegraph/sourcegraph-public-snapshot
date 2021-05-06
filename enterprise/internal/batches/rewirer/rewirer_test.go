@@ -388,6 +388,8 @@ func TestRewirer_Rewire(t *testing.T) {
 				CurrentSpec:        testChangesetSpecID + 1,
 				// The changeset was reconciled successfully before, so the previous spec should have been recorded.
 				PreviousSpec: testChangesetSpecID,
+				// Diff stat is copied over from changeset spec
+				DiffStat: ct.TestChangsetSpecDiffStat,
 			})},
 		},
 		{
@@ -420,6 +422,8 @@ func TestRewirer_Rewire(t *testing.T) {
 				CurrentSpec:        testChangesetSpecID + 1,
 				// The changeset was not reconciled successfully before, so the previous spec should have remained unset.
 				PreviousSpec: 0,
+				// Diff stat is copied over from changeset spec
+				DiffStat: ct.TestChangsetSpecDiffStat,
 			})},
 		},
 		// END CHANGESET SPEC AND CHANGESET

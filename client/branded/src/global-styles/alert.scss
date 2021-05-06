@@ -24,3 +24,5 @@
 .alert a:not(.btn) {
     @extend .alert-link;
 }
+
+@import './alert-redesign';
