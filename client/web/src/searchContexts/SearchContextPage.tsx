@@ -68,22 +68,22 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                             </div>
                             {!searchContextOrError.autoDefined && (
                                 <>
-                                    <div className="row mt-4">
-                                        <div className="col">Repositories</div>
-                                        <div className="col">Revisions</div>
+                                    <div className="mt-4 d-flex">
+                                        <div className="w-50">Repositories</div>
+                                        <div className="w-50">Revisions</div>
                                     </div>
                                     <hr className="mt-2 mb-0" />
                                     {searchContextOrError.repositories.map(repositoryRevisions => (
                                         <div
                                             key={repositoryRevisions.repository.name}
-                                            className="row search-context-page__repo-revs-row"
+                                            className="search-context-page__repo-revs-row d-flex"
                                         >
-                                            <div className="col search-context-page__repo-revs-row-repo">
+                                            <div className="search-context-page__repo-revs-row-repo w-50">
                                                 <Link to={`/${repositoryRevisions.repository.name}`}>
                                                     {repositoryRevisions.repository.name}
                                                 </Link>
                                             </div>
-                                            <div className="col">
+                                            <div className="w-50">
                                                 {repositoryRevisions.revisions.map(revision => (
                                                     <div
                                                         key={`${repositoryRevisions.repository.name}-${revision}`}
