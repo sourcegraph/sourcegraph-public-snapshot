@@ -12,13 +12,8 @@ import { PageHeader } from '@sourcegraph/wildcard'
 
 import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { Page } from '../../../components/Page'
-import { PageHeader } from '../../../components/PageHeader'
 import { InsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
 import { InsightsApiContext } from '../../core/backend/api-provider'
-import { FeedbackBadge } from '../../components/FeedbackBadge'
-import { Page } from '../../components/Page'
-import { InsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../components'
-import { InsightsApiContext } from '../core/backend/api-provider'
 
 export interface InsightsPageProps
     extends ExtensionsControllerProps,
