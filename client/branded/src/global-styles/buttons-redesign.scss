@@ -187,6 +187,10 @@
         @extend %label-base;
     }
 
+    .btn.btn-sm {
+        @extend %label-base-small;
+    }
+
     // Label / Uppercase / Base
     .btn.text-uppercase {
         @extend %label-uppercase;
@@ -194,6 +198,7 @@
         // Label / Uppercase / Small
         &.btn-sm {
             font-size: 0.6875rem;
+            @extend %label-uppercase;
         }
     }
 }
