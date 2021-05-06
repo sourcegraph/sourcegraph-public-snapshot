@@ -76,8 +76,8 @@ import styles from './PageSelector.module.scss'
 To use mixins/functions provided by Bootstrap in CSS modules use explicit imports to the required module.
 
 ```scss
-@import '~bootstrap/scss/functions';
-@import '~bootstrap/scss/mixins/caret';
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/mixins/caret';
 ```
 
 It's not safe to import all global Bootstrap helpers and variables into the CSS module because we redefine many Bootstrap variables on our side.

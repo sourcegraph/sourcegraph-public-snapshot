@@ -75,12 +75,15 @@ const reposStatsName = "repos-stats.json"
 
 // cleanupRepos walks the repos directory and performs maintenance tasks:
 //
-// 1. Remove corrupt repos.
-// 2. Remove stale lock files.
-// 3. Remove repos based on disk pressure.
-// 4. Reclone repos after a while. (simulate git gc)
-// 5. Remove repos on disk that don't belong in this shard
-func (s *Server) cleanupRepos(addrs []string) {
+// 1. Compute the amount of space used by the repo
+// 2. Remove corrupt repos.
+// 3. Remove stale lock files.
+// 4. Ensure correct git attributes
+// 5. Scrub remote URLs
+// 6. Perform garbage collection
+// 7. Re-clone repos after a while. (simulate git gc)
+// 8. Remove repos based on disk pressure.
+func (s *Server) cleanupRepos() {
 	janitorRunning.Set(1)
 	defer janitorRunning.Set(0)
 
@@ -153,7 +156,7 @@ func (s *Server) cleanupRepos(addrs []string) {
 		}
 
 		// We believe converting a Perforce depot to a Git repository is generally a
-		// very expensive operation, therefore we do not try to reclone/redo the
+		// very expensive operation, therefore we do not try to re-clone/redo the
 		// conversion only because it is old or slow to do "git gc".
 		if repoType == "perforce" && reason != maybeCorrupt {
 			reason = ""
@@ -256,7 +259,7 @@ func (s *Server) cleanupRepos(addrs []string) {
 		// repository. We don't do this if DisableAutoGitUpdates is set as it could
 		// potentially kick off a clone operation.
 		cleanups = append(cleanups, cleanupFn{
-			Name: "maybe reclone",
+			Name: "maybe re-clone",
 			Do:   maybeReclone,
 		})
 	}
@@ -651,8 +654,8 @@ func setRecloneTime(dir GitDir, now time.Time) error {
 }
 
 // getRecloneTime returns an approximate time a repository is cloned. If the
-// value is not stored in the repository, the reclone time for the repository
-// is set to now.
+// value is not stored in the repository, the re-clone time for the repository is
+// set to now.
 func getRecloneTime(dir GitDir) (time.Time, error) {
 	// We store the time we re-cloned the repository. If the value is missing,
 	// we store the current time. This decouples this timestamp from the

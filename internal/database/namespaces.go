@@ -3,13 +3,11 @@ package database
 import (
 	"context"
 	"database/sql"
-	"sync"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -33,8 +31,6 @@ var (
 
 type NamespaceStore struct {
 	*basestore.Store
-
-	once sync.Once
 }
 
 // Namespaces instantiates and returns a new NamespaceStore with prepared statements.
@@ -54,17 +50,6 @@ func (s *NamespaceStore) With(other basestore.ShareableStore) *NamespaceStore {
 func (s *NamespaceStore) Transact(ctx context.Context) (*NamespaceStore, error) {
 	txBase, err := s.Store.Transact(ctx)
 	return &NamespaceStore{Store: txBase}, err
-}
-
-// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
-// This function ensures access to dbconn happens after the rest of the code or tests have
-// initialized it.
-func (s *NamespaceStore) ensureStore() {
-	s.once.Do(func() {
-		if s.Store == nil {
-			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-		}
-	})
 }
 
 // GetByID looks up the namespace by an ID.
@@ -123,8 +108,6 @@ func (s *NamespaceStore) GetByName(
 }
 
 func (s *NamespaceStore) getNamespace(ctx context.Context, n *Namespace, preds []*sqlf.Query) error {
-	s.ensureStore()
-
 	q := getNamespaceQuery(preds)
 	err := s.QueryRow(
 		ctx,

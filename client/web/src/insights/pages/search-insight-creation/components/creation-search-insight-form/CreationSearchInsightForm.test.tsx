@@ -9,7 +9,6 @@ import { FORM_ERROR } from '../../hooks/useForm'
 import { CreationSearchInsightForm, CreationSearchInsightFormProps } from './CreationSearchInsightForm'
 
 describe('CreateInsightForm', () => {
-    const DEFAULT_FINAL_SETTINGS = {}
     const renderWithProps = (props: CreationSearchInsightFormProps): RenderResult =>
         render(<CreationSearchInsightForm {...props} />)
     const onSubmitMock = sinon.spy()
@@ -19,7 +18,7 @@ describe('CreateInsightForm', () => {
 
     const getFormFields = (getByRole: BoundFunction<GetByRole>) => {
         const title = getByRole('textbox', { name: /title/i })
-        const repositories = getByRole('textbox', { name: /repositories/i })
+        const repositories = getByRole('textbox', { name: /list of repositories/i })
 
         const personalVisibility = getByRole('radio', { name: /personal/i })
         const organisationVisibility = getByRole('radio', { name: /organization/i })
@@ -54,7 +53,7 @@ describe('CreateInsightForm', () => {
 
     describe('with common fill flow', () => {
         it('will render standard package of form fields', () => {
-            const { getByRole } = renderWithProps({ onSubmit: onSubmitMock, settings: DEFAULT_FINAL_SETTINGS })
+            const { getByRole } = renderWithProps({ onSubmit: onSubmitMock })
 
             const {
                 title,
@@ -84,7 +83,7 @@ describe('CreateInsightForm', () => {
         })
 
         it('will fire onSubmit if all fields have been filled with valid value', async () => {
-            const { getByRole } = renderWithProps({ onSubmit: onSubmitMock, settings: DEFAULT_FINAL_SETTINGS })
+            const { getByRole } = renderWithProps({ onSubmit: onSubmitMock })
             const {
                 title,
                 repositories,
@@ -143,7 +142,6 @@ describe('CreateInsightForm', () => {
         it('with invalid title field', async () => {
             const { getByRole, getByText } = renderWithProps({
                 onSubmit: onSubmitMock,
-                settings: DEFAULT_FINAL_SETTINGS,
             })
             const title = getByRole('textbox', { name: /title/i })
             const submitButton = getByRole('button', { name: /create code insight/i })
@@ -156,16 +154,15 @@ describe('CreateInsightForm', () => {
             sinon.assert.notCalled(onSubmitMock)
 
             expect(title).toHaveFocus()
-            expect(getByText(/title is required/i)).toBeInTheDocument()
+            expect(getByText(/title is a required/i)).toBeInTheDocument()
         })
 
         it('with invalid repository field', async () => {
             const { getByRole, getByText } = renderWithProps({
                 onSubmit: onSubmitMock,
-                settings: DEFAULT_FINAL_SETTINGS,
             })
             const title = getByRole('textbox', { name: /title/i })
-            const repositories = getByRole('textbox', { name: /repositories/i })
+            const repositories = getByRole('textbox', { name: /list of repositories/i })
             const submitButton = getByRole('button', { name: /create code insight/i })
 
             fireEvent.change(title, { target: { value: 'First code insight' } })
@@ -178,16 +175,15 @@ describe('CreateInsightForm', () => {
             sinon.assert.notCalled(onSubmitMock)
 
             expect(repositories).toHaveFocus()
-            expect(getByText(/repositories is required/i)).toBeInTheDocument()
+            expect(getByText(/repositories is a required/i)).toBeInTheDocument()
         })
 
         it('with invalid data series field', async () => {
             const { getByRole, getByText } = renderWithProps({
                 onSubmit: onSubmitMock,
-                settings: DEFAULT_FINAL_SETTINGS,
             })
             const title = getByRole('textbox', { name: /title/i })
-            const repositories = getByRole('textbox', { name: /repositories/i })
+            const repositories = getByRole('textbox', { name: /list of repositories/i })
             const submitButton = getByRole('button', { name: /create code insight/i })
             const dataSeriesGroup = getByRole('group', { name: /data series/i })
             const seriesName = within(dataSeriesGroup).getByRole('textbox', { name: /name/i })
@@ -208,7 +204,7 @@ describe('CreateInsightForm', () => {
 
         it('when onSubmit threw submit error', async () => {
             const onSubmit = () => ({ [FORM_ERROR]: asError(new Error('Submit error')) })
-            const { getByRole, getByText } = renderWithProps({ onSubmit, settings: DEFAULT_FINAL_SETTINGS })
+            const { getByRole, getByText } = renderWithProps({ onSubmit })
             const {
                 title,
                 repositories,

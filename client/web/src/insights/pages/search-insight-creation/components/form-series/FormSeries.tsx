@@ -1,5 +1,5 @@
 import classnames from 'classnames'
-import React, { ReactElement, useCallback, useState } from 'react'
+import React, { ReactElement, useState } from 'react'
 
 import { DataSeries } from '../../types'
 import { FormSeriesInput } from '../form-series-input/FormSeriesInput'
@@ -25,25 +25,22 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
 
     // Add empty series form component that user be able to fill this form and create
     // another chart series.
-    const handleAddSeries = useCallback(() => {
+    const handleAddSeries = (): void => {
         setNewSeriesEdit(true)
-    }, [setNewSeriesEdit])
+    }
 
     // Close new series form component in case if user clicked cancel button.
-    const handleCancelNewSeries = useCallback(() => setNewSeriesEdit(false), [setNewSeriesEdit])
+    const handleCancelNewSeries = (): void => setNewSeriesEdit(false)
 
     // Handle submit of creation of new chart series.
-    const handleSubmitNewSeries = useCallback(
-        (newSeries: DataSeries) => {
-            // Close series input in case if we add another series
-            if (newSeriesEdit) {
-                setNewSeriesEdit(false)
-            }
+    const handleSubmitNewSeries = (newSeries: DataSeries): void => {
+        // Close series input in case if we add another series
+        if (newSeriesEdit) {
+            setNewSeriesEdit(false)
+        }
 
-            onChange([...series, newSeries])
-        },
-        [series, newSeriesEdit, setNewSeriesEdit, onChange]
-    )
+        onChange([...series, newSeries])
+    }
 
     const handleEditSeriesCommit = (index: number, editedSeries: DataSeries): void => {
         const newSeries = [...series]
@@ -64,6 +61,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
     // In case if we don't have series we have to skip series list ui (components below)
     // and render simple series form component.
     if (series.length === 0) {
+        /* eslint-disable react/jsx-no-bind */
         return <FormSeriesInput autofocus={false} className="card card-body p-3" onSubmit={handleSubmitNewSeries} />
     }
 
@@ -74,9 +72,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                     <FormSeriesInput
                         key={`${line.name}-${index}`}
                         cancel={true}
-                        /* eslint-disable-next-line react/jsx-no-bind */
                         onSubmit={series => handleEditSeriesCommit(index, series)}
-                        /* eslint-disable-next-line react/jsx-no-bind */
                         onCancel={() => handleCancelEditSeries(index)}
                         className={classnames('card card-body p-3', styles.formSeriesItem)}
                         {...line}
@@ -84,7 +80,6 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                 ) : (
                     <SeriesCard
                         key={`${line.name}-${index}`}
-                        /* eslint-disable-next-line react/jsx-no-bind */
                         onEdit={() => handleRequestToEdit(index)}
                         className={styles.formSeriesItem}
                         {...line}

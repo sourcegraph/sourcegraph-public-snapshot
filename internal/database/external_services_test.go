@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -704,7 +705,7 @@ func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
 
-	store := ExternalServices(db).WithEncryptionKey(testKey{})
+	store := ExternalServices(db).WithEncryptionKey(et.TestKey{})
 
 	err := store.Create(ctx, confGet, es)
 	if err != nil {
@@ -717,7 +718,7 @@ func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// if the testKey worked, the config should just be a base64 encoded version
+	// if the TestKey worked, the config should just be a base64 encoded version
 	if encrypted.Config != base64.StdEncoding.EncodeToString([]byte(es.Config)) {
 		t.Fatalf("expected base64 encoded config, got %s", encrypted.Config)
 	}
@@ -1325,7 +1326,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("with encryption key", func(t *testing.T) {
-		tx, err := ExternalServices(db).WithEncryptionKey(testKey{}).Transact(ctx)
+		tx, err := ExternalServices(db).WithEncryptionKey(et.TestKey{}).Transact(ctx)
 		if err != nil {
 			t.Fatalf("Transact error: %s", err)
 		}
@@ -1354,7 +1355,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			// if the testKey worked, the config should just be a base64 encoded version
+			// if the TestKey worked, the config should just be a base64 encoded version
 			if encrypted.Config != base64.StdEncoding.EncodeToString([]byte(e.Config)) {
 				t.Fatalf("expected base64 encoded config, got %s", encrypted.Config)
 			}
@@ -1505,23 +1506,4 @@ func TestExternalServicesStore_OneCloudDefaultPerKind(t *testing.T) {
 			t.Fatal("Expected an error")
 		}
 	})
-}
-
-// testKey is an encryption.Key that just base64 encodes the plaintext,
-// to make sure the data is actually transformed, so as to be unreadable
-// by misconfigured Stores, but doesn't do any encryption.
-type testKey struct{}
-
-func (k testKey) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
-	return []byte(base64.StdEncoding.EncodeToString(plaintext)), nil
-}
-
-func (k testKey) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Secret, error) {
-	decoded, err := base64.StdEncoding.DecodeString(string(ciphertext))
-	s := encryption.NewSecret(string(decoded))
-	return &s, err
-}
-
-func (k testKey) Version(ctx context.Context) (encryption.KeyVersion, error) {
-	return encryption.KeyVersion{Type: "testkey"}, nil
 }

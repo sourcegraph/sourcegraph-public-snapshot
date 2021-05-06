@@ -1,0 +1,98 @@
+@import 'branded/src/global-styles/breakpoints.scss';
+
+.link {
+    outline-offset: -1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    &:hover {
+        text-decoration: none;
+    }
+    &:focus-visible {
+        outline: none;
+        box-shadow: none;
+        .text {
+            padding: 0.125rem;
+            outline: 1px solid transparent;
+            box-shadow: 0 0 0 2px var(--primary-2);
+        }
+        .icon {
+            @include media-breakpoint-down(md) {
+                outline: 1px solid transparent;
+                box-shadow: 0 0 0 2px var(--primary-2);
+            }
+            @include media-breakpoint-down(sm) {
+                outline: none;
+                box-shadow: none;
+            }
+        }
+        .icon-included {
+            margin: -0.125rem;
+            margin-left: 0.375rem;
+        }
+    }
+    &:hover:not(.active) {
+        border-bottom: 2px solid var(--border-color);
+        .link-content {
+            margin-bottom: -0.125rem;
+        }
+    }
+    @include media-breakpoint-down(sm) {
+        padding: 0.25rem 0;
+        flex: 1;
+        align-items: flex-start;
+        justify-content: flex-start;
+    }
+}
+
+.item {
+    display: flex;
+    align-items: stretch;
+    margin: 0 0.75rem;
+    &:first-child {
+        margin-left: 0;
+    }
+    &:last-child {
+        margin-right: 0;
+    }
+    &:first-child,
+    &:last-child {
+        @include media-breakpoint-down(sm) {
+            margin: 0;
+        }
+    }
+    @include media-breakpoint-down(sm) {
+        margin: 0;
+    }
+}
+
+.active {
+    border-bottom: 2px solid var(--brand-secondary);
+    .link-content {
+        margin-bottom: -0.125rem;
+    }
+}
+
+.icon {
+    color: var(--header-icon-color);
+    border-radius: 3px;
+    @include media-breakpoint-down(md) {
+        color: var(--icon-color);
+    }
+}
+
+.icon-included {
+    margin-left: 0.25rem;
+    display: inline-flex;
+    @include media-breakpoint-down(md) {
+        display: none;
+    }
+    @include media-breakpoint-down(sm) {
+        display: inline-flex;
+    }
+}
+
+.text {
+    color: var(--body-color);
+    border-radius: 3px;
+}

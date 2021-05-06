@@ -23,7 +23,7 @@ func storeTest(db *sql.DB, f storeTestFunc) func(*testing.T) {
 		// don't need to insert a lot of dependencies into the DB (users,
 		// repos, ...) to setup the tests.
 		tx := dbtest.NewTx(t, db)
-		s := NewWithClock(tx, c.Now)
+		s := NewWithClock(tx, nil, c.Now)
 
 		f(t, context.Background(), s, c)
 	}

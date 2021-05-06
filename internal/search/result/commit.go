@@ -1,11 +1,14 @@
 package result
 
 import (
+	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/xeonx/timeago"
 )
 
 type CommitMatch struct {
@@ -65,6 +68,49 @@ func (r *CommitMatch) Select(path filter.SelectPath) Match {
 		return r
 	}
 	return nil
+}
+
+// Key implements Match interface's Key() method
+func (r *CommitMatch) Key() Key {
+	typeRank := rankCommitMatch
+	if r.DiffPreview != nil {
+		typeRank = rankDiffMatch
+	}
+	return Key{
+		TypeRank: typeRank,
+		Repo:     r.RepoName.Name,
+		Commit:   r.Commit.ID,
+	}
+}
+
+func (r *CommitMatch) Label() string {
+	message := r.Commit.Message.Subject()
+	author := r.Commit.Author.Name
+	repoName := displayRepoName(string(r.RepoName.Name))
+	repoURL := (&RepoMatch{Name: r.RepoName.Name, ID: r.RepoName.ID}).URL().String()
+	commitURL := r.URL().String()
+
+	return fmt.Sprintf("[%s](%s) › [%s](%s): [%s](%s)", repoName, repoURL, author, commitURL, message, commitURL)
+}
+
+func (r *CommitMatch) Detail() string {
+	commitHash := r.Commit.ID.Short()
+	timeagoConfig := timeago.NoMax(timeago.English)
+	return fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(r.Commit.Author.Date), r.URL())
+}
+
+func (r *CommitMatch) URL() *url.URL {
+	u := (&RepoMatch{Name: r.RepoName.Name, ID: r.RepoName.ID}).URL()
+	u.Path = u.Path + "/-/commit/" + string(r.Commit.ID)
+	return u
+}
+
+func displayRepoName(repoPath string) string {
+	parts := strings.Split(repoPath, "/")
+	if len(parts) >= 3 && strings.Contains(parts[0], ".") {
+		parts = parts[1:] // remove hostname from repo path (reduce visual noise)
+	}
+	return strings.Join(parts, "/")
 }
 
 // selectModifiedLines extracts the highlight ranges that correspond to lines

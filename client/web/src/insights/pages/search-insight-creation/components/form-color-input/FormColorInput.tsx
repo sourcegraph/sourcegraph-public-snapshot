@@ -1,12 +1,12 @@
 import classnames from 'classnames'
 import { startCase } from 'lodash'
 import openColor from 'open-color'
-import React, { ChangeEvent, ChangeEventHandler, useCallback, useRef, useState } from 'react'
+import React, { ChangeEventHandler } from 'react'
 import { noop } from 'rxjs'
 
 import styles from './FormColorInput.module.scss'
 
-interface FormColorPickerProps {
+interface FormColorInputProps {
     /** Name of data series color */
     name?: string
     /** Title of color input. */
@@ -28,24 +28,8 @@ const DEFAULT_COLOURS = Object.keys(openColor)
 export const DEFAULT_ACTIVE_COLOR = 'var(--oc-grape-7)'
 
 /** Displays custom radio group for picking color of code insight chart line. */
-export const FormColorInput: React.FunctionComponent<FormColorPickerProps> = props => {
-    const { className, value: propertyValue = null, title, name, colours = DEFAULT_COLOURS, onChange = noop } = props
-
-    const isControlled = useRef(propertyValue !== null)
-    const [internalValue, setInternalValue] = useState(DEFAULT_ACTIVE_COLOR)
-
-    const handleChange = useCallback(
-        (event: ChangeEvent<HTMLInputElement>) => {
-            if (isControlled.current) {
-                onChange(event)
-            } else {
-                setInternalValue(event.target.value)
-            }
-        },
-        [isControlled, onChange]
-    )
-
-    const value = isControlled.current ? propertyValue : internalValue
+export const FormColorInput: React.FunctionComponent<FormColorInputProps> = props => {
+    const { className, value = null, title, name, colours = DEFAULT_COLOURS, onChange = noop } = props
 
     return (
         <fieldset className={classnames('d-flex flex-column', className)}>
@@ -67,7 +51,7 @@ export const FormColorInput: React.FunctionComponent<FormColorPickerProps> = pro
                             value={colorInfo.color}
                             checked={value === colorInfo.color}
                             className={styles.formColorPickerNativeRadioControl}
-                            onChange={handleChange}
+                            onChange={onChange}
                         />
 
                         <span className={styles.formColorPickerRadioControl} />

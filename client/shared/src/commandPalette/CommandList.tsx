@@ -3,6 +3,8 @@ import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import { sortBy, uniq, uniqueId } from 'lodash'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
@@ -17,6 +19,7 @@ import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -385,17 +388,28 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
 
     const id = useMemo(() => uniqueId('command-list-popover-button-'), [])
 
+    const [isRedesignEnabled] = useRedesignToggle()
+
+    const MenuDropdownIcon = (): JSX.Element => {
+        const UpIcon = isRedesignEnabled ? ChevronUpIcon : MenuUpIcon
+        const DownIcon = isRedesignEnabled ? ChevronDownIcon : MenuDownIcon
+
+        return isOpen ? <UpIcon className="icon-inline" /> : <DownIcon className="icon-inline" />
+    }
+
     return (
         <ButtonElement
             role="button"
-            className={`command-list__popover-button test-command-list-button ${buttonClassName} ${
-                isOpen ? buttonOpenClassName : ''
-            }`}
+            className={classNames('test-command-list-button command-list__popover-button', buttonClassName, {
+                buttonOpenClassName: isOpen,
+            })}
             id={id}
             onClick={toggleIsOpen}
         >
             <ConsoleIcon className="icon-inline" />
-            {showCaret && (isOpen ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />)}
+
+            {showCaret && <MenuDropdownIcon />}
+
             {/* Need to use TooltipPopoverWrapper to apply classNames to inner element, see https://github.com/reactstrap/reactstrap/issues/1484 */}
             <TooltipPopoverWrapper
                 isOpen={isOpen}

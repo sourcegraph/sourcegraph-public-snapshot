@@ -18,7 +18,7 @@ type Visualizer struct {
 	Context *VisualizationContext
 }
 
-func (v *Visualizer) Visualize(indexFile io.Reader, fromID, subgraphDepth int) error {
+func (v *Visualizer) Visualize(indexFile io.Reader, fromID, subgraphDepth int, exclude []string) error {
 	if err := reader.Read(indexFile, v.Context.Stasher, nil, nil); err != nil {
 		return err
 	}
@@ -34,6 +34,10 @@ func (v *Visualizer) Visualize(indexFile io.Reader, fromID, subgraphDepth int) e
 	enc := json.NewEncoder(&b)
 	_ = v.Context.Stasher.Vertices(func(lineContext reader.LineContext) bool {
 		if _, ok := vertices[lineContext.Element.ID]; !ok {
+			return true
+		}
+
+		if contains(lineContext.Element.Label, exclude) {
 			return true
 		}
 
@@ -60,8 +64,17 @@ func (v *Visualizer) Visualize(indexFile io.Reader, fromID, subgraphDepth int) e
 			return true
 		}
 
+		vertex, _ := v.Context.Stasher.Vertex(edge.OutV)
+		if contains(vertex.Element.Label, exclude) {
+			return true
+		}
+
 		return forEachInV(edge, func(inV int) bool {
 			if _, ok := vertices[inV]; ok {
+				vertex, _ = v.Context.Stasher.Vertex(inV)
+				if contains(vertex.Element.Label, exclude) {
+					return true
+				}
 				fmt.Printf("\tv%d -> v%d [label=\"(%d) %s\"];\n", edge.OutV, inV, lineContext.Element.ID, lineContext.Element.Label)
 			}
 
@@ -86,4 +99,13 @@ func getReachableVerticesAtDepth(from int, forwardEdges, backwardEdges map[int][
 	for _, v := range backwardEdges[from] {
 		getReachableVerticesAtDepth(v, forwardEdges, backwardEdges, depth-1, vertices)
 	}
+}
+
+func contains(s string, ss []string) bool {
+	for _, str := range ss {
+		if str == s {
+			return true
+		}
+	}
+	return false
 }

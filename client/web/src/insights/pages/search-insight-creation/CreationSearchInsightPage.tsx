@@ -1,4 +1,5 @@
 import * as jsonc from '@sqs/jsonc-parser'
+import classnames from 'classnames'
 import { camelCase } from 'lodash'
 import React, { useCallback, useContext } from 'react'
 import { Redirect } from 'react-router'
@@ -12,11 +13,13 @@ import { AuthenticatedUser } from '../../../auth'
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { InsightsApiContext } from '../../core/backend/api-provider'
+import { InsightTypeSuffix } from '../../core/types'
 
 import {
     CreationSearchInsightForm,
     CreationSearchInsightFormProps,
 } from './components/creation-search-insight-form/CreationSearchInsightForm'
+import styles from './CreationSearchInsightPage.module.scss'
 import { FORM_ERROR } from './hooks/useForm'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
@@ -24,8 +27,6 @@ const defaultFormattingOptions: jsonc.FormattingOptions = {
     insertSpaces: true,
     tabSize: 2,
 }
-
-const DEFAULT_FINAL_SETTINGS = {}
 
 export interface CreationSearchInsightPageProps
     extends PlatformContextProps<'updateSettings'>,
@@ -82,7 +83,7 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
                 const edits = jsonc.modify(
                     settings.contents,
                     // According to our naming convention <type>.insight.<name>
-                    [`searchInsights.insight.${camelCase(values.title)}`],
+                    [`${InsightTypeSuffix.search}.${camelCase(values.title)}`],
                     newSettingsString,
                     { formattingOptions: defaultFormattingOptions }
                 )
@@ -105,21 +106,22 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
         history.push('/insights')
     }, [history])
 
+    // TODO [VK] Move this logic to high order component to simplify logic here
     if (authenticatedUser === null) {
         return <Redirect to="/" />
     }
 
     return (
-        <Page className="col-8">
+        <Page className={classnames('col-8', styles.creationPage)}>
             <PageTitle title="Create new code insight" />
 
             <div className="mb-5">
                 <h2>Create new code insight</h2>
 
                 <p className="text-muted">
-                    Search-based code insights analyse your code based on any search query.{' '}
+                    Search-based code insights analyze your code based on any search query.{' '}
                     <a
-                        href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points"
+                        href="https://docs.sourcegraph.com/dev/background-information/insights"
                         target="_blank"
                         rel="noopener"
                     >
@@ -130,7 +132,7 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
 
             <CreationSearchInsightForm
                 className="pb-5"
-                settings={settingsCascade.final ?? DEFAULT_FINAL_SETTINGS}
+                settings={settingsCascade.final}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
             />

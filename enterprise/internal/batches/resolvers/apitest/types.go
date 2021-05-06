@@ -89,6 +89,7 @@ type BatchChange struct {
 	Changesets              ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
+	BulkOperations          BulkOperationConnection
 }
 
 type BatchChangeConnection struct {
@@ -344,4 +345,25 @@ type BatchChangesCodeHost struct {
 	ExternalServiceKind string
 	ExternalServiceURL  string
 	Credential          BatchChangesCredential
+}
+
+type BulkOperation struct {
+	ID         string
+	Type       string
+	State      string
+	Progress   float64
+	Errors     []*ChangesetJobError
+	CreatedAt  string
+	FinishedAt string
+}
+
+type ChangesetJobError struct {
+	Changeset *Changeset
+	Error     *string
+}
+
+type BulkOperationConnection struct {
+	Nodes      []BulkOperation
+	TotalCount int
+	PageInfo   PageInfo
 }

@@ -166,5 +166,6 @@ func newJanitorRoutines(observationContext *observation.Context) []goroutine.Bac
 		janitor.NewRecordExpirer(dbStore, config.DataTTL, config.CleanupTaskInterval, metrics),
 		janitor.NewUploadResetter(uploadWorkerStore, config.CleanupTaskInterval, metrics, observationContext),
 		janitor.NewIndexResetter(indexWorkerStore, config.CleanupTaskInterval, metrics, observationContext),
+		janitor.NewUnknownCommitJanitor(dbStore, config.CommitResolverMinimumTimeSinceLastCheck, config.CommitResolverBatchSize, config.CommitResolverTaskInterval, metrics),
 	}
 }

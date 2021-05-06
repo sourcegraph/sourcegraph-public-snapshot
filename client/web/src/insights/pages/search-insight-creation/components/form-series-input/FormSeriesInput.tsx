@@ -6,11 +6,11 @@ import { useField } from '../../hooks/useField'
 import { useForm } from '../../hooks/useForm'
 import { DataSeries } from '../../types'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
-import { InputField } from '../form-field/FormField'
+import { InputField } from '../form-input-field/InputField'
 import { createRequiredValidator } from '../validators'
 
-const requiredNameField = createRequiredValidator('Name is required field for data series.')
-const validQuery = createRequiredValidator('Query is required field for data series.')
+const requiredNameField = createRequiredValidator('Name is a required field for data series.')
+const validQuery = createRequiredValidator('Query is a required field for data series.')
 
 interface FormSeriesProps {
     /** Name of series. */
@@ -70,13 +70,13 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
             />
 
             <InputField
-                title="Query"
+                title="Search query"
                 required={true}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 description={
                     <span>
-                        Do not include the <code>repo:</code> filter as it will be added automatically for the current
-                        repository
+                        Do not include the <code>repo:</code> filter as it will be added automatically for the
+                        repositories you included above.
                     </span>
                 }
                 valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.validState === 'VALID'}

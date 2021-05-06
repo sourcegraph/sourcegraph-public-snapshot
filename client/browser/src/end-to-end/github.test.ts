@@ -47,31 +47,35 @@ describe('Sourcegraph browser extension on github.com', function () {
             'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go#L5:6',
     })
 
-    const headGoToDefinitionUrl = new URL(
-        '/github.com/gorilla/mux@e73f183699f8ab7d54609771e1fa0ab7ffddc21b/-/blob/regexp.go#L247:24&tab=def',
-        sourcegraphBaseUrl
-    ).toString()
     const tokens = {
         // https://github.com/gorilla/mux/pull/117/files#diff-9ef8a22c4ce5141c30a501c542fb1adeL244
         base: {
             token: 'varsN',
             lineId: 'diff-a609417fa264c6aed88fb8cfe2d9b4fb24226ffdf7db1f685e344d5239783d46L244',
-            goToDefinitionURL:
+            goToDefinitionURLs: [
                 'https://github.com/gorilla/mux/blob/f15e0c49460fd49eebe2bcc8486b05d1bef68d3a/regexp.go#L139:2',
+            ],
         },
         // https://github.com/gorilla/mux/pull/117/files#diff-9ef8a22c4ce5141c30a501c542fb1adeR247
         head: {
             token: 'host',
             lineId: 'diff-a609417fa264c6aed88fb8cfe2d9b4fb24226ffdf7db1f685e344d5239783d46R247',
-            goToDefinitionURL: headGoToDefinitionUrl,
+            // There are multiple passing go to definition URLs:
+            // https://github.com/sourcegraph/sourcegraph/pull/20520
+            goToDefinitionURLs: [
+                'https://github.com/gorilla/mux/blob/e73f183699f8ab7d54609771e1fa0ab7ffddc21b/regexp.go#L233:2',
+                'https://sourcegraph.com/github.com/gorilla/mux@e73f183699f8ab7d54609771e1fa0ab7ffddc21b/-/blob/regexp.go#L247:24&tab=def',
+            ],
         },
     }
 
-    describe('Pull request pages', () => {
+    // Replace these unstable tests with integration tests with stubs:
+    // https://github.com/sourcegraph/sourcegraph/pull/20520#issuecomment-829726482
+    describe.skip('Pull request pages', () => {
         for (const diffType of ['unified', 'split']) {
             describe(`${startCase(diffType)} view`, () => {
                 for (const side of ['base', 'head'] as const) {
-                    const { token, lineId, goToDefinitionURL } = tokens[side]
+                    const { token, lineId, goToDefinitionURLs } = tokens[side]
                     it(`provides hover tooltips on token "${token}" in the ${side} part`, async () => {
                         await driver.page.goto(`https://github.com/gorilla/mux/pull/117/files?diff=${diffType}`)
                         await closeInstallPageTab(driver.browser)
@@ -110,12 +114,28 @@ describe('Sourcegraph browser extension on github.com', function () {
                         })
 
                         // Check go-to-definition jumps to the right place
+                        let goToDefinitionURL = ''
                         await retry(async () => {
-                            const href = await driver.page.evaluate(
-                                () => document.querySelector<HTMLAnchorElement>('.test-tooltip-go-to-definition')?.href
+                            const href =
+                                (await driver.page.evaluate(
+                                    () =>
+                                        document.querySelector<HTMLAnchorElement>('.test-tooltip-go-to-definition')
+                                            ?.href
+                                )) ?? ''
+
+                            assert.strictEqual(
+                                goToDefinitionURLs.includes(href),
+                                true,
+                                `Expected goToDefinitionURL (${href}) to be one of:\n\t${goToDefinitionURLs.join(
+                                    '\n\t'
+                                )}`
                             )
-                            assert.strictEqual(href, goToDefinitionURL)
+                            goToDefinitionURL = href
                         })
+                        if (!goToDefinitionURL) {
+                            throw new Error('Expected goToDefinitionURL to be truthy')
+                        }
+
                         let page: Page = driver.page
                         if (new URL(goToDefinitionURL).hostname !== 'github.com') {
                             ;[page] = await Promise.all([

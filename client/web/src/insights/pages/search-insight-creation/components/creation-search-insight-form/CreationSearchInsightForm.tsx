@@ -3,20 +3,23 @@ import { camelCase } from 'lodash'
 import React, { useMemo } from 'react'
 import { noop } from 'rxjs'
 
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
+
 import { ErrorAlert } from '../../../../../components/alerts'
 import { LoaderButton } from '../../../../../components/LoaderButton'
+import { InsightTypeSuffix } from '../../../../core/types'
 import { useField, Validator } from '../../hooks/useField'
 import { FORM_ERROR, SubmissionErrors, useForm } from '../../hooks/useForm'
 import { DataSeries } from '../../types'
-import { InputField } from '../form-field/FormField'
 import { FormGroup } from '../form-group/FormGroup'
+import { InputField } from '../form-input-field/InputField'
 import { FormRadioInput } from '../form-radio-input/FormRadioInput'
 import { FormSeries } from '../form-series/FormSeries'
 import { createRequiredValidator, composeValidators } from '../validators'
 
 import styles from './CreationSearchInsightForm.module.scss'
 
-const repositoriesFieldValidator = createRequiredValidator('Repositories is required field for code insight.')
+const repositoriesFieldValidator = createRequiredValidator('Repositories is a required field.')
 const requiredStepValueField = createRequiredValidator('Please specify a step between points.')
 /**
  * Custom validator for chart series. Since series has complex type
@@ -34,10 +37,13 @@ const INITIAL_VALUES: Partial<CreateInsightFormFields> = {
     repositories: '',
 }
 
+/** Default value for final user/org settings cascade */
+const DEFAULT_FINAL_SETTINGS = {}
+
 /** Public API of code insight creation form. */
 export interface CreationSearchInsightFormProps {
     /** Final settings cascade. Used for title field validation. */
-    settings: { [key: string]: any }
+    settings?: Settings | null
     /** Custom class name for root form element. */
     className?: string
     /** Submit handler for form element. */
@@ -73,13 +79,13 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
     // We can't have two or more insights with the same name, since we rely on name as on id of insights.
     const titleValidator = useMemo(() => {
         const alreadyExistsInsightNames = new Set(
-            Object.keys(settings)
+            Object.keys(settings ?? DEFAULT_FINAL_SETTINGS)
                 // According to our convention about insights name <insight type>.insight.<insight name>
-                .filter(key => key.startsWith('searchInsights.insight'))
+                .filter(key => key.startsWith(InsightTypeSuffix.search))
                 .map(key => camelCase(key.split('.').pop()))
         )
 
-        return composeValidators<string>(createRequiredValidator('Title is required field for code insight.'), value =>
+        return composeValidators<string>(createRequiredValidator('Title is a required field.'), value =>
             alreadyExistsInsightNames.has(camelCase(value))
                 ? 'An insight with this name already exists. Please set a different name for the new insight.'
                 : undefined
@@ -106,7 +112,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                 title="Title"
                 autoFocus={true}
                 required={true}
-                description="Shown as title for your insight"
+                description="Shown as the title for your insight"
                 placeholder="ex. Migration to React function components"
                 valid={title.meta.touched && title.meta.validState === 'VALID'}
                 error={title.meta.touched && title.meta.error}
@@ -117,7 +123,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
             <InputField
                 title="Repositories"
                 required={true}
-                description="Create a list of repositories to run your search over. Separate them with comas."
+                description="Create a list of repositories to run your search over. Separate them with commas."
                 placeholder="Add or search for repositories"
                 valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
                 error={repositories.meta.touched && repositories.meta.error}
@@ -128,8 +134,8 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
             <FormGroup
                 name="visibility"
                 title="Visibility"
-                description="This insigh will be visible only on your personal dashboard. It will not be show to other
-                            users in your organisation."
+                description="This insight will be visible only on your personal dashboard. It will not be show to other
+                            users in your organization."
                 className="mb-0 mt-4"
                 contentClassName="d-flex flex-wrap mb-n2"
             >
@@ -137,7 +143,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                     name="visibility"
                     value="personal"
                     title="Personal"
-                    description="only for you"
+                    description="only you"
                     checked={visibility.input.value === 'personal'}
                     className="mr-3"
                     onChange={visibility.input.onChange}
@@ -147,7 +153,7 @@ export const CreationSearchInsightForm: React.FunctionComponent<CreationSearchIn
                     name="visibility"
                     value="organization"
                     title="Organization"
-                    description="to all users in your organization"
+                    description="all users in your organization"
                     checked={visibility.input.value === 'organization'}
                     onChange={visibility.input.onChange}
                     className="mr-3"

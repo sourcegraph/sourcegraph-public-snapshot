@@ -41,8 +41,8 @@ We heavily customize Renovate to save more time. Possible configurations include
 
 - Setting different reviewers for certain dependencies
 - Grouping certain dependencies
-- Automerging certain low-risk dependencies
-- Updating certain dependencies out-of-schedule aswell
+- Auto merging certain low-risk dependencies
+- Updating certain dependencies out-of-schedule as well
 - Assigning certain labels for easier filtering
 
 If you see an opportunity to improve the configuration, raise a pull request to update the `renovate.json` in the repository or our [configuration shared between repositories](https://github.com/sourcegraph/renovate-config/blob/master/renovate.json).

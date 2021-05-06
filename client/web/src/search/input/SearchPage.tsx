@@ -56,7 +56,7 @@ export interface SearchPageProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         CopyQueryButtonProps,
         VersionContextProps,
-        SearchContextProps,
+        Omit<SearchContextProps, 'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable'>,
         RepogroupHomepageProps,
         OnboardingTourProps,
         HomePanelsProps,

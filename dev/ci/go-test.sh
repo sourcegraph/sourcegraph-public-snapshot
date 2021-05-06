@@ -24,7 +24,7 @@ find . -name go.mod -exec dirname '{}' \; | while read -r d; do
   go mod download
 
   echo "--- $d go test"
-  go test -timeout 4m -coverprofile=coverage.txt -covermode=atomic -race ./...
+  go test -timeout 5m -coverprofile=coverage.txt -covermode=atomic -race ./...
 
   popd >/dev/null
 done

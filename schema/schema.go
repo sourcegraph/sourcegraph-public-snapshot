@@ -440,8 +440,9 @@ func (v *EncryptionKey) UnmarshalJSON(data []byte) error {
 
 // EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
 type EncryptionKeys struct {
-	ExternalServiceKey     *EncryptionKey `json:"externalServiceKey,omitempty"`
-	UserExternalAccountKey *EncryptionKey `json:"userExternalAccountKey,omitempty"`
+	BatchChangesCredentialKey *EncryptionKey `json:"batchChangesCredentialKey,omitempty"`
+	ExternalServiceKey        *EncryptionKey `json:"externalServiceKey,omitempty"`
+	UserExternalAccountKey    *EncryptionKey `json:"userExternalAccountKey,omitempty"`
 }
 type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.
@@ -1471,6 +1472,8 @@ type Step struct {
 	Env interface{} `json:"env,omitempty"`
 	// Files description: Files that should be mounted into or be created inside the Docker container.
 	Files map[string]string `json:"files,omitempty"`
+	// If description: A condition to check before executing steps. Supports templating. The value 'true' is interpreted as true.
+	If interface{} `json:"if,omitempty"`
 	// Outputs description: Output variables of this step that can be referenced in the changesetTemplate or other steps via outputs.<name-of-output>
 	Outputs map[string]AdditionalProperties `json:"outputs,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
