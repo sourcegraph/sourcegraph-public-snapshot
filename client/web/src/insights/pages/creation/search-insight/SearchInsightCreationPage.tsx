@@ -19,7 +19,7 @@ import { InsightTypeSuffix } from '../../../core/types'
 import {
     SearchInsightCreationForm,
     CreationSearchInsightFormProps,
-} from './components/creation-search-insight-form/SearchInsightCreationForm'
+} from './components/search-insight-creation-form/SearchInsightCreationForm'
 import styles from './SearchInsightCreationPage.module.scss'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
