@@ -71,7 +71,7 @@ export const CreationIntroPage: React.FunctionComponent = () => (
 
                 <hr className="ml-n3 mr-n3 mt-4 mb-3" />
 
-                <p className="text-muted">How your insight would look like:</p>
+                <p className="text-muted">How your insight would look:</p>
                 <div className={styles.createIntroPageChartContainer}>
                     <ParentSize className={styles.createIntroPageChart}>
                         {({ width, height }) => <PieChart width={width} height={height} {...PIE_CHART_DATA} />}
