@@ -179,8 +179,6 @@ input[type='checkbox'] {
     }
 }
 
-.theme-redesign {
-    & .redesign-d-none {
-        display: none;
-    }
+.theme-redesign .redesign-d-none {
+    display: none;
 }
