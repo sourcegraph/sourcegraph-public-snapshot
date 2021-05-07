@@ -1,13 +1,19 @@
 import { camelCase } from 'lodash'
 import { useMemo } from 'react'
 
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
+
+import { InsightTypeSuffix } from '../../../core/types'
 import { composeValidators, createRequiredValidator } from '../validators'
 
 import { Validator } from './useField'
 
+/** Default value for final user/org settings cascade */
+const DEFAULT_FINAL_SETTINGS = {}
+
 export interface useTitleValidatorProps {
-    insightType: 'searchInsights' | 'codeStatsInsights'
-    settings: { [key: string]: unknown }
+    insightType: InsightTypeSuffix
+    settings?: Settings | null
 }
 
 /**
@@ -19,9 +25,9 @@ export function useTitleValidator(props: useTitleValidatorProps): Validator<stri
 
     return useMemo(() => {
         const alreadyExistsInsightNames = new Set(
-            Object.keys(settings)
+            Object.keys(settings ?? DEFAULT_FINAL_SETTINGS)
                 // According to our convention about insights name <insight type>.insight.<insight name>
-                .filter(key => key.startsWith(`${insightType}.insight`))
+                .filter(key => key.startsWith(`${insightType}`))
                 .map(key => camelCase(key.split('.').pop()))
         )
 

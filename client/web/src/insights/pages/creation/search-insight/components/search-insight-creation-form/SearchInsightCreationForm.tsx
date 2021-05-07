@@ -1,6 +1,5 @@
 import classnames from 'classnames'
-import { camelCase } from 'lodash'
-import React, { useMemo } from 'react'
+import React from 'react'
 import { noop } from 'rxjs'
 
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
@@ -12,7 +11,8 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useField, Validator } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
-import { composeValidators, createRequiredValidator } from '../../../../../components/form/validators'
+import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
+import { createRequiredValidator } from '../../../../../components/form/validators'
 import { InsightTypeSuffix } from '../../../../../core/types'
 import { DataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
@@ -36,9 +36,6 @@ const INITIAL_VALUES: Partial<CreateInsightFormFields> = {
     title: '',
     repositories: '',
 }
-
-/** Default value for final user/org settings cascade */
-const DEFAULT_FINAL_SETTINGS = {}
 
 /** Public API of code insight creation form. */
 export interface CreationSearchInsightFormProps {
@@ -77,20 +74,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
     })
 
     // We can't have two or more insights with the same name, since we rely on name as on id of insights.
-    const titleValidator = useMemo(() => {
-        const alreadyExistsInsightNames = new Set(
-            Object.keys(settings ?? DEFAULT_FINAL_SETTINGS)
-                // According to our convention about insights name <insight type>.insight.<insight name>
-                .filter(key => key.startsWith(InsightTypeSuffix.search))
-                .map(key => camelCase(key.split('.').pop()))
-        )
-
-        return composeValidators<string>(createRequiredValidator('Title is a required field.'), value =>
-            alreadyExistsInsightNames.has(camelCase(value))
-                ? 'An insight with this name already exists. Please set a different name for the new insight.'
-                : undefined
-        )
-    }, [settings])
+    const titleValidator = useTitleValidator({ settings, insightType: InsightTypeSuffix.search })
 
     const title = useField('title', formAPI, titleValidator)
     const repositories = useField('repositories', formAPI, repositoriesFieldValidator)

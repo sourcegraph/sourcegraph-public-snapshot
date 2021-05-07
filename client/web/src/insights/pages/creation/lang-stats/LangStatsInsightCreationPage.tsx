@@ -1,5 +1,5 @@
 import * as jsonc from '@sqs/jsonc-parser'
-import classnames from 'classnames';
+import classnames from 'classnames'
 import { camelCase } from 'lodash'
 import React, { useCallback, useContext } from 'react'
 import { Redirect } from 'react-router'
@@ -14,6 +14,7 @@ import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
 import { FORM_ERROR } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
+import { InsightTypeSuffix } from '../../../core/types'
 
 import {
     LangStatsInsightCreationForm,
@@ -74,7 +75,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                 const edits = jsonc.modify(
                     settings.contents,
                     // According to our naming convention <type>.insight.<name>
-                    [`codeStatsInsights.insight.${camelCase(values.title)}`],
+                    [`${InsightTypeSuffix.langStats}.${camelCase(values.title)}`],
                     newSettingsString,
                     { formattingOptions: defaultFormattingOptions }
                 )

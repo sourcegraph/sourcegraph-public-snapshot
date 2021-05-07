@@ -1,15 +1,18 @@
 import classnames from 'classnames'
 import React from 'react'
 
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
+
 import { ErrorAlert } from '../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../components/LoaderButton'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useField } from '../../../../../components/form/hooks/useField'
-import { SubmissionErrors, useForm, FORM_ERROR } from '../../../../../components/form/hooks/useForm'
+import { FORM_ERROR, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
 import { createRequiredValidator } from '../../../../../components/form/validators'
+import { InsightTypeSuffix } from '../../../../../core/types'
 
 import styles from './LangStatsInsightCreationForm.module.scss'
 
@@ -17,7 +20,7 @@ const repositoriesFieldValidator = createRequiredValidator('Repositories is a re
 const thresholdFieldValidator = createRequiredValidator('Threshold is a required field for code insight.')
 
 export interface LangStatsInsightCreationFormProps {
-    settings: { [key: string]: unknown }
+    settings: Settings | null
     className?: string
     onSubmit: (values: LangStatsCreationFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
@@ -45,7 +48,8 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
         onSubmit,
     })
 
-    const titleValidator = useTitleValidator({ settings, insightType: 'codeStatsInsights' })
+    // We can't have two or more insights with the same name, since we rely on name as on id of insights.
+    const titleValidator = useTitleValidator({ settings, insightType: InsightTypeSuffix.langStats })
 
     const repository = useField('repository', formAPI, repositoriesFieldValidator)
     const title = useField('title', formAPI, titleValidator)
