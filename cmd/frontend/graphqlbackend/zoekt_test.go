@@ -296,7 +296,7 @@ func TestIndexedSearch(t *testing.T) {
 			// This is a quick fix which will break once we enable the zoekt client for true streaming.
 			// Once we return more than one event we have to account for the proper order of results
 			// in the tests.
-			gotResults, gotCommon, err := collectMatchStream(db, func(stream Sender) error {
+			gotResults, gotCommon, err := collectStream(db, func(stream Sender) error {
 				return indexed.Search(tt.args.ctx, stream)
 			})
 			if (err != nil) != tt.wantErr {
