@@ -1,4 +1,5 @@
 import * as jsonc from '@sqs/jsonc-parser'
+import classnames from 'classnames';
 import { camelCase } from 'lodash'
 import React, { useCallback, useContext } from 'react'
 import { Redirect } from 'react-router'
@@ -18,6 +19,7 @@ import {
     LangStatsInsightCreationForm,
     LangStatsInsightCreationFormProps,
 } from './components/lang-stats-insight-creation-form/LangStatsInsightCreationForm'
+import styles from './LangStatsInsightCreationPage.module.scss'
 
 const DEFAULT_FINAL_SETTINGS = {}
 
@@ -100,7 +102,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
     }
 
     return (
-        <Page className="col-8">
+        <Page className={classnames(styles.creationPage, 'col-8')}>
             <PageTitle title="Create new code insight" />
 
             <div className="mb-5">
