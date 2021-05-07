@@ -23,7 +23,7 @@ type progressAggregator struct {
 	Dirty bool
 }
 
-func (p *progressAggregator) Update(event graphqlbackend.SearchMatchEvent) {
+func (p *progressAggregator) Update(event graphqlbackend.SearchEvent) {
 	if len(event.Results) == 0 && event.Stats.Zero() {
 		return
 	}

@@ -12,9 +12,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
-// SearchMatchEvent is a temporary struct that takes matches rather than
+// SearchEvent is a temporary struct that takes matches rather than
 // SearchResultResolvers. Once the transition is complete, this will replace SearchEvent.
-type SearchMatchEvent struct {
+type SearchEvent struct {
 	Results []result.Match
 	Stats   streaming.Stats
 }
@@ -22,7 +22,7 @@ type SearchMatchEvent struct {
 // MatchSender is a temporary interface that adds the SendMatches method to the
 // Sender interface. Eventually, Sender.Send() will be replaced with MatchSender.SendMatches
 type MatchSender interface {
-	SendMatches(SearchMatchEvent)
+	SendMatches(SearchEvent)
 }
 
 // Temporary conversion function from []SearchResultResolver to []result.Match
@@ -66,7 +66,7 @@ type limitStream struct {
 	remaining atomic.Int64
 }
 
-func (s *limitStream) SendMatches(event SearchMatchEvent) {
+func (s *limitStream) SendMatches(event SearchEvent) {
 	s.s.SendMatches(event)
 
 	var count int64
@@ -86,7 +86,7 @@ func (s *limitStream) SendMatches(event SearchMatchEvent) {
 	// multiple times, but this is fine. Want to avoid lots of noop events
 	// after the first IsLimitHit.
 	if old >= 0 && s.remaining.Load() < 0 {
-		s.s.SendMatches(SearchMatchEvent{Stats: streaming.Stats{IsLimitHit: true}})
+		s.s.SendMatches(SearchEvent{Stats: streaming.Stats{IsLimitHit: true}})
 		s.cancel()
 	}
 }
@@ -112,7 +112,7 @@ func WithSelect(parent MatchSender, s filter.SelectPath) MatchSender {
 	var mux sync.Mutex
 	dedup := result.NewDeduper()
 
-	return MatchStreamFunc(func(e SearchMatchEvent) {
+	return MatchStreamFunc(func(e SearchEvent) {
 		mux.Lock()
 
 		selected := e.Results[:0]
@@ -142,9 +142,9 @@ func WithSelect(parent MatchSender, s filter.SelectPath) MatchSender {
 	})
 }
 
-type MatchStreamFunc func(SearchMatchEvent)
+type MatchStreamFunc func(SearchEvent)
 
-func (f MatchStreamFunc) SendMatches(sme SearchMatchEvent) {
+func (f MatchStreamFunc) SendMatches(sme SearchEvent) {
 	f(sme)
 }
 
@@ -157,7 +157,7 @@ func collectMatchStream(db dbutil.DB, search func(MatchSender) error) ([]SearchR
 		stats   streaming.Stats
 	)
 
-	err := search(MatchStreamFunc(func(event SearchMatchEvent) {
+	err := search(MatchStreamFunc(func(event SearchEvent) {
 		mu.Lock()
 		results = append(results, event.Results...)
 		stats.Update(&event.Stats)

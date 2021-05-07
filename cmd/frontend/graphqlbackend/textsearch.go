@@ -320,7 +320,7 @@ func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.Tex
 func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, stream MatchSender) (err error) {
 	if mockSearchFilesInRepos != nil {
 		results, mockStats, err := mockSearchFilesInRepos(args)
-		stream.SendMatches(SearchMatchEvent{
+		stream.SendMatches(SearchEvent{
 			Results: fileMatchResolversToMatches(results),
 			Stats:   statsDeref(mockStats),
 		})
@@ -473,7 +473,7 @@ func callSearcherOverRepos(
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
 					stats, err := handleRepoSearchResult(repoRev, repoLimitHit, false, err)
-					stream.SendMatches(SearchMatchEvent{
+					stream.SendMatches(SearchEvent{
 						Results: fileMatchesToMatches(matches),
 						Stats:   stats,
 					})

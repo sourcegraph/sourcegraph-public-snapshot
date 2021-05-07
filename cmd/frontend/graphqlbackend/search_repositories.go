@@ -24,7 +24,7 @@ var mockSearchRepositories func(args *search.TextParameters) ([]result.Match, *s
 func searchRepositories(ctx context.Context, db dbutil.DB, args *search.TextParameters, limit int32, stream MatchSender) error {
 	if mockSearchRepositories != nil {
 		results, stats, err := mockSearchRepositories(args)
-		stream.SendMatches(SearchMatchEvent{
+		stream.SendMatches(SearchEvent{
 			Results: results,
 			Stats:   statsDeref(stats),
 		})
@@ -93,14 +93,14 @@ func searchRepositories(ctx context.Context, db dbutil.DB, args *search.TextPara
 		if err != nil {
 			return err
 		}
-		stream.SendMatches(SearchMatchEvent{
+		stream.SendMatches(SearchEvent{
 			Results: repoRevsToRepoMatches(ctx, repos),
 		})
 		return nil
 	}
 
 	for repos := range results {
-		stream.SendMatches(SearchMatchEvent{
+		stream.SendMatches(SearchEvent{
 			Results: repoRevsToRepoMatches(ctx, repos),
 		})
 	}

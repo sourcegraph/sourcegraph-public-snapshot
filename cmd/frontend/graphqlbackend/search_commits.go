@@ -318,7 +318,7 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 
 		// Only send if we have something to report back.
 		if len(results) > 0 || !stats.Zero() {
-			s.SendMatches(SearchMatchEvent{
+			s.SendMatches(SearchEvent{
 				Results: commitMatchesToMatches(results),
 				Stats:   stats,
 			})
