@@ -2,12 +2,15 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
@@ -74,30 +77,9 @@ func TestSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repo1, err := client.Repository("github.com/sgtest/java-langserver")
-	if err != nil {
-		t.Fatal(err)
-	}
-	repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	scID, err := client.CreateSearchContext(
-		gqltestutil.CreateSearchContextInput{Name: "TestSearchContext", Public: true},
-		[]gqltestutil.SearchContextRepositoryRevisionsInput{
-			{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
-			{RepositoryID: repo2.ID, Revisions: []string{"HEAD"}},
-		})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err = client.DeleteSearchContext(scID)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+	t.Run("search contexts", func(t *testing.T) {
+		testSearchContexts(t, client)
+	})
 
 	t.Run("graphql", func(t *testing.T) {
 		testSearchClient(t, client)
@@ -1125,6 +1107,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Symbol: 1},
 			},
 			{
+				name:   `search diffs with file start anchor`,
+				query:  `repo:go-diff patterntype:literal type:diff file:^README.md$ installing`,
+				counts: counts{Commit: 1},
+			},
+			{
 				name:   `select diffs with added lines containing pattern`,
 				query:  `repo:go-diff patterntype:literal type:diff select:commit.diff.added sample_binary_inline`,
 				counts: counts{Commit: 1},
@@ -1188,12 +1175,37 @@ func testSearchClient(t *testing.T, client searchClient) {
 // which are not replicated in the streaming API (statistics and suggestions).
 func testSearchOther(t *testing.T) {
 	t.Run("Suggestions", func(t *testing.T) {
+		repo1, err := client.Repository("github.com/sgtest/java-langserver")
+		if err != nil {
+			t.Fatal(err)
+		}
+		repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		scID, err := client.CreateSearchContext(
+			gqltestutil.CreateSearchContextInput{Name: "SuggestionSearchContext", Public: true},
+			[]gqltestutil.SearchContextRepositoryRevisionsInput{
+				{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
+				{RepositoryID: repo2.ID, Revisions: []string{"HEAD"}},
+			})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			err = client.DeleteSearchContext(scID)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
+
 		tests := []struct {
 			query           string
 			suggestionCount int
 		}{
 			{query: `repo:sourcegraph-typescript$ type:file file:deploy`, suggestionCount: 11},
-			{query: `context:TestSearchContext repo:`, suggestionCount: 2},
+			{query: `context:SuggestionSearchContext repo:`, suggestionCount: 2},
 		}
 
 		for _, test := range tests {
@@ -1246,4 +1258,58 @@ func testSearchOther(t *testing.T) {
 			t.Fatal(err, "lastResult:", lastResult)
 		}
 	})
+}
+
+func testSearchContexts(t *testing.T, client *gqltestutil.Client) {
+	repo1, err := client.Repository("github.com/sgtest/java-langserver")
+	require.NoError(t, err)
+	repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
+	require.NoError(t, err)
+
+	// Create a search context
+	scName := "TestSearchContext" + strconv.Itoa(int(rand.Int31()))
+	scID, err := client.CreateSearchContext(
+		gqltestutil.CreateSearchContextInput{Name: scName, Description: "test description", Public: true},
+		[]gqltestutil.SearchContextRepositoryRevisionsInput{
+			{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
+			{RepositoryID: repo2.ID, Revisions: []string{"HEAD"}},
+		},
+	)
+	require.NoError(t, err)
+	defer client.DeleteSearchContext(scID)
+
+	// Retrieve the search context and check that it has the correct fields
+	resultContext, err := client.GetSearchContext(scID)
+	require.NoError(t, err)
+	require.Equal(t, scName, resultContext.Spec)
+	require.Equal(t, "test description", resultContext.Description)
+
+	// Update the search context
+	updatedSCName := "TestUpdated" + strconv.Itoa(int(rand.Int31()))
+	scID, err = client.UpdateSearchContext(
+		scID,
+		gqltestutil.UpdateSearchContextInput{
+			Name:        updatedSCName,
+			Public:      false,
+			Description: "Updated description",
+		},
+		[]gqltestutil.SearchContextRepositoryRevisionsInput{
+			{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
+		},
+	)
+	require.NoError(t, err)
+
+	// Retrieve the search context and check that it has the updated fields
+	resultContext, err = client.GetSearchContext(scID)
+	require.NoError(t, err)
+	require.Equal(t, updatedSCName, resultContext.Spec)
+	require.Equal(t, "Updated description", resultContext.Description)
+
+	// Delete the context
+	err = client.DeleteSearchContext(scID)
+	require.NoError(t, err)
+
+	// Check that retrieving the deleted search context fails
+	_, err = client.GetSearchContext(scID)
+	require.Error(t, err)
 }

@@ -1,0 +1,12 @@
+.creation-insight-form {
+    &__separator {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+        width: 100%;
+    }
+
+    &__step-input {
+        flex-basis: 6rem;
+        margin-right: 1rem;
+    }
+}
