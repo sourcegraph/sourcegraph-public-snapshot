@@ -349,7 +349,7 @@ Possible values: `text`, `yaml`, `json`. Default is `text`.
 
 Condition to check before executing the step. If the value of the `if:` attribute is `true` (boolean) or `"true"` (string) then the step is executed in the given repository (or workspace, in case [workspaces](#workspaces) are used). Otherwise the step is skipped.
 
-As an optimization, the [Sourcegraph CLI](../../cli) tries to evaluate the condition _before_ starting to execute any `steps`. If the condition can be evaluated ahead of time and the result of the evaluation is false then the execution of the step won't be attempted for the repository, which leads to better cache utilization.
+As an optimization, the [Sourcegraph CLI](../../cli/index.md) tries to evaluate the condition _before_ starting to execute any `steps`. If the condition can be evaluated ahead of time and the result of the evaluation is false then the execution of the step won't be attempted for the repository, which leads to better cache utilization.
 
 Ahead-of-time evaluation is possible if the condition contains only static data. Example: `if: ${{ eq repository.name "github.com/my-org/my-repo" }}`. The repository name is known before the execution of the steps, so evaluation succeeds and Sourcegraph CLI will not include the given step in the list of steps to execute for repositories that don't have the matching name. That in turn allows the modification of this step's `run` attribute, for example, without invalidating the cache for the repositories in which it's never executed.
 
