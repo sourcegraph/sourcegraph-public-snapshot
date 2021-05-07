@@ -33,7 +33,7 @@ export interface LangStatsInsightCreationPageProps
         SettingsCascadeProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
-     * in personal dashboard (private) or in organisation dashboard (public)
+     * in personal dashboard (private) or in organization dashboard (public)
      * */
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations'> | null
 }
@@ -107,7 +107,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                 <h2>Set up new language usage insight</h2>
 
                 <p className="text-muted">
-                    Shows usage of languages in your repository based on number of lines of code.{' '}
+                    Shows language usage in your repository based on number of lines of code.{' '}
                     <a
                         href="https://docs.sourcegraph.com/dev/background-information/insights"
                         target="_blank"

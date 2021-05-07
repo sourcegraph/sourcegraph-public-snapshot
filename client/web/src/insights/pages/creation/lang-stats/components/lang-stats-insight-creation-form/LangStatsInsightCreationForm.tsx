@@ -13,8 +13,8 @@ import { createRequiredValidator } from '../../../../../components/form/validato
 
 import styles from './LangStatsInsightCreationForm.module.scss'
 
-const repositoriesFieldValidator = createRequiredValidator('Repositories is required field for code insight.')
-const thresholdFieldValidator = createRequiredValidator('Threshold is required field for code insight.')
+const repositoriesFieldValidator = createRequiredValidator('Repositories is a required field for code insight.')
+const thresholdFieldValidator = createRequiredValidator('Threshold is a required field for code insight.')
 
 export interface LangStatsInsightCreationFormProps {
     settings: { [key: string]: unknown }
@@ -27,13 +27,13 @@ export interface LangStatsCreationFormFields {
     title: string
     repository: string
     threshold: number
-    visibility: 'personal' | 'organisation'
+    visibility: 'personal' | 'organization'
 }
 
 const INITIAL_VALUES: Partial<LangStatsCreationFormFields> = {
     repository: '',
     title: '',
-    threshold: 10,
+    threshold: 3,
     visibility: 'personal',
 }
 
@@ -64,7 +64,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                 required={true}
                 autoFocus={true}
                 title="Repository"
-                description="This insight is limited to one repository. You can set up muliple language usage charts for many repositories."
+                description="This insight is limited to one repository. You can set up multiple language usage charts for analyzing other repositories."
                 placeholder="Add or search for repository"
                 valid={repository.meta.touched && repository.meta.validState === 'VALID'}
                 error={repository.meta.touched && repository.meta.error}
@@ -75,8 +75,8 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
             <FormInput
                 required={true}
                 title="Title"
-                description="Shown as title for your insight"
-                placeholder="ex. Migration to React function components"
+                description="Shown as the title for your insight."
+                placeholder="Example: Migration to React function components"
                 valid={title.meta.touched && title.meta.validState === 'VALID'}
                 error={title.meta.touched && title.meta.error}
                 {...title.input}
@@ -89,7 +89,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                 max={100}
                 type="number"
                 title="Threshold of ‘Other’ category"
-                description="The threshold for grouping all other languages into an 'other' category"
+                description="Languages with usage lower than the threshold are grouped into an 'other' category."
                 valid={threshold.meta.touched && threshold.meta.validState === 'VALID'}
                 error={threshold.meta.touched && threshold.meta.error}
                 {...threshold.input}
@@ -101,8 +101,8 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
             <FormGroup
                 name="visibility"
                 title="Visibility"
-                description="This insight will be visible only on your personal dashboard. It will not be show to other
-                            users in your organisation."
+                description="This insight will be visible only on your personal dashboard. It will not appear for other
+                            users in your organization."
                 className="mb-0 mt-4"
                 contentClassName="d-flex flex-wrap mb-n2"
             >
@@ -110,7 +110,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                     name="visibility"
                     value="personal"
                     title="Personal"
-                    description="only for you"
+                    description="only you"
                     checked={visibility.input.value === 'personal'}
                     className="mr-3"
                     onChange={visibility.input.onChange}
@@ -118,10 +118,10 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
 
                 <FormRadioInput
                     name="visibility"
-                    value="organisation"
+                    value="organization"
                     title="Organization"
-                    description="to all users in your organization"
-                    checked={visibility.input.value === 'organisation'}
+                    description="all users in your organization"
+                    checked={visibility.input.value === 'organization'}
                     onChange={visibility.input.onChange}
                     className="mr-3"
                 />
