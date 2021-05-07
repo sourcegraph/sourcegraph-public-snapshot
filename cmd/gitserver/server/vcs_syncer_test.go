@@ -2,14 +2,11 @@ package server
 
 import (
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 func TestDecomposePerforceRemoteURL(t *testing.T) {
 	t.Run("not a perforce scheme", func(t *testing.T) {
-		remoteURL, _ := vcs.ParseURL("https://www.google.com")
-		_, _, _, _, err := decomposePerforceRemoteURL(remoteURL)
+		_, _, _, _, err := decomposePerforceRemoteURL("https://www.google.com")
 		if err == nil {
 			t.Fatal("Want non-nil error but got nil")
 		}
@@ -64,8 +61,7 @@ func TestDecomposePerforceRemoteURL(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.cloneURL, func(t *testing.T) {
-			remoteURL, _ := vcs.ParseURL(test.cloneURL)
-			username, password, host, depot, err := decomposePerforceRemoteURL(remoteURL)
+			username, password, host, depot, err := decomposePerforceRemoteURL(test.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}
