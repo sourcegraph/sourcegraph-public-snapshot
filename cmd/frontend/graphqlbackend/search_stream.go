@@ -35,14 +35,19 @@ type MatchSender interface {
 
 // Temporary conversion function from SearchEvent to SearchMatchEvent
 func SearchEventToSearchMatchEvent(se SearchEvent) SearchMatchEvent {
-	matches := make([]result.Match, 0, len(se.Results))
-	for _, resolver := range se.Results {
-		matches = append(matches, resolver.toMatch())
-	}
 	return SearchMatchEvent{
-		Results: matches,
+		Results: ResolversToMatches(se.Results),
 		Stats:   se.Stats,
 	}
+}
+
+// Temporary conversion function from []SearchResultResolver to []result.Match
+func ResolversToMatches(resolvers []SearchResultResolver) []result.Match {
+	matches := make([]result.Match, 0, len(resolvers))
+	for _, resolver := range resolvers {
+		matches = append(matches, resolver.toMatch())
+	}
+	return matches
 }
 
 // Temporary conversion function from SearchMatchEvent to SearchEvent

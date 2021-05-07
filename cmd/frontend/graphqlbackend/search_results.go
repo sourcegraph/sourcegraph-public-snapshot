@@ -468,7 +468,10 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 			result.Stats.IsLimitHit = true
 		}
 		if r.stream != nil {
-			r.stream.Send(SearchEvent{result.SearchResults, result.Stats})
+			r.stream.SendMatches(SearchMatchEvent{
+				Results: ResolversToMatches(result.SearchResults),
+				Stats:   result.Stats,
+			})
 		}
 		return result, err
 	}
