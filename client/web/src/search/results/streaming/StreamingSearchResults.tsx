@@ -58,7 +58,6 @@ export interface StreamingSearchResultsProps
     location: H.Location
     history: H.History
     navbarSearchQueryState: QueryState
-    isSourcegraphDotCom: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }

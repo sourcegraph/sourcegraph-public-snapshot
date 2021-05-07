@@ -54,7 +54,7 @@ describe('FilterLink', () => {
         const filters: Filter[] = [repoFilter1, langFilter1, repoFilter2, langFilter2, fileFilter]
         const onFilterChosen = sinon.stub()
 
-        const links = getRepoFilterLinks(filters, onFilterChosen, false)
+        const links = getRepoFilterLinks(filters, onFilterChosen)
         expect(links.length).toBe(2)
         expect(mount(<>{links}</>)).toMatchSnapshot()
     })
@@ -63,7 +63,7 @@ describe('FilterLink', () => {
         const filters: Filter[] = [repoFilter1, langFilter1, repoFilter2, langFilter2, fileFilter]
         const onFilterChosen = sinon.stub()
 
-        const links = getRepoFilterLinks(filters, onFilterChosen, true)
+        const links = getRepoFilterLinks(filters, onFilterChosen)
         expect(links.length).toBe(2)
 
         const element = mount(<>{links}</>)
@@ -76,7 +76,7 @@ describe('FilterLink', () => {
         const filters: Filter[] = [langFilter1, langFilter2, fileFilter]
         const onFilterChosen = sinon.stub()
 
-        const links = getRepoFilterLinks(filters, onFilterChosen, false)
+        const links = getRepoFilterLinks(filters, onFilterChosen)
         expect(links.length).toBe(0)
     })
 
@@ -123,7 +123,7 @@ describe('FilterLink', () => {
         const filters: Filter[] = [repoFilter1]
         const onFilterChosen = sinon.spy()
 
-        const links = getRepoFilterLinks(filters, onFilterChosen, false)
+        const links = getRepoFilterLinks(filters, onFilterChosen)
         const link = mount(<>{links}</>).find('.test-sidebar-filter-link')
         link.simulate('click')
 

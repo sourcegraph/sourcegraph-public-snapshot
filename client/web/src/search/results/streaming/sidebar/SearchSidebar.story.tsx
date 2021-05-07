@@ -26,7 +26,6 @@ const defaultProps: SearchSidebarProps = {
     query: '',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    isSourcegraphDotCom: false,
 }
 
 const quicklinks: QuickLink[] = [
@@ -122,19 +121,6 @@ add('with everything', () => (
                 {...defaultProps}
                 settingsCascade={{ subjects: [], final: { quicklinks, 'search.scopes': scopes } }}
                 filters={filters}
-            />
-        )}
-    </WebStory>
-))
-
-add('with everything, on cloud', () => (
-    <WebStory>
-        {() => (
-            <SearchSidebar
-                {...defaultProps}
-                settingsCascade={{ subjects: [], final: { quicklinks, 'search.scopes': scopes } }}
-                filters={filters}
-                isSourcegraphDotCom={true}
             />
         )}
     </WebStory>

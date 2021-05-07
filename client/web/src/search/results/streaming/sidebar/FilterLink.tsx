@@ -48,30 +48,27 @@ export const FilterLink: React.FunctionComponent<FilterLinkProps> = ({
 
 export const getRepoFilterLinks = (
     filters: Filter[] | undefined,
-    onFilterChosen: (value: string) => void,
-    isSourcegraphDotCom: boolean
+    onFilterChosen: (value: string) => void
 ): React.ReactElement[] => {
     function repoLabelConverter(label: string): JSX.Element {
         let RepoIcon: ComponentType<MdiReactIconProps> | undefined
-        // We only show icons on Cloud
-        if (isSourcegraphDotCom) {
-            if (label.startsWith('github.com/')) {
-                RepoIcon = GithubIcon
-            }
-            if (label.startsWith('gitlab.com/')) {
-                RepoIcon = GitlabIcon
-            }
-            if (label.startsWith('bitbucket.com/')) {
-                RepoIcon = BitbucketIcon
-            }
+        if (label.startsWith('github.com/')) {
+            RepoIcon = GithubIcon
+        }
+        if (label.startsWith('gitlab.com/')) {
+            RepoIcon = GitlabIcon
+        }
+        if (label.startsWith('bitbucket.com/')) {
+            RepoIcon = BitbucketIcon
         }
 
         return (
             <span className={classNames('text-monospace search-query-link', styles.sidebarSectionListItemBreakWords)}>
-                <span className="search-filter-keyword">repo:</span>
+                <span className="search-filter-keyword">r:</span>
                 {RepoIcon ? (
                     <>
-                        <RepoIcon className="icon-inline" />/{displayRepoName(label)}
+                        <RepoIcon className={classNames('icon-inline text-muted', styles.sidebarSectionIcon)} />
+                        {displayRepoName(label)}
                     </>
                 ) : (
                     label

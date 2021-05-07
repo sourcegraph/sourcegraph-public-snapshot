@@ -25,7 +25,6 @@ export interface SearchSidebarProps
         TelemetryProps {
     query: string
     filters?: Filter[]
-    isSourcegraphDotCom: boolean
 }
 
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
@@ -52,7 +51,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     {getDynamicFilterLinks(props.filters, onFilterClicked)}
                 </SearchSidebarSection>
                 <SearchSidebarSection header="Repositories" showSearch={true}>
-                    {getRepoFilterLinks(props.filters, onFilterClicked, props.isSourcegraphDotCom)}
+                    {getRepoFilterLinks(props.filters, onFilterClicked)}
                 </SearchSidebarSection>
                 <SearchSidebarSection header="Search snippets">
                     {getSearchScopeLinks(props.settingsCascade, onFilterClicked)}

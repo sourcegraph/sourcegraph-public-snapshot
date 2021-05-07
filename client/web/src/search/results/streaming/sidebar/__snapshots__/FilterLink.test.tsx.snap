@@ -160,9 +160,12 @@ Array [
           <span
             className="search-filter-keyword"
           >
-            repo:
+            r:
           </span>
-          gitlab.com/sourcegraph/sourcegraph
+          <Memo(GitlabIcon)
+            className="icon-inline text-muted sidebarSectionIcon"
+          />
+          sourcegraph/sourcegraph
         </span>
       </span>
       <span
@@ -198,9 +201,12 @@ Array [
           <span
             className="search-filter-keyword"
           >
-            repo:
+            r:
           </span>
-          github.com/microsoft/vscode
+          <Memo(GithubIcon)
+            className="icon-inline text-muted sidebarSectionIcon"
+          />
+          microsoft/vscode
         </span>
       </span>
       <span
@@ -293,12 +299,11 @@ Array [
           <span
             className="search-filter-keyword"
           >
-            repo:
+            r:
           </span>
           <Memo(GitlabIcon)
-            className="icon-inline"
+            className="icon-inline text-muted sidebarSectionIcon"
           />
-          /
           sourcegraph/sourcegraph
         </span>
       </span>
@@ -335,12 +340,11 @@ Array [
           <span
             className="search-filter-keyword"
           >
-            repo:
+            r:
           </span>
           <Memo(GithubIcon)
-            className="icon-inline"
+            className="icon-inline text-muted sidebarSectionIcon"
           />
-          /
           microsoft/vscode
         </span>
       </span>
