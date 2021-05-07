@@ -1393,7 +1393,7 @@ func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParamete
 		tr.Finish()
 	}()
 
-	err = searchRepositories(ctx, a.db, args, limit, a)
+	err = searchRepositories(ctx, args, limit, a)
 	return errors.Wrap(err, "repository search failed")
 }
 
@@ -1426,7 +1426,7 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 
 	// For structural search with default limits we retry if we get no results.
 
-	fileMatches, stats, err := searchFilesInReposBatch(ctx, a.db, args)
+	fileMatches, stats, err := searchFilesInReposBatch(ctx, args)
 
 	if len(fileMatches) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
@@ -1437,7 +1437,7 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 		argsCopy.PatternInfo = &patternCopy
 		args = &argsCopy
 
-		fileMatches, stats, err = searchFilesInReposBatch(ctx, a.db, args)
+		fileMatches, stats, err = searchFilesInReposBatch(ctx, args)
 
 		if len(fileMatches) == 0 {
 			// Still no results? Give up.

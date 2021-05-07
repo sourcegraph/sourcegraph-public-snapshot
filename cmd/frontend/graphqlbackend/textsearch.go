@@ -306,7 +306,7 @@ func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
 
 // searchFilesInRepoBatch is a convenience function around searchFilesInRepos
 // which collects the results from the stream.
-func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.TextParameters) ([]*result.FileMatch, streaming.Stats, error) {
+func searchFilesInReposBatch(ctx context.Context, args *search.TextParameters) ([]*result.FileMatch, streaming.Stats, error) {
 	matches, stats, err := collectStream(func(stream Sender) error {
 		return searchFilesInRepos(ctx, args, stream)
 	})

@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 
@@ -21,7 +20,7 @@ var mockSearchRepositories func(args *search.TextParameters) ([]result.Match, *s
 //
 // For a repository to match a query, the repository's name must match all of the repo: patterns AND the
 // default patterns (i.e., the patterns that are not prefixed with any search field).
-func searchRepositories(ctx context.Context, db dbutil.DB, args *search.TextParameters, limit int32, stream Sender) error {
+func searchRepositories(ctx context.Context, args *search.TextParameters, limit int32, stream Sender) error {
 	if mockSearchRepositories != nil {
 		results, stats, err := mockSearchRepositories(args)
 		stream.Send(SearchEvent{
@@ -89,7 +88,7 @@ func searchRepositories(ctx context.Context, db dbutil.DB, args *search.TextPara
 		for matched := range results {
 			repos = append(repos, matched...)
 		}
-		repos, err = reposToAdd(ctx, db, args, repos)
+		repos, err = reposToAdd(ctx, args, repos)
 		if err != nil {
 			return err
 		}
@@ -184,7 +183,7 @@ func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions, 
 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
-func reposToAdd(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos []*search.RepositoryRevisions) ([]*search.RepositoryRevisions, error) {
+func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions) ([]*search.RepositoryRevisions, error) {
 	// matchCounts will contain the count of repohasfile patterns that matched.
 	// For negations, we will explicitly set this to -1 if it matches.
 	matchCounts := make(map[api.RepoID]int)
@@ -203,7 +202,7 @@ func reposToAdd(ctx context.Context, db dbutil.DB, args *search.TextParameters, 
 			newArgs.RepoPromise = (&search.Promise{}).Resolve(repos)
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
-			matches, _, err := searchFilesInReposBatch(ctx, db, &newArgs)
+			matches, _, err := searchFilesInReposBatch(ctx, &newArgs)
 			if err != nil {
 				return nil, err
 			}
@@ -239,7 +238,7 @@ func reposToAdd(ctx context.Context, db dbutil.DB, args *search.TextParameters, 
 			newArgs.RepoPromise = rp
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
-			matches, _, err := searchFilesInReposBatch(ctx, db, &newArgs)
+			matches, _, err := searchFilesInReposBatch(ctx, &newArgs)
 			if err != nil {
 				return nil, err
 			}

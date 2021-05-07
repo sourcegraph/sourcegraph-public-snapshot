@@ -78,9 +78,11 @@ func MatchToResolver(db dbutil.DB, match result.Match) SearchResultResolver {
 			RepoResolver: NewRepositoryResolver(db, v.Repo.ToRepo()),
 		}
 	case *result.RepoMatch:
+		repoName := v.RepoName()
 		return &RepositoryResolver{
 			db:        db,
 			RepoMatch: *v,
+			innerRepo: repoName.ToRepo(),
 		}
 	case *result.CommitMatch:
 		return &CommitSearchResultResolver{
