@@ -10,7 +10,6 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -31,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 type Test struct {
@@ -132,8 +130,8 @@ func TestRequest(t *testing.T) {
 	}
 	t.Cleanup(func() { repoCloned = origRepoCloned })
 
-	testGitRepoExists = func(ctx context.Context, remoteURL *url.URL) error {
-		if remoteURL.String() == "https://github.com/nicksnyder/go-i18n.git" {
+	testGitRepoExists = func(ctx context.Context, remoteURL string) error {
+		if remoteURL == "https://github.com/nicksnyder/go-i18n.git" {
 			return nil
 		}
 		return errors.New("not cloneable")
@@ -420,11 +418,7 @@ func TestUrlRedactor(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run("", func(t *testing.T) {
-			remoteURL, err := vcs.ParseURL(testCase.url)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if actual := newURLRedactor(remoteURL).redact(testCase.message); actual != testCase.redacted {
+			if actual := newURLRedactor(testCase.url).redact(testCase.message); actual != testCase.redacted {
 				t.Fatalf("newUrlRedactor(%q).redact(%q) got %q; want %q", testCase.url, testCase.message, actual, testCase.redacted)
 			}
 		})

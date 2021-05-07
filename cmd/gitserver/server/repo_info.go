@@ -29,7 +29,7 @@ func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 		if err != nil {
 			return nil, err
 		}
-		resp.URL = remoteURL.String()
+		resp.URL = remoteURL
 	}
 	{
 		resp.CloneProgress, resp.CloneInProgress = s.locker.Status(dir)

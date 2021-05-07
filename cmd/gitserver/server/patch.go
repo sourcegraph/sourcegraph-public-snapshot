@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,11 +13,12 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
+
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 var patchID uint64
@@ -59,14 +59,19 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	ref := req.TargetRef
 
 	var (
-		remoteURL *url.URL
+		remoteURL string
 		err       error
 	)
 
 	if req.Push != nil && req.Push.RemoteURL != "" {
-		remoteURL, err = vcs.ParseURL(req.Push.RemoteURL)
+		remoteURL = req.Push.RemoteURL
 	} else {
 		remoteURL, err = s.getRemoteURL(ctx, req.Repo)
+		if err != nil {
+			log15.Error("Failed to get remote URL", "ref", ref, "err", err)
+			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
+			return http.StatusInternalServerError, resp
+		}
 	}
 
 	if err != nil {
@@ -251,12 +256,17 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	if req.Push != nil {
-		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL.String(), fmt.Sprintf("%s:%s", cmtHash, ref))
+		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL, fmt.Sprintf("%s:%s", cmtHash, ref))
 		cmd.Dir = repoGitDir
 
 		// If the protocol is SSH and a private key was given, we want to
 		// use it for communication with the code host.
-		if remoteURL.Scheme == "ssh" && req.Push.PrivateKey != "" && req.Push.Passphrase != "" {
+		parsedURL, err := vcs.ParseURL(remoteURL)
+		if err != nil {
+			resp.SetError(repo, "", "", err)
+			return http.StatusInternalServerError, resp
+		}
+		if parsedURL.Scheme == "ssh" && req.Push.PrivateKey != "" && req.Push.Passphrase != "" {
 			// We set up an agent here, which sets up a socket that can be provided to
 			// SSH via the $SSH_AUTH_SOCK environment variable and the goroutine to drive
 			// it in the background.

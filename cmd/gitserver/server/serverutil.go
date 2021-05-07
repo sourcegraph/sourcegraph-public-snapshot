@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -284,10 +283,10 @@ var repoLastChanged = func(dir GitDir) (time.Time, error) {
 //
 // The ref prefix `ref/<ref type>/` is stripped away from the returned
 // refs.
-var repoRemoteRefs = func(ctx context.Context, remoteURL *url.URL, prefix string) (map[string]string, error) {
+var repoRemoteRefs = func(ctx context.Context, remoteURL string, prefix string) (map[string]string, error) {
 	// The expected output of this git command is a list of:
 	// <commit hash> <ref name>
-	cmd := exec.Command("git", "ls-remote", remoteURL.String(), prefix+"*")
+	cmd := exec.Command("git", "ls-remote", remoteURL, prefix+"*")
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout

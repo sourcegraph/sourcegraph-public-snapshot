@@ -97,7 +97,7 @@ func TestServer_handleRepoInfo(t *testing.T) {
 					Cloned:      true,
 					LastFetched: &lastFetched,
 					LastChanged: &lastChanged,
-					URL:         "file://u",
+					URL:         "u",
 				},
 			},
 		}

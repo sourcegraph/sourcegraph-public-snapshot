@@ -47,7 +47,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 // tempDirName is the name used for the temporary directory under ReposDir.
@@ -502,17 +501,11 @@ func (s *Server) serverContext() (context.Context, context.CancelFunc) {
 	}
 }
 
-func (s *Server) getRemoteURL(ctx context.Context, name api.RepoName) (*url.URL, error) {
+func (s *Server) getRemoteURL(ctx context.Context, name api.RepoName) (string, error) {
 	if s.GetRemoteURLFunc == nil {
-		return nil, errors.New("gitserver GetRemoteURLFunc is unset")
+		return "", errors.New("gitserver GetRemoteURLFunc is unset")
 	}
-
-	remoteURL, err := s.GetRemoteURLFunc(ctx, name)
-	if err != nil {
-		return nil, errors.Wrap(err, "GetRemoteURLFunc")
-	}
-
-	return vcs.ParseURL(remoteURL)
+	return s.GetRemoteURLFunc(ctx, name)
 }
 
 // acquireCloneLimiter() acquires a cancellable context associated with the
@@ -576,7 +569,7 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 		// We use this endpoint to verify if a repo exists without consuming
 		// API rate limit, since many users visit private or bogus repos,
 		// so we deduce the unauthenticated clone URL from the repo name.
-		remoteURL, _ = vcs.ParseURL("https://" + string(req.Repo) + ".git")
+		remoteURL = "https://" + string(req.Repo) + ".git"
 
 		// At this point we are assuming it's a git repo
 		syncer = &GitRepoSyncer{}
@@ -1436,23 +1429,26 @@ type urlRedactor struct {
 
 // newURLRedactor returns a new urlRedactor that redacts
 // credentials found in rawurl, and the rawurl itself.
-func newURLRedactor(parsedURL *url.URL) *urlRedactor {
+func newURLRedactor(rawurl string) *urlRedactor {
 	var sensitive []string
-	pw, _ := parsedURL.User.Password()
-	u := parsedURL.User.Username()
-	if pw != "" && u != "" {
-		// Only block password if we have both as we can
-		// assume that the username isn't sensitive in this case
-		sensitive = append(sensitive, pw)
-	} else {
-		if pw != "" {
+	parsedURL, _ := url.Parse(rawurl)
+	if parsedURL != nil {
+		pw, _ := parsedURL.User.Password()
+		u := parsedURL.User.Username()
+		if pw != "" && u != "" {
+			// Only block password if we have both as we can
+			// assume that the username isn't sensitive in this case
 			sensitive = append(sensitive, pw)
-		}
-		if u != "" {
-			sensitive = append(sensitive, u)
+		} else {
+			if pw != "" {
+				sensitive = append(sensitive, pw)
+			}
+			if u != "" {
+				sensitive = append(sensitive, u)
+			}
 		}
 	}
-	sensitive = append(sensitive, parsedURL.String())
+	sensitive = append(sensitive, rawurl)
 	return &urlRedactor{sensitive: sensitive}
 }
 
@@ -1493,7 +1489,7 @@ func scanCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
 
 // testGitRepoExists is a test fixture that overrides the return value for
 // GitRepoSyncer.IsCloneable when it is set.
-var testGitRepoExists func(ctx context.Context, remoteURL *url.URL) error
+var testGitRepoExists func(ctx context.Context, remoteURL string) error
 
 var (
 	execRunning = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -1721,7 +1717,7 @@ func ensureHEAD(dir GitDir) {
 
 // setHEAD configures git repo defaults (such as what HEAD is) which are
 // needed for git commands to work.
-func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoName, remoteURL *url.URL) error {
+func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoName, remoteURL string) error {
 	// Verify that there is a HEAD file within the repo, and that it is of
 	// non-zero length.
 	ensureHEAD(dir)

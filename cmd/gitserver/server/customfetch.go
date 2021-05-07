@@ -7,6 +7,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -28,13 +30,26 @@ func buildCustomFetchMappings(c []*schema.CustomGitFetchMapping) map[string][]st
 	return cgm
 }
 
-func customFetchCmd(ctx context.Context, remoteURL *url.URL) *exec.Cmd {
+func extractDomainPath(cloneURL string) (string, error) {
+	gitURL, err := url.Parse(cloneURL)
+	if err != nil {
+		return "", err
+	}
+
+	return path.Join(gitURL.Host, gitURL.Path), nil
+}
+
+func customFetchCmd(ctx context.Context, urlVal string) *exec.Cmd {
 	cgm := customGitFetch().(map[string][]string)
 	if len(cgm) == 0 {
 		return nil
 	}
 
-	dp := path.Join(remoteURL.Host, remoteURL.Path)
+	dp, err := extractDomainPath(urlVal)
+	if err != nil {
+		log15.Error("failed to extract domain and path", "url", urlVal, "err", err)
+		return nil
+	}
 	cmdParts := cgm[dp]
 	if len(cmdParts) == 0 {
 		return nil

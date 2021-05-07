@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -15,8 +14,7 @@ func TestEmptyCustomGitFetch(t *testing.T) {
 		return buildCustomFetchMappings(nil)
 	}
 
-	remoteURL, _ := vcs.ParseURL("git@github.com:sourcegraph/sourcegraph.git")
-	customCmd := customFetchCmd(context.Background(), remoteURL)
+	customCmd := customFetchCmd(context.Background(), "git@github.com:sourcegraph/sourcegraph.git")
 	if customCmd != nil {
 		t.Errorf("expected nil custom cmd for empty configuration, got %+v", customCmd)
 	}
@@ -63,8 +61,7 @@ func TestCustomGitFetch(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		remoteURL, _ := vcs.ParseURL(test.url)
-		customCmd := customFetchCmd(context.Background(), remoteURL)
+		customCmd := customFetchCmd(context.Background(), test.url)
 		var args []string
 		if customCmd != nil {
 			args = customCmd.Args
