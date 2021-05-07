@@ -26,13 +26,13 @@ func TestExtensionsUsageStatistics(t *testing.T) {
 
 	_, err := db.Exec(`
 		INSERT INTO event_logs
-			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
+			(id, name, user_id, anonymous_user_id, source, version, timestamp)
 		VALUES
-			(1, 'ExtensionActivation', '{"extension_id": "sourcegraph/codecov"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(2, 'ExtensionActivation', '{"extension_id": "sourcegraph/link-preview-expander"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(3, 'ExtensionActivation', '{"extension_id": "sourcegraph/link-preview-expander"}', 'https://sourcegraph.test:3443/search', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(4, 'ExtensionActivation', '{"extension_id": "sourcegraph/link-preview-expander"}', 'https://sourcegraph.test:3443/search', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(5, 'ExtensionActivation', '{"extension_id": "sourcegraph/link-preview-expander"}', 'https://sourcegraph.test:3443/search', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '8 days')
+			(1, 'ExtensionActivation', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(2, 'ExtensionActivation', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(3, 'ExtensionActivation', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(4, 'ExtensionActivation', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(5, 'ExtensionActivation', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '8 days')
 	`, now)
 	if err != nil {
 		t.Fatal(err)

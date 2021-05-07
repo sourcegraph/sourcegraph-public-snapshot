@@ -25,14 +25,14 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 
 	_, err := db.Exec(`
 		INSERT INTO event_logs
-			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
+			(id, name, user_id, anonymous_user_id, source, version, timestamp)
 		VALUES
-			(1, 'ViewCodeMonitoringPage', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(2, 'ViewCreateCodeMonitorPage', '{"hasTriggerQuery": false}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(3, 'ViewCreateCodeMonitorPage', '{"hasTriggerQuery": false}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(4, 'ViewCreateCodeMonitorPage', '{"hasTriggerQuery": true}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(5, 'ViewManageCodeMonitorPage', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(6, 'CodeMonitorEmailLinkClicked', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day')
+			(1, 'ViewCodeMonitoringPage', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(2, 'ViewCreateCodeMonitorPage', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(3, 'ViewCreateCodeMonitorPage', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(4, 'ViewCreateCodeMonitorPage', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(5, 'ViewManageCodeMonitorPage', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+			(6, 'CodeMonitorEmailLinkClicked', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day')
 	`, now)
 	if err != nil {
 		t.Fatal(err)

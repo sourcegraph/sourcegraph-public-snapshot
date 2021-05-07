@@ -74,33 +74,33 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	// Create event logs
 	_, err = db.Exec(`
 		INSERT INTO event_logs
-			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
+			(id, name, user_id, anonymous_user_id, source, version, timestamp)
 		VALUES
 		-- User 23, created a batch change last month and closes it
-			(1, 'BatchSpecCreated', '{"changeset_specs_count": 3}', '', 23, '', 'backend', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
-			(2, 'BatchSpecCreated', '{"changeset_specs_count": 1}', '', 23, '', 'backend', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
-			(3, 'BatchSpecCreated', '{}', '', 23, '', 'backend', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
-			(4, 'ViewBatchChangeApplyPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/apply/RANDID', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
-			(5, 'BatchChangeCreated', '{"batch_change_id": 1}', '', 23, '', 'backend', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
-			(6, 'ViewBatchChangeDetailsPageAfterCreate', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/gitignore-files', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
-			(7, 'ViewBatchChangeDetailsPageAfterUpdate', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/gitignore-files', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
-			(8, 'ViewBatchChangeDetailsPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/gitignore-files', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
-			(9, 'BatchChangeCreatedOrUpdated', '{"batch_change_id": 1}', '', 23, '', 'backend', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
-			(10, 'BatchChangeClosed', '{"batch_change_id": 1}', '', 23, '', 'backend', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
-			(11, 'BatchChangeDeleted', '{"batch_change_id": 1}', '', 23, '', 'backend', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
+			(1, 'BatchSpecCreated', 23, '', 'backend', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
+			(2, 'BatchSpecCreated', 23, '', 'backend', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
+			(3, 'BatchSpecCreated', 23, '', 'backend', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
+			(4, 'ViewBatchChangeApplyPage', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
+			(5, 'BatchChangeCreated', 23, '', 'backend', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
+			(6, 'ViewBatchChangeDetailsPageAfterCreate', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
+			(7, 'ViewBatchChangeDetailsPageAfterUpdate', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
+			(8, 'ViewBatchChangeDetailsPage', 23, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
+			(9, 'BatchChangeCreatedOrUpdated', 23, '', 'backend', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
+			(10, 'BatchChangeClosed', 23, '', 'backend', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
+			(11, 'BatchChangeDeleted', 23, '', 'backend', 'version', date_trunc('month', CURRENT_DATE) - INTERVAL '2 days'),
 		-- User 24, created a batch change today and closes it
-			(14, 'BatchSpecCreated', '{}', '', 24, '', 'backend', 'version', $1::timestamp),
-			(15, 'ViewBatchChangeApplyPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/apply/RANDID-2', 24, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp),
-			(16, 'BatchChangeCreated', '{"batch_change_id": 2}', '', 24, '', 'backend', 'version', $1::timestamp),
-			(17, 'ViewBatchChangeDetailsPageAfterCreate', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/foobar-files', 24, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp),
-			(18, 'ViewBatchChangeDetailsPageAfterUpdate', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/foobar-files', 24, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp),
-			(19, 'BatchChangeCreatedOrUpdated', '{"batch_change_id": 2}', '', 24, '', 'backend', 'version', $1::timestamp),
-			(20, 'BatchChangeClosed', '{"batch_change_id": 2}', '', 24, '', 'backend', 'version', $1::timestamp),
-			(21, 'BatchChangeDeleted', '{"batch_change_id": 2}', '', 24, '', 'backend', 'version', $1::timestamp),
+			(14, 'BatchSpecCreated', 24, '', 'backend', 'version', $1::timestamp),
+			(15, 'ViewBatchChangeApplyPage', 24, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp),
+			(16, 'BatchChangeCreated', 24, '', 'backend', 'version', $1::timestamp),
+			(17, 'ViewBatchChangeDetailsPageAfterCreate', 24, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp),
+			(18, 'ViewBatchChangeDetailsPageAfterUpdate', 24, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp),
+			(19, 'BatchChangeCreatedOrUpdated', 24, '', 'backend', 'version', $1::timestamp),
+			(20, 'BatchChangeClosed', 24, '', 'backend', 'version', $1::timestamp),
+			(21, 'BatchChangeDeleted', 24, '', 'backend', 'version', $1::timestamp),
 		-- User 25, only views the batch change, today
-			(27, 'ViewBatchChangeDetailsPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/gitignore-files', 25, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp),
-			(28, 'ViewBatchChangesListPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes', 25, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp),
-			(29, 'ViewBatchChangeDetailsPage', '{}', 'https://sourcegraph.test:3443/users/mrnugget/batch-changes/foobar-files', 25, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp)
+			(27, 'ViewBatchChangeDetailsPage', 25, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp),
+			(28, 'ViewBatchChangesListPage', 25, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp),
+			(29, 'ViewBatchChangeDetailsPage', 25, '5d302f47-9e91-4b3d-9e96-469b5601a765', 'WEB', 'version', $1::timestamp)
 	`, now)
 	if err != nil {
 		t.Fatal(err)
