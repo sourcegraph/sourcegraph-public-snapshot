@@ -292,25 +292,26 @@ func fileMatchResolversToMatches(resolvers []*FileMatchResolver) []result.Match 
 	return matches
 }
 
-func searchResultsToFileMatchResults(resolvers []SearchResultResolver) ([]*FileMatchResolver, error) {
-	results := make([]*FileMatchResolver, len(resolvers))
-	for i, resolver := range resolvers {
-		fm, ok := resolver.ToFileMatch()
+func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
+	fms := make([]*result.FileMatch, 0, len(matches))
+	for _, match := range matches {
+		fm, ok := match.(*result.FileMatch)
 		if !ok {
 			return nil, fmt.Errorf("expected only file match results")
 		}
-		results[i] = fm
+		fms = append(fms, fm)
 	}
-	return results, nil
+	return fms, nil
 }
 
 // searchFilesInRepoBatch is a convenience function around searchFilesInRepos
 // which collects the results from the stream.
-func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.TextParameters) ([]*FileMatchResolver, streaming.Stats, error) {
-	results, stats, err := collectStream(db, func(stream Sender) error {
+func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.TextParameters) ([]*result.FileMatch, streaming.Stats, error) {
+	matches, stats, err := collectStream(func(stream Sender) error {
 		return searchFilesInRepos(ctx, args, stream)
 	})
-	fms, fmErr := searchResultsToFileMatchResults(results)
+
+	fms, fmErr := matchesToFileMatches(matches)
 	if fmErr != nil && err == nil {
 		err = errors.Wrap(fmErr, "searchFilesInReposBatch failed to convert results")
 	}

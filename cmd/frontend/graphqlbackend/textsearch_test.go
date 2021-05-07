@@ -96,12 +96,12 @@ func TestSearchFilesInRepos(t *testing.T) {
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
-	results, common, err := searchFilesInReposBatch(context.Background(), db, args)
+	matches, common, err := searchFilesInReposBatch(context.Background(), db, args)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(results) != 2 {
-		t.Errorf("expected two results, got %d", len(results))
+	if len(matches) != 2 {
+		t.Errorf("expected two results, got %d", len(matches))
 	}
 	repoNames := map[api.RepoID]string{}
 	for _, rr := range repoRevs {
@@ -186,13 +186,13 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	results, _, err := searchFilesInReposBatch(context.Background(), db, args)
+	matches, _, err := searchFilesInReposBatch(context.Background(), db, args)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(results) != 3 {
-		t.Errorf("expected three results, got %d", len(results))
+	if len(matches) != 3 {
+		t.Errorf("expected three results, got %d", len(matches))
 	}
 }
 
@@ -265,16 +265,16 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
-	results, _, err := searchFilesInReposBatch(context.Background(), db, args)
+	matches, _, err := searchFilesInReposBatch(context.Background(), db, args)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	resultKeys := make([]result.Key, len(results))
-	for i, result := range results {
-		resultKeys[i] = result.FileMatch.Key()
+	matchKeys := make([]result.Key, len(matches))
+	for i, match := range matches {
+		matchKeys[i] = match.Key()
 	}
-	sort.Slice(resultKeys, func(i, j int) bool { return resultKeys[i].Less(resultKeys[j]) })
+	sort.Slice(matchKeys, func(i, j int) bool { return matchKeys[i].Less(matchKeys[j]) })
 
 	wantResultKeys := []result.Key{
 		{Repo: "foo", Commit: "branch3", Path: "main.go"},
@@ -282,8 +282,8 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		{Repo: "foo", Commit: "master", Path: "main.go"},
 		{Repo: "foo", Commit: "mybranch", Path: "main.go"},
 	}
-	if !reflect.DeepEqual(resultKeys, wantResultKeys) {
-		t.Errorf("got %v, want %v", resultKeys, wantResultKeys)
+	if !reflect.DeepEqual(matchKeys, wantResultKeys) {
+		t.Errorf("got %v, want %v", matchKeys, wantResultKeys)
 	}
 }
 

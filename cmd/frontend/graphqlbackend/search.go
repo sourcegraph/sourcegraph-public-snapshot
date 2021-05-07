@@ -469,16 +469,21 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		return nil, err
 	}
 
-	fileResults, _, err := searchFilesInReposBatch(ctx, r.db, &args)
+	fileMatches, _, err := searchFilesInReposBatch(ctx, r.db, &args)
 	if err != nil {
 		return nil, err
 	}
 
 	var suggestions []SearchSuggestionResolver
-	for i, result := range fileResults {
-		assumedScore := len(fileResults) - i // Greater score is first, so we inverse the index.
+	for i, fm := range fileMatches {
+		assumedScore := len(fileMatches) - i // Greater score is first, so we inverse the index.
+		fmr := &FileMatchResolver{
+			FileMatch:    *fm,
+			db:           r.db,
+			RepoResolver: NewRepositoryResolver(r.db, fm.Repo.ToRepo()),
+		}
 		suggestions = append(suggestions, gitTreeSuggestionResolver{
-			gitTreeEntry: result.File(),
+			gitTreeEntry: fmr.File(),
 			score:        assumedScore,
 		})
 	}

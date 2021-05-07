@@ -1426,9 +1426,9 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 
 	// For structural search with default limits we retry if we get no results.
 
-	fileResults, stats, err := searchFilesInReposBatch(ctx, a.db, args)
+	fileMatches, stats, err := searchFilesInReposBatch(ctx, a.db, args)
 
-	if len(fileResults) == 0 && err == nil {
+	if len(fileMatches) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
 		// to resolve more potential file matches by setting a higher FileMatchLimit.
 		patternCopy := *(args.PatternInfo)
@@ -1437,17 +1437,22 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 		argsCopy.PatternInfo = &patternCopy
 		args = &argsCopy
 
-		fileResults, stats, err = searchFilesInReposBatch(ctx, a.db, args)
+		fileMatches, stats, err = searchFilesInReposBatch(ctx, a.db, args)
 
-		if len(fileResults) == 0 {
+		if len(fileMatches) == 0 {
 			// Still no results? Give up.
 			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
 			stats.IsLimitHit = false // Ensure we don't display "Show more".
 		}
 	}
 
+	matches := make([]result.Match, 0, len(fileMatches))
+	for _, fm := range fileMatches {
+		matches = append(matches, fm)
+	}
+
 	a.Send(SearchEvent{
-		Results: fileMatchResolversToMatches(fileResults),
+		Results: matches,
 		Stats:   stats,
 	})
 	return err
