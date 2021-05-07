@@ -62,6 +62,49 @@ var (
 		ShortUsage:  "sg [flags] <subcommand>",
 		FlagSet:     rootFlagSet,
 		Subcommands: []*ffcli.Command{runCommand, runSetCommand, startCommand, testCommand},
+		Exec: func(ctx context.Context, args []string) error {
+			return flag.ErrHelp
+		},
+		UsageFunc: func(c *ffcli.Command) string {
+			var out strings.Builder
+
+			fmt.Fprintf(&out, "%s", output.StyleLogo)
+			fmt.Fprintln(&out, `          _____                    _____`)
+			fmt.Fprintln(&out, `         /\    \                  /\    \`)
+			fmt.Fprintln(&out, `        /::\    \                /::\    \`)
+			fmt.Fprintln(&out, `       /::::\    \              /::::\    \`)
+			fmt.Fprintln(&out, `      /::::::\    \            /::::::\    \`)
+			fmt.Fprintln(&out, `     /:::/\:::\    \          /:::/\:::\    \`)
+			fmt.Fprintln(&out, `    /:::/__\:::\    \        /:::/  \:::\    \`)
+			fmt.Fprintln(&out, `    \:::\   \:::\    \      /:::/    \:::\    \`)
+			fmt.Fprintln(&out, `  ___\:::\   \:::\    \    /:::/    / \:::\    \`)
+			fmt.Fprintln(&out, ` /\   \:::\   \:::\    \  /:::/    /   \:::\ ___\`)
+			fmt.Fprintln(&out, `/::\   \:::\   \:::\____\/:::/____/  ___\:::|    |`)
+			fmt.Fprintln(&out, `\:::\   \:::\   \::/    /\:::\    \ /\  /:::|____|`)
+			fmt.Fprintln(&out, ` \:::\   \:::\   \/____/  \:::\    /::\ \::/    /`)
+			fmt.Fprintln(&out, `  \:::\   \:::\    \       \:::\   \:::\ \/____/`)
+			fmt.Fprintln(&out, `   \:::\   \:::\____\       \:::\   \:::\____\`)
+			fmt.Fprintln(&out, `    \:::\  /:::/    /        \:::\  /:::/    /`)
+			fmt.Fprintln(&out, `     \:::\/:::/    /          \:::\/:::/    /`)
+			fmt.Fprintln(&out, `      \::::::/    /            \::::::/    /`)
+			fmt.Fprintln(&out, `       \::::/    /              \::::/    /`)
+			fmt.Fprintln(&out, `        \::/    /                \::/____/`)
+			fmt.Fprintln(&out, `         \/____/`)
+			fmt.Fprintf(&out, "%s", output.StyleReset)
+
+			fmt.Fprintf(&out, "USAGE\n")
+			fmt.Fprintf(&out, "  sg <subcommand>\n")
+
+			fmt.Fprintf(&out, "\n")
+			fmt.Fprintf(&out, "AVAILABLE COMMANDS\n")
+			for _, sub := range c.Subcommands {
+				fmt.Fprintf(&out, "  %s\n", sub.Name)
+			}
+
+			fmt.Fprintf(&out, "\nRun 'sg <subcommand> -help' to get help output for each subcommand\n")
+
+			return out.String()
+		},
 	}
 )
 
