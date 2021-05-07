@@ -36,7 +36,7 @@ export const CreationIntroPage: React.FunctionComponent = () => (
                 <h3>Based on your search query</h3>
 
                 <p>
-                    Search-based insights let you create any data visualization about your code based on a custom search
+                    Search-based insights let you create a time series data visualization about your code based on a custom search
                     query.
                 </p>
 
