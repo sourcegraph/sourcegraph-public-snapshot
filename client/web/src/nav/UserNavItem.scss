@@ -8,7 +8,7 @@
             > .dropdown-item {
                 &:hover {
                     background-color: var(--link-color);
-                    color: #ffffff;
+                    color: var(--light-text);
                 }
             }
             > .dropdown-header {

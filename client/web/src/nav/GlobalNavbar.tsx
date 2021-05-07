@@ -51,12 +51,12 @@ import {
 import { QueryState } from '../search/helpers'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { ThemePreferenceProps } from '../theme'
+import { UserSettingsSidebarItems } from '../user/settings/UserSettingsSidebar'
 import { showDotComMarketing } from '../util/features'
 
 import { NavLinks } from './NavLinks'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
 import { VersionContextDropdown } from './VersionContextDropdown'
-import { UserSettingsSidebarItems } from '../user/settings/UserSettingsSidebar'
 
 interface Props
     extends SettingsCascadeProps,
@@ -92,7 +92,7 @@ interface Props
 
     // Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets.
     enableSmartQuery: boolean
-    userSettingsSideBarItems: UserSettingsSidebarItems
+    userSettingsSideBarItems?: UserSettingsSidebarItems
 
     /**
      * Which variation of the global navbar to render.
@@ -144,9 +144,10 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 
     // Design Refresh will include repositories section as part of the user navigation bar
     // This filter makes sure repositories feature flag is active.
-    const showRepositorySection = useMemo(() => {
-        return !!props.userSettingsSideBarItems.account.filter(item => item.label === 'Repositories')
-    }, [props.userSettingsSideBarItems])
+    const showRepositorySection = useMemo(
+        () => !!props.userSettingsSideBarItems?.account.filter(item => item.label === 'Repositories'),
+        [props.userSettingsSideBarItems]
+    )
 
     const isSearchContextAvailable = useObservable(
         useMemo(

@@ -16,11 +16,11 @@ import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggl
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
 
 import { AuthenticatedUser } from '../auth'
+import { Badge } from '../components/Badge'
 import { ThemePreference, ThemePreferenceProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 
 import { RedesignToggle } from './RedesignToggle'
-import { Badge } from '../components/Badge'
 
 export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, ExtensionAlertAnimationProps {
     location: H.Location
@@ -32,7 +32,7 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     keyboardShortcutForSwitchTheme?: KeyboardShortcut
     testIsOpen?: boolean
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
-    showRepositorySection: boolean
+    showRepositorySection?: boolean
 }
 
 export interface ExtensionAlertAnimationProps {
