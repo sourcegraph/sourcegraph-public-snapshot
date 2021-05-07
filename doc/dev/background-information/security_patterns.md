@@ -30,4 +30,4 @@ In Sourcegraph, there are two places to enforce authorization, both equally impo
 
 ### Secret management
 
-Secrets used by our applications are stored in GCP Secret Manager, *never* in source code unless it is mock/test data. Internal documentation on how to store/consume secrets for development can be found in [this document](https://docs.google.com/document/d/1Qm5P4KbyVMP_KyPvud0qyqUb43RK3lTFMjAeE6623Nw/edit).ß
+Secrets used by our applications are stored in GCP Secret Manager, *never* in source code unless it is mock/test data. Internal documentation on how to store/consume secrets for development can be found in [this document](https://docs.google.com/document/d/1Qm5P4KbyVMP_KyPvud0qyqUb43RK3lTFMjAeE6623Nw/edit).
