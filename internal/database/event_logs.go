@@ -58,20 +58,15 @@ type Event struct {
 }
 
 func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
-	argument := e.Argument
-	if argument == nil {
-		argument = json.RawMessage([]byte(`{}`))
-	}
-
 	_, err := l.Handle().DB().ExecContext(
 		ctx,
 		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES($1, $2, $3, $4, $5, $6, $7, $8)",
 		e.Name,
-		e.URL,
+		"", // We want to eventually drop the url column. At the moment this is not nullable.
 		e.UserID,
 		e.AnonymousUserID,
 		e.Source,
-		argument,
+		"{}", // We want to eventually drop the argument column. At the moment this is not nullable. Also it accepts valid JSON only.
 		version.Version(),
 		e.Timestamp.UTC(),
 	)
