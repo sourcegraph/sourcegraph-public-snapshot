@@ -55,6 +55,12 @@ $popover-item-padding-v: 0.325rem;
         }
     }
 
+    .theme-redesign & {
+        &__input {
+            margin: 0.5rem;
+        }
+    }
+
     &__show-more {
         flex: 0 0;
         border: none;
