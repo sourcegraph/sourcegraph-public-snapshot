@@ -329,7 +329,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 				return
 			}
 
-			matches := make([]SearchResultResolver, 0, len(files))
+			matches := make([]result.FileMatch, 0, len(files))
 			repoResolvers := make(RepositoryResolverCache)
 			for _, file := range files {
 				fileLimitHit := false
@@ -362,27 +362,23 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 					if typ == symbolRequest {
 						symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
 					}
-					fm := &FileMatchResolver{
-						db: db,
-						FileMatch: result.FileMatch{
-							LineMatches: lines,
-							LimitHit:    fileLimitHit,
-							Symbols:     symbols,
-							File: result.File{
-								InputRev: &inputRev,
-								CommitID: api.CommitID(file.Version),
-								Repo:     repo,
-								Path:     file.FileName,
-							},
+					fm := result.FileMatch{
+						LineMatches: lines,
+						LimitHit:    fileLimitHit,
+						Symbols:     symbols,
+						File: result.File{
+							InputRev: &inputRev,
+							CommitID: api.CommitID(file.Version),
+							Repo:     repo,
+							Path:     file.FileName,
 						},
-						RepoResolver: repoResolver,
 					}
 					matches = append(matches, fm)
 				}
 			}
 
 			c.Send(SearchEvent{
-				Results: ResolversToMatches(matches),
+				Results: fileMatchesToMatches(matches),
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
 				},
