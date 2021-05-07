@@ -164,9 +164,9 @@ func (lm lineMatchResolver) LimitHit() bool {
 	return false
 }
 
-var mockSearchFilesInRepo func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.FileMatch, limitHit bool, err error)
+var mockSearchFilesInRepo func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]result.FileMatch, bool, error) {
+func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]*result.FileMatch, bool, error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
@@ -203,7 +203,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 		return nil, false, err
 	}
 
-	fileMatches := make([]result.FileMatch, 0, len(matches))
+	fileMatches := make([]*result.FileMatch, 0, len(matches))
 	for _, fm := range matches {
 		lineMatches := make([]*result.LineMatch, 0, len(fm.LineMatches))
 		for _, lm := range fm.LineMatches {
@@ -218,7 +218,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 			})
 		}
 
-		fileMatches = append(fileMatches, result.FileMatch{
+		fileMatches = append(fileMatches, &result.FileMatch{
 			File: result.File{
 				Path:     fm.Path,
 				Repo:     repo,
@@ -273,13 +273,13 @@ func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.M
 	return true, nil
 }
 
-var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error)
+var mockSearchFilesInRepos func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error)
 
-func fileMatchesToMatches(fms []result.FileMatch) []result.Match {
+func fileMatchesToMatches(fms []*result.FileMatch) []result.Match {
 	matches := make([]result.Match, 0, len(fms))
 	for _, fm := range fms {
 		newFm := fm
-		matches = append(matches, &newFm)
+		matches = append(matches, newFm)
 	}
 	return matches
 }
@@ -321,9 +321,9 @@ func searchFilesInReposBatch(ctx context.Context, args *search.TextParameters) (
 // searchFilesInRepos searches a set of repos for a pattern.
 func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream Sender) (err error) {
 	if mockSearchFilesInRepos != nil {
-		results, mockStats, err := mockSearchFilesInRepos(args)
+		matches, mockStats, err := mockSearchFilesInRepos(args)
 		stream.Send(SearchEvent{
-			Results: fileMatchResolversToMatches(results),
+			Results: fileMatchesToMatches(matches),
 			Stats:   statsDeref(mockStats),
 		})
 		return err

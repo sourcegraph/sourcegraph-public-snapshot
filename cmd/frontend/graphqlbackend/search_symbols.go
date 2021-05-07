@@ -139,7 +139,7 @@ func symbolCount(fmrs []*FileMatchResolver) int {
 	return nsym
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.FileMatch, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []*result.FileMatch, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
@@ -183,7 +183,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	}
 
 	// Create file matches from partitioned symbols
-	fileMatches := make([]result.FileMatch, 0, len(symbolsByPath))
+	fileMatches := make([]*result.FileMatch, 0, len(symbolsByPath))
 	for path, symbols := range symbolsByPath {
 		file := result.File{
 			Path:     path,
@@ -200,7 +200,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 			})
 		}
 
-		fileMatches = append(fileMatches, result.FileMatch{
+		fileMatches = append(fileMatches, &result.FileMatch{
 			Symbols: symbolMatches,
 			File:    file,
 		})
