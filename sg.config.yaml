@@ -315,6 +315,15 @@ commands:
       GOGC: 50
       PATH: .bin:$PATH
 
+checks:
+  redis:
+    cmd: echo "PING" | nc localhost 6379
+    failMessage: "Failed to connect to Redis on port 6379. Please make sure Redis is running."
+
+  docker:
+    cmd: docker -v
+    failMessage: "Failed to run 'docker -v'. Please make sure Docker is running."
+
 commandsets:
   default:
     - frontend
