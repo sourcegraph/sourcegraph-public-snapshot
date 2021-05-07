@@ -23,6 +23,16 @@ $popover-item-padding-v: 0.325rem;
     }
 
     &__node {
+        // .theme-redesign & {
+        //     color: var(--body-color);
+
+        //     &:hover,
+        //     &:focus {
+        //         color: var(--light-text);
+        //         background-color: var(--primary);
+        //     }
+        // }
+
         border-bottom: solid 1px var(--border-color);
         &:last-child {
             border-bottom: none;
@@ -34,6 +44,10 @@ $popover-item-padding-v: 0.325rem;
 
             &-icon {
                 margin-left: 0.25rem;
+
+                .theme-redesign & {
+                    display: none;
+                }
             }
             &--active {
                 font-weight: bold;

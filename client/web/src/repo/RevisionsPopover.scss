@@ -11,6 +11,18 @@
     &-git-commit-node {
         &__link {
             display: flex;
+            color: var(--body-color);
+
+            .theme-redesign & {
+                color: var(--text-muted);
+                text-decoration: none;
+
+                &:hover,
+                &:focus {
+                    background-color: var(--primary);
+                    color: var(--light-text);
+                }
+            }
         }
         &__message {
             flex: 1 1;
@@ -19,11 +31,15 @@
             overflow: hidden;
             padding: 0 0.5rem;
         }
-        &__link:not(:hover) &__message {
-            color: var(--body-color);
-        }
         &__oid {
             margin-bottom: -0.125rem;
+
+            .theme-redesign & {
+                // Extend new default badge styles in redesign
+                @extend .badge;
+                // TODO: Update when we have specific badge font-sizes: Github issue:
+                font-size: 0.75rem;
+            }
         }
     }
 }

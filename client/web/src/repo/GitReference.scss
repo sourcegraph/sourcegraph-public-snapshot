@@ -13,4 +13,15 @@
     &:first-of-type {
         border-top: 1px solid var(--border-color);
     }
+
+    .theme-redesign & {
+        text-decoration: none;
+        color: var(--text-muted);
+
+        &:hover,
+        &:focus {
+            background-color: var(--primary);
+            color: var(--light-text);
+        }
+    }
 }
