@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
-var mockSearchRepositories func(args *search.TextParameters) ([]SearchResultResolver, *streaming.Stats, error)
+var mockSearchRepositories func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error)
 
 // searchRepositories searches for repositories by name.
 //
@@ -24,7 +24,7 @@ var mockSearchRepositories func(args *search.TextParameters) ([]SearchResultReso
 func searchRepositories(ctx context.Context, db dbutil.DB, args *search.TextParameters, limit int32, stream MatchSender) error {
 	if mockSearchRepositories != nil {
 		results, stats, err := mockSearchRepositories(args)
-		stream.Send(SearchEvent{
+		stream.SendMatches(SearchMatchEvent{
 			Results: results,
 			Stats:   statsDeref(stats),
 		})

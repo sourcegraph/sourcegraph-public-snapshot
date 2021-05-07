@@ -148,7 +148,7 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
-		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *streaming.Stats, error) {
+		mockSearchRepositories = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 			calledSearchRepositories = true
 			return nil, &streaming.Stats{}, nil
 		}
@@ -213,7 +213,7 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
-		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *streaming.Stats, error) {
+		mockSearchRepositories = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 			calledSearchRepositories = true
 			return nil, &streaming.Stats{}, nil
 		}
