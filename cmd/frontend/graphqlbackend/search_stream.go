@@ -29,7 +29,6 @@ type SearchMatchEvent struct {
 // MatchSender is a temporary interface that adds the SendMatches method to the
 // Sender interface. Eventually, Sender.Send() will be replaced with MatchSender.SendMatches
 type MatchSender interface {
-	Send(SearchEvent)
 	SendMatches(SearchMatchEvent)
 }
 

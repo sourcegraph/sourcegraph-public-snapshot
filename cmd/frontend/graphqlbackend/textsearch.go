@@ -276,7 +276,7 @@ func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.M
 var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error)
 
 func fileMatchesToMatches(fms []result.FileMatch) []result.Match {
-	matches := make([]result.Match, len(fms))
+	matches := make([]result.Match, 0, len(fms))
 	for _, fm := range fms {
 		matches = append(matches, &fm)
 	}
