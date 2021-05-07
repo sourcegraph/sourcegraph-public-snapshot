@@ -283,14 +283,6 @@ func fileMatchesToMatches(fms []result.FileMatch) []result.Match {
 	return matches
 }
 
-func fileMatchResolversToSearchResults(resolvers []*FileMatchResolver) []SearchResultResolver {
-	results := make([]SearchResultResolver, len(resolvers))
-	for i, resolver := range resolvers {
-		results[i] = resolver
-	}
-	return results
-}
-
 func fileMatchResolversToMatches(resolvers []*FileMatchResolver) []result.Match {
 	matches := make([]result.Match, 0, len(resolvers))
 	for _, resolver := range resolvers {
@@ -328,8 +320,8 @@ func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.Tex
 func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, stream MatchSender) (err error) {
 	if mockSearchFilesInRepos != nil {
 		results, mockStats, err := mockSearchFilesInRepos(args)
-		stream.Send(SearchEvent{
-			Results: fileMatchResolversToSearchResults(results),
+		stream.SendMatches(SearchMatchEvent{
+			Results: fileMatchResolversToMatches(results),
 			Stats:   statsDeref(mockStats),
 		})
 		return err
