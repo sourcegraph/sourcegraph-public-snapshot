@@ -70,7 +70,13 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     } = useCarousel({ direction: 'leftToRight' })
 
     return (
-        <div className={classNames('status-bar w-100 border-top d-flex', className)}>
+        <div
+            className={classNames(
+                'status-bar w-100 border-top d-flex',
+                'percy-hide', // TODO: Fix flaky status bar in Percy tests: https://github.com/sourcegraph/sourcegraph/issues/20751
+                className
+            )}
+        >
             <ErrorBoundary
                 location={location}
                 // To be clear to users that this isn't an error reported by extensions
