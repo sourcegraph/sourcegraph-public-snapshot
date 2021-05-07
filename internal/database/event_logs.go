@@ -77,7 +77,7 @@ func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
 }
 
 func (l *EventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Event, error) {
-	q := sqlf.Sprintf("SELECT id, name, url, user_id, anonymous_user_id, source, argument, version, timestamp FROM event_logs %s", querySuffix)
+	q := sqlf.Sprintf("SELECT id, name, user_id, anonymous_user_id, source, version, timestamp FROM event_logs %s", querySuffix)
 	rows, err := l.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -86,7 +86,7 @@ func (l *EventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (
 	events := []*types.Event{}
 	for rows.Next() {
 		r := types.Event{}
-		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.Version, &r.Timestamp)
+		err := rows.Scan(&r.ID, &r.Name, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Version, &r.Timestamp)
 		if err != nil {
 			return nil, err
 		}
