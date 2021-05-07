@@ -275,18 +275,6 @@ func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.M
 
 var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error)
 
-func fileMatchesToSearchResults(db dbutil.DB, matches []result.FileMatch) []SearchResultResolver {
-	results := make([]SearchResultResolver, len(matches))
-	for i, match := range matches {
-		results[i] = &FileMatchResolver{
-			FileMatch:    match,
-			RepoResolver: NewRepositoryResolver(db, match.Repo.ToRepo()),
-			db:           db,
-		}
-	}
-	return results
-}
-
 func fileMatchesToMatches(fms []result.FileMatch) []result.Match {
 	matches := make([]result.Match, len(fms))
 	for _, fm := range fms {
@@ -493,8 +481,8 @@ func callSearcherOverRepos(
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
 					stats, err := handleRepoSearchResult(repoRev, repoLimitHit, false, err)
-					stream.Send(SearchEvent{
-						Results: fileMatchesToSearchResults(db, matches),
+					stream.SendMatches(SearchMatchEvent{
+						Results: fileMatchesToMatches(matches),
 						Stats:   stats,
 					})
 					return err
