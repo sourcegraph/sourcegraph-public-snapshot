@@ -330,7 +330,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 			}
 
 			matches := make([]result.FileMatch, 0, len(files))
-			repoResolvers := make(RepositoryResolverCache)
 			for _, file := range files {
 				fileLimitHit := false
 				if len(file.LineMatches) > maxLineMatches {
@@ -343,11 +342,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 				mu.Unlock()
 				if !ok {
 					continue
-				}
-				repoResolver := repoResolvers[repo.Name]
-				if repoResolver == nil {
-					repoResolver = NewRepositoryResolver(db, repo.ToRepo())
-					repoResolvers[repo.Name] = repoResolver
 				}
 
 				var lines []*result.LineMatch
