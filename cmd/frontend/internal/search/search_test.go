@@ -17,9 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -174,7 +174,7 @@ func TestDisplayLimit(t *testing.T) {
 
 			// Send 2 repository matches.
 			mock.c.Send(graphqlbackend.SearchEvent{
-				Results: graphqlbackend.ResolversToMatches([]graphqlbackend.SearchResultResolver{mkRepoResolver(1), mkRepoResolver(2)}),
+				Results: []result.Match{mkRepoMatch(1), mkRepoMatch(2)},
 			})
 			mock.Close()
 			if err := g.Wait(); err != nil {
@@ -198,12 +198,11 @@ func TestDisplayLimit(t *testing.T) {
 	}
 }
 
-func mkRepoResolver(id int) *graphqlbackend.RepositoryResolver {
-	repo := &types.RepoName{
+func mkRepoMatch(id int) *result.RepoMatch {
+	return &result.RepoMatch{
 		ID:   api2.RepoID(id),
 		Name: api2.RepoName(fmt.Sprintf("repo%d", id)),
 	}
-	return graphqlbackend.NewRepositoryResolver(nil, repo.ToRepo())
 }
 
 type mockSearchResolver struct {
