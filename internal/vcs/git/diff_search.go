@@ -361,7 +361,8 @@ func rawShowSearch(ctx context.Context, repo api.RepoName, opt RawLogDiffSearchO
 		commitOIDs[i] = c.sha1
 	}
 	showArgs := append([]string{}, "show")
-	showArgs = append(showArgs, "--no-patch") // will be overridden if opt.FormatArgs has --patch
+	showArgs = append(showArgs, "--no-patch")  // will be overridden if opt.FormatArgs has --patch
+	showArgs = append(showArgs, "--no-prefix") // do not prefix file names with a/ and b/
 	showArgs = append(showArgs, opt.FormatArgs...)
 	showArgs = append(showArgs, commitOIDs...)
 	// Need --patch (TODO(sqs): or just --raw, which is smaller) if we are filtering by file paths,
