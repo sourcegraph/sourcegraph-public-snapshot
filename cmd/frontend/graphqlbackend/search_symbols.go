@@ -30,8 +30,8 @@ var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, lim
 func searchSymbols(ctx context.Context, db dbutil.DB, args *search.TextParameters, limit int, stream MatchSender) (err error) {
 	if mockSearchSymbols != nil {
 		results, stats, err := mockSearchSymbols(ctx, args, limit)
-		stream.Send(SearchEvent{
-			Results: fileMatchResolversToSearchResults(results),
+		stream.SendMatches(SearchMatchEvent{
+			Results: fileMatchResolversToMatches(results),
 			Stats:   statsDeref(stats),
 		})
 		return err
