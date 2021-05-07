@@ -56,6 +56,7 @@ UPDATE out_of_band_migrations SET apply_reverse = true WHERE id = 3;
 
 -- for the user_external_accounts migration
 UPDATE out_of_band_migrations SET apply_reverse = true WHERE id = 6;
-```
 
->WARNING: Batch Changes credentials cannot be decrypted once encryption is enabled.
+-- for the batch changes migrations (only required for Batch Changes users)
+UPDATE out_of_band_migrations SET apply_reverse = true WHERE id IN (9, 10);
+```
