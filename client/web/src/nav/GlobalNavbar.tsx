@@ -145,7 +145,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     // Design Refresh will include repositories section as part of the user navigation bar
     // This filter makes sure repositories feature flag is active.
     const showRepositorySection = useMemo(
-        () => !!props.userSettingsSideBarItems?.account.filter(item => item.label === 'Repositories'),
+        () => !!props.userSettingsSideBarItems?.account.find(item => item.label === 'Repositories'),
         [props.userSettingsSideBarItems]
     )
 
