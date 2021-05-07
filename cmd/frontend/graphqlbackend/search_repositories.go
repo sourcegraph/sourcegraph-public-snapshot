@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -92,35 +93,37 @@ func searchRepositories(ctx context.Context, db dbutil.DB, args *search.TextPara
 		if err != nil {
 			return err
 		}
-		stream.Send(SearchEvent{
-			Results: repoRevsToSearchResultResolver(ctx, db, repos),
+		stream.SendMatches(SearchMatchEvent{
+			Results: repoRevsToRepoMatches(ctx, repos),
 		})
 		return nil
 	}
 
 	for repos := range results {
-		stream.Send(SearchEvent{
-			Results: repoRevsToSearchResultResolver(ctx, db, repos),
+		stream.SendMatches(SearchMatchEvent{
+			Results: repoRevsToRepoMatches(ctx, repos),
 		})
 	}
 
 	return nil
 }
 
-func repoRevsToSearchResultResolver(ctx context.Context, db dbutil.DB, repos []*search.RepositoryRevisions) []SearchResultResolver {
-	results := make([]SearchResultResolver, 0, len(repos))
+func repoRevsToRepoMatches(ctx context.Context, repos []*search.RepositoryRevisions) []result.Match {
+	matches := make([]result.Match, 0, len(repos))
 	for _, r := range repos {
 		revs, err := r.ExpandedRevSpecs(ctx)
 		if err != nil { // fallback to just return revspecs
 			revs = r.RevSpecs()
 		}
 		for _, rev := range revs {
-			rr := NewRepositoryResolver(db, r.Repo.ToRepo())
-			rr.RepoMatch.Rev = rev
-			results = append(results, rr)
+			matches = append(matches, &result.RepoMatch{
+				Name: r.Repo.Name,
+				ID:   r.Repo.ID,
+				Rev:  rev,
+			})
 		}
 	}
-	return results
+	return matches
 }
 
 func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions, results chan<- []*search.RepositoryRevisions) {
