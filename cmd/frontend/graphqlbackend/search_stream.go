@@ -12,17 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
-// SearchEvent is a temporary struct that takes matches rather than
-// SearchResultResolvers. Once the transition is complete, this will replace SearchEvent.
 type SearchEvent struct {
 	Results []result.Match
 	Stats   streaming.Stats
 }
 
-// Sender is a temporary interface that adds the SendMatches method to the
-// Sender interface. Eventually, Sender.Send() will be replaced with Sender.SendMatches
 type Sender interface {
-	SendMatches(SearchEvent)
+	Send(SearchEvent)
 }
 
 // Temporary conversion function from []SearchResultResolver to []result.Match
@@ -66,8 +62,8 @@ type limitStream struct {
 	remaining atomic.Int64
 }
 
-func (s *limitStream) SendMatches(event SearchEvent) {
-	s.s.SendMatches(event)
+func (s *limitStream) Send(event SearchEvent) {
+	s.s.Send(event)
 
 	var count int64
 	for _, r := range event.Results {
@@ -86,7 +82,7 @@ func (s *limitStream) SendMatches(event SearchEvent) {
 	// multiple times, but this is fine. Want to avoid lots of noop events
 	// after the first IsLimitHit.
 	if old >= 0 && s.remaining.Load() < 0 {
-		s.s.SendMatches(SearchEvent{Stats: streaming.Stats{IsLimitHit: true}})
+		s.s.Send(SearchEvent{Stats: streaming.Stats{IsLimitHit: true}})
 		s.cancel()
 	}
 }
@@ -137,15 +133,15 @@ func WithSelect(parent Sender, s filter.SelectPath) Sender {
 
 		mux.Unlock()
 		if parent != nil {
-			parent.SendMatches(e)
+			parent.Send(e)
 		}
 	})
 }
 
 type MatchStreamFunc func(SearchEvent)
 
-func (f MatchStreamFunc) SendMatches(sme SearchEvent) {
-	f(sme)
+func (f MatchStreamFunc) Send(se SearchEvent) {
+	f(se)
 }
 
 // collectMatchStream will call search and aggregates all events it sends. It then

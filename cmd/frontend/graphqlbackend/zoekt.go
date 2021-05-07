@@ -314,7 +314,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 			limitHit := event.FilesSkipped+event.ShardsSkipped > 0
 
 			if len(files) == 0 {
-				c.SendMatches(SearchEvent{
+				c.Send(SearchEvent{
 					Stats: streaming.Stats{IsLimitHit: limitHit},
 				})
 				return
@@ -381,7 +381,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 				}
 			}
 
-			c.SendMatches(SearchEvent{
+			c.Send(SearchEvent{
 				Results: ResolversToMatches(matches),
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
@@ -406,7 +406,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 	}
 
 	if !foundResults.Load() && since(t0) >= searchOpts.MaxWallTime {
-		c.SendMatches(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
+		c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
 		return nil
 	}
 	return nil
@@ -460,7 +460,7 @@ func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoek
 		resolvers = append(resolvers, NewRepositoryResolver(db, &types.Repo{Name: rev.Repo.Name, ID: rev.Repo.ID}))
 	}
 
-	c.SendMatches(SearchEvent{
+	c.Send(SearchEvent{
 		Results: ResolversToMatches(resolvers),
 		Stats:   streaming.Stats{}, // TODO
 	})
@@ -840,7 +840,7 @@ func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, str
 		for _, r := range missing {
 			status.Update(r.Repo.ID, search.RepoStatusMissing)
 		}
-		stream.SendMatches(SearchEvent{
+		stream.Send(SearchEvent{
 			Stats: streaming.Stats{
 				Status: status,
 			},
