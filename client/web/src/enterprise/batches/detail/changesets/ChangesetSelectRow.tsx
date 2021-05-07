@@ -20,7 +20,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
     <>
         <div className="row align-items-center no-gutters">
             <div className="ml-2 col">
-                <InfoCircleOutlineIcon className="redesign-d-none icon-inline text-muted mr-2" />
+                <InfoCircleOutlineIcon className="icon-inline text-muted mr-2" />
                 Select changesets to detach them
             </div>
             <div className="w-100 d-block d-md-none" />
