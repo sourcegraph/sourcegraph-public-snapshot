@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/encryption/cache"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/cloudkms"
@@ -76,13 +78,24 @@ func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, erro
 		return nil, nil
 	}
 
-	var r Ring
-	var err error
+	var (
+		r   Ring
+		err error
+
+		enableCache = keyConfig.EnableCache
+		cacheSize   = keyConfig.CacheSize
+	)
 
 	if keyConfig.BatchChangesCredentialKey != nil {
 		r.BatchChangesCredentialKey, err = NewKey(ctx, keyConfig.BatchChangesCredentialKey)
 		if err != nil {
 			return nil, err
+		}
+		if enableCache {
+			r.BatchChangesCredentialKey, err = cache.New(r.BatchChangesCredentialKey, cacheSize)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -91,12 +104,24 @@ func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, erro
 		if err != nil {
 			return nil, err
 		}
+		if enableCache {
+			r.ExternalServiceKey, err = cache.New(r.ExternalServiceKey, cacheSize)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	if keyConfig.UserExternalAccountKey != nil {
 		r.UserExternalAccountKey, err = NewKey(ctx, keyConfig.UserExternalAccountKey)
 		if err != nil {
 			return nil, err
+		}
+		if enableCache {
+			r.UserExternalAccountKey, err = cache.New(r.UserExternalAccountKey, cacheSize)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
