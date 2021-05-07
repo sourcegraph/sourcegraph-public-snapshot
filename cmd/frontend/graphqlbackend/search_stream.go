@@ -12,13 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
-// SearchEvent is an event on a search stream. It contains fields which can be
-// aggregated up into a final result.
-type SearchEvent struct {
-	Results []SearchResultResolver
-	Stats   streaming.Stats
-}
-
 // SearchMatchEvent is a temporary struct that takes matches rather than
 // SearchResultResolvers. Once the transition is complete, this will replace SearchEvent.
 type SearchMatchEvent struct {
@@ -32,14 +25,6 @@ type MatchSender interface {
 	SendMatches(SearchMatchEvent)
 }
 
-// Temporary conversion function from SearchEvent to SearchMatchEvent
-func SearchEventToSearchMatchEvent(se SearchEvent) SearchMatchEvent {
-	return SearchMatchEvent{
-		Results: ResolversToMatches(se.Results),
-		Stats:   se.Stats,
-	}
-}
-
 // Temporary conversion function from []SearchResultResolver to []result.Match
 func ResolversToMatches(resolvers []SearchResultResolver) []result.Match {
 	matches := make([]result.Match, 0, len(resolvers))
@@ -47,14 +32,6 @@ func ResolversToMatches(resolvers []SearchResultResolver) []result.Match {
 		matches = append(matches, resolver.toMatch())
 	}
 	return matches
-}
-
-// Temporary conversion function from SearchMatchEvent to SearchEvent
-func SearchMatchEventToSearchEvent(db dbutil.DB, sme SearchMatchEvent) SearchEvent {
-	return SearchEvent{
-		Results: MatchesToResolvers(db, sme.Results),
-		Stats:   sme.Stats,
-	}
 }
 
 // Temporary conversion function from []result.Match to []SearchResultResolver
@@ -87,10 +64,6 @@ type limitStream struct {
 	s         MatchSender
 	cancel    context.CancelFunc
 	remaining atomic.Int64
-}
-
-func (s *limitStream) Send(event SearchEvent) {
-	s.SendMatches(SearchEventToSearchMatchEvent(event))
 }
 
 func (s *limitStream) SendMatches(event SearchMatchEvent) {
@@ -169,19 +142,7 @@ func WithSelect(parent MatchSender, s filter.SelectPath) MatchSender {
 	})
 }
 
-// StreamFunc is a convenience function to create a stream receiver from a
-// function.
-type StreamFunc func(SearchEvent)
-
-func (f StreamFunc) Send(event SearchEvent) {
-	f(event)
-}
-
 type MatchStreamFunc func(SearchMatchEvent)
-
-func (f MatchStreamFunc) Send(se SearchEvent) {
-	f(SearchEventToSearchMatchEvent(se))
-}
 
 func (f MatchStreamFunc) SendMatches(sme SearchMatchEvent) {
 	f(sme)

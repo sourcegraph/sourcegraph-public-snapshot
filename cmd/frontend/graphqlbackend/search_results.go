@@ -183,10 +183,10 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	filters := SearchFilters{
 		Globbing: globbing,
 	}
-	filters.Update(SearchEventToSearchMatchEvent(SearchEvent{
-		Results: sr.SearchResults,
+	filters.Update(SearchMatchEvent{
+		Results: ResolversToMatches(sr.SearchResults),
 		Stats:   sr.Stats,
-	}))
+	})
 
 	var resolvers []*searchFilterResolver
 	for _, f := range filters.Compute() {
@@ -1379,10 +1379,6 @@ func (a *aggregator) SendMatches(event SearchMatchEvent) {
 
 	a.alert.Update(event)
 	a.stats.Update(&event.Stats)
-}
-
-func (a *aggregator) Send(event SearchEvent) {
-	a.SendMatches(SearchEventToSearchMatchEvent(event))
 }
 
 func (a *aggregator) error(ctx context.Context, err error) {
