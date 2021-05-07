@@ -19,9 +19,9 @@ type SearchEvent struct {
 	Stats   streaming.Stats
 }
 
-// MatchSender is a temporary interface that adds the SendMatches method to the
-// Sender interface. Eventually, Sender.Send() will be replaced with MatchSender.SendMatches
-type MatchSender interface {
+// Sender is a temporary interface that adds the SendMatches method to the
+// Sender interface. Eventually, Sender.Send() will be replaced with Sender.SendMatches
+type Sender interface {
 	SendMatches(SearchEvent)
 }
 
@@ -61,7 +61,7 @@ func MatchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultReso
 }
 
 type limitStream struct {
-	s         MatchSender
+	s         Sender
 	cancel    context.CancelFunc
 	remaining atomic.Int64
 }
@@ -99,7 +99,7 @@ func (s *limitStream) SendMatches(event SearchEvent) {
 // Canceling this context releases resources associated with it, so code
 // should call cancel as soon as the operations running in this Context and
 // Stream are complete.
-func WithLimit(ctx context.Context, parent MatchSender, limit int) (context.Context, MatchSender, context.CancelFunc) {
+func WithLimit(ctx context.Context, parent Sender, limit int) (context.Context, Sender, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(ctx)
 	stream := &limitStream{cancel: cancel, s: parent}
 	stream.remaining.Store(int64(limit))
@@ -108,7 +108,7 @@ func WithLimit(ctx context.Context, parent MatchSender, limit int) (context.Cont
 
 // WithSelect returns a child Stream of parent that runs the select operation
 // on each event, deduplicating where possible.
-func WithSelect(parent MatchSender, s filter.SelectPath) MatchSender {
+func WithSelect(parent Sender, s filter.SelectPath) Sender {
 	var mux sync.Mutex
 	dedup := result.NewDeduper()
 
@@ -150,7 +150,7 @@ func (f MatchStreamFunc) SendMatches(sme SearchEvent) {
 
 // collectMatchStream will call search and aggregates all events it sends. It then
 // returns the aggregate event and any error it returns.
-func collectMatchStream(db dbutil.DB, search func(MatchSender) error) ([]SearchResultResolver, streaming.Stats, error) {
+func collectMatchStream(db dbutil.DB, search func(Sender) error) ([]SearchResultResolver, streaming.Stats, error) {
 	var (
 		mu      sync.Mutex
 		results []result.Match
