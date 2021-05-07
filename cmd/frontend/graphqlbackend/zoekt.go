@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -68,11 +67,9 @@ type indexedSearchRequest struct {
 
 	// since if non-nil will be used instead of time.Since. For tests
 	since func(time.Time) time.Duration
-
-	db dbutil.DB
 }
 
-func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.TextParameters, typ indexedRequestType, stream Sender) (_ *indexedSearchRequest, err error) {
+func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType, stream Sender) (_ *indexedSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
@@ -91,7 +88,6 @@ func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.Tex
 		}
 
 		return &indexedSearchRequest{
-			db:               db,
 			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 			IndexUnavailable: true,
 		}, nil
@@ -103,7 +99,6 @@ func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.Tex
 			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", args.PatternInfo.Index)
 		}
 		return &indexedSearchRequest{
-			db:        db,
 			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 		}, nil
 	}
@@ -111,7 +106,6 @@ func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.Tex
 	// Fallback to Unindexed if index:no
 	if args.PatternInfo.Index == query.No {
 		return &indexedSearchRequest{
-			db:        db,
 			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 		}, nil
 	}
@@ -139,7 +133,6 @@ func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.Tex
 		}
 
 		return &indexedSearchRequest{
-			db:               db,
 			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 			IndexUnavailable: true,
 		}, ctx.Err()
@@ -161,7 +154,6 @@ func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.Tex
 	}
 
 	return &indexedSearchRequest{
-		db:   db,
 		args: args,
 		typ:  typ,
 

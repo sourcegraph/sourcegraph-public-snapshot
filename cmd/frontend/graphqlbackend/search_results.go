@@ -1405,7 +1405,7 @@ func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParame
 		tr.Finish()
 	}()
 
-	err = searchSymbols(ctx, a.db, args, limit, a)
+	err = searchSymbols(ctx, args, limit, a)
 	return errors.Wrap(err, "symbol search failed")
 }
 
@@ -1421,7 +1421,7 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults
 
 	if !isDefaultStructuralSearch {
-		return searchFilesInRepos(ctx, a.db, args, a)
+		return searchFilesInRepos(ctx, args, a)
 	}
 
 	// For structural search with default limits we retry if we get no results.

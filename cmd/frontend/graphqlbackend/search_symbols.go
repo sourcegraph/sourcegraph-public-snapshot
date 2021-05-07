@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -27,7 +26,7 @@ var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, lim
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, db dbutil.DB, args *search.TextParameters, limit int, stream Sender) (err error) {
+func searchSymbols(ctx context.Context, args *search.TextParameters, limit int, stream Sender) (err error) {
 	if mockSearchSymbols != nil {
 		results, stats, err := mockSearchSymbols(ctx, args, limit)
 		stream.Send(SearchEvent{
@@ -55,7 +54,7 @@ func searchSymbols(ctx context.Context, db dbutil.DB, args *search.TextParameter
 	ctx, stream, cancel := WithLimit(ctx, stream, limit)
 	defer cancel()
 
-	indexed, err := newIndexedSearchRequest(ctx, db, args, symbolRequest, stream)
+	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest, stream)
 	if err != nil {
 		return err
 	}
