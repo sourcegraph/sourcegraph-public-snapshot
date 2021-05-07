@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -10,11 +11,14 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { Page } from '../components/Page'
 import { PageTitle } from '../components/PageTitle'
 import { Timestamp } from '../components/time/Timestamp'
 import { SearchContextProps } from '../search'
+
+import styles from './SearchContextPage.module.scss'
 
 export interface SearchContextPageProps
     extends RouteComponentProps<{ id: Scalars['ID'] }>,
@@ -40,15 +44,25 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
         <div className="w-100">
             <Page>
                 <div className="container col-8">
-                    {searchContextOrError === LOADING && <LoadingSpinner />}
+                    {searchContextOrError === LOADING && (
+                        <div className="d-flex justify-content-center">
+                            <LoadingSpinner />
+                        </div>
+                    )}
                     {searchContextOrError && !isErrorLike(searchContextOrError) && searchContextOrError !== LOADING && (
                         <>
                             <PageTitle title={searchContextOrError.spec} />
                             <div className="mb-2 d-flex align-items-center">
                                 <Link to="/contexts">
-                                    <ChevronLeftIcon className="search-context-page__back-icon" />
+                                    <ChevronLeftIcon />
                                 </Link>
-                                <h1 className="mb-0">{searchContextOrError.spec}</h1>
+                                <PageHeader
+                                    path={[
+                                        {
+                                            text: searchContextOrError.spec,
+                                        },
+                                    ]}
+                                />
                                 {!searchContextOrError.public && (
                                     <div className="badge badge-pill badge-secondary ml-1">Private</div>
                                 )}
@@ -76,9 +90,11 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                     {searchContextOrError.repositories.map(repositoryRevisions => (
                                         <div
                                             key={repositoryRevisions.repository.name}
-                                            className="search-context-page__repo-revs-row d-flex"
+                                            className={classNames(styles.searchContextPageRepoRevsRow, 'd-flex')}
                                         >
-                                            <div className="search-context-page__repo-revs-row-repo w-50">
+                                            <div
+                                                className={classNames(styles.searchContextPageRepoRevsRowRepo, 'w-50')}
+                                            >
                                                 <Link to={`/${repositoryRevisions.repository.name}`}>
                                                     {repositoryRevisions.repository.name}
                                                 </Link>
@@ -87,7 +103,7 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                                 {repositoryRevisions.revisions.map(revision => (
                                                     <div
                                                         key={`${repositoryRevisions.repository.name}-${revision}`}
-                                                        className="search-context-page__repo-revs-row-rev"
+                                                        className={styles.searchContextPageRepoRevsRowRev}
                                                     >
                                                         <Link
                                                             to={`/${repositoryRevisions.repository.name}@${revision}`}
