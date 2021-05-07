@@ -1331,7 +1331,7 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	return nil
 }
 
-func newAggregator(db dbutil.DB, stream Sender, inputs *SearchInputs) *aggregator {
+func newAggregator(db dbutil.DB, stream MatchSender, inputs *SearchInputs) *aggregator {
 	return &aggregator{
 		db:           db,
 		parentStream: stream,
@@ -1342,11 +1342,11 @@ func newAggregator(db dbutil.DB, stream Sender, inputs *SearchInputs) *aggregato
 }
 
 type aggregator struct {
-	parentStream Sender
+	parentStream MatchSender
 	db           dbutil.DB
 
 	mu      sync.Mutex
-	results []SearchResultResolver
+	results []result.Match
 	stats   streaming.Stats
 	alert   alertObserver
 }
@@ -1358,12 +1358,12 @@ func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *searchAler
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	alert, err := a.alert.Done(&a.stats)
-	return a.results, a.stats, alert, err
+	return MatchesToResolvers(a.db, a.results), a.stats, alert, err
 }
 
-func (a *aggregator) Send(event SearchEvent) {
+func (a *aggregator) SendMatches(event SearchMatchEvent) {
 	if a.parentStream != nil {
-		a.parentStream.Send(event)
+		a.parentStream.SendMatches(event)
 	}
 
 	a.mu.Lock()
@@ -1376,6 +1376,10 @@ func (a *aggregator) Send(event SearchEvent) {
 
 	a.alert.Update(event)
 	a.stats.Update(&event.Stats)
+}
+
+func (a *aggregator) Send(event SearchEvent) {
+	a.SendMatches(SearchEventToSearchMatchEvent(event))
 }
 
 func (a *aggregator) error(ctx context.Context, err error) {

@@ -310,7 +310,7 @@ func searchResultsToFileMatchResults(resolvers []SearchResultResolver) ([]*FileM
 // searchFilesInRepoBatch is a convenience function around searchFilesInRepos
 // which collects the results from the stream.
 func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.TextParameters) ([]*FileMatchResolver, streaming.Stats, error) {
-	results, stats, err := collectStream(func(stream Sender) error {
+	results, stats, err := collectMatchStream(db, func(stream MatchSender) error {
 		return searchFilesInRepos(ctx, db, args, stream)
 	})
 	fms, fmErr := searchResultsToFileMatchResults(results)
@@ -321,7 +321,7 @@ func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.Tex
 }
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, stream Sender) (err error) {
+func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, stream MatchSender) (err error) {
 	if mockSearchFilesInRepos != nil {
 		results, mockStats, err := mockSearchFilesInRepos(args)
 		stream.Send(SearchEvent{

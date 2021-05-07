@@ -54,38 +54,50 @@ func SearchEventToSearchMatchEvent(se SearchEvent) SearchMatchEvent {
 
 // Temporary conversion function from SearchMatchEvent to SearchEvent
 func SearchMatchEventToSearchEvent(db dbutil.DB, sme SearchMatchEvent) SearchEvent {
-	srrs := make([]SearchResultResolver, 0, len(sme.Results))
-	for _, match := range sme.Results {
+	return SearchEvent{
+		Results: MatchesToResolvers(db, sme.Results),
+		Stats:   sme.Stats,
+	}
+}
+
+// Temporary conversion function from []result.Match to []SearchResultResolver
+func MatchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultResolver {
+	resolvers := make([]SearchResultResolver, 0, len(matches))
+	for _, match := range matches {
 		switch v := match.(type) {
 		case *result.FileMatch:
-			srrs = append(srrs, &FileMatchResolver{
+			resolvers = append(resolvers, &FileMatchResolver{
 				db:           db,
 				FileMatch:    *v,
 				RepoResolver: NewRepositoryResolver(db, v.Repo.ToRepo()),
 			})
 		case *result.RepoMatch:
-			srrs = append(srrs, NewRepositoryResolver(db, &types.Repo{Name: v.Name, ID: v.ID}))
+			resolvers = append(resolvers, &RepositoryResolver{
+				db: db,
+				RepoMatch: *v,
+			})
 		case *result.CommitMatch:
-			srrs = append(srrs, &CommitSearchResultResolver{
+			resolvers = append(resolvers, &CommitSearchResultResolver{
 				db:          db,
 				CommitMatch: *v,
 			})
 		}
 	}
-	return SearchEvent{
-		Results: srrs,
-		Stats:   sme.Stats,
-	}
+	return resolvers
 }
 
 type limitStream struct {
-	s         Sender
+	s         MatchSender
 	cancel    context.CancelFunc
 	remaining atomic.Int64
 }
 
 func (s *limitStream) Send(event SearchEvent) {
-	s.s.Send(event)
+	s.SendMatches(SearchEventToSearchMatchEvent(event))
+}
+
+func (s *limitStream) SendMatches(event SearchMatchEvent) {
+	s.s.SendMatches(event)
 
 	var count int64
 	for _, r := range event.Results {
@@ -117,7 +129,7 @@ func (s *limitStream) Send(event SearchEvent) {
 // Canceling this context releases resources associated with it, so code
 // should call cancel as soon as the operations running in this Context and
 // Stream are complete.
-func WithLimit(ctx context.Context, parent Sender, limit int) (context.Context, Sender, context.CancelFunc) {
+func WithLimit(ctx context.Context, parent MatchSender, limit int) (context.Context, MatchSender, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(ctx)
 	stream := &limitStream{cancel: cancel, s: parent}
 	stream.remaining.Store(int64(limit))
@@ -195,4 +207,23 @@ func (f MatchStreamFunc) Send(se SearchEvent) {
 
 func (f MatchStreamFunc) SendMatches(sme SearchMatchEvent) {
 	f(sme)
+}
+
+// collectMatchStream will call search and aggregates all events it sends. It then
+// returns the aggregate event and any error it returns.
+func collectMatchStream(db dbutil.DB, search func(MatchSender) error) ([]SearchResultResolver, streaming.Stats, error) {
+	var (
+		mu      sync.Mutex
+		results []result.Match
+		stats   streaming.Stats
+	)
+
+	err := search(MatchStreamFunc(func(event SearchMatchEvent) {
+		mu.Lock()
+		results = append(results, event.Results...)
+		stats.Update(&event.Stats)
+		mu.Unlock()
+	}))
+
+	return MatchesToResolvers(db, results), stats, err
 }

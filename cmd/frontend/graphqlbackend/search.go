@@ -252,7 +252,7 @@ type searchResolver struct {
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
 	// stream if non-nil will send all search events we receive down it.
-	stream Sender
+	stream MatchSender
 
 	// Cached resolveRepositories results. We use a pointer to the mutex so that we
 	// can copy the resolver, while sharing the mutex. If we didn't use a pointer,
