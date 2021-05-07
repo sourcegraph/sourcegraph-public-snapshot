@@ -460,8 +460,8 @@ func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoek
 		resolvers = append(resolvers, NewRepositoryResolver(db, &types.Repo{Name: rev.Repo.Name, ID: rev.Repo.ID}))
 	}
 
-	c.Send(SearchEvent{
-		Results: resolvers,
+	c.SendMatches(SearchMatchEvent{
+		Results: ResolversToMatches(resolvers),
 		Stats:   streaming.Stats{}, // TODO
 	})
 	return nil
