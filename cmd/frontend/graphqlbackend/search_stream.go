@@ -114,7 +114,7 @@ func (s *limitStream) SendMatches(event SearchMatchEvent) {
 	// multiple times, but this is fine. Want to avoid lots of noop events
 	// after the first IsLimitHit.
 	if old >= 0 && s.remaining.Load() < 0 {
-		s.s.Send(SearchEvent{Stats: streaming.Stats{IsLimitHit: true}})
+		s.s.SendMatches(SearchMatchEvent{Stats: streaming.Stats{IsLimitHit: true}})
 		s.cancel()
 	}
 }
