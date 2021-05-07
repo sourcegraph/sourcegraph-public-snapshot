@@ -11,6 +11,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -257,6 +258,12 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at > %s", *opts.UploadedAfter))
 	}
 
+	authzCond, err := database.AuthzQueryConds(ctx, tx.Store.Handle().DB())
+	if err != nil {
+		return nil, 0, err
+	}
+	conds = append(conds, authzCond)
+
 	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(
 		ctx,
 		sqlf.Sprintf(getUploadsCountQuery, sqlf.Join(conds, " AND ")),
@@ -286,7 +293,9 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 
 const getUploadsCountQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetUploads
-SELECT COUNT(*) FROM lsif_uploads_with_repository_name u WHERE %s
+SELECT COUNT(*) FROM lsif_uploads_with_repository_name u
+JOIN repo ON repo.name = u.repository_name
+WHERE %s
 `
 
 const getUploadsQuery = `
@@ -315,6 +324,7 @@ SELECT
 FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
+JOIN repo ON repo.name = u.repository_name
 WHERE %s ORDER BY %s LIMIT %d OFFSET %d
 `
 
