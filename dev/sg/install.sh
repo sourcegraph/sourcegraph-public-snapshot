@@ -67,13 +67,13 @@ set +e # Don't fail if it the check fails
 sg_in_path=$(command -v sg)
 set -e
 
-red_bg="\033[41m"
-white_fg="\033[37;1m"
-reset="\033[0m"
+red_bg=$'\033[41m'
+white_fg=$'\033[37;1m'
+reset=$'\033[0m'
 if [ "$sg_in_path" != "$GOBIN/sg" ]; then
   echo
-  printf "  ${red_bg}${white_fg}NOTE: this is NOT on your \$PATH.${reset}"
-  if [ ! -z $sg_in_path ]; then
+  printf "  %s%sNOTE: this is NOT on your \$PATH.%s" "$red_bg" "$white_fg" "$reset"
+  if [ -n "${sg_in_path}" ]; then
     echo "  running sg will run '$sg_in_path' instead."
   fi
   echo
