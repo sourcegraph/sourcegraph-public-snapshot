@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`QuickLink should have correct links for dynamic filters 1`] = `
+exports[`FilterLink should have correct links for dynamic filters 1`] = `
 Array [
   <FilterLink
     count={500}
@@ -38,7 +38,7 @@ Array [
         </SyntaxHighlightedSearchQuery>
       </span>
       <span
-        className="pl-1 flex-shrink-0"
+        className="pl-2 flex-shrink-0"
       >
         500
         +
@@ -81,7 +81,7 @@ Array [
         </SyntaxHighlightedSearchQuery>
       </span>
       <span
-        className="pl-1 flex-shrink-0"
+        className="pl-2 flex-shrink-0"
       >
         241
       </span>
@@ -123,7 +123,7 @@ Array [
         </SyntaxHighlightedSearchQuery>
       </span>
       <span
-        className="pl-1 flex-shrink-0"
+        className="pl-2 flex-shrink-0"
       >
         1230
       </span>
@@ -132,31 +132,41 @@ Array [
 ]
 `;
 
-exports[`QuickLink should have correct links for repos 1`] = `
+exports[`FilterLink should have correct links for repos 1`] = `
 Array [
   <FilterLink
     count={5}
-    key="sourcegraph/sourcegraph-repo:^sourcegraph/sourcgreaph$"
+    key="gitlab.com/sourcegraph/sourcegraph-repo:^gitlab\\\\.com/sourcegraph/sourcgreaph$"
     kind="repo"
-    label="sourcegraph/sourcegraph"
+    label="gitlab.com/sourcegraph/sourcegraph"
+    labelConverter={[Function]}
     limitHit={false}
     onFilterChosen={[Function]}
-    value="repo:^sourcegraph/sourcgreaph$"
+    value="repo:^gitlab\\\\.com/sourcegraph/sourcgreaph$"
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
       data-placement="right"
-      data-tooltip="repo:^sourcegraph/sourcgreaph$"
+      data-tooltip="repo:^gitlab\\\\.com/sourcegraph/sourcgreaph$"
       onClick={[Function]}
       type="button"
     >
       <span
         className="flex-grow-1"
       >
-        sourcegraph/sourcegraph
+        <span
+          className="text-monospace search-query-link sidebarSectionListItemBreakWords"
+        >
+          <span
+            className="search-filter-keyword"
+          >
+            repo:
+          </span>
+          gitlab.com/sourcegraph/sourcegraph
+        </span>
       </span>
       <span
-        className="pl-1 flex-shrink-0"
+        className="pl-2 flex-shrink-0"
       >
         5
       </span>
@@ -164,27 +174,37 @@ Array [
   </FilterLink>,
   <FilterLink
     count={201}
-    key="microsoft/vscode-repo:^microsoft/vscode$"
+    key="github.com/microsoft/vscode-repo:^github\\\\.com/microsoft/vscode$"
     kind="repo"
-    label="microsoft/vscode"
+    label="github.com/microsoft/vscode"
+    labelConverter={[Function]}
     limitHit={true}
     onFilterChosen={[Function]}
-    value="repo:^microsoft/vscode$"
+    value="repo:^github\\\\.com/microsoft/vscode$"
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
       data-placement="right"
-      data-tooltip="repo:^microsoft/vscode$"
+      data-tooltip="repo:^github\\\\.com/microsoft/vscode$"
       onClick={[Function]}
       type="button"
     >
       <span
         className="flex-grow-1"
       >
-        microsoft/vscode
+        <span
+          className="text-monospace search-query-link sidebarSectionListItemBreakWords"
+        >
+          <span
+            className="search-filter-keyword"
+          >
+            repo:
+          </span>
+          github.com/microsoft/vscode
+        </span>
       </span>
       <span
-        className="pl-1 flex-shrink-0"
+        className="pl-2 flex-shrink-0"
       >
         201
         +
@@ -194,7 +214,7 @@ Array [
 ]
 `;
 
-exports[`QuickLink should have correct links for scopes 1`] = `
+exports[`FilterLink should have correct links for scopes 1`] = `
 Array [
   <FilterLink
     key="This is a search scope with a very long name lorem ipsum dolor sit amet-repo:sourcegraph"
@@ -215,7 +235,7 @@ Array [
         This is a search scope with a very long name lorem ipsum dolor sit amet
       </span>
       <span
-        className="pl-1 flex-shrink-0"
+        className="pl-2 flex-shrink-0"
       />
     </button>
   </FilterLink>,
@@ -238,8 +258,98 @@ Array [
         All results
       </span>
       <span
-        className="pl-1 flex-shrink-0"
+        className="pl-2 flex-shrink-0"
       />
+    </button>
+  </FilterLink>,
+]
+`;
+
+exports[`FilterLink should have show icons for repos on cloud 1`] = `
+Array [
+  <FilterLink
+    count={5}
+    key="gitlab.com/sourcegraph/sourcegraph-repo:^gitlab\\\\.com/sourcegraph/sourcgreaph$"
+    kind="repo"
+    label="gitlab.com/sourcegraph/sourcegraph"
+    labelConverter={[Function]}
+    limitHit={false}
+    onFilterChosen={[Function]}
+    value="repo:^gitlab\\\\.com/sourcegraph/sourcgreaph$"
+  >
+    <button
+      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      data-placement="right"
+      data-tooltip="repo:^gitlab\\\\.com/sourcegraph/sourcgreaph$"
+      onClick={[Function]}
+      type="button"
+    >
+      <span
+        className="flex-grow-1"
+      >
+        <span
+          className="text-monospace search-query-link sidebarSectionListItemBreakWords"
+        >
+          <span
+            className="search-filter-keyword"
+          >
+            repo:
+          </span>
+          <Memo(GitlabIcon)
+            className="icon-inline"
+          />
+          /
+          sourcegraph/sourcegraph
+        </span>
+      </span>
+      <span
+        className="pl-2 flex-shrink-0"
+      >
+        5
+      </span>
+    </button>
+  </FilterLink>,
+  <FilterLink
+    count={201}
+    key="github.com/microsoft/vscode-repo:^github\\\\.com/microsoft/vscode$"
+    kind="repo"
+    label="github.com/microsoft/vscode"
+    labelConverter={[Function]}
+    limitHit={true}
+    onFilterChosen={[Function]}
+    value="repo:^github\\\\.com/microsoft/vscode$"
+  >
+    <button
+      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      data-placement="right"
+      data-tooltip="repo:^github\\\\.com/microsoft/vscode$"
+      onClick={[Function]}
+      type="button"
+    >
+      <span
+        className="flex-grow-1"
+      >
+        <span
+          className="text-monospace search-query-link sidebarSectionListItemBreakWords"
+        >
+          <span
+            className="search-filter-keyword"
+          >
+            repo:
+          </span>
+          <Memo(GithubIcon)
+            className="icon-inline"
+          />
+          /
+          microsoft/vscode
+        </span>
+      </span>
+      <span
+        className="pl-2 flex-shrink-0"
+      >
+        201
+        +
+      </span>
     </button>
   </FilterLink>,
 ]

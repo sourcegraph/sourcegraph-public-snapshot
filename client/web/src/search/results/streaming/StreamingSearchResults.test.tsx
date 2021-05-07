@@ -71,6 +71,8 @@ describe('StreamingSearchResults', () => {
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         isLightTheme: true,
         enableCodeMonitoring: false,
+
+        isSourcegraphDotCom: false,
     }
 
     it('should call streaming search API with the right parameters from URL', () => {

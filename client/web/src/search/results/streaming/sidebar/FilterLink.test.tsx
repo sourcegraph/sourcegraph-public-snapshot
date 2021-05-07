@@ -1,4 +1,6 @@
 import { mount } from 'enzyme'
+import GithubIcon from 'mdi-react/GithubIcon'
+import GitlabIcon from 'mdi-react/GitlabIcon'
 import React from 'react'
 import sinon from 'sinon'
 
@@ -7,18 +9,18 @@ import { Filter } from '../../../stream'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchScopeLinks } from './FilterLink'
 
-describe('QuickLink', () => {
+describe('FilterLink', () => {
     const repoFilter1: Filter = {
-        label: 'sourcegraph/sourcegraph',
-        value: 'repo:^sourcegraph/sourcgreaph$',
+        label: 'gitlab.com/sourcegraph/sourcegraph',
+        value: 'repo:^gitlab\\.com/sourcegraph/sourcgreaph$',
         count: 5,
         limitHit: false,
         kind: 'repo',
     }
 
     const repoFilter2: Filter = {
-        label: 'microsoft/vscode',
-        value: 'repo:^microsoft/vscode$',
+        label: 'github.com/microsoft/vscode',
+        value: 'repo:^github\\.com/microsoft/vscode$',
         count: 201,
         limitHit: true,
         kind: 'repo',
@@ -52,16 +54,29 @@ describe('QuickLink', () => {
         const filters: Filter[] = [repoFilter1, langFilter1, repoFilter2, langFilter2, fileFilter]
         const onFilterChosen = sinon.stub()
 
-        const links = getRepoFilterLinks(filters, onFilterChosen)
+        const links = getRepoFilterLinks(filters, onFilterChosen, false)
         expect(links.length).toBe(2)
         expect(mount(<>{links}</>)).toMatchSnapshot()
+    })
+
+    it('should have show icons for repos on cloud', () => {
+        const filters: Filter[] = [repoFilter1, langFilter1, repoFilter2, langFilter2, fileFilter]
+        const onFilterChosen = sinon.stub()
+
+        const links = getRepoFilterLinks(filters, onFilterChosen, true)
+        expect(links.length).toBe(2)
+
+        const element = mount(<>{links}</>)
+        expect(element.find(GithubIcon).length).toBe(1)
+        expect(element.find(GitlabIcon).length).toBe(1)
+        expect(element).toMatchSnapshot()
     })
 
     it('should have no repo links if no repo filters present', () => {
         const filters: Filter[] = [langFilter1, langFilter2, fileFilter]
         const onFilterChosen = sinon.stub()
 
-        const links = getRepoFilterLinks(filters, onFilterChosen)
+        const links = getRepoFilterLinks(filters, onFilterChosen, false)
         expect(links.length).toBe(0)
     })
 
@@ -108,7 +123,7 @@ describe('QuickLink', () => {
         const filters: Filter[] = [repoFilter1]
         const onFilterChosen = sinon.spy()
 
-        const links = getRepoFilterLinks(filters, onFilterChosen)
+        const links = getRepoFilterLinks(filters, onFilterChosen, false)
         const link = mount(<>{links}</>).find('.test-sidebar-filter-link')
         link.simulate('click')
 

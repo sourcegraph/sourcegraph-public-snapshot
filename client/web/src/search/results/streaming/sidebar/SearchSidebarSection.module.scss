@@ -37,8 +37,16 @@
             text-decoration: none;
         }
 
+        &:focus {
+            text-decoration: none;
+        }
+
         &:active {
             background-color: var(--color-bg-3);
+        }
+
+        &--break-words {
+            word-break: break-all;
         }
     }
 
