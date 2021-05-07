@@ -272,11 +272,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search
 		})
 		results := make([]SearchResultResolver, 0, len(fileMatches))
 		for _, match := range fileMatches {
-			results = append(results, &FileMatchResolver{
-				FileMatch:    *match,
-				db:           db,
-				RepoResolver: NewRepositoryResolver(db, match.Repo.ToRepo()),
-			})
+			results = append(results, MatchToResolver(db, match))
 		}
 		return results, &fileCommon, nil
 	})
