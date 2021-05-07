@@ -48,7 +48,7 @@ type SearchArgs struct {
 	// allow us to stream out things like dynamic filters or take into account
 	// AND/OR. However, streaming is behind a feature flag for now, so this is
 	// to make it visible in the browser.
-	Stream Sender
+	Stream MatchSender
 
 	// For tests
 	Settings *schema.Settings

@@ -126,34 +126,23 @@ func WithLimit(ctx context.Context, parent Sender, limit int) (context.Context, 
 
 // WithSelect returns a child Stream of parent that runs the select operation
 // on each event, deduplicating where possible.
-func WithSelect(parent Sender, s filter.SelectPath) Sender {
+func WithSelect(parent MatchSender, s filter.SelectPath) MatchSender {
 	var mux sync.Mutex
-	dedup := NewDeduper()
+	dedup := result.NewDeduper()
 
-	return StreamFunc(func(e SearchEvent) {
+	return MatchStreamFunc(func(e SearchMatchEvent) {
 		mux.Lock()
 
 		selected := e.Results[:0]
-		for _, result := range e.Results {
-			var current SearchResultResolver
-			switch v := result.(type) {
-			case *FileMatchResolver:
-				current = v.Select(s)
-			case *RepositoryResolver:
-				current = v.Select(s)
-			case *CommitSearchResultResolver:
-				current = v.Select(s)
-			default:
-				current = result
-			}
-
+		for _, match := range e.Results {
+			current := match.Select(s)
 			if current == nil {
 				continue
 			}
 
 			// If the selected file is a file match, send it unconditionally
 			// to ensure we get all line matches for a file.
-			_, isFileMatch := current.(*FileMatchResolver)
+			_, isFileMatch := current.(*result.FileMatch)
 			seen := dedup.Seen(current)
 			if seen && !isFileMatch {
 				continue
@@ -166,7 +155,7 @@ func WithSelect(parent Sender, s filter.SelectPath) Sender {
 
 		mux.Unlock()
 		if parent != nil {
-			parent.Send(e)
+			parent.SendMatches(e)
 		}
 	})
 }
@@ -204,6 +193,6 @@ func (f MatchStreamFunc) Send(se SearchEvent) {
 	f(SearchEventToSearchMatchEvent(se))
 }
 
-func (f MatchStreamFunc) SendMatch(sme SearchMatchEvent) {
+func (f MatchStreamFunc) SendMatches(sme SearchMatchEvent) {
 	f(sme)
 }
