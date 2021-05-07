@@ -278,7 +278,8 @@ var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolv
 func fileMatchesToMatches(fms []result.FileMatch) []result.Match {
 	matches := make([]result.Match, 0, len(fms))
 	for _, fm := range fms {
-		matches = append(matches, &fm)
+		newFm := fm
+		matches = append(matches, &newFm)
 	}
 	return matches
 }
