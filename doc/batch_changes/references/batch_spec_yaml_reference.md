@@ -362,32 +362,32 @@ Ahead-of-time evaluation is possible if the condition contains only static data.
 ```yaml
 steps:
   # `if:` is true, step always executes.
-  - run: echo "name of repository is ${{ repository.name }}" >> message.txt
-    if: true
+  - if: true
+    run: echo "name of repository is ${{ repository.name }}" >> message.txt
     container: alpine:3
 ```
 
 ```yaml
 steps:
   # `if:` is a static string that's not "true", step never executes.
-  - run: echo "name of repository is ${{ repository.name }}" >> message.txt
-    if: "random string"
+  - if: "random string"
+    run: echo "name of repository is ${{ repository.name }}" >> message.txt
     container: alpine:3
 ```
 
 ```yaml
 steps:
   # `if:` uses templating to check for repository name and produce a "true". Only runs in github.com/sourcegraph/automation-testing
-  - run: echo "hello from automation-testing" >> message.txt
-    if: ${{ eq repository.name "github.com/sourcegraph/automation-testing" }}
+  - if: ${{ eq repository.name "github.com/sourcegraph/automation-testing" }}
+    run: echo "hello from automation-testing" >> message.txt
     container: alpine:3
 ```
 
 ```yaml
 steps:
   # `if:` uses glob pattern to match repository name and produce "true" on match.
-  - run: echo "name contains sourcegraph-testing" >> message.txt
-    if: ${{ matches repository.name "*sourcegraph-testing*" }}
+  - if: ${{ matches repository.name "*sourcegraph-testing*" }}
+    run: echo "name contains sourcegraph-testing" >> message.txt
     container: alpine:3
 ```
 
@@ -401,17 +401,17 @@ steps:
         value: ${{ step.stdout }}
 
   # `if:` uses the just-set `outputs.goModExists` value as condition
-  - run: go fmt ./...
+  - if: ${{ outputs.goModExists }}
+    run: go fmt ./...
     container: golang
-    if: ${{ outputs.goModExists }}
 ```
 
 ```yaml
 steps:
   # `if:` checks for path, in case steps are executed in workspace.
-  - run: echo "hello workspace" >> workspace.txt
+  - if: ${{ eq steps.path "sub/directory/in/repo" }}
+    run: echo "hello workspace" >> workspace.txt
     container: golang
-    if: ${{ eq steps.path "sub/directory/in/repo" }}
 ```
 
 ## [`importChangesets`](#importchangesets)
