@@ -287,6 +287,14 @@ func fileMatchesToSearchResults(db dbutil.DB, matches []result.FileMatch) []Sear
 	return results
 }
 
+func fileMatchesToMatches(fms []result.FileMatch) []result.Match {
+	matches := make([]result.Match, len(fms))
+	for _, fm := range fms {
+		matches = append(matches, &fm)
+	}
+	return matches
+}
+
 func fileMatchResolversToSearchResults(resolvers []*FileMatchResolver) []SearchResultResolver {
 	results := make([]SearchResultResolver, len(resolvers))
 	for i, resolver := range resolvers {

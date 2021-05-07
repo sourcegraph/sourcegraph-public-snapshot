@@ -91,8 +91,8 @@ func searchSymbols(ctx context.Context, db dbutil.DB, args *search.TextParameter
 
 			matches, err := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, limit)
 			stats, err := handleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
-			stream.Send(SearchEvent{
-				Results: fileMatchesToSearchResults(db, matches),
+			stream.SendMatches(SearchMatchEvent{
+				Results: fileMatchesToMatches(matches),
 				Stats:   stats,
 			})
 			if err != nil {
