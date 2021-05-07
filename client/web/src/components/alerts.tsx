@@ -51,8 +51,8 @@ export const ErrorAlert: React.FunctionComponent<{
     prefix = prefix?.trim().replace(/:+$/, '')
     return (
         <div className={classNames('alert', 'alert-danger', className)} {...rest}>
-            {icon && <AlertCircleIcon className="icon icon-inline" />} {prefix && <strong>{prefix}:</strong>}{' '}
-            <ErrorMessage error={error} />
+            {icon && <AlertCircleIcon className="redesign-d-none icon icon-inline" />}{' '}
+            {prefix && <strong>{prefix}:</strong>} <ErrorMessage error={error} />
         </div>
     )
 }

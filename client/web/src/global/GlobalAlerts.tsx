@@ -50,10 +50,10 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
             <div className="global-alerts test-global-alert">
                 {this.state.siteFlags && (
                     <>
-                        {this.state.siteFlags.needsRepositoryConfiguration && (
+                        {(this.state.siteFlags.needsRepositoryConfiguration || true) && (
                             <NeedsRepositoryConfigurationAlert className="global-alerts__alert" />
                         )}
-                        {this.state.siteFlags.freeUsersExceeded && (
+                        {(this.state.siteFlags.freeUsersExceeded || true) && (
                             <FreeUsersExceededAlert
                                 noLicenseWarningUserCount={
                                     this.state.siteFlags.productSubscription.noLicenseWarningUserCount
@@ -62,7 +62,9 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             />
                         )}
                         {/* Only show if the user has already added repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
-                        {window.context.likelyDockerOnMac && <DockerForMacAlert className="global-alerts__alert" />}
+                        {(window.context.likelyDockerOnMac || true) && (
+                            <DockerForMacAlert className="global-alerts__alert" />
+                        )}
                         {this.state.siteFlags.alerts.map((alert, index) => (
                             <GlobalAlert
                                 key={index}

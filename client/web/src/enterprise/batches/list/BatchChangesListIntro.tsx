@@ -20,13 +20,13 @@ export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntr
             </div>
         </div>
         <div className="row mb-2">
-            {licensed === true ? (
+            {licensed === false ? (
                 <div className="col-12">
                     <BatchChangesChangelogAlert />
                 </div>
             ) : (
                 <>
-                    {licensed === false && (
+                    {licensed === true && (
                         <>
                             <div className="col-12 col-md-6">
                                 <BatchChangesUnlicensedAlert />
@@ -111,7 +111,7 @@ const BatchChangesRenameAlert: React.FunctionComponent = () => (
 )
 
 const BatchChangesUnlicensedAlert: React.FunctionComponent = () => (
-    <div className={styles.batchChangesListIntroAlert}>
+    <div className={classNames(styles.batchChangesListIntroAlert, 'h-100')}>
         <div className={classNames(styles.batchChangesListIntroCard, 'card p-2 h-100')}>
             <div className="card-body d-flex align-items-start">
                 {/* d-none d-sm-block ensure that we hide the icon on XS displays. */}

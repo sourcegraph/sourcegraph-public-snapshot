@@ -218,8 +218,8 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
 const SyncerError: React.FunctionComponent<{ syncerError: string }> = ({ syncerError }) => (
     <div className="alert alert-danger" role="alert">
         <h4 className="alert-heading">
-            <AlertCircleIcon className="icon icon-inline" /> Encountered error during last attempt to sync changeset
-            data from code host
+            <AlertCircleIcon className="redesign-d-none icon icon-inline" /> Encountered error during last attempt to
+            sync changeset data from code host
         </h4>
         <ErrorMessage error={syncerError} />
         <hr className="my-2" />
@@ -239,7 +239,7 @@ const ChangesetError: React.FunctionComponent<{
     return (
         <div className="alert alert-danger" role="alert">
             <h4 className="alert-heading">
-                <AlertCircleIcon className="icon icon-inline" /> Failed to run operations on changeset
+                <AlertCircleIcon className="redesign-d-none icon icon-inline" /> Failed to run operations on changeset
             </h4>
             <ErrorMessage error={node.error} />
         </div>

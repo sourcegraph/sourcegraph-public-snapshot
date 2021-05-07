@@ -22,9 +22,9 @@ export const CodeIntelStateIcon: FunctionComponent<CodeIntelStateIconProps> = ({
     ) : state === LSIFUploadState.PROCESSING || state === LSIFIndexState.PROCESSING ? (
         <LoadingSpinner className={className} />
     ) : state === LSIFUploadState.COMPLETED || state === LSIFIndexState.COMPLETED ? (
-        <CheckCircleIcon className={classNames('text-success', className)} />
+        <CheckCircleIcon className={classNames('redesign-d-none text-success', className)} />
     ) : state === LSIFUploadState.ERRORED || state === LSIFIndexState.ERRORED ? (
-        <ErrorIcon className={classNames('text-danger', className)} />
+        <ErrorIcon className={classNames('redesign-d-none text-danger', className)} />
     ) : (
         <></>
     )
