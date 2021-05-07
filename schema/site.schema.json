@@ -240,6 +240,12 @@
           "type": "boolean",
           "default": false,
           "!go": { "pointer": false }
+        },
+        "enablePostSignupFlow": {
+          "description": "Enables post sign-up user flow",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": false }
         }
       },
       "examples": [

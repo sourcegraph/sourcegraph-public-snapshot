@@ -67,10 +67,15 @@ export const UsernameInput: React.FunctionComponent<InputProps> = props => {
  *
  * 🚨 SECURITY: We must disallow open redirects (to arbitrary hosts).
  */
-export function getReturnTo(location: H.Location): string {
+export function getReturnTo(location: H.Location, isPostSignupEnabled?: boolean): string {
+    if (isPostSignupEnabled) {
+        return new URL('/post-sign-up', window.location.href).pathname
+    }
+
     const searchParameters = new URLSearchParams(location.search)
     const returnTo = searchParameters.get('returnTo') || '/search'
     const newURL = new URL(returnTo, window.location.href)
+
     newURL.searchParams.append('toast', 'integrations')
     return newURL.pathname + newURL.search + newURL.hash
 }
