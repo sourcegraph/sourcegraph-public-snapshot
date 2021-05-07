@@ -1450,8 +1450,8 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 		}
 	}
 
-	a.Send(SearchEvent{
-		Results: fileMatchResolversToSearchResults(fileResults),
+	a.SendMatches(SearchMatchEvent{
+		Results: fileMatchResolversToMatches(fileResults),
 		Stats:   stats,
 	})
 	return err

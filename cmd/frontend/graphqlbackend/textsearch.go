@@ -295,6 +295,14 @@ func fileMatchResolversToSearchResults(resolvers []*FileMatchResolver) []SearchR
 	return results
 }
 
+func fileMatchResolversToMatches(resolvers []*FileMatchResolver) []result.Match {
+	matches := make([]result.Match, 0, len(resolvers))
+	for _, resolver := range resolvers {
+		matches = append(matches, resolver.toMatch())
+	}
+	return matches
+}
+
 func searchResultsToFileMatchResults(resolvers []SearchResultResolver) ([]*FileMatchResolver, error) {
 	results := make([]*FileMatchResolver, len(resolvers))
 	for i, resolver := range resolvers {
