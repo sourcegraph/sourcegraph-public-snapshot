@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // SearchEvent is an event on a search stream. It contains fields which can be
@@ -73,7 +72,7 @@ func MatchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultReso
 			})
 		case *result.RepoMatch:
 			resolvers = append(resolvers, &RepositoryResolver{
-				db: db,
+				db:        db,
 				RepoMatch: *v,
 			})
 		case *result.CommitMatch:
