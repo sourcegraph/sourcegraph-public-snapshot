@@ -18,11 +18,11 @@ func TestRepoUsageStatistics(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	store := testStore(db)
 
-	insertEvent := func(url, name string, count int) {
+	insertEvent := func(name string, count int) {
 		query := sqlf.Sprintf(`
-			INSERT INTO event_logs (user_id, anonymous_user_id, source, argument, version, timestamp, name, url)
-			VALUES (1, '', 'test', '{}', 'dev', NOW(), %s, %s)
-		`, name, url)
+			INSERT INTO event_logs (user_id, anonymous_user_id, source, version, timestamp, name)
+			VALUES (1, '', 'test', '{}', 'dev', NOW(), %s)
+		`, name)
 
 		for i := 0; i < count; i++ {
 			if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
@@ -44,8 +44,8 @@ func TestRepoUsageStatistics(t *testing.T) {
 		{"https://sourcegraph.com/github.com/baz/honk/-/remainder_of_path", 10, 60},  // deleted repo
 		{"https://sourcegraph.com/github.com/bonk/honk/-/remainder_of_path", 10, 60}, // no such repo
 	} {
-		insertEvent(data.URL, "codeintel.searchHover", data.NumSearchEvents)
-		insertEvent(data.URL, "codeintel.lsifHover", data.NumPreciseEvents)
+		insertEvent("codeintel.searchHover", data.NumSearchEvents)
+		insertEvent("codeintel.lsifHover", data.NumPreciseEvents)
 	}
 
 	repos := []string{
