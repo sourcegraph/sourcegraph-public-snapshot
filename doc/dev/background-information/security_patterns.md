@@ -27,3 +27,7 @@ In Sourcegraph, there are two places to enforce authorization, both equally impo
     - Be aware that any backend failure has potential to indicate unauthorized information about private resources. Therefore, halt the process as soon as we identify an unauthorized request, and behave as if the resource does not exist at all.
 - At the database layer:
     - The database is our source of truth for authorization, especially for repository and batch changes permissions. Enforcing authorization at this layer is absolutely necessary.
+
+### Secret management
+
+Secrets used by our applications are stored in GCP Secret Manager, *never* in source code unless it is mock/test data. Internal documentation on how to store/consume secrets for development can be found in [this document](https://docs.google.com/document/d/1Qm5P4KbyVMP_KyPvud0qyqUb43RK3lTFMjAeE6623Nw/edit).ß
