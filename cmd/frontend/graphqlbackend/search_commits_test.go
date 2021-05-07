@@ -304,12 +304,13 @@ func Benchmark_highlightMatches(b *testing.B) {
 
 // searchCommitsInRepo is a blocking version of searchCommitsInRepoStream.
 func searchCommitsInRepo(ctx context.Context, db dbutil.DB, op search.CommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
-	var srr []SearchResultResolver
-	err = searchCommitsInRepoStream(ctx, db, op, StreamFunc(func(event SearchEvent) {
-		srr = append(srr, event.Results...)
+	var matches []result.Match
+	err = searchCommitsInRepoStream(ctx, db, op, MatchStreamFunc(func(event SearchMatchEvent) {
+		matches = append(matches, event.Results...)
 		timedOut = timedOut || event.Stats.Status.Any(search.RepoStatusTimedout)
 		limitHit = limitHit || event.Stats.Status.Any(search.RepoStatusLimitHit)
 	}))
+	srr := MatchesToResolvers(db, matches)
 	for _, s := range srr {
 		results = append(results, s.(*CommitSearchResultResolver))
 	}

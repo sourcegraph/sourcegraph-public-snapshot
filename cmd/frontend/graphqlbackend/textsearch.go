@@ -402,7 +402,7 @@ func callSearcherOverRepos(
 	ctx context.Context,
 	db dbutil.DB,
 	args *search.TextParameters,
-	stream Sender,
+	stream MatchSender,
 	searcherRepos []*search.RepositoryRevisions,
 	index bool,
 ) (err error) {

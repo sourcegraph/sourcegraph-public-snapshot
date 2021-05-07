@@ -208,7 +208,7 @@ func mkRepoResolver(id int) *graphqlbackend.RepositoryResolver {
 
 type mockSearchResolver struct {
 	done   chan struct{}
-	c      graphqlbackend.Sender
+	c      graphqlbackend.MatchSender
 	inputs *graphqlbackend.SearchInputs
 }
 

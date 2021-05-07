@@ -266,7 +266,7 @@ func commitParametersToDiffParameters(ctx context.Context, db dbutil.DB, op *sea
 }
 
 // searchCommitsInRepoStream searches for commits based on op.
-func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.CommitParameters, s Sender) (err error) {
+func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.CommitParameters, s MatchSender) (err error) {
 	var timedOut, limitHit bool
 	resultCount := 0
 	tr, ctx := trace.New(ctx, "searchCommitsInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v", op.RepoRevs, op.PatternInfo))
@@ -511,7 +511,7 @@ type searchCommitsInReposParameters struct {
 	// with the RepoRevs field set.
 	CommitParams search.CommitParameters
 
-	ResultChannel Sender
+	ResultChannel MatchSender
 }
 
 func searchCommitsInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, params searchCommitsInReposParameters) (err error) {
@@ -547,7 +547,7 @@ func searchCommitsInRepos(ctx context.Context, db dbutil.DB, args *search.TextPa
 }
 
 // searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
-func searchCommitDiffsInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel Sender) error {
+func searchCommitDiffsInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel MatchSender) error {
 	return searchCommitsInRepos(ctx, db, args, searchCommitsInReposParameters{
 		TraceName:     "searchCommitDiffsInRepos",
 		ResultChannel: resultChannel,
@@ -560,7 +560,7 @@ func searchCommitDiffsInRepos(ctx context.Context, db dbutil.DB, args *search.Te
 }
 
 // searchCommitLogInRepos searches a set of repos for matching commits.
-func searchCommitLogInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel Sender) error {
+func searchCommitLogInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel MatchSender) error {
 	var terms []string
 	if args.PatternInfo.Pattern != "" {
 		terms = append(terms, args.PatternInfo.Pattern)

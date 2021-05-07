@@ -26,16 +26,10 @@ type SearchMatchEvent struct {
 	Stats   streaming.Stats
 }
 
-// Sender is the interface that wraps the basic Send method. Send must not
-// mutate the event.
-type Sender interface {
-	Send(SearchEvent)
-}
-
 // MatchSender is a temporary interface that adds the SendMatches method to the
 // Sender interface. Eventually, Sender.Send() will be replaced with MatchSender.SendMatches
 type MatchSender interface {
-	Sender
+	Send(SearchEvent)
 	SendMatches(SearchMatchEvent)
 }
 
@@ -177,25 +171,6 @@ type StreamFunc func(SearchEvent)
 
 func (f StreamFunc) Send(event SearchEvent) {
 	f(event)
-}
-
-// collectStream will call search and aggregates all events it sends. It then
-// returns the aggregate event and any error it returns.
-func collectStream(search func(Sender) error) ([]SearchResultResolver, streaming.Stats, error) {
-	var (
-		mu      sync.Mutex
-		results []SearchResultResolver
-		stats   streaming.Stats
-	)
-
-	err := search(StreamFunc(func(event SearchEvent) {
-		mu.Lock()
-		results = append(results, event.Results...)
-		stats.Update(&event.Stats)
-		mu.Unlock()
-	}))
-
-	return results, stats, err
 }
 
 type MatchStreamFunc func(SearchMatchEvent)

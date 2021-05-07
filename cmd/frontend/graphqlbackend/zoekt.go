@@ -72,7 +72,7 @@ type indexedSearchRequest struct {
 	db dbutil.DB
 }
 
-func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.TextParameters, typ indexedRequestType, stream Sender) (_ *indexedSearchRequest, err error) {
+func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.TextParameters, typ indexedRequestType, stream MatchSender) (_ *indexedSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
@@ -182,7 +182,7 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 }
 
 // Search streams 0 or more events to c.
-func (s *indexedSearchRequest) Search(ctx context.Context, c Sender) error {
+func (s *indexedSearchRequest) Search(ctx context.Context, c MatchSender) error {
 	if s.args == nil {
 		return nil
 	}
@@ -203,7 +203,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c Sender) error {
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Sender) error {
+func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c MatchSender) error {
 	if args == nil {
 		return nil
 	}
@@ -439,7 +439,7 @@ func bufferedSender(cap int, sender zoekt.Sender) (zoekt.Sender, func()) {
 // zoektSearchReposOnly is used when select:repo is set, in which case we can ask zoekt
 // only for the repos that contain matches for the query. This is a performance optimization,
 // and not required for proper function of select:repo.
-func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, db dbutil.DB, c Sender, getRepoRevMap func() map[string]*search.RepositoryRevisions) error {
+func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, db dbutil.DB, c MatchSender, getRepoRevMap func() map[string]*search.RepositoryRevisions) error {
 	repoList, err := client.List(ctx, query)
 	if err != nil {
 		return err
@@ -823,7 +823,7 @@ func (rb *indexedRepoRevs) GetRepoInputRev(file *zoekt.FileMatch) (repo types.Re
 // excluded.
 //
 // A slice to the input list is returned, it is not copied.
-func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, stream Sender) []*search.RepositoryRevisions {
+func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, stream MatchSender) []*search.RepositoryRevisions {
 	var missing []*search.RepositoryRevisions
 
 	for i, repoRevs := range unindexed {
