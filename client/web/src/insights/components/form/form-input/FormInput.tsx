@@ -1,6 +1,5 @@
 import classnames from 'classnames'
-import React, { forwardRef, InputHTMLAttributes, ReactNode, useRef } from 'react'
-import { useMergeRefs } from 'use-callback-ref'
+import React, { forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 
 interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Title of input. */
@@ -36,7 +35,6 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>((props, re
         errorInputState,
         ...otherProps
     } = props
-    const localInputReference = useRef<HTMLInputElement>(null)
 
     return (
         <label className={classnames(className)}>
@@ -50,7 +48,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>((props, re
                         'is-invalid': !!error || errorInputState,
                     })}
                     {...otherProps}
-                    ref={useMergeRefs([localInputReference, reference])}
+                    ref={reference}
                 />
 
                 {inputSymbol}
