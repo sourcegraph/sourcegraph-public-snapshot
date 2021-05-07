@@ -20,6 +20,11 @@ const InsightCreateLazyPage = lazyComponent<CreationSearchInsightPageProps, 'Cre
     'CreationSearchInsightPage'
 )
 
+const InsightCreateIntroLazyPage = lazyComponent<{}, 'CreationIntroPage'>(
+    () => import('./pages/creation-intro/CreationIntroPage'),
+    'CreationIntroPage'
+)
+
 /**
  * Feature flag for new code insights creation UI.
  * */
@@ -54,11 +59,15 @@ export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = prop
             />
 
             {isCreationUIEnabled && (
-                <Route
-                    path={`${match.url}/create`}
-                    /* eslint-disable-next-line react/jsx-no-bind */
-                    render={props => <InsightCreateLazyPage {...outerProps} {...props} />}
-                />
+                <>
+                    <Route
+                        path={`${match.url}/create`}
+                        /* eslint-disable-next-line react/jsx-no-bind */
+                        render={props => <InsightCreateLazyPage {...outerProps} {...props} />}
+                    />
+
+                    <Route path={`${match.url}/create-intro`} component={InsightCreateIntroLazyPage} />
+                </>
             )}
 
             <Route component={NotFoundPage} key="hardcoded-key" />
