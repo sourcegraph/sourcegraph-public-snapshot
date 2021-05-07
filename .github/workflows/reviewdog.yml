@@ -8,7 +8,7 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
       - name: golangci-lint
-        uses: docker://reviewdog/action-golangci-lint:latest
+        uses: docker://reviewdog/action-golangci-lint:latest@sha256:9f8af9633d7a14d2100936693dc609249e13c29a352ce88fdc8a3d0aaadd8b26
         env:
           GITHUB_ACTION: reviewdog
         with:
