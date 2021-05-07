@@ -195,7 +195,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c Sender) error {
 		since = s.since
 	}
 
-	return zoektSearch(ctx, s.db, s.args, s.repos, s.typ, since, c)
+	return zoektSearch(ctx, s.args, s.repos, s.typ, since, c)
 }
 
 // zoektSearch searches repositories using zoekt.
@@ -203,7 +203,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c Sender) error {
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Sender) error {
+func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Sender) error {
 	if args == nil {
 		return nil
 	}
@@ -294,7 +294,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 		// PERF: if we are going to be selecting to repo results only anyways, we can just ask
 		// zoekt for only results of type repo.
 		if args.PatternInfo.Select.Type == filter.Repository {
-			return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, db, c, func() map[string]*search.RepositoryRevisions {
+			return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, c, func() map[string]*search.RepositoryRevisions {
 				<-reposResolved
 				// getRepoInputRev is nil only if we encountered an error during repo resolution.
 				if getRepoInputRev == nil {
@@ -429,7 +429,7 @@ func bufferedSender(cap int, sender zoekt.Sender) (zoekt.Sender, func()) {
 // zoektSearchReposOnly is used when select:repo is set, in which case we can ask zoekt
 // only for the repos that contain matches for the query. This is a performance optimization,
 // and not required for proper function of select:repo.
-func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, db dbutil.DB, c Sender, getRepoRevMap func() map[string]*search.RepositoryRevisions) error {
+func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, c Sender, getRepoRevMap func() map[string]*search.RepositoryRevisions) error {
 	repoList, err := client.List(ctx, query)
 	if err != nil {
 		return err
@@ -440,18 +440,21 @@ func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoek
 		return nil
 	}
 
-	resolvers := make([]SearchResultResolver, 0, len(repoList.Repos))
+	matches := make([]result.Match, 0, len(repoList.Repos))
 	for _, repo := range repoList.Repos {
 		rev, ok := repoRevMap[repo.Repository.Name]
 		if !ok {
 			continue
 		}
 
-		resolvers = append(resolvers, NewRepositoryResolver(db, &types.Repo{Name: rev.Repo.Name, ID: rev.Repo.ID}))
+		matches = append(matches, &result.RepoMatch{
+			Name: rev.Repo.Name,
+			ID:   rev.Repo.ID,
+		})
 	}
 
 	c.Send(SearchEvent{
-		Results: ResolversToMatches(resolvers),
+		Results: matches,
 		Stats:   streaming.Stats{}, // TODO
 	})
 	return nil
