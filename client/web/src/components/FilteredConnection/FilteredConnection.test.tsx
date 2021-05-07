@@ -3,7 +3,7 @@ import { createLocation } from 'history'
 import React from 'react'
 import sinon from 'sinon'
 
-import { ConnectionNodesForTesting as ConnectionNodes } from './FilteredConnection'
+import { ConnectionNodes } from './ConnectionNodes'
 
 function fakeConnection<N>({
     hasNextPage,

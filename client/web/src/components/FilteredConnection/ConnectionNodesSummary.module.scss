@@ -1,0 +1,11 @@
+.summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: solid 1px var(--border-color-2);
+    padding: 0.5rem 0.75rem;
+
+    &-show-more {
+        flex: 0 0 auto;
+    }
+}

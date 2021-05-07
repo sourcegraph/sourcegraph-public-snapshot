@@ -15,12 +15,12 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ErrorAlert } from '../../../components/alerts'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import {
-    Connection,
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
     FilterValue,
 } from '../../../components/FilteredConnection'
+import type { Connection } from '../../../components/FilteredConnection/ConnectionType'
 import { PageTitle } from '../../../components/PageTitle'
 import {
     RepositoriesResult,
