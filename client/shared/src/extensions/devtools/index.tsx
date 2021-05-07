@@ -27,7 +27,6 @@ interface ExtensionDevelopmentToolsTab {
 
 const TABS: ExtensionDevelopmentToolsTab[] = [
     { id: 'activeExtensions', label: 'Active extensions', component: ActiveExtensionsPanel },
-    // TODO(tj): tabs: activeExtensions, logging (all known/enabled exts, not just active), sideloaded extensions
 ]
 
 const ExtensionDevelopmentTools: React.FunctionComponent<ExtensionsDevelopmentToolsProps> = props => {
@@ -58,7 +57,7 @@ const ExtensionDevelopmentTools: React.FunctionComponent<ExtensionsDevelopmentTo
 }
 
 /** A button that toggles the visibility of the ExtensionDevTools element in a popover. */
-export const ExtensionDevToolsPopover = React.memo<ExtensionsDevelopmentToolsProps>(props => (
+export const ExtensionDevelopmentToolsPopover = React.memo<ExtensionsDevelopmentToolsProps>(props => (
     <>
         <button type="button" id="extension-status-popover" className="btn btn-link text-decoration-none px-2">
             <span className="text-muted">Ext</span> <MenuUpIcon className="icon-inline" />
@@ -69,7 +68,6 @@ export const ExtensionDevToolsPopover = React.memo<ExtensionsDevelopmentToolsPro
             hideArrow={true}
             popperClassName="border-0 rounded-0"
         >
-            {/* TODO(tj): Error boundary */}
             <ExtensionDevelopmentTools {...props} />
         </UncontrolledPopover>
     </>

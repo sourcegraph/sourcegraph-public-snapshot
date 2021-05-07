@@ -2,7 +2,7 @@ import * as H from 'history'
 import * as React from 'react'
 
 import { Controller as ClientController } from '@sourcegraph/shared/src/extensions/controller'
-import { ExtensionDevToolsPopover } from '@sourcegraph/shared/src/extensions/devtools'
+import { ExtensionDevelopmentToolsPopover } from '@sourcegraph/shared/src/extensions/devtools'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
 import { ShortcutProvider } from './ShortcutProvider'
@@ -27,7 +27,7 @@ export const GlobalDebug: React.FunctionComponent<Props> = props => (
         <div className="navbar-nav align-items-center">
             <div className="nav-item">
                 <ShortcutProvider>
-                    <ExtensionDevToolsPopover
+                    <ExtensionDevelopmentToolsPopover
                         extensionsController={props.extensionsController}
                         link={makeExtensionLink(props.sourcegraphURL)}
                         platformContext={props.platformContext}
