@@ -314,7 +314,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 			limitHit := event.FilesSkipped+event.ShardsSkipped > 0
 
 			if len(files) == 0 {
-				c.Send(SearchEvent{
+				c.SendMatches(SearchMatchEvent{
 					Stats: streaming.Stats{IsLimitHit: limitHit},
 				})
 				return
@@ -381,8 +381,8 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 				}
 			}
 
-			c.Send(SearchEvent{
-				Results: matches,
+			c.SendMatches(SearchMatchEvent{
+				Results: ResolversToMatches(matches),
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
 				},
@@ -406,7 +406,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 	}
 
 	if !foundResults.Load() && since(t0) >= searchOpts.MaxWallTime {
-		c.Send(SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
+		c.SendMatches(SearchMatchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
 		return nil
 	}
 	return nil
