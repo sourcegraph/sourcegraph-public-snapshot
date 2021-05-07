@@ -32,23 +32,23 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 	}{
 		{
 			name:  "EmptyName",
-			event: &Event{UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
+			event: &Event{UserID: 1, URL: "", Source: "WEB"},
 			err:   `INSERT: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_name_not_empty" (SQLSTATE 23514)`,
 		},
 		{
 			name:  "InvalidUser",
-			event: &Event{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB"},
+			event: &Event{Name: "test_event", URL: "", Source: "WEB"},
 			err:   `INSERT: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_has_user" (SQLSTATE 23514)`,
 		},
 		{
 			name:  "EmptySource",
-			event: &Event{Name: "test_event", URL: "http://sourcegraph.com", UserID: 1},
+			event: &Event{Name: "test_event", URL: "", UserID: 1},
 			err:   `INSERT: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_source_not_empty" (SQLSTATE 23514)`,
 		},
 
 		{
 			name:  "ValidInsert",
-			event: &Event{Name: "test_event", UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
+			event: &Event{Name: "test_event", UserID: 1, URL: "", Source: "WEB"},
 			err:   "<nil>",
 		},
 	}
@@ -132,7 +132,7 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 					e := &Event{
 						UserID:    user,
 						Name:      name,
-						URL:       "test",
+						URL:       "",
 						Source:    "test",
 						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60*12))),
 					}
@@ -227,7 +227,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 						e := &Event{
 							UserID: user,
 							Name:   name,
-							URL:    "test",
+							URL:    "",
 							Source: source,
 							// Jitter current time +/- 30 minutes
 							Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
@@ -298,7 +298,7 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 			e := &Event{
 				UserID: user,
 				Name:   name,
-				URL:    "test",
+				URL:    "",
 				Source: "test",
 				// This week; jitter current time +/- 30 minutes
 				Timestamp: now.Add(-time.Hour * 24 * 3).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
@@ -312,7 +312,7 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 			e := &Event{
 				UserID: user,
 				Name:   name,
-				URL:    "test",
+				URL:    "",
 				Source: "test",
 				// This month: jitter current time +/- 30 minutes
 				Timestamp: now.Add(-time.Hour * 24 * 12).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
@@ -435,7 +435,7 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 					e := &Event{
 						UserID:   user,
 						Name:     name,
-						URL:      "test",
+						URL:      "",
 						Source:   "test",
 						Argument: json.RawMessage(fmt.Sprintf(`{"languageId": "lang-%02d"}`, (i%3)+1)),
 						// Jitter current time +/- 30 minutes
@@ -491,7 +491,7 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 		e := &Event{
 			UserID:    1,
 			Name:      "codeintel.searchReferences.xrepo",
-			URL:       "test",
+			URL:       "",
 			Source:    "test",
 			Argument:  json.RawMessage(fmt.Sprintf(`{"languageId": "lang-%02d"}`, (i%3)+1)),
 			Timestamp: now.Add(-time.Hour * 24 * 3), // This week
@@ -540,7 +540,7 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 		e := &Event{
 			UserID: 1,
 			Name:   "search.latencies.structural",
-			URL:    "test",
+			URL:    "",
 			Source: "test",
 			// Make durations non-uniform to test percent_cont. The values
 			// in this test were hand-checked before being added to the assertion.
@@ -618,7 +618,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 						e := &Event{
 							UserID: user,
 							Name:   name,
-							URL:    "test",
+							URL:    "",
 							Source: "test",
 							// Make durations non-uniform to test percent_cont. The values
 							// in this test were hand-checked before being added to the assertion.
@@ -695,27 +695,27 @@ func TestEventLogs_ListAll(t *testing.T) {
 		{
 			UserID:    1,
 			Name:      "SearchResultsQueried",
-			URL:       "test",
+			URL:       "",
 			Source:    "test",
 			Timestamp: startDate,
 		}, {
 			UserID:    2,
 			Name:      "codeintel",
-			URL:       "test",
+			URL:       "",
 			Source:    "test",
 			Timestamp: startDate,
 		},
 		{
 			UserID:    2,
 			Name:      "ViewRepository",
-			URL:       "test",
+			URL:       "",
 			Source:    "test",
 			Timestamp: startDate,
 		},
 		{
 			UserID:    2,
 			Name:      "SearchResultsQueried",
-			URL:       "test",
+			URL:       "",
 			Source:    "test",
 			Timestamp: startDate,
 		}}
@@ -765,7 +765,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 			{
 				UserID:          0,
 				Name:            "ping",
-				URL:             "test",
+				URL:             "test", // This test verifies that even though we try to write a value to URL, it writes an empty string instead.
 				AnonymousUserID: "test",
 				Source:          "test",
 				Timestamp:       timestamp,
@@ -773,7 +773,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 			}, {
 				UserID:          0,
 				Name:            "ping",
-				URL:             "test",
+				URL:             "test", // This test verifies that even though we try to write a value to URL, it writes an empty string instead.
 				AnonymousUserID: "test",
 				Source:          "test",
 				Timestamp:       timestamp,
@@ -793,11 +793,11 @@ func TestEventLogs_LatestPing(t *testing.T) {
 		expectedPing := &types.Event{
 			ID:              2,
 			Name:            events[1].Name,
-			URL:             events[1].URL,
+			URL:             "", // We expect an empty string as we will stop writing the URL to the database.
 			UserID:          &userID,
 			AnonymousUserID: events[1].AnonymousUserID,
 			Version:         version.Version(),
-			Argument:        string(events[1].Argument),
+			Argument:        "",
 			Source:          events[1].Source,
 			Timestamp:       timestamp,
 		}
