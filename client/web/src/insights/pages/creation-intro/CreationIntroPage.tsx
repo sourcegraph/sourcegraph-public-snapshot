@@ -36,8 +36,8 @@ export const CreationIntroPage: React.FunctionComponent = () => (
                 <h3>Based on your search query</h3>
 
                 <p>
-                    Search-based insights let you create a time series data visualization about your code based on a custom search
-                    query.
+                    Search-based insights let you create a time series data visualization about your code based on a
+                    custom search query.
                 </p>
 
                 <Link
@@ -83,7 +83,8 @@ export const CreationIntroPage: React.FunctionComponent = () => (
                 <h3>Based on Sourcegraph extensions</h3>
 
                 <p>
-                    Enable an extension that creates code insights, then follow its README.md to learn how to set up code insights for that extension.
+                    Enable an extension that creates code insights, then follow its README.md to learn how to set up
+                    code insights for that extension.
                 </p>
 
                 <Link
