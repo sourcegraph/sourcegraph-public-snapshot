@@ -222,10 +222,6 @@ func (h *mockSearchResolver) Results(ctx context.Context) (*graphqlbackend.Searc
 	}
 }
 
-func (h *mockSearchResolver) Send(r []graphqlbackend.SearchResultResolver) {
-	h.c.Send(graphqlbackend.SearchEvent{Results: graphqlbackend.ResolversToMatches(r)})
-}
-
 func (h *mockSearchResolver) Close() {
 	close(h.done)
 }
