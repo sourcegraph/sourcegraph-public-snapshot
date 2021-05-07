@@ -840,7 +840,7 @@ func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, str
 		for _, r := range missing {
 			status.Update(r.Repo.ID, search.RepoStatusMissing)
 		}
-		stream.Send(SearchEvent{
+		stream.SendMatches(SearchMatchEvent{
 			Stats: streaming.Stats{
 				Status: status,
 			},
