@@ -60,7 +60,7 @@ export const CreationIntroPage: React.FunctionComponent = () => (
             <section className={classnames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
                 <h3>Language usage</h3>
 
-                <p>Shows usage of languages in your repository based on number of lines of code.</p>
+                <p>Shows language usage in your repository by lines of code.</p>
 
                 <Link
                     to="/user/settings"
