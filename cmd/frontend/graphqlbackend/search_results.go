@@ -1357,11 +1357,11 @@ type aggregator struct {
 // get finalises aggregation over the stream and returns the aggregated
 // result. It should only be called once each do* function is finished
 // running.
-func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *searchAlert, error) {
+func (a *aggregator) get() ([]result.Match, streaming.Stats, *searchAlert, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	alert, err := a.alert.Done(&a.stats)
-	return MatchesToResolvers(a.db, a.results), a.stats, alert, err
+	return a.results, a.stats, alert, err
 }
 
 func (a *aggregator) Send(event SearchEvent) {
@@ -1740,7 +1740,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 
 	// We have to call get once all waitgroups are done since it relies on
 	// collecting from the streams.
-	results, common, alert, err := agg.get()
+	matches, common, alert, err := agg.get()
+	results := MatchesToResolvers(r.db, matches)
 
 	tr.LazyPrintf("results=%d %s", len(results), &common)
 
