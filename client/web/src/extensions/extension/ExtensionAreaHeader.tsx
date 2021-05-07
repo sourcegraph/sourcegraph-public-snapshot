@@ -61,7 +61,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                 feedbackTimeoutManager.setTimeout(() => setChange(null), FEEDBACK_DELAY)
             }
         },
-        [feedbackTimeoutManager]
+        [feedbackTimeoutManager, isSiteAdmin]
     )
 
     /**
