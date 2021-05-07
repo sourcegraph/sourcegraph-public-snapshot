@@ -118,7 +118,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
 
                 <FormRadioInput
                     name="visibility"
-                    value="organization"
+                    value="organisation"
                     title="Organization"
                     description="to all users in your organization"
                     checked={visibility.input.value === 'organisation'}
