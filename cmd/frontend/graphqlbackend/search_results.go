@@ -853,8 +853,8 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 		r.stream = nil // Disables streaming: backends may not use the endpoint.
 		srr, err := r.resultsBatch(ctx)
 		if srr != nil {
-			endpoint.Send(SearchEvent{
-				Results: srr.SearchResults,
+			endpoint.SendMatches(SearchMatchEvent{
+				Results: ResolversToMatches(srr.SearchResults),
 				Stats:   srr.Stats,
 			})
 		}
