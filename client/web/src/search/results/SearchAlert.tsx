@@ -5,7 +5,6 @@ import { Link, useHistory } from 'react-router-dom'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { SearchPatternType } from '../../graphql-operations'
 import { AggregateStreamingSearchResults } from '../stream'

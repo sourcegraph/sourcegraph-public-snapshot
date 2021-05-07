@@ -20,13 +20,13 @@ export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntr
             </div>
         </div>
         <div className="row mb-2">
-            {licensed === false ? (
+            {licensed === true ? (
                 <div className="col-12">
                     <BatchChangesChangelogAlert />
                 </div>
             ) : (
                 <>
-                    {licensed === true && (
+                    {licensed === false && (
                         <>
                             <div className="col-12 col-md-6">
                                 <BatchChangesUnlicensedAlert />
