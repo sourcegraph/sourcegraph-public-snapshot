@@ -3,7 +3,7 @@ package cache
 import (
 	"context"
 
-	"github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 )
