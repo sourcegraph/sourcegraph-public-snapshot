@@ -263,21 +263,21 @@ Using the [`steps.if`](batch_spec_yaml_reference.md#steps-if) field to condition
 ```yaml
 steps:
   # `if:` is true, step always executes.
-  - run: echo "name of repository is ${{ repository.name }}" >> message.txt
-    if: true
+  - if: true
+    run: echo "name of repository is ${{ repository.name }}" >> message.txt
     container: alpine:3
 
   # `if:` checks for repository name. Only runs in github.com/sourcegraph/automation-testing
-  - run: echo "hello from automation-testing" >> message.txt
-    if: ${{ eq repository.name "github.com/sourcegraph/automation-testing" }}
+  - if: ${{ eq repository.name "github.com/sourcegraph/automation-testing" }}
+    run: echo "hello from automation-testing" >> message.txt
     container: alpine:3
 
   # `if:` uses glob pattern to match repository name.
-  - run: echo "name contains sourcegraph-testing" >> message.txt
-    if: ${{ matches repository.name "*sourcegraph-testing*" }}
+  - if: ${{ matches repository.name "*sourcegraph-testing*" }}
+    run: echo "name contains sourcegraph-testing" >> message.txt
     container: alpine:3
 
-  # Checks for go.mod existance and saves to outputs
+  # Checks for go.mod existence and saves to outputs
   - run:  if [[ -f "go.mod" ]]; then echo "true"; else echo "false"; fi
     container: alpine:3
     outputs:
@@ -285,12 +285,12 @@ steps:
         value: ${{ step.stdout }}
 
   # `if:` uses the just-set `outputs.goModExists` value as condition
-  - run: go fmt ./...
+  - if: ${{ outputs.goModExists }}
+    run: go fmt ./...
     container: golang
-    if: ${{ outputs.goModExists }}
 
   # `if:` checks for path, in case steps are executed in workspace.
-  - run: echo "hello workspace" >> workspace.txt
+  - if: ${{ eq steps.path "sub/directory/in/repo" }}
+    run: echo "hello workspace" >> workspace.txt
     container: golang
-    if: ${{ eq steps.path "sub/directory/in/repo" }}
 ```
