@@ -200,9 +200,9 @@ We may lack the language expertise or bandwidth to implement certain features on
 
 #### lsif-clang
 
-- Supports projects using with make, cmake and Bazel in their build tooling.
-- lsif-clang sometimes outputs nonsensical data when trying to index template usages or definitions.
-- C/C++ build system ecosystem is extremely fragmented and difficult to support out of the box. We have decided that integrated build tool support will not be a short-term goal of lsif-clang.
+- Supports all build systems.
+- lsif-clang sometimes fails to correctly index templates and macros.
+- It is not on our roadmap to support autoindexing for C/C++ repositories due to tooling ecosystem fragmentation.
 
 #### lsif-java
 
