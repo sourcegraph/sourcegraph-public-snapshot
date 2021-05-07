@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"sync"
 	"time"
 
 	"github.com/opentracing/opentracing-go"
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -41,12 +41,12 @@ func (e ErrRepoSeeOther) Error() string {
 
 var Repos = &repos{
 	store: database.GlobalRepos,
+	cache: dbcache.NewDefaultRepoLister(database.GlobalRepos),
 }
 
 type repos struct {
-	store            *database.RepoStore
-	defaultRepoStore *database.DefaultRepoStore
-	once             sync.Once
+	store *database.RepoStore
+	cache *dbcache.DefaultRepoLister
 }
 
 func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error) {
@@ -170,7 +170,7 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err 
 		}
 		done()
 	}()
-	return s.ensureDefaultRepos().List(ctx)
+	return s.cache.List(ctx)
 }
 
 // ListDefault calls database.DefaultRepos.ListPublic, with tracing.
@@ -188,7 +188,7 @@ func (s *repos) ListDefault(ctx context.Context) (repos []types.RepoName, err er
 
 	span := opentracing.SpanFromContext(ctx)
 	span.LogFields(otlog.String("ListPublic", "start"))
-	repos, err = s.ensureDefaultRepos().ListPublic(ctx)
+	repos, err = s.cache.ListPublic(ctx)
 	if err != nil {
 		span.LogFields(otlog.String("ListPublic", "failed"))
 		return nil, errors.Wrap(err, "listing default public repos")
@@ -244,11 +244,4 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return nil, err
 	}
 	return &inv, nil
-}
-
-func (s *repos) ensureDefaultRepos() *database.DefaultRepoStore {
-	s.once.Do(func() {
-		s.defaultRepoStore = database.DefaultReposWith(s.store)
-	})
-	return s.defaultRepoStore
 }
