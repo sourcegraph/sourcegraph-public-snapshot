@@ -83,8 +83,7 @@ export const CreationIntroPage: React.FunctionComponent = () => (
                 <h3>Based on Sourcegraph extensions</h3>
 
                 <p>
-                    Enable the extension and go to the README.md to learn how to set up code insights for selected
-                    Sourcegraph extensions.
+                    Enable an extension that creates code insights, then follow its README.md to learn how to set up code insights for that extension.
                 </p>
 
                 <Link
