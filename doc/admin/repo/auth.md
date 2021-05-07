@@ -48,6 +48,10 @@ gitserver-0:
   ...
 ```
 
+>NOTE: The permission of your SSH / Git configuration must be set to be readable by the user in the `gitserver` container. 
+
+See [Custom git or ssh config docs](https://docs.sourcegraph.com/admin/repo/custom_git_or_ssh_config#setting-configuration) on setting configuring 
+
 ### HTTP(S) authentication via netrc
 
 The easiest way to specify HTTP(S) authentication for repositories is to include the username and password in the clone URL itself, such as `https://user:password@example.com/my/repo`. These credentials won't be displayed to non-admin users.
