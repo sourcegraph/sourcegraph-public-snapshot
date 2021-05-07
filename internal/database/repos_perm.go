@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -21,8 +22,8 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
 	authzAllowByDefault, authzProviders := authz.GetProviders()
 	usePermissionsUserMapping := globals.PermissionsUserMapping().Enabled
 
-	// 🚨 SECURITY: Blocking access to all repositories if both code host authz provider(s) and permissions user mapping
-	// are configured.
+	// 🚨 SECURITY: Blocking access to all repositories if both code host authz
+	// provider(s) and permissions user mapping are configured.
 	if usePermissionsUserMapping {
 		if len(authzProviders) > 0 {
 			return nil, errPermissionsUserMappingConflict
@@ -32,8 +33,10 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
 
 	authenticatedUserID := int32(0)
 
-	// Authz is bypassed when the request is coming from an internal actor or
-	// there is no authz provider configured and access to all repositories are allowed by default.
+	// Authz is bypassed when the request is coming from an internal actor or there
+	// is no authz provider configured and access to all repositories are allowed by
+	// default. Authz can be bypassed by site admins unless
+	// conf.AuthEnforceForSiteAdmins is set to "true".
 	bypassAuthz := isInternalActor(ctx) || (authzAllowByDefault && len(authzProviders) == 0)
 	if !bypassAuthz && actor.FromContext(ctx).IsAuthenticated() {
 		currentUser, err := Users(db).GetByCurrentAuthUser(ctx)
@@ -41,7 +44,7 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
 			return nil, err
 		}
 		authenticatedUserID = currentUser.ID
-		bypassAuthz = currentUser.SiteAdmin
+		bypassAuthz = currentUser.SiteAdmin && !conf.Get().AuthzEnforceForSiteAdmins
 	}
 
 	q := authzQuery(bypassAuthz,

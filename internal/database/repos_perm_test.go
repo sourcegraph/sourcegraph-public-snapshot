@@ -82,57 +82,81 @@ func TestAuthzQueryConds(t *testing.T) {
 	}()
 	tests := []struct {
 		name                string
-		setup               func() context.Context
+		setup               func(t *testing.T) context.Context
 		authzAllowByDefault bool
 		wantQuery           *sqlf.Query
 	}{
 		{
 			name: "internal actor bypass checks",
-			setup: func() context.Context {
+			setup: func(t *testing.T) context.Context {
 				return actor.WithInternalActor(context.Background())
 			},
 			wantQuery: authzQuery(true, false, int32(0), authz.Read),
 		},
-
 		{
-			name:      "no authz provider and not allow by default",
-			setup:     context.Background,
+			name: "no authz provider and not allow by default",
+			setup: func(t *testing.T) context.Context {
+				return context.Background()
+			},
 			wantQuery: authzQuery(false, false, int32(0), authz.Read),
 		},
 		{
-			name:                "no authz provider but allow by default",
-			setup:               context.Background,
+			name: "no authz provider but allow by default",
+			setup: func(t *testing.T) context.Context {
+				return context.Background()
+			},
 			authzAllowByDefault: true,
 			wantQuery:           authzQuery(true, false, int32(0), authz.Read),
 		},
-
 		{
 			name: "authenticated user is a site admin",
-			setup: func() context.Context {
+			setup: func(t *testing.T) context.Context {
 				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 					return &types.User{ID: 1, SiteAdmin: true}, nil
 				}
+				t.Cleanup(func() {
+					Mocks.Users = MockUsers{}
+				})
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			},
 			wantQuery: authzQuery(true, false, int32(1), authz.Read),
 		},
 		{
+			name: "authenticated user is a site admin and AuthzEnforceForSiteAdmins is set",
+			setup: func(t *testing.T) context.Context {
+				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+					return &types.User{ID: 1, SiteAdmin: true}, nil
+				}
+				conf.Get().AuthzEnforceForSiteAdmins = true
+				t.Cleanup(func() {
+					Mocks.Users = MockUsers{}
+					conf.Get().AuthzEnforceForSiteAdmins = false
+				})
+				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			},
+			wantQuery: authzQuery(false, false, int32(1), authz.Read),
+		},
+		{
 			name: "authenticated user is not a site admin",
-			setup: func() context.Context {
+			setup: func(t *testing.T) context.Context {
 				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 					return &types.User{ID: 1}, nil
 				}
+				t.Cleanup(func() {
+					Mocks.Users = MockUsers{}
+				})
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			},
 			wantQuery: authzQuery(false, false, int32(1), authz.Read),
 		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			authz.SetProviders(test.authzAllowByDefault, nil)
 			defer authz.SetProviders(true, nil)
 
-			q, err := AuthzQueryConds(test.setup(), db)
+			q, err := AuthzQueryConds(test.setup(t), db)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -296,6 +320,7 @@ VALUES
 	defer authz.SetProviders(true, nil)
 
 	// Alice should see "alice_public_repo", "alice_private_repo", "bob_public_repo", "cindy_private_repo"
+	// "cindy_private_repos" comes from an unrestricted external service
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
 	repos, err := Repos(db).List(aliceCtx, ReposListOptions{})
 	if err != nil {
@@ -307,6 +332,7 @@ VALUES
 	}
 
 	// Bob should see "alice_public_repo", "bob_private_repo", "bob_public_repo", "cindy_private_repo"
+	// "cindy_private_repos" comes from an unrestricted external service
 	bobCtx := actor.WithActor(ctx, &actor.Actor{UID: bob.ID})
 	repos, err = Repos(db).List(bobCtx, ReposListOptions{})
 	if err != nil {
@@ -317,7 +343,7 @@ VALUES
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
-	// Admin should see all repositories
+	// By default, site admins can see all repos
 	adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
 	repos, err = Repos(db).List(adminCtx, ReposListOptions{})
 	if err != nil {
@@ -328,7 +354,24 @@ VALUES
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
+	// When AuthzEnforceForSiteAdmins is set, site admins can only see repos they have access
+	// to based on our authz model
+	conf.Get().AuthzEnforceForSiteAdmins = true
+	t.Cleanup(func() {
+		conf.Get().AuthzEnforceForSiteAdmins = false
+	})
+	adminCtx = actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
+	repos, err = Repos(db).List(adminCtx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRepos = []*types.Repo{alicePublicRepo, bobPublicRepo, cindyPrivateRepo}
+	if diff := cmp.Diff(wantRepos, repos); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+
 	// A random user should only see "alice_public_repo", "bob_public_repo", "cindy_private_repo"
+	// "cindy_private_repos" comes from an unrestricted external service
 	repos, err = Repos(db).List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
@@ -474,13 +517,30 @@ VALUES
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
-	// Admin should see all repositories
+	// By default, admins can see all repos
 	adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
 	repos, err = Repos(db).List(adminCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	wantRepos = []*types.Repo{alicePublicRepo, alicePrivateRepo, bobPublicRepo, bobPrivateRepo}
+	if diff := cmp.Diff(wantRepos, repos); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+
+	// Admin should not see anything as they have not been granted permissions and
+	// AuthzEnforceForSiteAdmins is set
+	conf.Get().AuthzEnforceForSiteAdmins = true
+	t.Cleanup(func() {
+		Mocks.Users = MockUsers{}
+		conf.Get().AuthzEnforceForSiteAdmins = false
+	})
+	adminCtx = actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
+	repos, err = Repos(db).List(adminCtx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRepos = ([]*types.Repo)(nil)
 	if diff := cmp.Diff(wantRepos, repos); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
