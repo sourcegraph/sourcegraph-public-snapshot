@@ -8,7 +8,7 @@ We are working on creating language specific guides for use with LSIF indexers, 
 
 ## Benefits of CI integration
 
-Setting up a source code indexing job in your CI build provides you with fast code intelligence that gives you more control on when source code gets indexed, and ensures accuracy of your code intelligence by keeping in sync with changes in your respository. Due to the large number of CI frameworks and languages we may not have specific documentation for your use case. Feel free to [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new) if you're having difficulties and we can help troubleshoot your setup.
+Setting up a source code indexing job in your CI build provides you with fast code intelligence that gives you more control on when source code gets indexed, and ensures accuracy of your code intelligence by keeping in sync with changes in your repository. Due to the large number of CI frameworks and languages we may not have specific documentation for your use case. Feel free to [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new) if you're having difficulties and we can help troubleshoot your setup.
 
 ## Index
 

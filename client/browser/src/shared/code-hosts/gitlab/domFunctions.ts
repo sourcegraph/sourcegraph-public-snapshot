@@ -17,7 +17,10 @@ export const singleFileDOMFunctions: DOMFunctions = {
     getLineElementFromLineNumber: getSingleFileCodeElementFromLineNumber,
 }
 
-const getDiffCodePart: DOMFunctions['getDiffCodePart'] = codeElement => {
+/**
+ * Implementation of `getDiffCodePart` for earlier verisons of GitLab
+ */
+const getDiffCodePartLegacy: DOMFunctions['getDiffCodePart'] = codeElement => {
     let selector = 'old'
 
     const row = codeElement.closest('.diff-td,td')!
@@ -30,7 +33,24 @@ const getDiffCodePart: DOMFunctions['getDiffCodePart'] = codeElement => {
     return row.classList.contains(selector) ? 'base' : 'head'
 }
 
-const getDiffCodeElementFromLineNumber = (codeView: HTMLElement, line: number, part?: DiffPart): HTMLElement | null => {
+const getDiffCodePart: DOMFunctions['getDiffCodePart'] = codeElement => {
+    const interopParent = codeElement.closest<HTMLElement>('[data-interop-type]')
+
+    if (!interopParent) {
+        return getDiffCodePartLegacy(codeElement)
+    }
+
+    return interopParent.dataset.interopType === 'old' ? 'base' : 'head'
+}
+
+/**
+ * Implementation of `getDiffCodeElementFromLineNumber` for earlier verisons of GitLab
+ */
+const getDiffCodeElementFromLineNumberLegacy = (
+    codeView: HTMLElement,
+    line: number,
+    part?: DiffPart
+): HTMLElement | null => {
     const lineNumberElement = codeView.querySelector<HTMLElement>(
         `.${part === 'base' ? 'old_line' : 'new_line'} [data-linenumber="${line}"]`
     )
@@ -53,29 +73,56 @@ const getDiffCodeElementFromLineNumber = (codeView: HTMLElement, line: number, p
     return row.querySelector<HTMLElement>(selector)
 }
 
+const getDiffCodeElementFromLineNumber = (codeView: HTMLElement, line: number, part?: DiffPart): HTMLElement | null => {
+    const type = part === 'base' ? 'old' : 'new'
+
+    const interopChild = codeView.querySelector(`[data-interop-${type}-line="${line}"]`)
+
+    if (!interopChild) {
+        return getDiffCodeElementFromLineNumberLegacy(codeView, line, part)
+    }
+
+    return interopChild.querySelector('span.line')
+}
+
+/**
+ * Implementation of `getDiffLineNumberFromCodeElement` for earlier verisons of GitLab
+ */
+const getDiffLineNumberFromCodeElementLegacy: DOMFunctions['getLineNumberFromCodeElement'] = codeElement => {
+    const part = getDiffCodePart(codeElement)
+
+    let cell: HTMLElement | null = codeElement.closest('.diff-td,td')
+    while (
+        cell &&
+        // It's possible for a line number container to not contain an <a> tag with the line
+        // number, e.g. right side 'old_line' for a deleted file
+        !(cell.matches(`.diff-line-num.${part === 'base' ? 'old_line' : 'new_line'}`) && cell.querySelector('a')) &&
+        cell.previousElementSibling
+    ) {
+        cell = cell.previousElementSibling as HTMLElement | null
+    }
+
+    if (cell) {
+        const a = cell.querySelector<HTMLElement>('a')!
+        return parseInt(a.dataset.linenumber || '', 10)
+    }
+
+    throw new Error('Unable to determine line number for diff code element')
+}
+
+const getDiffLineNumberFromCodeElement: DOMFunctions['getLineNumberFromCodeElement'] = codeElement => {
+    const interopParent = codeElement.closest<HTMLElement>('[data-interop-line]')
+
+    if (!interopParent) {
+        return getDiffLineNumberFromCodeElementLegacy(codeElement)
+    }
+
+    return parseInt(interopParent.dataset.interopLine || '', 10)
+}
+
 export const diffDOMFunctions: DOMFunctions = {
     getCodeElementFromTarget: singleFileDOMFunctions.getCodeElementFromTarget,
-    getLineNumberFromCodeElement: codeElement => {
-        const part = getDiffCodePart(codeElement)
-
-        let cell: HTMLElement | null = codeElement.closest('.diff-td,td')
-        while (
-            cell &&
-            // It's possible for a line number container to not contain an <a> tag with the line
-            // number, e.g. right side 'old_line' for a deleted file
-            !(cell.matches(`.diff-line-num.${part === 'base' ? 'old_line' : 'new_line'}`) && cell.querySelector('a')) &&
-            cell.previousElementSibling
-        ) {
-            cell = cell.previousElementSibling as HTMLElement | null
-        }
-
-        if (cell) {
-            const a = cell.querySelector<HTMLElement>('a')!
-            return parseInt(a.dataset.linenumber || '', 10)
-        }
-
-        throw new Error('Unable to determine line number for diff code element')
-    },
+    getLineNumberFromCodeElement: getDiffLineNumberFromCodeElement,
     getCodeElementFromLineNumber: getDiffCodeElementFromLineNumber,
     getLineElementFromLineNumber: (codeView, line, part) => {
         const codeElement = getDiffCodeElementFromLineNumber(codeView, line, part)

@@ -79,6 +79,13 @@ func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, erro
 	var r Ring
 	var err error
 
+	if keyConfig.BatchChangesCredentialKey != nil {
+		r.BatchChangesCredentialKey, err = NewKey(ctx, keyConfig.BatchChangesCredentialKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if keyConfig.ExternalServiceKey != nil {
 		r.ExternalServiceKey, err = NewKey(ctx, keyConfig.ExternalServiceKey)
 		if err != nil {
@@ -97,8 +104,9 @@ func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, erro
 }
 
 type Ring struct {
-	ExternalServiceKey     encryption.Key
-	UserExternalAccountKey encryption.Key
+	BatchChangesCredentialKey encryption.Key
+	ExternalServiceKey        encryption.Key
+	UserExternalAccountKey    encryption.Key
 }
 
 func NewKey(ctx context.Context, k *schema.EncryptionKey) (encryption.Key, error) {

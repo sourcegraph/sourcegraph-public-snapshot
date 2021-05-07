@@ -7,6 +7,7 @@ import { ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 
 import { queryChangesetSpecFileDiffs } from './backend'
+import styles from './ChangesetApplyPreviewNode.module.scss'
 import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNode'
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
 
@@ -34,14 +35,14 @@ export const ChangesetApplyPreviewNode: React.FunctionComponent<ChangesetApplyPr
     if (node.__typename === 'HiddenChangesetApplyPreview') {
         return (
             <>
-                <span className="changeset-apply-preview-node__separator" />
+                <span className={styles.changesetApplyPreviewNodeSeparator} />
                 <HiddenChangesetApplyPreviewNode node={node} />
             </>
         )
     }
     return (
         <>
-            <span className="changeset-apply-preview-node__separator" />
+            <span className={styles.changesetApplyPreviewNodeSeparator} />
             <VisibleChangesetApplyPreviewNode
                 node={node}
                 history={history}

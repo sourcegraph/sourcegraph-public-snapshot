@@ -10,7 +10,6 @@ site_monitoring.go @bobheadxi
 *zoekt*.go @rvantonder
 
 # Batch changes
-batches.go @LawnGnome
 batches.go @eseliger
 
 # Insights

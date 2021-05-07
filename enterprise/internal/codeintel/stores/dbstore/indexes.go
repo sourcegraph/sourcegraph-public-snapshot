@@ -248,10 +248,12 @@ WHERE %s ORDER BY queued_at DESC LIMIT %d OFFSET %d
 // makeIndexSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an index.
 func makeIndexSearchCondition(term string) *sqlf.Query {
 	searchableColumns := []string{
-		"(u.state)::text",
-		`u.repository_name`,
 		"u.commit",
+		"(u.state)::text",
 		"u.failure_message",
+		`u.repository_name`,
+		"u.root",
+		"u.indexer",
 	}
 
 	var termConds []*sqlf.Query

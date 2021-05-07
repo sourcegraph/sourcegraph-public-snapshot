@@ -907,7 +907,7 @@ func Frontend() *monitoring.Container {
 							Description: "unsuccessful status rate per 5m",
 							Query:       `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="success"}[5m])) by (status)`,
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{status}}").Unit(monitoring.Seconds),
+							Panel:       monitoring.Panel().LegendFormat("{{status}}"),
 							Owner:       monitoring.ObservableOwnerSearch,
 							Interpretation: `
 								- The rate of unsuccessful sentinel query, broken down by failure type

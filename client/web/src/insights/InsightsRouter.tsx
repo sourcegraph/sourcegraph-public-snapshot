@@ -7,8 +7,8 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { HeroPage } from '../components/HeroPage'
 import { lazyComponent } from '../util/lazyComponent'
 
-import { CreationSearchInsightPageProps } from './pages/creation/search-insight-creation/CreationSearchInsightPage'
 import { InsightsPageProps } from './pages/dashboard/InsightsPage'
+import { CreationSearchInsightPageProps } from './pages/creation/search-insight-creation/CreationSearchInsightPage'
 
 const InsightsLazyPage = lazyComponent<InsightsPageProps, 'InsightsPage'>(
     () => import('./pages/dashboard/InsightsPage'),
@@ -16,7 +16,7 @@ const InsightsLazyPage = lazyComponent<InsightsPageProps, 'InsightsPage'>(
 )
 
 const InsightCreateLazyPage = lazyComponent<CreationSearchInsightPageProps, 'CreationSearchInsightPage'>(
-    () => import('./pages/creation/search-insight-creation/CreationSearchInsightPage'),
+    () => import('./pages/search-insight-creation/CreationSearchInsightPage'),
     'CreationSearchInsightPage'
 )
 

@@ -1,12 +1,14 @@
 package database
 
 import (
+	"context"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -36,7 +38,7 @@ type NullAuthenticator struct{ A *auth.Authenticator }
 func (n *NullAuthenticator) Scan(value interface{}) (err error) {
 	switch value := value.(type) {
 	case string:
-		*n.A, err = unmarshalAuthenticator(value)
+		*n.A, err = UnmarshalAuthenticator(value)
 		return err
 	case nil:
 		return nil
@@ -51,6 +53,26 @@ func (n NullAuthenticator) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return marshalAuthenticator(*n.A)
+}
+
+// EncryptAuthenticator encodes _and_ encrypts an Authenticator into a byte
+// slice.
+func EncryptAuthenticator(ctx context.Context, enc encryption.Encrypter, a auth.Authenticator) ([]byte, error) {
+	raw, err := marshalAuthenticator(a)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling authenticator")
+	}
+
+	if enc == nil {
+		return []byte(raw), nil
+	}
+
+	secret, err := enc.Encrypt(ctx, []byte(raw))
+	if err != nil {
+		return nil, errors.Wrap(err, "encrypting credential")
+	}
+
+	return secret, nil
 }
 
 // marshalAuthenticator encodes an Authenticator into a JSON string.
@@ -89,8 +111,8 @@ func marshalAuthenticator(a auth.Authenticator) (string, error) {
 	return string(raw), nil
 }
 
-// unmarshalAuthenticator decodes a JSON string into an Authenticator.
-func unmarshalAuthenticator(raw string) (auth.Authenticator, error) {
+// UnmarshalAuthenticator decodes a JSON string into an Authenticator.
+func UnmarshalAuthenticator(raw string) (auth.Authenticator, error) {
 	// We do two unmarshals: the first just to get the type, and then the second
 	// to actually unmarshal the authenticator itself.
 	var partial struct {

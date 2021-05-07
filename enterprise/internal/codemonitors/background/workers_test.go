@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -42,10 +41,10 @@ func TestActionRunner(t *testing.T) {
 
 	// Create a TestStore.
 	var err error
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	now := time.Now()
 	clock := func() time.Time { return now }
-	s := codemonitors.NewStoreWithClock(dbconn.Global, clock)
+	s := codemonitors.NewStoreWithClock(db, clock)
 	ctx, ts := storetest.NewTestStoreWithStore(t, s)
 
 	tests := []struct {

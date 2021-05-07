@@ -47,15 +47,20 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, clock c
 	}
 
 	t.Run("Create", func(t *testing.T) {
-
+		haveJobs := []*btypes.ChangesetJob{}
 		for _, c := range jobs {
-			want := *c
-			have := c
+			// Copy c.
+			c := *c
+			haveJobs = append(haveJobs, &c)
+		}
+		err := s.CreateChangesetJob(ctx, haveJobs...)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-			err := s.CreateChangesetJob(ctx, have)
-			if err != nil {
-				t.Fatal(err)
-			}
+		for i, c := range haveJobs {
+			want := jobs[i]
+			have := c
 
 			if have.ID == 0 {
 				t.Fatal("ID should not be zero")
@@ -66,7 +71,7 @@ func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, clock c
 			want.CreatedAt = clock.Now()
 			want.UpdatedAt = clock.Now()
 
-			if diff := cmp.Diff(have, &want); diff != "" {
+			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
 			}
 		}

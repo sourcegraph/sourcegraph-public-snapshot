@@ -15,7 +15,7 @@ import { createMockAPI } from './mock-api'
 
 import '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { lazyComponent } from '@sourcegraph/web/src/util/lazyComponent'
-import { Route, Switch } from 'react-router'
+import { Route, Switch, Redirect } from 'react-router'
 import { LayoutRouteProps } from '@sourcegraph/web/src/routes'
 import { authUser } from '@sourcegraph/web/src/search/panels/utils'
 
@@ -74,6 +74,8 @@ export function App(): ReactElement {
                                 )}
                             />
                         ))}
+
+                        <Redirect to="/insights" />
                         {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 </Suspense>

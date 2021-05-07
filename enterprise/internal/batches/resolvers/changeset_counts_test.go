@@ -122,7 +122,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	})
 	defer mockState.Unmock()
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 	sourcer := sources.NewSourcer(cf)
 
 	spec := &btypes.BatchSpec{

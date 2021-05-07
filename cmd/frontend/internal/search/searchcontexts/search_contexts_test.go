@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/stretchr/testify/require"
 )
 
 func init() {
@@ -254,7 +256,7 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 	}
 }
 
-func TestSearchContextNamespaceValidation(t *testing.T) {
+func TestSearchContextWriteAccessValidation(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -288,6 +290,7 @@ func TestSearchContextNamespaceValidation(t *testing.T) {
 		name            string
 		namespaceUserID int32
 		namespaceOrgID  int32
+		public          bool
 		userID          int32
 		wantErr         string
 	}{
@@ -306,7 +309,7 @@ func TestSearchContextNamespaceValidation(t *testing.T) {
 			name:           "current user must be a member of the org namespace",
 			namespaceOrgID: org.ID,
 			userID:         user3.ID,
-			wantErr:        "current user is not an org member",
+			wantErr:        "org member not found",
 		},
 		{
 			name:    "non site-admin users are not valid for instance-level contexts",
@@ -314,18 +317,32 @@ func TestSearchContextNamespaceValidation(t *testing.T) {
 			wantErr: "current user must be site-admin",
 		},
 		{
-			name:   "site-admin is valid for any instance-level context",
+			name:            "site-admin is invalid for private user search context",
+			namespaceUserID: user2.ID,
+			userID:          user1.ID,
+			wantErr:         "search context user does not match current user",
+		},
+		{
+			name:           "site-admin is invalid for private org search context",
+			namespaceOrgID: org.ID,
+			userID:         user1.ID,
+			wantErr:        "org member not found",
+		},
+		{
+			name:   "site-admin is valid for private instance-level context",
 			userID: user1.ID,
 		},
 		{
-			name:            "site-admin is valid for any user namespace",
+			name:            "site-admin is valid for any public user search context",
 			namespaceUserID: user2.ID,
+			public:          true,
 			userID:          user1.ID,
 		},
 		{
-			name:            "site-admin is valid for any org namespace",
-			namespaceUserID: org.ID,
-			userID:          user1.ID,
+			name:           "site-admin is valid for any public org search context",
+			namespaceOrgID: org.ID,
+			public:         true,
+			userID:         user1.ID,
 		},
 		{
 			name:            "current user is valid if matches the user namespace",
@@ -343,7 +360,7 @@ func TestSearchContextNamespaceValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: tt.userID})
 
-			err := validateSearchContextNamespaceForCurrentUser(ctx, db, tt.namespaceUserID, tt.namespaceOrgID)
+			err := validateSearchContextWriteAccessForCurrentUser(ctx, db, tt.namespaceUserID, tt.namespaceOrgID, tt.public)
 
 			expectErr := tt.wantErr != ""
 			if !expectErr && err != nil {
@@ -407,6 +424,11 @@ func TestCreatingSearchContexts(t *testing.T) {
 			wantErr:       "\"invalid name\" is not a valid search context name",
 		},
 		{
+			name:          "can create search context with non-space separators",
+			searchContext: &types.SearchContext{Name: "version_1.2-final/3"},
+			userID:        user1.ID,
+		},
+		{
 			name:          "cannot create search context with name too long",
 			searchContext: &types.SearchContext{Name: tooLongName},
 			userID:        user1.ID,
@@ -451,6 +473,90 @@ func TestCreatingSearchContexts(t *testing.T) {
 			if expectErr && err != nil && !strings.Contains(err.Error(), tt.wantErr) {
 				t.Fatalf("wanted error containing %s, got %s", tt.wantErr, err)
 			}
+		})
+	}
+}
+
+func TestUpdatingSearchContexts(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	internalCtx := actor.WithInternalActor(context.Background())
+	db := dbtesting.GetDB(t)
+	u := database.Users(db)
+
+	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	require.NoError(t, err)
+
+	repos, err := createRepos(internalCtx, database.Repos(db))
+	require.NoError(t, err)
+
+	var scs []*types.SearchContext
+	for i := 0; i < 6; i++ {
+		sc, err := database.SearchContexts(db).CreateSearchContextWithRepositoryRevisions(
+			internalCtx,
+			&types.SearchContext{Name: strconv.Itoa(i)},
+			[]*types.SearchContextRepositoryRevisions{},
+		)
+		require.NoError(t, err)
+		scs = append(scs, sc)
+	}
+
+	set := func(sc *types.SearchContext, f func(*types.SearchContext)) *types.SearchContext {
+		copied := *sc
+		f(&copied)
+		return &copied
+	}
+
+	tests := []struct {
+		name                string
+		update              *types.SearchContext
+		repositoryRevisions []*types.SearchContextRepositoryRevisions
+		userID              int32
+		wantErr             string
+	}{
+		{
+			name:    "cannot create search context with global name",
+			update:  &types.SearchContext{Name: "global"},
+			wantErr: "cannot update global search context",
+		},
+		{
+			name:    "cannot update search context to use an invalid name",
+			update:  set(scs[0], func(sc *types.SearchContext) { sc.Name = "invalid name" }),
+			wantErr: "not a valid search context name",
+		},
+		{
+			name:    "cannot update search context with name too long",
+			update:  set(scs[1], func(sc *types.SearchContext) { sc.Name = strings.Repeat("x", 33) }),
+			wantErr: "exceeds maximum allowed length (32)",
+		},
+		{
+			name:    "cannot update search context with description too long",
+			update:  set(scs[2], func(sc *types.SearchContext) { sc.Description = strings.Repeat("x", 1025) }),
+			wantErr: "search context description exceeds maximum allowed length (1024)",
+		},
+		{
+			name:   "cannot update search context with revisions too long",
+			update: scs[3],
+			repositoryRevisions: []*types.SearchContextRepositoryRevisions{
+				{Repo: repos[0], Revisions: []string{strings.Repeat("x", 256)}},
+			},
+			wantErr: "exceeds maximum allowed length (255)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user1.ID})
+
+			updated, err := UpdateSearchContextWithRepositoryRevisions(ctx, db, tt.update, tt.repositoryRevisions)
+			if tt.wantErr != "" {
+				require.Contains(t, err.Error(), tt.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tt.update, updated)
 		})
 	}
 }

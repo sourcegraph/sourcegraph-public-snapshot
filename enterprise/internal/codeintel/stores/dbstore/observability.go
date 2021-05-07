@@ -50,12 +50,14 @@ type operations struct {
 	markRepositoryAsDirty                  *observation.Operation
 	queueSize                              *observation.Operation
 	referenceIDsAndFilters                 *observation.Operation
+	refreshCommitResolvability             *observation.Operation
 	repoName                               *observation.Operation
 	repoUsageStatistics                    *observation.Operation
 	requeue                                *observation.Operation
 	requeueIndex                           *observation.Operation
 	resetIndexableRepositories             *observation.Operation
 	softDeleteOldUploads                   *observation.Operation
+	staleSourcedCommits                    *observation.Operation
 	updateCommitedAt                       *observation.Operation
 	updateIndexableRepository              *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
@@ -136,12 +138,14 @@ func newOperations(observationContext *observation.Context) *operations {
 		markRepositoryAsDirty:                  op("MarkRepositoryAsDirty"),
 		queueSize:                              op("QueueSize"),
 		referenceIDsAndFilters:                 op("ReferenceIDsAndFilters"),
+		refreshCommitResolvability:             op("RefreshCommitResolvability"),
 		repoName:                               op("RepoName"),
 		repoUsageStatistics:                    op("RepoUsageStatistics"),
 		requeue:                                op("Requeue"),
 		requeueIndex:                           op("RequeueIndex"),
 		resetIndexableRepositories:             op("ResetIndexableRepositories"),
 		softDeleteOldUploads:                   op("SoftDeleteOldUploads"),
+		staleSourcedCommits:                    op("StaleSourcedCommits"),
 		updateCommitedAt:                       op("UpdateCommitedAt"),
 		updateIndexableRepository:              op("UpdateIndexableRepository"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),

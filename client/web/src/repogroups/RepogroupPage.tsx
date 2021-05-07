@@ -51,7 +51,7 @@ export interface RepogroupPageProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         CopyQueryButtonProps,
         VersionContextProps,
-        SearchContextProps,
+        Omit<SearchContextProps, 'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable'>,
         OnboardingTourProps,
         ShowQueryBuilderProps {
     authenticatedUser: AuthenticatedUser | null

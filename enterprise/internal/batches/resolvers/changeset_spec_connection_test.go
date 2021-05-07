@@ -28,7 +28,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 
 	batchSpec := &btypes.BatchSpec{
 		UserID:          userID,

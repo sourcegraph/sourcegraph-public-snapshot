@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"sync"
 
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -19,8 +17,6 @@ import (
 
 type SavedSearchStore struct {
 	*basestore.Store
-
-	once sync.Once
 }
 
 // SavedSearches instantiates and returns a new SavedSearchStore with prepared statements.
@@ -42,22 +38,9 @@ func (s *SavedSearchStore) Transact(ctx context.Context) (*SavedSearchStore, err
 	return &SavedSearchStore{Store: txBase}, err
 }
 
-// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
-// This function ensures access to dbconn happens after the rest of the code or tests have
-// initialized it.
-func (s *SavedSearchStore) ensureStore() {
-	s.once.Do(func() {
-		if s.Store == nil {
-			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-		}
-	})
-}
-
 // IsEmpty tells if there are no saved searches (at all) on this Sourcegraph
 // instance.
 func (s *SavedSearchStore) IsEmpty(ctx context.Context) (bool, error) {
-	s.ensureStore()
-
 	q := `SELECT true FROM saved_searches LIMIT 1`
 	var isNotEmpty bool
 	err := s.Handle().DB().QueryRowContext(ctx, q).Scan(&isNotEmpty)
@@ -79,7 +62,6 @@ func (s *SavedSearchStore) ListAll(ctx context.Context) (savedSearches []api.Sav
 	if Mocks.SavedSearches.ListAll != nil {
 		return Mocks.SavedSearches.ListAll(ctx)
 	}
-	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "database.SavedSearches.ListAll", "")
 	defer func() {
@@ -137,7 +119,6 @@ func (s *SavedSearchStore) GetByID(ctx context.Context, id int32) (*api.SavedQue
 	if Mocks.SavedSearches.GetByID != nil {
 		return Mocks.SavedSearches.GetByID(ctx, id)
 	}
-	s.ensureStore()
 
 	var sq api.SavedQuerySpecAndConfig
 	err := s.Handle().DB().QueryRowContext(ctx, `SELECT
@@ -181,7 +162,6 @@ func (s *SavedSearchStore) ListSavedSearchesByUserID(ctx context.Context, userID
 	if Mocks.SavedSearches.ListSavedSearchesByUserID != nil {
 		return Mocks.SavedSearches.ListSavedSearchesByUserID(ctx, userID)
 	}
-	s.ensureStore()
 
 	var savedSearches []*types.SavedSearch
 	orgs, err := OrgsWith(s).GetByUserID(ctx, userID)
@@ -235,8 +215,6 @@ func (s *SavedSearchStore) ListSavedSearchesByUserID(ctx context.Context, userID
 // members of the specified organization can access the returned saved
 // searches.
 func (s *SavedSearchStore) ListSavedSearchesByOrgID(ctx context.Context, orgID int32) ([]*types.SavedSearch, error) {
-	s.ensureStore()
-
 	var savedSearches []*types.SavedSearch
 	conds := sqlf.Sprintf("WHERE org_id=%d", orgID)
 	query := sqlf.Sprintf(`SELECT
@@ -275,7 +253,6 @@ func (s *SavedSearchStore) Create(ctx context.Context, newSavedSearch *types.Sav
 	if Mocks.SavedSearches.Create != nil {
 		return Mocks.SavedSearches.Create(ctx, newSavedSearch)
 	}
-	s.ensureStore()
 
 	if newSavedSearch.ID != 0 {
 		return nil, errors.New("newSavedSearch.ID must be zero")
@@ -326,7 +303,6 @@ func (s *SavedSearchStore) Update(ctx context.Context, savedSearch *types.SavedS
 	if Mocks.SavedSearches.Update != nil {
 		return Mocks.SavedSearches.Update(ctx, savedSearch)
 	}
-	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "database.SavedSearches.Update", "")
 	defer func() {
@@ -371,7 +347,6 @@ func (s *SavedSearchStore) Delete(ctx context.Context, id int32) (err error) {
 	if Mocks.SavedSearches.Delete != nil {
 		return Mocks.SavedSearches.Delete(ctx, id)
 	}
-	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "database.SavedSearches.Delete", "")
 	defer func() {

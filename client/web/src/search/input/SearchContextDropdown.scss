@@ -17,6 +17,7 @@
         &:active,
         &:focus {
             text-decoration: none;
+            color: var(--search-query-text-color);
         }
 
         &:hover,

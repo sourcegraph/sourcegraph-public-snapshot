@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -34,10 +33,10 @@ func TestCreateCodeMonitor(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
-	r := newTestResolver(t)
+	db := dbtesting.GetDB(t)
+	r := newTestResolver(t, db)
 
-	userID := insertTestUser(t, dbconn.Global, "cm-user1", true)
+	userID := insertTestUser(t, db, "cm-user1", true)
 
 	want := &cm.Monitor{
 		ID:              1,
@@ -91,10 +90,10 @@ func TestListCodeMonitors(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
-	r := newTestResolver(t)
+	db := dbtesting.GetDB(t)
+	r := newTestResolver(t, db)
 
-	userID := insertTestUser(t, dbconn.Global, "cm-user1", true)
+	userID := insertTestUser(t, db, "cm-user1", true)
 	ctx = actor.WithActor(ctx, actor.FromUser(userID))
 
 	// Create a monitor.
@@ -180,21 +179,21 @@ func TestIsAllowedToEdit(t *testing.T) {
 		t.Skip()
 	}
 
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
 	// Setup users and org
-	member := insertTestUser(t, dbconn.Global, "cm-user1", false)
-	notMember := insertTestUser(t, dbconn.Global, "cm-user2", false)
-	siteAdmin := insertTestUser(t, dbconn.Global, "cm-user3", true)
+	member := insertTestUser(t, db, "cm-user1", false)
+	notMember := insertTestUser(t, db, "cm-user2", false)
+	siteAdmin := insertTestUser(t, db, "cm-user3", true)
 
 	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
-	org, err := database.GlobalOrgs.Create(admContext, "cm-test-org", nil)
+	org, err := database.Orgs(db).Create(admContext, "cm-test-org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	addUserToOrg(t, dbconn.Global, member, org.ID)
+	addUserToOrg(t, db, member, org.ID)
 
-	r := newTestResolver(t)
+	r := newTestResolver(t, db)
 
 	// Create a monitor and set org as owner.
 	ownerOpt := WithOwner(relay.MarshalID("Org", org.ID))
@@ -235,21 +234,21 @@ func TestIsAllowedToCreate(t *testing.T) {
 		t.Skip()
 	}
 
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 
 	// Setup users and org
-	member := insertTestUser(t, dbconn.Global, "cm-user1", false)
-	notMember := insertTestUser(t, dbconn.Global, "cm-user2", false)
-	siteAdmin := insertTestUser(t, dbconn.Global, "cm-user3", true)
+	member := insertTestUser(t, db, "cm-user1", false)
+	notMember := insertTestUser(t, db, "cm-user2", false)
+	siteAdmin := insertTestUser(t, db, "cm-user3", true)
 
 	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
-	org, err := database.GlobalOrgs.Create(admContext, "cm-test-org", nil)
+	org, err := database.Orgs(db).Create(admContext, "cm-test-org", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	addUserToOrg(t, dbconn.Global, member, org.ID)
+	addUserToOrg(t, db, member, org.ID)
 
-	r := newTestResolver(t)
+	r := newTestResolver(t, db)
 
 	tests := []struct {
 		user    int32
@@ -313,14 +312,14 @@ func TestQueryMonitor(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
-	r := newTestResolver(t)
+	db := dbtesting.GetDB(t)
+	r := newTestResolver(t, db)
 
 	// Create 2 test users.
 	user1 := &testUser{name: "cm-user1"}
-	user1.idInt32 = insertTestUser(t, dbconn.Global, user1.name, true)
+	user1.idInt32 = insertTestUser(t, db, user1.name, true)
 	user2 := &testUser{name: "cm-user2"}
-	user2.idInt32 = insertTestUser(t, dbconn.Global, user2.name, true)
+	user2.idInt32 = insertTestUser(t, db, user2.name, true)
 
 	// Create 2 code monitors, each with 1 trigger, 2 actions and two recipients per action.
 	ctx = actor.WithActor(ctx, actor.FromUser(user1.idInt32))
@@ -387,7 +386,7 @@ func TestQueryMonitor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	schema, err := graphqlbackend.NewSchema(dbconn.Global, nil, nil, nil, nil, r, nil, nil)
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, r, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -585,16 +584,16 @@ func TestEditCodeMonitor(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	dbtesting.SetupGlobalTestDB(t)
-	r := newTestResolver(t)
+	db := dbtesting.GetDB(t)
+	r := newTestResolver(t, db)
 
 	// Create 2 test users.
 	user1Name := "cm-user1"
-	user1ID := insertTestUser(t, dbconn.Global, user1Name, true)
+	user1ID := insertTestUser(t, db, user1Name, true)
 	ns1 := relay.MarshalID("User", user1ID)
 
 	user2Name := "cm-user2"
-	user2ID := insertTestUser(t, dbconn.Global, user2Name, true)
+	user2ID := insertTestUser(t, db, user2Name, true)
 	ns2 := relay.MarshalID("User", user2ID)
 
 	// Create a code monitor with 1 trigger and 2 actions.
@@ -623,7 +622,7 @@ func TestEditCodeMonitor(t *testing.T) {
 
 	// Update the code monitor.
 	// We update all fields, delete one action, and add a new action.
-	schema, err := graphqlbackend.NewSchema(dbconn.Global, nil, nil, nil, nil, r, nil, nil)
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, r, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1164,7 +1163,7 @@ func TestTriggerTestEmailAction(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	r := newTestResolver(t)
+	r := newTestResolver(t, nil)
 
 	userID := 1
 	namespaceID := relay.MarshalID("User", actor.FromContext(ctx).UID)

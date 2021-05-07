@@ -53,15 +53,15 @@ svg.railroad-diagram path {
 
 svg.railroad-diagram text {
     font: 14px var(--monospace-font-family);
-	fill: var(--text-color);
+    fill: var(--text-color);
     text-anchor: middle;
     white-space: pre;
 }
 svg.railroad-diagram a text {
-	fill: var(--link-color);
+    fill: var(--link-color);
 }
 svg.railroad-diagram a:hover text {
-	text-decoration: underline;
+    text-decoration: underline;
 }
 svg.railroad-diagram text.diagram-text {
     font-size: 12px;
@@ -81,7 +81,7 @@ svg.railroad-diagram g.non-terminal text {
 svg.railroad-diagram rect {
     stroke-width: 2;
     stroke: var(--text-color);
-	fill: none;
+    fill: none;
 }
 svg.railroad-diagram rect.group-box {
     stroke: gray;
@@ -109,18 +109,18 @@ on itself like this:
 
 <script>
 ComplexDiagram(
-		OneOrMore(
-			Terminal("repeatable"))).addTo();
+    OneOrMore(
+    Terminal("repeatable"))).addTo();
 </script>
 
 ## Basic query
 
 <script>
 ComplexDiagram(
-	OneOrMore(
-		Choice(0,
-			Terminal("search pattern", {href: "#search-pattern"}),
-			Terminal("parameter", {href: "#parameter"})))).addTo();
+    OneOrMore(
+        Choice(0,
+            Terminal("search pattern", {href: "#search-pattern"}),
+            Terminal("parameter", {href: "#parameter"})))).addTo();
 </script>
 
 At a basic level, a query consists of [search patterns](#search-pattern) and [parameters](#parameter). Typical queries contain one or more space-separated search patterns that describe what to search, and parameters refine searches by filtering results or changing search behavior.
@@ -132,15 +132,15 @@ At a basic level, a query consists of [search patterns](#search-pattern) and [pa
 
 <script>
 ComplexDiagram(
-	Terminal("basic query", {href: "#basic-query"}),
-	ZeroOrMore(
-		Sequence(
-			Choice(0,
-				Terminal("AND"),
-				Terminal("OR")),
-			Terminal("basic query", {href: "#basic-query"})),
-		null,
-		'skip')).addTo();
+    Terminal("basic query", {href: "#basic-query"}),
+    ZeroOrMore(
+        Sequence(
+            Choice(0,
+                Terminal("AND"),
+                Terminal("OR")),
+            Terminal("basic query", {href: "#basic-query"})),
+        null,
+        'skip')).addTo();
 </script>
 
 
@@ -154,9 +154,9 @@ Group expressions with parentheses to build more complex expressions. If there a
 
 <script>
 ComplexDiagram(
-	Choice(0,
-		Terminal("string", {href: "#string"}),
-		Terminal("quoted string", {href: "#quoted-string"}))).addTo();
+    Choice(0,
+        Terminal("string", {href: "#string"}),
+        Terminal("quoted string", {href: "#quoted-string"}))).addTo();
 </script>
 
 A pattern to search. By default the pattern is searched literally. The kind of search may be toggled to change how a pattern matches:
@@ -171,23 +171,23 @@ A pattern to search. By default the pattern is searched literally. The kind of s
 
 <script>
 ComplexDiagram(
-	Choice(0,
-		Terminal("repo", {href: "#repo"}),
-		Terminal("file", {href: "#file"}),
-		Terminal("content", {href: "#content"}),
-		Terminal("select", {href: "#select"}),
-		Terminal("language", {href: "#language"}),
-		Terminal("type", {href: "#type"}),
-		Terminal("case", {href: "#case"}),
-		Terminal("fork", {href: "#fork"}),
-		Terminal("archived", {href: "#archived"}),
-		Terminal("repogroup", {href: "#repogroup"}),
-		Terminal("repohasfile", {href: "#repo-has-file"}),
-		Terminal("repohascommitafter", {href: "#repo-has-commit-after"}),
-		Terminal("count", {href: "#count"}),
-		Terminal("timeout", {href: "#timeout"}),
-		Terminal("visibility", {href: "#visibility"}),
-		Terminal("patterntype", {href: "#pattern-type"}))).addTo();
+    Choice(0,
+        Terminal("repo", {href: "#repo"}),
+        Terminal("file", {href: "#file"}),
+        Terminal("content", {href: "#content"}),
+        Terminal("select", {href: "#select"}),
+        Terminal("language", {href: "#language"}),
+        Terminal("type", {href: "#type"}),
+        Terminal("case", {href: "#case"}),
+        Terminal("fork", {href: "#fork"}),
+        Terminal("archived", {href: "#archived"}),
+        Terminal("repogroup", {href: "#repogroup"}),
+        Terminal("repohasfile", {href: "#repo-has-file"}),
+        Terminal("repohascommitafter", {href: "#repo-has-commit-after"}),
+        Terminal("count", {href: "#count"}),
+        Terminal("timeout", {href: "#timeout"}),
+        Terminal("visibility", {href: "#visibility"}),
+        Terminal("patterntype", {href: "#pattern-type"}))).addTo();
 </script>
 
 Search parameters allow you to filter search results or modify search behavior.
@@ -196,31 +196,33 @@ Search parameters allow you to filter search results or modify search behavior.
 
 <script>
 ComplexDiagram(
-		Choice(0,
-			Skip(),
-			Terminal("-"),
-			Sequence(
-				Terminal("NOT"),
-				Terminal("space", {href: "#whitespace"}))),
-		Choice(0,
-			Terminal("repo:"),
-			Terminal("r:")),
-		Terminal("regex", {href: "#regular-expression"}),
-	Choice(0,
-		Skip(),
-		Sequence(
-			Terminal("@"),
-			Terminal("revision", {href: "#revision"})),
-		Sequence(
-			Terminal("space", {href: "#whitespace"}),
-			Terminal("rev:"),
-			Terminal("revision", {href: "#revision"})))).addTo();
+    Choice(0,
+        Skip(),
+        Terminal("-"),
+        Sequence(
+            Terminal("NOT"),
+            Terminal("space", {href: "#whitespace"}))),
+    Choice(0,
+        Terminal("repo:"),
+        Terminal("r:")),
+    Choice(0,
+        Terminal("regex", {href: "#regular-expression"}),
+        Terminal("built-in", {href: "#built-in-predicate"})),
+    Choice(0,
+        Skip(),
+        Sequence(
+            Terminal("@"),
+            Terminal("revision", {href: "#revision"})),
+        Sequence(
+            Terminal("space", {href: "#whitespace"}),
+            Terminal("rev:"),
+            Terminal("revision", {href: "#revision"})))).addTo();
 </script>
 
-Search repositories that match the regular expression.
-A `-` before `repo` excludes the repository. By default
-the repository will be searched at the `HEAD` commit of the default
-branch. You can optionally change the [revision](#revision).
+Search repositories that match the regular expression. A `-` before `repo`
+excludes the repository. By default the repository will be searched at the
+`HEAD` commit of the default branch. You can optionally change the
+[revision](#revision).
 
 **Example:** `repo:gorilla/mux testroute` [↗](https://sourcegraph.com/search?q=repo:gorilla/mux+testroute&patternType=regexp) `-repo:gorilla/mux testroute` [↗](https://sourcegraph.com/search?q=-repo:gorilla/mux+testroute&patternType=regexp)
 
@@ -228,12 +230,12 @@ branch. You can optionally change the [revision](#revision).
 
 <script>
 ComplexDiagram(
-	OneOrMore(
-		Choice(0,
-			Terminal("branch name"),
-			Terminal("commit hash"),
-			Terminal("git tag")),
-		Terminal(":"))).addTo();
+    OneOrMore(
+        Choice(0,
+            Terminal("branch name"),
+            Terminal("commit hash"),
+            Terminal("git tag")),
+            Terminal(":"))).addTo();
 </script>
 
 
@@ -249,16 +251,16 @@ You can search multiple revisions by separating the revisions with `:`. Specify 
 
 <script>
 ComplexDiagram(
-		Choice(0,
-			Skip(),
-			Terminal("-"),
-			Sequence(
-				Terminal("NOT"),
-				Terminal("space", {href: "#whitespace"}))),
-		Choice(0,
-			Terminal("file:"),
-			Terminal("f:")),
-		Terminal("regular expression", {href: "#regular-expression"})).addTo();
+    Choice(0,
+        Skip(),
+        Terminal("-"),
+        Sequence(
+            Terminal("NOT"),
+            Terminal("space", {href: "#whitespace"}))),
+    Choice(0,
+        Terminal("file:"),
+        Terminal("f:")),
+        Terminal("regular expression", {href: "#regular-expression"})).addTo();
 </script>
 
 Search files whose full path matches the regular expression. A `-` before `file`
@@ -270,10 +272,10 @@ excludes the file from being searched.
 
 <script>
 ComplexDiagram(
-		Choice(0,
-			Terminal("language"),
-			Terminal("lang"),
-			Terminal("l"))).addTo();
+    Choice(0,
+        Terminal("language"),
+        Terminal("lang"),
+        Terminal("l"))).addTo();
 </script>
 
 Only search files in the specified programming language, like `typescript` or
@@ -286,14 +288,14 @@ Only search files in the specified programming language, like `typescript` or
 
 <script>
 ComplexDiagram(
-		Choice(0,
-			Skip(),
-			Terminal("-"),
-			Sequence(
-				Terminal("NOT"),
-				Terminal("space", {href: "#whitespace"}))),
-		Terminal("content:"),
-		Terminal("quoted string", {href: "#quoted-string"})).addTo();
+    Choice(0,
+        Skip(),
+        Terminal("-"),
+        Sequence(
+            Terminal("NOT"),
+            Terminal("space", {href: "#whitespace"}))),
+    Terminal("content:"),
+    Terminal("quoted string", {href: "#quoted-string"})).addTo();
 </script>
 
 Set the search pattern to search using a dedicated parameter. Useful, for
@@ -306,19 +308,23 @@ conflict with the syntax of parameters in this Sourcegraph language.
 
 <script>
 ComplexDiagram(
-	Terminal("select:"),
-	Choice(0,
-		Terminal("repo"),
-		Terminal("file"),
-		Terminal("path"),
-		Terminal("content"),
-		Sequence(
-			Terminal("symbol"),
-			Optional(
-				Sequence(
-					Terminal("."),
-					Terminal("symbol kind", {href: "#symbol-kind"})),
-				'skip')))).addTo();
+    Terminal("select:"),
+    Choice(0,
+        Terminal("repo"),
+        Terminal("file"),
+        Terminal("path"),
+        Terminal("content"),
+        Sequence(
+            Terminal("symbol"),
+            Optional(
+                Sequence(
+                    Terminal("."),
+                    Terminal("symbol kind", {href: "#symbol-kind"})),
+                'skip')),
+        Sequence(
+            Terminal("commit.diff"),
+            Terminal("."),
+            Terminal("modified lines", {href: "#modified-lines"})))).addTo();
 </script>
 
 Selects the specified result type from the set of search results. If a query produces results that aren't of the
@@ -340,33 +346,33 @@ and cannot be converted to that type.
 
 <script>
 ComplexDiagram(
-	Choice(0,
-		Terminal("file"),
-		Terminal("module"),
-		Terminal("namespace"),
-		Terminal("package"),
-		Terminal("class"),
-		Terminal("method"),
-		Terminal("property"),
-		Terminal("field"),
-		Terminal("constructor"),
-		Terminal("enum"),
-		Terminal("interface"),
-		Terminal("function"),
-		Terminal("variable"),
-		Terminal("constant"),
-		Terminal("string"),
-		Terminal("number"),
-		Terminal("boolean"),
-		Terminal("array"),
-		Terminal("object"),
-		Terminal("key"),
-		Terminal("null"),
-		Terminal("enum-member"),
-		Terminal("struct"),
-		Terminal("event"),
-		Terminal("operator"),
-		Terminal("type-parameter"))).addTo();
+    Choice(0,
+        Terminal("file"),
+        Terminal("module"),
+        Terminal("namespace"),
+        Terminal("package"),
+        Terminal("class"),
+        Terminal("method"),
+        Terminal("property"),
+        Terminal("field"),
+        Terminal("constructor"),
+        Terminal("enum"),
+        Terminal("interface"),
+        Terminal("function"),
+        Terminal("variable"),
+        Terminal("constant"),
+        Terminal("string"),
+        Terminal("number"),
+        Terminal("boolean"),
+        Terminal("array"),
+        Terminal("object"),
+        Terminal("key"),
+        Terminal("null"),
+        Terminal("enum-member"),
+        Terminal("struct"),
+        Terminal("event"),
+        Terminal("operator"),
+        Terminal("type-parameter"))).addTo();
 </script>
 
 Select a specific kind of symbol. For example `type:symbol select:symbol.function zoektSearch` will only return functions that contain the
@@ -375,22 +381,41 @@ literal `zoektSearch`.
 **Example:**
 `type:symbol zoektSearch select:symbol.function` [↗](https://sourcegraph.com/search?q=type:symbol+zoektSearch+select:symbol.function&patternType=literal)
 
+#### Modified lines
+
+<script>
+ComplexDiagram(
+    Choice(0,
+        Terminal("added"),
+        Terminal("removed"))).addTo();
+</script>
+
+When searching commit diffs, select only diffs where the pattern matches on
+`added` (respectively, `removed`) lines. For example, search for recent commits
+that removed `TODO`s in your code.
+
+<small>- Note: if _any_ line exists that satisfies the condition, the entire diff is included in the result set.</small><br>
+<small>- Note: `type:diff` must be specified in the query.</small>
+
+**Example:**
+
+`repo:^github\.com/sourcegraph/sourcegraph$ type:diff TODO select:commit.diff.removed` [↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type:diff+TODO+select:commit.diff.removed+&patternType=literal)
 
 ### Type
 
 <script>
 ComplexDiagram(
-		Terminal("type:"),
-		Choice(0,
-			Terminal("symbol"),
-			Terminal("repo"),
-			Terminal("path"),
-			Terminal("file"),
-			Sequence(
-				Choice(0,
-					Terminal("commit"),
-					Terminal("diff")),
-				Terminal("commit parameter", {href: "#commit-parameter"})))).addTo();
+    Terminal("type:"),
+    Choice(0,
+        Terminal("symbol"),
+        Terminal("repo"),
+        Terminal("path"),
+        Terminal("file"),
+        Sequence(
+            Choice(0,
+            Terminal("commit"),
+            Terminal("diff")),
+            Terminal("commit parameter", {href: "#commit-parameter"})))).addTo();
 </script>
 
 Set whether the search pattern should perform a search of a certain type.
@@ -402,10 +427,10 @@ Notable search types are symbol, commit, and diff searches.
 
 <script>
 ComplexDiagram(
-		Terminal("case:"),
-		Choice(0,
-			Terminal("yes"),
-			Terminal("no"))).addTo();
+    Terminal("case:"),
+    Choice(0,
+        Terminal("yes"),
+        Terminal("no"))).addTo();
 </script>
 
 
@@ -419,15 +444,15 @@ synonymous with the <span class="toggle-container"><img class="toggle" src=../im
 
 <script>
 ComplexDiagram(
-		Terminal("fork:"),
-		Choice(0,
-			Terminal("yes"),
-			Terminal("no"),
-			Terminal("only"))).addTo();
+    Terminal("fork:"),
+    Choice(0,
+        Terminal("yes"),
+        Terminal("no"),
+        Terminal("only"))).addTo();
 </script>
 
 Set to `yes` if repository forks should be included or `only` if only forks
-should be searched. Respository forks are excluded by default.
+should be searched. Repository forks are excluded by default.
 
 **Example:** `fork:yes repo:sourcegraph` [↗](https://sourcegraph.com/search?q=fork:yes+repo:sourcegraph&patternType=regexp)
 
@@ -435,11 +460,11 @@ should be searched. Respository forks are excluded by default.
 
 <script>
 ComplexDiagram(
-		Terminal("archived:"),
-		Choice(0,
-			Terminal("yes"),
-			Terminal("no"),
-			Terminal("only"))).addTo();
+    Terminal("archived:"),
+    Choice(0,
+        Terminal("yes"),
+        Terminal("no"),
+        Terminal("only"))).addTo();
 </script>
 
 Set to `yes` if archived repositories should be included or `only` if only
@@ -451,10 +476,10 @@ archives should be searched. Archived repositories are excluded by default.
 
 <script>
 ComplexDiagram(
-		Choice(0,
-			Terminal("repogroup:"),
-			Terminal("g:")),
-		Terminal("string")).addTo()
+    Choice(0,
+        Terminal("repogroup:"),
+        Terminal("g:")),
+        Terminal("string")).addTo()
 </script>
 
 Only include results from the named group of repositories (defined by the server
@@ -468,17 +493,17 @@ exists.
 
 <script>
 ComplexDiagram(
-		Choice(0,
-			Skip(),
-			Terminal("-"),
-			Sequence(
-				Terminal("NOT"),
-				Terminal("space", {href: "#whitespace"}))),
-		Terminal("repohasfile:"),
-		Terminal("regular expression", {href: "#regular-expression"})).addTo();
+    Choice(0,
+        Skip(),
+        Terminal("-"),
+        Sequence(
+            Terminal("NOT"),
+            Terminal("space", {href: "#whitespace"}))),
+    Terminal("repohasfile:"),
+    Terminal("regular expression", {href: "#regular-expression"})).addTo();
 </script>
 
-Only include results from repositories that contain a matching file. This
+_Deprecated. Prefer [Repo contains file](#repo-contains-file)._ Only include results from repositories that contain a matching file. This
 keyword is a pure filter, so it requires at least one other search term in the
 query. Note: this filter currently only works on text matches and file path
 matches.
@@ -489,12 +514,12 @@ matches.
 
 <script>
 ComplexDiagram(
-		Terminal("repohascommitafter:"),
-		Terminal("quoted string", {href: "#quoted-string"})).addTo();
+    Terminal("repohascommitafter:"),
+    Terminal("quoted string", {href: "#quoted-string"})).addTo();
 </script>
 
-Filter out stale repositories that don’t contain commits past the specified time
-frame. This parameter is experimental.
+_Deprecated. Prefer [Repo contains commit after](#repo-contains-commit-after)._ Filter out stale repositories that don’t
+contain commits past the specified time frame. This parameter is experimental.
 
 **Example:** `repo:github\.com/sourcegraph repohascommitafter:"1 week ago"` [↗](https://sourcegraph.com/search?q=context:global+repo:github%5C.com/sourcegraph+repohascommitafter:%221+week+ago%22&patternType=literal)
 
@@ -502,10 +527,10 @@ frame. This parameter is experimental.
 
 <script>
 ComplexDiagram(
-		Terminal("count:"),
-		Choice(0,
-			Terminal("number"),
-			Terminal("all"))).addTo();
+    Terminal("count:"),
+    Choice(0,
+        Terminal("number"),
+        Terminal("all"))).addTo();
 </script>
 
 Retrieve N results. By default, Sourcegraph stops searching early and
@@ -518,8 +543,8 @@ interactive searches. To wait for all results, use **count:all**.
 
 <script>
 ComplexDiagram(
-		Terminal("timeout:"),
-		Terminal("time value")).addTo();
+    Terminal("timeout:"),
+    Terminal("time value")).addTo();
 </script>
 
 
@@ -536,11 +561,11 @@ than 1 minute.
 
 <script>
 ComplexDiagram(
-		Terminal("visibility:"),
-		Choice(0,
-			Terminal("any"),
-			Terminal("public"),
-			Terminal("private"))).addTo();
+    Terminal("visibility:"),
+    Choice(0,
+        Terminal("any"),
+        Terminal("public"),
+        Terminal("private"))).addTo();
 </script>
 
 Filter results to only public or private repositories. The default is to include
@@ -552,11 +577,11 @@ both private and public repositories.
 
 <script>
 ComplexDiagram(
-		Terminal("patterntype:"),
-		Choice(0,
-			Terminal("literal"),
-			Terminal("regexp"),
-			Terminal("structural"))).addTo();
+    Terminal("patterntype:"),
+    Choice(0,
+        Terminal("literal"),
+        Terminal("regexp"),
+        Terminal("structural"))).addTo();
 </script>
 
 
@@ -565,13 +590,85 @@ or a structural search pattern. This parameter is available as a command-line an
 accessibility option, and synonymous with the visual [search pattern](#search-pattern) toggles.
 in [search pattern](#search-pattern).
 
+## Built-in predicate
+
+<script>
+ComplexDiagram(
+    Choice(0,
+        Terminal("contains.content(...)", {href: "#repo-contains-content"}),
+        Terminal("contains.file(...)", {href: "#repo-contains-file"}),
+        Terminal("contains(...)", {href: "#repo-contains-file-and-content"}),
+        Terminal("contains.commit.after(...)", {href: "#repo-contains-commit-after"}))).addTo();
+</script>
+
+### Repo contains file
+
+<script>
+ComplexDiagram(
+    Terminal("contains.file"),
+    Terminal("("),
+    Terminal("regexp", {href: "#regexp"}),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositories that contain a file path matching the regular expression.
+
+**Example:** `repo:contains.file(README)` [↗](https://sourcegraph.com/search?q=repo:contains%28file:README%29&patternType=literal)
+
+### Repo contains content
+
+<script>
+ComplexDiagram(
+    Terminal("contains.content"),
+    Terminal("("),
+    Terminal("regexp", {href: "#regular-expression"}),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositories that contain file content matching the regular expression.
+
+**Example:** `repo:contains.content(TODO)` [↗](https://sourcegraph.com/search?q=repo:contains.content%28TODO%29&patternType=literal)
+
+### Repo contains file and content
+
+<script>
+ComplexDiagram(
+    Terminal("contains"),
+    Terminal("("),
+    Stack(
+        Sequence(Terminal("file:"), Terminal("regexp", {href: "#regular-expression"}), Terminal("space", {href: "#whitespace"})),
+        Sequence(Terminal("content:"),Terminal("regexp", {href: "#regular-expression"}))),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositories that contain a file matching the `file:` with `content:` filters.
+
+**Example:** `repo:contains(file:CHANGELOG content:fix)` [↗](https://sourcegraph.com/search?q=repo:contains%28file:CHANGELOG+content:fix%29&patternType=literal)
+
+### Repo contains commit after
+
+<script>
+ComplexDiagram(
+    Terminal("contains.commit.after"),
+    Terminal("("),
+    Terminal("string", {href: "#string"}),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositories that contain a a commit after some specified
+time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt)
+for accepted formats. Use this to filter out stale repositories that don’t contain
+commits past the specified time frame. This parameter is experimental.
+
+**Example:** `repo:contains.commit.after(1 month ago)` [↗](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph+repo:contains.commit.after%281+month+ago%29&patternType=literal)
+
 ## Regular expression
 
 <script>
 ComplexDiagram(
-		Choice(0,
-			Terminal("string", {href: "#string"}),
-			Terminal("quoted string", {href: "#quoted-string"}))).addTo();
+    Choice(0,
+        Terminal("string", {href: "#string"}),
+        Terminal("quoted string", {href: "#quoted-string"}))).addTo();
 </script>
 
 A string that is interpreted as a <a href="https://golang.org/s/re2syntax">RE2</a> regular expression.
@@ -580,7 +677,7 @@ A string that is interpreted as a <a href="https://golang.org/s/re2syntax">RE2</
 
 <script>
 ComplexDiagram(
-		Terminal("string")).addTo();
+    Terminal("string")).addTo();
 </script>
 
 An unquoted string is any contiguous sequence of characters not containing whitespace.
@@ -589,9 +686,9 @@ An unquoted string is any contiguous sequence of characters not containing white
 
 <script>
 ComplexDiagram(
-		Choice(0,
-			Terminal('"any string"'),
-			Terminal("'any string'"))).addTo();
+    Choice(0,
+        Terminal('"any string"'),
+        Terminal("'any string'"))).addTo();
 </script>
 
 Any string, including whitespace, may be quoted with single `'` or double `"`
@@ -601,12 +698,12 @@ quotes. Quotes can be escaped with `\`. Literal `\` characters will need to be e
 
 <script>
 ComplexDiagram(
-		OneOrMore(
-			Choice(0,
-				Terminal("author", {href: "#author"}),
-				Terminal("before", {href: "#before"}),
-				Terminal("after", {href: "#after"}),
-				Terminal("message", {href: "#message"})))).addTo();
+    OneOrMore(
+        Choice(0,
+            Terminal("author", {href: "#author"}),
+            Terminal("before", {href: "#before"}),
+            Terminal("after", {href: "#after"}),
+            Terminal("message", {href: "#message"})))).addTo();
 </script>
 
 Set parameters that apply only to commit and diff searches.
@@ -615,8 +712,8 @@ Set parameters that apply only to commit and diff searches.
 
 <script>
 ComplexDiagram(
-		Terminal("author:"),
-		Terminal("regular expression", {href: "#regular-expression"})).addTo();
+    Terminal("author:"),
+    Terminal("regular expression", {href: "#regular-expression"})).addTo();
 </script>
 
 Include commits or diffs that are authored by the user.
@@ -625,10 +722,10 @@ Include commits or diffs that are authored by the user.
 
 <script>
 ComplexDiagram(
-		Choice(0,
-			Terminal("before:"),
-			Terminal("until:")),
-		Terminal("quoted string", {href: "#quoted-string"})).addTo();
+    Choice(0,
+        Terminal("before:"),
+        Terminal("until:")),
+    Terminal("quoted string", {href: "#quoted-string"})).addTo();
 </script>
 
 Include results which have a commit date before the specified time frame.
@@ -639,10 +736,10 @@ Include results which have a commit date before the specified time frame.
 
 <script>
 ComplexDiagram(
-		Choice(0,
-			Terminal("after:"),
-			Terminal("since:")),
-		Terminal("quoted string", {href: "#quoted-string"})).addTo();
+    Choice(0,
+        Terminal("after:"),
+        Terminal("since:")),
+    Terminal("quoted string", {href: "#quoted-string"})).addTo();
 </script>
 
 Include results which have a commit date before the specified time frame.
@@ -653,11 +750,11 @@ Include results which have a commit date before the specified time frame.
 
 <script>
 ComplexDiagram(
-		Choice(0,
-			Terminal("message:"),
-			Terminal("msg:"),
-			Terminal("m:")),
-		Terminal("quoted string", {href: "#quoted-string"})).addTo();
+    Choice(0,
+        Terminal("message:"),
+        Terminal("msg:"),
+        Terminal("m:")),
+    Terminal("quoted string", {href: "#quoted-string"})).addTo();
 </script>
 
 Include results which have commit messages containing the string.
@@ -668,6 +765,6 @@ Include results which have commit messages containing the string.
 
 <script>
 ComplexDiagram(
-		OneOrMore(
-			Terminal("space"))).addTo();
+    OneOrMore(
+        Terminal("space"))).addTo();
 </script>

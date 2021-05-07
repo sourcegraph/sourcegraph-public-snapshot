@@ -4,13 +4,13 @@ import { of } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
 } from '../../../components/FilteredConnection'
-import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
 
@@ -59,10 +59,22 @@ const filters: FilteredConnectionFilter[] = [
                 args: { state: LSIFUploadState.ERRORED },
             },
             {
+                label: 'Processing',
+                value: 'processing',
+                tooltip: 'Show processing uploads only',
+                args: { state: LSIFUploadState.PROCESSING },
+            },
+            {
                 label: 'Queued',
                 value: 'queued',
                 tooltip: 'Show queued uploads only',
                 args: { state: LSIFUploadState.QUEUED },
+            },
+            {
+                label: 'Uploading',
+                value: 'uploading',
+                tooltip: 'Show uploading uploads only',
+                args: { state: LSIFUploadState.UPLOADING },
             },
         ],
     },
@@ -95,7 +107,7 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
             <PageTitle title="Precise code intelligence uploads" />
             <PageHeader
                 path={[{ text: 'Precise code intelligence upload' }]}
-                byline={
+                description={
                     <>
                         <p>
                             Enable precise code intelligence by{' '}
