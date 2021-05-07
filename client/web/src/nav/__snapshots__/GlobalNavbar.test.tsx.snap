@@ -112,7 +112,6 @@ exports[`GlobalNavbar default 1`] = `
       }
       showBatchChanges={false}
       showOnboardingTour={false}
-      showRepositorySection={true}
       showSearchContext={false}
       showSearchContextManagement={false}
       telemetryService={Object {}}
