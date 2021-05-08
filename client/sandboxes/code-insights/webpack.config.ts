@@ -1,7 +1,12 @@
-const path = require('path')
 
-const ReactRefreshPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
-const HtmlWebpackPlugin = require('html-webpack-plugin')
+import path from 'path'
+
+import ReactRefreshPlugin from '@pmmmwh/react-refresh-webpack-plugin';
+import HtmlWebpackPlugin from 'html-webpack-plugin'
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import { getCSSLoaders } from '@sourcegraph/web/webpack.config'
 
 module.exports = {
   entry: path.resolve(__dirname, './src/demo.tsx'),
@@ -25,35 +30,25 @@ module.exports = {
         use: ['babel-loader'],
       },
       {
-        test: /\.module\.(sass|scss)$/,
-        use: [
-          'style-loader',
-          {
-            loader: 'css-loader',
-            options: {
-              sourceMap: true,
-              modules: {
-                localIdentName: '[name]__[local]_[hash:base64:5]',
-                exportLocalsConvention: 'camelCase',
-              },
+        test: /\.(sass|scss)$/,
+        // CSS Modules loaders are only applied when the file is explicitly named as CSS module stylesheet using the extension `.module.scss`.
+        include: /\.module\.(sass|scss)$/,
+        use: getCSSLoaders(true, {
+          loader: 'css-loader',
+          options: {
+            sourceMap: true,
+            url: false,
+            modules: {
+              exportLocalsConvention: 'camelCase',
+              localIdentName: '[name]__[local]_[hash:base64:5]',
             },
           },
-          'sass-loader',
-        ],
+        }),
       },
       {
-        test: /\.(scss)$/i,
+        test: /\.(sass|scss)$/,
         exclude: /\.module\.(sass|scss)$/,
-        use: [
-          'style-loader',
-          {
-            loader: 'css-loader',
-            options: {
-              url: false,
-            },
-          },
-          'sass-loader',
-        ],
+        use: getCSSLoaders(true,{ loader: 'css-loader', options: { url: false } }),
       },
     ],
   },

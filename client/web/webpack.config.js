@@ -55,10 +55,11 @@ const extensionHostWorker = /main\.worker\.ts$/
  * Generates array of CSS loaders both for regular CSS and CSS modules.
  * Useful to ensure that we use the same configuration for shared loaders: postcss-loader, sass-loader, etc.
  *
+ * @param isDevelopment current bundler mode
  * @param {import('webpack').RuleSetUseItem[]} loaders additional CSS loaders
  * @returns {import('webpack').RuleSetUseItem[]} array of CSS loaders
  */
-const getCSSLoaders = (...loaders) => [
+const getCSSLoaders = (isDevelopment, ...loaders) => [
   // Use style-loader for local development as it is significantly faster.
   isDevelopment ? 'style-loader' : MiniCssExtractPlugin.loader,
   ...loaders,
@@ -209,7 +210,7 @@ const config = {
         test: /\.(sass|scss)$/,
         // CSS Modules loaders are only applied when the file is explicitly named as CSS module stylesheet using the extension `.module.scss`.
         include: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders({
+        use: getCSSLoaders(isDevelopment, {
           loader: 'css-loader',
           options: {
             sourceMap: isDevelopment,
@@ -224,7 +225,7 @@ const config = {
       {
         test: /\.(sass|scss)$/,
         exclude: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders({ loader: 'css-loader', options: { url: false } }),
+        use: getCSSLoaders(isDevelopment,{ loader: 'css-loader', options: { url: false } }),
       },
       {
         // CSS rule for monaco-editor and other external plain CSS (skip SASS and PostCSS for build perf)
@@ -242,3 +243,4 @@ const config = {
 }
 
 module.exports = config
+module.exports.getCSSLoaders = getCSSLoaders
