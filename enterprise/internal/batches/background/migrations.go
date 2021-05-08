@@ -1,6 +1,7 @@
 package background
 
 import (
+	"os"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -26,10 +27,18 @@ const (
 // RegisterMigrations registers all currently implemented out of band migrations
 // by batch changes with the migration runner.
 func RegisterMigrations(cstore *store.Store, outOfBandMigrationRunner *oobmigration.Runner) error {
+	allowDecrypt := os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
+
 	migrations := map[int]oobmigration.Migrator{
-		BatchChangesSSHMigrationID:            &sshMigrator{store: cstore},
-		BatchChangesUserCredentialMigrationID: &userCredentialMigrator{store: cstore},
-		BatchChangesSiteCredentialMigrationID: &siteCredentialMigrator{store: cstore},
+		BatchChangesSSHMigrationID: &sshMigrator{store: cstore},
+		BatchChangesUserCredentialMigrationID: &userCredentialMigrator{
+			store:        cstore,
+			allowDecrypt: allowDecrypt,
+		},
+		BatchChangesSiteCredentialMigrationID: &siteCredentialMigrator{
+			store:        cstore,
+			allowDecrypt: allowDecrypt,
+		},
 	}
 
 	for id, migrator := range migrations {
