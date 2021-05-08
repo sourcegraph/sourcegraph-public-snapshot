@@ -9,18 +9,20 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
-import { AuthenticatedUser } from '../../../auth'
-import { Page } from '../../../components/Page'
-import { PageTitle } from '../../../components/PageTitle'
-import { InsightsApiContext } from '../../core/backend/api-provider'
-import { InsightTypeSuffix } from '../../core/types'
+import { AuthenticatedUser } from '../../../../auth'
+import { Page } from '../../../../components/Page'
+import { PageTitle } from '../../../../components/PageTitle'
+import { FORM_ERROR } from '../../../components/form/hooks/useForm'
+import { InsightsApiContext } from '../../../core/backend/api-provider'
+import { InsightTypeSuffix } from '../../../core/types'
 
 import {
-    CreationSearchInsightForm,
-    CreationSearchInsightFormProps,
-} from './components/creation-search-insight-form/CreationSearchInsightForm'
-import styles from './CreationSearchInsightPage.module.scss'
-import { FORM_ERROR } from './hooks/useForm'
+    LangStatsInsightCreationForm,
+    LangStatsInsightCreationFormProps,
+} from './components/lang-stats-insight-creation-form/LangStatsInsightCreationForm'
+import styles from './LangStatsInsightCreationPage.module.scss'
+
+const DEFAULT_FINAL_SETTINGS = {}
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
     eol: '\n',
@@ -28,23 +30,22 @@ const defaultFormattingOptions: jsonc.FormattingOptions = {
     tabSize: 2,
 }
 
-export interface CreationSearchInsightPageProps
+export interface LangStatsInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
         Pick<RouteComponentProps, 'history'>,
         SettingsCascadeProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
-     * in personal dashboard (private) or in organisation dashboard (public)
+     * in personal dashboard (private) or in organization dashboard (public)
      * */
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations'> | null
 }
 
-/** Displays create insight page with creation form. */
-export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchInsightPageProps> = props => {
-    const { platformContext, authenticatedUser, history, settingsCascade } = props
-    const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
+export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsightCreationPageProps> = props => {
+    const { history, authenticatedUser, settingsCascade, platformContext } = props
+    const { getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
 
-    const handleSubmit = useCallback<CreationSearchInsightFormProps['onSubmit']>(
+    const handleSubmit = useCallback<LangStatsInsightCreationFormProps['onSubmit']>(
         async values => {
             if (!authenticatedUser) {
                 return
@@ -63,27 +64,18 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
 
+                // TODO [VK] Change these settings when multi code insights stats
+                // will be supported in code stats insight extension
                 const newSettingsString = {
                     title: values.title,
-                    repositories: values.repositories.trim().split(/\s*,\s*/),
-                    series: values.series.map(line => ({
-                        name: line.name,
-                        // Query field is a reg exp field for code insight query setting
-                        // Native html input element adds escape symbols by itself
-                        // to prevent this behavior below we replace double escaping
-                        // with just one series of escape characters e.g. - //
-                        query: line.query.replace(/\\\\/g, '\\'),
-                        stroke: line.color,
-                    })),
-                    step: {
-                        [values.step]: +values.stepValue,
-                    },
+                    repository: values.repository.trim(),
+                    otherThreshold: values.threshold / 100,
                 }
 
                 const edits = jsonc.modify(
                     settings.contents,
                     // According to our naming convention <type>.insight.<name>
-                    [`${InsightTypeSuffix.search}.${camelCase(values.title)}`],
+                    [`${InsightTypeSuffix.langStats}.${camelCase(values.title)}`],
                     newSettingsString,
                     { formattingOptions: defaultFormattingOptions }
                 )
@@ -106,20 +98,19 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
         history.push('/insights')
     }, [history])
 
-    // TODO [VK] Move this logic to high order component to simplify logic here
     if (authenticatedUser === null) {
         return <Redirect to="/" />
     }
 
     return (
-        <Page className={classnames('col-8', styles.creationPage)}>
+        <Page className={classnames(styles.creationPage, 'col-8')}>
             <PageTitle title="Create new code insight" />
 
             <div className="mb-5">
-                <h2>Create new code insight</h2>
+                <h2>Set up new language usage insight</h2>
 
                 <p className="text-muted">
-                    Search-based code insights analyze your code based on any search query.{' '}
+                    Shows language usage in your repository based on number of lines of code.{' '}
                     <a
                         href="https://docs.sourcegraph.com/dev/background-information/insights"
                         target="_blank"
@@ -130,9 +121,9 @@ export const CreationSearchInsightPage: React.FunctionComponent<CreationSearchIn
                 </p>
             </div>
 
-            <CreationSearchInsightForm
+            <LangStatsInsightCreationForm
                 className="pb-5"
-                settings={settingsCascade.final}
+                settings={settingsCascade.final ?? DEFAULT_FINAL_SETTINGS}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
             />

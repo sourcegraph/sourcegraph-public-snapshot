@@ -3,16 +3,16 @@ import classnames from 'classnames'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-import { Page } from '../../../components/Page'
-import { PageTitle } from '../../../components/PageTitle'
-import { LineChart } from '../../../views/ChartViewContent/charts/line/LineChart'
-import { PieChart } from '../../../views/ChartViewContent/charts/pie/PieChart'
+import { Page } from '../../../../components/Page'
+import { PageTitle } from '../../../../components/PageTitle'
+import { LineChart } from '../../../../views/ChartViewContent/charts/line/LineChart'
+import { PieChart } from '../../../../views/ChartViewContent/charts/pie/PieChart'
 
 import { LINE_CHART_DATA, PIE_CHART_DATA } from './charts-mock'
-import styles from './CreationIntroPage.module.scss'
+import styles from './IntroCreationPage.module.scss'
 
 /** Displays intro page for insights creation UI. */
-export const CreationIntroPage: React.FunctionComponent = () => (
+export const IntroCreationPage: React.FunctionComponent = () => (
     <Page className="col-8">
         <PageTitle title="Create code insights" />
 
@@ -41,7 +41,7 @@ export const CreationIntroPage: React.FunctionComponent = () => (
                 </p>
 
                 <Link
-                    to="/insights/create"
+                    to="/insights/create-search-insight"
                     className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
                 >
                     Create custom insight
@@ -63,7 +63,7 @@ export const CreationIntroPage: React.FunctionComponent = () => (
                 <p>Shows language usage in your repository by lines of code.</p>
 
                 <Link
-                    to="/user/settings"
+                    to="/insights/create-lang-stats-insight"
                     className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
                 >
                     Set up language usage insight

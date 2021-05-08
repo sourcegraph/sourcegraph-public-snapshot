@@ -1,9 +1,9 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { WebStory } from '../../../components/WebStory'
+import { WebStory } from '../../../../components/WebStory'
 
-import { CreationIntroPage } from './CreationIntroPage'
+import { IntroCreationPage } from './IntroCreationPage'
 
 const { add } = storiesOf('web/insights/CreationInsightIntroPage', module)
     .addDecorator(story => <WebStory>{() => story()}</WebStory>)
@@ -13,4 +13,4 @@ const { add } = storiesOf('web/insights/CreationInsightIntroPage', module)
         },
     })
 
-add('Page', () => <CreationIntroPage />)
+add('Page', () => <IntroCreationPage />)

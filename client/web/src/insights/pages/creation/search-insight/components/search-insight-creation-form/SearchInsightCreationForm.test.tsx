@@ -4,13 +4,13 @@ import sinon from 'sinon'
 
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
-import { FORM_ERROR } from '../../hooks/useForm'
+import { FORM_ERROR } from '../../../../../components/form/hooks/useForm'
 
-import { CreationSearchInsightForm, CreationSearchInsightFormProps } from './CreationSearchInsightForm'
+import { SearchInsightCreationForm, CreationSearchInsightFormProps } from './SearchInsightCreationForm'
 
 describe('CreateInsightForm', () => {
     const renderWithProps = (props: CreationSearchInsightFormProps): RenderResult =>
-        render(<CreationSearchInsightForm {...props} />)
+        render(<SearchInsightCreationForm {...props} />)
     const onSubmitMock = sinon.spy()
 
     beforeEach(() => onSubmitMock.resetHistory())

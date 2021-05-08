@@ -4,12 +4,12 @@ import React from 'react'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
-import { WebStory } from '../../../components/WebStory'
-import { authUser } from '../../../search/panels/utils'
+import { WebStory } from '../../../../components/WebStory'
+import { authUser } from '../../../../search/panels/utils'
 
-import { CreationSearchInsightPage, CreationSearchInsightPageProps } from './CreationSearchInsightPage'
+import { SearchInsightCreationPage, SearchInsightCreationPageProps } from './SearchInsightCreationPage'
 
-const { add } = storiesOf('web/insights/CreationSearchInsightPage', module)
+const { add } = storiesOf('web/insights/SearchInsightCreationPage', module)
     .addDecorator(story => <WebStory>{() => story()}</WebStory>)
     .addParameters({
         chromatic: {
@@ -17,7 +17,7 @@ const { add } = storiesOf('web/insights/CreationSearchInsightPage', module)
         },
     })
 
-const PLATFORM_CONTEXT: CreationSearchInsightPageProps['platformContext'] = {
+const PLATFORM_CONTEXT: SearchInsightCreationPageProps['platformContext'] = {
     // eslint-disable-next-line @typescript-eslint/require-await
     updateSettings: async (...args) => {
         console.log('PLATFORM CONTEXT update settings with', { ...args })
@@ -27,7 +27,7 @@ const PLATFORM_CONTEXT: CreationSearchInsightPageProps['platformContext'] = {
 const history = createMemoryHistory()
 
 add('Page', () => (
-    <CreationSearchInsightPage
+    <SearchInsightCreationPage
         history={history}
         platformContext={PLATFORM_CONTEXT}
         settingsCascade={EMPTY_SETTINGS_CASCADE}

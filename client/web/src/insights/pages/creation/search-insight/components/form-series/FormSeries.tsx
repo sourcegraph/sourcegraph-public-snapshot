@@ -13,7 +13,9 @@ export interface FormSeriesProps {
     onChange: (series: DataSeries[]) => void
 }
 
-/** Renders form series (sub-form) for series (chart lines) creation code insight form. */
+/**
+ * Renders form series (sub-form) for series (chart lines) creation code insight form.
+ * */
 export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
     const { series = [], onChange } = props
 
@@ -124,7 +126,9 @@ interface SeriesCardProps {
     onRemove?: () => void
 }
 
-/** Renders series card component, visual list item of series (name, color, query) */
+/**
+ * Renders series card component, visual list item of series (name, color, query)
+ * */
 function SeriesCard(props: SeriesCardProps): ReactElement {
     const { name, query, color, className, onEdit } = props
 

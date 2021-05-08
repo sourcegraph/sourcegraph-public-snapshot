@@ -2,17 +2,17 @@ import classnames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
-import { useField } from '../../hooks/useField'
-import { useForm } from '../../hooks/useForm'
+import { FormInput } from '../../../../../components/form/form-input/FormInput'
+import { useField } from '../../../../../components/form/hooks/useField'
+import { useForm } from '../../../../../components/form/hooks/useForm'
+import { createRequiredValidator } from '../../../../../components/form/validators'
 import { DataSeries } from '../../types'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
-import { InputField } from '../form-input-field/InputField'
-import { createRequiredValidator } from '../validators'
 
 const requiredNameField = createRequiredValidator('Name is a required field for data series.')
 const validQuery = createRequiredValidator('Query is a required field for data series.')
 
-interface FormSeriesProps {
+interface FormSeriesInputProps {
     /** Name of series. */
     name?: string
     /** Query value of series. */
@@ -32,7 +32,7 @@ interface FormSeriesProps {
 }
 
 /** Displays form series input (three field - name field, query field and color picker). */
-export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props => {
+export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
     const { name, query, color, className, cancel = false, autofocus = true, onCancel = noop, onSubmit = noop } = props
 
     const hasNameControlledValue = !!name
@@ -58,7 +58,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
 
     return (
         <div ref={ref} className={classnames('d-flex flex-column', className)}>
-            <InputField
+            <FormInput
                 title="Name"
                 required={true}
                 autoFocus={autofocus}
@@ -69,7 +69,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesProps> = props =
                 {...nameField.input}
             />
 
-            <InputField
+            <FormInput
                 title="Search query"
                 required={true}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
