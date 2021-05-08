@@ -202,7 +202,7 @@ const config = {
       {
         test: /\.(sass|scss)$/,
         exclude: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders(rootPath, isDevelopment,{ loader: 'css-loader', options: { url: false } }),
+        use: getCSSLoaders(rootPath, isDevelopment, { loader: 'css-loader', options: { url: false } }),
       },
       {
         // CSS rule for monaco-editor and other external plain CSS (skip SASS and PostCSS for build perf)
