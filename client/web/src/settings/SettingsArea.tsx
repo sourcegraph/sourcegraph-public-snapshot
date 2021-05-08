@@ -2,9 +2,10 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
+import { combineLatest, from, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
+import { getConfiguredSideloadedExtension } from '@sourcegraph/shared/src/api/client/mainthread-api'
 import { extensionIDsFromSettings } from '@sourcegraph/shared/src/extensions/extension'
 import { queryConfiguredRegistryExtensions } from '@sourcegraph/shared/src/extensions/helpers'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -15,6 +16,7 @@ import { gqlToCascade, SettingsCascadeProps } from '@sourcegraph/shared/src/sett
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
@@ -183,17 +185,30 @@ export class SettingsArea extends React.Component<Props, State> {
     private onUpdate = (): void => this.refreshRequests.next()
 
     private getMergedSettingsJSONSchema(cascade: Pick<GQL.ISettingsCascade, 'subjects'>): Observable<{ $id: string }> {
-        return queryConfiguredRegistryExtensions(
-            this.props.platformContext,
-            extensionIDsFromSettings(gqlToCascade(cascade))
-        ).pipe(
-            catchError(error => {
-                console.warn('Unable to get extension settings JSON Schemas for settings editor.', { error })
-                return [null]
-            }),
-            map(configuredExtensions => ({
+        return combineLatest([
+            queryConfiguredRegistryExtensions(
+                this.props.platformContext,
+                extensionIDsFromSettings(gqlToCascade(cascade))
+            ).pipe(
+                catchError(error => {
+                    console.warn('Unable to get extension settings JSON Schemas for settings editor.', { error })
+                    return of([])
+                })
+            ),
+            from(this.props.platformContext.sideloadedExtensionURL).pipe(
+                switchMap(url => (url ? getConfiguredSideloadedExtension(url) : of(null))),
+                catchError(error => {
+                    console.error('Error sideloading extension', error)
+                    return of(null)
+                })
+            ),
+        ]).pipe(
+            map(([registryExtensions, sideloadedExtension]) =>
+                [...registryExtensions, sideloadedExtension].filter(isDefined)
+            ),
+            map(extensions => ({
                 $id: 'mergedSettings.schema.json#',
-                ...(configuredExtensions ? mergeSettingsSchemas(configuredExtensions) : null),
+                ...mergeSettingsSchemas(extensions),
             }))
         )
     }
