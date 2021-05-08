@@ -10,8 +10,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetUploadByID(t *testing.T) {
@@ -269,6 +271,7 @@ func TestGetUploads(t *testing.T) {
 		{uploadedAfter: &t4, expectedIDs: []int{1, 2, 3}},
 	}
 
+	ctx := context.Background()
 	for _, testCase := range testCases {
 		for lo := 0; lo < len(testCase.expectedIDs); lo++ {
 			hi := lo + 3
@@ -286,7 +289,7 @@ func TestGetUploads(t *testing.T) {
 			)
 
 			t.Run(name, func(t *testing.T) {
-				uploads, totalCount, err := store.GetUploads(context.Background(), GetUploadsOptions{
+				uploads, totalCount, err := store.GetUploads(ctx, GetUploadsOptions{
 					RepositoryID:   testCase.repositoryID,
 					State:          testCase.state,
 					Term:           testCase.term,
@@ -315,6 +318,27 @@ func TestGetUploads(t *testing.T) {
 			})
 		}
 	}
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		uploads, totalCount, err := store.GetUploads(ctx,
+			GetUploadsOptions{
+				Limit: 1,
+			},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(uploads) > 0 || totalCount > 0 {
+			t.Fatalf("Want no upload but got %d uploads with totalCount %d", len(uploads), totalCount)
+		}
+	})
 }
 
 func TestInsertUploadUploading(t *testing.T) {

@@ -294,7 +294,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 const getUploadsCountQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetUploads
 SELECT COUNT(*) FROM lsif_uploads_with_repository_name u
-JOIN repo ON repo.name = u.repository_name
+JOIN repo ON repo.id = u.repository_id
 WHERE %s
 `
 
@@ -324,7 +324,7 @@ SELECT
 FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
-JOIN repo ON repo.name = u.repository_name
+JOIN repo ON repo.id = u.repository_id
 WHERE %s ORDER BY %s LIMIT %d OFFSET %d
 `
 
