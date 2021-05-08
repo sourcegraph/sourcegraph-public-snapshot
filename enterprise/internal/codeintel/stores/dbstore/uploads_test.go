@@ -22,9 +22,10 @@ func TestGetUploadByID(t *testing.T) {
 	}
 	db := dbtesting.GetDB(t)
 	store := testStore(db)
+	ctx := context.Background()
 
 	// Upload does not exist initially
-	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+	if _, exists, err := store.GetUploadByID(ctx, 1); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if exists {
 		t.Fatal("unexpected record")
@@ -53,7 +54,6 @@ func TestGetUploadByID(t *testing.T) {
 	insertUploads(t, db, expected)
 	insertVisibleAtTip(t, db, 123, 1)
 
-	ctx := context.Background()
 	if upload, exists, err := store.GetUploadByID(ctx, 1); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if !exists {
@@ -232,6 +232,7 @@ func TestGetUploads(t *testing.T) {
 	}
 	db := dbtesting.GetDB(t)
 	store := testStore(db)
+	ctx := context.Background()
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Minute * 1)
@@ -289,7 +290,6 @@ func TestGetUploads(t *testing.T) {
 		{uploadedAfter: &t4, expectedIDs: []int{1, 2, 3}},
 	}
 
-	ctx := context.Background()
 	for _, testCase := range testCases {
 		for lo := 0; lo < len(testCase.expectedIDs); lo++ {
 			hi := lo + 3
