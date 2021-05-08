@@ -4,11 +4,12 @@ import path from 'path'
 import ReactRefreshPlugin from '@pmmmwh/react-refresh-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin'
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import { getCSSLoaders } from '@sourcegraph/web/webpack.config'
+import { getCSSLoaders } from '@sourcegraph/web/dev/webpack/get-css-loaders'
 
-module.exports = {
+const rootPath = path.resolve(__dirname, '..', '..', '..')
+
+// eslint-disable-next-line import/no-default-export
+export default {
   entry: path.resolve(__dirname, './src/demo.tsx'),
   output: {
     path: path.resolve(__dirname, 'dist'), // Note: Physical files are only output by the production build task `npm run build`.
@@ -33,7 +34,7 @@ module.exports = {
         test: /\.(sass|scss)$/,
         // CSS Modules loaders are only applied when the file is explicitly named as CSS module stylesheet using the extension `.module.scss`.
         include: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders(true, {
+        use: getCSSLoaders(rootPath, true, {
           loader: 'css-loader',
           options: {
             sourceMap: true,
@@ -48,7 +49,7 @@ module.exports = {
       {
         test: /\.(sass|scss)$/,
         exclude: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders(true,{ loader: 'css-loader', options: { url: false } }),
+        use: getCSSLoaders(rootPath, true,{ loader: 'css-loader', options: { url: false } }),
       },
     ],
   },

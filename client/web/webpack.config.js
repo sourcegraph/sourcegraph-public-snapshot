@@ -11,6 +11,7 @@ const webpack = require('webpack')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
+const { getCSSLoaders } = require('./dev/webpack/get-css-loaders')
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
@@ -50,30 +51,6 @@ const babelLoader = {
 }
 
 const extensionHostWorker = /main\.worker\.ts$/
-
-/**
- * Generates array of CSS loaders both for regular CSS and CSS modules.
- * Useful to ensure that we use the same configuration for shared loaders: postcss-loader, sass-loader, etc.
- *
- * @param isDevelopment current bundler mode
- * @param {import('webpack').RuleSetUseItem[]} loaders additional CSS loaders
- * @returns {import('webpack').RuleSetUseItem[]} array of CSS loaders
- */
-const getCSSLoaders = (isDevelopment, ...loaders) => [
-  // Use style-loader for local development as it is significantly faster.
-  isDevelopment ? 'style-loader' : MiniCssExtractPlugin.loader,
-  ...loaders,
-  'postcss-loader',
-  {
-    loader: 'sass-loader',
-    options: {
-      sassOptions: {
-        implementation: require('sass'),
-        includePaths: [nodeModulesPath, path.resolve(rootPath, 'client')],
-      },
-    },
-  },
-]
 
 /** @type {import('webpack').Configuration} */
 const config = {
@@ -210,7 +187,7 @@ const config = {
         test: /\.(sass|scss)$/,
         // CSS Modules loaders are only applied when the file is explicitly named as CSS module stylesheet using the extension `.module.scss`.
         include: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders(isDevelopment, {
+        use: getCSSLoaders(rootPath, isDevelopment, {
           loader: 'css-loader',
           options: {
             sourceMap: isDevelopment,
@@ -225,7 +202,7 @@ const config = {
       {
         test: /\.(sass|scss)$/,
         exclude: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders(isDevelopment,{ loader: 'css-loader', options: { url: false } }),
+        use: getCSSLoaders(rootPath, isDevelopment,{ loader: 'css-loader', options: { url: false } }),
       },
       {
         // CSS rule for monaco-editor and other external plain CSS (skip SASS and PostCSS for build perf)
@@ -243,4 +220,3 @@ const config = {
 }
 
 module.exports = config
-module.exports.getCSSLoaders = getCSSLoaders
