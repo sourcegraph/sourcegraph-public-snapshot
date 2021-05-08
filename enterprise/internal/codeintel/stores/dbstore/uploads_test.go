@@ -53,13 +53,31 @@ func TestGetUploadByID(t *testing.T) {
 	insertUploads(t, db, expected)
 	insertVisibleAtTip(t, db, 123, 1)
 
-	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+	ctx := context.Background()
+	if upload, exists, err := store.GetUploadByID(ctx, 1); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
 	} else if diff := cmp.Diff(expected, upload); diff != "" {
 		t.Errorf("unexpected upload (-want +got):\n%s", diff)
 	}
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		_, exists, err := store.GetUploadByID(ctx, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if exists {
+			t.Fatalf("exists: want false but got %v", exists)
+		}
+	})
 }
 
 func TestGetUploadByIDDeleted(t *testing.T) {

@@ -136,7 +136,12 @@ func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, er
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return scanFirstUpload(s.Store.Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id)))
+	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	if err != nil {
+		return Upload{}, false, err
+	}
+
+	return scanFirstUpload(s.Store.Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id, authzConds)))
 }
 
 const uploadRankQueryFragment = `
@@ -173,7 +178,8 @@ SELECT
 FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
-WHERE u.state != 'deleted' AND u.id = %s
+JOIN repo ON repo.id = u.repository_id
+WHERE u.state != 'deleted' AND u.id = %s AND %s
 `
 
 // DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
@@ -258,11 +264,11 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at > %s", *opts.UploadedAfter))
 	}
 
-	authzCond, err := database.AuthzQueryConds(ctx, tx.Store.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, tx.Store.Handle().DB())
 	if err != nil {
 		return nil, 0, err
 	}
-	conds = append(conds, authzCond)
+	conds = append(conds, authzConds)
 
 	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(
 		ctx,
