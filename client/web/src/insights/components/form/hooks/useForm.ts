@@ -3,11 +3,11 @@ import {
     FormEventHandler,
     RefObject,
     SyntheticEvent,
-    useCallback,
     useEffect,
     useRef,
     useState,
 } from 'react'
+import { noop } from 'rxjs';
 
 // Special key for the submit error store.
 export const FORM_ERROR = 'useForm/submissionErrors'
@@ -21,9 +21,15 @@ interface UseFormProps<FormValues extends object> {
     initialValues: Partial<FormValues>
 
     /**
-     * Submit handlers for a form element.
+     * Submit handler for a form element.
      * */
     onSubmit: (values: FormValues) => SubmissionErrors | Promise<SubmissionErrors> | void
+
+    /**
+     * Change handler will be called every time when some field withing the form
+     * has been changed with last fields values.
+     * */
+    onChange?: (values: FormValues) => void
 }
 
 /**
@@ -132,6 +138,13 @@ export interface FieldState<Value> {
 }
 
 /**
+ * Store object of all fields state within the form element.
+ * Used below to keep tracking of fields value, touched, validity and other
+ * fields state data.
+ * */
+type FieldsState<FormValues> = Record<keyof FormValues, FieldState<unknown>>;
+
+/**
  * Unified form abstraction to track form state and provide form fields management
  * React hook to have all needed state for building proper UX for forms.
  *
@@ -140,12 +153,15 @@ export interface FieldState<Value> {
  * hook.
  * */
 export function useForm<FormValues extends object>(props: UseFormProps<FormValues>): Form<FormValues> {
-    const { onSubmit, initialValues } = props
+    const {
+        onSubmit,
+        initialValues,
+        onChange = noop } = props
 
     const [submitted, setSubmitted] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [submitErrors, setSubmitErrors] = useState<SubmissionErrors>()
-    const [fields, setFields] = useState<Record<string, FieldState<unknown>>>({})
+    const [fields, setFields] = useState<FieldsState<FormValues>>({} as FieldsState<FormValues>)
 
     const formElementReference = useRef<HTMLFormElement>(null)
     const onSubmitReference = useRef<UseFormProps<FormValues>['onSubmit']>()
@@ -154,9 +170,20 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
     // will be resolved after component has been unmounted.
     const isUnmounted = useRef<boolean>(false)
 
-    const setFieldState = useCallback((name: keyof FormValues, state: FieldState<unknown>) => {
+    const setFieldState = (name: keyof FormValues, state: FieldState<unknown>): void => {
+
         setFields(fields => ({ ...fields, [name]: state }))
-    }, [])
+
+        // On first render all fields within the form trigger setFieldState
+        // in order to set initial state. OnChange handler shouldn't being run
+        // on first render so we have to skip setFieldState calls during the first
+        // fields render.
+        const hasRegisterField = fields[name] !== undefined;
+
+        if (hasRegisterField && fields[name].value !== state.value) {
+            onChange(getFormValues({ ...fields, [name]: state }))
+        }
+    }
 
     useEffect(
         () => () => {
@@ -189,15 +216,9 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
             )
 
             if (!hasInvalidField) {
-                // Collect all form fields to pass them to onSubmit handler.
-                const values = Object.keys(fields).reduce<FormValues>(
-                    (values, fieldName) => ({ ...values, [fieldName]: fields[fieldName].value }),
-                    {} as FormValues
-                )
-
                 setSubmitting(true)
 
-                const submitResult = await onSubmitReference.current?.(values)
+                const submitResult = await onSubmitReference.current?.(getFormValues(fields))
 
                 // Check isUnmounted state to prevent calling setState on
                 // unmounted components.
@@ -214,4 +235,15 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
             }
         },
     }
+}
+
+/**
+ * Creates form values object and omit all other internal state of form field.
+ * Used to form values for onSubmit and onChange handlers.
+ * */
+function getFormValues<FormValues>(fields: Record<string, FieldState<unknown>>): FormValues {
+    return (Object.keys(fields)).reduce(
+        (values, fieldName) => ({ ...values, [fieldName]: fields[fieldName].value }),
+        {} as FormValues
+    )
 }

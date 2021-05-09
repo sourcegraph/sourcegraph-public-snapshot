@@ -54,6 +54,11 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
         validity: null,
     })
 
+    // Use useRef for form api handler in order to avoid unnecessary
+    // calls if API handler has been changed.
+    const setFieldStateReference = useRef<FormAPI<FormValues>['setFieldState']>(setFieldState)
+    setFieldStateReference.current = setFieldState
+
     useEffect(() => {
         const inputElement = inputReference.current
 
@@ -95,7 +100,7 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
     // Sync field state with state on form level - useForm hook will used this state to run
     // onSubmit handler and track validation state to prevent onSubmit run when async
     // validation is going.
-    useEffect(() => setFieldState(name, state), [name, state, setFieldState])
+    useEffect(() => setFieldStateReference.current(name, state), [name, state])
 
     return {
         input: {
