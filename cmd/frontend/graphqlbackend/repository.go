@@ -335,7 +335,7 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	r.hydration.Do(func() {
 		// Repositories with an empty creation date were created using RepoName.ToRepo(),
 		// they only contain ID and name information.
-		if !r.innerRepo.CreatedAt.IsZero() {
+		if r.innerRepo != nil && !r.innerRepo.CreatedAt.IsZero() {
 			return
 		}
 
