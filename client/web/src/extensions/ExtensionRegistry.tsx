@@ -143,7 +143,6 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                     ),
                     tap(({ query, category }) => {
                         setQuery(query)
-                        setSelectedCategory(category)
 
                         history.replace({
                             search: new URLSearchParams(
@@ -207,6 +206,12 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                             error,
                             ...configureExtensionRegistry(nodes, configuredExtensionCache),
                         }
+                    }),
+                    tap(() => {
+                        // Wait until `data` === LOADING to update category state
+                        // in order to prevent jitter from category change before loading spinner is rendered.
+                        // Hacky: this works because we know that category updates are always immeditate (no debounce)
+                        setSelectedCategory(getCategoryFromLocation(window.location))
                     })
                 ),
             [platformContext, history, configuredExtensionCache]
