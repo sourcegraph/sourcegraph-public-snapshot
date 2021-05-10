@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -38,20 +37,6 @@ type CommitSearchResultResolver struct {
 	// Use Commit() instead.
 	gitCommitResolver *GitCommitResolver
 	gitCommitOnce     sync.Once
-}
-
-func (r *CommitSearchResultResolver) Select(path filter.SelectPath) SearchResultResolver {
-	match := r.CommitMatch.Select(path)
-
-	// Turn result type back into a resolver
-	switch v := match.(type) {
-	case *result.RepoMatch:
-		return NewRepositoryResolver(r.db, &types.Repo{Name: v.Name, ID: v.ID})
-	case *result.CommitMatch:
-		return &CommitSearchResultResolver{db: r.db, CommitMatch: *v, gitCommitResolver: r.gitCommitResolver}
-	}
-
-	return nil
 }
 
 func (r *CommitSearchResultResolver) toMatch() result.Match {

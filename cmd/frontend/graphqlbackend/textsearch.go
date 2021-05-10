@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -118,20 +117,6 @@ func (fm *FileMatchResolver) path() string {
 
 func (fm *FileMatchResolver) ResultCount() int32 {
 	return int32(fm.FileMatch.ResultCount())
-}
-
-func (fm *FileMatchResolver) Select(t filter.SelectPath) SearchResultResolver {
-	match := fm.FileMatch.Select(t)
-
-	// Turn the result type back to a resolver
-	switch v := match.(type) {
-	case *result.RepoMatch:
-		return NewRepositoryResolver(fm.db, &types.Repo{Name: v.Name, ID: v.ID})
-	case *result.FileMatch:
-		return &FileMatchResolver{db: fm.db, RepoResolver: fm.RepoResolver, FileMatch: *v}
-	}
-
-	return nil
 }
 
 type lineMatchResolver struct {

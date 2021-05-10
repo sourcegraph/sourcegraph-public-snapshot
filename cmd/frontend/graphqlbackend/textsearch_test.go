@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -31,8 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-
-	"github.com/hexops/autogold"
 )
 
 func TestSearchFilesInRepos(t *testing.T) {
@@ -416,29 +413,4 @@ func TestFileMatch_Limit(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestSelect(t *testing.T) {
-	data := FileMatchResolver{
-		FileMatch: result.FileMatch{
-			Symbols: []*result.SymbolMatch{
-				{Symbol: result.Symbol{Name: "a()", Kind: "func"}},
-				{Symbol: result.Symbol{Name: "b()", Kind: "function"}},
-				{Symbol: result.Symbol{Name: "var c", Kind: "variable"}},
-			},
-		},
-	}
-
-	test := func(input string) string {
-		selectPath, _ := filter.SelectPathFromString(input)
-		symbols := data.Select(selectPath).(*FileMatchResolver).FileMatch.Symbols
-		var values []string
-		for _, s := range symbols {
-			values = append(values, s.Symbol.Name+":"+s.Symbol.Kind)
-		}
-		return strings.Join(values, ", ")
-	}
-
-	autogold.Want("filter any symbol", "a():func, b():function, var c:variable").Equal(t, test("symbol"))
-	autogold.Want("filter symbol kind variable", "var c:variable").Equal(t, test("symbol.variable"))
 }
