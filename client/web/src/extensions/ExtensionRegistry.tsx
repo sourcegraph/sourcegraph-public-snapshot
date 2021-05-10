@@ -206,77 +206,81 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
             <div className="container">
                 <PageTitle title="Extensions" />
 
-                <div className="pt-3">
-                    <div className="mb-5">
-                        <Form onSubmit={preventDefault} className="form-inline">
-                            <small className="mb-3">
-                                Connect all your other tools to get things like test coverage, 1-click open file in
-                                editor, custom highlighting, and information from your other favorite services all in
-                                one place on Sourcegraph.
-                            </small>
-                            <div className="shadow flex-grow-1 mb-2">
-                                <input
-                                    className="form-control w-100 test-extension-registry-input"
-                                    type="search"
-                                    placeholder="Search extensions..."
-                                    name="query"
-                                    value={query}
-                                    onChange={onQueryChangeEvent}
-                                    autoFocus={true}
-                                    autoComplete="off"
-                                    autoCorrect="off"
-                                    autoCapitalize="off"
-                                    spellCheck={false}
-                                />
-                            </div>
-                        </Form>
-                        <ExtensionsQueryInputToolbar
-                            selectedCategories={selectedCategories}
-                            onSelectCategories={setSelectedCategories}
-                            enablementFilter={enablementFilter}
-                            setEnablementFilter={setEnablementFilter}
-                        />
-                        {!authenticatedUser && (
-                            <div className="alert alert-info my-4">
-                                <span>An account is required to create, enable and disable extensions. </span>
-                                <Link to="/sign-up?returnTo=/extensions">
-                                    <span className="alert-link">Register now!</span>
-                                </Link>
+                <div className="row pt-3">
+                    <div className="col-3">
+                        <h3>Categories</h3>
+                    </div>
+                    {/* hi */}
+                    <div className="col">
+                        <div className="mb-5">
+                            <Form onSubmit={preventDefault} className="form-inline">
+                                <small className="mb-3">
+                                    Connect all your other tools to get things like test coverage, 1-click open file in
+                                    editor, custom highlighting, and information from your other favorite services all
+                                    in one place on Sourcegraph.
+                                </small>
+                                <div className="shadow flex-grow-1 mb-2">
+                                    <input
+                                        className="form-control w-100 test-extension-registry-input"
+                                        type="search"
+                                        placeholder="Search extensions..."
+                                        name="query"
+                                        value={query}
+                                        onChange={onQueryChangeEvent}
+                                        autoFocus={true}
+                                        autoComplete="off"
+                                        autoCorrect="off"
+                                        autoCapitalize="off"
+                                        spellCheck={false}
+                                    />
+                                </div>
+                            </Form>
+                            {/* <ExtensionsQueryInputToolbar
+                                selectedCategories={selectedCategories}
+                                onSelectCategories={setSelectedCategories}
+                                enablementFilter={enablementFilter}
+                                setEnablementFilter={setEnablementFilter}
+                            /> */}
+                            {!authenticatedUser && (
+                                <div className="alert alert-info my-4">
+                                    <span>An account is required to create, enable and disable extensions. </span>
+                                    <Link to="/sign-up?returnTo=/extensions">
+                                        <span className="alert-link">Register now!</span>
+                                    </Link>
+                                </div>
+                            )}
+                            <ExtensionsList
+                                {...props}
+                                data={data}
+                                query={query}
+                                enablementFilter={enablementFilter}
+                                selectedCategories={selectedCategories}
+                                showMoreExtensions={showMoreExtensions}
+                            />
+                        </div>
+                        {!isLoading && !showMoreExtensions && selectedCategories.length === 0 && (
+                            <div className="d-flex justify-content-center">
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-secondary"
+                                    onClick={() => setShowMoreExtensions(true)}
+                                >
+                                    Show more extensions
+                                </button>
                             </div>
                         )}
-                        <ExtensionsList
-                            {...props}
-                            data={data}
-                            query={query}
-                            enablementFilter={enablementFilter}
-                            selectedCategories={selectedCategories}
-                            showMoreExtensions={showMoreExtensions}
-                        />
+                        {/* Only show the banner when there are no selected categories and it is not loading */}
+                        {selectedCategories.length === 0 && !isLoading && (
+                            <>
+                                <hr className="mt-5" />
+                                <div className="my-5 justify-content-center">
+                                    <ExtensionBanner />
+                                </div>
+                            </>
+                        )}
                     </div>
-                    {!isLoading && !showMoreExtensions && selectedCategories.length === 0 && (
-                        <div className="d-flex justify-content-center">
-                            <button
-                                type="button"
-                                className="btn btn-outline-secondary"
-                                onClick={() => setShowMoreExtensions(true)}
-                            >
-                                Show more extensions
-                            </button>
-                        </div>
-                    )}
                 </div>
             </div>
-            {/* Only show the banner when there are no selected categories and it is not loading */}
-            {selectedCategories.length === 0 && !isLoading && (
-                <>
-                    <hr className="mt-5" />
-                    <div className="my-5 row justify-content-center">
-                        <div className="mx-auto col-sm-12 col-md-8 col-lg-8 col-xl-6">
-                            <ExtensionBanner />
-                        </div>
-                    </div>
-                </>
-            )}
         </>
     )
 }

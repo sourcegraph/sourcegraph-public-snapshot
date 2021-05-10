@@ -1,3 +1,4 @@
+import classnames from 'classnames'
 import React from 'react'
 
 import { CtaBanner } from '../components/CtaBanner'
@@ -10,7 +11,7 @@ interface Props {
 
 export const ExtensionBanner: React.FunctionComponent<Props> = ({ className }) => (
     <CtaBanner
-        className={className}
+        className={classnames(className, 'border-0 shadow-none')}
         icon={<img className="extension-banner__icon" src={extensionBannerIconURL} alt="" />}
         title="Create your own extension"
         bodyText="You can improve your workflow by creating custom extensions. See the Sourcegraph Docs for details about writing and publishing."
