@@ -179,7 +179,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
 
         categorySections = [
             <div key={selectedCategory} className="mt-1">
-                <h3 className="extensions-list__category font-weight-bold">{selectedCategory}</h3>
+                <h3 className="extensions-list__category mb-3 font-weight-normal">{selectedCategory}</h3>
                 <div className="extensions-list__cards mt-1">
                     {extensionIDs.map(extensionId => (
                         <ExtensionCard

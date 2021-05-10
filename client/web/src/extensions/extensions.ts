@@ -1,17 +1,15 @@
 import {
     ConfiguredRegistryExtension,
     toConfiguredRegistryExtension,
-    isExtensionEnabled,
 } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
-import { isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
 
 import { validCategories } from './extension/extension'
-import { ConfiguredExtensionCache, ExtensionsEnablement } from './ExtensionRegistry'
+import { ConfiguredExtensionCache } from './ExtensionRegistry'
 
 export interface ConfiguredRegistryExtensions {
     [id: string]: Pick<ConfiguredRegistryExtension<RegistryExtensionFieldsForList>, 'manifest' | 'id'>
@@ -83,4 +81,3 @@ export function configureExtensionRegistry(
 
     return { extensions, extensionIDsByCategory }
 }
-
