@@ -24,11 +24,15 @@ $popover-item-padding-v: 0.25rem;
 
     &__node {
         border-bottom: solid 1px var(--border-color);
-        padding: $popover-item-padding-v $popover-item-padding-h;
+        .theme-redesign & {
+            border-bottom: none;
+        }
+
         &:last-child {
             border-bottom: none;
         }
         &-link {
+            padding: $popover-item-padding-v $popover-item-padding-h;
             display: flex;
             align-items: center;
             &-icon {
