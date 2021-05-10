@@ -9,102 +9,105 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // changesetJobInsertColumns is the list of changeset_jobs columns that are
-// modified in CreateChangesetJob and UpdateChangesetJob.
-var changesetJobInsertColumns = []*sqlf.Query{
-	sqlf.Sprintf("bulk_group"),
-	sqlf.Sprintf("user_id"),
-	sqlf.Sprintf("batch_change_id"),
-	sqlf.Sprintf("changeset_id"),
-	sqlf.Sprintf("job_type"),
-	sqlf.Sprintf("payload"),
-	sqlf.Sprintf("state"),
-	sqlf.Sprintf("failure_message"),
-	sqlf.Sprintf("started_at"),
-	sqlf.Sprintf("finished_at"),
-	sqlf.Sprintf("process_after"),
-	sqlf.Sprintf("num_resets"),
-	sqlf.Sprintf("num_failures"),
-	sqlf.Sprintf("created_at"),
-	sqlf.Sprintf("updated_at"),
+// modified in CreateChangesetJob.
+var changesetJobInsertColumns = []string{
+	"bulk_group",
+	"user_id",
+	"batch_change_id",
+	"changeset_id",
+	"job_type",
+	"payload",
+	"state",
+	"failure_message",
+	"started_at",
+	"finished_at",
+	"process_after",
+	"num_resets",
+	"num_failures",
+	"created_at",
+	"updated_at",
 }
 
-// ChangesetJobColumns are used by the batch change related Store methods to insert,
-// update and query changeset jobs.
-var ChangesetJobColumns = []*sqlf.Query{
-	sqlf.Sprintf("changeset_jobs.id"),
-	sqlf.Sprintf("changeset_jobs.bulk_group"),
-	sqlf.Sprintf("changeset_jobs.user_id"),
-	sqlf.Sprintf("changeset_jobs.batch_change_id"),
-	sqlf.Sprintf("changeset_jobs.changeset_id"),
-	sqlf.Sprintf("changeset_jobs.job_type"),
-	sqlf.Sprintf("changeset_jobs.payload"),
-	sqlf.Sprintf("changeset_jobs.state"),
-	sqlf.Sprintf("changeset_jobs.failure_message"),
-	sqlf.Sprintf("changeset_jobs.started_at"),
-	sqlf.Sprintf("changeset_jobs.finished_at"),
-	sqlf.Sprintf("changeset_jobs.process_after"),
-	sqlf.Sprintf("changeset_jobs.num_resets"),
-	sqlf.Sprintf("changeset_jobs.num_failures"),
-	sqlf.Sprintf("changeset_jobs.created_at"),
-	sqlf.Sprintf("changeset_jobs.updated_at"),
+// ChangesetJobColumns are used by the changeset job related Store methods to query
+// and create changeset jobs.
+var ChangesetJobColumns = SQLColumns{
+	"changeset_jobs.id",
+	"changeset_jobs.bulk_group",
+	"changeset_jobs.user_id",
+	"changeset_jobs.batch_change_id",
+	"changeset_jobs.changeset_id",
+	"changeset_jobs.job_type",
+	"changeset_jobs.payload",
+	"changeset_jobs.state",
+	"changeset_jobs.failure_message",
+	"changeset_jobs.started_at",
+	"changeset_jobs.finished_at",
+	"changeset_jobs.process_after",
+	"changeset_jobs.num_resets",
+	"changeset_jobs.num_failures",
+	"changeset_jobs.created_at",
+	"changeset_jobs.updated_at",
 }
 
-// CreateChangesetJob creates the given changeset job.
-func (s *Store) CreateChangesetJob(ctx context.Context, c *btypes.ChangesetJob) error {
-	if c.CreatedAt.IsZero() {
-		c.CreatedAt = s.now()
+// CreateChangesetJob creates the given changeset jobs.
+func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJob) error {
+	inserter := func(inserter *batch.Inserter) error {
+		for _, c := range cs {
+			payload, err := jsonbColumn(c.Payload)
+			if err != nil {
+				return err
+			}
+
+			if c.CreatedAt.IsZero() {
+				c.CreatedAt = s.now()
+			}
+
+			if c.UpdatedAt.IsZero() {
+				c.UpdatedAt = c.CreatedAt
+			}
+
+			if err := inserter.Insert(
+				ctx,
+				c.BulkGroup,
+				c.UserID,
+				c.BatchChangeID,
+				c.ChangesetID,
+				c.JobType,
+				payload,
+				c.State.ToDB(),
+				c.FailureMessage,
+				nullTimeColumn(c.StartedAt),
+				nullTimeColumn(c.FinishedAt),
+				nullTimeColumn(c.ProcessAfter),
+				c.NumResets,
+				c.NumFailures,
+				c.CreatedAt,
+				c.UpdatedAt,
+			); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
-
-	if c.UpdatedAt.IsZero() {
-		c.UpdatedAt = c.CreatedAt
-	}
-
-	q, err := createChangesetJobQuery(c)
-	if err != nil {
-		return err
-	}
-
-	return s.query(ctx, q, func(sc scanner) (err error) {
-		return scanChangesetJob(c, sc)
-	})
-}
-
-var createChangesetJobQueryFmtstr = `
--- source: enterprise/internal/batches/store/changeset_jobs.go:CreateChangesetJob
-INSERT INTO changeset_jobs (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-RETURNING %s
-`
-
-func createChangesetJobQuery(c *btypes.ChangesetJob) (*sqlf.Query, error) {
-	payload, err := jsonbColumn(c.Payload)
-	if err != nil {
-		return nil, err
-	}
-	return sqlf.Sprintf(
-		createChangesetJobQueryFmtstr,
-		sqlf.Join(changesetJobInsertColumns, ", "),
-		c.BulkGroup,
-		c.UserID,
-		c.BatchChangeID,
-		c.ChangesetID,
-		c.JobType,
-		payload,
-		c.State,
-		c.FailureMessage,
-		&dbutil.NullTime{Time: &c.StartedAt},
-		&dbutil.NullTime{Time: &c.FinishedAt},
-		&dbutil.NullTime{Time: &c.ProcessAfter},
-		c.NumResets,
-		c.NumFailures,
-		c.CreatedAt,
-		c.UpdatedAt,
-		sqlf.Join(ChangesetJobColumns, ", "),
-	), nil
+	i := -1
+	return batch.WithInserterWithReturn(
+		ctx,
+		s.Handle().DB(),
+		"changeset_jobs",
+		changesetJobInsertColumns,
+		ChangesetJobColumns,
+		func(rows *sql.Rows) error {
+			i++
+			return scanChangesetJob(cs[i], rows)
+		},
+		inserter,
+	)
 }
 
 // GetChangesetJobOpts captures the query options needed for getting a ChangesetJob
@@ -115,7 +118,6 @@ type GetChangesetJobOpts struct {
 // GetChangesetJob gets a ChangesetJob matching the given options.
 func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (*btypes.ChangesetJob, error) {
 	q := getChangesetJobQuery(&opts)
-
 	var c btypes.ChangesetJob
 	err := s.query(ctx, q, func(sc scanner) (err error) {
 		return scanChangesetJob(&c, sc)
@@ -148,7 +150,7 @@ func getChangesetJobQuery(opts *GetChangesetJobOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getChangesetJobsQueryFmtstr,
-		sqlf.Join(ChangesetJobColumns, ", "),
+		sqlf.Join(ChangesetJobColumns.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }

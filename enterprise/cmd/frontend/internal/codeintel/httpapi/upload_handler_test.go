@@ -41,6 +41,7 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	mockDBStore.InsertUploadFunc.SetDefaultReturn(42, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")
@@ -122,6 +123,7 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	mockDBStore.InsertUploadFunc.SetDefaultReturn(42, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")
@@ -188,6 +190,7 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	mockDBStore.InsertUploadFunc.SetDefaultReturn(42, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")
@@ -252,6 +255,7 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 	}
 
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")
@@ -325,6 +329,7 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 		UploadedParts: []int{0, 1, 2, 3, 4},
 	}
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")

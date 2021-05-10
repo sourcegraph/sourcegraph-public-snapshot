@@ -22,7 +22,6 @@ import (
 	"golang.org/x/tools/go/buildutil"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
-	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
@@ -86,7 +85,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	uri, err := gituri.Parse(string(location.URI))
+	uri, err := url.Parse(string(location.URI))
 	if err != nil {
 		return err
 	}

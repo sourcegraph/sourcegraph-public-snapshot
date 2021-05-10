@@ -142,7 +142,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		return nil, err
 	}
 	if alertResult != nil {
-		return alertResult, nil
+		return &SearchResultsResolver{db: r.db, alert: alertResult}, nil
 	}
 
 	q, err := query.ToBasicQuery(r.Query)
@@ -257,7 +257,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search
 		searchBucketMin:     10,
 		searchBucketMax:     1000,
 	}
-	return plan.execute(ctx, func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error) {
+	return plan.execute(ctx, database.Repos(db), func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error) {
 		batchArgs := *args
 		batchArgs.RepoPromise = (&search.Promise{}).Resolve(batch)
 		fileResults, fileCommon, err := searchFilesInReposBatch(ctx, db, &batchArgs)
@@ -268,7 +268,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search
 		// fileResults is not sorted so we must sort it now. fileCommon may or
 		// may not be sorted, but we do not rely on its order.
 		sort.Slice(fileResults, func(i, j int) bool {
-			return fileResults[i].URL() < fileResults[j].URL()
+			return fileResults[i].FileMatch.Key().Less(fileResults[j].FileMatch.Key())
 		})
 		results := make([]SearchResultResolver, 0, len(fileResults))
 		for _, r := range fileResults {
@@ -337,13 +337,13 @@ func repoOfResult(result SearchResultResolver) string {
 //
 // If the executor returns any error, the search will be cancelled and the error
 // returned.
-func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *searchCursor, results []SearchResultResolver, common *streaming.Stats, err error) {
+func (p *repoPaginationPlan) execute(ctx context.Context, repoStore *database.RepoStore, exec executor) (c *searchCursor, results []SearchResultResolver, common *streaming.Stats, err error) {
 	// Determine how large the batches of repositories we will search over will be.
 	var totalRepos int
 	if p.mockNumTotalRepos != nil {
 		totalRepos = p.mockNumTotalRepos()
 	} else {
-		totalRepos = numTotalRepos.get(ctx)
+		totalRepos = numTotalRepos.get(ctx, repoStore)
 	}
 	batchSize := clamp(totalRepos/p.searchBucketDivisor, p.searchBucketMin, p.searchBucketMax)
 
@@ -600,7 +600,7 @@ type numTotalReposCache struct {
 	count      int
 }
 
-func (n *numTotalReposCache) get(ctx context.Context) int {
+func (n *numTotalReposCache) get(ctx context.Context, repoStore *database.RepoStore) int {
 	n.RLock()
 	if !n.lastUpdate.IsZero() && time.Since(n.lastUpdate) < 1*time.Minute {
 		defer n.RUnlock()
@@ -609,7 +609,7 @@ func (n *numTotalReposCache) get(ctx context.Context) int {
 	n.RUnlock()
 
 	n.Lock()
-	newCount, err := database.GlobalRepos.Count(ctx, database.ReposListOptions{})
+	newCount, err := repoStore.Count(ctx, database.ReposListOptions{})
 	if err != nil {
 		defer n.Unlock()
 		log15.Error("failed to determine numTotalRepos", "error", err)

@@ -14,7 +14,7 @@
 
 Search subexpressions combine groups of
 [filters](../reference/queries.md#keywords-all-searches) like `repo:` and
-[operators](../reference/queries.md#operators) like `or`. Compared to [basic examples](examples.md), search subexpressions allow more sophisticated queries.
+[operators](../reference/queries.md#boolean-operators) like `or`. Compared to [basic examples](examples.md), search subexpressions allow more sophisticated queries.
 Here are examples of how they can help you:
 
 → [Noncompliant spelling where case-sensitivity differs depending on the word](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%28%28Github+case:yes%29+or+%28organisation+case:no%29%29&patternType=literal).

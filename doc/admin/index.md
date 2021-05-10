@@ -57,3 +57,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - [Migrating to Sourcegraph 3.7.2+](migration/3_7.md)
 - [Pricing and subscriptions](subscriptions/index.md)
 - [FAQ](faq.md)
+
+## [How-tos](how-to/index.md)
+
+- [How to troubleshoot a dirty database](how-to/dirty_database.md)

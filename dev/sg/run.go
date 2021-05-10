@@ -13,8 +13,8 @@ import (
 	"github.com/rjeczalik/notify"
 
 	// TODO - deduplicate me
-	"github.com/sourcegraph/batch-change-utils/output"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 func run(ctx context.Context, cmds ...Command) error {
@@ -172,8 +172,16 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 		c.Env = makeEnv(conf.Env, cmd.Env)
 
 		logger := newCmdLogger(cmd.Name, out)
-		c.Stdout = logger
-		c.Stderr = logger
+		if cmd.IgnoreStdout {
+			out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
+		} else {
+			c.Stdout = logger
+		}
+		if cmd.IgnoreStderr {
+			out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
+		} else {
+			c.Stderr = logger
+		}
 
 		if err := c.Start(); err != nil {
 			return err
@@ -229,6 +237,12 @@ func makeEnv(envs ...map[string]string) []string {
 			// TODO: using range to iterate over the env is not stable and thus
 			// this won't work
 			expanded := os.Expand(v, func(lookup string) string {
+				// If we're looking up the key that we're trying to define, we
+				// skip the self-reference and look in the OS
+				if lookup == k {
+					return os.Getenv(lookup)
+				}
+
 				if e, ok := env[lookup]; ok {
 					return e
 				}

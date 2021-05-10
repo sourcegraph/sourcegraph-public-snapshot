@@ -65,12 +65,14 @@ Triggers:
  id                    | bigint                   |           | not null | nextval('batch_changes_site_credentials_id_seq'::regclass)
  external_service_type | text                     |           | not null | 
  external_service_id   | text                     |           | not null | 
- credential            | text                     |           | not null | 
  created_at            | timestamp with time zone |           | not null | now()
  updated_at            | timestamp with time zone |           | not null | now()
+ credential            | bytea                    |           | not null | 
+ encryption_key_id     | text                     |           | not null | ''::text
 Indexes:
     "batch_changes_site_credentials_pkey" PRIMARY KEY, btree (id)
     "batch_changes_site_credentials_unique" UNIQUE, btree (external_service_type, external_service_id)
+    "batch_changes_site_credentials_credential_idx" btree ((encryption_key_id = ANY (ARRAY[''::text, 'previously-migrated'::text])))
 
 ```
 
@@ -146,6 +148,8 @@ Foreign-key constraints:
  updated_at      | timestamp with time zone |           | not null | now()
 Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
+    "changeset_jobs_bulk_group_idx" btree (bulk_group)
+    "changeset_jobs_state_idx" btree (state)
 Check constraints:
     "changeset_jobs_payload_check" CHECK (jsonb_typeof(payload) = 'object'::text)
 Foreign-key constraints:
@@ -745,29 +749,31 @@ Stores the number of code intel events for repositories. Used for auto-index sch
 
 # Table "public.lsif_indexes"
 ```
-     Column      |           Type           | Collation | Nullable |                 Default                  
------------------+--------------------------+-----------+----------+------------------------------------------
- id              | bigint                   |           | not null | nextval('lsif_indexes_id_seq'::regclass)
- commit          | text                     |           | not null | 
- queued_at       | timestamp with time zone |           | not null | now()
- state           | text                     |           | not null | 'queued'::text
- failure_message | text                     |           |          | 
- started_at      | timestamp with time zone |           |          | 
- finished_at     | timestamp with time zone |           |          | 
- repository_id   | integer                  |           | not null | 
- process_after   | timestamp with time zone |           |          | 
- num_resets      | integer                  |           | not null | 0
- num_failures    | integer                  |           | not null | 0
- docker_steps    | jsonb[]                  |           | not null | 
- root            | text                     |           | not null | 
- indexer         | text                     |           | not null | 
- indexer_args    | text[]                   |           | not null | 
- outfile         | text                     |           | not null | 
- log_contents    | text                     |           |          | 
- execution_logs  | json[]                   |           |          | 
- local_steps     | text[]                   |           | not null | 
+         Column         |           Type           | Collation | Nullable |                 Default                  
+------------------------+--------------------------+-----------+----------+------------------------------------------
+ id                     | bigint                   |           | not null | nextval('lsif_indexes_id_seq'::regclass)
+ commit                 | text                     |           | not null | 
+ queued_at              | timestamp with time zone |           | not null | now()
+ state                  | text                     |           | not null | 'queued'::text
+ failure_message        | text                     |           |          | 
+ started_at             | timestamp with time zone |           |          | 
+ finished_at            | timestamp with time zone |           |          | 
+ repository_id          | integer                  |           | not null | 
+ process_after          | timestamp with time zone |           |          | 
+ num_resets             | integer                  |           | not null | 0
+ num_failures           | integer                  |           | not null | 0
+ docker_steps           | jsonb[]                  |           | not null | 
+ root                   | text                     |           | not null | 
+ indexer                | text                     |           | not null | 
+ indexer_args           | text[]                   |           | not null | 
+ outfile                | text                     |           | not null | 
+ log_contents           | text                     |           |          | 
+ execution_logs         | json[]                   |           |          | 
+ local_steps            | text[]                   |           | not null | 
+ commit_last_checked_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
+    "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 
@@ -891,29 +897,31 @@ Associates an upload with the set of packages they require within a given packag
 
 # Table "public.lsif_uploads"
 ```
-       Column        |           Type           | Collation | Nullable |                Default                 
----------------------+--------------------------+-----------+----------+----------------------------------------
- id                  | integer                  |           | not null | nextval('lsif_dumps_id_seq'::regclass)
- commit              | text                     |           | not null | 
- root                | text                     |           | not null | ''::text
- uploaded_at         | timestamp with time zone |           | not null | now()
- state               | text                     |           | not null | 'queued'::text
- failure_message     | text                     |           |          | 
- started_at          | timestamp with time zone |           |          | 
- finished_at         | timestamp with time zone |           |          | 
- repository_id       | integer                  |           | not null | 
- indexer             | text                     |           | not null | 
- num_parts           | integer                  |           | not null | 
- uploaded_parts      | integer[]                |           | not null | 
- process_after       | timestamp with time zone |           |          | 
- num_resets          | integer                  |           | not null | 0
- upload_size         | bigint                   |           |          | 
- num_failures        | integer                  |           | not null | 0
- associated_index_id | bigint                   |           |          | 
- committed_at        | timestamp with time zone |           |          | 
+         Column         |           Type           | Collation | Nullable |                Default                 
+------------------------+--------------------------+-----------+----------+----------------------------------------
+ id                     | integer                  |           | not null | nextval('lsif_dumps_id_seq'::regclass)
+ commit                 | text                     |           | not null | 
+ root                   | text                     |           | not null | ''::text
+ uploaded_at            | timestamp with time zone |           | not null | now()
+ state                  | text                     |           | not null | 'queued'::text
+ failure_message        | text                     |           |          | 
+ started_at             | timestamp with time zone |           |          | 
+ finished_at            | timestamp with time zone |           |          | 
+ repository_id          | integer                  |           | not null | 
+ indexer                | text                     |           | not null | 
+ num_parts              | integer                  |           | not null | 
+ uploaded_parts         | integer[]                |           | not null | 
+ process_after          | timestamp with time zone |           |          | 
+ num_resets             | integer                  |           | not null | 0
+ upload_size            | bigint                   |           |          | 
+ num_failures           | integer                  |           | not null | 0
+ associated_index_id    | bigint                   |           |          | 
+ committed_at           | timestamp with time zone |           |          | 
+ commit_last_checked_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
+    "lsif_uploads_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
     "lsif_uploads_committed_at" btree (committed_at) WHERE state = 'completed'::text
     "lsif_uploads_state" btree (state)
     "lsif_uploads_uploaded_at" btree (uploaded_at)
@@ -1478,12 +1486,15 @@ Foreign-key constraints:
  user_id               | integer                  |           | not null | 
  external_service_type | text                     |           | not null | 
  external_service_id   | text                     |           | not null | 
- credential            | text                     |           | not null | 
  created_at            | timestamp with time zone |           | not null | now()
  updated_at            | timestamp with time zone |           | not null | now()
+ credential            | bytea                    |           | not null | 
+ ssh_migration_applied | boolean                  |           | not null | false
+ encryption_key_id     | text                     |           | not null | ''::text
 Indexes:
     "user_credentials_pkey" PRIMARY KEY, btree (id)
     "user_credentials_domain_user_id_external_service_type_exter_key" UNIQUE CONSTRAINT, btree (domain, user_id, external_service_type, external_service_id)
+    "user_credentials_credential_idx" btree ((encryption_key_id = ANY (ARRAY[''::text, 'previously-migrated'::text])))
 Foreign-key constraints:
     "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 

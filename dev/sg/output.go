@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/sourcegraph/batch-change-utils/output"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var out *output.Output = output.NewOutput(os.Stdout, output.OutputOpts{

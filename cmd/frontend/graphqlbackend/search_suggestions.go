@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -118,8 +117,8 @@ func (s symbolSuggestionResolver) Label() string {
 func (s symbolSuggestionResolver) ToSymbol() (*symbolResolver, bool) { return &s.symbol, true }
 func (s symbolSuggestionResolver) Key() suggestionKey {
 	return suggestionKey{
-		uri:    s.symbol.URI(),
 		symbol: s.symbol.Symbol.Name + s.symbol.Symbol.Parent,
+		url:    s.symbol.CanonicalURL(),
 	}
 }
 
@@ -164,7 +163,7 @@ type suggestionKey struct {
 	file     string
 	symbol   string
 	lang     string
-	uri      *gituri.URI
+	url      string
 }
 
 type searchSuggestionsArgs struct {
@@ -396,13 +395,16 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				if len(sr.Symbol.Name) < 12 {
 					score++
 				}
-				switch ctagsKindToLSPSymbolKind(sr.Symbol.Kind) {
+				switch sr.Symbol.LSPKind() {
 				case lsp.SKFunction, lsp.SKMethod:
 					score += 2
 				case lsp.SKClass:
 					score += 3
 				}
-				if len(sr.Symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.URI().String()), strings.ToLower(sr.Symbol.Name)) {
+				repoName := strings.ToLower(string(sr.File.Repo.Name))
+				fileName := strings.ToLower(sr.File.Path)
+				symbolName := strings.ToLower(sr.Symbol.Name)
+				if len(sr.Symbol.Name) >= 4 && strings.Contains(repoName+fileName, symbolName) {
 					score++
 				}
 				results = append(results, symbolSuggestionResolver{

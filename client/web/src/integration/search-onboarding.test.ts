@@ -172,7 +172,7 @@ describe('Search onboarding', () => {
             )
             assert.strictEqual(inputContents, 'lang:')
             await driver.page.waitForSelector('.test-tour-step-2')
-            await driver.page.keyboard.type('typescr')
+            await driver.page.keyboard.type('TypeScr')
             await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
             let tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
             let tourStep3 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-3'))
@@ -182,26 +182,6 @@ describe('Search onboarding', () => {
             await driver.page.waitForSelector('.test-tour-step-3')
             tourStep3 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-3'))
             tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
-            expect(tourStep3).toBeTruthy()
-        })
-
-        it('advances filter-lang when there is a valid matching language passed to the lang filter', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await resetOnboardingTour()
-            await waitAndFocusInput()
-            await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.test-tour-language-button')
-            await driver.page.click('.test-tour-language-button')
-            await driver.page.waitForSelector('#monaco-query-input')
-            const inputContents = await driver.page.evaluate(
-                () => document.querySelector('#monaco-query-input .view-lines')?.textContent
-            )
-            assert.strictEqual(inputContents, 'lang:')
-            await driver.page.waitForSelector('.test-tour-step-2')
-            await driver.page.keyboard.type('typescript')
-            await driver.page.keyboard.press('Space')
-            await driver.page.waitForSelector('.test-tour-step-3')
-            const tourStep3 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-3'))
             expect(tourStep3).toBeTruthy()
         })
         it('advances filter-repository when an autocomplete suggestion is selected', async () => {

@@ -8,6 +8,11 @@ import { getCompletionItems, repositoryCompletionItemKind } from './completion'
 import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
 import { Token } from './token'
 
+expect.addSnapshotSerializer({
+    serialize: value => JSON.stringify(value, null, 2),
+    test: () => true,
+})
+
 const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSuccess<Token[]>).term
 
 describe('getCompletionItems()', () => {
@@ -298,30 +303,44 @@ describe('getCompletionItems()', () => {
                     false
                 )
             )?.suggestions.map(({ label }) => label)
-        ).toStrictEqual([
-            'c',
-            'cpp',
-            'csharp',
-            'css',
-            'go',
-            'graphql',
-            'haskell',
-            'html',
-            'java',
-            'javascript',
-            'json',
-            'lua',
-            'markdown',
-            'php',
-            'powershell',
-            'python',
-            'r',
-            'ruby',
-            'rust',
-            'sass',
-            'swift',
-            'typescript',
-        ])
+        ).toMatchInlineSnapshot(`
+            [
+              "Assembly",
+              "Bash",
+              "C",
+              "C++",
+              "C#",
+              "CSS",
+              "Dart",
+              "Go",
+              "GraphQL",
+              "Haskell",
+              "HTML",
+              "Java",
+              "JavaScript",
+              "Kotlin",
+              "JSON",
+              "Julia",
+              "Lua",
+              "Markdown",
+              "Objective-C",
+              "OCaml",
+              "PHP",
+              "PowerShell",
+              "Python",
+              "R",
+              "Ruby",
+              "Rust",
+              "Sass",
+              "Scala",
+              "SQL",
+              "Swift",
+              "TypeScript",
+              "VBA",
+              "XML",
+              "Zig"
+            ]
+        `)
     })
 
     test('returns completions in order of discrete value definition, not alphabetically', async () => {
@@ -475,12 +494,32 @@ describe('getCompletionItems()', () => {
                     false
                 )
             )?.suggestions.map(({ insertText }) => insertText)
-        ).toStrictEqual([
-            'contains.file(${1:CHANGELOG}) ',
-            'contains.content(${1:TODO}) ',
-            'contains(file:${1:CHANGELOG} content:${2:fix}) ',
-            'contains.commit.after(${1:1 month ago}) ',
-            '^repo/with\\ a\\ space$ ',
-        ])
+        ).toMatchInlineSnapshot(`
+            [
+              "contains.file(\${1:CHANGELOG}) ",
+              "contains.content(\${1:TODO}) ",
+              "contains(file:\${1:CHANGELOG} content:\${2:fix}) ",
+              "contains.commit.after(\${1:1 month ago}) ",
+              "^repo/with\\\\ a\\\\ space$ "
+            ]
+        `)
+    })
+
+    test('Sourcegraph.com GH repo completions', async () => {
+        expect(
+            (
+                await getCompletionItems(toSuccess(scanSearchQuery('repo:')), { column: 5 }, of([]), false, true)
+            )?.suggestions.map(({ insertText }) => insertText)
+        ).toMatchInlineSnapshot(`
+            [
+              "^github\\\\.com/\${1:ORGANIZATION}/.* ",
+              "^github\\\\.com/\${1:ORGANIZATION}/\${2:REPO-NAME}$ ",
+              "\${1:STRING} ",
+              "contains.file(\${1:CHANGELOG}) ",
+              "contains.content(\${1:TODO}) ",
+              "contains(file:\${1:CHANGELOG} content:\${2:fix}) ",
+              "contains.commit.after(\${1:1 month ago}) "
+            ]
+        `)
     })
 })

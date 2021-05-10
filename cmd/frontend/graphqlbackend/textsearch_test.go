@@ -44,15 +44,19 @@ func TestSearchFilesInRepos(t *testing.T) {
 		switch repoName {
 		case "foo/one":
 			return []result.FileMatch{{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
 			}}, false, nil
 		case "foo/two":
 			return []result.FileMatch{{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
 			}}, false, nil
 		case "foo/empty":
 			return nil, false, nil
@@ -137,21 +141,27 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		switch repoName {
 		case "foo/one":
 			return []result.FileMatch{{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
 			}}, false, nil
 		case "foo/two":
 			return []result.FileMatch{{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
 			}}, false, nil
 		case "foo/three":
 			return []result.FileMatch{{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
+				File: result.File{
+					Repo:     repo,
+					InputRev: &rev,
+					Path:     "main.go",
+				},
 			}}, false, nil
 		default:
 			return nil, false, errors.New("Unexpected repo")
@@ -217,9 +227,11 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		switch repoName {
 		case "foo":
 			return []result.FileMatch{{
-				Repo:     repo,
-				InputRev: &rev,
-				Path:     "main.go",
+				File: result.File{
+					Repo:     repo,
+					CommitID: api.CommitID(rev),
+					Path:     "main.go",
+				},
 			}}, false, nil
 		default:
 			panic("unexpected repo")
@@ -258,20 +270,20 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resultURIs := make([]string, len(results))
+	resultKeys := make([]result.Key, len(results))
 	for i, result := range results {
-		resultURIs[i] = result.URL()
+		resultKeys[i] = result.FileMatch.Key()
 	}
-	sort.Strings(resultURIs)
+	sort.Slice(resultKeys, func(i, j int) bool { return resultKeys[i].Less(resultKeys[j]) })
 
-	wantResultURIs := []string{
-		"git://foo?branch3#main.go",
-		"git://foo?branch4#main.go",
-		"git://foo?master#main.go",
-		"git://foo?mybranch#main.go",
+	wantResultKeys := []result.Key{
+		{Repo: "foo", Commit: "branch3", Path: "main.go"},
+		{Repo: "foo", Commit: "branch4", Path: "main.go"},
+		{Repo: "foo", Commit: "master", Path: "main.go"},
+		{Repo: "foo", Commit: "mybranch", Path: "main.go"},
 	}
-	if !reflect.DeepEqual(resultURIs, wantResultURIs) {
-		t.Errorf("got %v, want %v", resultURIs, wantResultURIs)
+	if !reflect.DeepEqual(resultKeys, wantResultKeys) {
+		t.Errorf("got %v, want %v", resultKeys, wantResultKeys)
 	}
 }
 

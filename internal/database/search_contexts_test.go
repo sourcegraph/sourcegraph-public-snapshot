@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -70,6 +71,75 @@ func TestSearchContexts_Get(t *testing.T) {
 			}
 			if !reflect.DeepEqual(tt.want, searchContext) {
 				t.Fatalf("wanted %v search contexts, got %v", tt.want, searchContext)
+			}
+		})
+	}
+}
+
+func TestSearchContexts_Update(t *testing.T) {
+	db := dbtesting.GetDB(t)
+	ctx := actor.WithInternalActor(context.Background())
+	u := Users(db)
+	o := Orgs(db)
+	sc := SearchContexts(db)
+
+	user, err := u.Create(ctx, NewUser{Username: "u", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	displayName := "My Org"
+	org, err := o.Create(ctx, "myorg", &displayName)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	created, err := createSearchContexts(ctx, sc, []*types.SearchContext{
+		{Name: "instance", Description: "instance level", Public: true},
+		{Name: "user", Description: "user level", Public: true, NamespaceUserID: user.ID},
+		{Name: "org", Description: "org level", Public: true, NamespaceOrgID: org.ID},
+	})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	instanceSC := created[0]
+	userSC := created[1]
+	orgSC := created[2]
+
+	set := func(sc *types.SearchContext, f func(*types.SearchContext)) *types.SearchContext {
+		copied := *sc
+		f(&copied)
+		return &copied
+	}
+
+	tests := []struct {
+		name    string
+		updated *types.SearchContext
+		revs    []*types.SearchContextRepositoryRevisions
+	}{
+		{
+			name:    "update public",
+			updated: set(instanceSC, func(sc *types.SearchContext) { sc.Public = false }),
+		},
+		{
+			name:    "update description",
+			updated: set(userSC, func(sc *types.SearchContext) { sc.Description = "testdescription" }),
+		},
+		{
+			name:    "update name",
+			updated: set(orgSC, func(sc *types.SearchContext) { sc.Name = "testname" }),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			updated, err := sc.UpdateSearchContextWithRepositoryRevisions(ctx, tt.updated, nil)
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
+			if diff := cmp.Diff(tt.updated, updated); diff != "" {
+				t.Fatalf("unexpected result: %s", diff)
 			}
 		})
 	}
@@ -392,9 +462,9 @@ func TestSearchContexts_Permissions(t *testing.T) {
 			wantSearchContexts: []*types.SearchContext{searchContexts[0], searchContexts[2], searchContexts[4]},
 		},
 		{
-			name:               "site-admin user2 has access to all contexts",
+			name:               "site-admin user2 has access to all public contexts and private instance-level contexts",
 			userID:             user2.ID,
-			wantSearchContexts: searchContexts,
+			wantSearchContexts: []*types.SearchContext{searchContexts[0], searchContexts[1], searchContexts[2], searchContexts[4]},
 			siteAdmin:          true,
 		},
 	}
@@ -455,16 +525,23 @@ func TestSearchContexts_Permissions(t *testing.T) {
 			wantErr:       "search context not found",
 		},
 		{
-			name:          "authenticated site-admin user2 has access to private user1 context",
+			name:          "authenticated site-admin user2 does not have access to private user1 context",
 			userID:        user2.ID,
 			searchContext: searchContexts[3],
 			siteAdmin:     true,
+			wantErr:       "search context not found",
 		},
 		{
 			name:          "authenticated user1 does not have access to private instance-level context",
 			userID:        user1.ID,
 			searchContext: searchContexts[1],
 			wantErr:       "search context not found",
+		},
+		{
+			name:          "site-admin user2 has access to private instance-level context",
+			userID:        user2.ID,
+			siteAdmin:     true,
+			searchContext: searchContexts[1],
 		},
 		{
 			name:          "authenticated user1 has access to his private context",

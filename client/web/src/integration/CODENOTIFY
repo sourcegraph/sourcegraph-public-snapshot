@@ -1,6 +1,5 @@
 # See https://github.com/sourcegraph/codenotify for documentation.
 
-batches* @LawnGnome
 batches* @eseliger
 search* @limitedmage
 code-monitoring* @limitedmage

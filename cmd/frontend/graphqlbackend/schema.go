@@ -4,30 +4,34 @@ import (
 	_ "embed"
 )
 
-// MainSchema is the main raw graqhql schema.
+// mainSchema is the main raw graqhql schema.
 //go:embed schema.graphql
-var MainSchema string
+var mainSchema string
 
-// BatchesSchema is the Batch Changes raw graqhql schema.
+// batchesSchema is the Batch Changes raw graqhql schema.
 //go:embed batches.graphql
-var BatchesSchema string
+var batchesSchema string
 
-// CodeIntelSchema is the Code Intel raw graqhql schema.
+// codeIntelSchema is the Code Intel raw graqhql schema.
 //go:embed codeintel.graphql
-var CodeIntelSchema string
+var codeIntelSchema string
 
-// DotcomSchema is the Dotcom schema extension raw graqhql schema.
+// dotcomSchema is the Dotcom schema extension raw graqhql schema.
 //go:embed dotcom.graphql
-var DotcomSchema string
+var dotcomSchema string
 
-// LicenseSchema is the Licensing raw graqhql schema.
+// licenseSchema is the Licensing raw graqhql schema.
 //go:embed license.graphql
-var LicenseSchema string
+var licenseSchema string
 
-// CodeMonitorsSchema is the Code Monitoring raw graqhql schema.
+// codeMonitorsSchema is the Code Monitoring raw graqhql schema.
 //go:embed code_monitors.graphql
-var CodeMonitorsSchema string
+var codeMonitorsSchema string
 
-// InsightsSchema is the Code Insights raw graqhql schema.
+// insightsSchema is the Code Insights raw graqhql schema.
 //go:embed insights.graphql
-var InsightsSchema string
+var insightsSchema string
+
+// authzSchema is the Authz raw graqhql schema.
+//go:embed authz.graphql
+var authzSchema string

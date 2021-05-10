@@ -48,7 +48,7 @@ func (fm *FileMatchResolver) Equal(other *FileMatchResolver) bool {
 }
 
 func (fm *FileMatchResolver) Key() string {
-	return fm.URL()
+	return fmt.Sprintf("%#v", fm.FileMatch.Key())
 }
 
 func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
@@ -82,10 +82,6 @@ func (fm *FileMatchResolver) RevSpec() *gitRevSpec {
 	return &gitRevSpec{
 		expr: &gitRevSpecExpr{expr: *fm.InputRev, repo: fm.Repository()},
 	}
-}
-
-func (fm *FileMatchResolver) Resource() string {
-	return fm.URL()
 }
 
 func (fm *FileMatchResolver) Symbols() []symbolResolver {
@@ -219,12 +215,14 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 		}
 
 		fileMatches = append(fileMatches, result.FileMatch{
-			Path:        fm.Path,
+			File: result.File{
+				Path:     fm.Path,
+				Repo:     repo,
+				CommitID: commit,
+				InputRev: &rev,
+			},
 			LineMatches: lineMatches,
 			LimitHit:    fm.LimitHit,
-			Repo:        repo,
-			CommitID:    commit,
-			InputRev:    &rev,
 		})
 	}
 

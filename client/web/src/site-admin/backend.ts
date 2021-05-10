@@ -42,8 +42,6 @@ import {
     DeleteUserVariables,
     UpdateMirrorRepositoryResult,
     UpdateMirrorRepositoryVariables,
-    ScheduleUserPermissionsSyncResult,
-    ScheduleUserPermissionsSyncVariables,
     ScheduleRepositoryPermissionsSyncResult,
     ScheduleRepositoryPermissionsSyncVariables,
     UserPublicRepositoriesResult,
@@ -351,23 +349,6 @@ export function scheduleRepositoryPermissionsSync(args: { repository: Scalars['I
         gql`
             mutation ScheduleRepositoryPermissionsSync($repository: ID!) {
                 scheduleRepositoryPermissionsSync(repository: $repository) {
-                    alwaysNil
-                }
-            }
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()),
-        mapTo(undefined)
-    )
-}
-
-export function scheduleUserPermissionsSync(args: { user: Scalars['ID'] }): Observable<void> {
-    return requestGraphQL<ScheduleUserPermissionsSyncResult, ScheduleUserPermissionsSyncVariables>(
-        gql`
-            mutation ScheduleUserPermissionsSync($user: ID!) {
-                scheduleUserPermissionsSync(user: $user) {
                     alwaysNil
                 }
             }

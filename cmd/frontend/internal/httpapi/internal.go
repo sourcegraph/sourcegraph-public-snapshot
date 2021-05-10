@@ -213,8 +213,8 @@ type reposListServer struct {
 	// Repos is the subset of backend.Repos methods we use. Declared as an
 	// interface for testing.
 	Repos interface {
-		// ListDefault returns the repositories to index on Sourcegraph.com
-		ListDefault(context.Context) ([]types.RepoName, error)
+		// ListIndexable returns the repositories to index on Sourcegraph.com
+		ListIndexable(context.Context) ([]types.RepoName, error)
 		// List returns a list of repositories
 		List(context.Context, database.ReposListOptions) ([]*types.Repo, error)
 	}
@@ -248,7 +248,7 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 
 	var names []string
 	if h.SourcegraphDotComMode {
-		res, err := h.Repos.ListDefault(r.Context())
+		res, err := h.Repos.ListIndexable(r.Context())
 		if err != nil {
 			return errors.Wrap(err, "listing repos")
 		}
@@ -387,19 +387,21 @@ func serveSavedQueriesDeleteInfo(db dbutil.DB) func(w http.ResponseWriter, r *ht
 	}
 }
 
-func serveSettingsGetForSubject(w http.ResponseWriter, r *http.Request) error {
-	var subject api.SettingsSubject
-	if err := json.NewDecoder(r.Body).Decode(&subject); err != nil {
-		return errors.Wrap(err, "Decode")
+func serveSettingsGetForSubject(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var subject api.SettingsSubject
+		if err := json.NewDecoder(r.Body).Decode(&subject); err != nil {
+			return errors.Wrap(err, "Decode")
+		}
+		settings, err := database.Settings(db).GetLatest(r.Context(), subject)
+		if err != nil {
+			return errors.Wrap(err, "Settings.GetLatest")
+		}
+		if err := json.NewEncoder(w).Encode(settings); err != nil {
+			return errors.Wrap(err, "Encode")
+		}
+		return nil
 	}
-	settings, err := database.GlobalSettings.GetLatest(r.Context(), subject)
-	if err != nil {
-		return errors.Wrap(err, "Settings.GetLatest")
-	}
-	if err := json.NewEncoder(w).Encode(settings); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
 }
 
 func serveOrgsListUsers(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
@@ -424,20 +426,22 @@ func serveOrgsListUsers(db dbutil.DB) func(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func serveOrgsGetByName(w http.ResponseWriter, r *http.Request) error {
-	var orgName string
-	err := json.NewDecoder(r.Body).Decode(&orgName)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
+func serveOrgsGetByName(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var orgName string
+		err := json.NewDecoder(r.Body).Decode(&orgName)
+		if err != nil {
+			return errors.Wrap(err, "Decode")
+		}
+		org, err := database.Orgs(db).GetByName(r.Context(), orgName)
+		if err != nil {
+			return errors.Wrap(err, "Orgs.GetByName")
+		}
+		if err := json.NewEncoder(w).Encode(org.ID); err != nil {
+			return errors.Wrap(err, "Encode")
+		}
+		return nil
 	}
-	org, err := database.GlobalOrgs.GetByName(r.Context(), orgName)
-	if err != nil {
-		return errors.Wrap(err, "Orgs.GetByName")
-	}
-	if err := json.NewEncoder(w).Encode(org.ID); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
 }
 
 func serveUsersGetByUsername(w http.ResponseWriter, r *http.Request) error {

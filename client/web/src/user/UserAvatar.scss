@@ -1,3 +1,25 @@
 .user-avatar {
     border-radius: 50%;
 }
+
+.theme-redesign {
+    .user-avatar {
+        display: inline-flex;
+        border-radius: 50%;
+        text-transform: capitalize;
+        background: linear-gradient(
+            90deg,
+            var(--logo-purple) 0%,
+            #a537f8 20%,
+            #974ff9 40%,
+            #8760f9 60%,
+            #746ffa 80%,
+            #5c7cfa 100%
+        );
+        color: var(--color-bg-1);
+        align-items: center;
+        justify-content: center;
+        min-width: 1rem;
+        min-height: 1rem;
+    }
+}

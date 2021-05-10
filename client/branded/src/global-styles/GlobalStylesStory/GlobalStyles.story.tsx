@@ -8,8 +8,7 @@ import { action } from '@storybook/addon-actions'
 import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
-import { flow, startCase } from 'lodash'
-import openColor from 'open-color'
+import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useState } from 'react'
 import 'storybook-addon-designs'
 
@@ -20,14 +19,14 @@ import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
 import { Form } from '../../components/Form'
 
+import { AlertsStory } from './AlertsStory'
+import { BadgeVariants } from './BadgeVariants/BadgeVariants'
+import { ButtonVariants } from './ButtonVariants'
+import { ColorVariants } from './ColorVariants'
+import { SEMANTIC_COLORS } from './constants'
+import { FormFieldVariants } from './FormFieldVariants'
 import { TextStory } from './TextStory'
-
-const semanticColors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'merged'] as const
-
-const preventDefault = <E extends React.SyntheticEvent>(event: E): E => {
-    event.preventDefault()
-    return event
-}
+import { preventDefault } from './utils'
 
 const { add } = storiesOf('branded/Global styles', module).addDecorator(story => (
     <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>
@@ -39,7 +38,7 @@ add(
         <>
             <h1>Typography</h1>
 
-            <TextStory semanticColors={semanticColors} />
+            <TextStory />
         </>
     ),
     {
@@ -71,7 +70,7 @@ add(
                 areas.
             </p>
 
-            <TextStory semanticColors={semanticColors} />
+            <TextStory />
         </div>
     ),
     {
@@ -166,52 +165,23 @@ add(
             <h1>Colors</h1>
 
             <h2>Semantic colors</h2>
-            <p>
-                These can be used to give semantic clues and always work both in light and dark theme. They are
-                available on most CSS components and the <code>border-</code> and <code>bg-</code> utility classes.
-            </p>
-            <div className="d-flex flex-wrap">
-                {semanticColors.map(semantic => (
-                    <div className="m-2 text-center" key={semantic}>
-                        <div className={`bg-${semantic} rounded`} style={{ width: '5rem', height: '5rem' }} />
-                        {semantic}
-                    </div>
-                ))}
-            </div>
-
-            <h2>Color Palette</h2>
-            <p>
-                Our color palette is the <a href="https://yeun.github.io/open-color/">Open Color</a> palette. All colors
-                are available as SCSS and CSS variables. It's generally not advised to use these directly, but they may
-                be used in rare cases, like charts. In other cases, rely on CSS components, utilities for borders and
-                background, and dynamic CSS variables.
-            </p>
-            {Object.entries(openColor).map(
-                ([name, colors]) =>
-                    Array.isArray(colors) && (
-                        <div key={name}>
-                            <h5>{name}</h5>
-                            <div className="d-flex flex-wrap">
-                                {colors.map((color, number) => (
-                                    <div key={color} className="m-2 text-right">
-                                        <div
-                                            className="rounded"
-                                            style={{ background: color, width: '3rem', height: '3rem' }}
-                                        />
-                                        {number}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )
-            )}
+            <p>These can be used to give semantic clues and always work both in light and dark theme.</p>
+            <ColorVariants />
         </>
     ),
     {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/P2M4QrgIxeUsjE80MHP8TmY3/Sourcegraph-Colors?node-id=0%3A2',
-        },
+        design: [
+            {
+                type: 'figma',
+                url: 'https://www.figma.com/file/P2M4QrgIxeUsjE80MHP8TmY3/Sourcegraph-Colors?node-id=0%3A2',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Redesign',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A7608',
+            },
+        ],
     }
 )
 
@@ -306,44 +276,27 @@ add('Layout', () => (
     </>
 ))
 
-add(
-    'Alerts',
-    () => (
-        <>
-            <h1>Alerts</h1>
-            <p>
-                Provide contextual feedback messages for typical user actions with the handful of available and flexible
-                alert messages.
-            </p>
-            {semanticColors.map(semantic => (
-                <div key={semantic} className={classNames('alert', `alert-${semantic}`)}>
-                    A simple {semantic} alert — check it out! It can also contain{' '}
-                    <a href="/" onClick={flow(preventDefault, action('alert link clicked'))}>
-                        links like this
-                    </a>
-                    .
-                </div>
-            ))}
-            <div className="alert alert-info d-flex align-items-center">
-                <div className="flex-grow-1">An alert with a button</div>
-                {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus */}
-                <a
-                    role="button"
-                    className="btn btn-info"
-                    onClick={flow(preventDefault, action('alert button clicked'))}
-                >
-                    Call to action
-                </a>
-            </div>
-        </>
-    ),
-    {
-        design: {
+add('Alerts', AlertsStory, {
+    design: [
+        {
             type: 'figma',
+            name: 'Figma',
             url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=127%3A4',
         },
-    }
-)
+        {
+            type: 'figma',
+            name: 'Figma Redesign Light',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A196',
+        },
+        {
+            type: 'figma',
+            name: 'Figma Redesign Dark',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A525',
+        },
+    ],
+})
 
 add(
     'Badges',
@@ -420,58 +373,8 @@ add(
                 </tbody>
             </table>
 
-            <h2>Semantic variations</h2>
-            <p>Change the appearance of any badge with modifier classes for semantic colors.</p>
-            <p>
-                {semanticColors.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <span className={classNames('badge', `badge-${semantic}`)}>{semantic}</span>{' '}
-                    </React.Fragment>
-                ))}
-            </p>
-
-            <h2>Uppercase</h2>
-            <p>
-                Badges can be visually uppercased by combining them with the <code>text-uppercase</code> class.
-                Examples:
-            </p>
-            <div>
-                <h1>
-                    Blockchain support{' '}
-                    <sup>
-                        <span className="badge badge-warning text-uppercase">Beta</span>
-                    </sup>
-                </h1>
-                <h1>
-                    Blockchain support{' '}
-                    <sup>
-                        <span className="badge badge-info text-uppercase">Preview</span>
-                    </sup>
-                </h1>
-                <h1>
-                    Blockchain support{' '}
-                    <sup>
-                        <span className="badge badge-info text-uppercase">Experimental</span>
-                    </sup>
-                </h1>
-                <h1>
-                    Blockchain support{' '}
-                    <sup>
-                        <span className="badge badge-info text-uppercase">Prototype</span>
-                    </sup>
-                </h1>
-            </div>
-            <p>
-                <span className="badge badge-success text-uppercase">added</span> <code>path/to/file.ts</code>
-            </p>
-            <p>
-                <span className="badge badge-danger text-uppercase">deleted</span> <code>path/to/file.ts</code>
-            </p>
-            <p>
-                <span className="badge badge-warning text-uppercase">moved</span> <code>path/to/file.ts</code>
-            </p>
-            <p>Do not use it for user-supplied text like labels (tags) or usernames.</p>
-
+            <h2>Reference</h2>
+            <BadgeVariants variants={SEMANTIC_COLORS} />
             <h2>Pill badges</h2>
             <p>Pill badges are commonly used to display counts.</p>
             <div className="mb-4">
@@ -504,10 +407,25 @@ add(
         </>
     ),
     {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=486%3A0',
-        },
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma',
+                url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=486%3A0',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Redesign - Light',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6149',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Redesign - Dark',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6448',
+            },
+        ],
     }
 )
 
@@ -521,81 +439,47 @@ add(
                 sizes, states, and more.{' '}
                 <a href="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</a>
             </p>
-
             <h2>Semantic variants</h2>
-            <p>
-                {semanticColors.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <button
-                            type="button"
-                            key={semantic}
-                            className={classNames('btn', `btn-${semantic}`)}
-                            onClick={flow(preventDefault, action('button clicked'))}
-                        >
-                            {startCase(semantic)}
-                        </button>{' '}
-                    </React.Fragment>
-                ))}
-            </p>
-
+            <ButtonVariants variants={SEMANTIC_COLORS} />
             <h2>Outline variants</h2>
-            <p>
-                {semanticColors.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <button
-                            type="button"
-                            key={semantic}
-                            className={classNames('btn', `btn-outline-${semantic}`)}
-                            onClick={flow(preventDefault, action('button clicked'))}
-                        >
-                            {startCase(semantic)}
-                        </button>{' '}
-                    </React.Fragment>
-                ))}
-            </p>
-
-            <h2>Disabled</h2>
-            <div className="mb-2">
-                {semanticColors.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <button
-                            type="button"
-                            key={semantic}
-                            className={classNames('btn', `btn-${semantic}`)}
-                            disabled={true}
-                        >
-                            Disabled
-                        </button>{' '}
-                    </React.Fragment>
-                ))}
-            </div>
-            <div className="mb-2">
-                {semanticColors.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <button
-                            type="button"
-                            key={semantic}
-                            className={classNames('btn', `btn-outline-${semantic}`)}
-                            disabled={true}
-                        >
-                            Disabled
-                        </button>{' '}
-                    </React.Fragment>
-                ))}
-            </div>
-
+            <ButtonVariants variants={['primary', 'secondary', 'danger']} variantType="btn-outline" />
+            <h2>Icons</h2>
+            <p>We can use icons with our buttons</p>
+            <ButtonVariants variants={['danger']} icon={SearchIcon} />
+            <ButtonVariants variants={['danger']} variantType="btn-outline" icon={SearchIcon} />
+            <h2>Size</h2>
+            <p>We can make our buttons smaller</p>
+            <ButtonVariants variants={['primary']} variantType="btn-outline" small={true} />
             <h2>Links</h2>
-            <p>Links can be made to look like buttons too.</p>
-            <a href="https://example.com" className="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+            <p>Links can be made to look like buttons:</p>
+            <a href="https://example.com" className="btn btn-secondary mb-3" target="_blank" rel="noopener noreferrer">
                 I am a link
             </a>
+            <p>Buttons can be made to look like links:</p>
+            <button type="button" className="btn btn-link mr-3">
+                Link button
+            </button>
+            <button type="button" className="btn btn-link mr-3 focus">
+                Focused
+            </button>
+            <button type="button" className="btn btn-link mr-3" disabled={true}>
+                Disabled
+            </button>
         </>
     ),
     {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=35%3A11',
-        },
+        design: [
+            {
+                type: 'figma',
+                url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=35%3A11',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Redesign',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2513',
+            },
+        ],
     }
 )
 
@@ -825,7 +709,7 @@ add(
                 </div>
                 <div className="form-group">
                     <label htmlFor="example-example-select">Example select</label>
-                    <select id="example-select" className="form-control">
+                    <select id="example-select" className="custom-select">
                         <option>Option A</option>
                         <option>Option B</option>
                         <option>Option C</option>
@@ -860,7 +744,7 @@ add(
                     </div>
                     <div className="form-group">
                         <label htmlFor="disabledSelect">Disabled select menu</label>
-                        <select id="disabledSelect" className="form-control">
+                        <select id="disabledSelect" className="custom-select">
                             <option>Disabled select</option>
                         </select>
                     </div>
@@ -887,25 +771,20 @@ add(
             <input className="form-control" type="text" value="I'm a readonly value" readOnly={true} />
 
             <h2 className="mt-3">Sizing</h2>
-            <p>Form controls can be made smaller or larger for rare use cases, like a select inside a dropdown menu.</p>
+            <p>Form fields can be made smaller</p>
             <div className="d-flex">
-                <div>
-                    <input className="form-control form-control-lg mb-1" type="text" placeholder="Large input" />
-                    <input className="form-control mb-1" type="text" placeholder="Default input" />
-                    <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
-                </div>
-                <div className="ml-2">
-                    <select className="form-control form-control-lg mb-1">
-                        <option>Large select</option>
-                    </select>
-                    <select className="form-control mb-1">
-                        <option>Default select</option>
-                    </select>
-                    <select className="form-control form-control-sm mb-1">
-                        <option>Small select</option>
-                    </select>
-                </div>
+                <fieldset>
+                    <div className="form-group">
+                        <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
+                        <textarea className="form-control form-control-sm mb-1" placeholder="Small textarea" />
+                        <select className="custom-select custom-select-sm mb-1">
+                            <option>Small select</option>
+                        </select>
+                    </div>
+                </fieldset>
             </div>
+            <h2 className="mt-3">Field reference</h2>
+            <FormFieldVariants />
         </>
     ),
     {

@@ -2,12 +2,12 @@ package batch
 
 import (
 	"context"
+	"database/sql"
 	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -19,13 +19,13 @@ func TestBatchInserter(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	setupTestTable(t)
+	db := dbtesting.GetDB(t)
+	setupTestTable(t, db)
 
 	expectedValues := makeTestValues(2, 0)
-	testInsert(t, expectedValues)
+	testInsert(t, db, expectedValues)
 
-	rows, err := dbconn.Global.Query("SELECT col1, col2, col3, col4, col5 from batch_inserter_test")
+	rows, err := db.Query("SELECT col1, col2, col3, col4, col5 from batch_inserter_test")
 	if err != nil {
 		t.Fatalf("unexpected error querying data: %s", err)
 	}
@@ -47,35 +47,56 @@ func TestBatchInserter(t *testing.T) {
 	}
 }
 
+func TestBatchInserterWithReturn(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	setupTestTable(t, db)
+
+	tableSizeFactor := 2
+	numRows := maxNumParameters * tableSizeFactor
+	expectedValues := makeTestValues(tableSizeFactor, 0)
+
+	var expectedIDs []int
+	for i := 0; i < numRows; i++ {
+		expectedIDs = append(expectedIDs, i+1)
+	}
+
+	if diff := cmp.Diff(expectedIDs, testInsertWithReturn(t, db, expectedValues)); diff != "" {
+		t.Errorf("unexpected returned ids (-want +got):\n%s", diff)
+	}
+}
+
 func BenchmarkBatchInserter(b *testing.B) {
-	dbtesting.SetupGlobalTestDB(b)
-	setupTestTable(b)
+	db := dbtesting.GetDB(b)
+	setupTestTable(b, db)
 	expectedValues := makeTestValues(10, 0)
 
 	b.ResetTimer()
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		testInsert(b, expectedValues)
+		testInsert(b, db, expectedValues)
 	}
 }
 
 func BenchmarkBatchInserterLargePayload(b *testing.B) {
-	dbtesting.SetupGlobalTestDB(b)
-	setupTestTable(b)
+	db := dbtesting.GetDB(b)
+	setupTestTable(b, db)
 	expectedValues := makeTestValues(10, 4096)
 
 	b.ResetTimer()
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		testInsert(b, expectedValues)
+		testInsert(b, db, expectedValues)
 	}
 }
 
 var setup sync.Once
 
-func setupTestTable(t testing.TB) {
+func setupTestTable(t testing.TB, db *sql.DB) {
 	setup.Do(func() {
 		createTableQuery := `
 			CREATE TABLE batch_inserter_test (
@@ -87,7 +108,7 @@ func setupTestTable(t testing.TB) {
 				col5 text
 			)
 		`
-		if _, err := dbconn.Global.Exec(createTableQuery); err != nil {
+		if _, err := db.Exec(createTableQuery); err != nil {
 			t.Fatalf("unexpected error creating test table: %s", err)
 		}
 	})
@@ -117,10 +138,10 @@ func makePayload(size int) string {
 	return string(s)
 }
 
-func testInsert(t testing.TB, expectedValues [][]interface{}) {
+func testInsert(t testing.TB, db *sql.DB, expectedValues [][]interface{}) {
 	ctx := context.Background()
 
-	inserter := NewInserter(ctx, dbconn.Global, "batch_inserter_test", "col1", "col2", "col3", "col4", "col5")
+	inserter := NewInserter(ctx, db, "batch_inserter_test", "col1", "col2", "col3", "col4", "col5")
 	for _, values := range expectedValues {
 		if err := inserter.Insert(ctx, values...); err != nil {
 			t.Fatalf("unexpected error inserting values: %s", err)
@@ -130,4 +151,37 @@ func testInsert(t testing.TB, expectedValues [][]interface{}) {
 	if err := inserter.Flush(ctx); err != nil {
 		t.Fatalf("unexpected error flushing: %s", err)
 	}
+}
+
+func testInsertWithReturn(t testing.TB, db *sql.DB, expectedValues [][]interface{}) (insertedIDs []int) {
+	ctx := context.Background()
+
+	inserter := NewInserterWithReturn(
+		ctx,
+		db,
+		"batch_inserter_test",
+		[]string{"col1", "col2", "col3", "col4", "col5"},
+		[]string{"id"},
+		func(rows *sql.Rows) error {
+			var id int
+			if err := rows.Scan(&id); err != nil {
+				return err
+			}
+
+			insertedIDs = append(insertedIDs, id)
+			return nil
+		},
+	)
+
+	for _, values := range expectedValues {
+		if err := inserter.Insert(ctx, values...); err != nil {
+			t.Fatalf("unexpected error inserting values: %s", err)
+		}
+	}
+
+	if err := inserter.Flush(ctx); err != nil {
+		t.Fatalf("unexpected error flushing: %s", err)
+	}
+
+	return insertedIDs
 }

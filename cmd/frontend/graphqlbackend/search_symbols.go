@@ -3,21 +3,15 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"sort"
-	"strings"
-	"unicode/utf8"
 
-	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/go-lsp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -168,10 +162,6 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		return nil, err
 	}
 	span.SetTag("commit", string(commitID))
-	baseURI, err := gituri.Parse("git://" + string(repoRevs.Repo.Name) + "?" + url.QueryEscape(inputRev))
-	if err != nil {
-		return nil, err
-	}
 
 	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
 		Repo:            repoRevs.Repo.Name,
@@ -187,26 +177,33 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 
 	// All symbols are from the same repo, so we can just partition them by path
 	// to build fileMatches
-	symbolMatchesByPath := make(map[string][]*result.SymbolMatch)
+	symbolsByPath := make(map[string][]*result.Symbol)
 	for _, symbol := range symbols {
-		symbolMatch := &result.SymbolMatch{
-			Symbol:  symbol,
-			BaseURI: baseURI,
-		}
-
-		cur := symbolMatchesByPath[symbol.Path]
-		symbolMatchesByPath[symbol.Path] = append(cur, symbolMatch)
+		cur := symbolsByPath[symbol.Path]
+		symbolsByPath[symbol.Path] = append(cur, &symbol)
 	}
 
 	// Create file matches from partitioned symbols
-	fileMatches := make([]result.FileMatch, 0, len(symbolMatchesByPath))
-	for path, symbolMatches := range symbolMatchesByPath {
-		fileMatches = append(fileMatches, result.FileMatch{
+	fileMatches := make([]result.FileMatch, 0, len(symbolsByPath))
+	for path, symbols := range symbolsByPath {
+		file := result.File{
 			Path:     path,
-			Symbols:  symbolMatches,
 			Repo:     repoRevs.Repo,
 			CommitID: commitID,
 			InputRev: &inputRev,
+		}
+
+		symbolMatches := make([]*result.SymbolMatch, 0, len(symbols))
+		for _, symbol := range symbols {
+			symbolMatches = append(symbolMatches, &result.SymbolMatch{
+				File:   &file,
+				Symbol: *symbol,
+			})
+		}
+
+		fileMatches = append(fileMatches, result.FileMatch{
+			Symbols: symbolMatches,
+			File:    file,
 		})
 	}
 
@@ -215,118 +212,4 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		return fileMatches[i].Path < fileMatches[j].Path
 	})
 	return fileMatches, err
-}
-
-// unescapePattern expects a regexp pattern of the form /^ ... $/ and unescapes
-// the pattern inside it.
-func unescapePattern(pattern string) string {
-	pattern = strings.TrimSuffix(strings.TrimPrefix(pattern, "/^"), "$/")
-	var start int
-	var r rune
-	var escaped []rune
-	buf := []byte(pattern)
-
-	next := func() rune {
-		r, start := utf8.DecodeRune(buf)
-		buf = buf[start:]
-		return r
-	}
-
-	for len(buf) > 0 {
-		r = next()
-		if r == '\\' && len(buf[start:]) > 0 {
-			r = next()
-			if r == '/' || r == '\\' {
-				escaped = append(escaped, r)
-				continue
-			}
-			escaped = append(escaped, '\\', r)
-			continue
-		}
-		escaped = append(escaped, r)
-	}
-	return string(escaped)
-}
-
-// computeSymbolOffset calculates a symbol offset based on the the only Symbol
-// data member that currently exposes line content: the symbols Pattern member,
-// which has the form /^ ... $/. We find the offset of the symbol name in this
-// line, after escaping the Pattern.
-func computeSymbolOffset(s result.Symbol) int {
-	if s.Pattern == "" {
-		return 0
-	}
-	i := strings.Index(unescapePattern(s.Pattern), s.Name)
-	if i >= 0 {
-		return i
-	}
-	return 0
-}
-
-func symbolRange(s result.Symbol) lsp.Range {
-	offset := computeSymbolOffset(s)
-	return lsp.Range{
-		Start: lsp.Position{Line: s.Line - 1, Character: offset},
-		End:   lsp.Position{Line: s.Line - 1, Character: offset + len(s.Name)},
-	}
-}
-
-func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
-	// Ctags kinds are determined by the parser and do not (in general) match LSP symbol kinds.
-	switch strings.ToLower(kind) {
-	case "file":
-		return lsp.SKFile
-	case "module":
-		return lsp.SKModule
-	case "namespace":
-		return lsp.SKNamespace
-	case "package", "packagename", "subprogspec":
-		return lsp.SKPackage
-	case "class", "type", "service", "typedef", "union", "section", "subtype", "component":
-		return lsp.SKClass
-	case "method", "methodspec":
-		return lsp.SKMethod
-	case "property":
-		return lsp.SKProperty
-	case "field", "member", "anonmember", "recordfield":
-		return lsp.SKField
-	case "constructor":
-		return lsp.SKConstructor
-	case "enum", "enumerator":
-		return lsp.SKEnum
-	case "interface":
-		return lsp.SKInterface
-	case "function", "func", "subroutine", "macro", "subprogram", "procedure", "command", "singletonmethod":
-		return lsp.SKFunction
-	case "variable", "var", "functionvar", "define", "alias", "val":
-		return lsp.SKVariable
-	case "constant", "const":
-		return lsp.SKConstant
-	case "string", "message", "heredoc":
-		return lsp.SKString
-	case "number":
-		return lsp.SKNumber
-	case "bool", "boolean":
-		return lsp.SKBoolean
-	case "array":
-		return lsp.SKArray
-	case "object", "literal", "map":
-		return lsp.SKObject
-	case "key", "label", "target", "selector", "id", "tag":
-		return lsp.SKKey
-	case "null":
-		return lsp.SKNull
-	case "enum member", "enumconstant":
-		return lsp.SKEnumMember
-	case "struct":
-		return lsp.SKStruct
-	case "event":
-		return lsp.SKEvent
-	case "operator":
-		return lsp.SKOperator
-	case "type parameter", "annotation":
-		return lsp.SKTypeParameter
-	}
-	log15.Debug("Unknown ctags kind", "kind", kind)
-	return 0
 }

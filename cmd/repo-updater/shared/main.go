@@ -54,7 +54,7 @@ var stateHTMLTemplate string
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(db *sql.DB, store *repos.Store, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
+type EnterpriseInit func(db *sql.DB, store *repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 func Main(enterpriseInit EnterpriseInit) {
 	// NOTE: Internal actor is required to have full visibility of the repo table
@@ -182,7 +182,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	// All dependencies ready
 	var debugDumpers []debugserver.Dumper
 	if enterpriseInit != nil {
-		debugDumpers = enterpriseInit(db, store, cf, server)
+		debugDumpers = enterpriseInit(db, store, keyring.Default(), cf, server)
 	}
 
 	if envvar.SourcegraphDotComMode() {
@@ -450,9 +450,13 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 			return
 		}
 
-		// Fetch all default repos that are NOT cloned so that we can add them to the
+		// Fetch ALL default repos that are NOT cloned so that we can add them to the
 		// scheduler
-		if u, err := baseRepoStore.ListDefaultRepos(ctx, database.ListDefaultReposOptions{OnlyUncloned: true}); err != nil {
+		opts := database.ListDefaultReposOptions{
+			OnlyUncloned:   true,
+			IncludePrivate: true,
+		}
+		if u, err := baseRepoStore.ListDefaultRepos(ctx, opts); err != nil {
 			log15.Error("Listing default repos", "error", err)
 			return
 		} else {

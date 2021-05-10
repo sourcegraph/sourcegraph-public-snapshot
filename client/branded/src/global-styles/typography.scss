@@ -46,6 +46,10 @@ sup {
     top: -1em;
 }
 
+legend {
+    font-size: 1rem;
+}
+
 .font-weight-medium {
     font-weight: 600;
 }
@@ -53,6 +57,13 @@ sup {
 // Make sure text color utilities are theme-aware
 .theme-light {
     @each $color, $value in $theme-colors-light {
+        @include text-emphasis-variant('.text-#{$color}', $value, true);
+    }
+}
+
+.theme-light.theme-redesign,
+.theme-dark.theme-redesign {
+    @each $color, $value in $theme-colors-redesign {
         @include text-emphasis-variant('.text-#{$color}', $value, true);
     }
 }

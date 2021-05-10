@@ -685,7 +685,7 @@ describe('Search', () => {
                 }),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:%40test+test&patternType=regexp', {
-                waitUntil: 'networkidle2',
+                waitUntil: 'networkidle0',
             })
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@test')
@@ -704,7 +704,7 @@ describe('Search', () => {
         test('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
             await driver.page.goto(
                 driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp',
-                { waitUntil: 'networkidle2' }
+                { waitUntil: 'networkidle0' }
             )
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             await driver.page.waitForSelector('#monaco-query-input')
@@ -736,7 +736,7 @@ describe('Search', () => {
             await driver.page.evaluate(() => localStorage.setItem('sg-last-search-context', 'doesnotexist'))
             // Visit the page again with localStorage initialized
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
-                waitUntil: 'networkidle2',
+                waitUntil: 'networkidle0',
             })
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
@@ -750,15 +750,15 @@ describe('Search', () => {
                 }),
             })
 
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts?tab=convert-version-contexts')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/convert-version-contexts')
 
-            await driver.page.waitForSelector('.test-convert-version-context-btn')
+            await driver.page.waitForSelector('.test-convert-version-context-btn', { visible: true })
             await driver.page.click('.test-convert-version-context-btn')
 
-            await driver.page.waitForSelector('.convert-version-context-node .alert-success')
+            await driver.page.waitForSelector('.convert-version-context-node .text-success')
 
             const successText = await driver.page.evaluate(
-                () => document.querySelector('.convert-version-context-node .alert-success')?.textContent
+                () => document.querySelector('.convert-version-context-node .text-success')?.textContent
             )
             expect(successText).toBe('Version context successfully converted.')
         })
@@ -771,8 +771,10 @@ describe('Search', () => {
                 }),
             })
 
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts?tab=convert-version-contexts')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/convert-version-contexts')
 
+            // Wait for individual nodes to load
+            await driver.page.waitForSelector('.test-convert-version-context-btn', { visible: true })
             await driver.page.waitForSelector('.test-convert-all-search-contexts-btn')
             await driver.page.click('.test-convert-all-search-contexts-btn')
 
@@ -788,7 +790,9 @@ describe('Search', () => {
             const successText = await driver.page.evaluate(
                 () => document.querySelector('.test-convert-all-search-contexts-success')?.textContent
             )
-            expect(successText).toBe(`Sucessfully converted ${versionContexts.length} version contexts.`)
+            expect(successText).toBe(
+                `Sucessfully converted ${versionContexts.length} version contexts into search contexts.`
+            )
 
             // Check that individual context nodes have 'Converted' text
             const convertedContexts = await driver.page.evaluate(
@@ -804,10 +808,13 @@ describe('Search', () => {
         })
 
         test('Highlight tour step should not be visible if already seen', async () => {
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp', {
+                waitUntil: 'networkidle0',
+            })
             await driver.page.evaluate(() =>
                 localStorage.setItem('has-seen-search-contexts-dropdown-highlight-tour-step', 'true')
             )
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             expect(await isSearchContextHighlightTourStepVisible()).toBeFalsy()
         })

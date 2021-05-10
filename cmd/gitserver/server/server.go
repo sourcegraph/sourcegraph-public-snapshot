@@ -305,8 +305,7 @@ func (s *Server) Handler() http.Handler {
 // background goroutine.
 func (s *Server) Janitor(interval time.Duration) {
 	for {
-		addrs := conf.Get().ServiceConnections.GitServers
-		s.cleanupRepos(addrs)
+		s.cleanupRepos()
 		time.Sleep(interval)
 	}
 }
@@ -863,6 +862,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			status = "repo-not-found"
 			w.WriteHeader(http.StatusNotFound)
 			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{})
+			return
 		}
 
 		cloneProgress, cloneInProgress := s.locker.Status(dir)

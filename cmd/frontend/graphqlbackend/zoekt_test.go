@@ -21,7 +21,6 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -67,7 +66,7 @@ func TestIndexedSearch(t *testing.T) {
 		name               string
 		args               args
 		wantMatchCount     int
-		wantMatchURLs      []string
+		wantMatchKeys      []result.Key
 		wantMatchInputRevs []string
 		wantUnindexed      []*search.RepositoryRevisions
 		wantCommon         streaming.Stats
@@ -122,6 +121,7 @@ func TestIndexedSearch(t *testing.T) {
 					{
 						Repository: "foo/bar",
 						Branches:   []string{"HEAD"},
+						Version:    "1",
 						FileName:   "baz.go",
 						LineMatches: []zoekt.LineMatch{
 							{
@@ -142,6 +142,7 @@ func TestIndexedSearch(t *testing.T) {
 					{
 						Repository: "foo/foobar",
 						Branches:   []string{"HEAD"},
+						Version:    "2",
 						FileName:   "baz.go",
 						LineMatches: []zoekt.LineMatch{
 							{
@@ -157,9 +158,9 @@ func TestIndexedSearch(t *testing.T) {
 				since: func(time.Time) time.Duration { return 0 },
 			},
 			wantMatchCount: 5,
-			wantMatchURLs: []string{
-				"git://foo/bar#baz.go",
-				"git://foo/foobar#baz.go",
+			wantMatchKeys: []result.Key{
+				{Repo: "foo/bar", Commit: "1", Path: "baz.go"},
+				{Repo: "foo/foobar", Commit: "2", Path: "baz.go"},
 			},
 			wantMatchInputRevs: []string{
 				"",
@@ -180,20 +181,22 @@ func TestIndexedSearch(t *testing.T) {
 						// baz.go is the same in HEAD and dev
 						Branches: []string{"HEAD", "dev"},
 						FileName: "baz.go",
+						Version:  "1",
 					},
 					{
 						Repository: "foo/bar",
 						Branches:   []string{"dev"},
 						FileName:   "bam.go",
+						Version:    "2",
 					},
 				},
 				since: func(time.Time) time.Duration { return 0 },
 			},
 			wantMatchCount: 3,
-			wantMatchURLs: []string{
-				"git://foo/bar?HEAD#baz.go",
-				"git://foo/bar?dev#baz.go",
-				"git://foo/bar?dev#bam.go",
+			wantMatchKeys: []result.Key{
+				{Repo: "foo/bar", Commit: "1", Path: "baz.go"},
+				{Repo: "foo/bar", Commit: "1", Path: "baz.go"},
+				{Repo: "foo/bar", Commit: "2", Path: "bam.go"},
 			},
 			wantMatchInputRevs: []string{
 				"HEAD",
@@ -217,12 +220,13 @@ func TestIndexedSearch(t *testing.T) {
 						Repository: "foo/bar",
 						Branches:   []string{"HEAD"},
 						FileName:   "baz.go",
+						Version:    "1",
 					},
 				},
 			},
 			wantUnindexed: makeRepositoryRevisions("foo/bar@unindexed"),
-			wantMatchURLs: []string{
-				"git://foo/bar?HEAD#baz.go",
+			wantMatchKeys: []result.Key{
+				{Repo: "foo/bar", Commit: "1", Path: "baz.go"},
 			},
 			wantMatchCount:     1,
 			wantMatchInputRevs: []string{"HEAD"},
@@ -239,7 +243,7 @@ func TestIndexedSearch(t *testing.T) {
 				results:         []zoekt.FileMatch{},
 			},
 			wantUnindexed:      makeRepositoryRevisions("foo/bar@HEAD"),
-			wantMatchURLs:      nil,
+			wantMatchKeys:      nil,
 			wantMatchInputRevs: nil,
 		},
 		{
@@ -253,7 +257,7 @@ func TestIndexedSearch(t *testing.T) {
 				results:         []zoekt.FileMatch{},
 			},
 			wantUnindexed:      makeRepositoryRevisions("foo/bar@HEAD"),
-			wantMatchURLs:      nil,
+			wantMatchKeys:      nil,
 			wantMatchInputRevs: nil,
 		},
 	}
@@ -309,16 +313,16 @@ func TestIndexedSearch(t *testing.T) {
 			}
 
 			var gotMatchCount int
-			var gotMatchURLs []string
+			var gotMatchKeys []result.Key
 			var gotMatchInputRevs []string
 			for _, m := range gotFm {
 				gotMatchCount += int(m.ResultCount())
-				gotMatchURLs = append(gotMatchURLs, m.Resource())
+				gotMatchKeys = append(gotMatchKeys, m.FileMatch.Key())
 				if m.InputRev != nil {
 					gotMatchInputRevs = append(gotMatchInputRevs, *m.InputRev)
 				}
 			}
-			if diff := cmp.Diff(tt.wantMatchURLs, gotMatchURLs); diff != "" {
+			if diff := cmp.Diff(tt.wantMatchKeys, gotMatchKeys); diff != "" {
 				t.Errorf("match URLs mismatch (-want +got):\n%s", diff)
 			}
 			if diff := cmp.Diff(tt.wantMatchInputRevs, gotMatchInputRevs); diff != "" {
@@ -779,7 +783,7 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 		sqlf.Join(rows, ","),
 	)
 
-	_, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -973,7 +977,6 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 }
 
 func TestZoektFileMatchToSymbolResults(t *testing.T) {
-	db := new(dbtesting.MockDB)
 	symbolInfo := func(sym string) *zoekt.Symbol {
 		return &zoekt.Symbol{
 			Sym:        sym,
@@ -1016,15 +1019,9 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		}},
 	}
 
-	repo := NewRepositoryResolver(db, &types.Repo{Name: "foo"})
-
-	results := zoektFileMatchToSymbolResults(repo, "master", file)
+	results := zoektFileMatchToSymbolResults(types.RepoName{Name: "foo"}, "master", file)
 	var symbols []result.Symbol
 	for _, res := range results {
-		if got, want := res.BaseURI.URL.String(), "git://foo?master"; got != want {
-			t.Fatalf("baseURI: got %q want %q", got, want)
-		}
-
 		symbols = append(symbols, res.Symbol)
 	}
 

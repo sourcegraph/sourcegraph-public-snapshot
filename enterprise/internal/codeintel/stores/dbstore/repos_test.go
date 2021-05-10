@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -12,10 +11,10 @@ func TestRepoName(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
-	if _, err := dbconn.Global.Exec(`INSERT INTO repo (id, name) VALUES (50, 'github.com/foo/bar')`); err != nil {
+	if _, err := db.Exec(`INSERT INTO repo (id, name) VALUES (50, 'github.com/foo/bar')`); err != nil {
 		t.Fatalf("unexpected error inserting repo: %s", err)
 	}
 

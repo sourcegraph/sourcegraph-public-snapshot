@@ -27,12 +27,13 @@ interface Props
         SettingsCascadeProps,
         ThemeProps,
         CopyQueryButtonProps,
-        SearchContextProps,
+        Omit<SearchContextProps, 'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable'>,
         VersionContextProps,
         OnboardingTourProps {
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
+    isSourcegraphDotCom: boolean
     onChange: (newValue: QueryState) => void
     globbing: boolean
     enableSmartQuery: boolean

@@ -1,8 +1,11 @@
 package result
 
 import (
+	"net/url"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type RepoMatch struct {
@@ -11,6 +14,13 @@ type RepoMatch struct {
 
 	// rev optionally specifies a revision to go to for search results.
 	Rev string
+}
+
+func (r RepoMatch) RepoName() types.RepoName {
+	return types.RepoName{
+		Name: r.Name,
+		ID:   r.ID,
+	}
 }
 
 func (r RepoMatch) Limit(limit int) int {
@@ -28,6 +38,22 @@ func (r *RepoMatch) Select(path filter.SelectPath) Match {
 		return r
 	}
 	return nil
+}
+
+func (r *RepoMatch) URL() *url.URL {
+	path := "/" + string(r.Name)
+	if r.Rev != "" {
+		path += "@" + r.Rev
+	}
+	return &url.URL{Path: path}
+}
+
+func (r *RepoMatch) Key() Key {
+	return Key{
+		TypeRank: rankRepoMatch,
+		Repo:     r.Name,
+		Rev:      r.Rev,
+	}
 }
 
 func (r *RepoMatch) searchResultMarker() {}

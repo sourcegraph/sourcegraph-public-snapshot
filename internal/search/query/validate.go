@@ -34,6 +34,32 @@ func IsPatternAtom(b Basic) bool {
 	return false
 }
 
+// IsStreamingCompatible returns whether a backend search process may
+// immediately send results over a streaming interface. A query is streaming
+// compatible if a streaming search engine component (like git-powered commit
+// search or Zoekt) may assume that it's processing just one logical search
+// expression which is not subject to additional merge/deduplication processing,
+// which are otherwise required by `and` and `or` expressions in the Sourcegraph
+// query evaluation routine. A single logical search expression is represented
+// by a single Basic query which contains either no pattern node, or a single
+// pattern node.
+func IsStreamingCompatible(p Plan) bool {
+	if len(p) == 1 {
+		if p[0].Pattern == nil {
+			return true
+		}
+		switch node := p[0].Pattern.(type) {
+		case Operator:
+			if len(node.Operands) == 1 {
+				return true
+			}
+		case Pattern:
+			return true
+		}
+	}
+	return false
+}
+
 // exists traverses every node in nodes and returns early as soon as fn is satisfied.
 func exists(nodes []Node, fn func(node Node) bool) bool {
 	found := false

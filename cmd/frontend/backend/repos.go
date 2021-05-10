@@ -8,14 +8,17 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -38,10 +41,12 @@ func (e ErrRepoSeeOther) Error() string {
 
 var Repos = &repos{
 	store: database.GlobalRepos,
+	cache: dbcache.NewDefaultRepoLister(database.GlobalRepos),
 }
 
 type repos struct {
 	store *database.RepoStore
+	cache *dbcache.DefaultRepoLister
 }
 
 func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error) {
@@ -154,9 +159,10 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	return s.store.List(ctx, opt)
 }
 
-// ListDefault calls database.DefaultRepos.List, with tracing.
-func (s *repos) ListDefault(ctx context.Context) (repos []types.RepoName, err error) {
-	ctx, done := trace(ctx, "Repos", "ListDefault", nil, &err)
+// ListIndexable calls database.DefaultRepos.List, with tracing. It lists ALL
+// default repos which could include private user added repos.
+func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err error) {
+	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
 	defer func() {
 		if err == nil {
 			span := opentracing.SpanFromContext(ctx)
@@ -164,7 +170,47 @@ func (s *repos) ListDefault(ctx context.Context) (repos []types.RepoName, err er
 		}
 		done()
 	}()
-	return database.GlobalDefaultRepos.List(ctx)
+	return s.cache.List(ctx)
+}
+
+// ListDefault calls database.DefaultRepos.ListPublic, with tracing.
+// It lists all public default repos and also any private repos added by the
+// current user.
+func (s *repos) ListDefault(ctx context.Context) (repos []types.RepoName, err error) {
+	ctx, done := trace(ctx, "Repos", "ListDefaultPublic", nil, &err)
+	defer func() {
+		if err == nil {
+			span := opentracing.SpanFromContext(ctx)
+			span.LogFields(otlog.Int("result.len", len(repos)))
+		}
+		done()
+	}()
+
+	span := opentracing.SpanFromContext(ctx)
+	span.LogFields(otlog.String("ListPublic", "start"))
+	repos, err = s.cache.ListPublic(ctx)
+	if err != nil {
+		span.LogFields(otlog.String("ListPublic", "failed"))
+		return nil, errors.Wrap(err, "listing default public repos")
+	}
+	span.LogFields(otlog.String("ListPublic", "done"))
+
+	// For authenticated users we also want to include any private repos they may have added
+	if a := actor.FromContext(ctx); a.IsAuthenticated() {
+		span.LogFields(otlog.String("ListRepoNames", "start"))
+		privateRepos, err := database.GlobalRepos.ListRepoNames(ctx, database.ReposListOptions{
+			UserID:      a.UID,
+			OnlyPrivate: true,
+		})
+		if err != nil {
+			span.LogFields(otlog.String("ListRepoNames", "failed"))
+			return nil, errors.Wrap(err, "getting user private repos")
+		}
+		span.LogFields(otlog.String("ListRepoNames", "done"))
+		repos = append(repos, privateRepos...)
+	}
+
+	return repos, nil
 }
 
 func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
