@@ -1,5 +1,7 @@
 import { Remote } from 'comlink'
+import { Duration } from 'date-fns';
 import { Observable } from 'rxjs'
+import sourcegraph from 'sourcegraph';
 
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -20,6 +22,21 @@ export interface SubjectSettingsResult {
     contents: string
 }
 
+export interface SearchInsight {
+    title: string
+    subtitle?: string
+    description?: string
+    series: DataSeries[]
+    step: Duration
+    repositories: string[]
+}
+
+export interface DataSeries {
+    name: string
+    color: string
+    query: string
+}
+
 export interface ApiService {
     getCombinedViews: (
         getExtensionsInsights: () => Observable<ViewProviderResult[]>
@@ -33,4 +50,5 @@ export interface ApiService {
         subjectId: string,
         content: string
     ) => Observable<void>
+    getSearchInsightContent(insight: SearchInsight): Observable<sourcegraph.View>
 }
