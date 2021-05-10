@@ -126,15 +126,17 @@ func parseLocal(rawurl string) (*URL, error) {
 	}}, nil
 }
 
+// URL wraps url.URL to provide rsync format compatible `String()` functionality.
+// eg git@foo.com:foo/bar.git
+// stdlib URL.String() would marshal those URLs with a leading slash in the path, which for
+// standard git hosts changes path semantics. This function will only use stdlib URL.String()
+// if a scheme is specified, otherwise it uses a custom format built for compatibility
 type URL struct {
 	url.URL
 }
 
-// String is used to provide a compatible way to marshal URL strings for SCP-style git URLs
-// eg git@foo.com/foo/bar.git
-// stdlib URL.String() would marshal those URLs with a leading slash in the path, which for
-// standard git hosts changes path semantics. This function will only use sdlib URL.String()
-// if a scheme is specified, otherwise it uses a custom format built for compatibility
+// String will return standard url.URL.String() if the url has a .Scheme set, but if
+// not it will produce an rsync format URL, eg `git@foo.com:foo/bar.git`
 func (u *URL) String() string {
 	// if we have a non-empty scheme we use stdlib url.URL.String()
 	if u.Scheme != "" {
