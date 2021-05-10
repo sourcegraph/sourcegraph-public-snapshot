@@ -8,9 +8,7 @@ import { action } from '@storybook/addon-actions'
 import { number } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import classNames from 'classnames'
-import { flow } from 'lodash'
 import SearchIcon from 'mdi-react/SearchIcon'
-import openColor from 'open-color'
 import React, { useState } from 'react'
 import 'storybook-addon-designs'
 
@@ -21,7 +19,10 @@ import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
 import { Form } from '../../components/Form'
 
+import { AlertsStory } from './AlertsStory'
+import { BadgeVariants } from './BadgeVariants/BadgeVariants'
 import { ButtonVariants } from './ButtonVariants'
+import { ColorVariants } from './ColorVariants'
 import { SEMANTIC_COLORS } from './constants'
 import { FormFieldVariants } from './FormFieldVariants'
 import { TextStory } from './TextStory'
@@ -164,52 +165,23 @@ add(
             <h1>Colors</h1>
 
             <h2>Semantic colors</h2>
-            <p>
-                These can be used to give semantic clues and always work both in light and dark theme. They are
-                available on most CSS components and the <code>border-</code> and <code>bg-</code> utility classes.
-            </p>
-            <div className="d-flex flex-wrap">
-                {SEMANTIC_COLORS.map(semantic => (
-                    <div className="m-2 text-center" key={semantic}>
-                        <div className={`bg-${semantic} rounded`} style={{ width: '5rem', height: '5rem' }} />
-                        {semantic}
-                    </div>
-                ))}
-            </div>
-
-            <h2>Color Palette</h2>
-            <p>
-                Our color palette is the <a href="https://yeun.github.io/open-color/">Open Color</a> palette. All colors
-                are available as SCSS and CSS variables. It's generally not advised to use these directly, but they may
-                be used in rare cases, like charts. In other cases, rely on CSS components, utilities for borders and
-                background, and dynamic CSS variables.
-            </p>
-            {Object.entries(openColor).map(
-                ([name, colors]) =>
-                    Array.isArray(colors) && (
-                        <div key={name}>
-                            <h5>{name}</h5>
-                            <div className="d-flex flex-wrap">
-                                {colors.map((color, number) => (
-                                    <div key={color} className="m-2 text-right">
-                                        <div
-                                            className="rounded"
-                                            style={{ background: color, width: '3rem', height: '3rem' }}
-                                        />
-                                        {number}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )
-            )}
+            <p>These can be used to give semantic clues and always work both in light and dark theme.</p>
+            <ColorVariants />
         </>
     ),
     {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/P2M4QrgIxeUsjE80MHP8TmY3/Sourcegraph-Colors?node-id=0%3A2',
-        },
+        design: [
+            {
+                type: 'figma',
+                url: 'https://www.figma.com/file/P2M4QrgIxeUsjE80MHP8TmY3/Sourcegraph-Colors?node-id=0%3A2',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Redesign',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A7608',
+            },
+        ],
     }
 )
 
@@ -304,44 +276,27 @@ add('Layout', () => (
     </>
 ))
 
-add(
-    'Alerts',
-    () => (
-        <>
-            <h1>Alerts</h1>
-            <p>
-                Provide contextual feedback messages for typical user actions with the handful of available and flexible
-                alert messages.
-            </p>
-            {SEMANTIC_COLORS.map(semantic => (
-                <div key={semantic} className={classNames('alert', `alert-${semantic}`)}>
-                    A simple {semantic} alert — check it out! It can also contain{' '}
-                    <a href="/" onClick={flow(preventDefault, action('alert link clicked'))}>
-                        links like this
-                    </a>
-                    .
-                </div>
-            ))}
-            <div className="alert alert-info d-flex align-items-center">
-                <div className="flex-grow-1">An alert with a button</div>
-                {/* eslint-disable-next-line jsx-a11y/anchor-is-valid, jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus */}
-                <a
-                    role="button"
-                    className="btn btn-info"
-                    onClick={flow(preventDefault, action('alert button clicked'))}
-                >
-                    Call to action
-                </a>
-            </div>
-        </>
-    ),
-    {
-        design: {
+add('Alerts', AlertsStory, {
+    design: [
+        {
             type: 'figma',
+            name: 'Figma',
             url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=127%3A4',
         },
-    }
-)
+        {
+            type: 'figma',
+            name: 'Figma Redesign Light',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A196',
+        },
+        {
+            type: 'figma',
+            name: 'Figma Redesign Dark',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A525',
+        },
+    ],
+})
 
 add(
     'Badges',
@@ -418,58 +373,8 @@ add(
                 </tbody>
             </table>
 
-            <h2>Semantic variations</h2>
-            <p>Change the appearance of any badge with modifier classes for semantic colors.</p>
-            <p>
-                {SEMANTIC_COLORS.map(semantic => (
-                    <React.Fragment key={semantic}>
-                        <span className={classNames('badge', `badge-${semantic}`)}>{semantic}</span>{' '}
-                    </React.Fragment>
-                ))}
-            </p>
-
-            <h2>Uppercase</h2>
-            <p>
-                Badges can be visually uppercased by combining them with the <code>text-uppercase</code> class.
-                Examples:
-            </p>
-            <div>
-                <h1>
-                    Blockchain support{' '}
-                    <sup>
-                        <span className="badge badge-warning text-uppercase">Beta</span>
-                    </sup>
-                </h1>
-                <h1>
-                    Blockchain support{' '}
-                    <sup>
-                        <span className="badge badge-info text-uppercase">Preview</span>
-                    </sup>
-                </h1>
-                <h1>
-                    Blockchain support{' '}
-                    <sup>
-                        <span className="badge badge-info text-uppercase">Experimental</span>
-                    </sup>
-                </h1>
-                <h1>
-                    Blockchain support{' '}
-                    <sup>
-                        <span className="badge badge-info text-uppercase">Prototype</span>
-                    </sup>
-                </h1>
-            </div>
-            <p>
-                <span className="badge badge-success text-uppercase">added</span> <code>path/to/file.ts</code>
-            </p>
-            <p>
-                <span className="badge badge-danger text-uppercase">deleted</span> <code>path/to/file.ts</code>
-            </p>
-            <p>
-                <span className="badge badge-warning text-uppercase">moved</span> <code>path/to/file.ts</code>
-            </p>
-            <p>Do not use it for user-supplied text like labels (tags) or usernames.</p>
-
+            <h2>Reference</h2>
+            <BadgeVariants variants={SEMANTIC_COLORS} />
             <h2>Pill badges</h2>
             <p>Pill badges are commonly used to display counts.</p>
             <div className="mb-4">
@@ -502,10 +407,25 @@ add(
         </>
     ),
     {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=486%3A0',
-        },
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma',
+                url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=486%3A0',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Redesign - Light',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6149',
+            },
+            {
+                type: 'figma',
+                name: 'Figma Redesign - Dark',
+                url:
+                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6448',
+            },
+        ],
     }
 )
 

@@ -229,7 +229,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 			return []result.FileMatch{{
 				File: result.File{
 					Repo:     repo,
-					InputRev: &rev,
+					CommitID: api.CommitID(rev),
 					Path:     "main.go",
 				},
 			}}, false, nil
@@ -270,20 +270,20 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resultURIs := make([]string, len(results))
+	resultKeys := make([]result.Key, len(results))
 	for i, result := range results {
-		resultURIs[i] = result.URL()
+		resultKeys[i] = result.FileMatch.Key()
 	}
-	sort.Strings(resultURIs)
+	sort.Slice(resultKeys, func(i, j int) bool { return resultKeys[i].Less(resultKeys[j]) })
 
-	wantResultURIs := []string{
-		"git://foo?branch3#main.go",
-		"git://foo?branch4#main.go",
-		"git://foo?master#main.go",
-		"git://foo?mybranch#main.go",
+	wantResultKeys := []result.Key{
+		{Repo: "foo", Commit: "branch3", Path: "main.go"},
+		{Repo: "foo", Commit: "branch4", Path: "main.go"},
+		{Repo: "foo", Commit: "master", Path: "main.go"},
+		{Repo: "foo", Commit: "mybranch", Path: "main.go"},
 	}
-	if !reflect.DeepEqual(resultURIs, wantResultURIs) {
-		t.Errorf("got %v, want %v", resultURIs, wantResultURIs)
+	if !reflect.DeepEqual(resultKeys, wantResultKeys) {
+		t.Errorf("got %v, want %v", resultKeys, wantResultKeys)
 	}
 }
 

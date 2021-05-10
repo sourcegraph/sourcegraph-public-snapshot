@@ -93,7 +93,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 		if c.isMasterDryRun || c.isStorybookAffected() {
 			// Upload storybook to Chromatic
 			chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
-			if !c.isPR() {
+			if c.isMainBranch() {
 				chromaticCommand += " --auto-accept-changes"
 			}
 			pipeline.AddStep(":chromatic: Upload storybook to Chromatic",

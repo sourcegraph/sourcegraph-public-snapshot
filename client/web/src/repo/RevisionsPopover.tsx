@@ -224,18 +224,18 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
 
     return (
         <Tabs defaultIndex={tabIndex} className="revisions-popover" onChange={handleTabsChange}>
-            <div className="tablist-wrapper w-100 align-items-center">
+            <div className="tablist-wrapper flex-1">
                 <TabList>
                     {TABS.map(({ label, id }) => (
-                        <Tab className="d-flex flex-1 justify-content-around" key={id} data-test-tab={id}>
-                            {label}
+                        <Tab key={id} data-test-tab={id}>
+                            <span className="tablist-wrapper--tab-label">{label}</span>
                         </Tab>
                     ))}
                 </TabList>
             </div>
             <TabPanels className="revisions-popover__tabs">
                 {TABS.map(tab => (
-                    <TabPanel className="" key={tab.id}>
+                    <TabPanel key={tab.id}>
                         {tab.type ? (
                             <FilteredConnection<GitRefFields, Omit<GitReferencePopoverNodeProps, 'node'>>
                                 key={tab.id}

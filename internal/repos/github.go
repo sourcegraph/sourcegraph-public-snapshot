@@ -677,12 +677,10 @@ func exampleRepositoryQuerySplit(q string) string {
 
 func (s *GithubSource) AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error) {
 	var (
-		repos    []*github.Repository
-		nextPage string
-		done     bool
-		page     = 1
-		cost     int
-		err      error
+		repos []*github.Repository
+		page  = 1
+		cost  int
+		err   error
 	)
 	defer func() {
 		remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
@@ -695,24 +693,19 @@ func (s *GithubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 			"retryAfter", retry,
 		)
 	}()
-	out := make([]types.CodeHostRepository, 0, len(repos))
-	for !done {
+	out := make([]types.CodeHostRepository, 0)
+	hasNextPage := true
+	for hasNextPage {
 		select {
 		case <-ctx.Done():
 			return nil, fmt.Errorf("context canceled")
 		default:
 		}
-		repos, nextPage, cost, err = s.v4Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, nextPage)
+		repos, hasNextPage, _, err = s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page)
 		if err != nil {
 			return nil, err
 		}
-		if nextPage == "" {
-			done = true
-		}
 		for _, repo := range repos {
-			// the github user repositories API doesn't support query strings, so we'll have
-			// to filter here 😬 this does make pagination more awkward though, as we won't
-			// paginate further if you don't match anything
 			out = append(out, types.CodeHostRepository{
 				Name:       repo.NameWithOwner,
 				Private:    repo.IsPrivate,

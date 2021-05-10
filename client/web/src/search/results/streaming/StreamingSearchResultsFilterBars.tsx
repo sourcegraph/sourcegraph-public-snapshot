@@ -5,6 +5,7 @@ import { switchMap } from 'rxjs/operators'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import {
     isSettingsValid,
@@ -67,8 +68,12 @@ export const StreamingSearchResultsFilterBars: React.FunctionComponent<Props> = 
         },
         [props]
     )
-    const showMoreResults = useCallback(() => {}, [])
-    const calculateCount = useCallback(() => 0, [])
+    const calculateCount = useCallback(() => (results?.state === 'complete' ? 'all' : 0), [results])
+    const showMoreResults = useCallback(() => {
+        const count = calculateCount()
+        const newQuery = updateFilter(props.navbarSearchQueryState.query, 'count', count.toString())
+        submitSearch({ ...props, query: newQuery, source: 'filter' })
+    }, [calculateCount, props])
 
     return (
         <SearchResultsFilterBars
