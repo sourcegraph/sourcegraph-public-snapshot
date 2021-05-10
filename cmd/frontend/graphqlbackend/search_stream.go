@@ -71,10 +71,10 @@ func MatchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultReso
 				RepoResolver: NewRepositoryResolver(db, v.Repo.ToRepo()),
 			})
 		case *result.RepoMatch:
-			resolvers = append(resolvers, &RepositoryResolver{
-				db:        db,
-				RepoMatch: *v,
-			})
+			repoName := v.RepoName()
+			resolver := NewRepositoryResolver(db, repoName.ToRepo())
+			resolver.RepoMatch.Rev = v.Rev // preserve the rev
+			resolvers = append(resolvers, resolver)
 		case *result.CommitMatch:
 			resolvers = append(resolvers, &CommitSearchResultResolver{
 				db:          db,
