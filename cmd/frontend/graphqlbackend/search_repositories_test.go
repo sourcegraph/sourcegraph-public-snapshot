@@ -100,7 +100,7 @@ func TestSearchRepositories(t *testing.T) {
 			q, _ := query.ParseLiteral(tc.q)
 			b, _ := query.ToBasicQuery(q)
 			pattern := search.ToTextPatternInfo(b, search.Batch, query.Identity)
-			results, _, err := searchRepositoriesBatch(context.Background(), db, &search.TextParameters{
+			matches, _, err := searchRepositoriesBatch(context.Background(), db, &search.TextParameters{
 				PatternInfo: pattern,
 				RepoPromise: (&search.Promise{}).Resolve(repositories),
 				Query:       q,
@@ -111,12 +111,9 @@ func TestSearchRepositories(t *testing.T) {
 			}
 
 			var got []string
-			for _, res := range results {
-				r, ok := res.ToRepository()
-				if !ok {
-					t.Fatal("expected repo result")
-				}
-				got = append(got, r.Name())
+			for _, res := range matches {
+				r := res.(*result.RepoMatch)
+				got = append(got, string(r.Name))
 			}
 			sort.Strings(got)
 
@@ -127,8 +124,8 @@ func TestSearchRepositories(t *testing.T) {
 	}
 }
 
-func searchRepositoriesBatch(ctx context.Context, db dbutil.DB, args *search.TextParameters, limit int32) ([]SearchResultResolver, streaming.Stats, error) {
-	return collectStream(db, func(stream Sender) error {
+func searchRepositoriesBatch(ctx context.Context, db dbutil.DB, args *search.TextParameters, limit int32) ([]result.Match, streaming.Stats, error) {
+	return collectStream(func(stream Sender) error {
 		return searchRepositories(ctx, db, args, limit, stream)
 	})
 }

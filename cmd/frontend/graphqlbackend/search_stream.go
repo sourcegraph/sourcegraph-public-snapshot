@@ -159,7 +159,7 @@ func (f MatchStreamFunc) Send(se SearchEvent) {
 
 // collectStream will call search and aggregates all events it sends. It then
 // returns the aggregate event and any error it returns.
-func collectStream(db dbutil.DB, search func(Sender) error) ([]SearchResultResolver, streaming.Stats, error) {
+func collectStream(search func(Sender) error) ([]result.Match, streaming.Stats, error) {
 	var (
 		mu      sync.Mutex
 		results []result.Match
@@ -173,5 +173,5 @@ func collectStream(db dbutil.DB, search func(Sender) error) ([]SearchResultResol
 		mu.Unlock()
 	}))
 
-	return MatchesToResolvers(db, results), stats, err
+	return results, stats, err
 }
