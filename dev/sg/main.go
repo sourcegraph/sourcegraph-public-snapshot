@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -68,29 +69,7 @@ var (
 		UsageFunc: func(c *ffcli.Command) string {
 			var out strings.Builder
 
-			fmt.Fprintf(&out, "%s", output.StyleLogo)
-			fmt.Fprintln(&out, `          _____                    _____`)
-			fmt.Fprintln(&out, `         /\    \                  /\    \`)
-			fmt.Fprintln(&out, `        /::\    \                /::\    \`)
-			fmt.Fprintln(&out, `       /::::\    \              /::::\    \`)
-			fmt.Fprintln(&out, `      /::::::\    \            /::::::\    \`)
-			fmt.Fprintln(&out, `     /:::/\:::\    \          /:::/\:::\    \`)
-			fmt.Fprintln(&out, `    /:::/__\:::\    \        /:::/  \:::\    \`)
-			fmt.Fprintln(&out, `    \:::\   \:::\    \      /:::/    \:::\    \`)
-			fmt.Fprintln(&out, `  ___\:::\   \:::\    \    /:::/    / \:::\    \`)
-			fmt.Fprintln(&out, ` /\   \:::\   \:::\    \  /:::/    /   \:::\ ___\`)
-			fmt.Fprintln(&out, `/::\   \:::\   \:::\____\/:::/____/  ___\:::|    |`)
-			fmt.Fprintln(&out, `\:::\   \:::\   \::/    /\:::\    \ /\  /:::|____|`)
-			fmt.Fprintln(&out, ` \:::\   \:::\   \/____/  \:::\    /::\ \::/    /`)
-			fmt.Fprintln(&out, `  \:::\   \:::\    \       \:::\   \:::\ \/____/`)
-			fmt.Fprintln(&out, `   \:::\   \:::\____\       \:::\   \:::\____\`)
-			fmt.Fprintln(&out, `    \:::\  /:::/    /        \:::\  /:::/    /`)
-			fmt.Fprintln(&out, `     \:::\/:::/    /          \:::\/:::/    /`)
-			fmt.Fprintln(&out, `      \::::::/    /            \::::::/    /`)
-			fmt.Fprintln(&out, `       \::::/    /              \::::/    /`)
-			fmt.Fprintln(&out, `        \::/    /                \::/____/`)
-			fmt.Fprintln(&out, `         \/____/`)
-			fmt.Fprintf(&out, "%s", output.StyleReset)
+			printLogo(&out)
 
 			fmt.Fprintf(&out, "USAGE\n")
 			fmt.Fprintf(&out, "  sg <subcommand>\n")
@@ -309,4 +288,50 @@ func fileExists(path string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+var styleOrange = output.Fg256Color(202)
+
+func printLogo(out io.Writer) {
+	fmt.Fprintf(out, "%s", output.StyleLogo)
+	fmt.Fprintln(out, `          _____                    _____`)
+	fmt.Fprintln(out, `         /\    \                  /\    \`)
+	fmt.Fprintf(out, `        /%s::%s\    \                /%s::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `       /%s::::%s\    \              /%s::::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `      /%s::::::%s\    \            /%s::::::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `     /%s:::%s/\%s:::%s\    \          /%s:::%s/\%s:::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `    /%s:::%s/__\%s:::%s\    \        /%s:::%s/  \%s:::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `    \%s:::%s\   \%s:::%s\    \      /%s:::%s/    \%s:::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `  ___\%s:::%s\   \%s:::%s\    \    /%s:::%s/    / \%s:::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, ` /\   \%s:::%s\   \%s:::%s\    \  /%s:::%s/    /   \%s:::%s\ ___\`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `/%s::%s\   \%s:::%s\   \%s:::%s\____\/%s:::%s/____/  ___\%s:::%s|    |`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `\%s:::%s\   \%s:::%s\   \%s::%s/    /\%s:::%s\    \ /\  /%s:::%s|____|`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, ` \%s:::%s\   \%s:::%s\   \/____/  \%s:::%s\    /%s::%s\ \%s::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `  \%s:::%s\   \%s:::%s\    \       \%s:::%s\   \%s:::%s\ \/____/`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `   \%s:::%s\   \%s:::%s\____\       \%s:::%s\   \%s:::%s\____\`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `    \%s:::%s\  /%s:::%s/    /        \%s:::%s\  /%s:::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `     \%s:::%s\/%s:::%s/    /          \%s:::%s\/%s:::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `      \%s::::::%s/    /            \%s::::::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `       \%s::::%s/    /              \%s::::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `        \%s::%s/    /                \%s::%s/____/`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, `         \/____/`)
+	fmt.Fprintf(out, "%s", output.StyleReset)
 }
