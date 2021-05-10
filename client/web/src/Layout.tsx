@@ -237,7 +237,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSignInOrUp =
         props.location.pathname === '/sign-in' ||
         props.location.pathname === '/sign-up' ||
-        props.location.pathname === '/password-reset'
+        props.location.pathname === '/password-reset' ||
+        props.location.pathname === '/post-sign-up'
 
     // TODO Change this behavior when we have global focus management system
     // Need to know this for disable autofocus on nav search input
