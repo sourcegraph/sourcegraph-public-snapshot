@@ -222,7 +222,7 @@ func TestRepos_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
 	aliceExternalService := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 	}
 	err = ExternalServices(db).Create(ctx, confGet, aliceExternalService)
 	if err != nil {
