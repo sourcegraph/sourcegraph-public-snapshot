@@ -203,3 +203,13 @@ func collectStream(search func(Sender) error) ([]SearchResultResolver, streaming
 
 	return results, stats, err
 }
+
+type MatchStreamFunc func(SearchMatchEvent)
+
+func (f MatchStreamFunc) Send(se SearchEvent) {
+	f(SearchEventToSearchMatchEvent(se))
+}
+
+func (f MatchStreamFunc) SendMatch(sme SearchMatchEvent) {
+	f(sme)
+}

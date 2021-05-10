@@ -1,7 +1,7 @@
-import { Observable, of } from 'rxjs'
+import { of, throwError } from 'rxjs'
 
-import { InsightsAPI } from '@sourcegraph/web/src/insights/core/backend/insights-api'
 import {
+    ApiService,
     ViewInsightProviderResult,
     ViewInsightProviderSourceType,
 } from '@sourcegraph/web/src/insights/core/backend/types'
@@ -153,8 +153,9 @@ export const MOCK_VIEWS = [
     },
 ] as ViewInsightProviderResult[]
 
-export class MockInsightsApi implements InsightsAPI {
-    public getCombinedViews = (): Observable<ViewInsightProviderResult[]> => of(MOCK_VIEWS)
-
-    public getInsightCombinedViews = (): Observable<ViewInsightProviderResult[]> => this.getCombinedViews()
-}
+export const createMockAPI = (): ApiService => ({
+    getCombinedViews: () => of(MOCK_VIEWS),
+    getInsightCombinedViews: () => of(MOCK_VIEWS),
+    getSubjectSettings: () => of({ id: 0, contents: '{}' }),
+    updateSubjectSettings: () => throwError(new Error('Hello this is submit error block')),
+})

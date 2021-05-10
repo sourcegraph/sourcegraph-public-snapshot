@@ -29,16 +29,21 @@ To set breakpoints and step through execution in your Sourcegraph extension:
    - Add a `debugger;` statement to your extension code and reload (with your browser devtools open). Execution will stop when your browser encounters that statement, and you'll be dropped into the source file.
 1. Set breakpoints and step through execution as you would for any other JavaScript file in your browser's devtools.
 
-## Enable trace logging
+## `sourcegraph.app.log`
 
-A Sourcegraph page uses an internal RPC protocol to communicate with extensions (which run in a Web Worker). This protocol consists of request-response sequences, such as "get the hover contents for `$FILE` at `$POSITION`" and the corresponding response with the hover message.
+`console.log` can be helpful to debug Sourcegraph extensions locally, but sometimes you'll want to see logs from users of a published extension, which can help with debugging issues that are hard to reproduce. If you use `console.log` for these kinds of logs in a published extension, extension may pollute the console with unnecessary logs when things are working as expected. Using `sourcegraph.app.log`, you can comfortably log all the information you need while giving end users the ability to toggle your extension's logs on and off as needed.
 
-In rare cases, it helps to see the communication between Sourcegraph and your extension. This can help identify bugs in the Sourcegraph extension API itself.
+> Note: This feature was introduced in Sourcegraph version 3.28. Extensions should check if `sourcegraph.app.log` is defined to prevent errors on older versions of Sourcegraph.
 
-To enable trace logging:
+### Extension API
 
-1. Reveal the **Ext ▲** debug menu by running the following JavaScript code in your browser's devtools console on a Sourcegraph page: `localStorage.debug=true;location.reload()`
-1. In the bottom right corner, click **Ext ▲**.
-1. Enable the **Log to devtools console** toggle.
+In your extension, call [`sourcegraph.app.log`]() anywhere you'd call `console.log`.
 
-Trace log messages are logged via `console.log` and appear in your browser's devtools console.
+<!-- TODO: link to extension API in main -->
+
+
+### User settings
+
+Users can enable an extension's logs by adding its ID to the [`extensions.activeLoggers`]() setting.
+
+<!-- TODO: link to settings schema in main -->

@@ -54,6 +54,7 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
     }, [])
 
     const [isRedesignEnabled] = useRedesignToggle()
+    const buttonColorRedesign = skipped.severity !== 'info' ? 'outline-danger' : 'outline-primary'
 
     return (
         <div
@@ -66,13 +67,7 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
                 onClick={toggleIsOpen}
                 onKeyDown={onKeyDown}
                 disabled={!skipped.message}
-                color={
-                    !isRedesignEnabled
-                        ? 'secondary'
-                        : skipped.severity !== 'info'
-                        ? 'outline-danger'
-                        : 'outline-primary'
-                }
+                color={isRedesignEnabled ? buttonColorRedesign : 'secondary'}
             >
                 <h4 className="d-flex align-items-center mb-0 w-100">
                     {skipped.severity === 'info' ? (

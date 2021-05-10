@@ -30,6 +30,11 @@ func ParseConfigFile(name string) (*Config, error) {
 		conf.Commands[name] = cmd
 	}
 
+	for name, cmd := range conf.Tests {
+		cmd.Name = name
+		conf.Tests[name] = cmd
+	}
+
 	return &conf, nil
 }
 
@@ -39,8 +44,11 @@ type Command struct {
 	Install          string            `yaml:"install"`
 	Env              map[string]string `yaml:"env"`
 	Watch            []string          `yaml:"watch"`
-	InstallDocDarwin string            `yaml:"install_doc.darwin"`
-	InstallDocLinux  string            `yaml:"install_doc.linux"`
+	InstallDocDarwin string            `yaml:"installDoc.darwin"`
+	InstallDocLinux  string            `yaml:"installDoc.linux"`
+	IgnoreStdout     bool              `yaml:"ignoreStdout"`
+	IgnoreStderr     bool              `yaml:"ignoreStderr"`
+	DefaultArgs      string            `yaml:"defaultArgs"`
 }
 
 type Config struct {
