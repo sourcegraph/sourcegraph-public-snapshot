@@ -5,10 +5,12 @@ import CardTextOutlineIcon from 'mdi-react/CardTextOutlineIcon'
 import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
 import React, { useCallback, useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { DiffStat } from '../../../../components/diff/DiffStat'
@@ -429,10 +431,30 @@ const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyP
         return <h3>Import changeset #{spec.targets.changesetSpec.description.externalID}</h3>
     }
     if (
-        spec.operations.length === 0 ||
-        !spec.delta.titleChanged ||
-        spec.targets.__typename === 'VisibleApplyPreviewTargetsAttach'
+        spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate' &&
+        (spec.operations.length === 0 || !spec.delta.titleChanged)
     ) {
+        return (
+            <h3>
+                <LinkOrSpan
+                    to={spec.targets.changeset.externalURL?.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mr-2"
+                >
+                    {spec.targets.changeset.title}
+                    {spec.targets.changeset.externalID && <> (#{spec.targets.changeset.externalID}) </>}
+                    {spec.targets.changeset.externalURL?.url && (
+                        <>
+                            {' '}
+                            <ExternalLinkIcon size="1rem" />
+                        </>
+                    )}
+                </LinkOrSpan>
+            </h3>
+        )
+    }
+    if (spec.targets.__typename === 'VisibleApplyPreviewTargetsAttach') {
         return <h3>{spec.targets.changesetSpec.description.title}</h3>
     }
     return (
