@@ -26,24 +26,7 @@ const { add } = storiesOf('web/search/input/SearchContextMenu', module)
 
 const defaultProps: SearchContextMenuProps = {
     showSearchContextManagement: false,
-    fetchAutoDefinedSearchContexts: of([
-        {
-            __typename: 'SearchContext',
-            id: '1',
-            spec: 'global',
-            autoDefined: true,
-            description: 'All repositories on Sourcegraph',
-            repositories: [],
-        },
-        {
-            __typename: 'SearchContext',
-            id: '2',
-            spec: '@username',
-            autoDefined: true,
-            description: 'Your repositories on Sourcegraph',
-            repositories: [],
-        },
-    ]),
+    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(2),
     fetchSearchContexts: ({
         first,
         namespaceFilterType,
@@ -64,7 +47,9 @@ const defaultProps: SearchContextMenuProps = {
                     id: '3',
                     spec: '@username/test-version-1.5',
                     autoDefined: false,
+                    public: true,
                     description: 'Only code in version 1.5',
+                    updatedAt: '2021-03-15T19:39:11Z',
                     repositories: [],
                 },
             ],

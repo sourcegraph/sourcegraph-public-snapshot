@@ -3,34 +3,20 @@ import * as H from 'history'
 import React from 'react'
 import { act } from 'react-dom/test-utils'
 import { Dropdown, DropdownItem, DropdownToggle } from 'reactstrap'
-import { of } from 'rxjs'
 import sinon from 'sinon'
 
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 
 import { SearchPatternType } from '../../graphql-operations'
-import { mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
 
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
-
-const mockFetchAutoDefinedSearchContexts = () =>
-    of([
-        {
-            __typename: 'SearchContext',
-            id: '1',
-            spec: 'global',
-            autoDefined: true,
-            description: 'All repositories on Sourcegraph',
-            repositories: [],
-        },
-    ] as ISearchContext[])
 
 describe('SearchContextDropdown', () => {
     const defaultProps: SearchContextDropdownProps = {
         query: '',
         showSearchContextManagement: false,
-        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(1),
         fetchSearchContexts: mockFetchSearchContexts,
         defaultSearchContextSpec: '',
         selectedSearchContextSpec: '',
