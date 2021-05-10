@@ -1,9 +1,9 @@
-@import 'branded/src/global-styles/breakpoints';
+@import 'wildcard/src/global-styles/breakpoints';
 
 .hidden-external-changeset-close-node {
     &__action,
     &__information {
-        @include media-breakpoint-down(xs) {
+        @media (--xs-breakpoint-down) {
             // Make it full width in the current row.
             grid-column: 1 / -1;
         }

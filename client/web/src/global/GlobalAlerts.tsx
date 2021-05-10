@@ -98,6 +98,21 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             <Markdown dangerousInnerHTML={renderMarkdown(motd)} history={this.props.history} />
                         </DismissibleAlert>
                     ))}
+                {process.env.SOURCEGRAPH_API_URL && (
+                    <DismissibleAlert
+                        key="dev-web-server-alert"
+                        partialStorageKey="dev-web-server-alert"
+                        className="alert alert-danger global-alerts__alert"
+                    >
+                        <div>
+                            <strong>Warning!</strong> This build uses data from the proxied API:{' '}
+                            <a target="__blank" href="process.env.SOURCEGRAPH_API_URL">
+                                {process.env.SOURCEGRAPH_API_URL}
+                            </a>
+                        </div>
+                        .
+                    </DismissibleAlert>
+                )}
                 <Notices
                     alertClassName="global-alerts__alert"
                     location="top"

@@ -20,6 +20,7 @@ add(
                 <UserNavItem
                     {...webProps}
                     testIsOpen={true}
+                    showRepositorySection={true}
                     authenticatedUser={{
                         username: 'alice',
                         displayName: 'alice doe',
@@ -74,6 +75,7 @@ add(
                 <UserNavItem
                     {...webProps}
                     testIsOpen={true}
+                    showRepositorySection={true}
                     authenticatedUser={{
                         username: 'alice',
                         displayName: 'alice doe',

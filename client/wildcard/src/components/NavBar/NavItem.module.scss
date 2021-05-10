@@ -1,4 +1,4 @@
-@import 'branded/src/global-styles/breakpoints.scss';
+@import '../../global-styles/breakpoints';
 
 .link {
     outline-offset: -1px;
@@ -17,11 +17,11 @@
             box-shadow: 0 0 0 2px var(--primary-2);
         }
         .icon {
-            @include media-breakpoint-down(md) {
+            @media (--md-breakpoint-down) {
                 outline: 1px solid transparent;
                 box-shadow: 0 0 0 2px var(--primary-2);
             }
-            @include media-breakpoint-down(sm) {
+            @media (--sm-breakpoint-down) {
                 outline: none;
                 box-shadow: none;
             }
@@ -32,12 +32,12 @@
         }
     }
     &:hover:not(.active) {
-        border-bottom: 2px solid var(--border-color);
+        border-bottom: 2px solid var(--border-color-2);
         .link-content {
             margin-bottom: -0.125rem;
         }
     }
-    @include media-breakpoint-down(sm) {
+    @media (--sm-breakpoint-down) {
         padding: 0.25rem 0;
         flex: 1;
         align-items: flex-start;
@@ -57,11 +57,11 @@
     }
     &:first-child,
     &:last-child {
-        @include media-breakpoint-down(sm) {
+        @media (--sm-breakpoint-down) {
             margin: 0;
         }
     }
-    @include media-breakpoint-down(sm) {
+    @media (--sm-breakpoint-down) {
         margin: 0;
     }
 }
@@ -76,7 +76,7 @@
 .icon {
     color: var(--header-icon-color);
     border-radius: 3px;
-    @include media-breakpoint-down(md) {
+    @media (--md-breakpoint-down) {
         color: var(--icon-color);
     }
 }
@@ -84,10 +84,10 @@
 .icon-included {
     margin-left: 0.25rem;
     display: inline-flex;
-    @include media-breakpoint-down(md) {
+    @media (--md-breakpoint-down) {
         display: none;
     }
-    @include media-breakpoint-down(sm) {
+    @media (--sm-breakpoint-down) {
         display: inline-flex;
     }
 }

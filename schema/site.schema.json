@@ -534,6 +534,11 @@
       ],
       "group": "Security"
     },
+    "authz.enforceForSiteAdmins": {
+      "description": "When true, site admins will only be able to see private code they have access to via our authz system.",
+      "type": "boolean",
+      "default": false
+    },
     "externalService.userMode": {
       "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
       "type": "string",
@@ -982,6 +987,16 @@
       "description": "Configuration for encryption keys used to encrypt data at rest in the database.",
       "type": "object",
       "properties": {
+        "enableCache": {
+          "description": "enable LRU cache for decryption APIs",
+          "type": "boolean",
+          "default": false
+        },
+        "cacheSize": {
+          "description": "number of values to keep in LRU cache",
+          "type": "integer",
+          "default": 2048
+        },
         "batchChangesCredentialKey": {
           "$ref": "#/definitions/EncryptionKey"
         },

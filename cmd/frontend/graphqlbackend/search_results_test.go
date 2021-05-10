@@ -113,7 +113,7 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.MockGet(t, 1)
 		database.Mocks.Repos.Count = mockCount
 
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error) {
 			return nil, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -148,7 +148,7 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
-		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *streaming.Stats, error) {
+		mockSearchRepositories = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 			calledSearchRepositories = true
 			return nil, &streaming.Stats{}, nil
 		}
@@ -166,14 +166,14 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			repo := types.RepoName{ID: 1, Name: "repo"}
-			fm := mkFileMatch(db, repo, "dir/file", 123)
-			return []*FileMatchResolver{fm}, &streaming.Stats{}, nil
+			fm := mkFileMatch(repo, "dir/file", 123)
+			return []*result.FileMatch{fm}, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -213,7 +213,7 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
-		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *streaming.Stats, error) {
+		mockSearchRepositories = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 			calledSearchRepositories = true
 			return nil, &streaming.Stats{}, nil
 		}
@@ -231,14 +231,14 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
 			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			repo := types.RepoName{ID: 1, Name: "repo"}
-			fm := mkFileMatch(db, repo, "dir/file", 123)
-			return []*FileMatchResolver{fm}, &streaming.Stats{}, nil
+			fm := mkFileMatch(repo, "dir/file", 123)
+			return []*result.FileMatch{fm}, &streaming.Stats{}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -281,7 +281,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 	repo := types.RepoName{Name: "testRepo"}
 	repoMatch := NewRepositoryResolver(db, repo.ToRepo())
 	fileMatch := func(path string) *FileMatchResolver {
-		return mkFileMatch(db, repo, path)
+		return mkFileMatchResolver(db, repo, path)
 	}
 
 	rev := "develop3.0"
@@ -819,7 +819,7 @@ func TestCompareSearchResults(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
 	makeResult := func(repo, file string) *FileMatchResolver {
-		return mkFileMatchResolver(db, result.FileMatch{File: result.File{
+		return mkResolverFromFileMatch(db, result.FileMatch{File: result.File{
 			Repo: types.RepoName{Name: api.RepoName(repo)},
 			Path: file,
 		}})

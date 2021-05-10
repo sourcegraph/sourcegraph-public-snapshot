@@ -1,4 +1,4 @@
-@import 'branded/src/global-styles/breakpoints';
+@import 'wildcard/src/global-styles/breakpoints';
 
 .batch-change-burndown-chart {
     &-legend {
@@ -14,7 +14,7 @@
         }
     }
     &__container {
-        @include media-breakpoint-down(xs) {
+        @media (--xs-breakpoint-down) {
             flex-direction: column-reverse;
             align-items: flex-start !important;
         }

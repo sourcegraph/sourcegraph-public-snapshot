@@ -35,8 +35,6 @@ import (
 )
 
 func TestIndexedSearch(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
 	zeroTimeoutCtx, cancel := context.WithTimeout(context.Background(), 0)
 	defer cancel()
 	type args struct {
@@ -282,7 +280,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 			}
 
-			indexed, err := newIndexedSearchRequest(context.Background(), db, args, textRequest, StreamFunc(func(SearchEvent) {}))
+			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest, MatchStreamFunc(func(SearchEvent) {}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -296,14 +294,15 @@ func TestIndexedSearch(t *testing.T) {
 			// This is a quick fix which will break once we enable the zoekt client for true streaming.
 			// Once we return more than one event we have to account for the proper order of results
 			// in the tests.
-			gotResults, gotCommon, err := collectStream(func(stream Sender) error {
+			gotMatches, gotCommon, err := collectStream(func(stream Sender) error {
 				return indexed.Search(tt.args.ctx, stream)
 			})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
 				return
 			}
-			gotFm, err := searchResultsToFileMatchResults(gotResults)
+
+			gotFm, err := matchesToFileMatches(gotMatches)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -316,8 +315,8 @@ func TestIndexedSearch(t *testing.T) {
 			var gotMatchKeys []result.Key
 			var gotMatchInputRevs []string
 			for _, m := range gotFm {
-				gotMatchCount += int(m.ResultCount())
-				gotMatchKeys = append(gotMatchKeys, m.FileMatch.Key())
+				gotMatchCount += m.ResultCount()
+				gotMatchKeys = append(gotMatchKeys, m.Key())
 				if m.InputRev != nil {
 					gotMatchInputRevs = append(gotMatchInputRevs, *m.InputRev)
 				}

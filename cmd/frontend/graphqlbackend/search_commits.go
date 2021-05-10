@@ -54,6 +54,10 @@ func (r *CommitSearchResultResolver) Select(path filter.SelectPath) SearchResult
 	return nil
 }
 
+func (r *CommitSearchResultResolver) toMatch() result.Match {
+	return &r.CommitMatch
+}
+
 func (r *CommitSearchResultResolver) Commit() *GitCommitResolver {
 	r.gitCommitOnce.Do(func() {
 		if r.gitCommitResolver != nil {
@@ -315,7 +319,7 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 		// Only send if we have something to report back.
 		if len(results) > 0 || !stats.Zero() {
 			s.Send(SearchEvent{
-				Results: commitMatchesToSearchResults(db, results),
+				Results: commitMatchesToMatches(results),
 				Stats:   stats,
 			})
 		}
@@ -574,24 +578,21 @@ func searchCommitLogInRepos(ctx context.Context, db dbutil.DB, args *search.Text
 	})
 }
 
-func commitMatchesToSearchResults(db dbutil.DB, matches []*result.CommitMatch) []SearchResultResolver {
-	if len(matches) == 0 {
+func commitMatchesToMatches(commitMatches []*result.CommitMatch) []result.Match {
+	if len(commitMatches) == 0 {
 		return nil
 	}
 
 	// Show most recent commits first.
-	sort.Slice(matches, func(i, j int) bool {
-		return matches[i].Commit.Author.Date.After(matches[j].Commit.Author.Date)
+	sort.Slice(commitMatches, func(i, j int) bool {
+		return commitMatches[i].Commit.Author.Date.After(commitMatches[j].Commit.Author.Date)
 	})
 
-	resolvers := make([]SearchResultResolver, len(matches))
-	for i, result := range matches {
-		resolvers[i] = &CommitSearchResultResolver{
-			db:          db,
-			CommitMatch: *result,
-		}
+	matches := make([]result.Match, 0, len(commitMatches))
+	for _, result := range commitMatches {
+		matches = append(matches, result)
 	}
-	return resolvers
+	return matches
 }
 
 // expandUsernamesToEmails expands references to usernames to mention all possible (known and
