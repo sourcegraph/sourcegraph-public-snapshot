@@ -66,9 +66,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                         defaultIndex={tabIndex}
                         onChange={handleTabsChange}
                     >
-                        <div
-                            className={classnames('tablist-wrapper d-flex flex-1', isRedesignEnabled ? 'mx-3' : 'mx-0')}
-                        >
+                        <div className={classnames('tablist-wrapper d-flex flex-1', isRedesignEnabled && 'mx-3')}>
                             <TabList>
                                 <Tab data-test-tab="files">
                                     <span className="tablist-wrapper--tab-label">Files</span>
