@@ -66,6 +66,7 @@ interface CommitMatch {
     label: MarkdownText
     url: string
     detail: MarkdownText
+    repository: string
 
     content: MarkdownText
     ranges: number[][]
@@ -290,6 +291,7 @@ function toGQLCommitMatch(commit: CommitMatch): GQL.ICommitSearchResult {
         label: toMarkdown(commit.label),
         url: commit.url,
         detail: toMarkdown(commit.detail),
+        repository: commit.repository,
         matches: [match],
     }
 

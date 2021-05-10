@@ -1784,6 +1784,10 @@ type CommitSearchResult implements GenericSearchResultInterface {
     """
     url: String!
     """
+    Full name of the repository the commit is based on. May not always be present.
+    """
+    repository: String
+    """
     A markdown string of that is rendered less prominently.
     """
     detail: Markdown!

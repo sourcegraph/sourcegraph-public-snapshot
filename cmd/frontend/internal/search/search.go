@@ -472,12 +472,13 @@ func fromCommit(commit *result.CommitMatch) *streamhttp.EventCommitMatch {
 	}
 
 	return &streamhttp.EventCommitMatch{
-		Type:    streamhttp.CommitMatchType,
-		Label:   commit.Label(),
-		URL:     commit.URL().String(),
-		Detail:  commit.Detail(),
-		Content: content,
-		Ranges:  ranges,
+		Type:       streamhttp.CommitMatchType,
+		Label:      commit.Label(),
+		URL:        commit.URL().String(),
+		Detail:     commit.Detail(),
+		Repository: string(commit.RepoName.Name),
+		Content:    content,
+		Ranges:     ranges,
 	}
 }
 
