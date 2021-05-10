@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type SearchEvent struct {
@@ -32,6 +33,21 @@ func ResolversToMatches(resolvers []SearchResultResolver) []result.Match {
 
 // Temporary conversion function from []result.Match to []SearchResultResolver
 func MatchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultResolver {
+	type repoKey struct {
+		Name types.RepoName
+		Rev  string
+	}
+	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
+	getRepoResolver := func(repoName types.RepoName, rev string) *RepositoryResolver {
+		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
+			return existing
+		}
+		resolver := NewRepositoryResolver(db, repoName.ToRepo())
+		resolver.RepoMatch.Rev = rev
+		repoResolvers[repoKey{repoName, rev}] = resolver
+		return resolver
+	}
+
 	resolvers := make([]SearchResultResolver, 0, len(matches))
 	for _, match := range matches {
 		switch v := match.(type) {
@@ -39,13 +55,10 @@ func MatchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultReso
 			resolvers = append(resolvers, &FileMatchResolver{
 				db:           db,
 				FileMatch:    *v,
-				RepoResolver: NewRepositoryResolver(db, v.Repo.ToRepo()),
+				RepoResolver: getRepoResolver(v.Repo, ""),
 			})
 		case *result.RepoMatch:
-			repoName := v.RepoName()
-			resolver := NewRepositoryResolver(db, repoName.ToRepo())
-			resolver.RepoMatch.Rev = v.Rev // preserve the rev
-			resolvers = append(resolvers, resolver)
+			resolvers = append(resolvers, getRepoResolver(v.RepoName(), v.Rev))
 		case *result.CommitMatch:
 			resolvers = append(resolvers, &CommitSearchResultResolver{
 				db:          db,
