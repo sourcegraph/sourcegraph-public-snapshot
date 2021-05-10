@@ -441,8 +441,12 @@ func (v *EncryptionKey) UnmarshalJSON(data []byte) error {
 // EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
 type EncryptionKeys struct {
 	BatchChangesCredentialKey *EncryptionKey `json:"batchChangesCredentialKey,omitempty"`
-	ExternalServiceKey        *EncryptionKey `json:"externalServiceKey,omitempty"`
-	UserExternalAccountKey    *EncryptionKey `json:"userExternalAccountKey,omitempty"`
+	// CacheSize description: number of values to keep in LRU cache
+	CacheSize int `json:"cacheSize,omitempty"`
+	// EnableCache description: enable LRU cache for decryption APIs
+	EnableCache            bool           `json:"enableCache,omitempty"`
+	ExternalServiceKey     *EncryptionKey `json:"externalServiceKey,omitempty"`
+	UserExternalAccountKey *EncryptionKey `json:"userExternalAccountKey,omitempty"`
 }
 type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.
