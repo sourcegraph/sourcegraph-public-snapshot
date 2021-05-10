@@ -55,7 +55,7 @@ type EventSymbolMatch struct {
 	Branches   []string `json:"branches,omitempty"`
 	Version    string   `json:"version,omitempty"`
 
-	Symbols    []Symbol `json:"symbols"`
+	Symbols []Symbol `json:"symbols"`
 }
 
 func (e *EventSymbolMatch) eventMatch() {}
@@ -81,7 +81,7 @@ type EventCommitMatch struct {
 	Repository string `json:"repository"`
 	Content    string `json:"content"`
 	// [line, character, length]
-	Ranges     [][3]int32 `json:"ranges"`
+	Ranges [][3]int32 `json:"ranges"`
 }
 
 func (e *EventCommitMatch) eventMatch() {}
