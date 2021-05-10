@@ -50,5 +50,5 @@ export interface ApiService {
         subjectId: string,
         content: string
     ) => Observable<void>
-    getSearchInsightContent(insight: SearchInsight): Observable<sourcegraph.View>
+    getSearchInsightContent(insight: SearchInsight): Promise<sourcegraph.View>
 }

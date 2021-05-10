@@ -1,6 +1,8 @@
+import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { ISearch } from '@sourcegraph/shared/src/graphql/schema';
 
 import { requestGraphQL } from '../../../../backend/graphql';
 
@@ -10,8 +12,8 @@ import { requestGraphQL } from '../../../../backend/graphql';
  * Bulk search is a package search requests for each data series and each
  * data point of particular data series.
  * */
-export function fetchRawSearchInsightResults(searchQueries: string[]) {
-    return  requestGraphQL(
+export function fetchRawSearchInsightResults(searchQueries: string[]): Observable<Record<string, ISearch>> {
+    return  requestGraphQL<Record<string, ISearch>>(
         gql`
             query BulkSearch(${searchQueries.map((searchQuery, index) => `$query${index}: String!`).join(', ')}) {
                 ${searchQueries.map(
@@ -32,8 +34,8 @@ export function fetchRawSearchInsightResults(searchQueries: string[]) {
 /**
  * Fetch closest commits according to step between points on insight chart.
  * */
-export function fetchSearchInsightCommits(commitQueries: string[]) {
-    return requestGraphQL(
+export function fetchSearchInsightCommits(commitQueries: string[]): Observable<Record<string, ISearch>> {
+    return requestGraphQL<Record<string, ISearch>>(
         gql`
             query BulkSearchCommits(${commitQueries.map((query, index) => `$query${index}: String!`).join(', ')}) {
                 ${commitQueries
