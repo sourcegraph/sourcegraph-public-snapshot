@@ -162,3 +162,10 @@ func (u *URL) String() string {
 	}
 	return buf.String()
 }
+
+// IsSSH returns whether this URL is SSH based, which for vcs.URL means
+// if the scheme is either empty or `ssh`, this is because of rsync format
+// urls being cloned over SSH, but not including a scheme.
+func (u *URL) IsSSH() bool {
+	return u.Scheme == "ssh" || u.Scheme == ""
+}

@@ -148,7 +148,7 @@ func gitserverPushConfig(ctx context.Context, store *database.ExternalServiceSto
 	}
 
 	// If the repo is cloned using SSH, we need to pass along a private key and passphrase.
-	if u.Scheme == "ssh" || u.Scheme == "" {
+	if u.IsSSH() {
 		sshA, ok := au.(auth.AuthenticatorWithSSH)
 		if !ok {
 			return nil, ErrNoSSHCredential
@@ -398,7 +398,7 @@ func extractCloneURL(ctx context.Context, s *database.ExternalServiceStore, repo
 		cloneURLs = append(cloneURLs, parsedURL)
 	}
 	sort.SliceStable(cloneURLs, func(i, j int) bool {
-		return cloneURLs[i].Scheme != "" && cloneURLs[i].Scheme != "ssh"
+		return !cloneURLs[i].IsSSH()
 	})
 	cloneURL := cloneURLs[0]
 	// TODO: Do this once we don't want to use existing credentials anymore.
