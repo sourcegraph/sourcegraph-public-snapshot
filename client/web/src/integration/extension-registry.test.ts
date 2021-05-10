@@ -262,6 +262,8 @@ describe('Extension Registry', () => {
             )
             // Toggle programming language extension category
             await driver.page.click('[data-test-extension-category="Programming languages"')
+            // Wait for the category header to change
+            await driver.page.waitForSelector('[data-test-extension-category-header="Programming languages"]')
             assert(
                 !(await driver.page.$('[data-test="extension-toggle-sqs/word-count"]')),
                 "Expected non-language extensions to not be displayed when only 'Programming languages' are toggled"
