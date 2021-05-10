@@ -35,10 +35,6 @@ if [ ! -x "$GOBIN/sg" ]; then
   exit 1
 fi
 
-# We can now compare this to the output of which sg, and make suggestions
-# accordingly in terms of usage.
-global_sg="$(which sg)"
-
 echo "          _____                    _____          "
 echo "         /\    \                  /\    \         "
 echo "        /::\    \                /::\    \        "
@@ -63,13 +59,27 @@ echo "         \/____/                                  "
 echo "                                                  "
 echo "                                                  "
 echo "  sg installed to $GOBIN/sg."
-if [ "$global_sg" != "$GOBIN/sg" ]; then
+
+# We can now check whether `sg` is in the $PATH and make suggestions
+# accordingly in terms of usage.
+
+set +e # Don't fail if it the check fails
+sg_in_path=$(command -v sg)
+set -e
+
+red_bg=$'\033[41m'
+white_fg=$'\033[37;1m'
+reset=$'\033[0m'
+if [ "$sg_in_path" != "$GOBIN/sg" ]; then
   echo
-  echo "  Note that this is NOT on your \$PATH; running sg"
-  echo "  will run $global_sg instead."
+  printf "  %s%sNOTE: this is NOT on your \$PATH.%s" "$red_bg" "$white_fg" "$reset"
+  if [ -n "${sg_in_path}" ]; then
+    echo "  running sg will run '$sg_in_path' instead."
+  fi
   echo
   echo "  Consider adding $GOBIN to your \$PATH for easier"
   echo "  sg-ing!"
 fi
+
 echo "                                                  "
 echo "                  Happy hacking!"
