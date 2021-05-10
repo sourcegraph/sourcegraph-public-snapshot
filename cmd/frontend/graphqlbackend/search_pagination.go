@@ -207,10 +207,18 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	return &SearchResultsResolver{
 		db:            r.db,
 		Stats:         common,
-		SearchResults: ResolversToMatches(results),
+		SearchResults: resolversToMatches(results),
 		alert:         alert,
 		cursor:        cursor,
 	}, nil
+}
+
+func resolversToMatches(resolvers []SearchResultResolver) []result.Match {
+	matches := make([]result.Match, 0, len(resolvers))
+	for _, resolver := range resolvers {
+		matches = append(matches, resolver.toMatch())
+	}
+	return matches
 }
 
 // repoIsLess sorts repositories first by name then by ID, suitable for use
