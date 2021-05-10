@@ -1,4 +1,4 @@
-@import 'wildcard/src/global-styles/breakpoints.scss';
+@import 'branded/src/global-styles/breakpoints.scss';
 
 .item {
     display: flex;
@@ -10,7 +10,7 @@
     &:last-child {
         margin-right: 0;
     }
-    @media (--md-breakpoint-down) {
+    @include media-breakpoint-down(sm) {
         margin: 0;
         &:first-of-type {
             .link {
@@ -65,6 +65,13 @@
         border-bottom: 2px solid var(--border-color);
         .link-content {
             margin-bottom: -0.125rem;
+        }
+        @include media-breakpoint-down(sm) {
+            background-color: var(--link-color);
+            .icon,
+            .text {
+                color: var(--light-text);
+            }
         }
     }
     .link-content {

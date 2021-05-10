@@ -12,6 +12,11 @@
     align-items: center;
 }
 
+.menu {
+    display: flex;
+    align-self: stretch;
+}
+
 .menu-close {
     @include media-breakpoint-down(sm) {
         display: none !important;

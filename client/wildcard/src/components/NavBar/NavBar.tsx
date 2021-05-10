@@ -33,7 +33,7 @@ interface NavLinkProps extends NavItemProps, Pick<LinkProps<H.LocationState>, 't
 }
 
 const useOutsideClickDetector = (
-    reference: React.RefObject<HTMLUListElement>
+    reference: React.RefObject<HTMLDivElement>
 ): [boolean, React.Dispatch<React.SetStateAction<boolean>>] => {
     const [outsideClick, setOutsideClick] = useState(true)
 
@@ -63,24 +63,22 @@ export const NavBar = ({ children, logo }: NavBarProps): JSX.Element => (
 )
 
 export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
-    const menuReference = useRef<HTMLUListElement>(null)
+    const menuReference = useRef<HTMLDivElement>(null)
     const [open, setOpen] = useOutsideClickDetector(menuReference)
 
     return (
-        <>
+        <div className={navBarStyles.menu} ref={menuReference}>
             <button
                 className={classNames('btn', navBarStyles.menuButton)}
                 type="button"
-                onClick={() => setOpen(() => !open)}
+                onClick={() => setOpen(!open)}
                 aria-label="Sections Navigation"
             >
                 <MenuIcon className="icon-inline" />
                 {!open ? <ChevronDownIcon className="icon-inline" /> : <ChevronUpIcon className="icon-inline" />}
             </button>
-            <ul ref={menuReference} className={classNames(navBarStyles.list, { [navBarStyles.menuClose]: !open })}>
-                {children}
-            </ul>
-        </>
+            <ul className={classNames(navBarStyles.list, { [navBarStyles.menuClose]: !open })}>{children}</ul>
+        </div>
     )
 }
 
