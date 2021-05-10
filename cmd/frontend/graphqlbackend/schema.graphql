@@ -418,6 +418,10 @@ type Mutation {
         """
         userCookieID: String!
         """
+        The first sourcegraph URL visited by the user, stored in a browser cookie.
+        """
+        firstSourceURL: String!
+        """
         The URL when the event was logged.
         """
         url: String!

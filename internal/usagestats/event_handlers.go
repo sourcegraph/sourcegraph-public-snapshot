@@ -19,12 +19,13 @@ var pubSubDotComEventsTopicID = env.Get("PUBSUB_DOTCOM_EVENTS_TOPIC_ID", "", "Pu
 
 // Event represents a request to log telemetry.
 type Event struct {
-	EventName    string
-	UserID       int32
-	UserCookieID string
-	URL          string
-	Source       string
-	Argument     json.RawMessage
+	EventName      string
+	UserID         int32
+	UserCookieID   string
+	FirstSourceURL string
+	URL            string
+	Source         string
+	Argument       json.RawMessage
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
@@ -56,6 +57,7 @@ func LogEvent(ctx context.Context, db dbutil.DB, args Event) error {
 type bigQueryEvent struct {
 	EventName       string `json:"name"`
 	AnonymousUserID string `json:"anonymous_user_id"`
+	FirstSourceURL  string `json:"first_source_url"`
 	UserID          int    `json:"user_id"`
 	URL             string `json:"url"`
 	Source          string `json:"source"`
@@ -76,6 +78,7 @@ func publishSourcegraphDotComEvent(args Event) error {
 		EventName:       args.EventName,
 		UserID:          int(args.UserID),
 		AnonymousUserID: args.UserCookieID,
+		FirstSourceURL:  args.FirstSourceURL,
 		URL:             args.URL,
 		Source:          args.Source,
 		Timestamp:       time.Now().UTC().Format(time.RFC3339),
