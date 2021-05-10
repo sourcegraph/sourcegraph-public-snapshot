@@ -430,39 +430,36 @@ const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyP
     if (spec.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
         return <h3>Import changeset #{spec.targets.changesetSpec.description.externalID}</h3>
     }
-    if (
-        spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate' &&
-        (spec.operations.length === 0 || !spec.delta.titleChanged)
-    ) {
-        return (
-            <h3>
-                <LinkOrSpan
-                    to={spec.targets.changeset.externalURL?.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mr-2"
-                >
-                    {spec.targets.changeset.title}
-                    {spec.targets.changeset.externalID && <> (#{spec.targets.changeset.externalID}) </>}
-                    {spec.targets.changeset.externalURL?.url && (
-                        <>
-                            {' '}
-                            <ExternalLinkIcon size="1rem" />
-                        </>
-                    )}
-                </LinkOrSpan>
-            </h3>
-        )
-    }
     if (spec.targets.__typename === 'VisibleApplyPreviewTargetsAttach') {
         return <h3>{spec.targets.changesetSpec.description.title}</h3>
     }
-    return (
-        <h3>
-            <del className="text-muted">{spec.targets.changeset.title}</del>{' '}
-            {spec.targets.changesetSpec.description.title}
-        </h3>
+    // default, spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate'
+    const linkOrSpan = (
+        <LinkOrSpan
+            to={spec.targets.changeset.externalURL?.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mr-2"
+        >
+            {spec.targets.changeset.title}
+            {spec.targets.changeset.externalID && <> (#{spec.targets.changeset.externalID}) </>}
+            {spec.targets.changeset.externalURL?.url && (
+                <>
+                    {' '}
+                    <ExternalLinkIcon size="1rem" />
+                </>
+            )}
+        </LinkOrSpan>
     )
+
+    if (spec.operations.length > 0 || spec.delta.titleChanged) {
+        return (
+            <h3>
+                <del className="text-muted">{linkOrSpan}</del>
+            </h3>
+        )
+    }
+    return <h3>{linkOrSpan}</h3>
 }
 
 const RepoLink: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFields }> = ({ spec }) => {
