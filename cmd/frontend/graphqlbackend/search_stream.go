@@ -69,6 +69,30 @@ func MatchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultReso
 	return resolvers
 }
 
+func MatchToResolver(db dbutil.DB, match result.Match) SearchResultResolver {
+	switch v := match.(type) {
+	case *result.FileMatch:
+		return &FileMatchResolver{
+			db:           db,
+			FileMatch:    *v,
+			RepoResolver: NewRepositoryResolver(db, v.Repo.ToRepo()),
+		}
+	case *result.RepoMatch:
+		repoName := v.RepoName()
+		return &RepositoryResolver{
+			db:        db,
+			RepoMatch: *v,
+			innerRepo: repoName.ToRepo(),
+		}
+	case *result.CommitMatch:
+		return &CommitSearchResultResolver{
+			db:          db,
+			CommitMatch: *v,
+		}
+	}
+	panic("unknown match type")
+}
+
 type limitStream struct {
 	s         Sender
 	cancel    context.CancelFunc

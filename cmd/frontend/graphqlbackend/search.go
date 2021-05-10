@@ -469,7 +469,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		return nil, err
 	}
 
-	fileMatches, _, err := searchFilesInReposBatch(ctx, r.db, &args)
+	fileMatches, _, err := searchFilesInReposBatch(ctx, &args)
 	if err != nil {
 		return nil, err
 	}
