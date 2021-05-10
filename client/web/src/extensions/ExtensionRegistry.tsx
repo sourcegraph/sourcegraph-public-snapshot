@@ -2,13 +2,13 @@ import * as H from 'history'
 import React, { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { concat, of, timer } from 'rxjs'
-import { debounce, delay, map, switchMap, takeUntil, tap, distinctUntilKeyChanged } from 'rxjs/operators'
+import { debounce, delay, map, switchMap, takeUntil, tap, distinctUntilChanged } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ExtensionCategory } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -23,10 +23,10 @@ import {
 import { eventLogger } from '../tracking/eventLogger'
 
 import { ExtensionBanner } from './ExtensionBanner'
+import { ExtensionRegistrySidenav } from './ExtensionRegistrySidenav'
 import { configureExtensionRegistry, ConfiguredExtensionRegistry } from './extensions'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 import { ExtensionsList } from './ExtensionsList'
-import { ExtensionsQueryInputToolbar } from './ExtensionsQueryInputToolbar'
 
 interface Props
     extends Pick<ExtensionsAreaRouteContext, 'authenticatedUser' | 'subject'>,
@@ -39,6 +39,7 @@ interface Props
 
 const LOADING = 'loading' as const
 const URL_QUERY_PARAM = 'query'
+const URL_CATEGORY_PARAM = 'category'
 
 export type ExtensionListData = typeof LOADING | (ConfiguredExtensionRegistry & { error: string | null }) | ErrorLike
 
@@ -109,9 +110,12 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
         () => new Map<string, ConfiguredRegistryExtension<RegistryExtensionFieldsForList>>()
     )
 
-    const [query, setQuery] = useState(getQueryFromProps(location))
-    // Selected categories in order of selection. Used to assign extensions to their earliest selected category.
-    const [selectedCategories, setSelectedCategories] = useState<ExtensionCategory[]>([])
+    const [query, setQuery] = useState(getQueryFromLocation(location))
+
+    const [selectedCategory, setSelectedCategory] = useState<ExtensionCategory | 'All'>(
+        getCategoryFromLocation(location) || 'All'
+    )
+
     // Filter extensions by enablement state: enabled, disabled, or all.
     const [enablementFilter, setEnablementFilter] = useState<ExtensionsEnablement>('all')
     // Programming language extensions are hidden by default. Users cannot un-show PL extensions once toggled.
@@ -122,30 +126,56 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
      * new subscriptions when user toggles extensions
      */
     const [nextQueryInput, data] = useEventObservable<
-        { query: string; immediate: boolean; settingsCascade: SettingsCascadeOrError<Settings> },
+        {
+            query: string
+            category: ExtensionCategory | 'All'
+            immediate: boolean
+            settingsCascade: SettingsCascadeOrError<Settings>
+        },
         ExtensionListData
     >(
         useCallback(
             newQueries =>
                 newQueries.pipe(
-                    distinctUntilKeyChanged('query'),
-                    tap(({ query }) => {
+                    distinctUntilChanged(
+                        (previous, current) =>
+                            previous.query === current.query && previous.category === current.category
+                    ),
+                    tap(({ query, category }) => {
                         setQuery(query)
+                        setSelectedCategory(category)
 
                         history.replace({
-                            search: query ? new URLSearchParams({ [URL_QUERY_PARAM]: query }).toString() : '',
-                            hash: location.hash,
+                            search: new URLSearchParams(
+                                query
+                                    ? {
+                                          [URL_QUERY_PARAM]: query,
+                                          [URL_CATEGORY_PARAM]: category,
+                                      }
+                                    : {
+                                          [URL_CATEGORY_PARAM]: category,
+                                      }
+                            ).toString(),
+                            hash: window.location.hash,
                         })
                     }),
                     debounce(({ immediate }) => timer(immediate ? 0 : 50)),
-                    distinctUntilKeyChanged('query'),
-                    switchMap(({ query, immediate, settingsCascade }) => {
+                    distinctUntilChanged(
+                        (previous, current) =>
+                            previous.query === current.query && previous.category === current.category
+                    ),
+                    switchMap(({ query, category, immediate, settingsCascade }) => {
                         let viewerConfiguredExtensions: string[] = []
                         if (!isErrorLike(settingsCascade.final)) {
                             if (settingsCascade.final?.extensions) {
                                 viewerConfiguredExtensions = Object.keys(settingsCascade.final.extensions)
                             }
                         }
+
+                        if (category !== 'All') {
+                            query = `${query} category:"${category}"`
+                        }
+
                         const resultOrError = platformContext.requestGraphQL<
                             RegistryExtensionsResult,
                             RegistryExtensionsVariables
@@ -179,24 +209,57 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                         }
                     })
                 ),
-            [platformContext, history, location.hash, configuredExtensionCache]
+            [platformContext, history, configuredExtensionCache]
         )
     )
 
     const onQueryChangeEvent = useCallback(
         (event: React.FormEvent<HTMLInputElement>) =>
-            nextQueryInput({ query: event.currentTarget.value, immediate: false, settingsCascade }),
+            nextQueryInput({
+                query: event.currentTarget.value,
+                category: getCategoryFromLocation(window.location),
+                immediate: false,
+                settingsCascade,
+            }),
         [nextQueryInput, settingsCascade]
     )
 
     const onQueryChangeImmediate = useCallback(
-        (query: string) => nextQueryInput({ query, immediate: true, settingsCascade }),
+        () =>
+            nextQueryInput({
+                query: getQueryFromLocation(window.location),
+                category: getCategoryFromLocation(window.location),
+                immediate: true,
+                settingsCascade,
+            }),
         [nextQueryInput, settingsCascade]
     )
 
+    const onSelectCategory = useCallback(
+        (category: ExtensionCategory | 'All') => {
+            const query = getQueryFromLocation(window.location)
+
+            history.push({
+                search: new URLSearchParams(
+                    query
+                        ? {
+                              [URL_QUERY_PARAM]: query,
+                              [URL_CATEGORY_PARAM]: category,
+                          }
+                        : {
+                              [URL_CATEGORY_PARAM]: category,
+                          }
+                ).toString(),
+                hash: window.location.hash,
+            })
+        },
+        [history]
+    )
+
+    // Keep state in sync with URL
     useEffect(() => {
         // kicks off initial request
-        onQueryChangeImmediate(getQueryFromProps(location))
+        onQueryChangeImmediate()
     }, [location, onQueryChangeImmediate])
 
     const isLoading = !data || data === LOADING
@@ -205,20 +268,23 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
         <>
             <div className="container">
                 <PageTitle title="Extensions" />
-
-                <div className="row pt-3">
-                    <div className="col-3">
-                        <h3>Categories</h3>
-                    </div>
-                    {/* hi */}
-                    <div className="col">
+                <div className="d-flex mt-3 pt-3">
+                    <ExtensionRegistrySidenav
+                        selectedCategory={selectedCategory}
+                        onSelectCategory={onSelectCategory}
+                        enablementFilter={enablementFilter}
+                        setEnablementFilter={setEnablementFilter}
+                    />
+                    <div className="flex-grow-1">
                         <div className="mb-5">
-                            <Form onSubmit={preventDefault} className="form-inline">
-                                <small className="mb-3">
+                            <div className="row">
+                                <span className="mb-3 col-lg-10">
                                     Connect all your other tools to get things like test coverage, 1-click open file in
                                     editor, custom highlighting, and information from your other favorite services all
                                     in one place on Sourcegraph.
-                                </small>
+                                </span>
+                            </div>
+                            <Form onSubmit={preventDefault} className="form-inline">
                                 <div className="shadow flex-grow-1 mb-2">
                                     <input
                                         className="form-control w-100 test-extension-registry-input"
@@ -235,12 +301,6 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                     />
                                 </div>
                             </Form>
-                            {/* <ExtensionsQueryInputToolbar
-                                selectedCategories={selectedCategories}
-                                onSelectCategories={setSelectedCategories}
-                                enablementFilter={enablementFilter}
-                                setEnablementFilter={setEnablementFilter}
-                            /> */}
                             {!authenticatedUser && (
                                 <div className="alert alert-info my-4">
                                     <span>An account is required to create, enable and disable extensions. </span>
@@ -254,11 +314,12 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                 data={data}
                                 query={query}
                                 enablementFilter={enablementFilter}
-                                selectedCategories={selectedCategories}
+                                selectedCategory={selectedCategory}
                                 showMoreExtensions={showMoreExtensions}
+                                onShowFullCategoryClicked={onSelectCategory}
                             />
                         </div>
-                        {!isLoading && !showMoreExtensions && selectedCategories.length === 0 && (
+                        {!isLoading && !showMoreExtensions && selectedCategory === 'All' && (
                             <div className="d-flex justify-content-center">
                                 <button
                                     type="button"
@@ -270,7 +331,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                             </div>
                         )}
                         {/* Only show the banner when there are no selected categories and it is not loading */}
-                        {selectedCategories.length === 0 && !isLoading && (
+                        {selectedCategory === 'All' && !isLoading && (
                             <>
                                 <hr className="mt-5" />
                                 <div className="my-5 justify-content-center">
@@ -285,9 +346,24 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
     )
 }
 
-function getQueryFromProps(location: H.Location): string {
+function getQueryFromLocation(location: Pick<H.Location, 'search'>): string {
     const parameters = new URLSearchParams(location.search)
     return parameters.get(URL_QUERY_PARAM) || ''
+}
+
+function getCategoryFromLocation(location: Pick<H.Location, 'search'>): ExtensionCategory | 'All' {
+    const parameters = new URLSearchParams(location.search)
+    const category = parameters.get(URL_CATEGORY_PARAM)
+
+    if (category && isExtensionCategory(category)) {
+        return category
+    }
+
+    return 'All'
+}
+
+function isExtensionCategory(category: string): category is ExtensionCategory {
+    return EXTENSION_CATEGORIES.includes(category as ExtensionCategory)
 }
 
 function preventDefault(event: React.FormEvent): void {
