@@ -1,12 +1,15 @@
 import classNames from 'classnames'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
-import React, { useCallback, useState } from 'react'
+import React, { Fragment, useCallback, useState } from 'react'
 
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { ErrorAlert } from '../../../../components/alerts'
+import { AllChangesetIDsVariables, Scalars } from '../../../../graphql-operations'
+
 import { CreateCommentModal } from './CreateCommentModal'
+import { queryAllChangesetIDs } from '../backend'
 
 interface ChangesetListAction {
     actionType: string
@@ -14,7 +17,12 @@ interface ChangesetListAction {
     dropdownTitle: string
     dropdownDescription: string
     isAvailable: () => boolean
-    onTrigger: () => void | JSX.Element
+    onTrigger: (
+        batchChangeID: Scalars['ID'],
+        changesetIDs: () => Promise<Scalars['ID'][]>,
+        onDone: () => void,
+        onCancel: () => void
+    ) => void | JSX.Element
 }
 
 const availableActions: ChangesetListAction[] = [
@@ -34,9 +42,14 @@ const availableActions: ChangesetListAction[] = [
         dropdownDescription:
             'Create a comment on all selected changesets to ask people for reviews, or give an update.',
         isAvailable: () => true,
-        onTrigger: () => {
-            return <CreateCommentModal userID={'123'} afterCreate={() => undefined} onCancel={() => undefined} />
-        },
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
+            <CreateCommentModal
+                batchChangeID={batchChangeID}
+                changesetIDs={changesetIDs}
+                afterCreate={onDone}
+                onCancel={onCancel}
+            />
+        ),
     },
     {
         actionType: 'merge',
@@ -50,15 +63,27 @@ const availableActions: ChangesetListAction[] = [
 ]
 
 export interface ChangesetSelectRowProps {
-    selected: Set<string>
+    selected: Set<Scalars['ID']>
+    batchChangeID: Scalars['ID']
     onSubmit: () => void
     isSubmitting: boolean | Error
+    isAllSelected: boolean
+    totalCount: number
+    allAllSelected: boolean
+    setAllSelected: () => void
+    queryArgs: Omit<AllChangesetIDsVariables, 'after'>
 }
 
 export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps> = ({
     selected,
+    batchChangeID,
     onSubmit,
     isSubmitting,
+    isAllSelected,
+    totalCount,
+    allAllSelected,
+    setAllSelected,
+    queryArgs,
 }) => {
     const [isOpen, setIsOpen] = useState<boolean>(false)
     const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
@@ -67,26 +92,48 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
         setSelectedType(type)
         setIsOpen(false)
     }, [])
-    const [renderedElem, setRenderedElem] = useState<JSX.Element>()
+    const [renderedElement, setRenderedElement] = useState<JSX.Element | undefined>()
     const onTriggerAction = useCallback(() => {
         const action = availableActions.find(action => action.actionType === selectedType)!
-        const elem = action.onTrigger()
-        if (elem !== undefined) {
-            setRenderedElem(elem)
+        let ids: () => Promise<Scalars['ID'][]>
+        if (allAllSelected) {
+            ids = () => queryAllChangesetIDs(queryArgs).toPromise()
+        } else {
+            ids = () => Promise.resolve([...selected])
         }
-        // onSubmit()
-    }, [selectedType])
+        const element = action.onTrigger(batchChangeID, ids, onSubmit, () => {
+            setRenderedElement(undefined)
+        })
+        if (element !== undefined) {
+            setRenderedElement(element)
+        }
+    }, [batchChangeID, onSubmit, selected, selectedType])
+    const onSelectAll = useCallback<React.MouseEventHandler>(
+        event => {
+            event.preventDefault()
+            setAllSelected()
+        },
+        [setAllSelected]
+    )
     const buttonLabel =
         selectedType === undefined
             ? 'Select action'
             : availableActions.find(action => action.actionType === selectedType)!.actionVerb
+
+    const selectedAmount = allAllSelected ? totalCount : selected.size
+
     return (
         <>
-            {renderedElem}
+            {renderedElement}
             <div className="row align-items-center no-gutters">
                 <div className="ml-2 col">
                     <InfoCircleOutlineIcon className="icon-inline text-muted mr-2" />
-                    {selected.size} {pluralize('changeset', selected.size)} selected
+                    {selectedAmount} {pluralize('changeset', selectedAmount)} selected
+                    {isAllSelected && totalCount > selectedAmount && (
+                        <a href="#" onClick={onSelectAll}>
+                            (Select all {totalCount})
+                        </a>
+                    )}
                 </div>
                 <div className="w-100 d-block d-md-none" />
                 <div className="m-0 col col-md-auto">
@@ -113,7 +160,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                                     style={{ minWidth: '350px' }}
                                 >
                                     {availableActions.map((action, index) => (
-                                        <>
+                                        <Fragment key={action.actionType}>
                                             <ActionDropdownItem
                                                 action={action}
                                                 setSelectedType={onSelectedTypeSelect}
@@ -121,7 +168,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                                             {index !== availableActions.length - 1 && (
                                                 <div className="dropdown-divider" />
                                             )}
-                                        </>
+                                        </Fragment>
                                     ))}
                                 </div>
                             </div>

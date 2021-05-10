@@ -3,6 +3,7 @@ import * as H from 'history'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
+import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import React, { useState, useCallback, useEffect } from 'react'
 
@@ -17,12 +18,14 @@ import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
+    queryBulkOperations as _queryBulkOperations,
 } from './backend'
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
 import { BatchSpecTab } from './BatchSpecTab'
+import { BulkOperationsTab } from './BulkOperationsTab'
 import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
 
-type SelectedTab = 'changesets' | 'chart' | 'spec' | 'archived'
+type SelectedTab = 'changesets' | 'chart' | 'spec' | 'archived' | 'bulkoperations'
 
 export interface BatchChangeTabsProps
     extends ExtensionsControllerProps,
@@ -32,6 +35,7 @@ export interface BatchChangeTabsProps
     batchChange: BatchChangeFields
     changesetsCount: number
     archivedCount: number
+    bulkOperationsCount: number
     history: H.History
     location: H.Location
     /** For testing only. */
@@ -40,6 +44,8 @@ export interface BatchChangeTabsProps
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing only. */
     queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
+    /** For testing only. */
+    queryBulkOperations?: typeof _queryBulkOperations
 }
 
 export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
@@ -52,9 +58,11 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
     batchChange,
     changesetsCount,
     archivedCount,
+    bulkOperationsCount,
     queryChangesets,
     queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
+    queryBulkOperations,
 }) => {
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(selectedTabFromLocation(location.search))
     useEffect(() => {
@@ -116,6 +124,19 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
         },
         [history, location]
     )
+    const onSelectBulkOperations = useCallback<React.MouseEventHandler>(
+        event => {
+            event.preventDefault()
+            setSelectedTab('bulkoperations')
+            const urlParameters = new URLSearchParams(location.search)
+            urlParameters.set('tab', 'bulkoperations')
+            removeConnectionParameters(urlParameters)
+            if (location.search !== urlParameters.toString()) {
+                history.replace({ ...location, search: urlParameters.toString() })
+            }
+        },
+        [history, location]
+    )
 
     return (
         <>
@@ -167,6 +188,18 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                             <span className="badge badge-pill badge-secondary ml-1">{archivedCount}</span>
                         </a>
                     </li>
+                    <li className="nav-item">
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                        <a
+                            href=""
+                            role="button"
+                            onClick={onSelectBulkOperations}
+                            className={classNames('nav-link', selectedTab === 'bulkoperations' && 'active')}
+                        >
+                            <MonitorStarIcon className="icon-inline text-muted mr-1" /> Bulk operations{' '}
+                            <span className="badge badge-pill badge-secondary ml-1">{bulkOperationsCount}</span>
+                        </a>
+                    </li>
                 </ul>
             </div>
             {selectedTab === 'chart' && (
@@ -209,6 +242,14 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                     onlyArchived={true}
                 />
             )}
+            {selectedTab === 'bulkoperations' && (
+                <BulkOperationsTab
+                    batchChangeID={batchChange.id}
+                    history={history}
+                    location={location}
+                    queryBulkOperations={queryBulkOperations}
+                />
+            )}
         </>
     )
 }
@@ -223,6 +264,9 @@ function selectedTabFromLocation(locationSearch: string): SelectedTab {
     }
     if (urlParameters.get('tab') === 'archived') {
         return 'archived'
+    }
+    if (urlParameters.get('tab') === 'bulkoperations') {
+        return 'bulkoperations'
     }
     return 'changesets'
 }

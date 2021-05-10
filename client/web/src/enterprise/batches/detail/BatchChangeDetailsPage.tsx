@@ -24,6 +24,7 @@ import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
     deleteBatchChange as _deleteBatchChange,
+    queryBulkOperations as _queryBulkOperations,
 } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
@@ -33,6 +34,9 @@ import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
+import { subDays } from 'date-fns'
+import { BulkOperationNode } from './bulk-operations/BulkOperationNode'
+import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
 export interface BatchChangeDetailsPageProps
     extends ThemeProps,
@@ -60,6 +64,8 @@ export interface BatchChangeDetailsPageProps
     queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
     /** For testing only. */
     deleteBatchChange?: typeof _deleteBatchChange
+    /** For testing only. */
+    queryBulkOperations?: typeof _queryBulkOperations
 }
 
 /**
@@ -79,15 +85,18 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
     queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime,
     deleteBatchChange,
+    queryBulkOperations,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeDetailsPage')
     }, [telemetryService])
 
+    const createdAfter = useMemo(() => subDays(new Date(), 3).toISOString(), [])
+
     const batchChange: BatchChangeFields | null | undefined = useObservable(
         useMemo(
             () =>
-                fetchBatchChangeByNamespace(namespaceID, batchChangeName).pipe(
+                fetchBatchChangeByNamespace(namespaceID, batchChangeName, createdAfter).pipe(
                     repeatWhen(notifier => notifier.pipe(delay(5000))),
                     distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
@@ -139,6 +148,11 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 }
                 className="test-batch-change-details-page mb-3"
             />
+            {batchChange.activeBulkOperations.nodes.map(node => (
+                <DismissibleAlert className="alert alert-info" partialStorageKey={`bulkOperation-${node.id}`}>
+                    <BulkOperationNode node={node} key={node.id} />
+                </DismissibleAlert>
+            ))}
             <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
             <ClosedNotice closedAt={batchChange.closedAt} className="mb-3" />
             <UnpublishedNotice
@@ -158,6 +172,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 batchChange={batchChange}
                 changesetsCount={batchChange.changesetsStats.total - batchChange.changesetsStats.archived}
                 archivedCount={batchChange.changesetsStats.archived}
+                bulkOperationsCount={batchChange.bulkOperations.totalCount}
                 extensionsController={extensionsController}
                 history={history}
                 isLightTheme={isLightTheme}
@@ -167,6 +182,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 queryChangesets={queryChangesets}
                 queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                 queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
+                queryBulkOperations={queryBulkOperations}
             />
         </>
     )

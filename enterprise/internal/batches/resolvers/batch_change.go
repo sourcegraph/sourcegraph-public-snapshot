@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strconv"
 	"sync"
@@ -274,6 +275,20 @@ func (r *batchChangeResolver) BulkOperations(
 			return nil, err
 		}
 		opts.Cursor = int64(id)
+	}
+
+	if args.State != nil {
+		for _, state := range *args.State {
+			boState := btypes.BulkOperationState(state)
+			if !boState.Valid() {
+				return nil, fmt.Errorf("invalid BulkOperationState %q", state)
+			}
+			opts.States = append(opts.States, boState)
+		}
+	}
+
+	if args.CreatedAfter != nil {
+		opts.CreatedAfter = args.CreatedAfter.Time
 	}
 
 	return &bulkOperationConnectionResolver{

@@ -21,7 +21,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { getHover, getDocumentHighlights } from '../../../../backend/features'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { WebHoverOverlay } from '../../../../components/shared'
-import { ChangesetFields, Scalars } from '../../../../graphql-operations'
+import { AllChangesetIDsVariables, ChangesetFields, Scalars } from '../../../../graphql-operations'
 import { getLSPTextDocumentPositionParameters } from '../../utils'
 import {
     detachChangesets,
@@ -73,42 +73,47 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     expandByDefault,
     onlyArchived,
 }) => {
-    const [availableChangesets, setAvailableChangesets] = useState<Set<string>>(new Set())
+    const [allAllSelected, setAllAllSelected] = useState<boolean>(false)
+    const [totalChangesetCount, setTotalChangesetCount] = useState<number>()
+    const [availableChangesets, setAvailableChangesets] = useState<Set<Scalars['ID']>>(new Set())
 
-    const [selectedChangesets, setSelectedChangesets] = useState<Set<string>>(new Set())
+    const [selectedChangesets, setSelectedChangesets] = useState<Set<Scalars['ID']>>(new Set())
     const onSelect = useCallback(
         (id: string, selected: boolean): void => {
-            let newSize: number
             if (selected) {
                 setSelectedChangesets(previous => {
                     const newSet = new Set(previous).add(id)
-                    newSize = newSet.size
+                    setAllSelected(newSet.size === availableChangesets.size)
                     return newSet
                 })
             } else {
                 setSelectedChangesets(previous => {
                     const newSet = new Set(previous)
                     newSet.delete(id)
-                    newSize = newSet.size
+                    setAllSelected(newSet.size === availableChangesets.size)
                     return newSet
                 })
             }
-            setAllSelected(newSize! === availableChangesets.size)
         },
         [availableChangesets.size]
     )
 
-    const changesetSelected = useCallback((id: string): boolean => selectedChangesets.has(id), [selectedChangesets])
+    const changesetSelected = useCallback(
+        (id: Scalars['ID']): boolean => allAllSelected || selectedChangesets.has(id),
+        [selectedChangesets]
+    )
     const [allSelected, setAllSelected] = useState<boolean>(false)
 
-    const deselectAll = useCallback((): void => setSelectedChangesets(new Set()), [setSelectedChangesets])
-    const selectAll = useCallback((): void => setSelectedChangesets(availableChangesets), [
-        availableChangesets,
-        setSelectedChangesets,
-    ])
+    const deselectAll = useCallback((): void => {
+        setSelectedChangesets(new Set())
+        setAllSelected(false)
+    }, [setSelectedChangesets])
+    const selectAll = useCallback((): void => {
+        setSelectedChangesets(availableChangesets)
+        setAllSelected(true)
+    }, [availableChangesets, setSelectedChangesets])
 
     const toggleSelectAll = useCallback((): void => {
-        setAllSelected(previous => !previous)
         if (allSelected) {
             deselectAll()
         } else {
@@ -118,22 +123,21 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
 
     const [isSubmittingSelected, setIsSubmittingSelected] = useState<boolean | Error>(false)
     const onSubmitSelected = useCallback(async () => {
-        if (
-            !confirm(
-                `Are you sure you want to detach ${selectedChangesets.size} ${pluralize(
-                    'changeset',
-                    selectedChangesets.size
-                )}?`
-            )
-        ) {
-            return
-        }
+        // if (
+        //     !confirm(
+        //         `Are you sure you want to detach ${selectedChangesets.size} ${pluralize(
+        //             'changeset',
+        //             selectedChangesets.size
+        //         )}?`
+        //     )
+        // ) {
+        //     return
+        // }
         setIsSubmittingSelected(true)
         try {
-            await detachChangesets(batchChangeID, [...selectedChangesets])
+            // await detachChangesets(batchChangeID, [...selectedChangesets])
             deselectAll()
-            setAllSelected(false)
-            telemetryService.logViewEvent('BatchChangeDetailsPageDetachArchivedChangesets')
+            // telemetryService.logViewEvent('BatchChangeDetailsPageDetachArchivedChangesets')
         } catch (error) {
             setIsSubmittingSelected(asError(error))
         }
@@ -149,15 +153,21 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     const setChangesetFiltersAndDeselectAll = useCallback(
         (filters: ChangesetFilters) => {
             deselectAll()
-            setAllSelected(false)
             setChangesetFilters(filters)
         },
         [deselectAll, setChangesetFilters]
     )
 
+    const onSelectAllAll = useCallback(() => {
+        setAllSelected(true)
+        setAllAllSelected(true)
+    }, [])
+
+    const [queryArgs, setQueryArgs] = useState<Omit<AllChangesetIDsVariables, 'after'>>()
+
     const queryChangesetsConnection = useCallback(
-        (args: FilteredConnectionQueryArguments) =>
-            queryChangesets({
+        (args: FilteredConnectionQueryArguments) => {
+            const passedArgs = {
                 state: changesetFilters.state,
                 reviewState: changesetFilters.reviewState,
                 checkState: changesetFilters.checkState,
@@ -167,17 +177,21 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                 onlyPublishedByThisBatchChange: null,
                 search: changesetFilters.search,
                 onlyArchived: !!onlyArchived,
-            })
+            }
+            return queryChangesets(passedArgs)
                 .pipe(
-                    tap(data =>
+                    tap(data => {
+                        setQueryArgs(passedArgs)
                         setAvailableChangesets(
                             new Set(
                                 data.nodes.filter(node => node.__typename === 'ExternalChangeset').map(node => node.id)
                             )
                         )
-                    )
+                        setTotalChangesetCount(data.totalCount)
+                    })
                 )
-                .pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
+                .pipe(repeatWhen(notifier => notifier.pipe(delay(5000))))
+        },
         [
             batchChangeID,
             changesetFilters.state,
@@ -242,7 +256,9 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     useEffect(() => {
         componentRerenders.next()
     }, [componentRerenders, hoverState])
+
     const showSelectRow = viewerCanAdminister && selectedChangesets.size > 0
+
     return (
         <>
             {!hideFilters && !showSelectRow && (
@@ -254,9 +270,15 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
             )}
             {showSelectRow && (
                 <ChangesetSelectRow
+                    batchChangeID={batchChangeID}
                     selected={selectedChangesets}
                     onSubmit={onSubmitSelected}
                     isSubmitting={isSubmittingSelected}
+                    totalCount={totalChangesetCount!}
+                    isAllSelected={allSelected}
+                    allAllSelected={allAllSelected}
+                    setAllSelected={onSelectAllAll}
+                    queryArgs={queryArgs!}
                 />
             )}
             <div className="list-group position-relative" ref={nextContainerElement}>

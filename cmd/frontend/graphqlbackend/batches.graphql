@@ -2319,6 +2319,14 @@ type BatchChange implements Node {
         Opaque pagination cursor.
         """
         after: String
+        """
+        Filter by state.
+        """
+        state: [BulkOperationState!]
+        """
+        Filter by createdAt value.
+        """
+        createdAfter: DateTime
     ): BulkOperationConnection!
 }
 

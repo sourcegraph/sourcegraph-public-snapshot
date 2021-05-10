@@ -8,14 +8,13 @@ import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { ExternalServiceKind, Scalars } from '../../../../graphql-operations'
+import { createChangesetComments } from '../backend'
 
 export interface CreateCommentModalProps {
     onCancel: () => void
     afterCreate: () => void
-    userID: Scalars['ID'] | null
-    // externalServiceKind: ExternalServiceKind
-    // externalServiceURL: string
-    // requiresSSH: boolean
+    batchChangeID: Scalars['ID']
+    changesetIDs: () => Promise<Scalars['ID'][]>
 
     /** For testing only. */
     // createBatchChangesCredential?: typeof _createBatchChangesCredential
@@ -24,10 +23,8 @@ export interface CreateCommentModalProps {
 export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps> = ({
     onCancel,
     afterCreate,
-    userID,
-    // externalServiceKind,
-    // externalServiceURL,
-    // requiresSSH,
+    batchChangeID,
+    changesetIDs,
     // createBatchChangesCredential = _createBatchChangesCredential,
 }) => {
     const labelId = 'addCredential'
@@ -43,26 +40,14 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
             event.preventDefault()
             setIsLoading(true)
             try {
-                // const createdCredential = await createBatchChangesCredential({
-                //     user: userID,
-                //     credential,
-                //     externalServiceKind,
-                //     externalServiceURL,
-                // })
+                const ids = await changesetIDs()
+                await createChangesetComments(batchChangeID, ids, credential)
                 afterCreate()
             } catch (error) {
                 setIsLoading(asError(error))
             }
         },
-        [
-            afterCreate,
-            userID,
-            credential,
-            // externalServiceKind,
-            // externalServiceURL,
-            // requiresSSH,
-            // createBatchChangesCredential,
-        ]
+        [afterCreate, batchChangeID, changesetIDs, credential]
     )
 
     return (
@@ -71,7 +56,7 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
             onDismiss={onCancel}
             aria-labelledby={labelId}
         >
-            <div className="web-content test-add-credential-modal">
+            <div className="web-content">
                 <h3>Post a bulk comment on changesets</h3>
                 <p className="mb-4">Use this feature to create a bulk comment on all the selected code hosts.</p>
                 {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
@@ -81,10 +66,8 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
                         <textarea
                             id="token"
                             name="token"
-                            className="form-control test-add-credential-modal-input text-monospace"
-                            placeholder={`## Please review this
-
-This change is really important for us so please go review and merge this.`}
+                            className="form-control text-monospace"
+                            placeholder={placeholderComment}
                             required={true}
                             rows={8}
                             minLength={1}
@@ -104,7 +87,7 @@ This change is really important for us so please go review and merge this.`}
                         <button
                             type="submit"
                             disabled={isLoading === true || credential.length === 0}
-                            className="btn btn-primary test-add-credential-modal-submit"
+                            className="btn btn-primary"
                         >
                             {isLoading === true && <LoadingSpinner className="icon-inline" />}
                             Post comments
@@ -115,3 +98,7 @@ This change is really important for us so please go review and merge this.`}
         </Dialog>
     )
 }
+
+const placeholderComment = `## Please review this
+
+This change is really important for us so please go review and merge this.`

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -94,7 +95,9 @@ func getBulkOperationQuery(opts *GetBulkOperationOpts) *sqlf.Query {
 // ListBulkOperationsOpts captures the query options needed for getting a list of bulk operations.
 type ListBulkOperationsOpts struct {
 	LimitOpts
-	Cursor int64
+	Cursor       int64
+	States       []btypes.BulkOperationState
+	CreatedAfter time.Time
 
 	BatchChangeID int64
 }
@@ -132,7 +135,8 @@ WHERE
     %s
 GROUP BY
     changeset_jobs.bulk_group, changeset_jobs.job_type
-ORDER BY MIN(changeset_jobs.id) ASC
+%s
+ORDER BY MIN(changeset_jobs.id) DESC
 `
 
 func listBulkOperationsQuery(opts *ListBulkOperationsOpts) *sqlf.Query {
@@ -140,20 +144,42 @@ func listBulkOperationsQuery(opts *ListBulkOperationsOpts) *sqlf.Query {
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 		sqlf.Sprintf("changeset_jobs.batch_change_id = %s", opts.BatchChangeID),
 	}
+	having := sqlf.Sprintf("")
 
 	if opts.Cursor > 0 {
 		preds = append(preds, sqlf.Sprintf("changeset_jobs.id >= %s", opts.Cursor))
+	}
+
+	// TODO: Broken logic. Needs a view.
+	if len(opts.States) > 0 {
+		states := make([]*sqlf.Query, 0)
+		for _, state := range opts.States {
+			if state == btypes.BulkOperationStateProcessing {
+				states = append(states, sqlf.Sprintf("%s", btypes.ChangesetJobStateProcessing.ToDB()))
+				states = append(states, sqlf.Sprintf("%s", btypes.ChangesetJobStateQueued.ToDB()))
+				states = append(states, sqlf.Sprintf("%s", btypes.ChangesetJobStateErrored.ToDB()))
+			} else if state == btypes.BulkOperationStateFailed {
+				states = append(states, sqlf.Sprintf("%s", btypes.ChangesetJobStateFailed.ToDB()))
+			}
+		}
+		preds = append(preds, sqlf.Sprintf("changeset_jobs.state IN (%s)", sqlf.Join(states, ",")))
+	}
+
+	if !opts.CreatedAfter.IsZero() {
+		having = sqlf.Sprintf("HAVING MIN(changeset_jobs.created_at) >= %s", opts.CreatedAfter)
 	}
 
 	return sqlf.Sprintf(
 		listBulkOperationsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(bulkOperationColumns, ","),
 		sqlf.Join(preds, "\n AND "),
+		having,
 	)
 }
 
 // CountBulkOperationsOpts captures the query options needed when counting BulkOperations.
 type CountBulkOperationsOpts struct {
+	CreatedAfter  time.Time
 	BatchChangeID int64
 }
 
@@ -171,6 +197,8 @@ INNER JOIN changesets ON changesets.id = changeset_jobs.changeset_id
 INNER JOIN repo ON repo.id = changesets.repo_id
 WHERE
     %s
+GROUP BY changeset_jobs.bulk_group
+%s
 `
 
 func countBulkOperationsQuery(opts *CountBulkOperationsOpts) *sqlf.Query {
@@ -178,10 +206,16 @@ func countBulkOperationsQuery(opts *CountBulkOperationsOpts) *sqlf.Query {
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 		sqlf.Sprintf("changeset_jobs.batch_change_id = %s", opts.BatchChangeID),
 	}
+	having := &sqlf.Query{}
+
+	if !opts.CreatedAfter.IsZero() {
+		having = sqlf.Sprintf("HAVING MIN(changeset_jobs.created_at) >= %s", opts.CreatedAfter)
+	}
 
 	return sqlf.Sprintf(
 		countBulkOperationsQueryFmtstr,
 		sqlf.Join(preds, "\n AND "),
+		having,
 	)
 }
 
