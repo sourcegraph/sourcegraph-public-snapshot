@@ -4,10 +4,18 @@ import { defer } from 'rxjs';
 import { retry } from 'rxjs/operators';
 import sourcegraph from 'sourcegraph';
 
-import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from '../requests/fetch-search-insight';
+import { ICommitSearchResult } from '@sourcegraph/shared/src/graphql/schema';
+
+import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from '../requests/fetch-search-insight.ignored';
 import { SearchInsight } from '../types';
 
-export async function getInsightContent(insight: SearchInsight): Promise<sourcegraph.View> {
+/**
+ * This logic is a copy of fetch logic of search-based code insight extension.
+ * In order to have live preview for creation UI we had to copy this logic from
+ * extension.
+ *
+ * */
+export async function getSearchInsightContent(insight: SearchInsight): Promise<sourcegraph.View> {
     const step = insight.step || { days: 1 }
     const { repositories: repos } = insight
     const dates = getDaysToQuery(step)
@@ -18,6 +26,7 @@ export async function getInsightContent(insight: SearchInsight): Promise<sourceg
             repos.map(async repo => (await determineCommitsToSearch(dates, repo)).map(commit => ({ repo, ...commit })))
         )
     ).flat()
+
     const searchQueries = insight.series.flatMap(({ query, name }) =>
         repoCommits.map(({ date, repo, commit }) => ({
             name,
@@ -54,8 +63,9 @@ export async function getInsightContent(insight: SearchInsight): Promise<sourceg
                 ...Object.fromEntries(insight.series.map(series => [series.name, 0])),
             })
         // Sum across repos
-        const countForRepo = result.results.matchCount
-        object[dataKey] += countForRepo
+        const countForRepo = result?.results.matchCount
+
+        object[dataKey] += countForRepo ?? 0
     }
 
     return {
@@ -110,11 +120,11 @@ async function determineCommitsToSearch(dates: Date[], repo: string): Promise<{ 
             throw new Error(`Expected field ${name} to be at index ${index_} of object keys`)
         }
 
-        if (search.results.results.length === 0) {
+        if (search?.results?.results?.length ?? 0 === 0) {
             throw new Error(`No result for ${commitQueries[index_]}`)
         }
 
-        const commit = (search.results.results[0] ).commit
+        const commit = (search?.results.results[0] as ICommitSearchResult).commit
 
         // Sanity check
         const commitDate = commit.committer && new Date(commit.committer.date)

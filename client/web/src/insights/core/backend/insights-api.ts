@@ -1,4 +1,5 @@
 import { getCombinedViews, getInsightCombinedViews } from './api/get-combined-views';
+import { getSearchInsightContent } from './api/get-search-insight-content';
 import { getSubjectSettings, updateSubjectSettings } from './api/subject-settings';
 import { ApiService } from './types'
 
@@ -10,4 +11,5 @@ export const createInsightAPI = (): ApiService => ({
     getInsightCombinedViews,
     getSubjectSettings,
     updateSubjectSettings,
+    getSearchInsightContent
 })
