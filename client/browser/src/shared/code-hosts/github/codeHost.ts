@@ -205,7 +205,7 @@ export const fileLineContainerResolver: ViewResolver<CodeView> = {
 
 const genericCodeViewResolver: ViewResolver<CodeView> = {
     selector: target => {
-        const codeViews: HTMLElement[] = []
+        const codeViews = new Set<HTMLElement>()
 
         // Logic to support large diffs that are loaded asynchronously:
         // https://github.com/sourcegraph/sourcegraph/issues/18337
@@ -216,18 +216,18 @@ const genericCodeViewResolver: ViewResolver<CodeView> = {
 
         for (const file of querySelectorAllOrSelf<HTMLElement>(target, '.file')) {
             if (file.querySelectorAll('.js-diff-load-container').length === 0) {
-                codeViews.push(file)
+                codeViews.add(file)
             }
         }
 
         for (const blobWrapper of querySelectorAllOrSelf(target, '.js-blob-wrapper')) {
             const file = blobWrapper.closest('.file')
             if (file instanceof HTMLElement) {
-                codeViews.push(file)
+                codeViews.add(file)
             }
         }
 
-        return codeViews
+        return [...codeViews]
     },
     resolveView: (element: HTMLElement): CodeView | null => {
         if (element.querySelector('article.markdown-body')) {
