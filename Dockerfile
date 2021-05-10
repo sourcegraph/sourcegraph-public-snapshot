@@ -11,7 +11,7 @@ WORKDIR /src
 RUN go build ./cmd/src
 
 # This stage should be kept in sync with Dockerfile.release.
-FROM sourcegraph/alpine:3.12@sha256:133a0a767b836cf86a011101995641cf1b5cbefb3dd212d78d7be145adde636d
+FROM sourcegraph/alpine:3.12@sha256:ce099fbcd3cf70b338fc4cb2a4e1fa9ae847de21afdb0a849a393b87d94fb174
 
 # needed for `src lsif upload` and `src actions exec`
 RUN apk add --no-cache git
