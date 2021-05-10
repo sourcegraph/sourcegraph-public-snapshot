@@ -20,7 +20,7 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 		return nil, err
 	}
 
-	langs, err := searchResultsStatsLanguages(ctx, srr.SearchResults)
+	langs, err := searchResultsStatsLanguages(ctx, srr.Results())
 	if err != nil {
 		return nil, err
 	}
