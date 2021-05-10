@@ -321,7 +321,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 				return
 			}
 
-			matches := make([]result.FileMatch, 0, len(files))
+			matches := make([]*result.FileMatch, 0, len(files))
 			for _, file := range files {
 				fileLimitHit := false
 				if len(file.LineMatches) > maxLineMatches {
@@ -359,7 +359,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 							Path:     file.FileName,
 						},
 					}
-					matches = append(matches, fm)
+					matches = append(matches, &fm)
 				}
 			}
 

@@ -36,11 +36,11 @@ import (
 )
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.FileMatch, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []result.FileMatch{{
+			return []*result.FileMatch{{
 				File: result.File{
 					Repo:     repo,
 					InputRev: &rev,
@@ -48,7 +48,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 				},
 			}}, false, nil
 		case "foo/two":
-			return []result.FileMatch{{
+			return []*result.FileMatch{{
 				File: result.File{
 					Repo:     repo,
 					InputRev: &rev,
@@ -131,11 +131,11 @@ func TestSearchFilesInRepos(t *testing.T) {
 }
 
 func TestSearchFilesInReposStream(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.FileMatch, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []result.FileMatch{{
+			return []*result.FileMatch{{
 				File: result.File{
 					Repo:     repo,
 					InputRev: &rev,
@@ -143,7 +143,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 				},
 			}}, false, nil
 		case "foo/two":
-			return []result.FileMatch{{
+			return []*result.FileMatch{{
 				File: result.File{
 					Repo:     repo,
 					InputRev: &rev,
@@ -151,7 +151,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 				},
 			}}, false, nil
 		case "foo/three":
-			return []result.FileMatch{{
+			return []*result.FileMatch{{
 				File: result.File{
 					Repo:     repo,
 					InputRev: &rev,
@@ -215,11 +215,11 @@ func mkStatusMap(m map[string]search.RepoStatus) search.RepoStatusMap {
 }
 
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.FileMatch, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
-			return []result.FileMatch{{
+			return []*result.FileMatch{{
 				File: result.File{
 					Repo:     repo,
 					CommitID: api.CommitID(rev),
