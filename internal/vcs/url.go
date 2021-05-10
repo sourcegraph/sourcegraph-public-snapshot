@@ -130,10 +130,17 @@ type URL struct {
 	url.URL
 }
 
+// String is used to provide a compatible way to marshal URL strings for SCP-style git URLs
+// eg git@foo.com/foo/bar.git
+// stdlib URL.String() would marshal those URLs with a leading slash in the path, which for
+// standard git hosts changes path semantics. This function will only use sdlib URL.String()
+// if a scheme is specified, otherwise it uses a custom format built for compatibility
 func (u *URL) String() string {
+	// if we have a non-empty scheme we use stdlib url.URL.String()
 	if u.Scheme != "" {
 		return u.URL.String()
 	}
+	// otherwise attempt to marshal scp style URLs
 	var buf strings.Builder
 	if u.User != nil {
 		buf.WriteString(u.User.String())
@@ -141,6 +148,7 @@ func (u *URL) String() string {
 	}
 	if h := u.Host; h != "" {
 		buf.WriteString(h)
+		// key difference here, add : and don't add a leading / to the path
 		buf.WriteByte(':')
 	}
 	buf.WriteString(u.EscapedPath())
