@@ -148,7 +148,7 @@ func gitserverPushConfig(ctx context.Context, store *database.ExternalServiceSto
 	}
 
 	// If the repo is cloned using SSH, we need to pass along a private key and passphrase.
-	if u.Scheme == "ssh" {
+	if u.Scheme == "ssh" || u.Scheme == "" {
 		sshA, ok := au.(auth.AuthenticatorWithSSH)
 		if !ok {
 			return nil, ErrNoSSHCredential
@@ -338,7 +338,7 @@ func loadSiteCredential(ctx context.Context, s SourcerStore, repo *types.Repo) (
 
 // setOAuthTokenAuth sets the user part of the given URL to use the provided OAuth token,
 // with the specific quirks per code host.
-func setOAuthTokenAuth(u *url.URL, extsvcType, token string) error {
+func setOAuthTokenAuth(u *vcs.URL, extsvcType, token string) error {
 	switch extsvcType {
 	case extsvc.TypeGitHub:
 		u.User = url.User(token)
@@ -354,7 +354,7 @@ func setOAuthTokenAuth(u *url.URL, extsvcType, token string) error {
 
 // setBasicAuth sets the user part of the given URL to use the provided username/
 // password combination, with the specific quirks per code host.
-func setBasicAuth(u *url.URL, extSvcType, username, password string) error {
+func setBasicAuth(u *vcs.URL, extSvcType, username, password string) error {
 	switch extSvcType {
 	case extsvc.TypeGitHub, extsvc.TypeGitLab:
 		return errors.New("need token to push commits to " + extSvcType)
@@ -383,7 +383,7 @@ func extractCloneURL(ctx context.Context, s *database.ExternalServiceStore, repo
 		return "", err
 	}
 
-	cloneURLs := make([]*url.URL, 0, len(svcs))
+	cloneURLs := make([]*vcs.URL, 0, len(svcs))
 	for _, svc := range svcs {
 		// build the clone url using the external service config instead of using
 		// the source CloneURL field
@@ -398,7 +398,7 @@ func extractCloneURL(ctx context.Context, s *database.ExternalServiceStore, repo
 		cloneURLs = append(cloneURLs, parsedURL)
 	}
 	sort.SliceStable(cloneURLs, func(i, j int) bool {
-		return cloneURLs[i].Scheme != "ssh"
+		return cloneURLs[i].Scheme != "" && cloneURLs[i].Scheme != "ssh"
 	})
 	cloneURL := cloneURLs[0]
 	// TODO: Do this once we don't want to use existing credentials anymore.

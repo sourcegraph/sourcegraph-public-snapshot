@@ -3,12 +3,13 @@ package server
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 
 	"github.com/pkg/errors"
 
@@ -23,13 +24,13 @@ type VCSSyncer interface {
 	Type() string
 	// IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
 	// error indicates there is a problem.
-	IsCloneable(ctx context.Context, remoteURL *url.URL) error
+	IsCloneable(ctx context.Context, remoteURL *vcs.URL) error
 	// CloneCommand returns the command to be executed for cloning from remote.
-	CloneCommand(ctx context.Context, remoteURL *url.URL, tmpPath string) (cmd *exec.Cmd, err error)
+	CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (cmd *exec.Cmd, err error)
 	// Fetch tries to fetch updates from the remote to given directory.
-	Fetch(ctx context.Context, remoteURL *url.URL, dir GitDir) error
+	Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error
 	// RemoteShowCommand returns the command to be executed for showing remote.
-	RemoteShowCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, err error)
+	RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error)
 }
 
 // GitRepoSyncer is a syncer for Git repositories.
@@ -40,7 +41,7 @@ func (s *GitRepoSyncer) Type() string {
 }
 
 // IsCloneable checks to see if the Git remote URL is cloneable.
-func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *url.URL) error {
+func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
 	if strings.ToLower(string(protocol.NormalizeRepo(api.RepoName(remoteURL.String())))) == "github.com/sourcegraphtest/alwayscloningtest" {
 		return nil
 	}
@@ -67,7 +68,7 @@ func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *url.URL) err
 }
 
 // CloneCommand returns the command to be executed for cloning a Git repository.
-func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *url.URL, tmpPath string) (cmd *exec.Cmd, err error) {
+func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (cmd *exec.Cmd, err error) {
 	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
 		return nil, errors.Wrapf(err, "clone failed to create tmp dir")
 	}
@@ -83,7 +84,7 @@ func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *url.URL, tm
 	return cmd, nil
 }
 
-func (s *GitRepoSyncer) fetchCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, configRemoteOpts bool) {
+func (s *GitRepoSyncer) fetchCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, configRemoteOpts bool) {
 	configRemoteOpts = true
 	if customCmd := customFetchCmd(ctx, remoteURL); customCmd != nil {
 		cmd = customCmd
@@ -110,7 +111,7 @@ func (s *GitRepoSyncer) fetchCommand(ctx context.Context, remoteURL *url.URL) (c
 }
 
 // Fetch tries to fetch updates of a Git repository.
-func (s *GitRepoSyncer) Fetch(ctx context.Context, remoteURL *url.URL, dir GitDir) error {
+func (s *GitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
 	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
@@ -120,7 +121,7 @@ func (s *GitRepoSyncer) Fetch(ctx context.Context, remoteURL *url.URL, dir GitDi
 }
 
 // RemoteShowCommand returns the command to be executed for showing remote of a Git repository.
-func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, err error) {
+func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
 	return exec.CommandContext(ctx, "git", "remote", "show", remoteURL.String()), nil
 }
 
@@ -136,7 +137,7 @@ func (s *PerforceDepotSyncer) Type() string {
 
 // decomposePerforceRemoteURL decomposes information back from a clone URL for a
 // Perforce depot.
-func decomposePerforceRemoteURL(remoteURL *url.URL) (username, password, host, depot string, err error) {
+func decomposePerforceRemoteURL(remoteURL *vcs.URL) (username, password, host, depot string, err error) {
 	if remoteURL.Scheme != "perforce" {
 		return "", "", "", "", errors.New(`scheme is not "perforce"`)
 	}
@@ -213,7 +214,7 @@ func p4pingWithTrust(ctx context.Context, host, username, password string) error
 }
 
 // IsCloneable checks to see if the Perforce remote URL is cloneable.
-func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, remoteURL *url.URL) error {
+func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
 	username, password, host, _, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return errors.Wrap(err, "decompose")
@@ -224,7 +225,7 @@ func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, remoteURL *url.UR
 }
 
 // CloneCommand returns the command to be executed for cloning a Perforce depot as a Git repository.
-func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *url.URL, tmpPath string) (*exec.Cmd, error) {
+func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (*exec.Cmd, error) {
 	username, password, host, depot, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "decompose")
@@ -253,7 +254,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *url.U
 }
 
 // Fetch tries to fetch updates of a Perforce depot as a Git repository.
-func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *url.URL, dir GitDir) error {
+func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
 	username, password, host, _, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return errors.Wrap(err, "decompose")
@@ -297,7 +298,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *url.URL, dir
 }
 
 // RemoteShowCommand returns the command to be executed for showing Git remote of a Perforce depot.
-func (s *PerforceDepotSyncer) RemoteShowCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, err error) {
+func (s *PerforceDepotSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
 	// Remote info is encoded as in the current repository
 	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
 }
