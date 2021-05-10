@@ -117,8 +117,6 @@ $hr-margin-y: 0.25rem;
 // Disable transitions
 $input-transition: none;
 
-// './breakpoints' defines $grid-breakpoints for global CSS and exposes breakpoints mixins to CSS modules
-@import './breakpoints';
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
@@ -128,7 +126,8 @@ $input-transition: none;
 @import 'bootstrap/scss/progress';
 @import 'bootstrap/scss/tooltip';
 @import 'bootstrap/scss/transitions';
-@import '../../../shared/src/global-styles/icons';
+@import 'wildcard/src/global-styles/breakpoints';
+@import 'shared/src/global-styles/icons';
 @import './background';
 @import './badge';
 @import './card';

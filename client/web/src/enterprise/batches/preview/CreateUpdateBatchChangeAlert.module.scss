@@ -1,6 +1,6 @@
-@import 'branded/src/global-styles/breakpoints';
+@import 'wildcard/src/global-styles/breakpoints';
 
-@include media-breakpoint-down(sm) {
+@media (--sm-breakpoint-down) {
     .create-update-batch-change-alert {
         &__badge,
         &__copy {
