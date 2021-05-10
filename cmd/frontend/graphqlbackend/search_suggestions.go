@@ -464,9 +464,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 							FileMatch:    *fm,
 							RepoResolver: NewRepositoryResolver(r.db, fm.Repo.ToRepo()),
 						}
-						entryResolver := fmResolver.File()
 						suggestions = append(suggestions, gitTreeSuggestionResolver{
-							gitTreeEntry: entryResolver,
+							gitTreeEntry: fmResolver.File(),
 							score:        len(results.SearchResults) - i,
 						})
 					}
