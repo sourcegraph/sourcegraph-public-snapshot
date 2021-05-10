@@ -21,6 +21,7 @@ const WEB_DOCUMENTS_GLOB = [
   `${WEB_FOLDER}/src/**/*.{ts,tsx}`,
   `!${WEB_FOLDER}/src/regression/**/*.*`,
   `!${WEB_FOLDER}/src/end-to-end/**/*.*`,
+  `!${WEB_FOLDER}/src/**/*.ignored.{ts,tsx}`
 ]
 
 const BROWSER_DOCUMENTS_GLOB = [
