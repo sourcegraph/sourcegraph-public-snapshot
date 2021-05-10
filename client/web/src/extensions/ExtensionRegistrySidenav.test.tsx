@@ -9,8 +9,8 @@ describe('ExtensionsQueryInputToolbar', () => {
             renderer
                 .create(
                     <ExtensionRegistrySidenav
-                        activeCategory="Code analysis"
-                        onSelectActiveCategory={() => {}}
+                        selectedCategory="Code analysis"
+                        onSelectCategory={() => {}}
                         enablementFilter="all"
                         setEnablementFilter={() => {}}
                     />
