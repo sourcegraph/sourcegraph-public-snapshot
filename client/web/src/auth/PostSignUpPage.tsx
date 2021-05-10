@@ -20,9 +20,9 @@ export const PostSignUpPage: FunctionComponent<Props> = ({
     location,
     context: { sourcegraphDotComMode, experimentalFeatures },
 }) =>
-    // post sign-up flow is available only for .com and only in two case:
-    // 1. user is authenticated and has AllowUserViewPostSignup tag
-    // 2. user is authenticated and enablePostSignupFlow experimental feature is TRUE
+    // post sign-up flow is available only for .com and only in two cases, user:
+    // 1. is authenticated and has AllowUserViewPostSignup tag
+    // 2. is authenticated and enablePostSignupFlow experimental feature is ON
     sourcegraphDotComMode &&
     ((authenticatedUser && experimentalFeatures.enablePostSignupFlow) ||
         authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
