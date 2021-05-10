@@ -35,12 +35,12 @@ interface NavLinkProps extends NavItemProps, Pick<LinkProps<H.LocationState>, 't
 const useOutsideClickDetector = (
     reference: React.RefObject<HTMLUListElement>
 ): [boolean, React.Dispatch<React.SetStateAction<boolean>>] => {
-    const [outsideClick, setOutsideClick] = useState(() => true)
+    const [outsideClick, setOutsideClick] = useState(true)
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent): void {
             if (reference.current && !reference.current.contains(event.target as Node | null)) {
-                setOutsideClick(() => false)
+                setOutsideClick(false)
             }
         }
         document.addEventListener('mouseup', handleClickOutside)
