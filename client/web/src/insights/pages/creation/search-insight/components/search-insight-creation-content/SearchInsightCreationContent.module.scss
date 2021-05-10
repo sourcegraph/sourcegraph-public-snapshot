@@ -1,0 +1,10 @@
+
+.content {
+    display: flex;
+
+    &__live-preview {
+        position: sticky;
+        top: 1rem;
+        padding-left: 1rem;
+    }
+}

@@ -2,12 +2,12 @@ import { formatISO, isAfter, startOfDay, sub } from 'date-fns';
 import escapeRegExp from 'lodash/escapeRegExp'
 import { defer } from 'rxjs';
 import { retry } from 'rxjs/operators';
-import sourcegraph from 'sourcegraph';
+import type { LineChartContent } from 'sourcegraph';
 
 import { ICommitSearchResult } from '@sourcegraph/shared/src/graphql/schema';
 
 import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from '../requests/fetch-search-insight.ignored';
-import { SearchInsight } from '../types';
+import { SearchInsightSettings } from '../types';
 
 /**
  * This logic is a copy of fetch logic of search-based code insight extension.
@@ -15,7 +15,7 @@ import { SearchInsight } from '../types';
  * extension.
  *
  * */
-export async function getSearchInsightContent(insight: SearchInsight): Promise<sourcegraph.View> {
+export async function getSearchInsightContent(insight: SearchInsightSettings): Promise<LineChartContent<any, string>> {
     const step = insight.step || { days: 1 }
     const { repositories: repos } = insight
     const dates = getDaysToQuery(step)
@@ -33,7 +33,7 @@ export async function getSearchInsightContent(insight: SearchInsight): Promise<s
             date,
             repo,
             commit,
-            query: `repo:^${escapeRegExp(repo)}$@${commit} ${query} 'count:99999'`,
+            query: `repo:^${escapeRegExp(repo)}$@${commit} ${query} count:99999`,
         }))
     )
     const rawSearchResults = await defer(() =>
@@ -69,37 +69,31 @@ export async function getSearchInsightContent(insight: SearchInsight): Promise<s
     }
 
     return {
-        title: insight.title,
-        subtitle: insight.subtitle,
-        content: [
-            {
-                chart: 'line' as const,
-                data,
-                series: insight.series.map(series => ({
-                    dataKey: series.name,
-                    name: series.name,
-                    stroke: series.color,
-                    linkURLs: dates.map(date => {
-                        // Link to diff search that explains what new cases were added between two data points
-                        const url = new URL('/search', sourcegraph.internal.sourcegraphURL)
-                        // Use formatISO instead of toISOString(), because toISOString() always outputs UTC.
-                        // They mark the same point in time, but using the user's timezone makes the date string
-                        // easier to read (else the date component may be off by one day)
-                        const after = formatISO(sub(date, step))
-                        const before = formatISO(date)
-                        const repoFilters = repos.map(repo => `repo:^${escapeRegExp(repo)}$`).join(' ')
-                        const diffQuery = `${repoFilters} type:diff after:${after} before:${before} ${series.query}`
-                        url.searchParams.set('q', diffQuery)
-                        return url.href
-                    }),
-                })),
-                xAxis: {
-                    dataKey: 'date' as const,
-                    type: 'number' as const,
-                    scale: 'time' as const,
-                },
-            },
-        ],
+        chart: 'line' as const,
+        data,
+        series: insight.series.map(series => ({
+            dataKey: series.name,
+            name: series.name,
+            stroke: series.color,
+            linkURLs: dates.map(date => {
+                // Link to diff search that explains what new cases were added between two data points
+                const url = new URL('/search', window.location.origin)
+                // Use formatISO instead of toISOString(), because toISOString() always outputs UTC.
+                // They mark the same point in time, but using the user's timezone makes the date string
+                // easier to read (else the date component may be off by one day)
+                const after = formatISO(sub(date, step))
+                const before = formatISO(date)
+                const repoFilters = repos.map(repo => `repo:^${escapeRegExp(repo)}$`).join(' ')
+                const diffQuery = `${repoFilters} type:diff after:${after} before:${before} ${series.query}`
+                url.searchParams.set('q', diffQuery)
+                return url.href
+            }),
+        })),
+        xAxis: {
+            dataKey: 'date' as const,
+            type: 'number' as const,
+            scale: 'time' as const,
+        },
     }
 }
 
@@ -120,7 +114,7 @@ async function determineCommitsToSearch(dates: Date[], repo: string): Promise<{ 
             throw new Error(`Expected field ${name} to be at index ${index_} of object keys`)
         }
 
-        if (search?.results?.results?.length ?? 0 === 0) {
+        if (search.results.results.length === 0) {
             throw new Error(`No result for ${commitQueries[index_]}`)
         }
 

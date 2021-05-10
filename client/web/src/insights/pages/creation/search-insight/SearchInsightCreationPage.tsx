@@ -16,10 +16,7 @@ import { FORM_ERROR } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
 import { InsightTypeSuffix } from '../../../core/types'
 
-import {
-    SearchInsightCreationForm,
-    CreationSearchInsightFormProps,
-} from './components/search-insight-creation-form/SearchInsightCreationForm'
+import { SearchInsightCreationContent, SearchInsightCreationContentProps } from './components/search-insight-creation-content/SearchInsightCreationContent'
 import styles from './SearchInsightCreationPage.module.scss'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
@@ -44,7 +41,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
     const { platformContext, authenticatedUser, history, settingsCascade } = props
     const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
 
-    const handleSubmit = useCallback<CreationSearchInsightFormProps['onSubmit']>(
+    const handleSubmit = useCallback<SearchInsightCreationContentProps['onSubmit']>(
         async values => {
             if (!authenticatedUser) {
                 return
@@ -112,7 +109,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
     }
 
     return (
-        <Page className={classnames('col-8', styles.creationPage)}>
+        <Page className={classnames('col-10', styles.creationPage)}>
             <PageTitle title="Create new code insight" />
 
             <div className="mb-5">
@@ -130,7 +127,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                 </p>
             </div>
 
-            <SearchInsightCreationForm
+            <SearchInsightCreationContent
                 className="pb-5"
                 settings={settingsCascade.final}
                 onSubmit={handleSubmit}

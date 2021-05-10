@@ -1,97 +1,60 @@
 import classnames from 'classnames'
-import React from 'react'
-import { noop } from 'rxjs'
-
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import React, { FormEventHandler, RefObject } from 'react'
 
 import { ErrorAlert } from '../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../components/LoaderButton'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
-import { useField, Validator } from '../../../../../components/form/hooks/useField'
-import { FORM_ERROR, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
-import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
-import { createRequiredValidator } from '../../../../../components/form/validators'
-import { InsightTypeSuffix } from '../../../../../core/types'
-import { DataSeries } from '../../types'
+import { useFieldAPI } from '../../../../../components/form/hooks/useField';
+import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
+import { CreateInsightFormFields } from '../../types';
 import { FormSeries } from '../form-series/FormSeries'
 
 import styles from './SearchInsightCreationForm.module.scss'
 
-const repositoriesFieldValidator = createRequiredValidator('Repositories is a required field.')
-const requiredStepValueField = createRequiredValidator('Please specify a step between points.')
-/**
- * Custom validator for chart series. Since series has complex type
- * we can't validate this with standard validators.
- * */
-const seriesRequired: Validator<DataSeries[]> = series =>
-    series && series.length > 0 ? undefined : 'Series is empty. You must have at least one series for code insight.'
-
-const INITIAL_VALUES: Partial<CreateInsightFormFields> = {
-    visibility: 'personal',
-    series: [],
-    step: 'months',
-    stepValue: '2',
-    title: '',
-    repositories: '',
-}
-
-/** Public API of code insight creation form. */
-export interface CreationSearchInsightFormProps {
-    /** Final settings cascade. Used for title field validation. */
-    settings?: Settings | null
-    /** Custom class name for root form element. */
+interface CreationSearchInsightFormProps {
+    innerRef: RefObject<any>,
+    handleSubmit: FormEventHandler,
+    submitErrors: SubmissionErrors,
+    submitting: boolean,
     className?: string
-    /** Submit handler for form element. */
-    onSubmit: (values: CreateInsightFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
-    onCancel?: () => void
+
+    title: useFieldAPI<CreateInsightFormFields['title']>,
+    repositories: useFieldAPI<CreateInsightFormFields['repositories']>,
+    visibility: useFieldAPI<CreateInsightFormFields['visibility']>,
+    series: useFieldAPI<CreateInsightFormFields['series']>
+    step: useFieldAPI<CreateInsightFormFields['step']>,
+    stepValue: useFieldAPI<CreateInsightFormFields['stepValue']>
+
+    onCancel: () => void
 }
 
-/** Creation form fields. */
-export interface CreateInsightFormFields {
-    /** Code Insight series setting (name of line, line query, color) */
-    series: DataSeries[]
-    /** Title of code insight*/
-    title: string
-    /** Repositories which to be used to get the info for code insights */
-    repositories: string
-    /** Visibility setting which responsible for where insight will appear. */
-    visibility: 'personal' | 'organization'
-    /** Setting for set chart step - how often do we collect data. */
-    step: 'hours' | 'days' | 'weeks' | 'months' | 'years'
-    /** Value for insight step setting */
-    stepValue: string
-}
-
-/** Displays creation code insight form (title, visibility, series, etc.) */
+/**
+ * Displays creation code insight form (title, visibility, series, etc.)
+ * UI layer only, all controlled data should be managed by consumer of this component.
+ * */
 export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchInsightFormProps> = props => {
-    const { settings, className, onSubmit, onCancel = noop } = props
-
-    const { formAPI, ref, handleSubmit } = useForm<CreateInsightFormFields>({
-        initialValues: INITIAL_VALUES,
-        onSubmit,
-        onChange: values => {
-            console.log('next values', values);
-        }
-    })
-
-    // We can't have two or more insights with the same name, since we rely on name as on id of insights.
-    const titleValidator = useTitleValidator({ settings, insightType: InsightTypeSuffix.search })
-
-    const title = useField('title', formAPI, titleValidator)
-    const repositories = useField('repositories', formAPI, repositoriesFieldValidator)
-    const visibility = useField('visibility', formAPI)
-
-    const series = useField('series', formAPI, seriesRequired)
-    const step = useField('step', formAPI)
-    const stepValue = useField('stepValue', formAPI, requiredStepValueField)
+    const {
+        innerRef,
+        handleSubmit,
+        submitErrors,
+        submitting,
+        title,
+        repositories,
+        visibility,
+        series,
+        stepValue,
+        step,
+        className,
+        onCancel,
+    } = props
 
     return (
         // eslint-disable-next-line react/forbid-elements
         <form
             noValidate={true}
-            ref={ref}
+            ref={innerRef}
             onSubmit={handleSubmit}
             className={classnames(className, 'd-flex flex-column')}
         >
@@ -226,14 +189,14 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             <hr className={styles.creationInsightFormSeparator} />
 
             <div>
-                {formAPI.submitErrors?.[FORM_ERROR] && <ErrorAlert error={formAPI.submitErrors[FORM_ERROR]} />}
+                {submitErrors?.[FORM_ERROR] && <ErrorAlert error={submitErrors[FORM_ERROR]} />}
 
                 <LoaderButton
                     alwaysShowLabel={true}
-                    loading={formAPI.submitting}
-                    label={formAPI.submitting ? 'Submitting' : 'Create code insight'}
+                    loading={submitting}
+                    label={submitting ? 'Submitting' : 'Create code insight'}
                     type="submit"
-                    disabled={formAPI.submitting}
+                    disabled={submitting}
                     className="btn btn-primary mr-2"
                 />
 
