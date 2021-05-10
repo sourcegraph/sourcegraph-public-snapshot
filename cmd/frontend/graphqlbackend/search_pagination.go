@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -265,16 +266,10 @@ func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search
 		if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 			return nil, nil, err
 		}
-		// fileResults is not sorted so we must sort it now. fileCommon may or
-		// may not be sorted, but we do not rely on its order.
-		sort.Slice(fileMatches, func(i, j int) bool {
-			return fileMatches[i].Key().Less(fileMatches[j].Key())
-		})
-		results := make([]SearchResultResolver, 0, len(fileMatches))
-		for _, match := range fileMatches {
-			results = append(results, MatchToResolver(db, match))
-		}
-		return results, &fileCommon, nil
+
+		matches := fileMatchesToMatches(fileMatches)
+		sort.Sort(result.Matches(matches))
+		return MatchesToResolvers(db, matches), &fileCommon, nil
 	})
 }
 
