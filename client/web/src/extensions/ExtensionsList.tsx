@@ -113,7 +113,12 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
             if (extensionIDsForCategory.length > 6) {
                 return (
                     <div key={category} className="mt-1">
-                        <h3 className="extensions-list__category mb-3 font-weight-normal">{category}</h3>
+                        <h3
+                            className="extensions-list__category mb-3 font-weight-normal"
+                            data-test-extension-category-header={category}
+                        >
+                            {category}
+                        </h3>
                         <div className="extensions-list__cards mt-1">
                             {extensionIDsForCategory.slice(0, 6).map(extensionId => (
                                 <ExtensionCard
@@ -144,7 +149,12 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
 
             return (
                 <div key={category} className="mt-1">
-                    <h3 className="extensions-list__category mb-3 font-weight-normal">{category}</h3>
+                    <h3
+                        className="extensions-list__category mb-3 font-weight-normal"
+                        data-test-extension-category-header={category}
+                    >
+                        {category}
+                    </h3>
                     <div className="extensions-list__cards mt-1">
                         {extensionIDsForCategory.map(extensionId => (
                             <ExtensionCard
@@ -179,7 +189,12 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
 
         categorySections = [
             <div key={selectedCategory} className="mt-1">
-                <h3 className="extensions-list__category mb-3 font-weight-normal">{selectedCategory}</h3>
+                <h3
+                    className="extensions-list__category mb-3 font-weight-normal"
+                    data-test-extension-category-header={selectedCategory}
+                >
+                    {selectedCategory}
+                </h3>
                 <div className="extensions-list__cards mt-1">
                     {extensionIDs.map(extensionId => (
                         <ExtensionCard
