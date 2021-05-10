@@ -14,8 +14,7 @@ $popover-item-padding-v: 0.25rem;
         display: flex;
         flex-direction: column;
 
-        min-height: 27rem; // avoid jitter when only loading indicator is shown
-        max-height: 70vh;
+        height: 27rem;
 
         .alert {
             word-break: break-word;
@@ -26,6 +25,10 @@ $popover-item-padding-v: 0.25rem;
         border-bottom: solid 1px var(--border-color);
         .theme-redesign & {
             border-bottom: none;
+
+            &:first-of-type {
+                border-top: solid 1px var(--border-color-2);
+            }
         }
 
         &:last-child {
