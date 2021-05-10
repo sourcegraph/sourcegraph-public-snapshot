@@ -15,25 +15,19 @@ interface Props extends ThemeProps {
     icon: React.ComponentType<{ className?: string }>
 }
 
-export class SearchResult extends React.Component<Props> {
-    private renderTitle = (): JSX.Element => (
+export const SearchResult: React.FunctionComponent<Props> = ({ result, history, icon, isLightTheme }) => {
+    const renderTitle = (): JSX.Element => (
         <div className="search-result__title">
             <Markdown
                 className="test-search-result-label"
-                dangerousInnerHTML={
-                    this.props.result.label.html
-                        ? this.props.result.label.html
-                        : renderMarkdown(this.props.result.label.text)
-                }
+                dangerousInnerHTML={result.label.html ? result.label.html : renderMarkdown(result.label.text)}
             />
-            {this.props.result.detail && (
+            {result.detail && (
                 <>
                     <span className="search-result__spacer" />
                     <Markdown
                         dangerousInnerHTML={
-                            this.props.result.detail.html
-                                ? this.props.result.detail.html
-                                : renderMarkdown(this.props.result.detail.text)
+                            result.detail.html ? result.detail.html : renderMarkdown(result.detail.text)
                         }
                     />
                 </>
@@ -41,29 +35,27 @@ export class SearchResult extends React.Component<Props> {
         </div>
     )
 
-    private renderBody = (): JSX.Element => (
+    const renderBody = (): JSX.Element => (
         <>
-            {this.props.result.matches.map(match => (
+            {result.matches.map(match => (
                 <SearchResultMatch
                     key={match.url}
                     item={match}
                     highlightRanges={match.highlights}
-                    isLightTheme={this.props.isLightTheme}
-                    history={this.props.history}
+                    isLightTheme={isLightTheme}
+                    history={history}
                 />
             ))}
         </>
     )
 
-    public render(): JSX.Element {
-        return (
-            <ResultContainer
-                icon={this.props.icon}
-                collapsible={this.props.result && this.props.result.matches.length > 0}
-                defaultExpanded={true}
-                title={this.renderTitle()}
-                expandedChildren={this.renderBody()}
-            />
-        )
-    }
+    return (
+        <ResultContainer
+            icon={icon}
+            collapsible={result && result.matches.length > 0}
+            defaultExpanded={true}
+            title={renderTitle()}
+            expandedChildren={renderBody()}
+        />
+    )
 }
