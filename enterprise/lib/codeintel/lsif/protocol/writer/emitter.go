@@ -1,6 +1,7 @@
 package writer
 
 import (
+	"fmt"
 	"sync/atomic"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol"
