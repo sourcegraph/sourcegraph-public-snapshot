@@ -29,20 +29,24 @@ type SearchMatchEvent struct {
 // MatchSender is a temporary interface that adds the SendMatches method to the
 // Sender interface. Eventually, Sender.Send() will be replaced with MatchSender.SendMatches
 type MatchSender interface {
-	Send(SearchEvent)
 	SendMatches(SearchMatchEvent)
 }
 
 // Temporary conversion function from SearchEvent to SearchMatchEvent
 func SearchEventToSearchMatchEvent(se SearchEvent) SearchMatchEvent {
-	matches := make([]result.Match, 0, len(se.Results))
-	for _, resolver := range se.Results {
-		matches = append(matches, resolver.toMatch())
-	}
 	return SearchMatchEvent{
-		Results: matches,
+		Results: ResolversToMatches(se.Results),
 		Stats:   se.Stats,
 	}
+}
+
+// Temporary conversion function from []SearchResultResolver to []result.Match
+func ResolversToMatches(resolvers []SearchResultResolver) []result.Match {
+	matches := make([]result.Match, 0, len(resolvers))
+	for _, resolver := range resolvers {
+		matches = append(matches, resolver.toMatch())
+	}
+	return matches
 }
 
 // Temporary conversion function from SearchMatchEvent to SearchEvent
@@ -109,7 +113,7 @@ func (s *limitStream) SendMatches(event SearchMatchEvent) {
 	// multiple times, but this is fine. Want to avoid lots of noop events
 	// after the first IsLimitHit.
 	if old >= 0 && s.remaining.Load() < 0 {
-		s.s.Send(SearchEvent{Stats: streaming.Stats{IsLimitHit: true}})
+		s.s.SendMatches(SearchMatchEvent{Stats: streaming.Stats{IsLimitHit: true}})
 		s.cancel()
 	}
 }

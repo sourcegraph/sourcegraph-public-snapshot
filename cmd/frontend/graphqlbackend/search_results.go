@@ -468,7 +468,10 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 			result.Stats.IsLimitHit = true
 		}
 		if r.stream != nil {
-			r.stream.Send(SearchEvent{result.SearchResults, result.Stats})
+			r.stream.SendMatches(SearchMatchEvent{
+				Results: ResolversToMatches(result.SearchResults),
+				Stats:   result.Stats,
+			})
 		}
 		return result, err
 	}
@@ -850,8 +853,8 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 		r.stream = nil // Disables streaming: backends may not use the endpoint.
 		srr, err := r.resultsBatch(ctx)
 		if srr != nil {
-			endpoint.Send(SearchEvent{
-				Results: srr.SearchResults,
+			endpoint.SendMatches(SearchMatchEvent{
+				Results: ResolversToMatches(srr.SearchResults),
 				Stats:   srr.Stats,
 			})
 		}
@@ -1447,8 +1450,8 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 		}
 	}
 
-	a.Send(SearchEvent{
-		Results: fileMatchResolversToSearchResults(fileResults),
+	a.SendMatches(SearchMatchEvent{
+		Results: fileMatchResolversToMatches(fileResults),
 		Stats:   stats,
 	})
 	return err
@@ -1660,7 +1663,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 			repos[repoRev.Repo.ID] = repoRev.Repo
 		}
 
-		agg.Send(SearchEvent{
+		agg.SendMatches(SearchMatchEvent{
 			Stats: streaming.Stats{
 				Repos:            repos,
 				ExcludedForks:    resolved.ExcludedRepos.Forks,

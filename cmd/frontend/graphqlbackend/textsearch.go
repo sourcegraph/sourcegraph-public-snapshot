@@ -275,24 +275,20 @@ func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.M
 
 var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error)
 
-func fileMatchesToSearchResults(db dbutil.DB, matches []result.FileMatch) []SearchResultResolver {
-	results := make([]SearchResultResolver, len(matches))
-	for i, match := range matches {
-		results[i] = &FileMatchResolver{
-			FileMatch:    match,
-			RepoResolver: NewRepositoryResolver(db, match.Repo.ToRepo()),
-			db:           db,
-		}
+func fileMatchesToMatches(fms []result.FileMatch) []result.Match {
+	matches := make([]result.Match, 0, len(fms))
+	for _, fm := range fms {
+		matches = append(matches, &fm)
 	}
-	return results
+	return matches
 }
 
-func fileMatchResolversToSearchResults(resolvers []*FileMatchResolver) []SearchResultResolver {
-	results := make([]SearchResultResolver, len(resolvers))
-	for i, resolver := range resolvers {
-		results[i] = resolver
+func fileMatchResolversToMatches(resolvers []*FileMatchResolver) []result.Match {
+	matches := make([]result.Match, 0, len(resolvers))
+	for _, resolver := range resolvers {
+		matches = append(matches, resolver.toMatch())
 	}
-	return results
+	return matches
 }
 
 func searchResultsToFileMatchResults(resolvers []SearchResultResolver) ([]*FileMatchResolver, error) {
@@ -324,8 +320,8 @@ func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.Tex
 func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, stream MatchSender) (err error) {
 	if mockSearchFilesInRepos != nil {
 		results, mockStats, err := mockSearchFilesInRepos(args)
-		stream.Send(SearchEvent{
-			Results: fileMatchResolversToSearchResults(results),
+		stream.SendMatches(SearchMatchEvent{
+			Results: fileMatchResolversToMatches(results),
 			Stats:   statsDeref(mockStats),
 		})
 		return err
@@ -477,8 +473,8 @@ func callSearcherOverRepos(
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
 					stats, err := handleRepoSearchResult(repoRev, repoLimitHit, false, err)
-					stream.Send(SearchEvent{
-						Results: fileMatchesToSearchResults(db, matches),
+					stream.SendMatches(SearchMatchEvent{
+						Results: fileMatchesToMatches(matches),
 						Stats:   stats,
 					})
 					return err
