@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -82,57 +83,81 @@ func TestAuthzQueryConds(t *testing.T) {
 	}()
 	tests := []struct {
 		name                string
-		setup               func() context.Context
+		setup               func(t *testing.T) context.Context
 		authzAllowByDefault bool
 		wantQuery           *sqlf.Query
 	}{
 		{
 			name: "internal actor bypass checks",
-			setup: func() context.Context {
+			setup: func(t *testing.T) context.Context {
 				return actor.WithInternalActor(context.Background())
 			},
 			wantQuery: authzQuery(true, false, int32(0), authz.Read),
 		},
-
 		{
-			name:      "no authz provider and not allow by default",
-			setup:     context.Background,
+			name: "no authz provider and not allow by default",
+			setup: func(t *testing.T) context.Context {
+				return context.Background()
+			},
 			wantQuery: authzQuery(false, false, int32(0), authz.Read),
 		},
 		{
-			name:                "no authz provider but allow by default",
-			setup:               context.Background,
+			name: "no authz provider but allow by default",
+			setup: func(t *testing.T) context.Context {
+				return context.Background()
+			},
 			authzAllowByDefault: true,
 			wantQuery:           authzQuery(true, false, int32(0), authz.Read),
 		},
-
 		{
 			name: "authenticated user is a site admin",
-			setup: func() context.Context {
+			setup: func(t *testing.T) context.Context {
 				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 					return &types.User{ID: 1, SiteAdmin: true}, nil
 				}
+				t.Cleanup(func() {
+					Mocks.Users = MockUsers{}
+				})
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			},
 			wantQuery: authzQuery(true, false, int32(1), authz.Read),
 		},
 		{
+			name: "authenticated user is a site admin and AuthzEnforceForSiteAdmins is set",
+			setup: func(t *testing.T) context.Context {
+				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+					return &types.User{ID: 1, SiteAdmin: true}, nil
+				}
+				conf.Get().AuthzEnforceForSiteAdmins = true
+				t.Cleanup(func() {
+					Mocks.Users = MockUsers{}
+					conf.Get().AuthzEnforceForSiteAdmins = false
+				})
+				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			},
+			wantQuery: authzQuery(false, false, int32(1), authz.Read),
+		},
+		{
 			name: "authenticated user is not a site admin",
-			setup: func() context.Context {
+			setup: func(t *testing.T) context.Context {
 				Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 					return &types.User{ID: 1}, nil
 				}
+				t.Cleanup(func() {
+					Mocks.Users = MockUsers{}
+				})
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			},
 			wantQuery: authzQuery(false, false, int32(1), authz.Read),
 		},
 	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			authz.SetProviders(test.authzAllowByDefault, nil)
 			defer authz.SetProviders(true, nil)
 
-			q, err := AuthzQueryConds(test.setup(), db)
+			q, err := AuthzQueryConds(test.setup(t), db)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -141,6 +166,88 @@ func TestAuthzQueryConds(t *testing.T) {
 				t.Fatalf("Mismatch (-want +got):\n%s", diff)
 			}
 		})
+	}
+}
+
+func TestRepos_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+
+	// Add a single user who is NOT a site admin
+	alice, err := Users(db).Create(ctx, NewUser{
+		Email:                 "alice@example.com",
+		Username:              "alice",
+		Password:              "alice",
+		EmailVerificationCode: "alice",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = Users(db).SetIsSiteAdmin(ctx, alice.ID, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Add both a public and private repo
+	internalCtx := actor.WithInternalActor(ctx)
+	alicePublicRepo := mustCreate(internalCtx, t, db,
+		&types.Repo{
+			Name: "alice_public_repo",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "alice_public_repo",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		}, types.CloneStatusNotCloned,
+	)[0]
+	alicePrivateRepo := mustCreate(internalCtx, t, db,
+		&types.Repo{
+			Name:    "alice_private_repo",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "alice_private_repo",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		}, types.CloneStatusNotCloned,
+	)[0]
+
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	aliceExternalService := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+	}
+	err = ExternalServices(db).Create(ctx, confGet, aliceExternalService)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Set it up so that Alice added the repo via an external service
+	q := sqlf.Sprintf(`
+INSERT INTO external_service_repos (external_service_id, repo_id, user_id, clone_url)
+VALUES (%s, %s, NULLIF(%s, 0), '')
+`, aliceExternalService.ID, alicePrivateRepo.ID, aliceExternalService.NamespaceUserID)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Alice should be able to see both her public and private repos
+	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
+	repos, err := Repos(db).List(aliceCtx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRepos := []*types.Repo{alicePublicRepo, alicePrivateRepo}
+	if diff := cmp.Diff(wantRepos, repos, cmpopts.IgnoreFields(types.Repo{}, "Sources")); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 }
 
@@ -296,6 +403,7 @@ VALUES
 	defer authz.SetProviders(true, nil)
 
 	// Alice should see "alice_public_repo", "alice_private_repo", "bob_public_repo", "cindy_private_repo"
+	// "cindy_private_repos" comes from an unrestricted external service
 	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
 	repos, err := Repos(db).List(aliceCtx, ReposListOptions{})
 	if err != nil {
@@ -307,6 +415,7 @@ VALUES
 	}
 
 	// Bob should see "alice_public_repo", "bob_private_repo", "bob_public_repo", "cindy_private_repo"
+	// "cindy_private_repos" comes from an unrestricted external service
 	bobCtx := actor.WithActor(ctx, &actor.Actor{UID: bob.ID})
 	repos, err = Repos(db).List(bobCtx, ReposListOptions{})
 	if err != nil {
@@ -317,7 +426,7 @@ VALUES
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
-	// Admin should see all repositories
+	// By default, site admins can see all repos
 	adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
 	repos, err = Repos(db).List(adminCtx, ReposListOptions{})
 	if err != nil {
@@ -328,7 +437,24 @@ VALUES
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
+	// When AuthzEnforceForSiteAdmins is set, site admins can only see repos they have access
+	// to based on our authz model
+	conf.Get().AuthzEnforceForSiteAdmins = true
+	t.Cleanup(func() {
+		conf.Get().AuthzEnforceForSiteAdmins = false
+	})
+	adminCtx = actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
+	repos, err = Repos(db).List(adminCtx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRepos = []*types.Repo{alicePublicRepo, bobPublicRepo, cindyPrivateRepo}
+	if diff := cmp.Diff(wantRepos, repos); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+
 	// A random user should only see "alice_public_repo", "bob_public_repo", "cindy_private_repo"
+	// "cindy_private_repos" comes from an unrestricted external service
 	repos, err = Repos(db).List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
@@ -474,13 +600,30 @@ VALUES
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 
-	// Admin should see all repositories
+	// By default, admins can see all repos
 	adminCtx := actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
 	repos, err = Repos(db).List(adminCtx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	wantRepos = []*types.Repo{alicePublicRepo, alicePrivateRepo, bobPublicRepo, bobPrivateRepo}
+	if diff := cmp.Diff(wantRepos, repos); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+
+	// Admin should not see anything as they have not been granted permissions and
+	// AuthzEnforceForSiteAdmins is set
+	conf.Get().AuthzEnforceForSiteAdmins = true
+	t.Cleanup(func() {
+		Mocks.Users = MockUsers{}
+		conf.Get().AuthzEnforceForSiteAdmins = false
+	})
+	adminCtx = actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
+	repos, err = Repos(db).List(adminCtx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRepos = ([]*types.Repo)(nil)
 	if diff := cmp.Diff(wantRepos, repos); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}

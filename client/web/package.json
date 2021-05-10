@@ -15,6 +15,8 @@
     "test:regression:onboarding": "cross-env TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha ./src/regression/onboarding.test.ts",
     "test:regression:search": "cross-env TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha ./src/regression/search.test.ts",
     "test-e2e-sgdev": "env TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' SOURCEGRAPH_BASE_URL=https://sourcegraph.sgdev.org OVERRIDE_AUTH_SECRET=${SGDEV_OVERRIDE_AUTH_SECRET} mocha ./end-to-end/end-to-end.test.ts",
+    "serve:dev": "ts-node-transpile-only --project ./dev/tsconfig.json ./dev/server/development.server.ts",
+    "serve:prod": "ts-node-transpile-only --project ./dev/tsconfig.json ./dev/server/production.server.ts",
     "build": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp build",
     "watch": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp watch",
     "watch-webpack": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp watchWebpack",

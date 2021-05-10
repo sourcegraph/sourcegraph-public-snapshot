@@ -1368,9 +1368,16 @@ func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, pr
 				return nil, nil, nil, nil, nil
 			}
 
-			if subexact == nil {
-				subexact = subcontains
+			// We only returns subcontains for child literals. But because it
+			// is part of a concat pattern, we know it is exact when we
+			// append. This transformation has been running in production for
+			// many years, so while it isn't correct for all inputs
+			// theoretically, in practice this hasn't been a problem. However,
+			// a redesign of this function as a whole is needed. - keegan
+			if subcontains != nil {
+				subexact = append(subexact, subcontains...)
 			}
+
 			if exact == nil {
 				exact = subexact
 			} else {

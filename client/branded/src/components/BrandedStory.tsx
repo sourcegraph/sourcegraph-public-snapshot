@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useLayoutEffect } from 'react'
 import { MemoryRouter, MemoryRouterProps } from 'react-router'
 import { useDarkMode } from 'storybook-dark-mode'
 
@@ -32,7 +32,7 @@ export const BrandedStory: React.FunctionComponent<
 > = ({ children: Children, styles = brandedStyles, ...memoryRouterProps }) => {
     const isLightTheme = !useDarkMode()
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const styleTag = prependCSSToDocumentHead(styles)
 
         return () => {

@@ -45,7 +45,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
         props.telemetryService.log('InsightAddMoreClick')
     }, [props.telemetryService])
 
-    const configureURL = isCreationUIEnabled ? '/insights/create' : '/user/settings'
+    const configureURL = isCreationUIEnabled ? '/insights/create-intro' : '/user/settings'
 
     // Remove uniqBy when this extension api issue will be resolved
     // https://github.com/sourcegraph/sourcegraph/issues/20442

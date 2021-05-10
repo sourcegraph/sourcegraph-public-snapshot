@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -57,12 +58,32 @@ var (
 	rootFlagSet         = flag.NewFlagSet("sg", flag.ExitOnError)
 	configFlag          = rootFlagSet.String("config", "sg.config.yaml", "configuration file")
 	overwriteConfigFlag = rootFlagSet.String("overwrite", "sg.config.overwrite.yaml", "configuration overwrites file that is gitignored and can be used to, for example, add credentials")
-	conf                *Config
 
 	rootCommand = &ffcli.Command{
 		ShortUsage:  "sg [flags] <subcommand>",
 		FlagSet:     rootFlagSet,
 		Subcommands: []*ffcli.Command{runCommand, runSetCommand, startCommand, testCommand},
+		Exec: func(ctx context.Context, args []string) error {
+			return flag.ErrHelp
+		},
+		UsageFunc: func(c *ffcli.Command) string {
+			var out strings.Builder
+
+			printLogo(&out)
+
+			fmt.Fprintf(&out, "USAGE\n")
+			fmt.Fprintf(&out, "  sg <subcommand>\n")
+
+			fmt.Fprintf(&out, "\n")
+			fmt.Fprintf(&out, "AVAILABLE COMMANDS\n")
+			for _, sub := range c.Subcommands {
+				fmt.Fprintf(&out, "  %s\n", sub.Name)
+			}
+
+			fmt.Fprintf(&out, "\nRun 'sg <subcommand> -help' to get help output for each subcommand\n")
+
+			return out.String()
+		},
 	}
 )
 
@@ -71,26 +92,43 @@ func main() {
 		os.Exit(1)
 	}
 
-	var err error
-	conf, err = ParseConfigFile(*configFlag)
-	if err != nil {
-		out.WriteLine(output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as configuration file:%s\n%s\n", output.StyleBold, *configFlag, output.StyleReset, output.StyleWarning, output.StyleReset, err))
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
 		os.Exit(1)
-	}
-
-	if ok, _ := fileExists(*overwriteConfigFlag); ok {
-		overwriteConf, err := ParseConfigFile(*overwriteConfigFlag)
-		if err != nil {
-			out.WriteLine(output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as overwrites configuration file:%s\n%s\n", output.StyleBold, *overwriteConfigFlag, output.StyleReset, output.StyleWarning, output.StyleReset, err))
-			os.Exit(1)
-		}
-		conf.Merge(overwriteConf)
 	}
 
 	if err := rootCommand.Run(context.Background()); err != nil {
 		fmt.Printf("error: %s\n", err)
 		os.Exit(1)
 	}
+}
+
+var conf *Config
+
+// parseConf parses the config file and the optional overwrite file.
+// If the conf
+// has already been parsed it's a noop.
+func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
+	if conf != nil {
+		return true, output.FancyLine{}
+	}
+
+	var err error
+	conf, err = ParseConfigFile(confFile)
+	if err != nil {
+		return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as configuration file:%s\n%s\n", output.StyleBold, confFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
+	}
+
+	if ok, _ := fileExists(overwriteFile); ok {
+		overwriteConf, err := ParseConfigFile(overwriteFile)
+		if err != nil {
+			return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as overwrites configuration file:%s\n%s\n", output.StyleBold, overwriteFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
+		}
+		conf.Merge(overwriteConf)
+	}
+
+	return true, output.FancyLine{}
 }
 
 func runSetExec(ctx context.Context, args []string) error {
@@ -129,18 +167,13 @@ func testExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	if len(args) != 1 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
-		return flag.ErrHelp
-	}
-
 	cmd, ok := conf.Tests[args[0]]
 	if !ok {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: test suite %q not found :(\n", args[0]))
 		return flag.ErrHelp
 	}
 
-	return runTest(ctx, cmd)
+	return runTest(ctx, cmd, args[1:])
 }
 
 func startExec(ctx context.Context, args []string) error {
@@ -177,11 +210,18 @@ func runUsage(c *ffcli.Command) string {
 
 	fmt.Fprintf(&out, "USAGE\n")
 	fmt.Fprintf(&out, "  sg %s <command>\n", c.Name)
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
 
-	for name := range conf.Commands {
-		fmt.Fprintf(&out, "  %s\n", name)
+	// Attempt to parse config to list available commands, but don't fail on
+	// error, because we should never error when the user wants --help output.
+	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
+
+	if conf != nil {
+		fmt.Fprintf(&out, "\n")
+		fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
+
+		for name := range conf.Commands {
+			fmt.Fprintf(&out, "  %s\n", name)
+		}
 	}
 
 	return out.String()
@@ -192,11 +232,18 @@ func testUsage(c *ffcli.Command) string {
 
 	fmt.Fprintf(&out, "USAGE\n")
 	fmt.Fprintf(&out, "  sg %s <test suite>\n", c.Name)
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "AVAILABLE TESTSUITES IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
 
-	for name := range conf.Tests {
-		fmt.Fprintf(&out, "  %s\n", name)
+	// Attempt to parse config so we can list test suites, but don't fail on
+	// error, because we should never error when the user wants --help output.
+	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
+
+	if conf != nil {
+		fmt.Fprintf(&out, "\n")
+		fmt.Fprintf(&out, "AVAILABLE TESTSUITES IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
+
+		for name := range conf.Tests {
+			fmt.Fprintf(&out, "  %s\n", name)
+		}
 	}
 
 	return out.String()
@@ -207,11 +254,17 @@ func runSetUsage(c *ffcli.Command) string {
 
 	fmt.Fprintf(&out, "USAGE\n")
 	fmt.Fprintf(&out, "  sg %s <commandset>\n", c.Name)
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
 
-	for name := range conf.Commandsets {
-		fmt.Fprintf(&out, "  %s\n", name)
+	// Attempt to parse config so we can list available sets, but don't fail on
+	// error, because we should never error when the user wants --help output.
+	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
+	if conf != nil {
+		fmt.Fprintf(&out, "\n")
+		fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
+
+		for name := range conf.Commandsets {
+			fmt.Fprintf(&out, "  %s\n", name)
+		}
 	}
 
 	return out.String()
@@ -235,4 +288,50 @@ func fileExists(path string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+var styleOrange = output.Fg256Color(202)
+
+func printLogo(out io.Writer) {
+	fmt.Fprintf(out, "%s", output.StyleLogo)
+	fmt.Fprintln(out, `          _____                    _____`)
+	fmt.Fprintln(out, `         /\    \                  /\    \`)
+	fmt.Fprintf(out, `        /%s::%s\    \                /%s::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `       /%s::::%s\    \              /%s::::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `      /%s::::::%s\    \            /%s::::::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `     /%s:::%s/\%s:::%s\    \          /%s:::%s/\%s:::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `    /%s:::%s/__\%s:::%s\    \        /%s:::%s/  \%s:::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `    \%s:::%s\   \%s:::%s\    \      /%s:::%s/    \%s:::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `  ___\%s:::%s\   \%s:::%s\    \    /%s:::%s/    / \%s:::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, ` /\   \%s:::%s\   \%s:::%s\    \  /%s:::%s/    /   \%s:::%s\ ___\`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `/%s::%s\   \%s:::%s\   \%s:::%s\____\/%s:::%s/____/  ___\%s:::%s|    |`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `\%s:::%s\   \%s:::%s\   \%s::%s/    /\%s:::%s\    \ /\  /%s:::%s|____|`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, ` \%s:::%s\   \%s:::%s\   \/____/  \%s:::%s\    /%s::%s\ \%s::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `  \%s:::%s\   \%s:::%s\    \       \%s:::%s\   \%s:::%s\ \/____/`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `   \%s:::%s\   \%s:::%s\____\       \%s:::%s\   \%s:::%s\____\`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `    \%s:::%s\  /%s:::%s/    /        \%s:::%s\  /%s:::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `     \%s:::%s\/%s:::%s/    /          \%s:::%s\/%s:::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `      \%s::::::%s/    /            \%s::::::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `       \%s::::%s/    /              \%s::::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `        \%s::%s/    /                \%s::%s/____/`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, `         \/____/`)
+	fmt.Fprintf(out, "%s", output.StyleReset)
 }

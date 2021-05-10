@@ -30,5 +30,9 @@
         &__alert {
             display: block;
         }
+
+        &__toggle-wrapper {
+            justify-content: flex-end;
+        }
     }
 }
