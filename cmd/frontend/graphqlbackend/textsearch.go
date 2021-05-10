@@ -116,12 +116,6 @@ func (fm *FileMatchResolver) path() string {
 	return fm.Path
 }
 
-// appendMatches appends the line matches from src as well as updating match
-// counts and limit.
-func (fm *FileMatchResolver) appendMatches(src *FileMatchResolver) {
-	fm.FileMatch.AppendMatches(&src.FileMatch)
-}
-
 func (fm *FileMatchResolver) ResultCount() int32 {
 	return int32(fm.FileMatch.ResultCount())
 }

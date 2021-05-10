@@ -459,8 +459,12 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				}
 				suggestions = make([]SearchSuggestionResolver, 0, len(results.SearchResults))
 				for i, res := range results.SearchResults {
-					if fm, ok := res.ToFileMatch(); ok {
-						entryResolver := fm.File()
+					if fm, ok := res.(*result.FileMatch); ok {
+						fmResolver := &FileMatchResolver{
+							FileMatch:    *fm,
+							RepoResolver: NewRepositoryResolver(r.db, fm.Repo.ToRepo()),
+						}
+						entryResolver := fmResolver.File()
 						suggestions = append(suggestions, gitTreeSuggestionResolver{
 							gitTreeEntry: entryResolver,
 							score:        len(results.SearchResults) - i,
