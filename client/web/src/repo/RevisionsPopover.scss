@@ -35,6 +35,7 @@
             margin-bottom: -0.125rem;
 
             .theme-redesign & {
+                margin-bottom: inherit;
                 // Extend new default badge styles in redesign
                 @extend .badge;
                 // TODO: Update when we have specific badge font-sizes. Issue: https://github.com/sourcegraph/sourcegraph/issues/20675
