@@ -1,5 +1,5 @@
-$popover-item-padding-h: 0.75rem;
-$popover-item-padding-v: 0.325rem;
+$popover-item-padding-h: 1rem;
+$popover-item-padding-v: 0.25rem;
 
 .connection-popover {
     isolation: isolate;
@@ -23,25 +23,14 @@ $popover-item-padding-v: 0.325rem;
     }
 
     &__node {
-        // .theme-redesign & {
-        //     color: var(--body-color);
-
-        //     &:hover,
-        //     &:focus {
-        //         color: var(--light-text);
-        //         background-color: var(--primary);
-        //     }
-        // }
-
         border-bottom: solid 1px var(--border-color);
+        padding: $popover-item-padding-v $popover-item-padding-h;
         &:last-child {
             border-bottom: none;
         }
         &-link {
             display: flex;
             align-items: center;
-            padding: $popover-item-padding-v $popover-item-padding-h;
-
             &-icon {
                 margin-left: 0.25rem;
 
@@ -51,6 +40,10 @@ $popover-item-padding-v: 0.325rem;
             }
             &--active {
                 font-weight: bold;
+
+                .theme-redesign & {
+                    font-weight: inherit;
+                }
             }
         }
     }

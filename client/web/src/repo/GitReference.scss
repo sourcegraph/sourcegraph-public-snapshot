@@ -1,4 +1,20 @@
 .git-ref-node {
+    --git-ref-divider-color: var(--border-color);
+
+    .theme-redesign & {
+        --git-ref-divider-color: var(--border-color-2);
+        text-decoration: none;
+        color: var(--text-muted);
+        padding: 0.25rem 1rem;
+        border: none;
+
+        &:hover,
+        &:focus {
+            background-color: var(--primary);
+            color: var(--light-text);
+        }
+    }
+
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -9,19 +25,8 @@
     border-left: none;
     border-right: none;
     border-top: none;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--git-ref-divider-color);
     &:first-of-type {
-        border-top: 1px solid var(--border-color);
-    }
-
-    .theme-redesign & {
-        text-decoration: none;
-        color: var(--text-muted);
-
-        &:hover,
-        &:focus {
-            background-color: var(--primary);
-            color: var(--light-text);
-        }
+        border-top: 1px solid var(--git-ref-divider-color);
     }
 }

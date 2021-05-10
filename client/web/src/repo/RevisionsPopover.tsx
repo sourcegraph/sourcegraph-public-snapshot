@@ -151,7 +151,7 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, curr
                 <code className="revisions-popover-git-commit-node__oid" title={node.oid}>
                     {node.abbreviatedOID}
                 </code>
-                <span className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</span>
+                <small className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</small>
                 {isCurrent && (
                     <CircleChevronLeftIcon
                         className="icon-inline connection-popover__node-link-icon"
@@ -242,6 +242,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                                 className="connection-popover__content"
                                 showMoreClassName="connection-popover__show-more"
                                 inputClassName="connection-popover__input"
+                                inputPlaceholder="Find..."
                                 compact={true}
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
@@ -264,6 +265,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                                 key={tab.id}
                                 className="connection-popover__content"
                                 inputClassName="connection-popover__input"
+                                inputPlaceholder="Find..."
                                 compact={true}
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
