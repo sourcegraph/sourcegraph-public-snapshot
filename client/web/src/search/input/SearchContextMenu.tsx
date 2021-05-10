@@ -77,6 +77,7 @@ export interface SearchContextMenuProps
         | 'setSelectedSearchContextSpec'
         | 'convertVersionContextToSearchContext'
         | 'isSearchContextSpecAvailable'
+        | 'fetchSearchContext'
     > {
     closeMenu: () => void
     selectSearchContextSpec: (spec: string) => void
