@@ -278,14 +278,6 @@ func fileMatchesToMatches(fms []*result.FileMatch) []result.Match {
 	return matches
 }
 
-func fileMatchResolversToMatches(resolvers []*FileMatchResolver) []result.Match {
-	matches := make([]result.Match, 0, len(resolvers))
-	for _, resolver := range resolvers {
-		matches = append(matches, resolver.toMatch())
-	}
-	return matches
-}
-
 func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
 	fms := make([]*result.FileMatch, 0, len(matches))
 	for _, match := range matches {

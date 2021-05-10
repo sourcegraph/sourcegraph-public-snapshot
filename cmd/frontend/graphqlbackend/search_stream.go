@@ -22,15 +22,6 @@ type Sender interface {
 	Send(SearchEvent)
 }
 
-// Temporary conversion function from []SearchResultResolver to []result.Match
-func ResolversToMatches(resolvers []SearchResultResolver) []result.Match {
-	matches := make([]result.Match, 0, len(resolvers))
-	for _, resolver := range resolvers {
-		matches = append(matches, resolver.toMatch())
-	}
-	return matches
-}
-
 // Temporary conversion function from []result.Match to []SearchResultResolver
 func MatchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultResolver {
 	type repoKey struct {
