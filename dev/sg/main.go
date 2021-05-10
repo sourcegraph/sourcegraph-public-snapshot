@@ -145,18 +145,13 @@ func testExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	if len(args) != 1 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
-		return flag.ErrHelp
-	}
-
 	cmd, ok := conf.Tests[args[0]]
 	if !ok {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: test suite %q not found :(\n", args[0]))
 		return flag.ErrHelp
 	}
 
-	return runTest(ctx, cmd)
+	return runTest(ctx, cmd, args[1:])
 }
 
 func startExec(ctx context.Context, args []string) error {
