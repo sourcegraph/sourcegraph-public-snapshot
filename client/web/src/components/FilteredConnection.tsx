@@ -385,7 +385,7 @@ interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
     /** CSS class name for the <input> element */
     inputClassName?: string
 
-    /** Placeholder for the <input> element */
+    /** Placeholder text for the <input> element */
     inputPlaceholder?: string
 }
 

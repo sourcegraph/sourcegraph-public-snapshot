@@ -1,5 +1,5 @@
-@import 'branded/src/global-styles/breakpoints';
+@import 'wildcard/src/global-styles/breakpoints';
 
 .creation-page {
-    max-width: map-get($grid-breakpoints, md);
+    max-width: $viewport-md;
 }

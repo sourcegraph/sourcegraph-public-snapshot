@@ -1,4 +1,4 @@
-@import 'branded/src/global-styles/breakpoints';
+@import 'wildcard/src/global-styles/breakpoints';
 
 .batch-change-preview-stats-bar {
     &__stat {
@@ -15,25 +15,25 @@
         margin-left: calc(20% / 2);
     }
     &__diff {
-        @include media-breakpoint-down(xs) {
+        @media (--xs-breakpoint-down) {
             flex-grow: 1;
         }
     }
     &__metrics {
-        @include media-breakpoint-down(xs) {
+        @media (--xs-breakpoint-down) {
             flex-grow: 1;
             justify-content: space-between !important;
         }
     }
     &__states {
-        @include media-breakpoint-down(md) {
+        @media (--md-breakpoint-down) {
             flex-grow: 1;
             justify-content: space-between !important;
             flex-wrap: wrap;
         }
     }
     &__state {
-        @include media-breakpoint-down(xs) {
+        @media (--xs-breakpoint-down) {
             margin-bottom: 1rem !important;
         }
     }
