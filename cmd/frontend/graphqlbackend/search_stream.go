@@ -12,32 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
-// SearchEvent is an event on a search stream. It contains fields which can be
-// aggregated up into a final result.
 type SearchEvent struct {
-	Results []SearchResultResolver
-	Stats   streaming.Stats
-}
-
-// SearchMatchEvent is a temporary struct that takes matches rather than
-// SearchResultResolvers. Once the transition is complete, this will replace SearchEvent.
-type SearchMatchEvent struct {
 	Results []result.Match
 	Stats   streaming.Stats
 }
 
-// MatchSender is a temporary interface that adds the SendMatches method to the
-// Sender interface. Eventually, Sender.Send() will be replaced with MatchSender.SendMatches
-type MatchSender interface {
-	SendMatches(SearchMatchEvent)
-}
-
-// Temporary conversion function from SearchEvent to SearchMatchEvent
-func SearchEventToSearchMatchEvent(se SearchEvent) SearchMatchEvent {
-	return SearchMatchEvent{
-		Results: ResolversToMatches(se.Results),
-		Stats:   se.Stats,
-	}
+type Sender interface {
+	Send(SearchEvent)
 }
 
 // Temporary conversion function from []SearchResultResolver to []result.Match
@@ -47,14 +28,6 @@ func ResolversToMatches(resolvers []SearchResultResolver) []result.Match {
 		matches = append(matches, resolver.toMatch())
 	}
 	return matches
-}
-
-// Temporary conversion function from SearchMatchEvent to SearchEvent
-func SearchMatchEventToSearchEvent(db dbutil.DB, sme SearchMatchEvent) SearchEvent {
-	return SearchEvent{
-		Results: MatchesToResolvers(db, sme.Results),
-		Stats:   sme.Stats,
-	}
 }
 
 // Temporary conversion function from []result.Match to []SearchResultResolver
@@ -84,17 +57,13 @@ func MatchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultReso
 }
 
 type limitStream struct {
-	s         MatchSender
+	s         Sender
 	cancel    context.CancelFunc
 	remaining atomic.Int64
 }
 
 func (s *limitStream) Send(event SearchEvent) {
-	s.SendMatches(SearchEventToSearchMatchEvent(event))
-}
-
-func (s *limitStream) SendMatches(event SearchMatchEvent) {
-	s.s.SendMatches(event)
+	s.s.Send(event)
 
 	var count int64
 	for _, r := range event.Results {
@@ -113,7 +82,7 @@ func (s *limitStream) SendMatches(event SearchMatchEvent) {
 	// multiple times, but this is fine. Want to avoid lots of noop events
 	// after the first IsLimitHit.
 	if old >= 0 && s.remaining.Load() < 0 {
-		s.s.SendMatches(SearchMatchEvent{Stats: streaming.Stats{IsLimitHit: true}})
+		s.s.Send(SearchEvent{Stats: streaming.Stats{IsLimitHit: true}})
 		s.cancel()
 	}
 }
@@ -126,7 +95,7 @@ func (s *limitStream) SendMatches(event SearchMatchEvent) {
 // Canceling this context releases resources associated with it, so code
 // should call cancel as soon as the operations running in this Context and
 // Stream are complete.
-func WithLimit(ctx context.Context, parent MatchSender, limit int) (context.Context, MatchSender, context.CancelFunc) {
+func WithLimit(ctx context.Context, parent Sender, limit int) (context.Context, Sender, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(ctx)
 	stream := &limitStream{cancel: cancel, s: parent}
 	stream.remaining.Store(int64(limit))
@@ -135,11 +104,11 @@ func WithLimit(ctx context.Context, parent MatchSender, limit int) (context.Cont
 
 // WithSelect returns a child Stream of parent that runs the select operation
 // on each event, deduplicating where possible.
-func WithSelect(parent MatchSender, s filter.SelectPath) MatchSender {
+func WithSelect(parent Sender, s filter.SelectPath) Sender {
 	var mux sync.Mutex
 	dedup := result.NewDeduper()
 
-	return MatchStreamFunc(func(e SearchMatchEvent) {
+	return MatchStreamFunc(func(e SearchEvent) {
 		mux.Lock()
 
 		selected := e.Results[:0]
@@ -164,39 +133,27 @@ func WithSelect(parent MatchSender, s filter.SelectPath) MatchSender {
 
 		mux.Unlock()
 		if parent != nil {
-			parent.SendMatches(e)
+			parent.Send(e)
 		}
 	})
 }
 
-// StreamFunc is a convenience function to create a stream receiver from a
-// function.
-type StreamFunc func(SearchEvent)
-
-func (f StreamFunc) Send(event SearchEvent) {
-	f(event)
-}
-
-type MatchStreamFunc func(SearchMatchEvent)
+type MatchStreamFunc func(SearchEvent)
 
 func (f MatchStreamFunc) Send(se SearchEvent) {
-	f(SearchEventToSearchMatchEvent(se))
+	f(se)
 }
 
-func (f MatchStreamFunc) SendMatches(sme SearchMatchEvent) {
-	f(sme)
-}
-
-// collectMatchStream will call search and aggregates all events it sends. It then
+// collectStream will call search and aggregates all events it sends. It then
 // returns the aggregate event and any error it returns.
-func collectMatchStream(db dbutil.DB, search func(MatchSender) error) ([]SearchResultResolver, streaming.Stats, error) {
+func collectStream(db dbutil.DB, search func(Sender) error) ([]SearchResultResolver, streaming.Stats, error) {
 	var (
 		mu      sync.Mutex
 		results []result.Match
 		stats   streaming.Stats
 	)
 
-	err := search(MatchStreamFunc(func(event SearchMatchEvent) {
+	err := search(MatchStreamFunc(func(event SearchEvent) {
 		mu.Lock()
 		results = append(results, event.Results...)
 		stats.Update(&event.Stats)

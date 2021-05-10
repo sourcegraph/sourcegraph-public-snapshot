@@ -21,10 +21,10 @@ var mockSearchRepositories func(args *search.TextParameters) ([]result.Match, *s
 //
 // For a repository to match a query, the repository's name must match all of the repo: patterns AND the
 // default patterns (i.e., the patterns that are not prefixed with any search field).
-func searchRepositories(ctx context.Context, db dbutil.DB, args *search.TextParameters, limit int32, stream MatchSender) error {
+func searchRepositories(ctx context.Context, db dbutil.DB, args *search.TextParameters, limit int32, stream Sender) error {
 	if mockSearchRepositories != nil {
 		results, stats, err := mockSearchRepositories(args)
-		stream.SendMatches(SearchMatchEvent{
+		stream.Send(SearchEvent{
 			Results: results,
 			Stats:   statsDeref(stats),
 		})
@@ -93,14 +93,14 @@ func searchRepositories(ctx context.Context, db dbutil.DB, args *search.TextPara
 		if err != nil {
 			return err
 		}
-		stream.SendMatches(SearchMatchEvent{
+		stream.Send(SearchEvent{
 			Results: repoRevsToRepoMatches(ctx, repos),
 		})
 		return nil
 	}
 
 	for repos := range results {
-		stream.SendMatches(SearchMatchEvent{
+		stream.Send(SearchEvent{
 			Results: repoRevsToRepoMatches(ctx, repos),
 		})
 	}

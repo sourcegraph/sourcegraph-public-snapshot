@@ -173,7 +173,7 @@ func TestDisplayLimit(t *testing.T) {
 			})
 
 			// Send 2 repository matches.
-			mock.c.SendMatches(graphqlbackend.SearchMatchEvent{
+			mock.c.Send(graphqlbackend.SearchEvent{
 				Results: graphqlbackend.ResolversToMatches([]graphqlbackend.SearchResultResolver{mkRepoResolver(1), mkRepoResolver(2)}),
 			})
 			mock.Close()
@@ -208,7 +208,7 @@ func mkRepoResolver(id int) *graphqlbackend.RepositoryResolver {
 
 type mockSearchResolver struct {
 	done   chan struct{}
-	c      graphqlbackend.MatchSender
+	c      graphqlbackend.Sender
 	inputs *graphqlbackend.SearchInputs
 }
 
@@ -224,7 +224,7 @@ func (h *mockSearchResolver) Results(ctx context.Context) (*graphqlbackend.Searc
 }
 
 func (h *mockSearchResolver) Send(r []graphqlbackend.SearchResultResolver) {
-	h.c.SendMatches(graphqlbackend.SearchMatchEvent{Results: graphqlbackend.ResolversToMatches(r)})
+	h.c.Send(graphqlbackend.SearchEvent{Results: graphqlbackend.ResolversToMatches(r)})
 }
 
 func (h *mockSearchResolver) Close() {

@@ -306,7 +306,7 @@ func searchResultsToFileMatchResults(resolvers []SearchResultResolver) ([]*FileM
 // searchFilesInRepoBatch is a convenience function around searchFilesInRepos
 // which collects the results from the stream.
 func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.TextParameters) ([]*FileMatchResolver, streaming.Stats, error) {
-	results, stats, err := collectMatchStream(db, func(stream MatchSender) error {
+	results, stats, err := collectStream(db, func(stream Sender) error {
 		return searchFilesInRepos(ctx, db, args, stream)
 	})
 	fms, fmErr := searchResultsToFileMatchResults(results)
@@ -317,10 +317,10 @@ func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.Tex
 }
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, stream MatchSender) (err error) {
+func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, stream Sender) (err error) {
 	if mockSearchFilesInRepos != nil {
 		results, mockStats, err := mockSearchFilesInRepos(args)
-		stream.SendMatches(SearchMatchEvent{
+		stream.Send(SearchEvent{
 			Results: fileMatchResolversToMatches(results),
 			Stats:   statsDeref(mockStats),
 		})
@@ -398,7 +398,7 @@ func callSearcherOverRepos(
 	ctx context.Context,
 	db dbutil.DB,
 	args *search.TextParameters,
-	stream MatchSender,
+	stream Sender,
 	searcherRepos []*search.RepositoryRevisions,
 	index bool,
 ) (err error) {
@@ -473,7 +473,7 @@ func callSearcherOverRepos(
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
 					stats, err := handleRepoSearchResult(repoRev, repoLimitHit, false, err)
-					stream.SendMatches(SearchMatchEvent{
+					stream.Send(SearchEvent{
 						Results: fileMatchesToMatches(matches),
 						Stats:   stats,
 					})

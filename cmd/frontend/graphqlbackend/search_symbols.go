@@ -27,10 +27,10 @@ var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, lim
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, db dbutil.DB, args *search.TextParameters, limit int, stream MatchSender) (err error) {
+func searchSymbols(ctx context.Context, db dbutil.DB, args *search.TextParameters, limit int, stream Sender) (err error) {
 	if mockSearchSymbols != nil {
 		results, stats, err := mockSearchSymbols(ctx, args, limit)
-		stream.SendMatches(SearchMatchEvent{
+		stream.Send(SearchEvent{
 			Results: fileMatchResolversToMatches(results),
 			Stats:   statsDeref(stats),
 		})
@@ -91,7 +91,7 @@ func searchSymbols(ctx context.Context, db dbutil.DB, args *search.TextParameter
 
 			matches, err := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, limit)
 			stats, err := handleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
-			stream.SendMatches(SearchMatchEvent{
+			stream.Send(SearchEvent{
 				Results: fileMatchesToMatches(matches),
 				Stats:   stats,
 			})
