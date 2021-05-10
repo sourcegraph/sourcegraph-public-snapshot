@@ -243,6 +243,8 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                                 key={tab.id}
                                 className="connection-popover__content"
                                 showMoreClassName="connection-popover__show-more"
+                                inputClassName="connection-popover__input"
+                                inputPlaceholder="Find..."
                                 compact={true}
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
@@ -264,6 +266,8 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                             <FilteredConnection<GitCommitAncestorFields, Omit<GitCommitNodeProps, 'node'>>
                                 key={tab.id}
                                 className="connection-popover__content"
+                                inputClassName="connection-popover__input"
+                                inputPlaceholder="Find..."
                                 compact={true}
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
