@@ -1,21 +1,11 @@
+import classnames from 'classnames'
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { EXTENSION_CATEGORIES, ExtensionCategory } from '@sourcegraph/shared/src/schema/extensionSchema'
 
 import { ExtensionsEnablement } from './ExtensionRegistry'
-
-interface Props {
-    selectedCategories: ExtensionCategory[]
-
-    onSelectCategories: (
-        categoriesOrCallback: ExtensionCategory[] | ((categories: ExtensionCategory[]) => ExtensionCategory[])
-    ) => void
-
-    enablementFilter: ExtensionsEnablement
-
-    setEnablementFilter: React.Dispatch<React.SetStateAction<ExtensionsEnablement>>
-}
+import styles from './ExtensionRegistrySidenav.module.scss'
 
 const enablementFilterToLabel: Record<ExtensionsEnablement, string> = {
     all: 'Show all',
@@ -23,48 +13,52 @@ const enablementFilterToLabel: Record<ExtensionsEnablement, string> = {
     disabled: 'Show disabled extensions',
 }
 
+interface ExtensionsCategoryFiltersProps {
+    selectedCategory: ExtensionCategory | 'All'
+    onSelectCategory: (category: ExtensionCategory | 'All') => void
+}
+interface ExtensionsEnablementDropdownProps {
+    enablementFilter: ExtensionsEnablement
+    setEnablementFilter: React.Dispatch<React.SetStateAction<ExtensionsEnablement>>
+}
+
 /**
- * Displays buttons to be rendered alongside the extension registry list query input field.
+ * Displays buttons to be rendered alongside the extension registry.
+ * Includes category filter buttons and enablement filter dropdown.
  */
-export const ExtensionsQueryInputToolbar: React.FunctionComponent<Props> = ({
-    selectedCategories,
-    onSelectCategories,
-    enablementFilter,
-    setEnablementFilter,
-}) => {
+export const ExtensionRegistrySidenav: React.FunctionComponent<
+    ExtensionsCategoryFiltersProps & ExtensionsEnablementDropdownProps
+> = ({ selectedCategory, onSelectCategory, enablementFilter, setEnablementFilter }) => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
 
     return (
-        <div className="d-flex flex-wrap justify-content-between mb-2">
-            <div>
-                {EXTENSION_CATEGORIES.map(category => {
-                    const selected = selectedCategories.includes(category)
-                    return (
-                        <button
-                            type="button"
-                            className={`btn btn-sm mr-2 ${selected ? 'btn-secondary' : 'btn-outline-secondary'}`}
-                            data-test-extension-category={category}
-                            key={category}
-                            onClick={() =>
-                                onSelectCategories(selectedCategories =>
-                                    selected
-                                        ? selectedCategories.filter(selectedCategory => selectedCategory !== category)
-                                        : [...selectedCategories, category]
-                                )
-                            }
-                        >
-                            {category}
-                        </button>
-                    )
-                })}
+        <div className={classnames(styles.column, 'mr-3')}>
+            <div className="d-flex flex-column">
+                <h3 className={classnames(styles.header, 'mb-3')}>Categories</h3>
+
+                {['All' as const, ...EXTENSION_CATEGORIES].map(category => (
+                    <button
+                        type="button"
+                        className={classnames('btn text-left', {
+                            'btn-primary': selectedCategory === category,
+                        })}
+                        data-test-extension-category={category}
+                        key={category}
+                        onClick={() => onSelectCategory(category)}
+                    >
+                        {category}
+                    </button>
+                ))}
             </div>
 
-            <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen}>
+            <hr className={classnames('my-3', styles.divider)} />
+
+            <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="ml-2">
                 <DropdownToggle className="btn-sm" caret={true} color="outline-secondary">
                     {enablementFilterToLabel[enablementFilter]}
                 </DropdownToggle>
-                <DropdownMenu right={true}>
+                <DropdownMenu>
                     <DropdownItem
                         // eslint-disable-next-line react/jsx-no-bind
                         onClick={() => setEnablementFilter('all')}
