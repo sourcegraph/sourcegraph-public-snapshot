@@ -2,7 +2,6 @@ import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React from 'react'
-import { useHistory } from 'react-router'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { asError } from '@sourcegraph/shared/src/util/errors'
@@ -14,11 +13,9 @@ const renderError = (error: unknown): string =>
         .replace(/^<p>/, '')
         .replace(/<\/p>$/, '')
 
-export const ErrorMessage: React.FunctionComponent<{ error: unknown }> = ({ error }) => {
-    const history = useHistory()
-
-    return <Markdown wrapper="span" dangerousInnerHTML={renderError(error)} history={history} />
-}
+export const ErrorMessage: React.FunctionComponent<{ error: unknown }> = ({ error }) => (
+    <Markdown wrapper="span" dangerousInnerHTML={renderError(error)} />
+)
 
 /**
  * Renders a given `Error` object in a Bootstrap danger alert.

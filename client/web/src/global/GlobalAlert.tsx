@@ -1,4 +1,3 @@
-import * as H from 'history'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import InformationIcon from 'mdi-react/InformationIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
@@ -14,16 +13,15 @@ import { DismissibleAlert } from '../components/DismissibleAlert'
 /**
  * A global alert that is shown at the top of the viewport.
  */
-export const GlobalAlert: React.FunctionComponent<{ alert: GQL.IAlert; className: string; history: H.History }> = ({
+export const GlobalAlert: React.FunctionComponent<{ alert: GQL.IAlert; className: string }> = ({
     alert,
-    history,
     className: commonClassName,
 }) => {
     const Icon = alertIconForType(alert.type)
     const content = (
         <>
             <Icon className="icon-inline mr-2 flex-shrink-0" />
-            <Markdown dangerousInnerHTML={renderMarkdown(alert.message)} history={history} />
+            <Markdown dangerousInnerHTML={renderMarkdown(alert.message)} />
         </>
     )
     const className = `${commonClassName} alert alert-${alertClassForType(alert.type)} d-flex`

@@ -281,7 +281,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             <GlobalAlerts
                 isSiteAdmin={!!props.authenticatedUser && props.authenticatedUser.siteAdmin}
                 settingsCascade={props.settingsCascade}
-                history={props.history}
             />
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {!isSiteInit && !isSignInOrUp && (
