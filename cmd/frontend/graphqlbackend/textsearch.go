@@ -109,12 +109,6 @@ func (fm *FileMatchResolver) ToCommitSearchResult() (*CommitSearchResultResolver
 	return nil, false
 }
 
-// path returns the path in repository for the file. This isn't directly
-// exposed in the GraphQL API (we expose a URI), but is used a lot internally.
-func (fm *FileMatchResolver) path() string {
-	return fm.Path
-}
-
 func (fm *FileMatchResolver) ResultCount() int32 {
 	return int32(fm.FileMatch.ResultCount())
 }
