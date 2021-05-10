@@ -18,7 +18,7 @@ interface UseFormProps<FormValues extends object> {
     /**
      * Initial values for form fields.
      * */
-    initialValues: Partial<FormValues>
+    initialValues: FormValues
 
     /**
      * Submit handler for a form element.
@@ -69,7 +69,7 @@ export interface FormAPI<FormValues> {
      * Initial values also used as field value for first run
      * of sync and async validators on useField level.
      * */
-    initialValues: Partial<FormValues>
+    initialValues: FormValues
 
     /**
      * Mark to understand was there an attempt by user to submit the form?
@@ -111,7 +111,7 @@ export interface FieldState<Value> {
      * Field (input) controlled value. This value might be not only some primitive value
      * like string, number but array, object, tuple and other complex types as consumer set.
      * */
-    value: Value | undefined
+    value: Value
 
     /**
      * State to understand when users focused and blurred input element.
