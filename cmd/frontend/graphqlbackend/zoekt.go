@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -68,11 +67,9 @@ type indexedSearchRequest struct {
 
 	// since if non-nil will be used instead of time.Since. For tests
 	since func(time.Time) time.Duration
-
-	db dbutil.DB
 }
 
-func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.TextParameters, typ indexedRequestType, stream Sender) (_ *indexedSearchRequest, err error) {
+func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType, stream Sender) (_ *indexedSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
@@ -91,7 +88,6 @@ func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.Tex
 		}
 
 		return &indexedSearchRequest{
-			db:               db,
 			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 			IndexUnavailable: true,
 		}, nil
@@ -103,7 +99,6 @@ func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.Tex
 			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", args.PatternInfo.Index)
 		}
 		return &indexedSearchRequest{
-			db:        db,
 			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 		}, nil
 	}
@@ -111,7 +106,6 @@ func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.Tex
 	// Fallback to Unindexed if index:no
 	if args.PatternInfo.Index == query.No {
 		return &indexedSearchRequest{
-			db:        db,
 			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 		}, nil
 	}
@@ -139,7 +133,6 @@ func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.Tex
 		}
 
 		return &indexedSearchRequest{
-			db:               db,
 			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 			IndexUnavailable: true,
 		}, ctx.Err()
@@ -161,7 +154,6 @@ func newIndexedSearchRequest(ctx context.Context, db dbutil.DB, args *search.Tex
 	}
 
 	return &indexedSearchRequest{
-		db:   db,
 		args: args,
 		typ:  typ,
 
@@ -195,7 +187,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c Sender) error {
 		since = s.since
 	}
 
-	return zoektSearch(ctx, s.db, s.args, s.repos, s.typ, since, c)
+	return zoektSearch(ctx, s.args, s.repos, s.typ, since, c)
 }
 
 // zoektSearch searches repositories using zoekt.
@@ -203,7 +195,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c Sender) error {
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Sender) error {
+func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c Sender) error {
 	if args == nil {
 		return nil
 	}
@@ -294,7 +286,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 		// PERF: if we are going to be selecting to repo results only anyways, we can just ask
 		// zoekt for only results of type repo.
 		if args.PatternInfo.Select.Type == filter.Repository {
-			return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, db, c, func() map[string]*search.RepositoryRevisions {
+			return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, c, func() map[string]*search.RepositoryRevisions {
 				<-reposResolved
 				// getRepoInputRev is nil only if we encountered an error during repo resolution.
 				if getRepoInputRev == nil {
@@ -329,8 +321,7 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 				return
 			}
 
-			matches := make([]SearchResultResolver, 0, len(files))
-			repoResolvers := make(RepositoryResolverCache)
+			matches := make([]result.FileMatch, 0, len(files))
 			for _, file := range files {
 				fileLimitHit := false
 				if len(file.LineMatches) > maxLineMatches {
@@ -343,11 +334,6 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 				mu.Unlock()
 				if !ok {
 					continue
-				}
-				repoResolver := repoResolvers[repo.Name]
-				if repoResolver == nil {
-					repoResolver = NewRepositoryResolver(db, repo.ToRepo())
-					repoResolvers[repo.Name] = repoResolver
 				}
 
 				var lines []*result.LineMatch
@@ -362,27 +348,23 @@ func zoektSearch(ctx context.Context, db dbutil.DB, args *search.TextParameters,
 					if typ == symbolRequest {
 						symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
 					}
-					fm := &FileMatchResolver{
-						db: db,
-						FileMatch: result.FileMatch{
-							LineMatches: lines,
-							LimitHit:    fileLimitHit,
-							Symbols:     symbols,
-							File: result.File{
-								InputRev: &inputRev,
-								CommitID: api.CommitID(file.Version),
-								Repo:     repo,
-								Path:     file.FileName,
-							},
+					fm := result.FileMatch{
+						LineMatches: lines,
+						LimitHit:    fileLimitHit,
+						Symbols:     symbols,
+						File: result.File{
+							InputRev: &inputRev,
+							CommitID: api.CommitID(file.Version),
+							Repo:     repo,
+							Path:     file.FileName,
 						},
-						RepoResolver: repoResolver,
 					}
 					matches = append(matches, fm)
 				}
 			}
 
 			c.Send(SearchEvent{
-				Results: ResolversToMatches(matches),
+				Results: fileMatchesToMatches(matches),
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
 				},
@@ -439,7 +421,7 @@ func bufferedSender(cap int, sender zoekt.Sender) (zoekt.Sender, func()) {
 // zoektSearchReposOnly is used when select:repo is set, in which case we can ask zoekt
 // only for the repos that contain matches for the query. This is a performance optimization,
 // and not required for proper function of select:repo.
-func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, db dbutil.DB, c Sender, getRepoRevMap func() map[string]*search.RepositoryRevisions) error {
+func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, c Sender, getRepoRevMap func() map[string]*search.RepositoryRevisions) error {
 	repoList, err := client.List(ctx, query)
 	if err != nil {
 		return err
@@ -450,18 +432,21 @@ func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoek
 		return nil
 	}
 
-	resolvers := make([]SearchResultResolver, 0, len(repoList.Repos))
+	matches := make([]result.Match, 0, len(repoList.Repos))
 	for _, repo := range repoList.Repos {
 		rev, ok := repoRevMap[repo.Repository.Name]
 		if !ok {
 			continue
 		}
 
-		resolvers = append(resolvers, NewRepositoryResolver(db, &types.Repo{Name: rev.Repo.Name, ID: rev.Repo.ID}))
+		matches = append(matches, &result.RepoMatch{
+			Name: rev.Repo.Name,
+			ID:   rev.Repo.ID,
+		})
 	}
 
 	c.Send(SearchEvent{
-		Results: ResolversToMatches(resolvers),
+		Results: matches,
 		Stats:   streaming.Stats{}, // TODO
 	})
 	return nil

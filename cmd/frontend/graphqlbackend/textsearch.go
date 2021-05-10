@@ -278,7 +278,8 @@ var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolv
 func fileMatchesToMatches(fms []result.FileMatch) []result.Match {
 	matches := make([]result.Match, 0, len(fms))
 	for _, fm := range fms {
-		matches = append(matches, &fm)
+		newFm := fm
+		matches = append(matches, &newFm)
 	}
 	return matches
 }
@@ -307,7 +308,7 @@ func searchResultsToFileMatchResults(resolvers []SearchResultResolver) ([]*FileM
 // which collects the results from the stream.
 func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.TextParameters) ([]*FileMatchResolver, streaming.Stats, error) {
 	results, stats, err := collectStream(db, func(stream Sender) error {
-		return searchFilesInRepos(ctx, db, args, stream)
+		return searchFilesInRepos(ctx, args, stream)
 	})
 	fms, fmErr := searchResultsToFileMatchResults(results)
 	if fmErr != nil && err == nil {
@@ -317,7 +318,7 @@ func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.Tex
 }
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, stream Sender) (err error) {
+func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream Sender) (err error) {
 	if mockSearchFilesInRepos != nil {
 		results, mockStats, err := mockSearchFilesInRepos(args)
 		stream.Send(SearchEvent{
@@ -346,13 +347,12 @@ func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextPara
 	var indexed *indexedSearchRequest
 	if args.Mode == search.ZoektGlobalSearch {
 		indexed = &indexedSearchRequest{
-			db:    db,
 			args:  args,
 			typ:   textRequest,
 			repos: &indexedRepoRevs{},
 		}
 	} else {
-		indexed, err = newIndexedSearchRequest(ctx, db, args, textRequest, stream)
+		indexed, err = newIndexedSearchRequest(ctx, args, textRequest, stream)
 		if err != nil {
 			return err
 		}
@@ -380,14 +380,14 @@ func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextPara
 				for _, repo := range indexed.Repos() {
 					repos = append(repos, repo)
 				}
-				return callSearcherOverRepos(ctx, db, args, stream, repos, true)
+				return callSearcherOverRepos(ctx, args, stream, repos, true)
 			})
 		}
 	}
 
 	// Concurrently run searcher for all unindexed repos regardless whether text, regexp, or structural search.
 	g.Go(func() error {
-		return callSearcherOverRepos(ctx, db, args, stream, indexed.Unindexed, false)
+		return callSearcherOverRepos(ctx, args, stream, indexed.Unindexed, false)
 	})
 
 	return g.Wait()
@@ -396,7 +396,6 @@ func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextPara
 // callSearcherOverRepos calls searcher on searcherRepos.
 func callSearcherOverRepos(
 	ctx context.Context,
-	db dbutil.DB,
 	args *search.TextParameters,
 	stream Sender,
 	searcherRepos []*search.RepositoryRevisions,

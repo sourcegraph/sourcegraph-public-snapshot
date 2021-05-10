@@ -282,7 +282,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 			}
 
-			indexed, err := newIndexedSearchRequest(context.Background(), db, args, textRequest, MatchStreamFunc(func(SearchEvent) {}))
+			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest, MatchStreamFunc(func(SearchEvent) {}))
 			if err != nil {
 				t.Fatal(err)
 			}
