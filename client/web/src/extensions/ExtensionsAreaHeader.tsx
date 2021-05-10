@@ -35,7 +35,6 @@ export const ExtensionsAreaHeader: React.FunctionComponent<ExtensionsAreaHeaderP
                             </Link>
                         )
                 )}
-                byline="Improve your workflow with code intelligence, test coverage, and other useful information."
             />
         )}
     </div>
