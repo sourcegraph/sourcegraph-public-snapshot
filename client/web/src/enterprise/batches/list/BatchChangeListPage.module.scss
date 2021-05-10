@@ -1,0 +1,19 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.batch-change-list-page {
+    &__grid {
+        display: grid;
+        grid-template-columns: [state] min-content [info] minmax(auto, 1fr) [open] min-content [closed] min-content [merged] min-content [end];
+        row-gap: 1rem;
+        column-gap: 1.5rem;
+        align-items: center;
+        @media (--sm-breakpoint-down) {
+            // Reduce gap on sm and xs screens.
+            column-gap: 1rem;
+        }
+        @media (--xs-breakpoint-down) {
+            // Reduce gap on xs screens.
+            row-gap: 0.5rem;
+        }
+    }
+}

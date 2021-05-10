@@ -5,9 +5,9 @@ import { percentageDone } from '@sourcegraph/shared/src/components/activation/Ac
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
-import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'

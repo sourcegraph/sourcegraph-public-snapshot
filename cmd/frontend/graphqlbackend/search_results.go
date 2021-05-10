@@ -184,7 +184,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 		Globbing: globbing,
 	}
 	filters.Update(SearchEvent{
-		Results: sr.SearchResults,
+		Results: ResolversToMatches(sr.SearchResults),
 		Stats:   sr.Stats,
 	})
 
@@ -468,7 +468,10 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 			result.Stats.IsLimitHit = true
 		}
 		if r.stream != nil {
-			r.stream.Send(SearchEvent{result.SearchResults, result.Stats})
+			r.stream.Send(SearchEvent{
+				Results: ResolversToMatches(result.SearchResults),
+				Stats:   result.Stats,
+			})
 		}
 		return result, err
 	}
@@ -851,7 +854,7 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 		srr, err := r.resultsBatch(ctx)
 		if srr != nil {
 			endpoint.Send(SearchEvent{
-				Results: srr.SearchResults,
+				Results: ResolversToMatches(srr.SearchResults),
 				Stats:   srr.Stats,
 			})
 		}
@@ -1346,7 +1349,7 @@ type aggregator struct {
 	db           dbutil.DB
 
 	mu      sync.Mutex
-	results []SearchResultResolver
+	results []result.Match
 	stats   streaming.Stats
 	alert   alertObserver
 }
@@ -1354,7 +1357,7 @@ type aggregator struct {
 // get finalises aggregation over the stream and returns the aggregated
 // result. It should only be called once each do* function is finished
 // running.
-func (a *aggregator) get() ([]SearchResultResolver, streaming.Stats, *searchAlert, error) {
+func (a *aggregator) get() ([]result.Match, streaming.Stats, *searchAlert, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	alert, err := a.alert.Done(&a.stats)
@@ -1390,7 +1393,7 @@ func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParamete
 		tr.Finish()
 	}()
 
-	err = searchRepositories(ctx, a.db, args, limit, a)
+	err = searchRepositories(ctx, args, limit, a)
 	return errors.Wrap(err, "repository search failed")
 }
 
@@ -1402,7 +1405,7 @@ func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParame
 		tr.Finish()
 	}()
 
-	err = searchSymbols(ctx, a.db, args, limit, a)
+	err = searchSymbols(ctx, args, limit, a)
 	return errors.Wrap(err, "symbol search failed")
 }
 
@@ -1418,14 +1421,14 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults
 
 	if !isDefaultStructuralSearch {
-		return searchFilesInRepos(ctx, a.db, args, a)
+		return searchFilesInRepos(ctx, args, a)
 	}
 
 	// For structural search with default limits we retry if we get no results.
 
-	fileResults, stats, err := searchFilesInReposBatch(ctx, a.db, args)
+	fileMatches, stats, err := searchFilesInReposBatch(ctx, args)
 
-	if len(fileResults) == 0 && err == nil {
+	if len(fileMatches) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
 		// to resolve more potential file matches by setting a higher FileMatchLimit.
 		patternCopy := *(args.PatternInfo)
@@ -1434,17 +1437,22 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 		argsCopy.PatternInfo = &patternCopy
 		args = &argsCopy
 
-		fileResults, stats, err = searchFilesInReposBatch(ctx, a.db, args)
+		fileMatches, stats, err = searchFilesInReposBatch(ctx, args)
 
-		if len(fileResults) == 0 {
+		if len(fileMatches) == 0 {
 			// Still no results? Give up.
 			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
 			stats.IsLimitHit = false // Ensure we don't display "Show more".
 		}
 	}
 
+	matches := make([]result.Match, 0, len(fileMatches))
+	for _, fm := range fileMatches {
+		matches = append(matches, fm)
+	}
+
 	a.Send(SearchEvent{
-		Results: fileMatchResolversToSearchResults(fileResults),
+		Results: matches,
 		Stats:   stats,
 	})
 	return err
@@ -1737,7 +1745,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 
 	// We have to call get once all waitgroups are done since it relies on
 	// collecting from the streams.
-	results, common, alert, err := agg.get()
+	matches, common, alert, err := agg.get()
+	results := MatchesToResolvers(r.db, matches)
 
 	tr.LazyPrintf("results=%d %s", len(results), &common)
 
@@ -1772,6 +1781,7 @@ type SearchResultResolver interface {
 	ToRepository() (*RepositoryResolver, bool)
 	ToFileMatch() (*FileMatchResolver, bool)
 	ToCommitSearchResult() (*CommitSearchResultResolver, bool)
+	toMatch() result.Match
 
 	ResultCount() int32
 }

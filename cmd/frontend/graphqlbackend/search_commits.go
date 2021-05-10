@@ -12,7 +12,6 @@ import (
 	"unicode/utf8"
 
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/xeonx/timeago"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/pkg/errors"
@@ -53,6 +52,10 @@ func (r *CommitSearchResultResolver) Select(path filter.SelectPath) SearchResult
 	}
 
 	return nil
+}
+
+func (r *CommitSearchResultResolver) toMatch() result.Match {
+	return &r.CommitMatch
 }
 
 func (r *CommitSearchResultResolver) Commit() *GitCommitResolver {
@@ -107,25 +110,15 @@ func (r *CommitSearchResultResolver) Icon() string {
 }
 
 func (r *CommitSearchResultResolver) Label() Markdown {
-	message := r.CommitMatch.Commit.Message.Subject()
-	author := r.CommitMatch.Commit.Author.Name
-	repoName := displayRepoName(r.Commit().Repository().Name())
-	repoURL := r.Commit().Repository().URL()
-	url := r.Commit().URL()
-
-	label := fmt.Sprintf("[%s](%s) › [%s](%s): [%s](%s)", repoName, repoURL, author, url, message, url)
-	return Markdown(label)
+	return Markdown(r.CommitMatch.Label())
 }
 
 func (r *CommitSearchResultResolver) URL() string {
-	return r.Commit().URL()
+	return r.CommitMatch.URL().String()
 }
 
 func (r *CommitSearchResultResolver) Detail() Markdown {
-	commitHash := r.CommitMatch.Commit.ID.Short()
-	timeagoConfig := timeago.NoMax(timeago.English)
-	detail := fmt.Sprintf("[`%v` %v](%v)", commitHash, timeagoConfig.Format(r.CommitMatch.Commit.Author.Date), r.Commit().URL())
-	return Markdown(detail)
+	return Markdown(r.CommitMatch.Detail())
 }
 
 func (r *CommitSearchResultResolver) Matches() []*searchResultMatchResolver {
@@ -303,11 +296,11 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 		}
 	}()
 
-	var results []*CommitSearchResultResolver
+	var results []*result.CommitMatch
 	for event := range events {
 		timedOut = timedOut || !event.Complete || ctx.Err() == context.DeadlineExceeded
 
-		results = logCommitSearchResultsToResolvers(ctx, db, &op, op.RepoRevs.Repo, event.Results)
+		results = logCommitSearchResultsToMatches(&op, op.RepoRevs.Repo, event.Results)
 		if len(results) > 0 {
 			resultCount += len(event.Results)
 			limitHit = resultCount > int(op.PatternInfo.FileMatchLimit)
@@ -326,7 +319,7 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 		// Only send if we have something to report back.
 		if len(results) > 0 || !stats.Zero() {
 			s.Send(SearchEvent{
-				Results: commitSearchResultsToSearchResults(results),
+				Results: commitMatchesToMatches(results),
 				Stats:   stats,
 			})
 		}
@@ -359,12 +352,12 @@ func orderedFuzzyRegexp(pieces []string) string {
 	return "(" + strings.Join(pieces, ").*?(") + ")"
 }
 
-func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *search.CommitParameters, repoName types.RepoName, rawResults []*git.LogCommitSearchResult) []*CommitSearchResultResolver {
+func logCommitSearchResultsToMatches(op *search.CommitParameters, repoName types.RepoName, rawResults []*git.LogCommitSearchResult) []*result.CommitMatch {
 	if len(rawResults) == 0 {
 		return nil
 	}
 
-	results := make([]*CommitSearchResultResolver, len(rawResults))
+	results := make([]*result.CommitMatch, len(rawResults))
 	for i, rawResult := range rawResults {
 		commit := rawResult.Commit
 
@@ -400,20 +393,17 @@ func logCommitSearchResultsToResolvers(ctx context.Context, db dbutil.DB, op *se
 			matchBody, matchHighlights = cleanDiffPreview(fromVCSHighlights(rawResult.DiffHighlights), rawResult.Diff.Raw)
 		}
 
-		results[i] = &CommitSearchResultResolver{
-			db: db,
-			CommitMatch: result.CommitMatch{
-				Commit:         rawResult.Commit,
-				Refs:           rawResult.Refs,
-				SourceRefs:     rawResult.SourceRefs,
-				MessagePreview: messagePreview,
-				DiffPreview:    diffPreview,
-				Body: result.HighlightedString{
-					Value:      matchBody,
-					Highlights: matchHighlights,
-				},
-				RepoName: repoName,
+		results[i] = &result.CommitMatch{
+			Commit:         rawResult.Commit,
+			Refs:           rawResult.Refs,
+			SourceRefs:     rawResult.SourceRefs,
+			MessagePreview: messagePreview,
+			DiffPreview:    diffPreview,
+			Body: result.HighlightedString{
+				Value:      matchBody,
+				Highlights: matchHighlights,
 			},
+			RepoName: repoName,
 		}
 	}
 
@@ -466,14 +456,6 @@ func cleanDiffPreview(highlights []result.HighlightedRange, rawDiffResult string
 
 	body := fmt.Sprintf("```diff\n%v```", strings.Join(finalLines, "\n"))
 	return body, highlights
-}
-
-func displayRepoName(repoPath string) string {
-	parts := strings.Split(repoPath, "/")
-	if len(parts) >= 3 && strings.Contains(parts[0], ".") {
-		parts = parts[1:] // remove hostname from repo path (reduce visual noise)
-	}
-	return strings.Join(parts, "/")
 }
 
 func highlightMatches(pattern *regexp.Regexp, data []byte) *result.HighlightedString {
@@ -596,21 +578,21 @@ func searchCommitLogInRepos(ctx context.Context, db dbutil.DB, args *search.Text
 	})
 }
 
-func commitSearchResultsToSearchResults(results []*CommitSearchResultResolver) []SearchResultResolver {
-	if len(results) == 0 {
+func commitMatchesToMatches(commitMatches []*result.CommitMatch) []result.Match {
+	if len(commitMatches) == 0 {
 		return nil
 	}
 
 	// Show most recent commits first.
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].Commit().commit.Author.Date.After(results[j].Commit().commit.Author.Date)
+	sort.Slice(commitMatches, func(i, j int) bool {
+		return commitMatches[i].Commit.Author.Date.After(commitMatches[j].Commit.Author.Date)
 	})
 
-	results2 := make([]SearchResultResolver, len(results))
-	for i, result := range results {
-		results2[i] = result
+	matches := make([]result.Match, 0, len(commitMatches))
+	for _, result := range commitMatches {
+		matches = append(matches, result)
 	}
-	return results2
+	return matches
 }
 
 // expandUsernamesToEmails expands references to usernames to mention all possible (known and

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -234,7 +235,7 @@ func DeleteSearchContext(ctx context.Context, db dbutil.DB, searchContext *types
 func GetAutoDefinedSearchContexts(ctx context.Context, db dbutil.DB) ([]*types.SearchContext, error) {
 	searchContexts := []*types.SearchContext{GetGlobalSearchContext()}
 	a := actor.FromContext(ctx)
-	if a.IsAuthenticated() {
+	if a.IsAuthenticated() && envvar.SourcegraphDotComMode() {
 		user, err := database.Users(db).GetByID(ctx, a.UID)
 		if err != nil {
 			return nil, err
@@ -279,7 +280,7 @@ func IsGlobalSearchContext(searchContext *types.SearchContext) bool {
 }
 
 func GetUserSearchContext(name string, userID int32) *types.SearchContext {
-	return &types.SearchContext{Name: name, Public: true, Description: "Your repositories on Sourcegraph", NamespaceUserID: userID}
+	return &types.SearchContext{Name: name, Public: true, Description: "All repositories you've added to Sourcegraph", NamespaceUserID: userID}
 }
 
 func GetGlobalSearchContext() *types.SearchContext {

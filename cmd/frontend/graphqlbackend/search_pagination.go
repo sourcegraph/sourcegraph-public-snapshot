@@ -260,19 +260,19 @@ func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search
 	return plan.execute(ctx, database.Repos(db), func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error) {
 		batchArgs := *args
 		batchArgs.RepoPromise = (&search.Promise{}).Resolve(batch)
-		fileResults, fileCommon, err := searchFilesInReposBatch(ctx, db, &batchArgs)
+		fileMatches, fileCommon, err := searchFilesInReposBatch(ctx, &batchArgs)
 		// Timeouts are reported through Stats so don't report an error for them
 		if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 			return nil, nil, err
 		}
 		// fileResults is not sorted so we must sort it now. fileCommon may or
 		// may not be sorted, but we do not rely on its order.
-		sort.Slice(fileResults, func(i, j int) bool {
-			return fileResults[i].FileMatch.Key().Less(fileResults[j].FileMatch.Key())
+		sort.Slice(fileMatches, func(i, j int) bool {
+			return fileMatches[i].Key().Less(fileMatches[j].Key())
 		})
-		results := make([]SearchResultResolver, 0, len(fileResults))
-		for _, r := range fileResults {
-			results = append(results, r)
+		results := make([]SearchResultResolver, 0, len(fileMatches))
+		for _, match := range fileMatches {
+			results = append(results, MatchToResolver(db, match))
 		}
 		return results, &fileCommon, nil
 	})

@@ -13,8 +13,8 @@ func TestLock(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	key := rand.Intn(1000)
 
@@ -55,8 +55,8 @@ func TestLockBlockingAcquire(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	key := rand.Intn(1000)
 

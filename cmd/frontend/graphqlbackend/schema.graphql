@@ -2419,6 +2419,18 @@ type SearchContext implements Node {
     Repositories and their revisions that will be searched when querying.
     """
     repositories: [SearchContextRepositoryRevisions!]!
+    """
+    Public property controls the visibility of the search context. Public search context is available to
+    any user on the instance. If a public search context contains private repositories, those are filtered out
+    for unauthorized users. Private search contexts are only available to their owners. Private user search context
+    is available only to the user, private org search context is available only to the members of the org, and private
+    instance-level search contexts are available only to site-admins.
+    """
+    public: Boolean!
+    """
+    Date and time the search context was last updated.
+    """
+    updatedAt: DateTime!
 }
 
 """

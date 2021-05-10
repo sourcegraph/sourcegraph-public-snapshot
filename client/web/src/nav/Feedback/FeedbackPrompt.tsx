@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
 import MessageDrawIcon from 'mdi-react/MessageDrawIcon'
@@ -10,6 +11,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { ErrorAlert } from '../../components/alerts'
 import { LoaderButton } from '../../components/LoaderButton'
@@ -165,18 +167,21 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, history, 
     const handleToggle = useCallback(() => setIsOpen(open => !open), [])
     const forceClose = useCallback(() => setIsOpen(false), [])
     const match = useRoutesMatch(routes)
+    const [isRedesignEnabled] = useRedesignToggle()
 
     return (
         <ButtonDropdown a11y={false} isOpen={isOpen} toggle={handleToggle} className="feedback-prompt" group={false}>
             <DropdownToggle
                 tag="button"
                 caret={false}
-                className="btn btn-link btn-sm text-decoration-none feedback-prompt__toggle"
-                nav={true}
+                className={classNames('btn btn-sm text-decoration-none feedback-prompt__toggle', {
+                    'btn-outline-secondary': isRedesignEnabled,
+                    'btn-link': !isRedesignEnabled,
+                })}
                 aria-label="Feedback"
             >
-                <MessageDrawIcon className="d-lg-none icon-inline" />
-                <span className="d-none d-lg-block">Feedback</span>
+                {!isRedesignEnabled && <MessageDrawIcon className="d-lg-none icon-inline" />}
+                <span className={classNames({ 'd-none d-lg-block': !isRedesignEnabled })}>Feedback</span>
             </DropdownToggle>
             <DropdownMenu right={true} className="web-content feedback-prompt__menu">
                 <FeedbackPromptContent closePrompt={forceClose} history={history} routeMatch={match} />

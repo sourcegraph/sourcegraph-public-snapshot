@@ -97,11 +97,12 @@ $theme-colors-redesign: (
     --border-active-color: var(--primary);
     --search-query-text-color: #{$redesign-gray-12};
     --search-filter-keyword-color: var(--primary);
-    --search-keyword-color: var(--secondary);
+    --search-keyword-color: #{$oc-grape-7};
     --infobar-warning-color: #{$oc-red-8};
     --icon-color: #{$redesign-gray-06};
     --code-bg: #{$redesign-gray-03};
     --intel-bg: #{$white};
+    --subtle-bg: #{$redesign-gray-02};
 
     // TODO: Remove from use, replace with the variables referenced here
     // Issue: https://github.com/sourcegraph/sourcegraph/issues/19973
@@ -144,11 +145,12 @@ $theme-colors-redesign: (
     --border-active-color: #4393e7;
     --search-query-text-color: #{$redesign-gray-04};
     --search-filter-keyword-color: #4393e7;
-    --search-keyword-color: var(--secondary-2);
+    --search-keyword-color: #{$oc-grape-4};
     --infobar-warning-color: #f05151;
     --icon-color: #{$redesign-gray-05};
     --code-bg: #{$redesign-gray-10};
     --intel-bg: #{$redesign-gray-12};
+    --subtle-bg: #{$redesign-gray-09};
 
     // TODO: Remove from use, replace with the variables referenced here
     // Issue: https://github.com/sourcegraph/sourcegraph/issues/19973

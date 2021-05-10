@@ -171,6 +171,24 @@ describe('Extension Registry', () => {
                     final: JSON.stringify({}),
                 },
             }),
+            CurrentAuthState: () => ({
+                currentUser: {
+                    __typename: 'User',
+                    id: 'TestGQLUserID',
+                    databaseID: 1,
+                    username: 'testusername',
+                    avatarURL: null,
+                    email: 'test@test.com',
+                    displayName: 'test',
+                    siteAdmin: true,
+                    tags: [],
+                    url: '/users/test',
+                    settingsURL: '/users/test/settings',
+                    organizations: { nodes: [] },
+                    session: { canSignOut: true },
+                    viewerCanAdminister: true,
+                },
+            }),
             RegistryExtensions: () => ({
                 extensionRegistry: {
                     extensions: {

@@ -8,8 +8,10 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
@@ -67,23 +69,17 @@ var commonFileFilters = []struct {
 
 // Update internal state for the results in event.
 func (s *SearchFilters) Update(event SearchEvent) {
-	// Avoid work if nothing to observe.
-	if len(event.Results) == 0 {
-		return
-	}
-
 	// Initialize state on first call.
 	if s.filters == nil {
 		s.filters = make(streaming.Filters)
 	}
 
-	addRepoFilter := func(repo *RepositoryResolver, rev string, lineMatchCount int32) {
-		uri := repo.Name()
+	addRepoFilter := func(repoName api.RepoName, repoID api.RepoID, rev string, lineMatchCount int32) {
 		var filter string
 		if s.Globbing {
-			filter = fmt.Sprintf(`repo:%s`, uri)
+			filter = fmt.Sprintf(`repo:%s`, repoName)
 		} else {
-			filter = fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(uri))
+			filter = fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(string(repoName)))
 		}
 
 		if rev != "" {
@@ -91,8 +87,8 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			// are @ and :, both of which are disallowed in git refs
 			filter = filter + fmt.Sprintf(`@%s`, rev)
 		}
-		limitHit := event.Stats.Status.Get(repo.IDInt32())&search.RepoStatusLimitHit != 0
-		s.filters.Add(filter, uri, lineMatchCount, limitHit, "repo")
+		limitHit := event.Stats.Status.Get(repoID)&search.RepoStatusLimitHit != 0
+		s.filters.Add(filter, string(repoName), lineMatchCount, limitHit, "repo")
 	}
 
 	addFileFilter := func(fileMatchPath string, lineMatchCount int32, limitHit bool) {
@@ -127,32 +123,34 @@ func (s *SearchFilters) Update(event SearchEvent) {
 	}
 
 	if event.Stats.ExcludedForks > 0 {
-		s.filters.Add("fork:yes", "fork:yes", int32(event.Stats.ExcludedForks), event.Stats.IsLimitHit, "repo")
+		s.filters.Add("fork:yes", "fork:yes", int32(event.Stats.ExcludedForks), event.Stats.IsLimitHit, "dynamic")
 		s.filters.MarkImportant("fork:yes")
 	}
 	if event.Stats.ExcludedArchived > 0 {
-		s.filters.Add("archived:yes", "archived:yes", int32(event.Stats.ExcludedArchived), event.Stats.IsLimitHit, "repo")
+		s.filters.Add("archived:yes", "archived:yes", int32(event.Stats.ExcludedArchived), event.Stats.IsLimitHit, "dynamic")
 		s.filters.MarkImportant("archived:yes")
 	}
-	for _, result := range event.Results {
-		if fm, ok := result.ToFileMatch(); ok {
-			rev := ""
-			if fm.InputRev != nil {
-				rev = *fm.InputRev
-			}
-			lines := fm.ResultCount()
-			addRepoFilter(fm.RepoResolver, rev, lines)
-			addLangFilter(fm.path(), lines, fm.LimitHit())
-			addFileFilter(fm.path(), lines, fm.LimitHit())
 
-			if len(fm.FileMatch.Symbols) > 0 {
-				s.filters.Add("type:symbol", "type:symbol", 1, fm.LimitHit(), "symbol")
+	for _, match := range event.Results {
+		switch v := match.(type) {
+		case *result.FileMatch:
+			rev := ""
+			if v.InputRev != nil {
+				rev = *v.InputRev
 			}
-		} else if r, ok := result.ToRepository(); ok {
+			lines := int32(v.ResultCount())
+			addRepoFilter(v.Repo.Name, v.Repo.ID, rev, lines)
+			addLangFilter(v.Path, lines, v.LimitHit)
+			addFileFilter(v.Path, lines, v.LimitHit)
+
+			if len(v.Symbols) > 0 {
+				s.filters.Add("type:symbol", "type:symbol", 1, v.LimitHit, "symbol")
+			}
+		case *result.RepoMatch:
 			// It should be fine to leave this blank since revision specifiers
 			// can only be used with the 'repo:' scope. In that case,
 			// we shouldn't be getting any repositoy name matches back.
-			addRepoFilter(r, "", 1)
+			addRepoFilter(v.Name, v.ID, "", 1)
 		}
 	}
 }

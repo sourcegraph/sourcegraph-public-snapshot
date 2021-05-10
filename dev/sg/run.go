@@ -172,8 +172,16 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 		c.Env = makeEnv(conf.Env, cmd.Env)
 
 		logger := newCmdLogger(cmd.Name, out)
-		c.Stdout = logger
-		c.Stderr = logger
+		if cmd.IgnoreStdout {
+			out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
+		} else {
+			c.Stdout = logger
+		}
+		if cmd.IgnoreStderr {
+			out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
+		} else {
+			c.Stderr = logger
+		}
 
 		if err := c.Start(); err != nil {
 			return err
@@ -229,6 +237,12 @@ func makeEnv(envs ...map[string]string) []string {
 			// TODO: using range to iterate over the env is not stable and thus
 			// this won't work
 			expanded := os.Expand(v, func(lookup string) string {
+				// If we're looking up the key that we're trying to define, we
+				// skip the self-reference and look in the OS
+				if lookup == k {
+					return os.Getenv(lookup)
+				}
+
 				if e, ok := env[lookup]; ok {
 					return e
 				}
@@ -330,21 +344,33 @@ func watch() (<-chan string, error) {
 	return paths, nil
 }
 
-func runTest(ctx context.Context, cmd Command) error {
+func runTest(ctx context.Context, cmd Command, args []string) error {
 	root, err := root.RepositoryRoot()
 	if err != nil {
 		return err
 	}
 
-	out.WriteLine(output.Linef("", output.StylePending, "Starting testsuite %s", cmd.Name))
-	out.WriteLine(output.Linef("", output.StylePending, "Running %q in %q...", cmd.Cmd, root))
+	out.WriteLine(output.Linef("", output.StylePending, "Starting testsuite %q.", cmd.Name))
+	if len(args) != 0 {
+		out.WriteLine(output.Linef("", output.StylePending, "\tAdditional arguments: %s", args))
+	}
 	commandCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	c := exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
+	cmdArgs := []string{cmd.Cmd}
+	if len(args) != 0 {
+		cmdArgs = append(cmdArgs, args...)
+	} else {
+		cmdArgs = append(cmdArgs, cmd.DefaultArgs)
+	}
+
+	c := exec.CommandContext(commandCtx, "bash", "-c", strings.Join(cmdArgs, " "))
 	c.Dir = root
 	c.Env = makeEnv(conf.Env, cmd.Env)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
+
+	out.WriteLine(output.Linef("", output.StylePending, "Running %s in %q...", c, root))
+
 	return c.Run()
 }

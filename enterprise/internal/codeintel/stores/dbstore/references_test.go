@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -14,11 +13,11 @@ func TestUpdatePackageReferences(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	// for foreign key relation
-	insertUploads(t, dbconn.Global, Upload{ID: 42})
+	insertUploads(t, db, Upload{ID: 42})
 
 	if err := store.UpdatePackageReferences(context.Background(), 42, []semantic.PackageReference{
 		{Scheme: "s0", Name: "n0", Version: "v0"},
@@ -35,7 +34,7 @@ func TestUpdatePackageReferences(t *testing.T) {
 		t.Fatalf("unexpected error updating references: %s", err)
 	}
 
-	count, _, err := basestore.ScanFirstInt(dbconn.Global.Query("SELECT COUNT(*) FROM lsif_references"))
+	count, _, err := basestore.ScanFirstInt(db.Query("SELECT COUNT(*) FROM lsif_references"))
 	if err != nil {
 		t.Fatalf("unexpected error checking reference count: %s", err)
 	}
@@ -48,14 +47,14 @@ func TestUpdatePackageReferencesEmpty(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	if err := store.UpdatePackageReferences(context.Background(), 0, nil); err != nil {
 		t.Fatalf("unexpected error updating references: %s", err)
 	}
 
-	count, _, err := basestore.ScanFirstInt(dbconn.Global.Query("SELECT COUNT(*) FROM lsif_references"))
+	count, _, err := basestore.ScanFirstInt(db.Query("SELECT COUNT(*) FROM lsif_references"))
 	if err != nil {
 		t.Fatalf("unexpected error checking reference count: %s", err)
 	}
@@ -68,11 +67,11 @@ func TestUpdatePackageReferencesWithDuplicates(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	// for foreign key relation
-	insertUploads(t, dbconn.Global, Upload{ID: 42})
+	insertUploads(t, db, Upload{ID: 42})
 
 	if err := store.UpdatePackageReferences(context.Background(), 42, []semantic.PackageReference{
 		{Scheme: "s0", Name: "n0", Version: "v0"},
@@ -96,7 +95,7 @@ func TestUpdatePackageReferencesWithDuplicates(t *testing.T) {
 		t.Fatalf("unexpected error updating references: %s", err)
 	}
 
-	count, _, err := basestore.ScanFirstInt(dbconn.Global.Query("SELECT COUNT(*) FROM lsif_references"))
+	count, _, err := basestore.ScanFirstInt(db.Query("SELECT COUNT(*) FROM lsif_references"))
 	if err != nil {
 		t.Fatalf("unexpected error checking reference count: %s", err)
 	}

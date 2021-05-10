@@ -28,6 +28,7 @@ describe('ExtensionToggle', () => {
                         enabled={false}
                         settingsCascade={{ final: { extensions: {} }, subjects: [SUBJECT] }}
                         platformContext={NOOP_PLATFORM_CONTEXT}
+                        subject={SUBJECT.subject}
                     />
                 )
                 .toJSON()
@@ -43,6 +44,7 @@ describe('ExtensionToggle', () => {
                         enabled={true}
                         settingsCascade={{ final: { extensions: { 'x/y': true } }, subjects: [SUBJECT] }}
                         platformContext={NOOP_PLATFORM_CONTEXT}
+                        subject={SUBJECT.subject}
                     />
                 )
                 .toJSON()
@@ -58,6 +60,7 @@ describe('ExtensionToggle', () => {
                         enabled={false}
                         settingsCascade={{ final: { extensions: { 'x/y': false } }, subjects: [SUBJECT] }}
                         platformContext={NOOP_PLATFORM_CONTEXT}
+                        subject={SUBJECT.subject}
                     />
                 )
                 .toJSON()

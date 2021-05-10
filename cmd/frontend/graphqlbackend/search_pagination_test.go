@@ -50,7 +50,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 		id := name[len(name)-1] - '0'
 		return types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
-	result := mkFileMatch
+	result := mkFileMatchResolver
 	format := func(r slicedSearchResults) string {
 		var b bytes.Buffer
 		fmt.Fprintln(&b, "results:")
@@ -261,7 +261,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		return types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
 	result := func(db dbutil.DB, repo types.RepoName, path, rev string) *FileMatchResolver {
-		fm := mkFileMatch(db, repo, path)
+		fm := mkFileMatchResolver(db, repo, path)
 		fm.InputRev = &rev
 		return fm
 	}
@@ -473,7 +473,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 		id := name[len(name)-1] - '0'
 		return types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
-	result := mkFileMatch
+	result := mkFileMatchResolver
 	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
 			Repo: repoName(name),
@@ -593,7 +593,7 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 		id := name[len(name)-1] - 'a' + 1
 		return types.RepoName{ID: api.RepoID(id), Name: api.RepoName(name)}
 	}
-	result := mkFileMatch
+	result := mkFileMatchResolver
 	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
 			Repo: repoName(name),

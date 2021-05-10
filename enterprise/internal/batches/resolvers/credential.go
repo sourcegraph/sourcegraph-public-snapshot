@@ -118,8 +118,13 @@ func (c *batchChangesSiteCredentialResolver) ExternalServiceURL() string {
 }
 
 func (c *batchChangesSiteCredentialResolver) SSHPublicKey(ctx context.Context) (*string, error) {
-	if a, ok := c.credential.Credential.(auth.AuthenticatorWithSSH); ok {
-		publicKey := a.SSHPublicKey()
+	a, err := c.credential.Authenticator(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "decrypting authenticator")
+	}
+
+	if ssh, ok := a.(auth.AuthenticatorWithSSH); ok {
+		publicKey := ssh.SSHPublicKey()
 		return &publicKey, nil
 	}
 	return nil, nil

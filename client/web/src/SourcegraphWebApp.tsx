@@ -50,7 +50,12 @@ import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
 import { VersionContext } from './schema/site.schema'
-import { resolveVersionContext, parseSearchURL, getAvailableSearchContextSpecOrDefault } from './search'
+import {
+    resolveVersionContext,
+    parseSearchURL,
+    getAvailableSearchContextSpecOrDefault,
+    isSearchContextSpecAvailable,
+} from './search'
 import {
     search,
     fetchSavedSearches,
@@ -58,6 +63,8 @@ import {
     fetchRecentFileViews,
     fetchAutoDefinedSearchContexts,
     fetchSearchContexts,
+    convertVersionContextToSearchContext,
+    fetchSearchContext,
 } from './search/backend'
 import { QueryState } from './search/helpers'
 import { aggregateStreamingSearch } from './search/stream'
@@ -504,6 +511,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
                                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                                     fetchSearchContexts={fetchSearchContexts}
+                                    fetchSearchContext={fetchSearchContext}
+                                    convertVersionContextToSearchContext={convertVersionContextToSearchContext}
+                                    isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                                     defaultSearchContextSpec={this.state.defaultSearchContextSpec}
                                     showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                     globbing={this.state.globbing}
