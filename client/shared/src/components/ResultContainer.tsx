@@ -86,7 +86,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
 }) => {
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
 
-    useEffect(() => setExpanded(allExpanded), [allExpanded])
+    useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
 
     const toggle = (): void => setExpanded(expanded => !expanded)
 
