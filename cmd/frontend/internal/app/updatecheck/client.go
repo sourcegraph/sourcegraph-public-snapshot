@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -245,7 +244,7 @@ func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db dbutil.DB) (_ 
 	return json.Marshal(codeMonitoringUsage)
 }
 
-func getDependencyVersions(ctx context.Context, logFunc func(string, ...interface{})) (json.RawMessage, error) {
+func getDependencyVersions(ctx context.Context, db dbutil.DB, logFunc func(string, ...interface{})) (json.RawMessage, error) {
 	var (
 		err error
 		dv  dependencyVersions
@@ -263,7 +262,7 @@ func getDependencyVersions(ctx context.Context, logFunc func(string, ...interfac
 	}
 
 	// get postgres version
-	err = dbconn.Global.QueryRowContext(ctx, "SHOW server_version").Scan(&dv.PostgresVersion)
+	err = db.QueryRowContext(ctx, "SHOW server_version").Scan(&dv.PostgresVersion)
 	if err != nil {
 		logFunc("updatecheck.getDependencyVersions: unable to get Postgres version", "error", err)
 	}
@@ -342,7 +341,7 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 		logFunc("telemetry: database.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
 
-	r.DependencyVersions, err = getDependencyVersions(ctx, logFunc)
+	r.DependencyVersions, err = getDependencyVersions(ctx, db, logFunc)
 	if err != nil {
 		logFunc("telemetry: getDependencyVersions failed", "error", err)
 	}
