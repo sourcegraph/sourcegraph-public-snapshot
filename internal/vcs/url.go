@@ -30,8 +30,8 @@ import (
 // If none of these rules apply, Parse returns an error.
 //
 // Code copied and modified from github.com/whilp/git-urls to support perforce scheme.
-func ParseURL(rawurl string) (u *url.URL, err error) {
-	parsers := []func(string) (*url.URL, error){
+func ParseURL(rawurl string) (u *URL, err error) {
+	parsers := []func(string) (*URL, error){
 		parseScheme,
 		parseScp,
 		parseLocal,
@@ -48,7 +48,7 @@ func ParseURL(rawurl string) (u *url.URL, err error) {
 
 	// It's unlikely that none of the parsers will succeed, since
 	// ParseLocal is very forgiving.
-	return new(url.URL), fmt.Errorf("failed to parse %q", rawurl)
+	return new(URL), fmt.Errorf("failed to parse %q", rawurl)
 }
 
 var schemes = map[string]struct{}{
@@ -64,7 +64,7 @@ var schemes = map[string]struct{}{
 	"perforce": {},
 }
 
-func parseScheme(rawurl string) (*url.URL, error) {
+func parseScheme(rawurl string) (*URL, error) {
 	u, err := url.Parse(rawurl)
 	if err != nil {
 		return nil, err
@@ -74,7 +74,7 @@ func parseScheme(rawurl string) (*url.URL, error) {
 		return nil, fmt.Errorf("scheme %q is not a valid transport", u.Scheme)
 	}
 
-	return u, nil
+	return &URL{URL: *u}, nil
 }
 
 const (
@@ -93,7 +93,7 @@ var scpSyntax = regexp.MustCompile(fmt.Sprintf(`^%s?%s:%s$`, usernameRe, urlRe, 
 
 // parseScp parses rawurl into a URL object. The rawurl must be
 // an SCP-like URL, otherwise ParseScp returns an error.
-func parseScp(rawurl string) (*url.URL, error) {
+func parseScp(rawurl string) (*URL, error) {
 	match := scpSyntax.FindAllStringSubmatch(rawurl, -1)
 	if len(match) == 0 {
 		return nil, fmt.Errorf("no scp URL found in %q", rawurl)
@@ -108,21 +108,49 @@ func parseScp(rawurl string) (*url.URL, error) {
 	if len(m) > 3 {
 		rawquery = m[4]
 	}
-	return &url.URL{
-		Scheme:   "ssh",
+	return &URL{URL: url.URL{
 		User:     userinfo,
 		Host:     m[2],
 		Path:     m[3],
 		RawQuery: rawquery,
-	}, nil
+	}}, nil
 }
 
 // parseLocal parses rawurl into a URL object with a "file"
 // scheme. This will effectively never return an error.
-func parseLocal(rawurl string) (*url.URL, error) {
-	return &url.URL{
+func parseLocal(rawurl string) (*URL, error) {
+	return &URL{URL: url.URL{
 		Scheme: "file",
 		Host:   "",
 		Path:   rawurl,
-	}, nil
+	}}, nil
+}
+
+type URL struct {
+	url.URL
+}
+
+func (u *URL) String() string {
+	if u.Scheme != "" {
+		return u.URL.String()
+	}
+	var buf strings.Builder
+	if u.User != nil {
+		buf.WriteString(u.User.String())
+		buf.WriteByte('@')
+	}
+	if h := u.Host; h != "" {
+		buf.WriteString(h)
+		buf.WriteByte(':')
+	}
+	buf.WriteString(u.EscapedPath())
+	if u.RawQuery != "" {
+		buf.WriteByte('?')
+		buf.WriteString(u.RawQuery)
+	}
+	if u.Fragment != "" {
+		buf.WriteByte('#')
+		buf.WriteString(u.EscapedFragment())
+	}
+	return buf.String()
 }

@@ -10,7 +10,7 @@ import (
 func TestParseURL(t *testing.T) {
 	type parseURLTest struct {
 		in      string
-		wantURL *url.URL
+		wantURL *URL
 		wantStr string // expected result of reserializing the URL; empty means same as "in".
 	}
 
@@ -32,13 +32,13 @@ func TestParseURL(t *testing.T) {
 
 		return &parseURLTest{
 			in: in,
-			wantURL: &url.URL{
+			wantURL: &URL{URL: url.URL{
 				Scheme:   scheme,
 				Host:     host,
 				Path:     path,
 				User:     userinfo,
 				RawQuery: rawquery,
-			},
+			}},
 			wantStr: str,
 		}
 	}
@@ -47,23 +47,23 @@ func TestParseURL(t *testing.T) {
 	tests := []*parseURLTest{
 		newParseURLTest(
 			"user@host.xz:path/to/repo.git/",
-			"ssh", "user", "host.xz", "path/to/repo.git/",
-			"ssh://user@host.xz/path/to/repo.git/", "",
+			"", "user", "host.xz", "path/to/repo.git/",
+			"user@host.xz:path/to/repo.git/", "",
 		),
 		newParseURLTest(
 			"host.xz:path/to/repo.git/",
-			"ssh", "", "host.xz", "path/to/repo.git/",
-			"ssh://host.xz/path/to/repo.git/", "",
+			"", "", "host.xz", "path/to/repo.git/",
+			"host.xz:path/to/repo.git/", "",
 		),
 		newParseURLTest(
 			"host.xz:/path/to/repo.git/",
-			"ssh", "", "host.xz", "/path/to/repo.git/",
-			"ssh://host.xz/path/to/repo.git/", "",
+			"", "", "host.xz", "/path/to/repo.git/",
+			"host.xz:/path/to/repo.git/", "",
 		),
 		newParseURLTest(
 			"host.xz:path/to/repo-with_specials.git/",
-			"ssh", "", "host.xz", "path/to/repo-with_specials.git/",
-			"ssh://host.xz/path/to/repo-with_specials.git/", "",
+			"", "", "host.xz", "path/to/repo-with_specials.git/",
+			"host.xz:path/to/repo-with_specials.git/", "",
 		),
 		newParseURLTest(
 			"git://host.xz/path/to/repo.git/",
@@ -158,13 +158,13 @@ func TestParseURL(t *testing.T) {
 		),
 		newParseURLTest(
 			"git@host.xz:organization/repo.git?ref=test",
-			"ssh", "git", "host.xz", "organization/repo.git",
-			"ssh://git@host.xz/organization/repo.git?ref=test", "ref=test",
+			"", "git", "host.xz", "organization/repo.git",
+			"git@host.xz:organization/repo.git?ref=test", "ref=test",
 		),
 		newParseURLTest(
 			"git@host.xz:organization/repo.git?ref=feature/test",
-			"ssh", "git", "host.xz", "organization/repo.git",
-			"ssh://git@host.xz/organization/repo.git?ref=feature/test", "ref=feature/test",
+			"", "git", "host.xz", "organization/repo.git",
+			"git@host.xz:organization/repo.git?ref=feature/test", "ref=feature/test",
 		),
 		// Tests with user+password and some with query strings
 		newParseURLTest(
@@ -184,18 +184,18 @@ func TestParseURL(t *testing.T) {
 		),
 		newParseURLTest(
 			"user-1234@host.xz:path/to/repo.git/",
-			"ssh", "user-1234", "host.xz", "path/to/repo.git/",
-			"ssh://user-1234@host.xz/path/to/repo.git/", "",
+			"", "user-1234", "host.xz", "path/to/repo.git/",
+			"user-1234@host.xz:path/to/repo.git/", "",
 		),
 		newParseURLTest(
 			"user@host.xz:path/to/repo@domain.git/",
-			"ssh", "user", "host.xz", "path/to/repo@domain.git/",
-			"ssh://user@host.xz/path/to/repo@domain.git/", "",
+			"", "user", "host.xz", "path/to/repo@domain.git/",
+			"user@host.xz:path/to/repo@domain.git/", "",
 		),
 		newParseURLTest(
 			"sourcegraph@gitolite.company.internal:service-config/runtime@east-cluster/action@test-5524",
-			"ssh", "sourcegraph", "gitolite.company.internal", "service-config/runtime@east-cluster/action@test-5524",
-			"ssh://sourcegraph@gitolite.company.internal/service-config/runtime@east-cluster/action@test-5524", "",
+			"", "sourcegraph", "gitolite.company.internal", "service-config/runtime@east-cluster/action@test-5524",
+			"sourcegraph@gitolite.company.internal:service-config/runtime@east-cluster/action@test-5524", "",
 		),
 
 		newParseURLTest(
