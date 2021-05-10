@@ -25,7 +25,6 @@ export class SearchResult extends React.Component<Props> {
                         ? this.props.result.label.html
                         : renderMarkdown(this.props.result.label.text)
                 }
-                history={this.props.history}
             />
             {this.props.result.detail && (
                 <>
@@ -36,7 +35,6 @@ export class SearchResult extends React.Component<Props> {
                                 ? this.props.result.detail.html
                                 : renderMarkdown(this.props.result.detail.text)
                         }
-                        history={this.props.history}
                     />
                 </>
             )}
