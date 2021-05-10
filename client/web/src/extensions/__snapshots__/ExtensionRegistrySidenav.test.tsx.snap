@@ -2,7 +2,7 @@
 
 exports[`ExtensionsQueryInputToolbar renders 1`] = `
 <div
-  className="column mr-3"
+  className="column mr-4 flex-grow-0 flex-shrink-0"
 >
   <div
     className="d-flex flex-column"
@@ -53,7 +53,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
       Code editors
     </button>
     <button
-      className="btn text-left"
+      className="btn text-left btn-primary"
       data-test-extension-category="Code analysis"
       onClick={[Function]}
       type="button"

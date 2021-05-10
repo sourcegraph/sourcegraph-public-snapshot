@@ -37,7 +37,7 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
     const showDisabled = useCallback(() => setEnablementFilter('disabled'), [setEnablementFilter])
 
     return (
-        <div className={classnames(styles.column, 'mr-3')}>
+        <div className={classnames(styles.column, 'mr-4 flex-grow-0 flex-shrink-0')}>
             <div className="d-flex flex-column">
                 <h3 className={classnames(styles.header, 'mb-3')}>Categories</h3>
 
