@@ -44,13 +44,7 @@ type MatchSender interface {
 func SearchEventToSearchMatchEvent(se SearchEvent) SearchMatchEvent {
 	matches := make([]result.Match, 0, len(se.Results))
 	for _, resolver := range se.Results {
-		if fmr, ok := resolver.ToFileMatch(); ok {
-			matches = append(matches, &fmr.FileMatch)
-		} else if rr, ok := resolver.ToRepository(); ok {
-			matches = append(matches, &rr.RepoMatch)
-		} else if csr, ok := resolver.ToCommitSearchResult(); ok {
-			matches = append(matches, &csr.CommitMatch)
-		}
+		matches = append(matches, resolver.toMatch())
 	}
 	return SearchMatchEvent{
 		Results: matches,

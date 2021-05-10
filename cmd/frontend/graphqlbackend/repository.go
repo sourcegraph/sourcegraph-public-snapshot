@@ -91,6 +91,10 @@ func RepositoryByIDInt32(ctx context.Context, db dbutil.DB, repoID api.RepoID) (
 	return NewRepositoryResolver(db, repo), nil
 }
 
+func (r *RepositoryResolver) toMatch() result.Match {
+	return &r.RepoMatch
+}
+
 func (r *RepositoryResolver) ID() graphql.ID {
 	return MarshalRepositoryID(r.IDInt32())
 }

@@ -54,6 +54,10 @@ func (r *CommitSearchResultResolver) Select(path filter.SelectPath) SearchResult
 	return nil
 }
 
+func (r *CommitSearchResultResolver) toMatch() result.Match {
+	return &r.CommitMatch
+}
+
 func (r *CommitSearchResultResolver) Commit() *GitCommitResolver {
 	r.gitCommitOnce.Do(func() {
 		if r.gitCommitResolver != nil {
