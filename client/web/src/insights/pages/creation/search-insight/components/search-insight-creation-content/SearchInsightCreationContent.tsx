@@ -51,10 +51,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
 
     const { formAPI, ref, handleSubmit } = useForm<CreateInsightFormFields>({
         initialValues: initialValue,
-        onSubmit,
-        onChange: values => {
-            console.log('next values', values)
-        },
+        onSubmit
     })
 
     // We can't have two or more insights with the same name, since we rely on name as on id of insights.
