@@ -1,0 +1,11 @@
+
+.content {
+    display: flex;
+    flex-wrap: wrap;
+
+    &__form {
+        order: 1;
+        flex-grow: 1;
+        flex-basis: 25rem;
+    }
+}

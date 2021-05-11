@@ -16,10 +16,7 @@ import { FORM_ERROR } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
 import { InsightTypeSuffix } from '../../../core/types'
 
-import {
-    LangStatsInsightCreationForm,
-    LangStatsInsightCreationFormProps,
-} from './components/lang-stats-insight-creation-form/LangStatsInsightCreationForm'
+import { LangStatsInsightCreationContent, LangStatsInsightCreationContentProps } from './components/lang-stats-insight-creation-content/LangStatsInsightCreationContent';
 import styles from './LangStatsInsightCreationPage.module.scss'
 
 const DEFAULT_FINAL_SETTINGS = {}
@@ -45,7 +42,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
     const { history, authenticatedUser, settingsCascade, platformContext } = props
     const { getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
 
-    const handleSubmit = useCallback<LangStatsInsightCreationFormProps['onSubmit']>(
+    const handleSubmit = useCallback<LangStatsInsightCreationContentProps['onSubmit']>(
         async values => {
             if (!authenticatedUser) {
                 return
@@ -121,7 +118,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                 </p>
             </div>
 
-            <LangStatsInsightCreationForm
+            <LangStatsInsightCreationContent
                 className="pb-5"
                 settings={settingsCascade.final ?? DEFAULT_FINAL_SETTINGS}
                 onSubmit={handleSubmit}
