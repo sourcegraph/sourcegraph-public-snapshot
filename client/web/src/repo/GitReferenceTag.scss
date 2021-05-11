@@ -30,5 +30,6 @@
         @extend .badge;
         // TODO: Update when we have specific badge font-sizes. Issue: https://github.com/sourcegraph/sourcegraph/issues/20675
         font-size: 0.75rem;
+        display: inline-flex;
     }
 }
