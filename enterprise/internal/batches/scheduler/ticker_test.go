@@ -75,8 +75,9 @@ func TestTickerRateLimited(t *testing.T) {
 	c <- time.Duration(0)
 
 	c = <-ticker.C
-	if have, want := time.Since(now), 10*time.Millisecond; have < want {
-		t.Errorf("unexpectedly short delay between takes: have=%v want>=%v", have, want)
+	have := time.Since(now)
+	if wantMin, wantMax := 9*time.Millisecond, 11*time.Millisecond; have < wantMin || have > wantMax {
+		t.Errorf("unexpectedly short delay between takes: have=%v want >=%v && <=%v", have, wantMin, wantMax)
 	}
 	c <- time.Duration(0)
 
