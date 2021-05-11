@@ -1,5 +1,5 @@
 import * as H from 'history'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
@@ -277,7 +277,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                         location={this.props.location}
                         locations={of(visibleLocations)}
                         onSelect={this.props.onSelectLocation}
-                        icon={SourceRepositoryIcon}
+                        icon={FileDocumentIcon}
                         isLightTheme={this.props.isLightTheme}
                         fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
                         settingsCascade={this.props.settingsCascade}
