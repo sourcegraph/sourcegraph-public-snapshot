@@ -297,13 +297,14 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) error {
 	batchCompletePending(pending, fmt.Sprintf("Found %d workspaces with steps to execute", len(tasks)))
 
 	execOpts := executor.Opts{
-		CacheDir:    opts.flags.cacheDir,
-		ClearCache:  opts.flags.clearCache,
-		Creator:     workspaceCreator,
-		Parallelism: opts.flags.parallelism,
-		Timeout:     opts.flags.timeout,
-		KeepLogs:    opts.flags.keepLogs,
-		TempDir:     opts.flags.tempDir,
+		CacheDir:      opts.flags.cacheDir,
+		ClearCache:    opts.flags.clearCache,
+		CleanArchives: opts.flags.cleanArchives,
+		Creator:       workspaceCreator,
+		Parallelism:   opts.flags.parallelism,
+		Timeout:       opts.flags.timeout,
+		KeepLogs:      opts.flags.keepLogs,
+		TempDir:       opts.flags.tempDir,
 	}
 
 	p := newBatchProgressPrinter(opts.out, *verbose, opts.flags.parallelism)
