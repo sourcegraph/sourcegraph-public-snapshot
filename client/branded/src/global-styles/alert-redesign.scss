@@ -68,17 +68,15 @@
     }
 
     .alert-secondary {
-        // TODO: use root color palette CSS variable: https://github.com/sourcegraph/sourcegraph/issues/20665
-        --alert-secondary-color: var(--icon-color);
-        --alert-border-color: var(--alert-secondary-color);
+        --alert-border-color: var(--gray-06);
         --alert-icon-background-color: var(--secondary-4);
 
         @include theme-light-rules {
-            --alert-icon-color: var(--alert-secondary-color);
+            --alert-icon-color: var(--gray-06);
         }
 
         @include theme-dark-rules {
-            --alert-icon-color: var(--alert-secondary-color);
+            --alert-icon-color: var(--gray-05);
         }
     }
 
