@@ -58,19 +58,11 @@ export const logEvent = (
             mutation logEvent(
                 $name: String!
                 $userCookieID: String!
-                $firstSourceURL: String!
                 $url: String!
                 $source: EventSource!
                 $argument: String
             ) {
-                logEvent(
-                    event: $name
-                    userCookieID: $userCookieID
-                    firstSourceURL: $firstSourceURL
-                    url: $url
-                    source: $source
-                    argument: $argument
-                ) {
+                logEvent(event: $name, userCookieID: $userCookieID, url: $url, source: $source, argument: $argument) {
                     alwaysNil
                 }
             }
