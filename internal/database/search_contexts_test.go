@@ -641,6 +641,14 @@ func reverseSearchContextsSlice(s []*types.SearchContext) []*types.SearchContext
 	return copySlice
 }
 
+func getSearchContextNames(s []*types.SearchContext) []string {
+	names := make([]string, 0, len(s))
+	for _, sc := range s {
+		names = append(names, sc.Name)
+	}
+	return names
+}
+
 func TestSearchContexts_OrderBy(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	internalCtx := actor.WithInternalActor(context.Background())
@@ -698,43 +706,43 @@ func TestSearchContexts_OrderBy(t *testing.T) {
 	searchContextsOrderedByUpdatedAt := []*types.SearchContext{searchContexts[0], searchContexts[2], searchContexts[4], searchContexts[1], searchContexts[3], searchContexts[5]}
 
 	tests := []struct {
-		name               string
-		orderBy            SearchContextsOrderByOption
-		descending         bool
-		wantSearchContexts []*types.SearchContext
+		name                   string
+		orderBy                SearchContextsOrderByOption
+		descending             bool
+		wantSearchContextNames []string
 	}{
 		{
-			name:               "order by id",
-			orderBy:            SearchContextsOrderByID,
-			wantSearchContexts: searchContexts,
+			name:                   "order by id",
+			orderBy:                SearchContextsOrderByID,
+			wantSearchContextNames: getSearchContextNames(searchContexts),
 		},
 		{
-			name:               "order by spec",
-			orderBy:            SearchContextsOrderBySpec,
-			wantSearchContexts: searchContextsOrderedBySpec,
+			name:                   "order by spec",
+			orderBy:                SearchContextsOrderBySpec,
+			wantSearchContextNames: getSearchContextNames(searchContextsOrderedBySpec),
 		},
 		{
-			name:               "order by updated at",
-			orderBy:            SearchContextsOrderByUpdatedAt,
-			wantSearchContexts: searchContextsOrderedByUpdatedAt,
+			name:                   "order by updated at",
+			orderBy:                SearchContextsOrderByUpdatedAt,
+			wantSearchContextNames: getSearchContextNames(searchContextsOrderedByUpdatedAt),
 		},
 		{
-			name:               "order by id descending",
-			orderBy:            SearchContextsOrderByID,
-			descending:         true,
-			wantSearchContexts: reverseSearchContextsSlice(searchContexts),
+			name:                   "order by id descending",
+			orderBy:                SearchContextsOrderByID,
+			descending:             true,
+			wantSearchContextNames: getSearchContextNames(reverseSearchContextsSlice(searchContexts)),
 		},
 		{
-			name:               "order by spec descending",
-			orderBy:            SearchContextsOrderBySpec,
-			descending:         true,
-			wantSearchContexts: reverseSearchContextsSlice(searchContextsOrderedBySpec),
+			name:                   "order by spec descending",
+			orderBy:                SearchContextsOrderBySpec,
+			descending:             true,
+			wantSearchContextNames: getSearchContextNames(reverseSearchContextsSlice(searchContextsOrderedBySpec)),
 		},
 		{
-			name:               "order by updated at descending",
-			orderBy:            SearchContextsOrderByUpdatedAt,
-			descending:         true,
-			wantSearchContexts: reverseSearchContextsSlice(searchContextsOrderedByUpdatedAt),
+			name:                   "order by updated at descending",
+			orderBy:                SearchContextsOrderByUpdatedAt,
+			descending:             true,
+			wantSearchContextNames: getSearchContextNames(reverseSearchContextsSlice(searchContextsOrderedByUpdatedAt)),
 		},
 	}
 
@@ -744,8 +752,9 @@ func TestSearchContexts_OrderBy(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !reflect.DeepEqual(tt.wantSearchContexts, gotSearchContexts) {
-				t.Fatalf("wanted %+v search contexts, got %+v", tt.wantSearchContexts, gotSearchContexts)
+			gotSearchContextNames := getSearchContextNames(gotSearchContexts)
+			if !reflect.DeepEqual(tt.wantSearchContextNames, gotSearchContextNames) {
+				t.Fatalf("wanted %+v search contexts, got %+v", tt.wantSearchContextNames, gotSearchContextNames)
 			}
 		})
 	}
