@@ -1,4 +1,4 @@
-@import '../../global-styles/breakpoints';
+@import 'wildcard/src/global-styles/breakpoints.scss';
 
 .item {
     display: flex;
@@ -10,7 +10,7 @@
     &:last-child {
         margin-right: 0;
     }
-    @include media-breakpoint-down(sm) {
+    @media (--md-breakpoint-down) {
         margin: 0;
         &:first-of-type {
             .link {
