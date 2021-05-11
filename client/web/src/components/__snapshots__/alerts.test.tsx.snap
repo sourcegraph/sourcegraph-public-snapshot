@@ -5,7 +5,7 @@ exports[`ErrorAlert should add a prefix if given 1`] = `
   className="alert alert-danger"
 >
   <AlertCircleIcon
-    className="icon icon-inline"
+    className="redesign-d-none icon icon-inline"
   />
    
   <strong>
@@ -48,7 +48,7 @@ exports[`ErrorAlert should render a Go multierror nicely 1`] = `
   className="alert alert-danger"
 >
   <AlertCircleIcon
-    className="icon icon-inline"
+    className="redesign-d-none icon icon-inline"
   />
    
    
@@ -72,7 +72,7 @@ exports[`ErrorAlert should render an Error object as an alert 1`] = `
   className="alert alert-danger"
 >
   <AlertCircleIcon
-    className="icon icon-inline"
+    className="redesign-d-none icon icon-inline"
   />
    
    

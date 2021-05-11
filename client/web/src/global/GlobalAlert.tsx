@@ -20,7 +20,7 @@ export const GlobalAlert: React.FunctionComponent<{ alert: GQL.IAlert; className
     const Icon = alertIconForType(alert.type)
     const content = (
         <>
-            <Icon className="icon-inline mr-2 flex-shrink-0" />
+            <Icon className="redesign-d-none icon-inline mr-2 flex-shrink-0" />
             <Markdown dangerousInnerHTML={renderMarkdown(alert.message)} />
         </>
     )

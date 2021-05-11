@@ -28,7 +28,7 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
 }) => (
     <div className="alert alert-info m-2" data-testid="alert-container">
         <h3>
-            <AlertCircleIcon className="icon-inline" /> {alert.title}
+            <AlertCircleIcon className="redesign-d-none icon-inline" /> {alert.title}
         </h3>
 
         {alert.description && (
