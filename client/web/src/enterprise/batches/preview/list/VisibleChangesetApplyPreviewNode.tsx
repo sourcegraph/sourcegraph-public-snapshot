@@ -433,13 +433,15 @@ const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyP
     if (spec.targets.__typename === 'VisibleApplyPreviewTargetsAttach') {
         return <h3>{spec.targets.changesetSpec.description.title}</h3>
     }
+    const useStrikethrough = spec.operations.length === 0 || spec.delta.titleChanged
+
     // default, spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate'
     const linkOrSpan = (
         <LinkOrSpan
             to={spec.targets.changeset.externalURL?.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="mr-2"
+            className={`mr-2 ${useStrikethrough ? 'text-muted' : ''}`}
         >
             {spec.targets.changeset.title}
             {spec.targets.changeset.externalID && <> (#{spec.targets.changeset.externalID}) </>}
@@ -455,7 +457,8 @@ const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyP
     if (spec.operations.length > 0 || spec.delta.titleChanged) {
         return (
             <h3>
-                <del className="text-muted">{linkOrSpan}</del>
+                <del>{linkOrSpan}</del>
+                {spec.targets.changesetSpec.description.title}
             </h3>
         )
     }
