@@ -1,4 +1,3 @@
-
 export interface LangStatsCreationFormFields {
     title: string
     repository: string

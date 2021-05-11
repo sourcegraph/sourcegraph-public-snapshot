@@ -1,3 +1,4 @@
+@import 'wildcard/src/global-styles/breakpoints';
 
 .content {
     display: flex;
@@ -7,5 +8,31 @@
         order: 1;
         flex-grow: 1;
         flex-basis: 25rem;
+    }
+
+    &__live-preview {
+        order: 2;
+
+        position: sticky;
+        top: 1rem;
+        padding-left: 1rem;
+
+        flex-basis: 25rem;
+        flex-shrink: 0;
+        height: 20rem;
+    }
+
+    @media (--md-breakpoint-down) {
+        &__live-preview {
+            order: 1;
+            flex-basis: 100%;
+            padding-left: 0;
+            margin-bottom: 2rem;
+            position: static;
+        }
+
+        &__form {
+            order: 2;
+        }
     }
 }

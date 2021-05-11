@@ -337,6 +337,7 @@
     "is-absolute-url": "^3.0.3",
     "iterare": "^1.2.1",
     "js-cookie": "^2.2.1",
+    "linguist-languages": "^7.14.0",
     "lodash": "^4.17.20",
     "marked": "^1.2.7",
     "mdi-react": "^7.3.0",

@@ -1,6 +1,7 @@
 import { of, throwError } from 'rxjs'
 
 import { getCombinedViews, getInsightCombinedViews } from './api/get-combined-views'
+import { getLangStatsInsightContent } from './api/get-lang-stats-insight-content'
 import { getSearchInsightContent } from './api/get-search-insight-content'
 import { getSubjectSettings, updateSubjectSettings } from './api/subject-settings'
 import { ApiService } from './types'
@@ -14,6 +15,7 @@ export const createInsightAPI = (): ApiService => ({
     getSubjectSettings,
     updateSubjectSettings,
     getSearchInsightContent,
+    getLangStatsInsightContent,
 })
 
 /**
@@ -26,5 +28,6 @@ export const createMockInsightAPI = (overrideRequests: Partial<ApiService>): Api
     getSubjectSettings: () => throwError(new Error('Implement getSubjectSettings handler first')),
     updateSubjectSettings: () => throwError(new Error('Implement getSubjectSettings handler first')),
     getSearchInsightContent: () => Promise.reject(new Error('Implement getSubjectSettings handler first')),
+    getLangStatsInsightContent: () => Promise.reject(new Error('Implement getLangStatsInsightContent handler first')),
     ...overrideRequests,
 })

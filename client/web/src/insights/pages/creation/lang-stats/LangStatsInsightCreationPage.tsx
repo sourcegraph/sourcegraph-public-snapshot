@@ -16,7 +16,10 @@ import { FORM_ERROR } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
 import { InsightTypeSuffix } from '../../../core/types'
 
-import { LangStatsInsightCreationContent, LangStatsInsightCreationContentProps } from './components/lang-stats-insight-creation-content/LangStatsInsightCreationContent';
+import {
+    LangStatsInsightCreationContent,
+    LangStatsInsightCreationContentProps,
+} from './components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
 import styles from './LangStatsInsightCreationPage.module.scss'
 
 const DEFAULT_FINAL_SETTINGS = {}
@@ -100,7 +103,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
     }
 
     return (
-        <Page className={classnames(styles.creationPage, 'col-8')}>
+        <Page className={classnames(styles.creationPage, 'col-10')}>
             <PageTitle title="Create new code insight" />
 
             <div className="mb-5">

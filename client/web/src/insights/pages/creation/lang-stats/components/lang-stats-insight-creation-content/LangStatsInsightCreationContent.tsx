@@ -1,16 +1,17 @@
-import classnames from 'classnames';
+import classnames from 'classnames'
 import React from 'react'
-import { noop } from 'rxjs';
+import { noop } from 'rxjs'
 
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
-import { useField } from '../../../../../components/form/hooks/useField';
-import { SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm';
-import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator';
-import { createRequiredValidator } from '../../../../../components/form/validators';
-import { InsightTypeSuffix } from '../../../../../core/types';
-import { LangStatsCreationFormFields } from '../../types';
-import { LangStatsInsightCreationForm } from '../lang-stats-insight-creation-form/LangStatsInsightCreationForm';
+import { useField } from '../../../../../components/form/hooks/useField'
+import { SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
+import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
+import { createRequiredValidator } from '../../../../../components/form/validators'
+import { InsightTypeSuffix } from '../../../../../core/types'
+import { LangStatsCreationFormFields } from '../../types'
+import { LangStatsInsightCreationForm } from '../lang-stats-insight-creation-form/LangStatsInsightCreationForm'
+import { LangStatsInsightLivePreview } from '../live-preview-chart/LangStatsInsightLivePreview'
 
 import styles from './LangStatsInsightCreationContent.module.scss'
 
@@ -38,7 +39,7 @@ export interface LangStatsInsightCreationContentProps {
 }
 
 export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsInsightCreationContentProps> = props => {
-    const { settings, initialValues = INITIAL_VALUES, className, onSubmit, onCancel = noop } = props;
+    const { settings, initialValues = INITIAL_VALUES, className, onSubmit, onCancel = noop } = props
 
     const { handleSubmit, formAPI, ref } = useForm<LangStatsCreationFormFields>({
         initialValues,
@@ -53,9 +54,12 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
     const threshold = useField('threshold', formAPI, thresholdFieldValidator)
     const visibility = useField('visibility', formAPI)
 
+    // If some fields that needed to run live preview  are invalid
+    // we should disabled live chart preview
+    const allFieldsForPreviewAreValid = repository.meta.validState === 'VALID' && threshold.meta.validState === 'VALID'
+
     return (
         <div className={classnames(styles.content, className)}>
-
             <LangStatsInsightCreationForm
                 innerRef={ref}
                 handleSubmit={handleSubmit}
@@ -68,6 +72,13 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
                 onCancel={onCancel}
                 className={styles.contentForm}
             />
+
+            <LangStatsInsightLivePreview
+                repository={repository.meta.value}
+                threshold={threshold.meta.value}
+                disabled={!allFieldsForPreviewAreValid}
+                className={styles.contentLivePreview}
+            />
         </div>
-    );
+    )
 }

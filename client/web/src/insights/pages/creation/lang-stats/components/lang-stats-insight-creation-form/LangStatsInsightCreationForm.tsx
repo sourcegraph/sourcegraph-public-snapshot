@@ -8,7 +8,7 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
-import { LangStatsCreationFormFields } from '../../types';
+import { LangStatsCreationFormFields } from '../../types'
 
 import styles from './LangStatsInsightCreationForm.module.scss'
 
@@ -38,7 +38,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
         repository,
         threshold,
         visibility,
-        onCancel
+        onCancel,
     } = props
 
     return (
