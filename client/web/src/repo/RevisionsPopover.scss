@@ -5,7 +5,8 @@
     width: 35rem;
 
     &__tabs {
-        flex: 1;
+        display: flex;
+        justify-content: space-between;
         .theme-redesign & {
             padding-left: 1rem;
             padding-right: 1rem;
