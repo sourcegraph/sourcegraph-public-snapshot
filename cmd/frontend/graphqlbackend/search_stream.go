@@ -6,11 +6,9 @@ import (
 
 	"go.uber.org/atomic"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type SearchEvent struct {
@@ -20,44 +18,6 @@ type SearchEvent struct {
 
 type Sender interface {
 	Send(SearchEvent)
-}
-
-// Temporary conversion function from []result.Match to []SearchResultResolver
-func MatchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultResolver {
-	type repoKey struct {
-		Name types.RepoName
-		Rev  string
-	}
-	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
-	getRepoResolver := func(repoName types.RepoName, rev string) *RepositoryResolver {
-		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
-			return existing
-		}
-		resolver := NewRepositoryResolver(db, repoName.ToRepo())
-		resolver.RepoMatch.Rev = rev
-		repoResolvers[repoKey{repoName, rev}] = resolver
-		return resolver
-	}
-
-	resolvers := make([]SearchResultResolver, 0, len(matches))
-	for _, match := range matches {
-		switch v := match.(type) {
-		case *result.FileMatch:
-			resolvers = append(resolvers, &FileMatchResolver{
-				db:           db,
-				FileMatch:    *v,
-				RepoResolver: getRepoResolver(v.Repo, ""),
-			})
-		case *result.RepoMatch:
-			resolvers = append(resolvers, getRepoResolver(v.RepoName(), v.Rev))
-		case *result.CommitMatch:
-			resolvers = append(resolvers, &CommitSearchResultResolver{
-				db:          db,
-				CommitMatch: *v,
-			})
-		}
-	}
-	return resolvers
 }
 
 type limitStream struct {
