@@ -18,14 +18,28 @@ import { DEFAULT_MOCK_CHART_CONTENT } from './live-preview-mock-data'
 import styles from './SearchInsightLivePreview.module.scss'
 
 export interface SearchInsightLivePreviewProps {
+    /** Custom className for the root element of live preview. */
     className?: string
+    /** List of repositories for insights. */
     repositories: string
+    /** All Series for live chart. */
     series: DataSeries[]
+    /** Step value for chart. */
     stepValue: string
+    /**
+     * Disable prop to disable live preview.
+     * Used in a consumer of this component when some required fields
+     * for live preview are invalid.
+     * */
     disabled?: boolean
+    /** Step mode for step value prop. */
     step: 'hours' | 'days' | 'weeks' | 'months' | 'years'
 }
 
+/**
+ * Displays live preview chart for creation UI with latest insights settings
+ * from creation UI form.
+ * */
 export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLivePreviewProps> = props => {
     const { series, repositories, step, stepValue, disabled = false, className } = props
 
