@@ -433,7 +433,7 @@ const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyP
     if (spec.targets.__typename === 'VisibleApplyPreviewTargetsAttach') {
         return <h3>{spec.targets.changesetSpec.description.title}</h3>
     }
-    const useStrikethrough = spec.operations.length === 0 || spec.delta.titleChanged
+    const useStrikethrough = spec.operations.length > 0 || spec.delta.titleChanged
 
     // default, spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate'
     const linkOrSpan = (
@@ -454,7 +454,7 @@ const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyP
         </LinkOrSpan>
     )
 
-    if (spec.operations.length > 0 || spec.delta.titleChanged) {
+    if (useStrikethrough) {
         return (
             <h3>
                 <del>{linkOrSpan}</del>
