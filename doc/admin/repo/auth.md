@@ -52,6 +52,19 @@ gitserver-0:
 
 See [Custom git or ssh config docs](https://docs.sourcegraph.com/admin/repo/custom_git_or_ssh_config#setting-configuration) on setting custom configuration 
 
+### Troubleshooting
+
+#### Error about `Host key verification failed`
+This indicates an invalid key is being used. You can confirm the error by cloning inside the gitserver directly. For example:
+```bash
+docker exec -it gitserver-0 sh
+cd data/repos/<name-of-code-host>/<name-of-repo-owner>
+git clone <ssh-url>
+```
+
+#### Error about `Bad owner or permissions on /home/sourcegraph/.ssh/config`
+This indicates the container is having trouble reading the configuration files due to permission issues, which can be change by setting permission to `600` for all the files with the `/home/sourcegraph/.ssh` directory, and `700` for the directory itself.
+
 ### HTTP(S) authentication via netrc
 
 The easiest way to specify HTTP(S) authentication for repositories is to include the username and password in the clone URL itself, such as `https://user:password@example.com/my/repo`. These credentials won't be displayed to non-admin users.
