@@ -3,36 +3,24 @@ import type { LineChartContent } from 'sourcegraph';
 export const DEFAULT_MOCK_CHART_CONTENT: LineChartContent<any, string> = {
     chart: 'line' as const,
     data: [
+        { x: 1588965700286 - 6 * 24 * 60 * 60 * 1000, a: 20, b: 200 },
+        { x: 1588965700286 - 5 * 24 * 60 * 60 * 1000, a: 40, b: 177 },
         { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 110, b: 150 },
-        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 145, b: 260 },
-        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 94, b: 200 },
-        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 134, b: 190 },
-        { x: 1588965700286, a: 123, b: 170 },
+        { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 105, b: 165 },
+        { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 160, b: 100 },
+        { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 184, b: 85 },
+        { x: 1588965700286, a: 200, b: 50 },
     ],
     series: [
         {
             dataKey: 'a',
-            name: 'A metric',
-            stroke: 'var(--warning)',
-            linkURLs: [
-                '#A:1st_data_point',
-                '#A:2nd_data_point',
-                '#A:3rd_data_point',
-                '#A:4th_data_point',
-                '#A:5th_data_point',
-            ],
+            name: 'Old gql imports',
+            stroke: 'var(--oc-indigo-7)'
         },
         {
             dataKey: 'b',
-            name: 'B metric',
-            stroke: 'var(--warning)',
-            linkURLs: [
-                '#B:1st_data_point',
-                '#B:2nd_data_point',
-                '#B:3rd_data_point',
-                '#B:4th_data_point',
-                '#B:5th_data_point',
-            ],
+            name: 'New gql operation imports',
+            stroke: 'var(--oc-orange-7)'
         },
     ],
     xAxis: {

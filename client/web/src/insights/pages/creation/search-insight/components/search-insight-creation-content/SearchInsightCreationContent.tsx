@@ -68,6 +68,13 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     const step = useField('step', formAPI)
     const stepValue = useField('stepValue', formAPI, requiredStepValueField)
 
+    // If some fields that needed to run live preview  are invalid
+    // we should disabled live chart preview
+    const allFieldsForPreviewAreValid =
+        repositories.meta.validState === 'VALID' &&
+        series.meta.validState === 'VALID' &&
+        stepValue.meta.validState === 'VALID'
+
     return (
         <div className={classnames(styles.content, className)}>
             <SearchInsightCreationForm
@@ -85,6 +92,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
             />
 
             <SearchInsightLivePreview
+                disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
                 series={series.meta.value}
                 step={step.meta.value}
