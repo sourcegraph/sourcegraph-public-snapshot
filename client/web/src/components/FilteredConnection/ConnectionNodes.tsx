@@ -7,6 +7,7 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { ConnectionNodesSummary } from './ConnectionNodesSummary'
 import { Connection } from './ConnectionType'
 import { hasID } from './utils'
+
 /**
  * Props for the FilteredConnection component's result nodes and associated summary/pagination controls.
  *
