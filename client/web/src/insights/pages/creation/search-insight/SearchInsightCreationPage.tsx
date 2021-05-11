@@ -16,7 +16,10 @@ import { FORM_ERROR } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
 import { InsightTypeSuffix } from '../../../core/types'
 
-import { SearchInsightCreationContent, SearchInsightCreationContentProps } from './components/search-insight-creation-content/SearchInsightCreationContent'
+import {
+    SearchInsightCreationContent,
+    SearchInsightCreationContentProps,
+} from './components/search-insight-creation-content/SearchInsightCreationContent'
 import styles from './SearchInsightCreationPage.module.scss'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {

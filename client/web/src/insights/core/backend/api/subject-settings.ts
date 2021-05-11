@@ -1,10 +1,10 @@
-import { from, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { from, Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context';
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { fetchLatestSubjectSettings } from '../requests/fetch-backend-insights';
-import { SubjectSettingsResult } from '../types';
+import { fetchLatestSubjectSettings } from '../requests/fetch-backend-insights'
+import { SubjectSettingsResult } from '../types'
 
 /**
  * Get settings of particular subject by id.

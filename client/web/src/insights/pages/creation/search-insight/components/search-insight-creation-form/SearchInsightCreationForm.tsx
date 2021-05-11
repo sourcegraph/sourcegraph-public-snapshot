@@ -6,25 +6,25 @@ import { LoaderButton } from '../../../../../../components/LoaderButton'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
-import { useFieldAPI } from '../../../../../components/form/hooks/useField';
+import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
-import { CreateInsightFormFields } from '../../types';
+import { CreateInsightFormFields } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
 
 import styles from './SearchInsightCreationForm.module.scss'
 
 interface CreationSearchInsightFormProps {
-    innerRef: RefObject<any>,
-    handleSubmit: FormEventHandler,
-    submitErrors: SubmissionErrors,
-    submitting: boolean,
+    innerRef: RefObject<any>
+    handleSubmit: FormEventHandler
+    submitErrors: SubmissionErrors
+    submitting: boolean
     className?: string
 
-    title: useFieldAPI<CreateInsightFormFields['title']>,
-    repositories: useFieldAPI<CreateInsightFormFields['repositories']>,
-    visibility: useFieldAPI<CreateInsightFormFields['visibility']>,
+    title: useFieldAPI<CreateInsightFormFields['title']>
+    repositories: useFieldAPI<CreateInsightFormFields['repositories']>
+    visibility: useFieldAPI<CreateInsightFormFields['visibility']>
     series: useFieldAPI<CreateInsightFormFields['series']>
-    step: useFieldAPI<CreateInsightFormFields['step']>,
+    step: useFieldAPI<CreateInsightFormFields['step']>
     stepValue: useFieldAPI<CreateInsightFormFields['stepValue']>
 
     onCancel: () => void

@@ -1,13 +1,13 @@
-import { formatISO, isAfter, startOfDay, sub } from 'date-fns';
+import { formatISO, isAfter, startOfDay, sub } from 'date-fns'
 import escapeRegExp from 'lodash/escapeRegExp'
-import { defer } from 'rxjs';
-import { retry } from 'rxjs/operators';
-import type { LineChartContent } from 'sourcegraph';
+import { defer } from 'rxjs'
+import { retry } from 'rxjs/operators'
+import type { LineChartContent } from 'sourcegraph'
 
-import { ICommitSearchResult } from '@sourcegraph/shared/src/graphql/schema';
+import { ICommitSearchResult } from '@sourcegraph/shared/src/graphql/schema'
 
-import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from '../requests/fetch-search-insight.ignored';
-import { SearchInsightSettings } from '../types';
+import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from '../requests/fetch-search-insight.ignored'
+import { SearchInsightSettings } from '../types'
 
 /**
  * This logic is a copy of fetch logic of search-based code insight extension.
@@ -36,8 +36,7 @@ export async function getSearchInsightContent(insight: SearchInsightSettings): P
             query: `repo:^${escapeRegExp(repo)}$@${commit} ${query} count:99999`,
         }))
     )
-    const rawSearchResults = await defer(() =>
-        fetchRawSearchInsightResults(searchQueries.map(search => search.query)))
+    const rawSearchResults = await defer(() => fetchRawSearchInsightResults(searchQueries.map(search => search.query)))
         // The bulk search may timeout, but a retry is then likely faster because caches are warm
         .pipe(retry(3))
         .toPromise()
@@ -105,7 +104,7 @@ async function determineCommitsToSearch(dates: Date[], repo: string): Promise<{ 
 
     console.log('searching commits for search live preview', commitQueries)
 
-    const commitResults = await fetchSearchInsightCommits(commitQueries).toPromise();
+    const commitResults = await fetchSearchInsightCommits(commitQueries).toPromise()
 
     const commitOids = Object.entries(commitResults).map(([name, search], index) => {
         const index_ = +name.slice('search'.length)
