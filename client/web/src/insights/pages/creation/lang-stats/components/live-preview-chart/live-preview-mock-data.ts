@@ -1,3 +1,6 @@
+import { random } from 'lodash'
+import { PieChartContent } from 'sourcegraph'
+
 export const DEFAULT_PREVIEW_MOCK = {
     chart: 'pie' as const,
     pies: [
@@ -22,4 +25,35 @@ export const DEFAULT_PREVIEW_MOCK = {
             ],
         },
     ],
+}
+
+export function getRandomLangStatsMock(): PieChartContent<any> {
+    const randomFirstPieValue = random(0, 0.6)
+    const randomSecondPieValue = 1 - randomFirstPieValue
+
+    return {
+        chart: 'pie' as const,
+        pies: [
+            {
+                dataKey: 'value',
+                nameKey: 'name',
+                fillKey: 'fill',
+                linkURLKey: 'linkURL',
+                data: [
+                    {
+                        name: 'JavaScript',
+                        value: randomFirstPieValue,
+                        fill: 'var(--oc-grape-7)',
+                        linkURL: '#Covered',
+                    },
+                    {
+                        name: 'Typescript',
+                        value: randomSecondPieValue,
+                        fill: 'var(--oc-orange-7)',
+                        linkURL: '#Not_covered',
+                    },
+                ],
+            },
+        ],
+    }
 }
