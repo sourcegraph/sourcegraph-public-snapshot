@@ -9,8 +9,8 @@ import { requestGraphQL } from '../../../../backend/graphql'
 /**
  * Fetch insight result.
  *
- * Bulk search is a package search requests for each data series and each
- * data point of particular data series.
+ * A bulk search is a package of search requests for each data series and each
+ * data point of a particular data series.
  * */
 export function fetchRawSearchInsightResults(searchQueries: string[]): Observable<Record<string, ISearch>> {
     return requestGraphQL<Record<string, ISearch>>(
