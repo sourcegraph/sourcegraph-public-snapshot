@@ -30,7 +30,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, history, 
                     {RepoIcon && <RepoIcon className="icon-inline text-muted" />}
                     <Markdown
                         className="test-search-result-label ml-1"
-                        dangerousInnerHTML={renderMarkdown(result.label.text)}
+                        dangerousInnerHTML={result.label.html ? result.label.html : renderMarkdown(result.label.text)}
                     />
                 </div>
             )
