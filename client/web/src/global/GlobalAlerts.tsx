@@ -50,7 +50,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
             <div className="global-alerts test-global-alert">
                 {this.state.siteFlags && (
                     <>
-                        {!this.state.siteFlags.needsRepositoryConfiguration && (
+                        {this.state.siteFlags.needsRepositoryConfiguration && (
                             <NeedsRepositoryConfigurationAlert className="global-alerts__alert" />
                         )}
                         {this.state.siteFlags.freeUsersExceeded && (
