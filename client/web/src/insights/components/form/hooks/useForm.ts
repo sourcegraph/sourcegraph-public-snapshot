@@ -226,7 +226,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
 }
 
 /**
- * Creates form values object and omit all other internal state of form field.
+ * Creates form values object and omits all other internal states of a form field.
  * Used to form values for onSubmit and onChange handlers.
  * */
 function getFormValues<FormValues>(fields: Record<string, FieldState<unknown>>): FormValues {
