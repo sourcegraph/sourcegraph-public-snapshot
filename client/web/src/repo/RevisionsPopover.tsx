@@ -1,4 +1,5 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
+import classNames from 'classnames'
 import * as H from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect } from 'react'
@@ -120,6 +121,7 @@ const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodePr
             node={node}
             url={replaceRevisionInURL(location.pathname + location.search + location.hash, node.abbrevName)}
             ancestorIsLink={false}
+            className={classNames(isCurrent && 'connection-popover__node-link--active')}
         >
             {isCurrent && (
                 <CircleChevronLeftIcon
