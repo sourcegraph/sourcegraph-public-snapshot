@@ -19,6 +19,13 @@
         border-top: 1px solid var(--border-color);
     }
 
+    .theme-redesign & {
+        background-color: var(--color-bg-1);
+        border: 1px solid var(--border-color-2);
+        border-radius: 3px;
+        padding: 0.5rem;
+    }
+
     pre,
     code {
         width: 100%;

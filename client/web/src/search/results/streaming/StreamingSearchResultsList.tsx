@@ -90,8 +90,10 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                         <SearchResult
                             icon={SourceCommitIcon}
                             result={result}
+                            repoName={result.commit.repository.name}
                             isLightTheme={isLightTheme}
                             history={history}
+                            isStreamingEnabled={true}
                         />
                     )
                 case 'Repository':
@@ -99,8 +101,10 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                         <SearchResult
                             icon={SourceRepositoryMultipleIcon}
                             result={result}
+                            repoName={result.name}
                             isLightTheme={isLightTheme}
                             history={history}
+                            isStreamingEnabled={true}
                         />
                     )
             }

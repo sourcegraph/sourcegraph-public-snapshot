@@ -88,7 +88,11 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
 
-    const toggle = (): void => setExpanded(expanded => !expanded)
+    const toggle = (): void => {
+        if (collapsible) {
+            setExpanded(expanded => !expanded)
+        }
+    }
 
     const Icon = icon
     return (
@@ -99,7 +103,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                 className={'result-container__header' + (collapsible ? ' result-container__header--collapsible' : '')}
                 onClick={toggle}
             >
-                <Icon className="icon-inline" />
+                <Icon className="icon-inline redesign-d-none" />
                 <div
                     className={`result-container__header-title ${titleClassName || ''}`}
                     data-testid="result-container-header"
