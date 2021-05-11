@@ -70,45 +70,52 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     expandByDefault,
     onlyArchived,
 }) => {
+    // Whether all the changesets are selected, beyond the scope of what's on screen right now.
     const [allAllSelected, setAllAllSelected] = useState<boolean>(false)
-    const [totalChangesetCount, setTotalChangesetCount] = useState<number>()
+    // The overall amount of all changesets in the connection.
+    const [totalChangesetCount, setTotalChangesetCount] = useState<number>(0)
+    // All changesets that are currently in view and can be selected. That currently
+    // just means they are visible.
     const [availableChangesets, setAvailableChangesets] = useState<Set<Scalars['ID']>>(new Set())
-
+    // The list of all selected changesets. This list does not reflect the selection
+    // when `allAllSelected` is true.
     const [selectedChangesets, setSelectedChangesets] = useState<Set<Scalars['ID']>>(new Set())
-    const onSelect = useCallback(
-        (id: string, selected: boolean): void => {
-            if (selected) {
-                setSelectedChangesets(previous => {
-                    const newSet = new Set(previous).add(id)
-                    setAllSelected(newSet.size === availableChangesets.size)
-                    return newSet
-                })
-            } else {
-                setSelectedChangesets(previous => {
-                    const newSet = new Set(previous)
-                    newSet.delete(id)
-                    setAllSelected(newSet.size === availableChangesets.size)
-                    return newSet
-                })
-            }
-        },
-        [availableChangesets.size]
-    )
 
+    const onSelect = useCallback((id: string, selected: boolean): void => {
+        if (selected) {
+            setSelectedChangesets(previous => {
+                const newSet = new Set(previous).add(id)
+                return newSet
+            })
+            return
+        }
+        setSelectedChangesets(previous => {
+            const newSet = new Set(previous)
+            newSet.delete(id)
+            return newSet
+        })
+        setAllAllSelected(false)
+    }, [])
+
+    // Whether the given changeset is currently selected. Returns always true, if
+    // `allAllSelected` is true.
     const changesetSelected = useCallback(
         (id: Scalars['ID']): boolean => allAllSelected || selectedChangesets.has(id),
         [allAllSelected, selectedChangesets]
     )
-    const [allSelected, setAllSelected] = useState<boolean>(false)
 
     const deselectAll = useCallback((): void => {
         setSelectedChangesets(new Set())
-        setAllSelected(false)
+        setAllAllSelected(false)
     }, [setSelectedChangesets])
+
     const selectAll = useCallback((): void => {
         setSelectedChangesets(availableChangesets)
-        setAllSelected(true)
     }, [availableChangesets, setSelectedChangesets])
+
+    // True when all in the current list are selected. It ticks the header row
+    // checkbox when true.
+    const allSelected = allAllSelected || selectedChangesets.size === availableChangesets.size
 
     const toggleSelectAll = useCallback((): void => {
         if (allSelected) {
@@ -134,7 +141,6 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     )
 
     const onSelectAllAll = useCallback(() => {
-        setAllSelected(true)
         setAllAllSelected(true)
     }, [])
 
@@ -156,12 +162,16 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
             return queryChangesets(passedArguments)
                 .pipe(
                     tap(data => {
+                        // Store the query arguments used for the current connection.
                         setQueryArguments(passedArguments)
+                        // Available changesets are all changesets that the user
+                        // can view.
                         setAvailableChangesets(
                             new Set(
                                 data.nodes.filter(node => node.__typename === 'ExternalChangeset').map(node => node.id)
                             )
                         )
+                        // Remember the totalCount.
                         setTotalChangesetCount(data.totalCount)
                     })
                 )
@@ -248,7 +258,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     batchChangeID={batchChangeID}
                     selected={selectedChangesets}
                     onSubmit={deselectAll}
-                    totalCount={totalChangesetCount!}
+                    totalCount={totalChangesetCount}
                     isAllSelected={allSelected}
                     allAllSelected={allAllSelected}
                     setAllSelected={onSelectAllAll}

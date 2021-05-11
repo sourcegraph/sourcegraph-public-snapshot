@@ -2416,6 +2416,16 @@ type BulkOperation implements Node {
     when some operations are still processing.
     """
     finishedAt: DateTime
+
+    """
+    The user who triggered this bulk operation.
+    """
+    initiator: User!
+
+    """
+    The number of changesets involved in this bulk operation.
+    """
+    changesetCount: Int!
 }
 
 """

@@ -33,6 +33,8 @@ END AS state`,
 		btypes.ChangesetJobStateCompleted.ToDB(),
 		btypes.ChangesetJobStateFailed.ToDB(),
 	),
+	sqlf.Sprintf("MIN(changeset_jobs.user_id) AS user_id"),
+	sqlf.Sprintf("COUNT(changeset_jobs.id) AS changeset_count"),
 	sqlf.Sprintf("MIN(changeset_jobs.created_at) AS created_at"),
 	sqlf.Sprintf(
 		"CASE WHEN (COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) / COUNT(*)) = 1.0 THEN MAX(changeset_jobs.finished_at) ELSE null END AS finished_at",
@@ -254,6 +256,8 @@ func scanBulkOperation(b *btypes.BulkOperation, s scanner) error {
 		&b.Type,
 		&b.State,
 		&b.Progress,
+		&b.UserID,
+		&b.ChangesetCount,
 		&b.CreatedAt,
 		&dbutil.NullTime{Time: &b.FinishedAt},
 	)

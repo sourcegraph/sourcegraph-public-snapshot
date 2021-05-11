@@ -272,6 +272,8 @@ type BulkOperationResolver interface {
 	State() string
 	Progress() float64
 	Errors(ctx context.Context) ([]ChangesetJobErrorResolver, error)
+	Initiator(ctx context.Context) (*UserResolver, error)
+	ChangesetCount() int32
 	CreatedAt() DateTime
 	FinishedAt() *DateTime
 }

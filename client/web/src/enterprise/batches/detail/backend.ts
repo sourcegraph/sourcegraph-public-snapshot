@@ -75,6 +75,11 @@ const bulkOperationsFragment = gql`
             }
             error
         }
+        initiator {
+            username
+            url
+        }
+        changesetCount
         createdAt
         finishedAt
     }
@@ -759,8 +764,10 @@ export const queryAllChangesetIDs = ({
     return request(null).pipe(
         expand(connection => (connection.pageInfo.hasNextPage ? request(connection.pageInfo.endCursor) : EMPTY)),
         reduce(
-            (prev, next) =>
-                prev.concat(next.nodes.filter(node => node.__typename === 'ExternalChangeset').map(node => node.id)),
+            (previous, next) =>
+                previous.concat(
+                    next.nodes.filter(node => node.__typename === 'ExternalChangeset').map(node => node.id)
+                ),
             [] as Scalars['ID'][]
         )
     )
