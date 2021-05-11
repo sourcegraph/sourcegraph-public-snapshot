@@ -22,7 +22,7 @@ type Event struct {
 	EventName      string
 	UserID         int32
 	UserCookieID   string
-	FirstSourceURL string
+	FirstSourceURL *string
 	URL            string
 	Source         string
 	Argument       json.RawMessage
@@ -74,11 +74,15 @@ func publishSourcegraphDotComEvent(args Event) error {
 	if pubSubDotComEventsTopicID == "" {
 		return nil
 	}
+	firstSourceURL := ""
+	if args.FirstSourceURL != nil {
+		firstSourceURL = *args.FirstSourceURL
+	}
 	event, err := json.Marshal(bigQueryEvent{
 		EventName:       args.EventName,
 		UserID:          int(args.UserID),
 		AnonymousUserID: args.UserCookieID,
-		FirstSourceURL:  args.FirstSourceURL,
+		FirstSourceURL:  firstSourceURL,
 		URL:             args.URL,
 		Source:          args.Source,
 		Timestamp:       time.Now().UTC().Format(time.RFC3339),

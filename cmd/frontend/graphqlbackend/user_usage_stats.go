@@ -79,7 +79,7 @@ func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 	Event          string
 	UserCookieID   string
-	FirstSourceURL string
+	FirstSourceURL *string
 	URL            string
 	Source         string
 	Argument       *string

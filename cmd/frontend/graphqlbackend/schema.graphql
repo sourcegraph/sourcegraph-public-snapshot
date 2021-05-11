@@ -420,7 +420,7 @@ type Mutation {
         """
         The first sourcegraph URL visited by the user, stored in a browser cookie.
         """
-        firstSourceURL: String!
+        firstSourceURL: String
         """
         The URL when the event was logged.
         """
