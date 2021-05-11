@@ -1,8 +1,9 @@
 import * as H from 'history'
+import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
+import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Observable } from 'rxjs'
 
@@ -73,7 +74,13 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                         <FileMatch
                             location={location}
                             eventLogger={eventLogger}
-                            icon={result.lineMatches && result.lineMatches.length > 0 ? SourceRepositoryIcon : FileIcon}
+                            icon={
+                                result.lineMatches && result.lineMatches.length > 0
+                                    ? FileDocumentIcon
+                                    : result.symbols && result.symbols.length > 0
+                                    ? AlphaSBoxIcon
+                                    : FileIcon
+                            }
                             result={result}
                             onSelect={logSearchResultClicked}
                             expanded={false}
@@ -93,18 +100,16 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             repoName={result.commit.repository.name}
                             isLightTheme={isLightTheme}
                             history={history}
-                            isStreamingEnabled={true}
                         />
                     )
                 case 'Repository':
                     return (
                         <SearchResult
-                            icon={SourceRepositoryMultipleIcon}
+                            icon={SourceRepositoryIcon}
                             result={result}
                             repoName={result.name}
                             isLightTheme={isLightTheme}
                             history={history}
-                            isStreamingEnabled={true}
                         />
                     )
             }

@@ -103,7 +103,8 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                 className={'result-container__header' + (collapsible ? ' result-container__header--collapsible' : '')}
                 onClick={toggle}
             >
-                <Icon className="icon-inline redesign-d-none" />
+                <Icon className="icon-inline" />
+                <div className="result-container__header-divider" />
                 <div
                     className={`result-container__header-title ${titleClassName || ''}`}
                     data-testid="result-container-header"

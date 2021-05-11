@@ -13,8 +13,7 @@ export const REPO_MATCH_CONTAINING_SPACES: RepositoryMatch = {
 describe('escapeSpaces', () => {
     test('escapes spaces in value', () => {
         expect(toGQLRepositoryMatch(REPO_MATCH_CONTAINING_SPACES).label).toMatchInlineSnapshot(
-            '{"__typename":"Markdown","text":"[github.com/save/the andimals](/github.com/save/the%20andimals)"}',
-            `{"__typename":"Markdown","text":"[save/the andimals](/github.com/save/the%20andimals)"}`
+            '{"__typename":"Markdown","text":"[save/the andimals](/github.com/save/the%20andimals)"}'
         )
     })
 })

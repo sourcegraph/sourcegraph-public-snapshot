@@ -1,5 +1,4 @@
 import * as H from 'history'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
@@ -18,17 +17,9 @@ interface Props extends ThemeProps {
     history: H.History
     repoName: string
     icon: React.ComponentType<{ className?: string }>
-    isStreamingEnabled?: boolean
 }
 
-export const SearchResult: React.FunctionComponent<Props> = ({
-    result,
-    history,
-    icon,
-    isLightTheme,
-    repoName,
-    isStreamingEnabled = false,
-}) => {
+export const SearchResult: React.FunctionComponent<Props> = ({ result, history, icon, isLightTheme, repoName }) => {
     const [isRedesignEnabled] = useRedesignToggle()
 
     const renderTitle = (): JSX.Element => {
@@ -68,10 +59,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({
         if (isRedesignEnabled && result.__typename === 'Repository') {
             return (
                 <div className="search-result-match">
-                    <small>
-                        <SourceRepositoryIcon className="icon-inline text-muted mr-1" />
-                        Repository name match
-                    </small>
+                    <small>Repository name match</small>
                 </div>
             )
         }
