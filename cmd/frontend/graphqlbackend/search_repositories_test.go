@@ -13,7 +13,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -292,13 +291,5 @@ func BenchmarkSearchRepositories(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-	}
-}
-
-func mkResolverFromFileMatch(db dbutil.DB, fm result.FileMatch) *FileMatchResolver {
-	return &FileMatchResolver{
-		db:           db,
-		FileMatch:    fm,
-		RepoResolver: NewRepositoryResolver(db, fm.Repo.ToRepo()),
 	}
 }

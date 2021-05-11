@@ -108,37 +108,6 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 	return run.Wait()
 }
 
-// limitSymbolResults returns a new version of res containing no more than limit symbol matches.
-func limitSymbolResults(res []*FileMatchResolver, limit int) []*FileMatchResolver {
-	res2 := make([]*FileMatchResolver, 0, len(res))
-	nsym := 0
-	for _, r := range res {
-		symbols := r.FileMatch.Symbols
-		if nsym+len(symbols) > limit {
-			symbols = symbols[:limit-nsym]
-		}
-		if len(symbols) > 0 {
-			r2 := *r
-			r2.FileMatch.Symbols = symbols
-			res2 = append(res2, &r2)
-		}
-		nsym += len(symbols)
-		if nsym >= limit {
-			return res2
-		}
-	}
-	return res2
-}
-
-// symbolCount returns the total number of symbols in a slice of fileMatchResolvers.
-func symbolCount(fmrs []*FileMatchResolver) int {
-	nsym := 0
-	for _, fmr := range fmrs {
-		nsym += len(fmr.FileMatch.Symbols)
-	}
-	return nsym
-}
-
 func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []*result.FileMatch, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
