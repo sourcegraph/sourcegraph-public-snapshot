@@ -1,4 +1,4 @@
-@import 'branded/src/global-styles/breakpoints';
+@import 'wildcard/src/global-styles/breakpoints';
 
 .content {
     display: flex;
@@ -22,7 +22,7 @@
         height: 20rem;
     }
 
-    @include media-breakpoint-down(md) {
+    @media (--md-breakpoint-down) {
         &__live-preview {
             order: 1;
             flex-basis: 100%;
