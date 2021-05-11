@@ -171,7 +171,6 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                         refFn={this.setTableContainerElement}
                                         className="search-result-match__markdown search-result-match__code-excerpt"
                                         dangerousInnerHTML={this.state.HTML}
-                                        history={this.props.history}
                                     />
                                 </code>
                             ) : (
@@ -179,7 +178,6 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                     refFn={this.setTableContainerElement}
                                     className="search-result-match__markdown"
                                     dangerousInnerHTML={this.state.HTML}
-                                    history={this.props.history}
                                 />
                             )}
                         </Link>

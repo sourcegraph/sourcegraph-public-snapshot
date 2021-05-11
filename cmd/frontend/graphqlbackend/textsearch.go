@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -40,6 +39,10 @@ type FileMatchResolver struct {
 
 	RepoResolver *RepositoryResolver
 	db           dbutil.DB
+}
+
+func (fm *FileMatchResolver) toMatch() result.Match {
+	return &fm.FileMatch
 }
 
 // Equal provides custom comparison which is used by go-cmp
@@ -106,34 +109,8 @@ func (fm *FileMatchResolver) ToCommitSearchResult() (*CommitSearchResultResolver
 	return nil, false
 }
 
-// path returns the path in repository for the file. This isn't directly
-// exposed in the GraphQL API (we expose a URI), but is used a lot internally.
-func (fm *FileMatchResolver) path() string {
-	return fm.Path
-}
-
-// appendMatches appends the line matches from src as well as updating match
-// counts and limit.
-func (fm *FileMatchResolver) appendMatches(src *FileMatchResolver) {
-	fm.FileMatch.AppendMatches(&src.FileMatch)
-}
-
 func (fm *FileMatchResolver) ResultCount() int32 {
 	return int32(fm.FileMatch.ResultCount())
-}
-
-func (fm *FileMatchResolver) Select(t filter.SelectPath) SearchResultResolver {
-	match := fm.FileMatch.Select(t)
-
-	// Turn the result type back to a resolver
-	switch v := match.(type) {
-	case *result.RepoMatch:
-		return NewRepositoryResolver(fm.db, &types.Repo{Name: v.Name, ID: v.ID})
-	case *result.FileMatch:
-		return &FileMatchResolver{db: fm.db, RepoResolver: fm.RepoResolver, FileMatch: *v}
-	}
-
-	return nil
 }
 
 type lineMatchResolver struct {
@@ -160,9 +137,9 @@ func (lm lineMatchResolver) LimitHit() bool {
 	return false
 }
 
-var mockSearchFilesInRepo func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.FileMatch, limitHit bool, err error)
+var mockSearchFilesInRepo func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]result.FileMatch, bool, error) {
+func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]*result.FileMatch, bool, error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
@@ -199,7 +176,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 		return nil, false, err
 	}
 
-	fileMatches := make([]result.FileMatch, 0, len(matches))
+	fileMatches := make([]*result.FileMatch, 0, len(matches))
 	for _, fm := range matches {
 		lineMatches := make([]*result.LineMatch, 0, len(fm.LineMatches))
 		for _, lm := range fm.LineMatches {
@@ -214,7 +191,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 			})
 		}
 
-		fileMatches = append(fileMatches, result.FileMatch{
+		fileMatches = append(fileMatches, &result.FileMatch{
 			File: result.File{
 				Path:     fm.Path,
 				Repo:     repo,
@@ -269,47 +246,37 @@ func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.M
 	return true, nil
 }
 
-var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *streaming.Stats, error)
+var mockSearchFilesInRepos func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error)
 
-func fileMatchesToSearchResults(db dbutil.DB, matches []result.FileMatch) []SearchResultResolver {
-	results := make([]SearchResultResolver, len(matches))
-	for i, match := range matches {
-		results[i] = &FileMatchResolver{
-			FileMatch:    match,
-			RepoResolver: NewRepositoryResolver(db, match.Repo.ToRepo()),
-			db:           db,
-		}
+func fileMatchesToMatches(fms []*result.FileMatch) []result.Match {
+	matches := make([]result.Match, 0, len(fms))
+	for _, fm := range fms {
+		newFm := fm
+		matches = append(matches, newFm)
 	}
-	return results
+	return matches
 }
 
-func fileMatchResolversToSearchResults(resolvers []*FileMatchResolver) []SearchResultResolver {
-	results := make([]SearchResultResolver, len(resolvers))
-	for i, resolver := range resolvers {
-		results[i] = resolver
-	}
-	return results
-}
-
-func searchResultsToFileMatchResults(resolvers []SearchResultResolver) ([]*FileMatchResolver, error) {
-	results := make([]*FileMatchResolver, len(resolvers))
-	for i, resolver := range resolvers {
-		fm, ok := resolver.ToFileMatch()
+func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
+	fms := make([]*result.FileMatch, 0, len(matches))
+	for _, match := range matches {
+		fm, ok := match.(*result.FileMatch)
 		if !ok {
 			return nil, fmt.Errorf("expected only file match results")
 		}
-		results[i] = fm
+		fms = append(fms, fm)
 	}
-	return results, nil
+	return fms, nil
 }
 
 // searchFilesInRepoBatch is a convenience function around searchFilesInRepos
 // which collects the results from the stream.
-func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.TextParameters) ([]*FileMatchResolver, streaming.Stats, error) {
-	results, stats, err := collectStream(func(stream Sender) error {
-		return searchFilesInRepos(ctx, db, args, stream)
+func searchFilesInReposBatch(ctx context.Context, args *search.TextParameters) ([]*result.FileMatch, streaming.Stats, error) {
+	matches, stats, err := collectStream(func(stream Sender) error {
+		return searchFilesInRepos(ctx, args, stream)
 	})
-	fms, fmErr := searchResultsToFileMatchResults(results)
+
+	fms, fmErr := matchesToFileMatches(matches)
 	if fmErr != nil && err == nil {
 		err = errors.Wrap(fmErr, "searchFilesInReposBatch failed to convert results")
 	}
@@ -317,11 +284,11 @@ func searchFilesInReposBatch(ctx context.Context, db dbutil.DB, args *search.Tex
 }
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, stream Sender) (err error) {
+func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream Sender) (err error) {
 	if mockSearchFilesInRepos != nil {
-		results, mockStats, err := mockSearchFilesInRepos(args)
+		matches, mockStats, err := mockSearchFilesInRepos(args)
 		stream.Send(SearchEvent{
-			Results: fileMatchResolversToSearchResults(results),
+			Results: fileMatchesToMatches(matches),
 			Stats:   statsDeref(mockStats),
 		})
 		return err
@@ -346,13 +313,12 @@ func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextPara
 	var indexed *indexedSearchRequest
 	if args.Mode == search.ZoektGlobalSearch {
 		indexed = &indexedSearchRequest{
-			db:    db,
 			args:  args,
 			typ:   textRequest,
 			repos: &indexedRepoRevs{},
 		}
 	} else {
-		indexed, err = newIndexedSearchRequest(ctx, db, args, textRequest, stream)
+		indexed, err = newIndexedSearchRequest(ctx, args, textRequest, stream)
 		if err != nil {
 			return err
 		}
@@ -380,14 +346,14 @@ func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextPara
 				for _, repo := range indexed.Repos() {
 					repos = append(repos, repo)
 				}
-				return callSearcherOverRepos(ctx, db, args, stream, repos, true)
+				return callSearcherOverRepos(ctx, args, stream, repos, true)
 			})
 		}
 	}
 
 	// Concurrently run searcher for all unindexed repos regardless whether text, regexp, or structural search.
 	g.Go(func() error {
-		return callSearcherOverRepos(ctx, db, args, stream, indexed.Unindexed, false)
+		return callSearcherOverRepos(ctx, args, stream, indexed.Unindexed, false)
 	})
 
 	return g.Wait()
@@ -396,7 +362,6 @@ func searchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextPara
 // callSearcherOverRepos calls searcher on searcherRepos.
 func callSearcherOverRepos(
 	ctx context.Context,
-	db dbutil.DB,
 	args *search.TextParameters,
 	stream Sender,
 	searcherRepos []*search.RepositoryRevisions,
@@ -474,7 +439,7 @@ func callSearcherOverRepos(
 					// non-diff search reports timeout through err, so pass false for timedOut
 					stats, err := handleRepoSearchResult(repoRev, repoLimitHit, false, err)
 					stream.Send(SearchEvent{
-						Results: fileMatchesToSearchResults(db, matches),
+						Results: fileMatchesToMatches(matches),
 						Stats:   stats,
 					})
 					return err

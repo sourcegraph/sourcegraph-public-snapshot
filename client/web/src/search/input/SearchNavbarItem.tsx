@@ -27,7 +27,10 @@ interface Props
         SettingsCascadeProps,
         ThemeProps,
         CopyQueryButtonProps,
-        Omit<SearchContextProps, 'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable'>,
+        Omit<
+            SearchContextProps,
+            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
+        >,
         VersionContextProps,
         OnboardingTourProps {
     location: H.Location

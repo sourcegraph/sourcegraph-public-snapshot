@@ -596,6 +596,8 @@ describe('Search', () => {
                         spec: 'global',
                         description: '',
                         autoDefined: true,
+                        public: true,
+                        updatedAt: '2021-03-15T19:39:11Z',
                         repositories: [],
                     },
                     {
@@ -604,6 +606,8 @@ describe('Search', () => {
                         spec: '@test',
                         description: '',
                         autoDefined: true,
+                        public: true,
+                        updatedAt: '2021-03-15T19:39:11Z',
                         repositories: [],
                     },
                 ],

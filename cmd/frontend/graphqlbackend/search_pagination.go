@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -206,10 +207,18 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	return &SearchResultsResolver{
 		db:            r.db,
 		Stats:         common,
-		SearchResults: results,
+		SearchResults: resolversToMatches(results),
 		alert:         alert,
 		cursor:        cursor,
 	}, nil
+}
+
+func resolversToMatches(resolvers []SearchResultResolver) []result.Match {
+	matches := make([]result.Match, 0, len(resolvers))
+	for _, resolver := range resolvers {
+		matches = append(matches, resolver.toMatch())
+	}
+	return matches
 }
 
 // repoIsLess sorts repositories first by name then by ID, suitable for use
@@ -260,21 +269,15 @@ func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search
 	return plan.execute(ctx, database.Repos(db), func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error) {
 		batchArgs := *args
 		batchArgs.RepoPromise = (&search.Promise{}).Resolve(batch)
-		fileResults, fileCommon, err := searchFilesInReposBatch(ctx, db, &batchArgs)
+		fileMatches, fileCommon, err := searchFilesInReposBatch(ctx, &batchArgs)
 		// Timeouts are reported through Stats so don't report an error for them
 		if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 			return nil, nil, err
 		}
-		// fileResults is not sorted so we must sort it now. fileCommon may or
-		// may not be sorted, but we do not rely on its order.
-		sort.Slice(fileResults, func(i, j int) bool {
-			return fileResults[i].FileMatch.Key().Less(fileResults[j].FileMatch.Key())
-		})
-		results := make([]SearchResultResolver, 0, len(fileResults))
-		for _, r := range fileResults {
-			results = append(results, r)
-		}
-		return results, &fileCommon, nil
+
+		matches := fileMatchesToMatches(fileMatches)
+		sort.Sort(result.Matches(matches))
+		return MatchesToResolvers(db, matches), &fileCommon, nil
 	})
 }
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useLayoutEffect, useMemo } from 'react'
 import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
 import { useDarkMode } from 'storybook-dark-mode'
 
@@ -30,7 +30,7 @@ export const WebStory: React.FunctionComponent<
     const breadcrumbSetters = useBreadcrumbs()
     const Children = useMemo(() => withRouter(children), [children])
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const styleTag = prependCSSToDocumentHead(webStyles)
 
         return () => {

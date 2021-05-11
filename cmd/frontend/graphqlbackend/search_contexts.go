@@ -139,12 +139,20 @@ func (r *searchContextResolver) Description(ctx context.Context) string {
 	return r.sc.Description
 }
 
+func (r *searchContextResolver) Public(ctx context.Context) bool {
+	return r.sc.Public
+}
+
 func (r *searchContextResolver) AutoDefined(ctx context.Context) bool {
 	return searchcontexts.IsAutoDefinedSearchContext(r.sc)
 }
 
 func (r *searchContextResolver) Spec(ctx context.Context) string {
 	return searchcontexts.GetSearchContextSpec(r.sc)
+}
+
+func (r *searchContextResolver) UpdatedAt(ctx context.Context) DateTime {
+	return DateTime{Time: r.sc.UpdatedAt}
 }
 
 func (r *searchContextResolver) Repositories(ctx context.Context) ([]*searchContextRepositoryRevisionsResolver, error) {

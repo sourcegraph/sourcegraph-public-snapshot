@@ -2,7 +2,7 @@
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import * as React from 'react'
+import React, { useEffect, useState } from 'react'
 
 export interface Props {
     /**
@@ -10,6 +10,9 @@ export interface Props {
      * The header is always visible even when the component is not expanded.
      */
     defaultExpanded?: boolean
+
+    /** Expand all results */
+    allExpanded?: boolean
 
     /**
      * Whether the result container can be collapsed. If false, its children
@@ -61,92 +64,72 @@ export interface Props {
      * This component does not accept children.
      */
     children?: never
-
-    /** Expand all results */
-    allExpanded?: boolean
 }
 
-interface State {
-    /**
-     * Whether this result container is currently expanded.
-     */
-    expanded?: boolean
-}
+const blockExpandAndCollapse = (event: React.MouseEvent<HTMLElement>): void => event.stopPropagation()
 
 /**
  * The container component for a result in the SearchResults component.
  */
-export class ResultContainer extends React.PureComponent<Props, State> {
-    constructor(props: Props) {
-        super(props)
-        this.state = { expanded: this.props.allExpanded || this.props.defaultExpanded }
-    }
+export const ResultContainer: React.FunctionComponent<Props> = ({
+    defaultExpanded,
+    allExpanded,
+    collapsible,
+    collapseLabel,
+    expandLabel,
+    collapsedChildren,
+    expandedChildren,
+    icon,
+    title,
+    titleClassName,
+    description,
+}) => {
+    const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
 
-    public componentDidUpdate(previousProps: Props): void {
-        if (previousProps.allExpanded !== this.props.allExpanded) {
-            if (this.state.expanded === previousProps.allExpanded) {
-                // eslint-disable-next-line react/no-did-update-set-state
-                this.setState({ expanded: this.props.allExpanded })
-            } else {
-                // eslint-disable-next-line react/no-did-update-set-state
-                this.setState({ expanded: this.props.allExpanded })
-            }
-        }
-    }
+    useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
 
-    public render(): JSX.Element | null {
-        const Icon = this.props.icon
-        return (
-            <div className="test-search-result result-container" data-testid="result-container">
-                {/* TODO: Fix accessibility issues.
+    const toggle = (): void => setExpanded(expanded => !expanded)
+
+    const Icon = icon
+    return (
+        <div className="test-search-result result-container" data-testid="result-container">
+            {/* TODO: Fix accessibility issues.
                 Issue: https://github.com/sourcegraph/sourcegraph/issues/19272 */}
+            <div
+                className={'result-container__header' + (collapsible ? ' result-container__header--collapsible' : '')}
+                onClick={toggle}
+            >
+                <Icon className="icon-inline" />
                 <div
-                    className={
-                        'result-container__header' +
-                        (this.props.collapsible ? ' result-container__header--collapsible' : '')
-                    }
-                    onClick={this.toggle}
+                    className={`result-container__header-title ${titleClassName || ''}`}
+                    data-testid="result-container-header"
                 >
-                    <Icon className="icon-inline" />
-                    <div
-                        className={`result-container__header-title ${this.props.titleClassName || ''}`}
-                        data-testid="result-container-header"
-                    >
-                        {this.props.collapsible ? (
-                            // This is to ensure the onClick toggle handler doesn't get called
-                            // We should be able to remove this if we refactor to seperate the toggle to its own button
-                            <span onClick={blockExpandAndCollapse}>{this.props.title}</span>
-                        ) : (
-                            this.props.title
-                        )}
-                        {this.props.description && <span className="ml-2">{this.props.description}</span>}
-                    </div>
-                    {this.props.collapsible &&
-                        (this.state.expanded ? (
-                            <small className="result-container__toggle-matches-container">
-                                {this.props.collapseLabel}
-                                {this.props.collapseLabel && <ChevronUpIcon className="icon-inline" />}
-                                {!this.props.collapseLabel && <ChevronDownIcon className="icon-inline" />}
-                            </small>
-                        ) : (
-                            <small className="result-container__toggle-matches-container">
-                                {this.props.expandLabel}
-                                {this.props.expandLabel && <ChevronDownIcon className="icon-inline" />}
-                                {!this.props.expandLabel && <ChevronRightIcon className="icon-inline" />}
-                            </small>
-                        ))}
+                    {collapsible ? (
+                        // This is to ensure the onClick toggle handler doesn't get called
+                        // We should be able to remove this if we refactor to seperate the toggle to its own button
+                        <span onClick={blockExpandAndCollapse}>{title}</span>
+                    ) : (
+                        title
+                    )}
+                    {description && <span className="ml-2">{description}</span>}
                 </div>
-                {!this.state.expanded && this.props.collapsedChildren}
-                {this.state.expanded && this.props.expandedChildren}
+                {collapsible &&
+                    (expanded ? (
+                        <small className="result-container__toggle-matches-container">
+                            {collapseLabel}
+                            {collapseLabel && <ChevronUpIcon className="icon-inline" />}
+                            {!collapseLabel && <ChevronDownIcon className="icon-inline" />}
+                        </small>
+                    ) : (
+                        <small className="result-container__toggle-matches-container">
+                            {expandLabel}
+                            {expandLabel && <ChevronDownIcon className="icon-inline" />}
+                            {!expandLabel && <ChevronRightIcon className="icon-inline" />}
+                        </small>
+                    ))}
             </div>
-        )
-    }
-
-    private toggle = (): void => {
-        this.setState(state => ({ expanded: !state.expanded }))
-    }
-}
-
-function blockExpandAndCollapse(event: React.MouseEvent<HTMLElement>): void {
-    event.stopPropagation()
+            {!expanded && collapsedChildren}
+            {expanded && expandedChildren}
+        </div>
+    )
 }

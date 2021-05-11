@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
@@ -35,11 +34,7 @@ const sortBySeverity = (a: Skipped, b: Skipped): number => {
     return aSev - bSev
 }
 
-const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.History; startOpen: boolean }> = ({
-    skipped,
-    history,
-    startOpen,
-}) => {
+const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boolean }> = ({ skipped, startOpen }) => {
     const [isOpen, setIsOpen] = useState(startOpen)
 
     const toggleIsOpen = useCallback(() => setIsOpen(oldValue => !oldValue), [])
@@ -90,7 +85,6 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
                     <Markdown
                         className="streaming-skipped-item__message text-left py-1"
                         dangerousInnerHTML={renderMarkdown(skipped.message)}
-                        history={history}
                     />
                 </Collapse>
             )}
@@ -100,8 +94,8 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
 }
 
 export const StreamingProgressSkippedPopover: React.FunctionComponent<
-    Pick<StreamingProgressProps, 'progress' | 'onSearchAgain' | 'history'>
-> = ({ progress, onSearchAgain, history }) => {
+    Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>
+> = ({ progress, onSearchAgain }) => {
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
     const submitHandler = useCallback(
         (event: React.FormEvent) => {
@@ -132,7 +126,6 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                 <SkippedMessage
                     key={skipped.reason}
                     skipped={skipped}
-                    history={history}
                     // Start with first item open, but only if it's not info severity or if there's only one item
                     startOpen={index === 0 && (skipped.severity !== 'info' || sortedSkippedItems.length === 1)}
                 />

@@ -29,7 +29,10 @@ export interface MonacoQueryInputProps
         ThemeProps,
         CaseSensitivityProps,
         PatternTypeProps,
-        Omit<SearchContextProps, 'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable'>,
+        Omit<
+            SearchContextProps,
+            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
+        >,
         CopyQueryButtonProps {
     location: H.Location
     history: H.History

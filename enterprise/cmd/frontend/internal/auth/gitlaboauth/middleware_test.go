@@ -41,7 +41,7 @@ func TestMiddleware(t *testing.T) {
 	authedHandler.Handle("/", Middleware(nil).App(h))
 
 	mockGitLabCom := newMockProvider(t, "gitlab-com-client", "gitlab-com-secret", "https://gitlab.com/")
-	mockPrivateGitLab := newMockProvider(t, "gitlab-private-instsance-client", "github-private-instance-secret", "https://mycompany.com/")
+	mockPrivateGitLab := newMockProvider(t, "gitlab-private-instance-client", "github-private-instance-secret", "https://mycompany.com/")
 	providers.MockProviders = []providers.Provider{mockGitLabCom.Provider}
 	defer func() { providers.MockProviders = nil }()
 

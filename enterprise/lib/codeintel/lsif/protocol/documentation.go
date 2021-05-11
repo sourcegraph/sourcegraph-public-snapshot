@@ -51,10 +51,10 @@ type DocumentationChildrenEdge struct {
 	Edge
 
 	// The ordered children "documentationResult" vertex IDs.
-	InVs []uint64 `json:"inV"`
+	InVs []uint64 `json:"inVs"`
 
 	// The parent "documentationResult" vertex ID.
-	OutV uint64 `json:"outVs"`
+	OutV uint64 `json:"outV"`
 }
 
 func NewDocumentationChildrenEdge(id uint64, inVs []uint64, outV uint64) DocumentationChildrenEdge {
@@ -148,8 +148,8 @@ const (
 // 	{id: 53, type:"vertex", label:"documentationResult", result:{slug:"httpserver", ...}}
 // 	{id: 54, type:"vertex", label:"documentationString", result:{kind:"plaintext", "value": "A single-line label for an HTTPServer instance"}}
 // 	{id: 55, type:"vertex", label:"documentationString", result:{kind:"plaintext", "value": "A multi-line\n detailed\n explanation of an HTTPServer instance, what it does, etc."}}
-// 	{id: 54, type:"edge", label:"documentationString", inV: 54, outV: 53, type:"label"}
-// 	{id: 54, type:"edge", label:"documentationString", inV: 55, outV: 53, type:"detail"}
+// 	{id: 54, type:"edge", label:"documentationString", inV: 54, outV: 53, kind:"label"}
+// 	{id: 54, type:"edge", label:"documentationString", inV: 55, outV: 53, kind:"detail"}
 //
 // Hover, definition, etc. results can then be attached to ranges within the "documentationString"
 // vertices themselves (vertex 54 / 55), see the docs for DocumentationString for more details.
@@ -163,23 +163,23 @@ type DocumentationStringEdge struct {
 	OutV uint64 `json:"outV"`
 
 	// Whether this links the "label" or "detail" string of the documentation.
-	Type DocumentationStringType `json:"type"`
+	Kind DocumentationStringKind `json:"kind"`
 }
 
-type DocumentationStringType string
+type DocumentationStringKind string
 
 const (
 	// A single-line label to display for this documentation in e.g. the index of a book. For
 	// example, the name of a group of documentation, the name of a library, the signature of a
 	// function or class, etc.
-	DocumentationStringTypeLabel DocumentationStringType = "label"
+	DocumentationStringKindLabel DocumentationStringKind = "label"
 
 	// A detailed multi-line string that contains detailed documentation for the section described by
 	// the title.
-	DocumentationStringTypeDetail DocumentationStringType = "detail"
+	DocumentationStringKindDetail DocumentationStringKind = "detail"
 )
 
-func NewDocumentationStringEdge(id, inV, outV uint64) DocumentationStringEdge {
+func NewDocumentationStringEdge(id, inV, outV uint64, kind DocumentationStringKind) DocumentationStringEdge {
 	return DocumentationStringEdge{
 		Edge: Edge{
 			Element: Element{
@@ -190,6 +190,7 @@ func NewDocumentationStringEdge(id, inV, outV uint64) DocumentationStringEdge {
 		},
 		OutV: outV,
 		InV:  inV,
+		Kind: kind,
 	}
 }
 

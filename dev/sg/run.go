@@ -344,21 +344,33 @@ func watch() (<-chan string, error) {
 	return paths, nil
 }
 
-func runTest(ctx context.Context, cmd Command) error {
+func runTest(ctx context.Context, cmd Command, args []string) error {
 	root, err := root.RepositoryRoot()
 	if err != nil {
 		return err
 	}
 
-	out.WriteLine(output.Linef("", output.StylePending, "Starting testsuite %s", cmd.Name))
-	out.WriteLine(output.Linef("", output.StylePending, "Running %q in %q...", cmd.Cmd, root))
+	out.WriteLine(output.Linef("", output.StylePending, "Starting testsuite %q.", cmd.Name))
+	if len(args) != 0 {
+		out.WriteLine(output.Linef("", output.StylePending, "\tAdditional arguments: %s", args))
+	}
 	commandCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	c := exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
+	cmdArgs := []string{cmd.Cmd}
+	if len(args) != 0 {
+		cmdArgs = append(cmdArgs, args...)
+	} else {
+		cmdArgs = append(cmdArgs, cmd.DefaultArgs)
+	}
+
+	c := exec.CommandContext(commandCtx, "bash", "-c", strings.Join(cmdArgs, " "))
 	c.Dir = root
 	c.Env = makeEnv(conf.Env, cmd.Env)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
+
+	out.WriteLine(output.Linef("", output.StylePending, "Running %s in %q...", c, root))
+
 	return c.Run()
 }

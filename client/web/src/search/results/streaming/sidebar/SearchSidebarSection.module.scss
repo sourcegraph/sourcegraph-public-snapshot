@@ -11,7 +11,7 @@
 
     &__list {
         list-style-type: none;
-        max-height: 15.5rem;
+        max-height: 12rem;
         overflow: auto;
         // Negative margin and positive padding allows focus rings to not be cut off by overflow:auto
         margin: 0 -0.125rem;
@@ -37,9 +37,22 @@
             text-decoration: none;
         }
 
+        &:focus {
+            text-decoration: none;
+        }
+
         &:active {
             background-color: var(--color-bg-3);
         }
+
+        &--break-words {
+            word-break: break-all;
+        }
+    }
+
+    &__icon {
+        width: 0.875rem;
+        height: 0.875rem;
     }
 
     &__no-results {

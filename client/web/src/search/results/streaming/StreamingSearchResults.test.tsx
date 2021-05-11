@@ -241,7 +241,7 @@ describe('StreamingSearchResults', () => {
             </BrowserRouter>
         )
 
-        const listComponent = element.find<VirtualList<SearchResult>>(VirtualList)
+        const listComponent = element.find<VirtualList<GQL.SearchResult>>(VirtualList)
         const renderedResultsList = listComponent.prop('items')
         expect(renderedResultsList.length).toBe(2)
         expect(listComponent.prop('renderItem')(renderedResultsList[0], undefined).type).toBe(FileMatch)

@@ -538,6 +538,21 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 		hunkLines = hunkLines[:len(hunkLines)-1]
 	}
 
+	// Now do the same thing for trailing "-" lines. But only if they're not
+	// followed by an "unchanged" line.
+	var lastMinus int = -1
+	for i, hunkLine := range hunkLines {
+		if hunkLine == " " {
+			lastMinus = -1
+		} else if hunkLine == "-" {
+			lastMinus = i
+		}
+	}
+	// Empty "-" line that's not followed by an unchanged line, so cut it out
+	if lastMinus > -1 {
+		hunkLines = append(hunkLines[:lastMinus], hunkLines[lastMinus+1:]...)
+	}
+
 	highlightedDiffHunkLineResolvers := make([]*highlightedDiffHunkLineResolver, len(hunkLines))
 	// Lines in highlightedBase and highlightedHead are 0-indexed.
 	baseLine := r.hunk.OrigStartLine - 1

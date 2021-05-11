@@ -1,4 +1,4 @@
-@import 'branded/src/global-styles/breakpoints';
+@import 'wildcard/src/global-styles/breakpoints';
 
 .batch-change-close-changesets-list {
     &__grid {
@@ -7,7 +7,7 @@
         row-gap: 1rem;
         column-gap: 1rem;
         align-items: center;
-        @include media-breakpoint-down(sm) {
+        @media (--sm-breakpoint-down) {
             row-gap: 0.5rem;
             column-gap: 0.5rem;
         }

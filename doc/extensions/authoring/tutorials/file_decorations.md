@@ -1,6 +1,6 @@
 # File decorations tutorial
 
-![Sourcegraph extension button](img/file-decorations.png)
+![File decorations](img/file-decorations.png)
 
 Extensions can decorate files in the file tree and/or directory page with text content and/or a `<meter/>` element. In this tutorial, you'll build an extension that decorates directories with the length of their names.
 
