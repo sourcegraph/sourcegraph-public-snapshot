@@ -19,9 +19,11 @@ var pubSubDotComEventsTopicID = env.Get("PUBSUB_DOTCOM_EVENTS_TOPIC_ID", "", "Pu
 
 // Event represents a request to log telemetry.
 type Event struct {
-	EventName      string
-	UserID         int32
-	UserCookieID   string
+	EventName    string
+	UserID       int32
+	UserCookieID string
+	// FirstSourceURL is only measured for Cloud events; therefore, this only goes to the BigQuery database
+	// and does not go to the Postgres DB.
 	FirstSourceURL *string
 	URL            string
 	Source         string
