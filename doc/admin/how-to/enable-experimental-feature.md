@@ -11,7 +11,7 @@ This document with take you through how to add, enable or disable an experimenta
 
 ## Steps to enable/disable
 
-1. Navigate to Site Admin > Global settings
+1. Navigate to Site Admin > Global settings in the UI or follow this link format for your `externalUrl/site-admin/global-settings`
 2. Scroll down and locate where `experimentalFeatures` is located. Example:
 
 ```
