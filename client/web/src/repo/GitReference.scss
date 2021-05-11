@@ -1,5 +1,6 @@
 .git-ref-node {
     --git-ref-divider-color: var(--border-color);
+    color: var(--text-muted);
 
     .theme-redesign & {
         --git-ref-divider-color: var(--border-color-2);

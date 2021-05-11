@@ -11,10 +11,9 @@
     &-git-commit-node {
         &__link {
             display: flex;
-            color: var(--body-color);
+            color: var(--text-muted);
 
             .theme-redesign & {
-                color: var(--text-muted);
                 text-decoration: none;
 
                 &:hover,

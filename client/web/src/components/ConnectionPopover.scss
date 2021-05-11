@@ -1,12 +1,14 @@
-.connection-popover {
+:root {
     --popover-item-padding-h: 0.75rem;
     --popover-item-padding-v: 0.325rem;
+}
 
-    .theme-redesign & {
-        --popover-item-padding-h: 1rem;
-        --popover-item-padding-v: 0.25rem;
-    }
+.theme-redesign {
+    --popover-item-padding-h: 1rem;
+    --popover-item-padding-v: 0.25rem;
+}
 
+.connection-popover {
     isolation: isolate;
     display: flex;
     flex-direction: column;
