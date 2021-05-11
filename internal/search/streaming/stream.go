@@ -1,4 +1,4 @@
-package graphqlbackend
+package streaming
 
 import (
 	"context"
@@ -8,25 +8,24 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
 type SearchEvent struct {
 	Results []result.Match
-	Stats   streaming.Stats
+	Stats   Stats
 }
 
 type Sender interface {
 	Send(SearchEvent)
 }
 
-type limitStream struct {
+type LimitStream struct {
 	s         Sender
 	cancel    context.CancelFunc
 	remaining atomic.Int64
 }
 
-func (s *limitStream) Send(event SearchEvent) {
+func (s *LimitStream) Send(event SearchEvent) {
 	s.s.Send(event)
 
 	var count int64
@@ -46,7 +45,7 @@ func (s *limitStream) Send(event SearchEvent) {
 	// multiple times, but this is fine. Want to avoid lots of noop events
 	// after the first IsLimitHit.
 	if old >= 0 && s.remaining.Load() < 0 {
-		s.s.Send(SearchEvent{Stats: streaming.Stats{IsLimitHit: true}})
+		s.s.Send(SearchEvent{Stats: Stats{IsLimitHit: true}})
 		s.cancel()
 	}
 }
@@ -61,7 +60,7 @@ func (s *limitStream) Send(event SearchEvent) {
 // Stream are complete.
 func WithLimit(ctx context.Context, parent Sender, limit int) (context.Context, Sender, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(ctx)
-	stream := &limitStream{cancel: cancel, s: parent}
+	stream := &LimitStream{cancel: cancel, s: parent}
 	stream.remaining.Store(int64(limit))
 	return ctx, stream, cancel
 }
@@ -108,13 +107,13 @@ func (f MatchStreamFunc) Send(se SearchEvent) {
 	f(se)
 }
 
-// collectStream will call search and aggregates all events it sends. It then
+// CollectStream will call search and aggregates all events it sends. It then
 // returns the aggregate event and any error it returns.
-func collectStream(search func(Sender) error) ([]result.Match, streaming.Stats, error) {
+func CollectStream(search func(Sender) error) ([]result.Match, Stats, error) {
 	var (
 		mu      sync.Mutex
 		results []result.Match
-		stats   streaming.Stats
+		stats   Stats
 	)
 
 	err := search(MatchStreamFunc(func(event SearchEvent) {

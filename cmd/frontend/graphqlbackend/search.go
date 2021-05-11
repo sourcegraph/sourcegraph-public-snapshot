@@ -48,7 +48,7 @@ type SearchArgs struct {
 	// allow us to stream out things like dynamic filters or take into account
 	// AND/OR. However, streaming is behind a feature flag for now, so this is
 	// to make it visible in the browser.
-	Stream Sender
+	Stream streaming.Sender
 
 	// For tests
 	Settings *schema.Settings
@@ -123,7 +123,7 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	if sp, _ := plan.ToParseTree().StringValue(query.FieldSelect); sp != "" && args.Stream != nil {
 		// Invariant: error already checked
 		selectPath, _ := filter.SelectPathFromString(sp)
-		args.Stream = WithSelect(args.Stream, selectPath)
+		args.Stream = streaming.WithSelect(args.Stream, selectPath)
 	}
 
 	return &searchResolver{
@@ -252,7 +252,7 @@ type searchResolver struct {
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
 	// stream if non-nil will send all search events we receive down it.
-	stream Sender
+	stream streaming.Sender
 
 	// Cached resolveRepositories results. We use a pointer to the mutex so that we
 	// can copy the resolver, while sharing the mutex. If we didn't use a pointer,

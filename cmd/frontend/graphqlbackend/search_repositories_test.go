@@ -122,7 +122,7 @@ func TestSearchRepositories(t *testing.T) {
 }
 
 func searchRepositoriesBatch(ctx context.Context, args *search.TextParameters, limit int32) ([]result.Match, streaming.Stats, error) {
-	return collectStream(func(stream Sender) error {
+	return streaming.CollectStream(func(stream streaming.Sender) error {
 		return searchRepositories(ctx, args, limit, stream)
 	})
 }

@@ -20,17 +20,17 @@ var mockSearchRepositories func(args *search.TextParameters) ([]result.Match, *s
 //
 // For a repository to match a query, the repository's name must match all of the repo: patterns AND the
 // default patterns (i.e., the patterns that are not prefixed with any search field).
-func searchRepositories(ctx context.Context, args *search.TextParameters, limit int32, stream Sender) error {
+func searchRepositories(ctx context.Context, args *search.TextParameters, limit int32, stream streaming.Sender) error {
 	if mockSearchRepositories != nil {
 		results, stats, err := mockSearchRepositories(args)
-		stream.Send(SearchEvent{
+		stream.Send(streaming.SearchEvent{
 			Results: results,
 			Stats:   statsDeref(stats),
 		})
 		return err
 	}
 
-	ctx, stream, cancel := WithLimit(ctx, stream, int(limit))
+	ctx, stream, cancel := streaming.WithLimit(ctx, stream, int(limit))
 	defer cancel()
 
 	fieldAllowlist := map[string]struct{}{
@@ -92,14 +92,14 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		if err != nil {
 			return err
 		}
-		stream.Send(SearchEvent{
+		stream.Send(streaming.SearchEvent{
 			Results: repoRevsToRepoMatches(ctx, repos),
 		})
 		return nil
 	}
 
 	for repos := range results {
-		stream.Send(SearchEvent{
+		stream.Send(streaming.SearchEvent{
 			Results: repoRevsToRepoMatches(ctx, repos),
 		})
 	}

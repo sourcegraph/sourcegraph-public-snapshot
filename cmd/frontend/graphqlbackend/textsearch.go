@@ -268,7 +268,7 @@ func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
 // searchFilesInRepoBatch is a convenience function around searchFilesInRepos
 // which collects the results from the stream.
 func searchFilesInReposBatch(ctx context.Context, args *search.TextParameters) ([]*result.FileMatch, streaming.Stats, error) {
-	matches, stats, err := collectStream(func(stream Sender) error {
+	matches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
 		return searchFilesInRepos(ctx, args, stream)
 	})
 
@@ -280,17 +280,17 @@ func searchFilesInReposBatch(ctx context.Context, args *search.TextParameters) (
 }
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream Sender) (err error) {
+func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream streaming.Sender) (err error) {
 	if mockSearchFilesInRepos != nil {
 		matches, mockStats, err := mockSearchFilesInRepos(args)
-		stream.Send(SearchEvent{
+		stream.Send(streaming.SearchEvent{
 			Results: fileMatchesToMatches(matches),
 			Stats:   statsDeref(mockStats),
 		})
 		return err
 	}
 
-	ctx, stream, cleanup := WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
+	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
 	defer cleanup()
 
 	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
@@ -359,7 +359,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 func callSearcherOverRepos(
 	ctx context.Context,
 	args *search.TextParameters,
-	stream Sender,
+	stream streaming.Sender,
 	searcherRepos []*search.RepositoryRevisions,
 	index bool,
 ) (err error) {
@@ -434,7 +434,7 @@ func callSearcherOverRepos(
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
 					stats, err := handleRepoSearchResult(repoRev, repoLimitHit, false, err)
-					stream.Send(SearchEvent{
+					stream.Send(streaming.SearchEvent{
 						Results: fileMatchesToMatches(matches),
 						Stats:   stats,
 					})

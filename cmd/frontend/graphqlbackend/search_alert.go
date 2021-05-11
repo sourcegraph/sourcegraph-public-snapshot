@@ -708,7 +708,7 @@ type alertObserver struct {
 }
 
 // Update AlertObserver's state based on event.
-func (o *alertObserver) Update(event SearchEvent) {
+func (o *alertObserver) Update(event streaming.SearchEvent) {
 	if len(event.Results) > 0 {
 		o.hasResults = true
 	}

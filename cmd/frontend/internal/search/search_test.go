@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -173,7 +174,7 @@ func TestDisplayLimit(t *testing.T) {
 			})
 
 			// Send 2 repository matches.
-			mock.c.Send(graphqlbackend.SearchEvent{
+			mock.c.Send(streaming.SearchEvent{
 				Results: []result.Match{mkRepoMatch(1), mkRepoMatch(2)},
 			})
 			mock.Close()
@@ -207,7 +208,7 @@ func mkRepoMatch(id int) *result.RepoMatch {
 
 type mockSearchResolver struct {
 	done   chan struct{}
-	c      graphqlbackend.Sender
+	c      streaming.Sender
 	inputs *graphqlbackend.SearchInputs
 }
 

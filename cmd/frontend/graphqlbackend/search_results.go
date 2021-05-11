@@ -221,7 +221,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	filters := SearchFilters{
 		Globbing: globbing,
 	}
-	filters.Update(SearchEvent{
+	filters.Update(streaming.SearchEvent{
 		Results: sr.SearchResults,
 		Stats:   sr.Stats,
 	})
@@ -505,7 +505,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 			result.Stats.IsLimitHit = true
 		}
 		if r.stream != nil {
-			r.stream.Send(SearchEvent{
+			r.stream.Send(streaming.SearchEvent{
 				Results: result.SearchResults,
 				Stats:   result.Stats,
 			})
@@ -890,7 +890,7 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 		r.stream = nil // Disables streaming: backends may not use the endpoint.
 		srr, err := r.resultsBatch(ctx)
 		if srr != nil {
-			endpoint.Send(SearchEvent{
+			endpoint.Send(streaming.SearchEvent{
 				Results: srr.SearchResults,
 				Stats:   srr.Stats,
 			})
@@ -1371,7 +1371,7 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	return nil
 }
 
-func newAggregator(db dbutil.DB, stream Sender, inputs *SearchInputs) *aggregator {
+func newAggregator(db dbutil.DB, stream streaming.Sender, inputs *SearchInputs) *aggregator {
 	return &aggregator{
 		db:           db,
 		parentStream: stream,
@@ -1382,7 +1382,7 @@ func newAggregator(db dbutil.DB, stream Sender, inputs *SearchInputs) *aggregato
 }
 
 type aggregator struct {
-	parentStream Sender
+	parentStream streaming.Sender
 	db           dbutil.DB
 
 	mu      sync.Mutex
@@ -1401,7 +1401,7 @@ func (a *aggregator) get() ([]result.Match, streaming.Stats, *searchAlert, error
 	return a.results, a.stats, alert, err
 }
 
-func (a *aggregator) Send(event SearchEvent) {
+func (a *aggregator) Send(event streaming.SearchEvent) {
 	if a.parentStream != nil {
 		a.parentStream.Send(event)
 	}
@@ -1488,7 +1488,7 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 		matches = append(matches, fm)
 	}
 
-	a.Send(SearchEvent{
+	a.Send(streaming.SearchEvent{
 		Results: matches,
 		Stats:   stats,
 	})
@@ -1640,7 +1640,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 	stream := r.stream
 	if stream != nil {
 		var cancelOnLimit context.CancelFunc
-		ctx, stream, cancelOnLimit = WithLimit(ctx, stream, limit)
+		ctx, stream, cancelOnLimit = streaming.WithLimit(ctx, stream, limit)
 		defer cancelOnLimit()
 	}
 
@@ -1701,7 +1701,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 			repos[repoRev.Repo.ID] = repoRev.Repo
 		}
 
-		agg.Send(SearchEvent{
+		agg.Send(streaming.SearchEvent{
 			Stats: streaming.Stats{
 				Repos:            repos,
 				ExcludedForks:    resolved.ExcludedRepos.Forks,

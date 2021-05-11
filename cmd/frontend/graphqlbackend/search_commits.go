@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -247,7 +248,7 @@ func commitParametersToDiffParameters(ctx context.Context, db dbutil.DB, op *sea
 }
 
 // searchCommitsInRepoStream searches for commits based on op.
-func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.CommitParameters, s Sender) (err error) {
+func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.CommitParameters, s streaming.Sender) (err error) {
 	var timedOut, limitHit bool
 	resultCount := 0
 	tr, ctx := trace.New(ctx, "searchCommitsInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v", op.RepoRevs, op.PatternInfo))
@@ -299,7 +300,7 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 
 		// Only send if we have something to report back.
 		if len(results) > 0 || !stats.Zero() {
-			s.Send(SearchEvent{
+			s.Send(streaming.SearchEvent{
 				Results: commitMatchesToMatches(results),
 				Stats:   stats,
 			})
@@ -492,7 +493,7 @@ type searchCommitsInReposParameters struct {
 	// with the RepoRevs field set.
 	CommitParams search.CommitParameters
 
-	ResultChannel Sender
+	ResultChannel streaming.Sender
 }
 
 func searchCommitsInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, params searchCommitsInReposParameters) (err error) {
@@ -528,7 +529,7 @@ func searchCommitsInRepos(ctx context.Context, db dbutil.DB, args *search.TextPa
 }
 
 // searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
-func searchCommitDiffsInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel Sender) error {
+func searchCommitDiffsInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel streaming.Sender) error {
 	return searchCommitsInRepos(ctx, db, args, searchCommitsInReposParameters{
 		TraceName:     "searchCommitDiffsInRepos",
 		ResultChannel: resultChannel,
@@ -541,7 +542,7 @@ func searchCommitDiffsInRepos(ctx context.Context, db dbutil.DB, args *search.Te
 }
 
 // searchCommitLogInRepos searches a set of repos for matching commits.
-func searchCommitLogInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel Sender) error {
+func searchCommitLogInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel streaming.Sender) error {
 	var terms []string
 	if args.PatternInfo.Pattern != "" {
 		terms = append(terms, args.PatternInfo.Pattern)

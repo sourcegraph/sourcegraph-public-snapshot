@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
 const maxSearchSuggestions = 100
@@ -368,7 +369,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
 
-		fileMatches, _, err := collectStream(func(stream Sender) error {
+		fileMatches, _, err := streaming.CollectStream(func(stream streaming.Sender) error {
 			return searchSymbols(ctx, &search.TextParameters{
 				PatternInfo:  p,
 				RepoPromise:  (&search.Promise{}).Resolve(resolved.RepoRevs),

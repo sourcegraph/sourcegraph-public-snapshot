@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -158,7 +159,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	first := true
 
 	for {
-		var event graphqlbackend.SearchEvent
+		var event streaming.SearchEvent
 		var ok bool
 		select {
 		case event, ok = <-events:
@@ -276,8 +277,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // startSearch will start a search. It returns the events channel which
 // streams out search events. Once events is closed you can call results which
 // will return the results resolver and error.
-func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan graphqlbackend.SearchEvent, inputs graphqlbackend.SearchInputs, results func() (*graphqlbackend.SearchResultsResolver, error)) {
-	eventsC := make(chan graphqlbackend.SearchEvent)
+func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan streaming.SearchEvent, inputs graphqlbackend.SearchInputs, results func() (*graphqlbackend.SearchResultsResolver, error)) {
+	eventsC := make(chan streaming.SearchEvent)
 
 	search, err := h.newSearchResolver(ctx, h.db, &graphqlbackend.SearchArgs{
 		Query:          a.Query,
@@ -285,7 +286,7 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan
 		PatternType:    strPtr(a.PatternType),
 		VersionContext: strPtr(a.VersionContext),
 
-		Stream: graphqlbackend.MatchStreamFunc(func(event graphqlbackend.SearchEvent) {
+		Stream: streaming.MatchStreamFunc(func(event streaming.SearchEvent) {
 			eventsC <- event
 		}),
 	})
