@@ -232,7 +232,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
         })
 
     return (
-        <Tabs defaultIndex={tabIndex} className="revisions-popover" onChange={handleTabsChange}>
+        <Tabs defaultIndex={tabIndex} className="revisions-popover connection-popover" onChange={handleTabsChange}>
             <div className="tablist-wrapper revisions-popover__tabs">
                 <TabList>
                     {TABS.map(({ label, id }) => (
@@ -245,7 +245,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                     <CloseIcon className="icon-inline" />
                 </button>
             </div>
-            <TabPanels className="revisions-popover__tab-panels">
+            <TabPanels>
                 {TABS.map(tab => (
                     <TabPanel key={tab.id}>
                         {tab.type ? (
@@ -254,6 +254,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                                 className="connection-popover__content"
                                 showMoreClassName="connection-popover__show-more"
                                 inputClassName="connection-popover__input"
+                                listClassName="connection-popover__nodes"
                                 inputPlaceholder="Find..."
                                 compact={true}
                                 noun={tab.noun}
@@ -277,6 +278,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                                 key={tab.id}
                                 className="connection-popover__content"
                                 inputClassName="connection-popover__input"
+                                listClassName="connection-popover__nodes"
                                 inputPlaceholder="Find..."
                                 compact={true}
                                 noun={tab.noun}
