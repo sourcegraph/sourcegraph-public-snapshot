@@ -5,12 +5,10 @@ import CardTextOutlineIcon from 'mdi-react/CardTextOutlineIcon'
 import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
 import React, { useCallback, useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -20,13 +18,13 @@ import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import {
     ChangesetState,
-    ExternalChangesetFields,
     VisibleChangesetApplyPreviewFields,
     VisibleChangesetSpecFields,
 } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
 import { Description } from '../../Description'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
+import { ExternalChangesetTitle } from '../../detail/changesets/ExternalChangesetTitle'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
@@ -425,46 +423,13 @@ const ChangesetSpecFileDiffConnection: React.FunctionComponent<
     )
 }
 
-const ExternalChangesetTitle: React.FunctionComponent<
-    Pick<ExternalChangesetFields, 'title' | 'externalID' | 'externalURL'> & { newTitle?: string }
-> = ({ title, externalID, externalURL, newTitle }) => {
-    const linkOrSpan = (
-        <LinkOrSpan
-            to={externalURL?.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`mr-2 ${newTitle ? 'text-muted' : ''}`}
-        >
-            {title}
-            {externalID && <> (#{externalID}) </>}
-            {externalURL?.url && (
-                <>
-                    {' '}
-                    <ExternalLinkIcon size="1rem" />
-                </>
-            )}
-        </LinkOrSpan>
-    )
-
-    if (newTitle) {
-        return (
-            <h3>
-                <del>{linkOrSpan}</del>
-                {newTitle}
-            </h3>
-        )
-    }
-    return <h3>{linkOrSpan}</h3>
-}
-
 const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFields }> = ({ spec }) => {
     if (spec.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         return (
-            <ExternalChangesetTitle
-                title={spec.targets.changeset.title}
-                externalID={spec.targets.changeset.externalID as Maybe<string>}
-                externalURL={spec.targets.changeset.externalURL as Maybe<{ url: string }>}
-            />
+            <ExternalChangesetTitle externalURL={spec.targets.changeset.externalURL as Maybe<{ url: string }>}>
+                {spec.targets.changeset.title}
+                {spec.targets.changeset.externalID && <> (#{spec.targets.changeset.externalID}) </>}
+            </ExternalChangesetTitle>
         )
     }
     if (spec.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
@@ -477,11 +442,12 @@ const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyP
     // (default) spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate'
     return (
         <ExternalChangesetTitle
-            title={spec.targets.changeset.title}
-            externalID={spec.targets.changeset.externalID}
             externalURL={spec.targets.changeset.externalURL}
             newTitle={spec.targets.changesetSpec.description.title}
-        />
+        >
+            {spec.targets.changeset.title}
+            {spec.targets.changeset.externalID && <> (#{spec.targets.changeset.externalID}) </>}
+        </ExternalChangesetTitle>
     )
 }
 
