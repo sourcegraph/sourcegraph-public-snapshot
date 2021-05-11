@@ -32,7 +32,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({
     const [isRedesignEnabled] = useRedesignToggle()
 
     const renderTitle = (): JSX.Element => {
-        if (isRedesignEnabled && isStreamingEnabled && result.__typename === 'Repository') {
+        if (isRedesignEnabled && result.__typename === 'Repository') {
             const RepoIcon = getRepoIcon(repoName)
             return (
                 <div className="search-result__title">
@@ -65,7 +65,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({
     }
 
     const renderBody = (): JSX.Element => {
-        if (isRedesignEnabled && isStreamingEnabled && result.__typename === 'Repository') {
+        if (isRedesignEnabled && result.__typename === 'Repository') {
             return (
                 <div className="search-result-match">
                     <small>
