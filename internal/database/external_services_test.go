@@ -420,7 +420,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 	}
 	err := ExternalServices(db).Create(ctx, confGet, es)
 	if err != nil {
