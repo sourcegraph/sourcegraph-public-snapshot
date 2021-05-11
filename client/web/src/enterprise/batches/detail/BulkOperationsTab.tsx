@@ -1,4 +1,5 @@
 import * as H from 'history'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useCallback } from 'react'
 import { delay, repeatWhen } from 'rxjs/operators'
 
@@ -25,7 +26,7 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
     const query = useCallback(
         ({ first, after }: FilteredConnectionQueryArguments) =>
             queryBulkOperations({ batchChange: batchChangeID, after: after ?? null, first: first ?? null }).pipe(
-                repeatWhen(notifier => notifier.pipe(delay(5000)))
+                repeatWhen(notifier => notifier.pipe(delay(2000)))
             ),
         [batchChangeID, queryBulkOperations]
     )
@@ -44,23 +45,17 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
             useURLQuery={true}
             listComponent="div"
             // listClassName={classNames(styles.batchChangeChangesetsGridWithCheckboxes, 'mb-3')}
-            // headComponent={BatchChangeChangesetsHeader}
-            // headComponentProps={{
-            //     allSelected,
-            //     toggleSelectAll,
-            //     disabled: !(viewerCanAdminister && !isSubmittingSelected),
-            // }}
-            // Only show the empty element, if no filters are selected.
-            // emptyElement={
-            //     filtersSelected(changesetFilters) ? (
-            //         <EmptyChangesetSearchElement />
-            //     ) : onlyArchived ? (
-            //         <EmptyArchivedChangesetListElement />
-            //     ) : (
-            //         <EmptyChangesetListElement />
-            //     )
-            // }
+            emptyElement={<EmptyBulkOperationsListElement />}
             noSummaryIfAllNodesVisible={true}
         />
     )
 }
+
+export const EmptyBulkOperationsListElement: React.FunctionComponent<{}> = () => (
+    <div className="text-muted mt-4 pt-4 mb-4 row">
+        <div className="col-12 text-center">
+            <MapSearchIcon className="icon" />
+            <div className="pt-2">No bulk operations have been run on this batch change.</div>
+        </div>
+    </div>
+)

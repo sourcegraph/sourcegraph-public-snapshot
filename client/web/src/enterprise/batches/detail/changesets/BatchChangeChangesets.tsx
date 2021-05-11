@@ -12,8 +12,6 @@ import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { property, isDefined } from '@sourcegraph/shared/src/util/types'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -24,7 +22,6 @@ import { WebHoverOverlay } from '../../../../components/shared'
 import { AllChangesetIDsVariables, ChangesetFields, Scalars } from '../../../../graphql-operations'
 import { getLSPTextDocumentPositionParameters } from '../../utils'
 import {
-    detachChangesets,
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
 } from '../backend'
@@ -100,7 +97,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
 
     const changesetSelected = useCallback(
         (id: Scalars['ID']): boolean => allAllSelected || selectedChangesets.has(id),
-        [selectedChangesets]
+        [allAllSelected, selectedChangesets]
     )
     const [allSelected, setAllSelected] = useState<boolean>(false)
 
@@ -119,29 +116,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
         } else {
             selectAll()
         }
-    }, [setAllSelected, allSelected, selectAll, deselectAll])
-
-    const [isSubmittingSelected, setIsSubmittingSelected] = useState<boolean | Error>(false)
-    const onSubmitSelected = useCallback(async () => {
-        // if (
-        //     !confirm(
-        //         `Are you sure you want to detach ${selectedChangesets.size} ${pluralize(
-        //             'changeset',
-        //             selectedChangesets.size
-        //         )}?`
-        //     )
-        // ) {
-        //     return
-        // }
-        setIsSubmittingSelected(true)
-        try {
-            // await detachChangesets(batchChangeID, [...selectedChangesets])
-            deselectAll()
-            // telemetryService.logViewEvent('BatchChangeDetailsPageDetachArchivedChangesets')
-        } catch (error) {
-            setIsSubmittingSelected(asError(error))
-        }
-    }, [batchChangeID, selectedChangesets, setIsSubmittingSelected, deselectAll, setAllSelected, telemetryService])
+    }, [allSelected, selectAll, deselectAll])
 
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
@@ -163,11 +138,11 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
         setAllAllSelected(true)
     }, [])
 
-    const [queryArgs, setQueryArgs] = useState<Omit<AllChangesetIDsVariables, 'after'>>()
+    const [queryArguments, setQueryArguments] = useState<Omit<AllChangesetIDsVariables, 'after'>>()
 
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArguments) => {
-            const passedArgs = {
+            const passedArguments = {
                 state: changesetFilters.state,
                 reviewState: changesetFilters.reviewState,
                 checkState: changesetFilters.checkState,
@@ -178,10 +153,10 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                 search: changesetFilters.search,
                 onlyArchived: !!onlyArchived,
             }
-            return queryChangesets(passedArgs)
+            return queryChangesets(passedArguments)
                 .pipe(
                     tap(data => {
-                        setQueryArgs(passedArgs)
+                        setQueryArguments(passedArguments)
                         setAvailableChangesets(
                             new Set(
                                 data.nodes.filter(node => node.__typename === 'ExternalChangeset').map(node => node.id)
@@ -272,13 +247,12 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                 <ChangesetSelectRow
                     batchChangeID={batchChangeID}
                     selected={selectedChangesets}
-                    onSubmit={onSubmitSelected}
-                    isSubmitting={isSubmittingSelected}
+                    onSubmit={deselectAll}
                     totalCount={totalChangesetCount!}
                     isAllSelected={allSelected}
                     allAllSelected={allAllSelected}
                     setAllSelected={onSelectAllAll}
-                    queryArgs={queryArgs!}
+                    queryArguments={queryArguments!}
                 />
             )}
             <div className="list-group position-relative" ref={nextContainerElement}>
@@ -310,7 +284,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     headComponentProps={{
                         allSelected,
                         toggleSelectAll,
-                        disabled: !(viewerCanAdminister && !isSubmittingSelected),
+                        disabled: !viewerCanAdminister,
                     }}
                     // Only show the empty element, if no filters are selected.
                     emptyElement={

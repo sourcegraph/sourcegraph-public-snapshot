@@ -19,21 +19,60 @@ add('all states', () => (
                     {...props}
                     onSubmit={onSubmit}
                     selected={new Set(['id-1', 'id-2'])}
-                    isSubmitting={false}
+                    allAllSelected={false}
+                    batchChangeID="test-123"
+                    isAllSelected={false}
+                    setAllSelected={() => undefined}
+                    totalCount={100}
+                    queryArguments={{
+                        batchChange: 'test-123',
+                        checkState: null,
+                        onlyArchived: null,
+                        onlyPublishedByThisBatchChange: null,
+                        reviewState: null,
+                        search: null,
+                        state: null,
+                    }}
                 />
                 <hr />
                 <ChangesetSelectRow
                     {...props}
                     onSubmit={onSubmit}
                     selected={new Set(['id-1', 'id-2'])}
-                    isSubmitting={true}
+                    allAllSelected={false}
+                    batchChangeID="test-123"
+                    isAllSelected={false}
+                    setAllSelected={() => undefined}
+                    totalCount={100}
+                    queryArguments={{
+                        batchChange: 'test-123',
+                        checkState: null,
+                        onlyArchived: null,
+                        onlyPublishedByThisBatchChange: null,
+                        reviewState: null,
+                        search: null,
+                        state: null,
+                    }}
                 />
                 <hr />
                 <ChangesetSelectRow
                     {...props}
                     onSubmit={onSubmit}
                     selected={new Set(['id-1', 'id-2'])}
-                    isSubmitting={new Error('something went wrong with the backend :(')}
+                    allAllSelected={false}
+                    batchChangeID="test-123"
+                    isAllSelected={false}
+                    setAllSelected={() => undefined}
+                    totalCount={100}
+                    queryArguments={{
+                        batchChange: 'test-123',
+                        checkState: null,
+                        onlyArchived: null,
+                        onlyPublishedByThisBatchChange: null,
+                        reviewState: null,
+                        search: null,
+                        state: null,
+                    }}
                 />
             </>
         )}

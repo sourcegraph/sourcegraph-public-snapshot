@@ -1,3 +1,4 @@
+import { subDays } from 'date-fns'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -13,6 +14,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import { DismissibleAlert } from '../../../components/DismissibleAlert'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { BatchChangeFields, Scalars } from '../../../graphql-operations'
@@ -30,13 +32,11 @@ import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSecti
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 import { BatchChangeTabs } from './BatchChangeTabs'
+import { BulkOperationNode } from './bulk-operations/BulkOperationNode'
 import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
-import { subDays } from 'date-fns'
-import { BulkOperationNode } from './bulk-operations/BulkOperationNode'
-import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
 export interface BatchChangeDetailsPageProps
     extends ThemeProps,
@@ -100,7 +100,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                     repeatWhen(notifier => notifier.pipe(delay(5000))),
                     distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
-            [namespaceID, batchChangeName, fetchBatchChangeByNamespace]
+            [fetchBatchChangeByNamespace, namespaceID, batchChangeName, createdAfter]
         )
     )
 
@@ -116,6 +116,9 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
     if (batchChange === null) {
         return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
+
+    const parameters = new URLSearchParams(location.search)
+    const isBulkTabOpen = parameters.get('tab') === 'bulkoperations'
 
     return (
         <>
@@ -148,11 +151,16 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 }
                 className="test-batch-change-details-page mb-3"
             />
-            {batchChange.activeBulkOperations.nodes.map(node => (
-                <DismissibleAlert className="alert alert-info" partialStorageKey={`bulkOperation-${node.id}`}>
-                    <BulkOperationNode node={node} key={node.id} />
-                </DismissibleAlert>
-            ))}
+            {!isBulkTabOpen &&
+                batchChange.activeBulkOperations.nodes.map(node => (
+                    <DismissibleAlert
+                        key={node.id}
+                        className="alert alert-info"
+                        partialStorageKey={`bulkOperation-${node.id}`}
+                    >
+                        <BulkOperationNode node={node} key={node.id} />
+                    </DismissibleAlert>
+                ))}
             <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
             <ClosedNotice closedAt={batchChange.closedAt} className="mb-3" />
             <UnpublishedNotice

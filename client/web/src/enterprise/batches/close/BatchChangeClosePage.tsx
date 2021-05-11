@@ -25,6 +25,7 @@ import { BatchChangeInfoByline } from '../detail/BatchChangeInfoByline'
 import { closeBatchChange as _closeBatchChange } from './backend'
 import { BatchChangeCloseAlert } from './BatchChangeCloseAlert'
 import { BatchChangeCloseChangesetsList } from './BatchChangeCloseChangesetsList'
+import { subDays } from 'date-fns'
 
 export interface BatchChangeClosePageProps
     extends ThemeProps,
@@ -67,8 +68,9 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
     closeBatchChange,
 }) => {
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
+    const createdAfter = useMemo(() => subDays(new Date(), 3).toISOString(), [])
     const batchChange = useObservable(
-        useMemo(() => fetchBatchChangeByNamespace(namespaceID, batchChangeName), [
+        useMemo(() => fetchBatchChangeByNamespace(namespaceID, batchChangeName, createdAfter), [
             namespaceID,
             batchChangeName,
             fetchBatchChangeByNamespace,

@@ -75,6 +75,20 @@ const batchChangeDefaults: BatchChangeFields = {
     bulkOperations: {
         totalCount: 3,
     },
+    activeBulkOperations: {
+        totalCount: 1,
+        nodes: [
+            {
+                id: 'testid-123',
+                state: BulkOperationState.PROCESSING,
+                createdAt: subDays(now, 2).toISOString(),
+                finishedAt: null,
+                progress: 0.37,
+                errors: [],
+                type: BulkOperationType.COMMENT,
+            },
+        ],
+    },
     diffStat: { added: 1000, changed: 2000, deleted: 1000 },
 }
 
@@ -259,7 +273,7 @@ const queryBulkOperations: typeof _queryBulkOperations = () =>
                             },
                             title: 'Changeset title on code host',
                         },
-                        error: `Failed to create comment, cannot comment on a PR that is awesome.`,
+                        error: 'Failed to create comment, cannot comment on a PR that is awesome.',
                     },
                 ],
                 progress: 1,

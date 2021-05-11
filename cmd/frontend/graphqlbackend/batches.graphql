@@ -2320,10 +2320,6 @@ type BatchChange implements Node {
         """
         after: String
         """
-        Filter by state.
-        """
-        state: [BulkOperationState!]
-        """
         Filter by createdAt value.
         """
         createdAfter: DateTime

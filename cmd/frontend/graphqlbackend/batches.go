@@ -207,7 +207,6 @@ type DetachChangesetsArgs struct {
 type ListBatchChangeBulkOperationArgs struct {
 	First        int32
 	After        *string
-	State        *[]string
 	CreatedAfter *DateTime
 }
 

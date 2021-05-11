@@ -2,21 +2,21 @@ import classNames from 'classnames'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React, { Fragment, useCallback, useState } from 'react'
 
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { ErrorAlert } from '../../../../components/alerts'
 import { AllChangesetIDsVariables, Scalars } from '../../../../graphql-operations'
+import { eventLogger } from '../../../../tracking/eventLogger'
+import { queryAllChangesetIDs } from '../backend'
 
 import { CreateCommentModal } from './CreateCommentModal'
-import { queryAllChangesetIDs } from '../backend'
+import { DetachChangesetsModal } from './DetachChangesetsModal'
 
 interface ChangesetListAction {
     actionType: string
     actionVerb: string
     dropdownTitle: string
     dropdownDescription: string
-    isAvailable: () => boolean
+    isAvailable: (queryArguments: Omit<AllChangesetIDsVariables, 'after'>) => boolean
     onTrigger: (
         batchChangeID: Scalars['ID'],
         changesetIDs: () => Promise<Scalars['ID'][]>,
@@ -32,8 +32,16 @@ const availableActions: ChangesetListAction[] = [
         dropdownTitle: 'Detach changesets',
         dropdownDescription:
             "Removes the selected changesets from this batch change. Unlike archive, this can't be undone.",
-        isAvailable: () => true,
-        onTrigger: () => undefined,
+        isAvailable: ({ onlyArchived }) => !!onlyArchived,
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
+            <DetachChangesetsModal
+                batchChangeID={batchChangeID}
+                changesetIDs={changesetIDs}
+                afterCreate={onDone}
+                onCancel={onCancel}
+                telemetryService={eventLogger}
+            />
+        ),
     },
     {
         actionType: 'commentatore',
@@ -51,74 +59,65 @@ const availableActions: ChangesetListAction[] = [
             />
         ),
     },
-    {
-        actionType: 'merge',
-        actionVerb: 'Merge changesets',
-        dropdownTitle: 'Merge changesets',
-        dropdownDescription:
-            "Merges all selected, currently open changesets on the code host. Some changesets may not be in a mergeable state, and hence won't be merged.",
-        isAvailable: () => true,
-        onTrigger: () => undefined,
-    },
 ]
 
 export interface ChangesetSelectRowProps {
     selected: Set<Scalars['ID']>
     batchChangeID: Scalars['ID']
     onSubmit: () => void
-    isSubmitting: boolean | Error
     isAllSelected: boolean
     totalCount: number
     allAllSelected: boolean
     setAllSelected: () => void
-    queryArgs: Omit<AllChangesetIDsVariables, 'after'>
+    queryArguments: Omit<AllChangesetIDsVariables, 'after'>
 }
 
 export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps> = ({
     selected,
     batchChangeID,
     onSubmit,
-    isSubmitting,
     isAllSelected,
     totalCount,
     allAllSelected,
     setAllSelected,
-    queryArgs,
+    queryArguments,
 }) => {
+    const actions = availableActions.filter(action => action.isAvailable(queryArguments))
     const [isOpen, setIsOpen] = useState<boolean>(false)
     const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
-    const [selectedType, setSelectedType] = useState<string | undefined>()
-    const onSelectedTypeSelect = useCallback((type: string) => {
-        setSelectedType(type)
-        setIsOpen(false)
-    }, [])
+    const [selectedAction, setSelectedAction] = useState<ChangesetListAction | undefined>(() => {
+        if (actions.length === 1) {
+            return actions[0]
+        }
+        return undefined
+    })
+    const onSelectedTypeSelect = useCallback(
+        (type: string) => {
+            setSelectedAction(actions.find(action => action.actionType === type))
+            setIsOpen(false)
+        },
+        [actions]
+    )
     const [renderedElement, setRenderedElement] = useState<JSX.Element | undefined>()
     const onTriggerAction = useCallback(() => {
-        const action = availableActions.find(action => action.actionType === selectedType)!
+        if (!selectedAction) {
+            return
+        }
         let ids: () => Promise<Scalars['ID'][]>
         if (allAllSelected) {
-            ids = () => queryAllChangesetIDs(queryArgs).toPromise()
+            ids = () => queryAllChangesetIDs(queryArguments).toPromise()
         } else {
             ids = () => Promise.resolve([...selected])
         }
-        const element = action.onTrigger(batchChangeID, ids, onSubmit, () => {
+        const element = selectedAction.onTrigger(batchChangeID, ids, onSubmit, () => {
             setRenderedElement(undefined)
         })
         if (element !== undefined) {
             setRenderedElement(element)
         }
-    }, [batchChangeID, onSubmit, selected, selectedType])
-    const onSelectAll = useCallback<React.MouseEventHandler>(
-        event => {
-            event.preventDefault()
-            setAllSelected()
-        },
-        [setAllSelected]
-    )
-    const buttonLabel =
-        selectedType === undefined
-            ? 'Select action'
-            : availableActions.find(action => action.actionType === selectedType)!.actionVerb
+    }, [allAllSelected, batchChangeID, onSubmit, queryArguments, selected, selectedAction])
+
+    const buttonLabel = selectedAction === undefined ? 'Select action' : selectedAction.actionVerb
 
     const selectedAmount = allAllSelected ? totalCount : selected.size
 
@@ -126,13 +125,13 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
         <>
             {renderedElement}
             <div className="row align-items-center no-gutters">
-                <div className="ml-2 col">
+                <div className="ml-2 col d-flex align-items-center">
                     <InfoCircleOutlineIcon className="icon-inline text-muted mr-2" />
                     {selectedAmount} {pluralize('changeset', selectedAmount)} selected
                     {isAllSelected && totalCount > selectedAmount && (
-                        <a href="#" onClick={onSelectAll}>
+                        <button type="button" className="btn btn-link py-0 px-1" onClick={setAllSelected}>
                             (Select all {totalCount})
-                        </a>
+                        </button>
                     )}
                 </div>
                 <div className="w-100 d-block d-md-none" />
@@ -144,40 +143,43 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                                     type="button"
                                     className="btn btn-primary text-nowrap"
                                     onClick={onTriggerAction}
-                                    disabled={
-                                        selected.size === 0 || isSubmitting === true || selectedType === undefined
-                                    }
+                                    disabled={selected.size === 0 || selectedAction === undefined}
                                 >
                                     {buttonLabel}
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={toggleIsOpen}
-                                    className="btn btn-primary dropdown-toggle dropdown-toggle-split"
-                                />
-                                <div
-                                    className={classNames('dropdown-menu dropdown-menu-right', isOpen && 'show')}
-                                    style={{ minWidth: '350px' }}
-                                >
-                                    {availableActions.map((action, index) => (
-                                        <Fragment key={action.actionType}>
-                                            <ActionDropdownItem
-                                                action={action}
-                                                setSelectedType={onSelectedTypeSelect}
-                                            />
-                                            {index !== availableActions.length - 1 && (
-                                                <div className="dropdown-divider" />
+                                {actions.length > 1 && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={toggleIsOpen}
+                                            className="btn btn-primary dropdown-toggle dropdown-toggle-split"
+                                        />
+                                        <div
+                                            className={classNames(
+                                                'dropdown-menu dropdown-menu-right',
+                                                isOpen && 'show'
                                             )}
-                                        </Fragment>
-                                    ))}
-                                </div>
+                                            style={{ minWidth: '350px' }}
+                                        >
+                                            {actions.map((action, index) => (
+                                                <Fragment key={action.actionType}>
+                                                    <ActionDropdownItem
+                                                        action={action}
+                                                        setSelectedType={onSelectedTypeSelect}
+                                                    />
+                                                    {index !== actions.length - 1 && (
+                                                        <div className="dropdown-divider" />
+                                                    )}
+                                                </Fragment>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-            {isErrorLike(isSubmitting) && <ErrorAlert error={isSubmitting} />}
         </>
     )
 }
@@ -195,12 +197,12 @@ const ActionDropdownItem: React.FunctionComponent<{
     )
     return (
         <div className="dropdown-item">
-            <a href="#" onClick={onClick}>
+            <button type="button" className="btn text-left" onClick={onClick}>
                 <h4 className="mb-1">{action.dropdownTitle}</h4>
                 <p className="text-wrap text-muted mb-0">
                     <small>{action.dropdownDescription}</small>
                 </p>
-            </a>
+            </button>
         </div>
     )
 }
