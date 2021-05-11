@@ -123,6 +123,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     results: {
                         results_count: results.results.length,
                         any_cloning: results.progress.skipped.some(skipped => skipped.reason === 'repository-cloning'),
+                        alert: results.alert ? results.alert.title : null,
                     },
                 },
             })
