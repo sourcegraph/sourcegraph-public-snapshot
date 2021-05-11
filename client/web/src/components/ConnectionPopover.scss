@@ -1,7 +1,12 @@
-$popover-item-padding-h: 1rem;
-$popover-item-padding-v: 0.25rem;
-
 .connection-popover {
+    --popover-item-padding-h: 0.75rem;
+    --popover-item-padding-v: 0.325rem;
+
+    .theme-redesign & {
+        --popover-item-padding-h: 1rem;
+        --popover-item-padding-v: 0.25rem;
+    }
+
     isolation: isolate;
     display: flex;
     flex-direction: column;
@@ -15,6 +20,7 @@ $popover-item-padding-v: 0.25rem;
         flex-direction: column;
 
         height: 27rem;
+        max-height: 70vh;
 
         .alert {
             word-break: break-word;
@@ -23,6 +29,7 @@ $popover-item-padding-v: 0.25rem;
 
     &__node {
         border-bottom: solid 1px var(--border-color);
+
         .theme-redesign & {
             border-bottom: none;
 
@@ -35,9 +42,10 @@ $popover-item-padding-v: 0.25rem;
             border-bottom: none;
         }
         &-link {
-            padding: $popover-item-padding-v $popover-item-padding-h;
             display: flex;
             align-items: center;
+            padding: var(--popover-item-padding-v) var(--popover-item-padding-h);
+
             &-icon {
                 margin-left: 0.25rem;
 
@@ -55,8 +63,8 @@ $popover-item-padding-v: 0.25rem;
         }
     }
 
-    .theme-redesign & {
-        &__input {
+    &__input {
+        .theme-redesign & {
             margin: 0.5rem;
         }
     }
@@ -67,6 +75,6 @@ $popover-item-padding-v: 0.25rem;
         border-radius: 0;
         text-align: left;
         font-size: 0.75rem;
-        padding: $popover-item-padding-v $popover-item-padding-h;
+        padding: var(--popover-item-padding-v) var(--popover-item-padding-h);
     }
 }
