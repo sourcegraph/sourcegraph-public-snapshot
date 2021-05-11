@@ -11,6 +11,7 @@ import React, { useCallback, useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { DiffStat } from '../../../../components/diff/DiffStat'
@@ -19,6 +20,7 @@ import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import {
     ChangesetState,
+    ExternalChangesetFields,
     VisibleChangesetApplyPreviewFields,
     VisibleChangesetSpecFields,
 } from '../../../../graphql-operations'
@@ -423,29 +425,19 @@ const ChangesetSpecFileDiffConnection: React.FunctionComponent<
     )
 }
 
-const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFields }> = ({ spec }) => {
-    if (spec.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
-        return <h3>{spec.targets.changeset.title}</h3>
-    }
-    if (spec.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
-        return <h3>Import changeset #{spec.targets.changesetSpec.description.externalID}</h3>
-    }
-    if (spec.targets.__typename === 'VisibleApplyPreviewTargetsAttach') {
-        return <h3>{spec.targets.changesetSpec.description.title}</h3>
-    }
-    const useStrikethrough = spec.operations.length > 0 || spec.delta.titleChanged
-
-    // default, spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate'
+const ExternalChangesetTitle: React.FunctionComponent<
+    Pick<ExternalChangesetFields, 'title' | 'externalID' | 'externalURL'> & { newTitle?: string }
+> = ({ title, externalID, externalURL, newTitle }) => {
     const linkOrSpan = (
         <LinkOrSpan
-            to={spec.targets.changeset.externalURL?.url}
+            to={externalURL?.url}
             target="_blank"
             rel="noopener noreferrer"
-            className={`mr-2 ${useStrikethrough ? 'text-muted' : ''}`}
+            className={`mr-2 ${newTitle ? 'text-muted' : ''}`}
         >
-            {spec.targets.changeset.title}
-            {spec.targets.changeset.externalID && <> (#{spec.targets.changeset.externalID}) </>}
-            {spec.targets.changeset.externalURL?.url && (
+            {title}
+            {externalID && <> (#{externalID}) </>}
+            {externalURL?.url && (
                 <>
                     {' '}
                     <ExternalLinkIcon size="1rem" />
@@ -454,15 +446,43 @@ const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyP
         </LinkOrSpan>
     )
 
-    if (useStrikethrough) {
+    if (newTitle) {
         return (
             <h3>
                 <del>{linkOrSpan}</del>
-                {spec.targets.changesetSpec.description.title}
+                {newTitle}
             </h3>
         )
     }
     return <h3>{linkOrSpan}</h3>
+}
+
+const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFields }> = ({ spec }) => {
+    if (spec.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
+        return (
+            <ExternalChangesetTitle
+                title={spec.targets.changeset.title}
+                externalID={spec.targets.changeset.externalID as Maybe<string>}
+                externalURL={spec.targets.changeset.externalURL as Maybe<{ url: string }>}
+            />
+        )
+    }
+    if (spec.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
+        return <h3>Import changeset #{spec.targets.changesetSpec.description.externalID}</h3>
+    }
+    if (spec.targets.__typename === 'VisibleApplyPreviewTargetsAttach') {
+        return <h3>{spec.targets.changesetSpec.description.title}</h3>
+    }
+
+    // (default) spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate'
+    return (
+        <ExternalChangesetTitle
+            title={spec.targets.changeset.title}
+            externalID={spec.targets.changeset.externalID}
+            externalURL={spec.targets.changeset.externalURL}
+            newTitle={spec.targets.changesetSpec.description.title}
+        />
+    )
 }
 
 const RepoLink: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFields }> = ({ spec }) => {

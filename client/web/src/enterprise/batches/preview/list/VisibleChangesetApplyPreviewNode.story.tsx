@@ -381,6 +381,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                 title: 'Le open changeset',
                 state: ChangesetState.OPEN,
                 repository: testRepo,
+                externalID: '123',
+                externalURL: {
+                    url: 'http://test.test/123',
+                },
                 diffStat: {
                     added: 2,
                     changed: 8,
@@ -408,6 +412,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                 title: 'Le open changeset',
                 state: ChangesetState.OPEN,
                 repository: testRepo,
+                externalID: '123',
+                externalURL: {
+                    url: 'http://test.test/123',
+                },
                 diffStat: {
                     added: 2,
                     changed: 8,
