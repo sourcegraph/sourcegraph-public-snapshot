@@ -3,5 +3,40 @@
     flex-basis: 25rem;
     flex-grow: 1;
     flex-shrink: 0;
-    height: 16rem;
+    height: 20rem;
+
+    &__update-button {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    &__chart-container {
+        position: relative;
+    }
+
+    &__chart--loading {
+        filter: blur(5px);
+        pointer-events: none;
+
+        :global(.visx-group) {
+            pointer-events: none !important;
+        }
+    }
+
+    &__update-button-icon {
+        margin-left: 0.5rem;
+    }
+
+    &__loading-chart-info {
+        position: absolute;
+        top:50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    &__loader {
+        background-color: var(--color-bg-2);
+        height: 100%;
+    }
 }
