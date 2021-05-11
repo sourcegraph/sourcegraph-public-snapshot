@@ -296,18 +296,20 @@ func TestExternalServicesStore_Create(t *testing.T) {
 		{
 			name: "without authorization",
 			externalService: &types.ExternalService{
-				Kind:        extsvc.KindGitHub,
-				DisplayName: "GITHUB #1",
-				Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				Kind:            extsvc.KindGitHub,
+				DisplayName:     "GITHUB #1",
+				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				NamespaceUserID: user.ID,
 			},
-			wantUnrestricted: true,
+			wantUnrestricted: false,
 		},
 		{
 			name: "with authorization",
 			externalService: &types.ExternalService{
-				Kind:        extsvc.KindGitHub,
-				DisplayName: "GITHUB #2",
-				Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+				Kind:            extsvc.KindGitHub,
+				DisplayName:     "GITHUB #2",
+				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+				NamespaceUserID: user.ID,
 			},
 			wantUnrestricted: false,
 		},
@@ -323,12 +325,13 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	"token": "abc",
 	// "authorization": {}
 }`,
+				NamespaceUserID: user.ID,
 			},
-			wantUnrestricted: true,
+			wantUnrestricted: false,
 		},
 
 		{
-			name: "Cloud: auto-add authorization to user code host connections for GitHub",
+			name: "Cloud: auto-add authorization to code host connections for GitHub",
 			externalService: &types.ExternalService{
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "GITHUB #4",
@@ -338,7 +341,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			wantUnrestricted: false,
 		},
 		{
-			name: "Cloud: auto-add authorization to user code host connections for GitLab",
+			name: "Cloud: auto-add authorization to code host connections for GitLab",
 			externalService: &types.ExternalService{
 				Kind:            extsvc.KindGitLab,
 				DisplayName:     "GITLAB #1",
@@ -367,6 +370,11 @@ func TestExternalServicesStore_Create(t *testing.T) {
 
 			if test.wantUnrestricted != got.Unrestricted {
 				t.Fatalf("Want unrestricted = %v, but got %v", test.wantUnrestricted, got.Unrestricted)
+			}
+
+			err = ExternalServices(db).Delete(ctx, test.externalService.ID)
+			if err != nil {
+				t.Fatal(err)
 			}
 		})
 	}
@@ -402,6 +410,9 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(false)
+
 	// Create a new external service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -420,6 +431,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	tests := []struct {
 		name             string
 		update           *ExternalServiceUpdate
+		wantError        bool
 		wantUnrestricted bool
 		wantCloudDefault bool
 	}{
@@ -438,7 +450,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 				DisplayName: strptr("GITHUB (updated) #2"),
 				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 			},
-			wantUnrestricted: true,
+			wantError:        true,
+			wantUnrestricted: false,
 			wantCloudDefault: false,
 		},
 		{
@@ -453,7 +466,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	// "authorization": {}
 }`),
 			},
-			wantUnrestricted: true,
+			wantError:        true,
+			wantUnrestricted: false,
 			wantCloudDefault: false,
 		},
 		{
@@ -466,18 +480,24 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	"url": "https://github.com",
 	"repositoryQuery": ["none"],
 	"token": "def",
-	// "authorization": {}
+	"authorization": {}
 }`),
 			},
-			wantUnrestricted: true,
+			wantUnrestricted: false,
 			wantCloudDefault: true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err = ExternalServices(db).Update(ctx, nil, es.ID, test.update)
-			if err != nil {
+			if err != nil && !test.wantError {
 				t.Fatal(err)
+			} else if err == nil && test.wantError {
+				t.Fatal("Want error but got nil")
+			}
+
+			if err != nil {
+				return // No point to continue if error is expected for update
 			}
 
 			// Get and verify update
