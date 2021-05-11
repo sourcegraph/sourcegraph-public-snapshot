@@ -86,6 +86,11 @@ const batchChangeDefaults: BatchChangeFields = {
                 progress: 0.37,
                 errors: [],
                 type: BulkOperationType.COMMENT,
+                changesetCount: 100,
+                initiator: {
+                    url: '/users/alice',
+                    username: 'alice',
+                },
             },
         ],
     },
@@ -246,6 +251,11 @@ const queryBulkOperations: typeof _queryBulkOperations = () =>
                 progress: 0.25,
                 createdAt: subDays(now, 5).toISOString(),
                 finishedAt: null,
+                changesetCount: 100,
+                initiator: {
+                    url: '/users/alice',
+                    username: 'alice',
+                },
             },
             {
                 id: 'id2',
@@ -255,6 +265,11 @@ const queryBulkOperations: typeof _queryBulkOperations = () =>
                 progress: 1,
                 createdAt: subDays(now, 5).toISOString(),
                 finishedAt: subDays(now, 4).toISOString(),
+                changesetCount: 100,
+                initiator: {
+                    url: '/users/alice',
+                    username: 'alice',
+                },
             },
             {
                 id: 'id3',
@@ -279,6 +294,11 @@ const queryBulkOperations: typeof _queryBulkOperations = () =>
                 progress: 1,
                 createdAt: subDays(now, 5).toISOString(),
                 finishedAt: subDays(now, 4).toISOString(),
+                changesetCount: 100,
+                initiator: {
+                    url: '/users/alice',
+                    username: 'alice',
+                },
             },
         ],
     })
