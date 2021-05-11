@@ -267,23 +267,30 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                 <ActivationDropdown activation={props.activation} history={history} />
                             </NavItem>
                         )}
+                    </NavGroup>
+                    <NavActions>
                         {!props.authenticatedUser && (
                             <>
                                 {showDotComMarketing && (
-                                    <NavItem>
-                                        <NavLink to="/help">Docs</NavLink>
-                                    </NavItem>
+                                    <NavAction>
+                                        <Link className="global-navbar__link" to="/help" target="_blank">
+                                            Docs
+                                        </Link>
+                                    </NavAction>
                                 )}
 
-                                <NavItem>
-                                    <NavLink to="https://about.sourcegraph.com" external={true}>
+                                <NavAction>
+                                    <Link
+                                        className="global-navbar__link"
+                                        to="https://about.sourcegraph.com"
+                                        rel="noreferrer noopener"
+                                        target="_blank"
+                                    >
                                         About
-                                    </NavLink>
-                                </NavItem>
+                                    </Link>
+                                </NavAction>
                             </>
                         )}
-                    </NavGroup>
-                    <NavActions>
                         {props.authenticatedUser && (
                             <NavAction>
                                 <FeedbackPrompt history={history} routes={props.routes} />

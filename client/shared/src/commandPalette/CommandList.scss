@@ -9,6 +9,10 @@
 
 .theme-redesign {
     .command-list {
+        .list-group {
+            max-height: 18.5rem;
+            overflow: auto;
+        }
         .list-group-item {
             &.active {
                 &:hover {

@@ -39,8 +39,14 @@
             color: var(--header-icon-color);
         }
 
+        &__link {
+            color: var(--body-color);
+            border-radius: var(--border-radius);
+        }
+
         &__sign-up {
             border: 1px solid var(--brand-secondary);
+            margin-left: -0.75rem; // negative unit for decrement the spacing between signup/signin buttons
         }
     }
 }

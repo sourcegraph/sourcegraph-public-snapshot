@@ -26,8 +26,9 @@
     }
 
     &__icon {
-        height: 1rem;
-        width: 1rem;
+        height: 1.1rem;
+        width: 1.1rem;
+        color: var(--icon-color);
     }
 
     &__textarea {
