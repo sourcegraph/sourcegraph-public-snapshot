@@ -1,6 +1,6 @@
 # How to add, enable or disable an experimental feature
 
-This document with take you through how to add, enable, or disable an experimental feature in Sourcegraph. Experimental features are not fully released, but we welcome your feedback at feedback@sourcegraph.com or on twitter @sourcegraph!
+This document will take you through how to add, enable, or disable an experimental feature in Sourcegraph. Experimental features are not fully released, but we welcome your feedback at feedback@sourcegraph.com or on twitter @sourcegraph!
 
 > NOTE: Changing these settings will affect the entire instance. We advise testing settings in a development environment before changing them in production.
 
