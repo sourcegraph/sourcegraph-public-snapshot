@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import * as React from 'react'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+
 import styles from './ConnectionNodesSummary.module.scss'
 
 interface ListSummaryProps {
@@ -15,37 +15,17 @@ export const ConnectionNodesSummary: React.FunctionComponent<ListSummaryProps> =
     displayShowMoreButton,
     showMoreClassName,
     onShowMore,
-}) => {
-    const [isRedesignEnabled] = useRedesignToggle()
-
-    const showMoreButton = displayShowMoreButton && (
-        <button
-            type="button"
-            className={classNames(
-                'btn btn-sm',
-                isRedesignEnabled ? 'btn-link' : 'btn-secondary',
-                styles.summaryShowMore,
-                showMoreClassName
-            )}
-            onClick={onShowMore}
-        >
-            Show more
-        </button>
-    )
-
-    if (isRedesignEnabled) {
-        return (
-            <div className={styles.summary}>
-                {summary}
-                {showMoreButton}
-            </div>
-        )
-    }
-
-    return (
-        <>
-            {summary}
-            {showMoreButton}
-        </>
-    )
-}
+}) => (
+    <>
+        {summary}
+        {displayShowMoreButton && (
+            <button
+                type="button"
+                className={classNames('btn btn-sm btn-secondary', styles.summaryShowMore, showMoreClassName)}
+                onClick={onShowMore}
+            >
+                Show more
+            </button>
+        )}
+    </>
+)
