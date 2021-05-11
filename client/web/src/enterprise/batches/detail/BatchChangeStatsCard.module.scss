@@ -1,4 +1,4 @@
-@import 'branded/src/global-styles/breakpoints';
+@import 'wildcard/src/global-styles/breakpoints';
 
 .batch-change-stats-card {
     &__changesets-pill {
@@ -7,14 +7,14 @@
         height: 24px;
     }
     &__completeness {
-        @include media-breakpoint-down(xs) {
+        @media (--xs-breakpoint-down) {
             // Emulate h4 size on xs devices.
             font-size: 0.875rem;
             line-height: (20/14);
         }
     }
     &__state-badge {
-        @include media-breakpoint-down(sm) {
+        @media (--sm-breakpoint-down) {
             // Emulate h4 on sm and xs devices.
             font-size: 0.875rem;
             line-height: (20/14);
@@ -22,20 +22,20 @@
         }
     }
     &__diff-stat {
-        @include media-breakpoint-down(sm) {
+        @media (--sm-breakpoint-down) {
             margin-top: 1rem;
             flex-basis: 100%;
         }
     }
     &__stat {
         min-width: 0;
-        @include media-breakpoint-down(sm) {
+        @media (--sm-breakpoint-down) {
             flex-basis: 33%;
             padding-top: 1rem;
             padding-left: 0.5rem;
             padding-right: 0.5rem;
         }
-        @include media-breakpoint-down(xs) {
+        @media (--xs-breakpoint-down) {
             flex-basis: 49.9%;
             padding-left: 0.5rem;
             padding-right: 0.5rem;

@@ -306,11 +306,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 </RepoHeaderContributionPortal>
             )}
             {blobInfoOrError.richHTML && renderMode === 'rendered' && (
-                <RenderedFile
-                    dangerousInnerHTML={blobInfoOrError.richHTML}
-                    location={props.location}
-                    history={props.history}
-                />
+                <RenderedFile dangerousInnerHTML={blobInfoOrError.richHTML} location={props.location} />
             )}
             {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
                 <div className="blob-page__aborted">

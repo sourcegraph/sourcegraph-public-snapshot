@@ -57,9 +57,13 @@ func run(ctx context.Context, cmds ...Command) error {
 
 	wg.Wait()
 
-	failure := <-failures
-	printCmdError(out, failure.cmdName, failure.err)
-	return failure
+	select {
+	case failure := <-failures:
+		printCmdError(out, failure.cmdName, failure.err)
+		return failure
+	default:
+		return nil
+	}
 }
 
 // failedRun is returned by run when a command failed to run and run exits
@@ -138,6 +142,7 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			c := exec.CommandContext(ctx, "bash", "-c", cmd.Install)
 			c.Dir = root
 			c.Env = makeEnv(conf.Env, cmd.Env)
+
 			cmdOut, err := c.CombinedOutput()
 			if err != nil {
 				if !startedOnce {
@@ -219,6 +224,9 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 
 			case err := <-errs:
 				// Exited on its own or errored
+				if err == nil {
+					out.WriteLine(output.Linef("", output.StyleSuccess, "%s%s exited without error%s", output.StyleBold, cmd.Name, output.StyleReset))
+				}
 				return err
 			}
 		}
@@ -344,21 +352,33 @@ func watch() (<-chan string, error) {
 	return paths, nil
 }
 
-func runTest(ctx context.Context, cmd Command) error {
+func runTest(ctx context.Context, cmd Command, args []string) error {
 	root, err := root.RepositoryRoot()
 	if err != nil {
 		return err
 	}
 
-	out.WriteLine(output.Linef("", output.StylePending, "Starting testsuite %s", cmd.Name))
-	out.WriteLine(output.Linef("", output.StylePending, "Running %q in %q...", cmd.Cmd, root))
+	out.WriteLine(output.Linef("", output.StylePending, "Starting testsuite %q.", cmd.Name))
+	if len(args) != 0 {
+		out.WriteLine(output.Linef("", output.StylePending, "\tAdditional arguments: %s", args))
+	}
 	commandCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	c := exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
+	cmdArgs := []string{cmd.Cmd}
+	if len(args) != 0 {
+		cmdArgs = append(cmdArgs, args...)
+	} else {
+		cmdArgs = append(cmdArgs, cmd.DefaultArgs)
+	}
+
+	c := exec.CommandContext(commandCtx, "bash", "-c", strings.Join(cmdArgs, " "))
 	c.Dir = root
 	c.Env = makeEnv(conf.Env, cmd.Env)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
+
+	out.WriteLine(output.Linef("", output.StylePending, "Running %s in %q...", c, root))
+
 	return c.Run()
 }

@@ -1,4 +1,4 @@
-@import 'branded/src/global-styles/breakpoints.scss';
+@import '../../global-styles/breakpoints';
 
 .item {
     display: flex;
@@ -47,11 +47,11 @@
             }
         }
         .icon {
-            @include media-breakpoint-down(md) {
+            @media (--md-breakpoint-down) {
                 outline: 1px solid transparent;
                 box-shadow: 0 0 0 2px var(--primary-2);
             }
-            @include media-breakpoint-down(sm) {
+            @media (--sm-breakpoint-down) {
                 outline: none;
                 box-shadow: none;
             }
@@ -62,7 +62,7 @@
         }
     }
     &:hover:not(.active) {
-        border-bottom: 2px solid var(--border-color);
+        border-bottom: 2px solid var(--border-color-2);
         .link-content {
             margin-bottom: -0.125rem;
         }
@@ -119,10 +119,10 @@
 .icon-included {
     margin-left: 0.25rem;
     display: inline-flex;
-    @include media-breakpoint-down(md) {
+    @media (--md-breakpoint-down) {
         display: none;
     }
-    @include media-breakpoint-down(sm) {
+    @media (--sm-breakpoint-down) {
         display: inline-flex;
     }
 }

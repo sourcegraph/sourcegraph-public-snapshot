@@ -467,7 +467,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     {results.matchCount === 0 && !results.alert && (
                                         <div className="alert alert-info d-flex m-2">
                                             <h3 className="m-0">
-                                                <SearchIcon className="icon-inline" /> No results
+                                                <SearchIcon className="redesign-d-none icon-inline" /> No results
                                             </h3>
                                         </div>
                                     )}

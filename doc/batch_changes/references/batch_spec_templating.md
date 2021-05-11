@@ -1,4 +1,4 @@
-# batch spec templating
+# Batch spec templating
 
 <style>
 .markdown-body h2 { margin-top: 50px; }

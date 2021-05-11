@@ -70,38 +70,30 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []*CommitSearchResultResolver{{
-		db: db,
-		CommitMatch: result.CommitMatch{
-			Commit:      git.Commit{ID: "c1", Author: gitSignatureWithDate},
-			RepoName:    types.RepoName{ID: 1, Name: "repo"},
-			DiffPreview: &result.HighlightedString{Value: "x", Highlights: []result.HighlightedRange{}},
-			Body:        result.HighlightedString{Value: "```diff\nx```", Highlights: []result.HighlightedRange{}},
-		},
+	want := []*result.CommitMatch{{
+		Commit:      git.Commit{ID: "c1", Author: gitSignatureWithDate},
+		RepoName:    types.RepoName{ID: 1, Name: "repo"},
+		DiffPreview: &result.HighlightedString{Value: "x", Highlights: []result.HighlightedRange{}},
+		Body:        result.HighlightedString{Value: "```diff\nx```", Highlights: []result.HighlightedRange{}},
 	}}
 
 	if !reflect.DeepEqual(results, want) {
 		t.Errorf("results\ngot  %v\nwant %v", results, want)
 	}
 
-	wantDetail := Markdown("[`c1` one day ago](/repo/-/commit/c1)")
+	wantDetail := "[`c1` one day ago](/repo/-/commit/c1)"
 	if gotDetail := want[0].Detail(); gotDetail != wantDetail {
 		t.Errorf("detail\ngot  %v\nwant %v", gotDetail, wantDetail)
 	}
 
-	wantLabel := Markdown("[repo](/repo) › [](/repo/-/commit/c1): [](/repo/-/commit/c1)")
+	wantLabel := "[repo](/repo) › [](/repo/-/commit/c1): [](/repo/-/commit/c1)"
 	if gotLabel := want[0].Label(); gotLabel != wantLabel {
 		t.Errorf("label\ngot  %v\nwant %v", gotLabel, wantLabel)
 	}
 
 	wantURL := "/repo/-/commit/c1"
-	if gotURL := want[0].URL(); gotURL != wantURL {
+	if gotURL := want[0].URL().String(); gotURL != wantURL {
 		t.Errorf("url\ngot  %v\nwant %v", gotURL, wantURL)
-	}
-
-	wantMatches := []*searchResultMatchResolver{{url: "/repo/-/commit/c1", body: "```diff\nx```", highlights: []result.HighlightedRange{}}}
-	if gotMatches := want[0].Matches(); !reflect.DeepEqual(gotMatches, wantMatches) {
-		t.Errorf("matches\ngot  %v\nwant %v", gotMatches, wantMatches)
 	}
 
 	if limitHit {
@@ -303,15 +295,15 @@ func Benchmark_highlightMatches(b *testing.B) {
 }
 
 // searchCommitsInRepo is a blocking version of searchCommitsInRepoStream.
-func searchCommitsInRepo(ctx context.Context, db dbutil.DB, op search.CommitParameters) (results []*CommitSearchResultResolver, limitHit, timedOut bool, err error) {
-	var srr []SearchResultResolver
-	err = searchCommitsInRepoStream(ctx, db, op, StreamFunc(func(event SearchEvent) {
-		srr = append(srr, event.Results...)
+func searchCommitsInRepo(ctx context.Context, db dbutil.DB, op search.CommitParameters) (results []*result.CommitMatch, limitHit, timedOut bool, err error) {
+	var matches []result.Match
+	err = searchCommitsInRepoStream(ctx, db, op, MatchStreamFunc(func(event SearchEvent) {
+		matches = append(matches, event.Results...)
 		timedOut = timedOut || event.Stats.Status.Any(search.RepoStatusTimedout)
 		limitHit = limitHit || event.Stats.Status.Any(search.RepoStatusLimitHit)
 	}))
-	for _, s := range srr {
-		results = append(results, s.(*CommitSearchResultResolver))
+	for _, s := range matches {
+		results = append(results, s.(*result.CommitMatch))
 	}
 	return results, limitHit, timedOut, err
 }

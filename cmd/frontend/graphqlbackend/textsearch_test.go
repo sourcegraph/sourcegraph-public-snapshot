@@ -18,13 +18,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -32,18 +30,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-
-	"github.com/hexops/autogold"
 )
 
 func TestSearchFilesInRepos(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.FileMatch, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []result.FileMatch{{
+			return []*result.FileMatch{{
 				File: result.File{
 					Repo:     repo,
 					InputRev: &rev,
@@ -51,7 +45,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 				},
 			}}, false, nil
 		case "foo/two":
-			return []result.FileMatch{{
+			return []*result.FileMatch{{
 				File: result.File{
 					Repo:     repo,
 					InputRev: &rev,
@@ -96,12 +90,12 @@ func TestSearchFilesInRepos(t *testing.T) {
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
-	results, common, err := searchFilesInReposBatch(context.Background(), db, args)
+	matches, common, err := searchFilesInReposBatch(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(results) != 2 {
-		t.Errorf("expected two results, got %d", len(results))
+	if len(matches) != 2 {
+		t.Errorf("expected two results, got %d", len(matches))
 	}
 	repoNames := map[api.RepoID]string{}
 	for _, rr := range repoRevs {
@@ -127,20 +121,18 @@ func TestSearchFilesInRepos(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	_, _, err = searchFilesInReposBatch(context.Background(), db, args)
+	_, _, err = searchFilesInReposBatch(context.Background(), args)
 	if !gitserver.IsRevisionNotFound(errors.Cause(err)) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
 }
 
 func TestSearchFilesInReposStream(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.FileMatch, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []result.FileMatch{{
+			return []*result.FileMatch{{
 				File: result.File{
 					Repo:     repo,
 					InputRev: &rev,
@@ -148,7 +140,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 				},
 			}}, false, nil
 		case "foo/two":
-			return []result.FileMatch{{
+			return []*result.FileMatch{{
 				File: result.File{
 					Repo:     repo,
 					InputRev: &rev,
@@ -156,7 +148,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 				},
 			}}, false, nil
 		case "foo/three":
-			return []result.FileMatch{{
+			return []*result.FileMatch{{
 				File: result.File{
 					Repo:     repo,
 					InputRev: &rev,
@@ -186,13 +178,13 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	results, _, err := searchFilesInReposBatch(context.Background(), db, args)
+	matches, _, err := searchFilesInReposBatch(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(results) != 3 {
-		t.Errorf("expected three results, got %d", len(results))
+	if len(matches) != 3 {
+		t.Errorf("expected three results, got %d", len(matches))
 	}
 }
 
@@ -220,13 +212,11 @@ func mkStatusMap(m map[string]search.RepoStatus) search.RepoStatusMap {
 }
 
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.FileMatch, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
-			return []result.FileMatch{{
+			return []*result.FileMatch{{
 				File: result.File{
 					Repo:     repo,
 					CommitID: api.CommitID(rev),
@@ -265,16 +255,16 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
-	results, _, err := searchFilesInReposBatch(context.Background(), db, args)
+	matches, _, err := searchFilesInReposBatch(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	resultKeys := make([]result.Key, len(results))
-	for i, result := range results {
-		resultKeys[i] = result.FileMatch.Key()
+	matchKeys := make([]result.Key, len(matches))
+	for i, match := range matches {
+		matchKeys[i] = match.Key()
 	}
-	sort.Slice(resultKeys, func(i, j int) bool { return resultKeys[i].Less(resultKeys[j]) })
+	sort.Slice(matchKeys, func(i, j int) bool { return matchKeys[i].Less(matchKeys[j]) })
 
 	wantResultKeys := []result.Key{
 		{Repo: "foo", Commit: "branch3", Path: "main.go"},
@@ -282,8 +272,8 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		{Repo: "foo", Commit: "master", Path: "main.go"},
 		{Repo: "foo", Commit: "mybranch", Path: "main.go"},
 	}
-	if !reflect.DeepEqual(resultKeys, wantResultKeys) {
-		t.Errorf("got %v, want %v", resultKeys, wantResultKeys)
+	if !reflect.DeepEqual(matchKeys, wantResultKeys) {
+		t.Errorf("got %v, want %v", matchKeys, wantResultKeys)
 	}
 }
 
@@ -423,29 +413,4 @@ func TestFileMatch_Limit(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestSelect(t *testing.T) {
-	data := FileMatchResolver{
-		FileMatch: result.FileMatch{
-			Symbols: []*result.SymbolMatch{
-				{Symbol: result.Symbol{Name: "a()", Kind: "func"}},
-				{Symbol: result.Symbol{Name: "b()", Kind: "function"}},
-				{Symbol: result.Symbol{Name: "var c", Kind: "variable"}},
-			},
-		},
-	}
-
-	test := func(input string) string {
-		selectPath, _ := filter.SelectPathFromString(input)
-		symbols := data.Select(selectPath).(*FileMatchResolver).FileMatch.Symbols
-		var values []string
-		for _, s := range symbols {
-			values = append(values, s.Symbol.Name+":"+s.Symbol.Kind)
-		}
-		return strings.Join(values, ", ")
-	}
-
-	autogold.Want("filter any symbol", "a():func, b():function, var c:variable").Equal(t, test("symbol"))
-	autogold.Want("filter symbol kind variable", "var c:variable").Equal(t, test("symbol.variable"))
 }

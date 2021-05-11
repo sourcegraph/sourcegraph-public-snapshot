@@ -75,10 +75,11 @@ type EventCommitMatch struct {
 	// Type is always CommitMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Label   string `json:"label"`
-	URL     string `json:"url"`
-	Detail  string `json:"detail"`
-	Content string `json:"content"`
+	Label      string `json:"label"`
+	URL        string `json:"url"`
+	Detail     string `json:"detail"`
+	Repository string `json:"repository"`
+	Content    string `json:"content"`
 	// [line, character, length]
 	Ranges [][3]int32 `json:"ranges"`
 }

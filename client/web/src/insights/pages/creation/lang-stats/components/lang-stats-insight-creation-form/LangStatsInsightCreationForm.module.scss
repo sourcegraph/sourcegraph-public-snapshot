@@ -1,0 +1,16 @@
+.form {
+    &__threshold-input {
+        margin-right: 0.5rem;
+        flex-basis: 6rem;
+    }
+
+    &__threshold-input-symbol {
+        align-self: center;
+    }
+
+    &__separator {
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+        width: 100%;
+    }
+}

@@ -31,7 +31,7 @@ import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
 import { BatchChangesListEmpty } from './BatchChangesListEmpty'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 
-export interface BatchChangeListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
+export interface BatchChangeListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'location'> {
     displayNamespace?: boolean
     /** For testing only. */
     queryBatchChanges?: typeof _queryBatchChanges
@@ -136,7 +136,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                     {...props}
                     location={location}
                     nodeComponent={BatchChangeNode}
-                    nodeComponentProps={{ history: props.history, displayNamespace }}
+                    nodeComponentProps={{ displayNamespace }}
                     queryConnection={query}
                     hideSearch={true}
                     defaultFirst={15}
