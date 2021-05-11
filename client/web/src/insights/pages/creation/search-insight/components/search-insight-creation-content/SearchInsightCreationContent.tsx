@@ -8,8 +8,9 @@ import { useField, Validator } from '../../../../../components/form/hooks/useFie
 import { SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
 import { createRequiredValidator } from '../../../../../components/form/validators'
+import { DataSeries } from '../../../../../core/backend/types'
 import { InsightTypeSuffix } from '../../../../../core/types'
-import { CreateInsightFormFields, DataSeries } from '../../types'
+import { CreateInsightFormFields } from '../../types'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
 

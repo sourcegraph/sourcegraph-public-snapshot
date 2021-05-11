@@ -12,7 +12,9 @@ import { useDebounce } from '@sourcegraph/wildcard/src'
 import { ErrorAlert } from '../../../../../../components/alerts'
 import { ChartViewContent } from '../../../../../../views/ChartViewContent/ChartViewContent'
 import { InsightsApiContext } from '../../../../../core/backend/api-provider'
-import { DataSeries } from '../../types'
+import { DataSeries } from '../../../../../core/backend/types'
+import { InsightStep } from '../../types'
+import { getSanitizedRepositories, getSanitizedSeries } from '../../utils/insight-sanitizer'
 
 import { DEFAULT_MOCK_CHART_CONTENT } from './live-preview-mock-data'
 import styles from './SearchInsightLivePreview.module.scss'
@@ -33,7 +35,7 @@ export interface SearchInsightLivePreviewProps {
      * */
     disabled?: boolean
     /** Step mode for step value prop. */
-    step: 'hours' | 'days' | 'weeks' | 'months' | 'years'
+    step: InsightStep
 }
 
 /**
@@ -53,8 +55,8 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
 
     const liveSettings = useMemo(
         () => ({
-            series: series.map(line => ({ ...line, query: line.query.replace(/\\\\/g, '\\') })),
-            repositories: repositories.trim().split(/\s*,\s*/),
+            series: getSanitizedSeries(series),
+            repositories: getSanitizedRepositories(repositories),
             step: { [step]: stepValue },
         }),
         [step, stepValue, series, repositories]

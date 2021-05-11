@@ -1,4 +1,4 @@
-import { formatISO, isAfter, startOfDay, sub } from 'date-fns'
+import { formatISO, isAfter, startOfDay, sub, Duration } from 'date-fns'
 import escapeRegExp from 'lodash/escapeRegExp'
 import { defer } from 'rxjs'
 import { retry } from 'rxjs/operators'
@@ -11,6 +11,7 @@ import { SearchInsightSettings } from '../types'
 
 /**
  * This logic is a copy of fetch logic of search-based code insight extension.
+ * See https://github.com/sourcegraph/sourcegraph-search-insights/blob/master/src/search-insights.ts
  * In order to have live preview for creation UI we had to copy this logic from
  * extension.
  *
@@ -73,7 +74,7 @@ export async function getSearchInsightContent(insight: SearchInsightSettings): P
         series: insight.series.map(series => ({
             dataKey: series.name,
             name: series.name,
-            stroke: series.color,
+            stroke: series.stroke,
             linkURLs: dates.map(date => {
                 // Link to diff search that explains what new cases were added between two data points
                 const url = new URL('/search', window.location.origin)
@@ -139,11 +140,13 @@ async function determineCommitsToSearch(dates: Date[], repo: string): Promise<{ 
     return commitOids
 }
 
-function getDaysToQuery(step: globalThis.Duration): Date[] {
+const NUMBER_OF_CHART_POINTS = 7
+
+function getDaysToQuery(step: Duration): Date[] {
     const now = startOfDay(new Date())
     const dates: Date[] = []
 
-    for (let index = 0, date = now; index < 7; index++) {
+    for (let index = 0, date = now; index < NUMBER_OF_CHART_POINTS; index++) {
         dates.unshift(date)
         date = sub(date, step)
     }

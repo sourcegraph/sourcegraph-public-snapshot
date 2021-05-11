@@ -30,7 +30,7 @@ export interface SearchInsightSettings {
 
 export interface DataSeries {
     name: string
-    color: string
+    stroke: string
     query: string
 }
 
