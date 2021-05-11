@@ -11,16 +11,18 @@ $redesign-cyan: #72dbe8;
 
 // Exception that's used in $custom-select-indicator as SVG icon fill color.
 $redesign-gray-06: #798baf;
+// Exception that's used in $theme-colors-redesign .
+$redesign-gray-08: #343a4d;
 
 // Core semantic base colors.
 $theme-colors-redesign: (
-    primary: var(--primary),
-    secondary: var(--secondary),
-    success: var(--success),
-    info: var(--info),
-    warning: var(--warning),
-    danger: var(--danger),
-    merged: var(--merged),
+    primary: $redesign-blue,
+    secondary: $redesign-gray-08,
+    success: $redesign-green,
+    info: $redesign-cyan,
+    warning: $redesign-yellow,
+    danger: $redesign-red,
+    merged: $redesign-purple,
 );
 
 .theme-redesign {
@@ -33,7 +35,7 @@ $theme-colors-redesign: (
     --gray-05: #a6b6d9;
     --gray-06: #{$redesign-gray-06};
     --gray-07: #5e6e8c;
-    --gray-08: #343a4d;
+    --gray-08: #{$redesign-gray-08};
     --gray-09: #262b38;
     --gray-10: #1d212f;
     --gray-11: #181b26;
