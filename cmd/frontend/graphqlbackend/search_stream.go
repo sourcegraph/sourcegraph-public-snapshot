@@ -22,15 +22,6 @@ type Sender interface {
 	Send(SearchEvent)
 }
 
-// Temporary conversion function from []SearchResultResolver to []result.Match
-func ResolversToMatches(resolvers []SearchResultResolver) []result.Match {
-	matches := make([]result.Match, 0, len(resolvers))
-	for _, resolver := range resolvers {
-		matches = append(matches, resolver.toMatch())
-	}
-	return matches
-}
-
 // Temporary conversion function from []result.Match to []SearchResultResolver
 func MatchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultResolver {
 	type repoKey struct {
@@ -67,30 +58,6 @@ func MatchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultReso
 		}
 	}
 	return resolvers
-}
-
-func MatchToResolver(db dbutil.DB, match result.Match) SearchResultResolver {
-	switch v := match.(type) {
-	case *result.FileMatch:
-		return &FileMatchResolver{
-			db:           db,
-			FileMatch:    *v,
-			RepoResolver: NewRepositoryResolver(db, v.Repo.ToRepo()),
-		}
-	case *result.RepoMatch:
-		repoName := v.RepoName()
-		return &RepositoryResolver{
-			db:        db,
-			RepoMatch: *v,
-			innerRepo: repoName.ToRepo(),
-		}
-	case *result.CommitMatch:
-		return &CommitSearchResultResolver{
-			db:          db,
-			CommitMatch: *v,
-		}
-	}
-	panic("unknown match type")
 }
 
 type limitStream struct {

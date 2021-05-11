@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -110,28 +109,8 @@ func (fm *FileMatchResolver) ToCommitSearchResult() (*CommitSearchResultResolver
 	return nil, false
 }
 
-// path returns the path in repository for the file. This isn't directly
-// exposed in the GraphQL API (we expose a URI), but is used a lot internally.
-func (fm *FileMatchResolver) path() string {
-	return fm.Path
-}
-
 func (fm *FileMatchResolver) ResultCount() int32 {
 	return int32(fm.FileMatch.ResultCount())
-}
-
-func (fm *FileMatchResolver) Select(t filter.SelectPath) SearchResultResolver {
-	match := fm.FileMatch.Select(t)
-
-	// Turn the result type back to a resolver
-	switch v := match.(type) {
-	case *result.RepoMatch:
-		return NewRepositoryResolver(fm.db, &types.Repo{Name: v.Name, ID: v.ID})
-	case *result.FileMatch:
-		return &FileMatchResolver{db: fm.db, RepoResolver: fm.RepoResolver, FileMatch: *v}
-	}
-
-	return nil
 }
 
 type lineMatchResolver struct {
@@ -274,14 +253,6 @@ func fileMatchesToMatches(fms []*result.FileMatch) []result.Match {
 	for _, fm := range fms {
 		newFm := fm
 		matches = append(matches, newFm)
-	}
-	return matches
-}
-
-func fileMatchResolversToMatches(resolvers []*FileMatchResolver) []result.Match {
-	matches := make([]result.Match, 0, len(resolvers))
-	for _, resolver := range resolvers {
-		matches = append(matches, resolver.toMatch())
 	}
 	return matches
 }

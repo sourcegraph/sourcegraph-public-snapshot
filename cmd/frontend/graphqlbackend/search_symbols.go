@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, stats *streaming.Stats, err error)
+var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*result.FileMatch, stats *streaming.Stats, err error)
 
 // searchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
@@ -30,7 +30,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 	if mockSearchSymbols != nil {
 		results, stats, err := mockSearchSymbols(ctx, args, limit)
 		stream.Send(SearchEvent{
-			Results: fileMatchResolversToMatches(results),
+			Results: fileMatchesToMatches(results),
 			Stats:   statsDeref(stats),
 		})
 		return err
