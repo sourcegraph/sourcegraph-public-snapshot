@@ -69,8 +69,7 @@ type Task struct {
 	// If Path is "" then this setting has no effect.
 	OnlyFetchWorkspace bool
 
-	Steps   []batches.Step
-	Outputs map[string]interface{}
+	Steps []batches.Step
 
 	// TODO(mrnugget): this should just be a single BatchSpec field instead, if
 	// we can make it work with caching
