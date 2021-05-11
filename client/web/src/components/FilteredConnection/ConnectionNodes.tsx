@@ -4,9 +4,9 @@ import * as React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
+import { ConnectionNodesSummary } from './ConnectionNodesSummary'
 import { Connection } from './ConnectionType'
 import { hasID } from './utils'
-import { ConnectionNodesSummary } from './ConnectionNodesSummary'
 /**
  * Props for the FilteredConnection component's result nodes and associated summary/pagination controls.
  *

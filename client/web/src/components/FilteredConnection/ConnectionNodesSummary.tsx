@@ -1,8 +1,6 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
-import styles from './ConnectionNodesSummary.module.scss'
-
 interface ListSummaryProps {
     summary: React.ReactFragment | undefined
     displayShowMoreButton?: boolean
@@ -21,7 +19,7 @@ export const ConnectionNodesSummary: React.FunctionComponent<ListSummaryProps> =
         {displayShowMoreButton && (
             <button
                 type="button"
-                className={classNames('btn btn-sm btn-secondary', styles.summaryShowMore, showMoreClassName)}
+                className={classNames('btn btn-sm btn-secondary filtered-connection__show-more', showMoreClassName)}
                 onClick={onShowMore}
             >
                 Show more
