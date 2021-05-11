@@ -10,7 +10,7 @@
         // To manipulate opacity of hex color without affecting children
         &::before {
             background-color: $oc-indigo-3;
-            opacity: 10%;
+            opacity: 0.1;
             height: 100%;
             width: 100%;
             content: '';
@@ -27,12 +27,32 @@
         margin-left: 0.75rem;
     }
 
+    &__badge {
+        position: absolute;
+        right: 0;
+        top: 0;
+        margin: 0.75rem;
+    }
+
     &__toggles-section {
         border-top: 1px solid var(--border-color-2);
     }
 
     &__footer {
         background: unset;
+    }
+
+    &__description {
+        // Truncation for multiple lines
+        // stylelint-disable-next-line value-no-vendor-prefix
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+
+        &--featured {
+            -webkit-line-clamp: 3;
+        }
     }
 
     &--enabled {

@@ -207,43 +207,36 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                             )
                         ) : // TODO: Default non-sourcegraph icons. rename SG defaults.
                         null}
+                        {extension.registryExtension?.isWorkInProgress && (
+                            <ExtensionStatusBadge
+                                viewerCanAdminister={extension.registryExtension.viewerCanAdminister}
+                                className="extension-card__badge"
+                            />
+                        )}
                     </div>
-                    {/* Section 2: Extension details */}
-                    <div className="text-truncate w-100">
-                        <div className="d-flex align-items-center">
-                            <span className="mb-0 mr-1 text-truncate flex-1">
+                    {/* Section 2: Extension details. This should be the section that grows to fill remaining space. */}
+                    <div className="w-100 mx-2 my-1 flex-grow-1">
+                        <div className="mb-2">
+                            <h3 className="mb-0 mr-1 text-truncate flex-1">
                                 <Link
                                     to={`/extensions/${extension.id}`}
                                     className={classNames('font-weight-bold', change === 'enabled' ? 'alert-link' : '')}
                                 >
                                     {name}
                                 </Link>
-                                <span
-                                    className={classNames({
-                                        'text-muted': change !== 'enabled',
-                                    })}
-                                >
-                                    {' '}
-                                    by{' '}
-                                    <span
-                                        className={classNames({
-                                            'font-weight-bold': isSourcegraphExtension,
-                                        })}
-                                    >
-                                        {publisher}
-                                    </span>
-                                </span>
+                            </h3>
+                            <span
+                                className={classNames({
+                                    'text-muted': change !== 'enabled',
+                                })}
+                            >
+                                by {publisher}
                                 {isSourcegraphExtension && (
                                     <SourcegraphExtensionIcon className="icon-inline extension-card__logo" />
                                 )}
                             </span>
-                            {extension.registryExtension?.isWorkInProgress && (
-                                <ExtensionStatusBadge
-                                    viewerCanAdminister={extension.registryExtension.viewerCanAdminister}
-                                />
-                            )}
                         </div>
-                        <div className="mt-1">
+                        <div className="mt-3 mb-2 extension-card__description mr-3">
                             {extension.manifest ? (
                                 isErrorLike(extension.manifest) ? (
                                     <span className="text-danger small" title={extension.manifest.message}>
@@ -251,7 +244,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                                     </span>
                                 ) : (
                                     extension.manifest.description && (
-                                        <div className="text-truncate">{extension.manifest.description}</div>
+                                        <span className="">{extension.manifest.description}</span>
                                     )
                                 )
                             ) : (
@@ -262,7 +255,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                         </div>
                     </div>
                     {/* Item 3: Toggle(s) */}
-                    <div className="extension-card__toggles-section d-flex flex-column align-items-end py-2">
+                    <div className="extension-card__toggles-section d-flex flex-column align-items-end py-2 mt-1">
                         <div className="px-1">
                             {subject &&
                                 (subject.viewerCanAdminister && viewerSubject ? (

@@ -6,7 +6,7 @@ export type BadgeStatus = 'beta' | 'prototype' | 'experimental' | 'wip' | 'new'
 const statusStyleMapping: Record<BadgeStatus, string> = {
     prototype: 'badge-warning',
     wip: 'badge-warning',
-    experimental: 'badge-secondary',
+    experimental: 'badge-info',
     beta: 'badge-info',
     new: 'badge-info',
 }
