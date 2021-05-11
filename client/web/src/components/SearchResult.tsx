@@ -27,9 +27,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, history, 
             const RepoIcon = getRepoIcon(repoName)
             return (
                 <div className="search-result__title">
-                    {RepoIcon && <RepoIcon className="icon-inline text-muted mr-1" />}
+                    {RepoIcon && <RepoIcon className="icon-inline text-muted" />}
                     <Markdown
-                        className="test-search-result-label"
+                        className="test-search-result-label ml-1"
                         dangerousInnerHTML={renderMarkdown(result.label.text)}
                     />
                 </div>

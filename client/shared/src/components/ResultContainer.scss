@@ -30,6 +30,14 @@
             overflow: hidden;
         }
 
+        &-divider {
+            .theme-redesign & {
+                border-right: 1px solid var(--border-color-2);
+                height: 1rem;
+                margin-left: 0.25rem;
+            }
+        }
+
         p {
             margin-bottom: 0;
         }
@@ -44,12 +52,6 @@
 
             &:not(:only-of-type) {
                 border-bottom: none;
-            }
-
-            &-divider {
-                border-right: 1px solid var(--border-color-2);
-                height: 1rem;
-                margin-left: 0.25rem;
             }
         }
     }
