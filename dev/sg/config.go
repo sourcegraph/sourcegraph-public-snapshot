@@ -49,6 +49,9 @@ type Command struct {
 	IgnoreStdout     bool              `yaml:"ignoreStdout"`
 	IgnoreStderr     bool              `yaml:"ignoreStderr"`
 	DefaultArgs      string            `yaml:"defaultArgs"`
+
+	// ATTENTION: If you add a new field here, be sure to also handle that
+	// field in `Merge` (below).
 }
 
 func (c Command) Merge(other Command) Command {
@@ -88,7 +91,6 @@ func (c Command) Merge(other Command) Command {
 	}
 
 	return merged
-
 }
 
 func equal(a, b []string) bool {
