@@ -21,17 +21,6 @@
     &-git-commit-node {
         &__link {
             display: flex;
-            color: var(--text-muted);
-
-            .theme-redesign & {
-                text-decoration: none;
-
-                &:hover,
-                &:focus {
-                    background-color: var(--primary);
-                    color: var(--light-text);
-                }
-            }
         }
         &__message {
             flex: 1 1;

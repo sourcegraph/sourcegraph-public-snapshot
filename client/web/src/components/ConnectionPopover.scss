@@ -51,6 +51,18 @@
             display: flex;
             align-items: center;
             padding: var(--popover-item-padding-v) var(--popover-item-padding-h);
+            color: var(--text-muted);
+
+            .theme-redesign & {
+                text-decoration: none;
+                border: none;
+
+                &:hover,
+                &:focus {
+                    background-color: var(--primary);
+                    color: var(--light-text);
+                }
+            }
 
             &-icon {
                 margin-left: 0.25rem;
