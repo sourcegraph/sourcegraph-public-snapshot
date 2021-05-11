@@ -48,9 +48,9 @@ gitserver-0:
   ...
 ```
 
->NOTE: The permission of your SSH / Git configuration must be set to be readable by the user in the `gitserver` container. 
+>NOTE: The permission of your SSH / Git configuration must be set to be readable by the user in the `gitserver` container. For example, run `chmod 600` for your config files inside the /home/sourcegraph/.ssh directory. 
 
-See [Custom git or ssh config docs](https://docs.sourcegraph.com/admin/repo/custom_git_or_ssh_config#setting-configuration) on setting configuring 
+See [Custom git or ssh config docs](https://docs.sourcegraph.com/admin/repo/custom_git_or_ssh_config#setting-configuration) on setting custom configuration 
 
 ### HTTP(S) authentication via netrc
 
