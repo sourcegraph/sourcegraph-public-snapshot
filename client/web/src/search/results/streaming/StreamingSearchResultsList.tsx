@@ -74,13 +74,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                         <FileMatch
                             location={location}
                             eventLogger={eventLogger}
-                            icon={
-                                result.lineMatches && result.lineMatches.length > 0
-                                    ? FileDocumentIcon
-                                    : result.symbols && result.symbols.length > 0
-                                    ? AlphaSBoxIcon
-                                    : FileIcon
-                            }
+                            icon={getFileMatchIcon(result)}
                             result={result}
                             onSelect={logSearchResultClicked}
                             expanded={false}
@@ -140,4 +134,14 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             {itemsToShow >= (results?.results.length || 0) && <StreamingSearchResultFooter results={results} />}
         </>
     )
+}
+
+function getFileMatchIcon(result: GQL.IFileMatch): React.ComponentType<{ className?: string }> {
+    if (result.lineMatches && result.lineMatches.length > 0) {
+        return FileDocumentIcon
+    }
+    if (result.symbols && result.symbols.length > 0) {
+        return AlphaSBoxIcon
+    }
+    return FileIcon
 }
