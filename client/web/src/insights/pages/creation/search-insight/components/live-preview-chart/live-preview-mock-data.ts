@@ -1,4 +1,5 @@
-import type { LineChartContent } from 'sourcegraph';
+import { random } from 'lodash'
+import type { LineChartContent } from 'sourcegraph'
 
 export const DEFAULT_MOCK_CHART_CONTENT: LineChartContent<any, string> = {
     chart: 'line' as const,
@@ -15,12 +16,12 @@ export const DEFAULT_MOCK_CHART_CONTENT: LineChartContent<any, string> = {
         {
             dataKey: 'a',
             name: 'Old gql imports',
-            stroke: 'var(--oc-indigo-7)'
+            stroke: 'var(--oc-indigo-7)',
         },
         {
             dataKey: 'b',
             name: 'New gql operation imports',
-            stroke: 'var(--oc-orange-7)'
+            stroke: 'var(--oc-orange-7)',
         },
     ],
     xAxis: {
@@ -29,3 +30,10 @@ export const DEFAULT_MOCK_CHART_CONTENT: LineChartContent<any, string> = {
         type: 'number',
     },
 }
+
+export const getRandomDataForMock = (): unknown[] =>
+    new Array(6).fill(null).map((item, index) => ({
+        x: 1588965700286 - index * 24 * 60 * 60 * 1000,
+        a: random(20, 200),
+        b: random(10, 200),
+    }))

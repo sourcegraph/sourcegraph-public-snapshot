@@ -1,13 +1,5 @@
-import {
-    EventHandler,
-    FormEventHandler,
-    RefObject,
-    SyntheticEvent,
-    useEffect,
-    useRef,
-    useState,
-} from 'react'
-import { noop } from 'rxjs';
+import { EventHandler, FormEventHandler, RefObject, SyntheticEvent, useEffect, useRef, useState } from 'react'
+import { noop } from 'rxjs'
 
 // Special key for the submit error store.
 export const FORM_ERROR = 'useForm/submissionErrors'
@@ -142,7 +134,7 @@ export interface FieldState<Value> {
  * Used below to keep tracking of fields value, touched, validity and other
  * fields state data.
  * */
-type FieldsState<FormValues> = Record<keyof FormValues, FieldState<unknown>>;
+type FieldsState<FormValues> = Record<keyof FormValues, FieldState<unknown>>
 
 /**
  * Unified form abstraction to track form state and provide form fields management
@@ -153,10 +145,7 @@ type FieldsState<FormValues> = Record<keyof FormValues, FieldState<unknown>>;
  * hook.
  * */
 export function useForm<FormValues extends object>(props: UseFormProps<FormValues>): Form<FormValues> {
-    const {
-        onSubmit,
-        initialValues,
-        onChange = noop } = props
+    const { onSubmit, initialValues, onChange = noop } = props
 
     const [submitted, setSubmitted] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -171,14 +160,13 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
     const isUnmounted = useRef<boolean>(false)
 
     const setFieldState = (name: keyof FormValues, state: FieldState<unknown>): void => {
-
         setFields(fields => ({ ...fields, [name]: state }))
 
         // On first render all fields within the form trigger setFieldState
         // in order to set initial state. OnChange handler shouldn't being run
         // on first render so we have to skip setFieldState calls during the first
         // fields render.
-        const hasRegisterField = fields[name] !== undefined;
+        const hasRegisterField = fields[name] !== undefined
 
         if (hasRegisterField && fields[name].value !== state.value) {
             onChange(getFormValues({ ...fields, [name]: state }))
@@ -242,7 +230,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
  * Used to form values for onSubmit and onChange handlers.
  * */
 function getFormValues<FormValues>(fields: Record<string, FieldState<unknown>>): FormValues {
-    return (Object.keys(fields)).reduce(
+    return Object.keys(fields).reduce(
         (values, fieldName) => ({ ...values, [fieldName]: fields[fieldName].value }),
         {} as FormValues
     )

@@ -1,15 +1,15 @@
-import { Remote } from 'comlink';
-import { combineLatest, from, Observable, of } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { Remote } from 'comlink'
+import { combineLatest, from, Observable, of } from 'rxjs'
+import { catchError, map, switchMap } from 'rxjs/operators'
 
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common';
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract';
-import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi';
-import { asError } from '@sourcegraph/shared/src/util/errors';
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 
-import { fetchBackendInsights } from '../requests/fetch-backend-insights';
-import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../types';
-import { createViewContent } from '../utils/create-view-content';
+import { fetchBackendInsights } from '../requests/fetch-backend-insights'
+import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../types'
+import { createViewContent } from '../utils/create-view-content'
 
 /**
  * Get combined (backend and extensions) code insights unified method.

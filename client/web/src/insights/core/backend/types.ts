@@ -1,7 +1,7 @@
 import { Remote } from 'comlink'
-import { Duration } from 'date-fns';
+import { Duration } from 'date-fns'
 import { Observable } from 'rxjs'
-import * as sourcegraph from 'sourcegraph';
+import * as sourcegraph from 'sourcegraph'
 
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'

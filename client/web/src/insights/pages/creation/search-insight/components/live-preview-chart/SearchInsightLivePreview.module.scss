@@ -1,18 +1,26 @@
-
 .live-preview {
-    flex-basis: 25rem;
-    flex-grow: 1;
-    flex-shrink: 0;
-    height: 20rem;
+    display: flex;
+    flex-direction: column;
 
     &__update-button {
         display: flex;
         align-items: center;
         margin-bottom: 0.5rem;
+        flex-grow: 0;
     }
 
     &__chart-container {
         position: relative;
+        width: 100%;
+        flex-grow: 1;
+    }
+
+    &__chart {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
     }
 
     &__chart--loading {
@@ -30,7 +38,7 @@
 
     &__loading-chart-info {
         position: absolute;
-        top:50%;
+        top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
     }

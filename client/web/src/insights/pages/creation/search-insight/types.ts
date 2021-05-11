@@ -1,4 +1,3 @@
-
 /** Creation form fields. */
 export interface CreateInsightFormFields {
     /** Code Insight series setting (name of line, line query, color) */
