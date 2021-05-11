@@ -13,6 +13,8 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
 
+import { AuthenticatedUser } from '../auth'
+
 import { isExtensionAdded } from './extension/extension'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
 import { ExtensionStatusBadge } from './extension/ExtensionStatusBadge'
@@ -31,8 +33,13 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     >
     subject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
     viewerSubject: SettingsSubject | undefined
+    siteSubject: SettingsSubject | undefined
     enabled: boolean
+    /** Displayed to site admins to toggle enablement for all users. */
+    enabledForAllUsers: boolean
     settingsURL: string | null | undefined
+    /** The currently authenticated user. */
+    authenticatedUser: AuthenticatedUser | null
 }
 
 /** ms after which to remove visual feedback */
@@ -45,9 +52,12 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
     platformContext,
     subject,
     enabled,
+    enabledForAllUsers,
     settingsURL,
     isLightTheme,
     viewerSubject,
+    siteSubject,
+    authenticatedUser,
 }) {
     const manifest: ExtensionManifest | undefined =
         extension.manifest && !isErrorLike(extension.manifest) ? extension.manifest : undefined
@@ -157,6 +167,20 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
         [startAnimationManager, endAnimationManager, feedbackManager, optimisticFailureManager]
     )
 
+    // Sync optimistic enabled state with ExtensionToggle so we can display text that reflects that state
+    const [optimisticEnabledForMe, setOptimisticEnabledForMe] = useState(enabled)
+    const [optimisticEnabledForAllUsers, setOptimisticEnabledForAllUsers] = useState(enabledForAllUsers)
+
+    // Three vertical sections:
+    // - icon w/ colored background
+    // - extension data: name, author, description, ratings + user count (future)
+    //   - limit to 2 lines for normal extensions, 3 lines for featured (pass in line limit prop, default is 2)
+    // - toggle(s) (<hr/> w/ border-color-2 on top)
+    //
+    // We are retaining "feedback":
+    // - on enabling, green flash behind card, tint the background
+    // - on disabling, floating alert above toggle
+
     return (
         <div className="d-flex">
             <div
@@ -170,20 +194,21 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                         'extension-card__shadow--show': showShadow,
                     })}
                 />
-                <div className="card-body extension-card__body d-flex position-relative">
-                    {/* Item 1: Icon */}
-                    <div className="flex-shrink-0 mr-2">
+                <div className="card-body p-0 extension-card__body d-flex flex-column position-relative">
+                    {/* Section 1: Icon w/ background */}
+                    <div className="extension-card__background-section d-flex align-items-center">
                         {icon ? (
                             <img className="extension-card__icon" src={icon} alt="" />
                         ) : isSourcegraphExtension ? (
                             change === 'enabled' ? (
-                                <DefaultIconEnabled isLightTheme={isLightTheme} />
+                                <DefaultIconEnabled isLightTheme={isLightTheme} className="extension-card__icon" />
                             ) : (
-                                <DefaultIcon />
+                                <DefaultIcon className="extension-card__icon" />
                             )
-                        ) : null}
+                        ) : // TODO: Default non-sourcegraph icons. rename SG defaults.
+                        null}
                     </div>
-                    {/* Item 2: Text */}
+                    {/* Section 2: Extension details */}
                     <div className="text-truncate w-100">
                         <div className="d-flex align-items-center">
                             <span className="mb-0 mr-1 text-truncate flex-1">
@@ -236,27 +261,57 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                             )}
                         </div>
                     </div>
-                    {/* Item 3: Toggle */}
-                    {subject &&
-                        (subject.viewerCanAdminister && viewerSubject ? (
-                            <ExtensionToggle
-                                extensionID={extension.id}
-                                enabled={enabled}
-                                settingsCascade={settingsCascade}
-                                platformContext={platformContext}
-                                className="extension-card__toggle flex-shrink-0 align-self-start"
-                                onToggleChange={onToggleChange}
-                                onToggleError={onToggleError}
-                                subject={viewerSubject}
-                            />
-                        ) : (
-                            <ExtensionConfigurationState
-                                isAdded={isExtensionAdded(settingsCascade.final, extension.id)}
-                                isEnabled={enabled}
-                                enabledIconOnly={true}
-                                className="small"
-                            />
-                        ))}
+                    {/* Item 3: Toggle(s) */}
+                    <div className="extension-card__toggles-section d-flex flex-column align-items-end py-2">
+                        <div className="px-1">
+                            {subject &&
+                                (subject.viewerCanAdminister && viewerSubject ? (
+                                    <>
+                                        <span className="text-muted">
+                                            {enabled ? 'Enabled' : 'Disabled'}
+                                            {authenticatedUser?.siteAdmin && ' for me'}
+                                        </span>
+                                        <ExtensionToggle
+                                            extensionID={extension.id}
+                                            enabled={enabled}
+                                            settingsCascade={settingsCascade}
+                                            platformContext={platformContext}
+                                            onToggleChange={onToggleChange}
+                                            onToggleError={onToggleError}
+                                            subject={viewerSubject}
+                                            className="mx-2"
+                                        />
+                                    </>
+                                ) : (
+                                    <ExtensionConfigurationState
+                                        isAdded={isExtensionAdded(settingsCascade.final, extension.id)}
+                                        isEnabled={enabled}
+                                        enabledIconOnly={true}
+                                        className="small"
+                                    />
+                                ))}
+                        </div>
+                        {authenticatedUser?.siteAdmin && siteSubject && (
+                            <div className="px-1 mt-2">
+                                <>
+                                    {/* TODO(tj): make this optimistic as well*/}
+                                    <span className="text-muted">
+                                        {enabledForAllUsers ? 'Enabled' : 'Not enabled'} for all users
+                                    </span>
+                                    <ExtensionToggle
+                                        extensionID={extension.id}
+                                        enabled={enabledForAllUsers}
+                                        settingsCascade={settingsCascade}
+                                        platformContext={platformContext}
+                                        onToggleChange={onToggleChange}
+                                        onToggleError={onToggleError}
+                                        subject={siteSubject}
+                                        className="mx-2"
+                                    />
+                                </>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Visual feedback: alert when extension is disabled */}
@@ -278,7 +333,20 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
 },
 areEqual)
 
-/** Custom compareFunction for ExtensionCard */
+/**
+ * Custom compareFunction for ExtensionCard.
+ *
+ * Rendering all ExtensionCards on settings changes significantly affects performance,
+ * so only render when necessary.
+ */
 function areEqual(oldProps: Props, newProps: Props): boolean {
+    if (newProps.authenticatedUser?.siteAdmin) {
+        // Also check if the extension is enabled for all users if the user is a site admin
+        return (
+            oldProps.enabledForAllUsers === newProps.enabledForAllUsers &&
+            oldProps.enabled === newProps.enabled &&
+            oldProps.isLightTheme === newProps.isLightTheme
+        )
+    }
     return oldProps.enabled === newProps.enabled && oldProps.isLightTheme === newProps.isLightTheme
 }

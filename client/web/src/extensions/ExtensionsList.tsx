@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isExtensionEnabled } from '@sourcegraph/shared/src/extensions/extension'
@@ -56,6 +56,16 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     onShowFullCategoryClicked,
     ...props
 }) => {
+    // Settings subjects for extension toggle
+    const viewerSubject = useMemo(
+        () => settingsCascade.subjects?.find(settingsSubject => settingsSubject.subject.id === subject.id),
+        [settingsCascade, subject.id]
+    )
+    const siteSubject = useMemo(
+        () => settingsCascade.subjects?.find(settingsSubject => settingsSubject.subject.__typename === 'Site'),
+        [settingsCascade]
+    )
+
     if (!data || data === LOADING) {
         return <LoadingSpinner className="icon-inline" />
     }
@@ -80,11 +90,6 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
             </>
         )
     }
-
-    // Settings subjects for extension toggle
-    const viewerSubject = settingsCascade.subjects?.find(settingsSubject => settingsSubject.subject.id === subject.id)
-        ?.subject
-    // TODO(card redesign): find Site subject for site admins, render site-wide toggle
 
     let categorySections: JSX.Element[]
 
@@ -124,13 +129,18 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                                 <ExtensionCard
                                     key={extensionId}
                                     subject={subject}
-                                    viewerSubject={viewerSubject}
+                                    viewerSubject={viewerSubject?.subject}
+                                    siteSubject={siteSubject?.subject}
                                     node={extensions[extensionId]}
                                     settingsCascade={settingsCascade}
                                     platformContext={platformContext}
                                     enabled={isExtensionEnabled(settingsCascade.final, extensionId)}
+                                    enabledForAllUsers={
+                                        siteSubject ? isExtensionEnabled(siteSubject.settings, extensionId) : false
+                                    }
                                     isLightTheme={props.isLightTheme}
                                     settingsURL={authenticatedUser?.settingsURL}
+                                    authenticatedUser={authenticatedUser}
                                 />
                             ))}
                         </div>
@@ -160,13 +170,18 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                             <ExtensionCard
                                 key={extensionId}
                                 subject={subject}
-                                viewerSubject={viewerSubject}
+                                viewerSubject={viewerSubject?.subject}
+                                siteSubject={siteSubject?.subject}
                                 node={extensions[extensionId]}
                                 settingsCascade={settingsCascade}
                                 platformContext={platformContext}
                                 enabled={isExtensionEnabled(settingsCascade.final, extensionId)}
+                                enabledForAllUsers={
+                                    siteSubject ? isExtensionEnabled(siteSubject.settings, extensionId) : false
+                                }
                                 isLightTheme={props.isLightTheme}
                                 settingsURL={authenticatedUser?.settingsURL}
+                                authenticatedUser={authenticatedUser}
                             />
                         ))}
                     </div>
@@ -200,13 +215,18 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                         <ExtensionCard
                             key={extensionId}
                             subject={subject}
-                            viewerSubject={viewerSubject}
+                            viewerSubject={viewerSubject?.subject}
+                            siteSubject={siteSubject?.subject}
                             node={extensions[extensionId]}
                             settingsCascade={settingsCascade}
                             platformContext={platformContext}
                             enabled={isExtensionEnabled(settingsCascade.final, extensionId)}
+                            enabledForAllUsers={
+                                siteSubject ? isExtensionEnabled(siteSubject.settings, extensionId) : false
+                            }
                             isLightTheme={props.isLightTheme}
                             settingsURL={authenticatedUser?.settingsURL}
+                            authenticatedUser={authenticatedUser}
                         />
                     ))}
                 </div>
