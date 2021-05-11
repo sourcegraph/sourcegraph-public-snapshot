@@ -1,3 +1,7 @@
+import { DataSeries } from '../../../core/backend/types'
+
+export type InsightStep = 'hours' | 'days' | 'weeks' | 'months' | 'years'
+
 /** Creation form fields. */
 export interface CreateInsightFormFields {
     /** Code Insight series setting (name of line, line query, color) */
@@ -9,13 +13,7 @@ export interface CreateInsightFormFields {
     /** Visibility setting which responsible for where insight will appear. */
     visibility: 'personal' | 'organization'
     /** Setting for set chart step - how often do we collect data. */
-    step: 'hours' | 'days' | 'weeks' | 'months' | 'years'
+    step: InsightStep
     /** Value for insight step setting */
     stepValue: string
-}
-
-export interface DataSeries {
-    name: string
-    color: string
-    query: string
 }

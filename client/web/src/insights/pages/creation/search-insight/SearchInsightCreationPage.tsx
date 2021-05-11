@@ -21,6 +21,7 @@ import {
     SearchInsightCreationContentProps,
 } from './components/search-insight-creation-content/SearchInsightCreationContent'
 import styles from './SearchInsightCreationPage.module.scss'
+import { getSanitizedInsight } from './utils/insight-sanitizer'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
     eol: '\n',
@@ -62,24 +63,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
-
-                const newSettingsString = {
-                    title: values.title,
-                    repositories: values.repositories.trim().split(/\s*,\s*/),
-                    series: values.series.map(line => ({
-                        name: line.name,
-                        // Query field is a reg exp field for code insight query setting
-                        // Native html input element adds escape symbols by itself
-                        // to prevent this behavior below we replace double escaping
-                        // with just one series of escape characters e.g. - //
-                        query: line.query.replace(/\\\\/g, '\\'),
-                        stroke: line.color,
-                    })),
-                    step: {
-                        [values.step]: +values.stepValue,
-                    },
-                }
-
+                const newSettingsString = getSanitizedInsight(values)
                 const edits = jsonc.modify(
                     settings.contents,
                     // According to our naming convention <type>.insight.<name>

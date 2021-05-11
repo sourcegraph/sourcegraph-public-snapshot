@@ -35,7 +35,7 @@ export interface LangStatsInsightsSettings {
 
 export interface DataSeries {
     name: string
-    color: string
+    stroke: string
     query: string
 }
 
