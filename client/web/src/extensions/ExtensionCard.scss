@@ -71,7 +71,7 @@
         flex: 0 0 auto;
     }
 
-    &__disabled-feedback {
+    &__alert {
         position: absolute;
         top: -1.625rem;
         // feedback is centered on top of toggle, so right is pr (0.5rem) + 50% of toggle width
