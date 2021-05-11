@@ -285,17 +285,25 @@ function toGQLCommitMatch(commit: CommitMatch): GQL.ICommitSearchResult {
         })),
     }
 
+    const gqlCommit: Partial<GQL.IGitCommit> = {
+        __typename: 'GitCommit',
+        repository: toGQLRepositoryMatch({
+            type: 'repo',
+            repository: commit.repository,
+        }),
+    }
+
     // We only need to return the subset defined in IGenericSearchResultInterface
-    const gqlCommit: Partial<GQL.ICommitSearchResult> = {
+    const gqlCommitResult: Partial<GQL.ICommitSearchResult> = {
         __typename: 'CommitSearchResult',
         label: toMarkdown(commit.label),
         url: commit.url,
         detail: toMarkdown(commit.detail),
-        repository: commit.repository,
+        commit: gqlCommit as GQL.IGitCommit,
         matches: [match],
     }
 
-    return gqlCommit as GQL.ICommitSearchResult
+    return gqlCommitResult as GQL.ICommitSearchResult
 }
 
 export type StreamingResultsState = 'loading' | 'error' | 'complete'

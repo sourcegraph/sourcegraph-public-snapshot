@@ -1788,11 +1788,6 @@ type CommitSearchResult implements GenericSearchResultInterface {
     """
     url: String!
     """
-    UNSTABLE: Full name of the repository the commit is based on. Will be removed when GraphQL search
-    is removed from the web UI. This is already accessible through `commit{ repository { name }}`.
-    """
-    repository: String!
-    """
     A markdown string of that is rendered less prominently.
     """
     detail: Markdown!

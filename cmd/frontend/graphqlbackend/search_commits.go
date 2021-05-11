@@ -102,10 +102,6 @@ func (r *CommitSearchResultResolver) URL() string {
 	return r.CommitMatch.URL().String()
 }
 
-func (r *CommitSearchResultResolver) Repository() string {
-	return string(r.CommitMatch.RepoName.Name)
-}
-
 func (r *CommitSearchResultResolver) Detail() Markdown {
 	return Markdown(r.CommitMatch.Detail())
 }
