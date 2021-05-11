@@ -5,6 +5,15 @@
     width: 35rem;
 
     &__tabs {
+        flex: 1;
+        .theme-redesign & {
+            padding-left: 1rem;
+            padding-right: 1rem;
+            margin-top: 0.25rem;
+        }
+    }
+
+    &__tab-panels {
         background-color: var(--body-bg);
     }
 
@@ -45,7 +54,7 @@
                 @extend .badge;
                 // TODO: Update when we have specific badge font-sizes. Issue: https://github.com/sourcegraph/sourcegraph/issues/20675
                 font-size: 0.75rem;
-                margin-bottom: inherit;
+                margin-bottom: 0;
             }
         }
     }

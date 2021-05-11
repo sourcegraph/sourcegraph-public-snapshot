@@ -1,5 +1,6 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import * as H from 'history'
+import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
@@ -175,6 +176,9 @@ interface Props {
 
     history: H.History
     location: H.Location
+
+    /* Callback to dismiss the parent popover wrapper */
+    togglePopover: () => void
 }
 
 type RevisionsPopoverTabID = 'branches' | 'tags' | 'commits'
@@ -224,7 +228,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
 
     return (
         <Tabs defaultIndex={tabIndex} className="revisions-popover" onChange={handleTabsChange}>
-            <div className="tablist-wrapper flex-1">
+            <div className="tablist-wrapper revisions-popover__tabs">
                 <TabList>
                     {TABS.map(({ label, id }) => (
                         <Tab key={id} data-test-tab={id}>
@@ -232,8 +236,11 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                         </Tab>
                     ))}
                 </TabList>
+                <button onClick={props.togglePopover} type="button" className="btn btn-icon" aria-label="Close">
+                    <CloseIcon className="icon-inline" />
+                </button>
             </div>
-            <TabPanels className="revisions-popover__tabs">
+            <TabPanels className="revisions-popover__tab-panels">
                 {TABS.map(tab => (
                     <TabPanel key={tab.id}>
                         {tab.type ? (
