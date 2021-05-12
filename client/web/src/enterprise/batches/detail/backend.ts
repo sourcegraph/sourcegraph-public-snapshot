@@ -53,7 +53,7 @@ const changesetsStatsFragment = gql`
     }
 `
 
-const bulkOperationsFragment = gql`
+const bulkOperationFragment = gql`
     fragment BulkOperationFields on BulkOperation {
         id
         type
@@ -149,7 +149,7 @@ const batchChangeFragment = gql`
 
     ${diffStatFields}
 
-    ${bulkOperationsFragment}
+    ${bulkOperationFragment}
 `
 
 const changesetLabelFragment = gql`
@@ -678,7 +678,7 @@ export const queryBulkOperations = (
                 }
             }
 
-            ${bulkOperationsFragment}
+            ${bulkOperationFragment}
         `,
         args
     ).pipe(

@@ -41,7 +41,7 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
         <FilteredConnection<BulkOperationFields, Omit<BulkOperationNodeProps, 'node'>>
             className="mt-2"
             nodeComponent={BulkOperationNode}
-            nodeComponentProps={{}}
+            nodeComponentProps={{ showErrors: true }}
             queryConnection={query}
             hideSearch={true}
             defaultFirst={15}

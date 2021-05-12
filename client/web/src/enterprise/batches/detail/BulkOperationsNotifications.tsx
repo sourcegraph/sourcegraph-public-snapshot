@@ -29,7 +29,7 @@ export const BulkOperationsNotifications: React.FunctionComponent<BulkOperations
                     className="alert alert-info"
                     partialStorageKey={`bulkOperation-${node.id}`}
                 >
-                    <BulkOperationNode node={node} key={node.id} />
+                    <BulkOperationNode node={node} key={node.id} showErrors={false} />
                 </DismissibleAlert>
             ))}
         </>
