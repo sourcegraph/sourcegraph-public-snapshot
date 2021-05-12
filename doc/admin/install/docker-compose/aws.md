@@ -13,7 +13,7 @@ This tutorial shows you how to deploy Sourcegraph via [Docker Compose](https://d
 * Select an appropriate instance size (use the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment), then **Next: Configure Instance Details.**
 * Ensure the **Auto-assign Public IP** option is "Enable". This ensures your instance is accessible to the Internet.
 * Add the following user data (as text) in the **Advanced Details** section:
-  * (optional) If you [created a fork as recommended above](#optional-recommended-create-a-fork-for-customizations), update the following environment variables in the script below:
+  * (optional) If you [created a fork of Sourcegraph](https://docs.sourcegraph.com/admin/install/docker-compose/configure#fork-this-repository) to track changes to the docker-compose.yml, update the following environment variables in the script below:
     * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL`: Your fork's git clone URL
     * `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION`: The git revision containing your fork's customizations to the base Sourcegraph Docker Compose yaml. Most likely, `DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='release'` if you followed our branching recommendations in ["Store customizations in a fork"](./index.md#optional-recommended-store-customizations-in-a-fork).
 
