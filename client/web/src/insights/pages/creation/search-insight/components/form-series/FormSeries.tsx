@@ -130,7 +130,7 @@ interface SeriesCardProps {
  * Renders series card component, visual list item of series (name, color, query)
  * */
 function SeriesCard(props: SeriesCardProps): ReactElement {
-    const { name, query, stroke, className, onEdit } = props
+    const { name, query, stroke: color, className, onEdit } = props
 
     return (
         <button
@@ -145,7 +145,7 @@ function SeriesCard(props: SeriesCardProps): ReactElement {
             </div>
 
             {/* eslint-disable-next-line react/forbid-dom-props */}
-            <div style={{ stroke }} className={styles.formSeriesCardColor} />
+            <div style={{ color }} className={styles.formSeriesCardColor} />
         </button>
     )
 }

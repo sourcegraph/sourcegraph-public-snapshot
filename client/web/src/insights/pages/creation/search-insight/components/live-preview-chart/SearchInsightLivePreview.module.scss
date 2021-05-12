@@ -28,7 +28,7 @@
         filter: blur(5px);
         pointer-events: none;
 
-        // In order to turn off any interaction with chart like
+        // In order to turn off any interactions with chart like
         // tooltip or chart shutter for user cursor we have to
         // override pointer events. Since visx charts add pointer events
         // by html attribute we have to use important statement.
