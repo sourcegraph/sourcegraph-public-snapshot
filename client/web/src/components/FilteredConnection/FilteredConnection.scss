@@ -10,6 +10,16 @@
         padding: 0;
     }
 
+    &--summary-container {
+        .theme-redesign & {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: solid 1px var(--border-color-2);
+            padding: 0.5rem 0.75rem;
+        }
+    }
+
     &--noncompact &__form {
         margin-bottom: 0.5rem;
     }
@@ -41,6 +51,13 @@
         padding: var(--popover-item-padding-v) var(--popover-item-padding-h);
         opacity: 0.7;
         border-top: solid 1px var(--border-color);
+
+        .theme-redesign & {
+            flex: 1;
+            opacity: 1;
+            border-top: none;
+            padding: 0;
+        }
     }
 
     &--noncompact {
