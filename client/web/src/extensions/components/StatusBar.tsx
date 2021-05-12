@@ -81,7 +81,6 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                 location={location}
                 // To be clear to users that this isn't an error reported by extensions
                 // about e.g. the code they're viewing.
-                // eslint-disable-next-line react/jsx-no-bind
                 render={error => (
                     <div className="status-bar__item ml-2">
                         <small className="text-muted">Status bar component error: {error.message}</small>

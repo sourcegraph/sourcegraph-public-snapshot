@@ -77,7 +77,6 @@ interface AuthenticatedProps extends Props {
 
 export const AuthenticatedBatchChangesArea = withAuthenticatedUser<AuthenticatedProps>(({ match, ...outerProps }) => (
     <Page>
-        {/* eslint-disable react/jsx-no-bind */}
         <Switch>
             <Route render={props => <BatchChangeListPage {...outerProps} {...props} />} path={match.url} exact={true} />
             <Route
@@ -87,7 +86,6 @@ export const AuthenticatedBatchChangesArea = withAuthenticatedUser<Authenticated
             />
             <Route component={NotFoundPage} key="hardcoded-key" />
         </Switch>
-        {/* eslint-enable react/jsx-no-bind */}
     </Page>
 ))
 
@@ -99,7 +97,6 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
     NamespaceBatchChangesAreaProps & { authenticatedUser: AuthenticatedUser }
 >(({ match, namespaceID, ...outerProps }) => (
     <Page>
-        {/* eslint-disable react/jsx-no-bind */}
         <Switch>
             <Route
                 path={`${match.url}/apply/:specID`}
@@ -139,6 +136,5 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
                 exact={true}
             />
         </Switch>
-        {/* eslint-enable react/jsx-no-bind */}
     </Page>
 ))

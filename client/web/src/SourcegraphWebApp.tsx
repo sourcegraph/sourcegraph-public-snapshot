@@ -467,7 +467,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             <ErrorBoundary location={null}>
                 <ShortcutProvider>
                     <BrowserRouter key={0}>
-                        {/* eslint-disable react/jsx-no-bind */}
                         <Route
                             path="/"
                             render={routeComponentProps => (
@@ -529,7 +528,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                 />
                             )}
                         />
-                        {/* eslint-enable react/jsx-no-bind */}
                     </BrowserRouter>
                     <Tooltip key={1} />
                     <Notifications
