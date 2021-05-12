@@ -75,8 +75,6 @@ export interface Props {
     children?: never
 }
 
-const blockExpandAndCollapse = (event: React.MouseEvent<HTMLElement>): void => event.stopPropagation()
-
 /**
  * The container component for a result in the SearchResults component.
  */
