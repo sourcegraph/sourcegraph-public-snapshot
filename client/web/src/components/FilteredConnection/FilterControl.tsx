@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-export interface FilterValue {
+export interface FilteredConnectionFilterValue {
     value: string
     label: string
     tooltip?: string
@@ -10,7 +10,7 @@ export interface FilterValue {
 /**
  * A filter to display next to the filter input field.
  */
-export interface Filter {
+export interface FilteredConnectionFilter {
     /** The UI label for the filter. */
     label: string
 
@@ -24,17 +24,17 @@ export interface Filter {
     /** An optional tooltip to display for this filter. */
     tooltip?: string
 
-    values: FilterValue[]
+    values: FilteredConnectionFilterValue[]
 }
 
 interface FilterControlProps {
     /** All filters. */
-    filters: Filter[]
+    filters: FilteredConnectionFilter[]
 
     /** Called when a filter is selected. */
-    onDidSelectValue: (filter: Filter, value: FilterValue) => void
+    onDidSelectValue: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
 
-    values: Map<string, FilterValue>
+    values: Map<string, FilteredConnectionFilterValue>
 }
 
 export const FilterControl: React.FunctionComponent<FilterControlProps> = ({
@@ -44,7 +44,7 @@ export const FilterControl: React.FunctionComponent<FilterControlProps> = ({
     children,
 }) => {
     const onChange = useCallback(
-        (filter: Filter, id: string) => {
+        (filter: FilteredConnectionFilter, id: string) => {
             const value = filter.values.find(value => value.value === id)
             if (value === undefined) {
                 return

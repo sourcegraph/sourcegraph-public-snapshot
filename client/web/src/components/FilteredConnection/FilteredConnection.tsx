@@ -27,7 +27,7 @@ import { ErrorMessage } from '../alerts'
 
 import { ConnectionNodes, ConnectionNodesState, ConnectionNodesDisplayProps, ConnectionProps } from './ConnectionNodes'
 import { Connection } from './ConnectionType'
-import { FilterControl, Filter, FilterValue } from './FilterControl'
+import { FilterControl, FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
 import { getFilterFromURL, parseQueryInt } from './utils'
 
 /**
@@ -76,7 +76,7 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps {
      *
      * Filters are mutually exclusive.
      */
-    filters?: Filter[]
+    filters?: FilteredConnectionFilter[]
 
     /**
      * The filter to select by default. If not supplied, this defaults to the first
@@ -85,7 +85,7 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps {
     defaultFilter?: string
 
     /** Called when a filter is selected and on initial render. */
-    onValueSelect?: (filter: Filter, value: FilterValue) => void
+    onValueSelect?: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
 
     /** CSS class name for the <input> element */
     inputClassName?: string
@@ -123,14 +123,14 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}, HP = {}>
 /**
  * The arguments for the Props.queryConnection function.
  */
-interface FilteredConnectionQueryArguments {
+export interface FilteredConnectionQueryArguments {
     first?: number
     after?: string
     query?: string
 }
 
 interface FilteredConnectionState<C extends Connection<N>, N> extends ConnectionNodesState {
-    activeValues: Map<string, FilterValue>
+    activeValues: Map<string, FilteredConnectionFilterValue>
 
     /** The fetched connection data or an error (if an error occurred). */
     connectionOrError?: C | ErrorLike
@@ -172,7 +172,7 @@ export class FilteredConnection<
     }
 
     private queryInputChanges = new Subject<string>()
-    private activeValuesChanges = new Subject<Map<string, FilterValue>>()
+    private activeValuesChanges = new Subject<Map<string, FilteredConnectionFilterValue>>()
     private showMoreClicks = new Subject<void>()
     private componentUpdates = new Subject<FilteredConnectionProps<C, N, NP, HP>>()
     private subscriptions = new Subscription()
@@ -201,7 +201,7 @@ export class FilteredConnection<
             query: (!this.props.hideSearch && this.props.useURLQuery && searchParameters.get(QUERY_KEY)) || '',
             activeValues:
                 (this.props.useURLQuery && getFilterFromURL(searchParameters, this.props.filters)) ||
-                new Map<string, FilterValue>(),
+                new Map<string, FilteredConnectionFilterValue>(),
             first: (this.props.useURLQuery && parseQueryInt(searchParameters, 'first')) || this.props.defaultFirst!,
             visible: (this.props.useURLQuery && parseQueryInt(searchParameters, 'visible')) || 0,
         }
@@ -263,10 +263,10 @@ export class FilteredConnection<
                 .pipe(
                     // Track whether the query or the active filter changed
                     scan<
-                        [string, Map<string, FilterValue> | undefined, { forceRefresh: boolean }],
+                        [string, Map<string, FilteredConnectionFilterValue> | undefined, { forceRefresh: boolean }],
                         {
                             query: string
-                            values: Map<string, FilterValue> | undefined
+                            values: Map<string, FilteredConnectionFilterValue> | undefined
                             shouldRefresh: boolean
                             queryCount: number
                         }
@@ -439,7 +439,7 @@ export class FilteredConnection<
     }: {
         first?: number
         query?: string
-        values?: Map<string, FilterValue>
+        values?: Map<string, FilteredConnectionFilterValue>
         visible?: number
     }): string {
         if (!first) {
@@ -619,7 +619,7 @@ export class FilteredConnection<
         this.queryInputChanges.next(event.currentTarget.value)
     }
 
-    private onDidSelectValue = (filter: Filter, value: FilterValue): void => {
+    private onDidSelectValue = (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue): void => {
         if (this.props.filters === undefined) {
             return
         }
@@ -632,7 +632,9 @@ export class FilteredConnection<
         this.showMoreClicks.next()
     }
 
-    private buildArgs = (values: Map<string, FilterValue>): { [name: string]: string | number | boolean } => {
+    private buildArgs = (
+        values: Map<string, FilteredConnectionFilterValue>
+    ): { [name: string]: string | number | boolean } => {
         let args: { [name: string]: string | number | boolean } = {}
         for (const key of values.keys()) {
             const value = values.get(key)

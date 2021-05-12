@@ -18,9 +18,9 @@ import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
-    FilterValue,
+    FilteredConnectionFilterValue,
+    Connection,
 } from '../../../components/FilteredConnection'
-import type { Connection } from '../../../components/FilteredConnection/ConnectionType'
 import { PageTitle } from '../../../components/PageTitle'
 import {
     RepositoriesResult,
@@ -163,7 +163,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                             { delay: 2000 }
                         ),
                         map(result => {
-                            const services: FilterValue[] = [
+                            const services: FilteredConnectionFilterValue[] = [
                                 {
                                     value: 'all',
                                     label: 'All',

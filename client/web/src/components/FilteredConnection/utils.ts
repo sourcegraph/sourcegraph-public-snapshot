@@ -1,7 +1,7 @@
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
-import type { Filter, FilterValue } from './FilterControl'
+import type { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
 export const hasID = (value: unknown): value is { id: Scalars['ID'] } =>
@@ -9,9 +9,9 @@ export const hasID = (value: unknown): value is { id: Scalars['ID'] } =>
 
 export const getFilterFromURL = (
     searchParameters: URLSearchParams,
-    filters: Filter[] | undefined
-): Map<string, FilterValue> => {
-    const values: Map<string, FilterValue> = new Map<string, FilterValue>()
+    filters: FilteredConnectionFilter[] | undefined
+): Map<string, FilteredConnectionFilterValue> => {
+    const values: Map<string, FilteredConnectionFilterValue> = new Map<string, FilteredConnectionFilterValue>()
 
     if (filters === undefined || filters.length === 0) {
         return values
