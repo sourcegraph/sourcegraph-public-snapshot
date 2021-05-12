@@ -56,16 +56,16 @@ export interface LineChartContentProps<Datum extends object>
      * Callback calls every time when a point-zone (zone around point) but not point itself
      * on the chart was clicked.
      */
-    onDatumZoneClick: onDatumZoneClick
+    onDatumZoneClick?: onDatumZoneClick
     /** Callback calls every time when link-point and only link-point on the chart was clicked. */
-    onDatumLinkClick: (event: React.MouseEvent) => void
+    onDatumLinkClick?: (event: React.MouseEvent) => void
 }
 
 /**
  * Displays line chart content - line chart, tooltip, active point
  * */
 export function LineChartContent<Datum extends object>(props: LineChartContentProps<Datum>): ReactElement {
-    const { width, height, data, series, xAxis, onDatumZoneClick, onDatumLinkClick } = props
+    const { width, height, data, series, xAxis, onDatumZoneClick = noop, onDatumLinkClick = noop } = props
 
     // Calculate inner sizes for chart without padding values
     const innerWidth = width - MARGIN.left - MARGIN.right
@@ -320,7 +320,6 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                         yAccessor={accessors.y[line.dataKey]}
                                         // Don't have info about line in props. @visx/xychart doesn't expose this information
                                         // Move this arrow function in separate component when API of GlyphSeries will be fixed.
-                                        /* eslint-disable-next-line react/jsx-no-bind */
                                         renderGlyph={glyphProps => (
                                             <GlyphContent
                                                 {...glyphProps}

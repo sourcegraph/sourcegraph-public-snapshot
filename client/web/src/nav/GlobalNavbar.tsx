@@ -51,6 +51,7 @@ import {
 import { QueryState } from '../search/helpers'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { ThemePreferenceProps } from '../theme'
+import { UserSettingsSidebarItems } from '../user/settings/UserSettingsSidebar'
 import { showDotComMarketing } from '../util/features'
 
 import { NavLinks } from './NavLinks'
@@ -72,7 +73,10 @@ interface Props
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        Omit<SearchContextProps, 'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable'>,
+        Omit<
+            SearchContextProps,
+            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
+        >,
         CodeMonitoringProps,
         OnboardingTourProps {
     history: H.History
@@ -91,6 +95,7 @@ interface Props
 
     // Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets.
     enableSmartQuery: boolean
+    userSettingsSideBarItems?: UserSettingsSidebarItems
 
     /**
      * Which variation of the global navbar to render.
@@ -139,6 +144,14 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     const query = props.parsedSearchQuery
 
     const globalSearchContextSpec = useMemo(() => getGlobalSearchContextFilter(query), [query])
+
+    // Design Refresh will include repositories section as part of the user navigation bar
+    // This filter makes sure repositories feature flag is active.
+    const showRepositorySection = useMemo(
+        () => !!props.userSettingsSideBarItems?.account.find(item => item.label === 'Repositories'),
+        [props.userSettingsSideBarItems]
+    )
+
     const isSearchContextAvailable = useObservable(
         useMemo(
             () =>
@@ -325,6 +338,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                     isLightTheme={isLightTheme}
                                     authenticatedUser={props.authenticatedUser}
                                     showDotComMarketing={showDotComMarketing}
+                                    showRepositorySection={showRepositorySection}
                                     codeHostIntegrationMessaging={
                                         (!isErrorLike(props.settingsCascade.final) &&
                                             props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||

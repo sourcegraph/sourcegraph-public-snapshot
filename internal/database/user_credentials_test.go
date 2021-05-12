@@ -31,13 +31,18 @@ func TestUserCredential_Authenticator(t *testing.T) {
 
 	t.Run("errors", func(t *testing.T) {
 		for name, credential := range map[string]*UserCredential{
-			"no credential": {key: &et.TestKey{}},
+			"no credential": {
+				EncryptionKeyID: "test key",
+				key:             &et.TestKey{},
+			},
 			"bad decrypter": {
-				encryptedCredential: []byte("foo"),
-				key:                 &et.BadKey{Err: errors.New("bad  bad  what you gonna do")},
+				EncryptionKeyID:     "it's the bad guy... uh, key",
+				EncryptedCredential: []byte("foo"),
+				key:                 &et.BadKey{Err: errors.New("bad key bad key what you gonna do")},
 			},
 			"invalid secret": {
-				encryptedCredential: []byte("foo"),
+				EncryptionKeyID:     "transparent key",
+				EncryptedCredential: []byte("foo"),
 				key:                 et.NewTransparentKey(t),
 			},
 		} {
@@ -51,13 +56,22 @@ func TestUserCredential_Authenticator(t *testing.T) {
 
 	t.Run("plaintext credential", func(t *testing.T) {
 		a := &auth.BasicAuth{}
-		uc := &UserCredential{credential: a, key: et.TestKey{}}
+
+		enc, err := EncryptAuthenticator(ctx, nil, a)
+		if err != nil {
+			t.Fatal(err)
+		}
+		uc := &UserCredential{
+			EncryptionKeyID:     "",
+			EncryptedCredential: enc,
+			key:                 et.TestKey{},
+		}
 
 		have, err := uc.Authenticator(ctx)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
-		} else if have != a {
-			t.Errorf("unexpected authenticator: have=%q want=%q", have, a)
+		} else if diff := cmp.Diff(have, a); diff != "" {
+			t.Errorf("unexpected authenticator (-have +want):\n%s", diff)
 		}
 	})
 
@@ -69,7 +83,11 @@ func TestUserCredential_Authenticator(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		uc := &UserCredential{encryptedCredential: enc, key: key}
+		uc := &UserCredential{
+			EncryptionKeyID:     "test key",
+			EncryptedCredential: enc,
+			key:                 key,
+		}
 
 		have, err := uc.Authenticator(ctx)
 		if err != nil {
@@ -86,7 +104,7 @@ func TestUserCredential_Authenticator(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		uc := &UserCredential{encryptedCredential: enc, key: nil}
+		uc := &UserCredential{EncryptedCredential: enc, key: nil}
 
 		have, err := uc.Authenticator(ctx)
 		if err != nil {
@@ -102,7 +120,10 @@ func TestUserCredential_SetAuthenticator(t *testing.T) {
 	a := &auth.BasicAuth{Username: "foo", Password: "bar"}
 
 	t.Run("error", func(t *testing.T) {
-		uc := &UserCredential{key: &et.BadKey{Err: errors.New("error")}}
+		uc := &UserCredential{
+			EncryptionKeyID: "bad key",
+			key:             &et.BadKey{Err: errors.New("error")},
+		}
 
 		if err := uc.SetAuthenticator(ctx, a); err == nil {
 			t.Error("unexpected nil error")
@@ -111,16 +132,20 @@ func TestUserCredential_SetAuthenticator(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		for name, key := range map[string]encryption.Key{
-			"nil":      nil,
+			"":         nil,
 			"test key": et.TestKey{},
 		} {
 			t.Run(name, func(t *testing.T) {
-				uc := &UserCredential{credential: a, key: key}
+				uc := &UserCredential{
+					key: key,
+				}
 
 				if err := uc.SetAuthenticator(ctx, a); err != nil {
 					t.Errorf("unexpected error: %v", err)
-				} else if uc.credential != nil {
-					t.Errorf("unencrypted credential is still present: %v", uc.credential)
+				} else if key == nil && uc.EncryptionKeyID != "" {
+					t.Errorf("unexpected non-empty key ID: %q", uc.EncryptionKeyID)
+				} else if key != nil && uc.EncryptionKeyID == "" {
+					t.Error("unexpected empty key ID")
 				}
 			})
 		}
@@ -503,6 +528,11 @@ func TestUserCredentials_Invalid(t *testing.T) {
 		// helper to make that easier.
 
 		insertRawCredential := func(t *testing.T, domain string, raw string) int64 {
+			kid, err := keyID(ctx, key)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			secret, err := key.Encrypt(ctx, []byte(raw))
 			if err != nil {
 				t.Fatal(err)
@@ -515,6 +545,7 @@ func TestUserCredentials_Invalid(t *testing.T) {
 				"type",
 				"id",
 				secret,
+				kid,
 				sqlf.Sprintf("id"),
 			)
 

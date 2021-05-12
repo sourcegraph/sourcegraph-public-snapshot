@@ -9,12 +9,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/require"
 )
 
 func init() {
@@ -204,6 +205,8 @@ func TestConvertingVersionContextToSearchContext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
+	// Ignore UpdateAt field
+	gotSearchContext.UpdatedAt = wantSearchContext.UpdatedAt
 	if !reflect.DeepEqual(wantSearchContext, gotSearchContext) {
 		t.Fatalf("want search context %+v, got %+v", wantSearchContext, gotSearchContext)
 	}

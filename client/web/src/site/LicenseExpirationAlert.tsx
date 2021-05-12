@@ -20,7 +20,7 @@ export const LicenseExpirationAlert: React.FunctionComponent<{
         partialStorageKey={`licenseExpiring.${daysLeft}`}
         className={`alert alert-warning align-items-center ${className}`}
     >
-        <WarningIcon className="icon-inline mr-2 flex-shrink-0" />
+        <WarningIcon className="redesign-d-none icon-inline mr-2 flex-shrink-0" />
         Your Sourcegraph license{' '}
         {
             isProductLicenseExpired(expiresAt)

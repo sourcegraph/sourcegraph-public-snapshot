@@ -4,7 +4,7 @@ exports[`StatusBar renders correctly 1`] = `
 <body>
   <div>
     <div
-      class="status-bar w-100 border-top d-flex"
+      class="status-bar w-100 border-top d-flex percy-hide"
     >
       <div
         class="status-bar__items d-flex px-2"

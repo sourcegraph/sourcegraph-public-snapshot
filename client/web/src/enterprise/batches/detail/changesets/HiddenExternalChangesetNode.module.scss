@@ -1,14 +1,14 @@
-@import 'branded/src/global-styles/breakpoints';
+@import 'wildcard/src/global-styles/breakpoints';
 
 .hidden-external-changeset-node {
     &__information {
-        @include media-breakpoint-down(sm) {
+        @media (--sm-breakpoint-down) {
             grid-column: 3 / -1;
         }
     }
     &__status,
     &__information {
-        @include media-breakpoint-down(xs) {
+        @media (--xs-breakpoint-down) {
             grid-column: 1 / -1;
         }
     }

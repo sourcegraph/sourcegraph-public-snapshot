@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -19,6 +20,10 @@ func TestAutoDefinedSearchContexts(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: key})
 	db := new(dbtesting.MockDB)
+
+	orig := envvar.SourcegraphDotComMode()
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(orig) // reset
 
 	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{Username: username}, nil
@@ -67,17 +72,17 @@ func TestSearchContexts(t *testing.T) {
 		{
 			name:     "filtering by namespace",
 			args:     &listSearchContextsArgs{Query: &query, Namespace: &graphqlUserID, NamespaceFilterType: &namespaceFilter},
-			wantOpts: database.ListSearchContextsOptions{Name: query, NamespaceUserID: userID},
+			wantOpts: database.ListSearchContextsOptions{Name: query, NamespaceUserID: userID, OrderBy: database.SearchContextsOrderBySpec},
 		},
 		{
 			name:     "filtering by instance",
 			args:     &listSearchContextsArgs{Query: &query, NamespaceFilterType: &instanceFilter},
-			wantOpts: database.ListSearchContextsOptions{Name: query, NoNamespace: true},
+			wantOpts: database.ListSearchContextsOptions{Name: query, NoNamespace: true, OrderBy: database.SearchContextsOrderBySpec},
 		},
 		{
 			name:     "get all",
 			args:     &listSearchContextsArgs{Query: &query},
-			wantOpts: database.ListSearchContextsOptions{Name: query},
+			wantOpts: database.ListSearchContextsOptions{Name: query, OrderBy: database.SearchContextsOrderBySpec},
 		},
 		{
 			name:    "cannot filter by namespace with nil namespace",

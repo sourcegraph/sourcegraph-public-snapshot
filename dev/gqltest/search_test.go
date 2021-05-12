@@ -78,7 +78,8 @@ func TestSearch(t *testing.T) {
 	}
 
 	t.Run("search contexts", func(t *testing.T) {
-		testSearchContexts(t, client)
+		testSearchContextsCRUD(t, client)
+		testListingSearchContexts(t, client)
 	})
 
 	t.Run("graphql", func(t *testing.T) {
@@ -1107,6 +1108,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Symbol: 1},
 			},
 			{
+				name:   `search diffs with file start anchor`,
+				query:  `repo:go-diff patterntype:literal type:diff file:^README.md$ installing`,
+				counts: counts{Commit: 1},
+			},
+			{
 				name:   `select diffs with added lines containing pattern`,
 				query:  `repo:go-diff patterntype:literal type:diff select:commit.diff.added sample_binary_inline`,
 				counts: counts{Commit: 1},
@@ -1255,7 +1261,7 @@ func testSearchOther(t *testing.T) {
 	})
 }
 
-func testSearchContexts(t *testing.T, client *gqltestutil.Client) {
+func testSearchContextsCRUD(t *testing.T, client *gqltestutil.Client) {
 	repo1, err := client.Repository("github.com/sgtest/java-langserver")
 	require.NoError(t, err)
 	repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
@@ -1307,4 +1313,51 @@ func testSearchContexts(t *testing.T, client *gqltestutil.Client) {
 	// Check that retrieving the deleted search context fails
 	_, err = client.GetSearchContext(scID)
 	require.Error(t, err)
+}
+
+func testListingSearchContexts(t *testing.T, client *gqltestutil.Client) {
+	numSearchContexts := 10
+	searchContextIDs := make([]string, 0, numSearchContexts)
+	for i := 0; i < numSearchContexts; i++ {
+		scID, err := client.CreateSearchContext(
+			gqltestutil.CreateSearchContextInput{Name: fmt.Sprintf("SearchContext%d", i), Public: true},
+			[]gqltestutil.SearchContextRepositoryRevisionsInput{},
+		)
+		require.NoError(t, err)
+		searchContextIDs = append(searchContextIDs, scID)
+	}
+	defer func() {
+		for i := 0; i < numSearchContexts; i++ {
+			err := client.DeleteSearchContext(searchContextIDs[i])
+			require.NoError(t, err)
+		}
+	}()
+
+	orderBySpec := gqltestutil.SearchContextsOrderBySpec
+	resultFirstPage, err := client.ListSearchContexts(gqltestutil.ListSearchContextsOptions{
+		First:      5,
+		OrderBy:    &orderBySpec,
+		Descending: true,
+	})
+	require.NoError(t, err)
+	if len(resultFirstPage.Nodes) != 5 {
+		t.Fatalf("expected 5 search contexts, got %d", len(resultFirstPage.Nodes))
+	}
+	if resultFirstPage.Nodes[0].Spec != "SearchContext9" {
+		t.Fatalf("expected first page first search context spec to be SearchContext9, got %s", resultFirstPage.Nodes[0].Spec)
+	}
+
+	resultSecondPage, err := client.ListSearchContexts(gqltestutil.ListSearchContextsOptions{
+		First:      5,
+		After:      resultFirstPage.PageInfo.EndCursor,
+		OrderBy:    &orderBySpec,
+		Descending: true,
+	})
+	require.NoError(t, err)
+	if len(resultSecondPage.Nodes) != 5 {
+		t.Fatalf("expected 5 search contexts, got %d", len(resultSecondPage.Nodes))
+	}
+	if resultSecondPage.Nodes[0].Spec != "SearchContext4" {
+		t.Fatalf("expected second page search context spec to be SearchContext4, got %s", resultSecondPage.Nodes[0].Spec)
+	}
 }

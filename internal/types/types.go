@@ -1513,6 +1513,7 @@ type SearchContext struct {
 	Public          bool
 	NamespaceUserID int32 // if non-zero, the owner is this user. NamespaceUserID/NamespaceOrgID are mutually exclusive.
 	NamespaceOrgID  int32 // if non-zero, the owner is this organization. NamespaceUserID/NamespaceOrgID are mutually exclusive.
+	UpdatedAt       time.Time
 
 	// We cache namespace names to avoid separate database lookups when constructing the search context spec
 

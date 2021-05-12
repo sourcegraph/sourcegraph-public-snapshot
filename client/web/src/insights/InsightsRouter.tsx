@@ -7,17 +7,24 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { HeroPage } from '../components/HeroPage'
 import { lazyComponent } from '../util/lazyComponent'
 
+import { SearchInsightCreationPageProps } from './pages/creation/search-insight/SearchInsightCreationPage'
 import { InsightsPageProps } from './pages/dashboard/InsightsPage'
-import { CreationSearchInsightPageProps } from './pages/search-insight-creation/CreationSearchInsightPage'
 
-const InsightsLazyPage = lazyComponent<InsightsPageProps, 'InsightsPage'>(
-    () => import('./pages/dashboard/InsightsPage'),
-    'InsightsPage'
+const InsightsLazyPage = lazyComponent(() => import('./pages/dashboard/InsightsPage'), 'InsightsPage')
+
+const IntroCreationLazyPage = lazyComponent(
+    () => import('./pages/creation/intro/IntroCreationPage'),
+    'IntroCreationPage'
 )
 
-const InsightCreateLazyPage = lazyComponent<CreationSearchInsightPageProps, 'CreationSearchInsightPage'>(
-    () => import('./pages/search-insight-creation/CreationSearchInsightPage'),
-    'CreationSearchInsightPage'
+const SearchInsightCreationLazyPage = lazyComponent(
+    () => import('./pages/creation/search-insight/SearchInsightCreationPage'),
+    'SearchInsightCreationPage'
+)
+
+const LangStatsInsightCreationLazyPage = lazyComponent(
+    () => import('./pages/creation/lang-stats/LangStatsInsightCreationPage'),
+    'LangStatsInsightCreationPage'
 )
 
 /**
@@ -35,7 +42,7 @@ const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIco
 export interface InsightsRouterProps
     extends RouteComponentProps,
         Omit<InsightsPageProps, 'isCreationUIEnabled'>,
-        CreationSearchInsightPageProps {}
+        SearchInsightCreationPageProps {}
 
 /** Main Insight routing component. Main entry point to code insights UI. */
 export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = props => {
@@ -45,7 +52,6 @@ export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = prop
     return (
         <Switch>
             <Route
-                /* eslint-disable-next-line react/jsx-no-bind */
                 render={props => (
                     <InsightsLazyPage isCreationUIEnabled={isCreationUIEnabled} {...outerProps} {...props} />
                 )}
@@ -54,11 +60,19 @@ export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = prop
             />
 
             {isCreationUIEnabled && (
-                <Route
-                    path={`${match.url}/create`}
-                    /* eslint-disable-next-line react/jsx-no-bind */
-                    render={props => <InsightCreateLazyPage {...outerProps} {...props} />}
-                />
+                <>
+                    <Route
+                        path={`${match.url}/create-search-insight`}
+                        render={props => <SearchInsightCreationLazyPage {...outerProps} {...props} />}
+                    />
+
+                    <Route
+                        path={`${match.url}/create-lang-stats-insight`}
+                        render={props => <LangStatsInsightCreationLazyPage {...outerProps} {...props} />}
+                    />
+
+                    <Route path={`${match.url}/create-intro`} component={IntroCreationLazyPage} />
+                </>
             )}
 
             <Route component={NotFoundPage} key="hardcoded-key" />

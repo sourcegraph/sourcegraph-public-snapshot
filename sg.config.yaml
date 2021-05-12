@@ -44,6 +44,15 @@ env:
   CODEINTEL_PGDATASOURCE: $PGDATASOURCE
   CODEINTEL_PG_ALLOW_SINGLE_DB: true
 
+  # Required for `frontend` and `web` commands
+  SOURCEGRAPH_HTTPS_DOMAIN: sourcegraph.test
+  SOURCEGRAPH_HTTPS_PORT: 3443
+
+  # Required for `web` commands
+  NODE_OPTIONS: "--max_old_space_size=4096"
+  # Default `NODE_ENV` to `development`
+  NODE_ENV: development
+
 commands:
   frontend:
     cmd: ulimit -n 10000 && .bin/frontend
@@ -172,25 +181,48 @@ commands:
       fi
     env:
       CADDY_VERSION: 2.3.0
-      SOURCEGRAPH_HTTPS_DOMAIN: sourcegraph.test
-      SOURCEGRAPH_HTTPS_PORT: 3443
 
   web:
     cmd: ./node_modules/.bin/gulp --silent --color dev
     install: yarn --no-progress
-    env:
-      WEBPACK_DEV_SERVER: 1
-      NODE_ENV: development
-      NODE_OPTIONS: "--max_old_space_size=4096"
 
   enterprise-web:
     cmd: ./node_modules/.bin/gulp --silent --color dev
     install: yarn --no-progress
     env:
       ENTERPRISE: 1
-      WEBPACK_DEV_SERVER: 1
-      NODE_ENV: development
-      NODE_OPTIONS: "--max_old_space_size=4096"
+
+  web-standalone:
+    cmd: yarn workspace @sourcegraph/web serve:dev
+    install: yarn --no-progress
+    env:
+      WEBPACK_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+
+  enterprise-web-standalone:
+    cmd: yarn workspace @sourcegraph/web serve:dev
+    install: yarn --no-progress
+    env:
+      ENTERPRISE: 1
+      WEBPACK_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+
+  web-standalone-prod:
+    cmd: yarn workspace @sourcegraph/web serve:prod
+    install: yarn workspace @sourcegraph/web run build
+    env:
+      NODE_ENV: production
+      WEBPACK_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+
+  enterprise-web-standalone-prod:
+    cmd: yarn workspace @sourcegraph/web serve:prod
+    install: yarn workspace @sourcegraph/web run build
+    env:
+      ENTERPRISE: 1
+      NODE_ENV: production
+      WEBPACK_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   docsite:
     cmd: .bin/docsite_${VERSION} -config doc/docsite.json serve -http=localhost:5080
@@ -321,7 +353,9 @@ commandsets:
 tests:
   # These can be run with `sg test [name]`
   backend:
-    cmd: go test ./...
+    cmd: go test
+    defaultArgs: ./...
+
   backend-integration:
     cmd: cd dev/gqltest && go test -long -base-url $BASE_URL -email $EMAIL -username $USERNAME -password $PASSWORD ./gqltest
     env:
@@ -330,8 +364,10 @@ tests:
       BASE_URL: "http://localhost:3080"
       EMAIL: "joe@sourcegraph.com"
       PASSWORD: "12345"
+
   frontend:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
+
   frontend-e2e:
     cmd: yarn run mocha ./client/web/src/end-to-end/end-to-end.test.ts
     env:
