@@ -181,7 +181,6 @@ var MockSearchFilesInRepos func(args *search.TextParameters) ([]*result.FileMatc
 func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream streaming.Sender) (err error) {
 	if MockSearchFilesInRepos != nil {
 		matches, mockStats, err := MockSearchFilesInRepos(args)
-		fmt.Printf("MockStats: %#v\n", mockStats.Status)
 		stream.Send(streaming.SearchEvent{
 			Results: fileMatchesToMatches(matches),
 			Stats:   statsDeref(mockStats),
@@ -333,7 +332,6 @@ func callSearcherOverRepos(
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
 					stats, err := handleRepoSearchResult(repoRev, repoLimitHit, false, err)
-					fmt.Printf("Stats1: %#v\n", stats.Status)
 					stream.Send(streaming.SearchEvent{
 						Results: fileMatchesToMatches(matches),
 						Stats:   stats,
