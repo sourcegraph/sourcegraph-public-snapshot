@@ -76,10 +76,6 @@ const getDiffCodeCellFromLineNumber = (
     line: number,
     part?: DiffPart
 ): HTMLTableCellElement | null => {
-    if (codeView.querySelector('.js-diff-load-container')) {
-        // Diff is collapsed
-        return null
-    }
     const isSplitDiff = isDomSplitDiff(codeView)
     const nthChild = getLineNumberElementIndex(part!, isSplitDiff) + 1 // nth-child() is 1-indexed
     const lineNumberCell = codeView.querySelector<HTMLTableCellElement>(
