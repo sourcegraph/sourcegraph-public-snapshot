@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -41,8 +42,10 @@ func (r *schemaResolver) savedSearchByID(ctx context.Context, id graphql.ID) (*s
 	}
 	// 🚨 SECURITY: Make sure the current user has permission to get the saved search.
 	if ss.Config.UserID != nil {
-		if err := backend.CheckSiteAdminOrSameUser(ctx, *ss.Config.UserID); err != nil {
-			return nil, err
+		if *ss.Config.UserID != actor.FromContext(ctx).UID {
+			return nil, &backend.InsufficientAuthorizationError{
+				Message: "current user has insufficient privileges to view saved search",
+			}
 		}
 	} else if ss.Config.OrgID != nil {
 		if err := backend.CheckOrgAccess(ctx, r.db, *ss.Config.OrgID); err != nil {
@@ -112,7 +115,7 @@ func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResol
 	var savedSearches []*savedSearchResolver
 	currentUser, err := CurrentUser(ctx, r.db)
 	if currentUser == nil {
-		return nil, errors.New("No currently authenticated user")
+		return nil, errors.New("no currently authenticated user")
 	}
 	if err != nil {
 		return nil, err
