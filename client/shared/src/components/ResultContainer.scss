@@ -55,5 +55,9 @@
 
     &__toggle-matches-container {
         display: flex;
+
+        .theme-redesign & {
+            flex-shrink: 0;
+        }
     }
 }

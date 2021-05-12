@@ -1,8 +1,12 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
+import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
+import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import React, { useEffect, useState } from 'react'
+
+import { useRedesignToggle } from '../util/useRedesignToggle'
 
 export interface Props {
     /**
@@ -61,6 +65,11 @@ export interface Props {
     expandLabel?: string
 
     /**
+     * The total number of matches to display
+     */
+    matchCountLabel?: string
+
+    /**
      * This component does not accept children.
      */
     children?: never
@@ -83,7 +92,9 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     title,
     titleClassName,
     description,
+    matchCountLabel,
 }) => {
+    const [isRedesignEnabled] = useRedesignToggle()
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
@@ -107,6 +118,12 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                     {title}
                     {description && <span className="ml-2">{description}</span>}
                 </div>
+                {matchCountLabel && isRedesignEnabled && (
+                    <>
+                        <small className="mr-1">{matchCountLabel}</small>
+                        {collapsible && <div className="result-container__header-divider" />}
+                    </>
+                )}
                 {collapsible &&
                     (expanded ? (
                         <button
@@ -114,8 +131,9 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                             className="result-container__toggle-matches-container btn btn-sm btn-link"
                             onClick={toggle}
                         >
+                            {collapseLabel && isRedesignEnabled && <ArrowCollapseUpIcon className="icon-inline mr-1" />}
                             {collapseLabel}
-                            {collapseLabel && <ChevronUpIcon className="icon-inline" />}
+                            {collapseLabel && !isRedesignEnabled && <ChevronUpIcon className="icon-inline" />}
                             {!collapseLabel && <ChevronDownIcon className="icon-inline" />}
                         </button>
                     ) : (
@@ -124,9 +142,10 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                             className="result-container__toggle-matches-container btn btn-sm btn-link"
                             onClick={toggle}
                         >
+                            {expandLabel && isRedesignEnabled && <ArrowExpandDownIcon className="icon-inline mr-1" />}
                             {expandLabel}
-                            {expandLabel && <ChevronDownIcon className="icon-inline" />}
-                            {!expandLabel && <ChevronRightIcon className="icon-inline" />}
+                            {expandLabel && !isRedesignEnabled && <ChevronDownIcon className="icon-inline" />}
+                            {!expandLabel && <ChevronLeftIcon className="icon-inline" />}
                         </button>
                     ))}
             </div>

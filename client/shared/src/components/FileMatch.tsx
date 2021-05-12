@@ -149,15 +149,19 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
         <FileMatchChildren {...props} items={items} result={result} allMatches={true} subsetMatches={subsetMatches} />
     )
 
+    const matchCount = items.length || result.symbols?.length
+    const matchCountLabel = matchCount ? `${matchCount} ${pluralize('match', matchCount, 'matches')}` : ''
+
     if (props.showAllMatches) {
         containerProps = {
-            collapsible: true,
+            collapsible: !isRedesignEnabled,
             defaultExpanded: props.expanded,
             icon: props.icon,
             title: renderTitle(),
             description,
             expandedChildren,
             allExpanded: props.allExpanded,
+            matchCountLabel,
         }
     } else {
         const length = items.length - subsetMatches
@@ -177,9 +181,14 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                 />
             ),
             expandedChildren,
-            collapseLabel: `Hide ${length} ${pluralize('match', length, 'matches')}`,
-            expandLabel: `Show ${length} more ${pluralize('match', length, 'matches')}`,
+            collapseLabel: isRedesignEnabled
+                ? `Hide ${length}`
+                : `Hide ${length} ${pluralize('match', length, 'matches')}`,
+            expandLabel: isRedesignEnabled
+                ? `${length} more`
+                : `Show ${length} more ${pluralize('match', length, 'matches')}`,
             allExpanded: props.allExpanded,
+            matchCountLabel,
         }
     }
 

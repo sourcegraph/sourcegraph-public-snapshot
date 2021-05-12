@@ -20,6 +20,8 @@ import { CodeMonitoringProps } from '../../code-monitoring'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { SearchPatternType } from '../../graphql-operations'
+import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
+import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
@@ -172,7 +174,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                     data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                                 >
                                     {props.allExpanded ? (
-                                        <ArrowCollapseVerticalIcon className="icon-inline" />
+                                        isRedesignEnabled ? (
+                                            <ArrowCollapseUpIcon className="icon-inline" />
+                                        ) : (
+                                            <ArrowCollapseVerticalIcon className="icon-inline" />
+                                        )
+                                    ) : isRedesignEnabled ? (
+                                        <ArrowExpandDownIcon className="icon-inline" />
                                     ) : (
                                         <ArrowExpandVerticalIcon className="icon-inline" />
                                     )}
