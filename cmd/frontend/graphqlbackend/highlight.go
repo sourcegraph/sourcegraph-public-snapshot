@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type highlightedRangeResolver struct {
@@ -28,18 +27,6 @@ func (s *highlightedStringResolver) Highlights() []highlightedRangeResolver {
 		res[i] = highlightedRangeResolver{hl}
 	}
 	return res
-}
-
-func fromVCSHighlights(vcsHighlights []git.Highlight) []result.HighlightedRange {
-	highlights := make([]result.HighlightedRange, len(vcsHighlights))
-	for i, vh := range vcsHighlights {
-		highlights[i] = result.HighlightedRange{
-			Line:      int32(vh.Line),
-			Character: int32(vh.Character),
-			Length:    int32(vh.Length),
-		}
-	}
-	return highlights
 }
 
 type HighlightArgs struct {

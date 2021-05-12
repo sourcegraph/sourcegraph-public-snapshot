@@ -16,7 +16,6 @@ import (
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -25,7 +24,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -112,10 +113,10 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.MockGet(t, 1)
 		database.Mocks.Repos.Count = mockCount
 
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error) {
+		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error) {
 			return nil, &streaming.Stats{}, nil
 		}
-		defer func() { mockSearchFilesInRepos = nil }()
+		defer func() { run.MockSearchFilesInRepos = nil }()
 
 		for _, v := range searchVersions {
 			testCallResults(t, `repo:r repo:p`, v, []string{"repo:repo"})
@@ -147,14 +148,14 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
-		mockSearchRepositories = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+		run.MockSearchRepositories = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 			calledSearchRepositories = true
 			return nil, &streaming.Stats{}, nil
 		}
-		defer func() { mockSearchRepositories = nil }()
+		defer func() { run.MockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*result.FileMatch, common *streaming.Stats, err error) {
+		run.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*result.FileMatch, common *streaming.Stats, err error) {
 			calledSearchSymbols = true
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -162,10 +163,10 @@ func TestSearchResults(t *testing.T) {
 			// TODO return mock results here and assert that they are output as results
 			return nil, nil, nil
 		}
-		defer func() { mockSearchSymbols = nil }()
+		defer func() { run.MockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error) {
+		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -174,7 +175,7 @@ func TestSearchResults(t *testing.T) {
 			fm := mkFileMatch(repo, "dir/file", 123)
 			return []*result.FileMatch{fm}, &streaming.Stats{}, nil
 		}
-		defer func() { mockSearchFilesInRepos = nil }()
+		defer func() { run.MockSearchFilesInRepos = nil }()
 
 		testCallResults(t, `foo\d "bar*"`, "V1", []string{"dir/file:123"})
 		if !calledReposListRepoNames {
@@ -212,14 +213,14 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.Count = mockCount
 
 		calledSearchRepositories := false
-		mockSearchRepositories = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+		run.MockSearchRepositories = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 			calledSearchRepositories = true
 			return nil, &streaming.Stats{}, nil
 		}
-		defer func() { mockSearchRepositories = nil }()
+		defer func() { run.MockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*result.FileMatch, common *streaming.Stats, err error) {
+		run.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*result.FileMatch, common *streaming.Stats, err error) {
 			calledSearchSymbols = true
 			if want := `"foo\\d \"bar*\""`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -227,10 +228,10 @@ func TestSearchResults(t *testing.T) {
 			// TODO return mock results here and assert that they are output as results
 			return nil, nil, nil
 		}
-		defer func() { mockSearchSymbols = nil }()
+		defer func() { run.MockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error) {
+		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
 			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -239,7 +240,7 @@ func TestSearchResults(t *testing.T) {
 			fm := mkFileMatch(repo, "dir/file", 123)
 			return []*result.FileMatch{fm}, &streaming.Stats{}, nil
 		}
-		defer func() { mockSearchFilesInRepos = nil }()
+		defer func() { run.MockSearchFilesInRepos = nil }()
 
 		testCallResults(t, `foo\d "bar*"`, "V2", []string{"dir/file:123"})
 		if !calledReposListRepoNames {
@@ -255,23 +256,6 @@ func TestSearchResults(t *testing.T) {
 			t.Error("calledSearchSymbols")
 		}
 	})
-}
-
-func TestOrderedFuzzyRegexp(t *testing.T) {
-	got := orderedFuzzyRegexp([]string{})
-	if want := ""; got != want {
-		t.Errorf("got %q, want %q", got, want)
-	}
-
-	got = orderedFuzzyRegexp([]string{"a"})
-	if want := "a"; got != want {
-		t.Errorf("got %q, want %q", got, want)
-	}
-
-	got = orderedFuzzyRegexp([]string{"a", "b|c"})
-	if want := "(a).*?(b|c)"; got != want {
-		t.Errorf("got %q, want %q", got, want)
-	}
 }
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
@@ -580,7 +564,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	}
 	resolver := &searchResolver{
 		db: db,
-		SearchInputs: &SearchInputs{
+		SearchInputs: &run.SearchInputs{
 			Plan:         p,
 			Query:        p.ToParseTree(),
 			UserSettings: &schema.Settings{},
@@ -795,7 +779,7 @@ func TestGetExactFilePatterns(t *testing.T) {
 				t.Fatal(err)
 			}
 			r := searchResolver{
-				SearchInputs: &SearchInputs{
+				SearchInputs: &run.SearchInputs{
 					Plan:          plan,
 					Query:         plan.ToParseTree(),
 					OriginalQuery: tt.in,
@@ -1004,7 +988,7 @@ func TestEvaluateAnd(t *testing.T) {
 			}
 			resolver := &searchResolver{
 				db: db,
-				SearchInputs: &SearchInputs{
+				SearchInputs: &run.SearchInputs{
 					Plan:         p,
 					Query:        p.ToParseTree(),
 					UserSettings: &schema.Settings{},
@@ -1062,7 +1046,7 @@ func TestSearchContext(t *testing.T) {
 			}
 
 			resolver := searchResolver{
-				SearchInputs: &SearchInputs{
+				SearchInputs: &run.SearchInputs{
 					Plan:         p,
 					Query:        p.ToParseTree(),
 					UserSettings: &schema.Settings{},
@@ -1321,7 +1305,7 @@ func TestIsGlobalSearch(t *testing.T) {
 			}
 
 			resolver := searchResolver{
-				SearchInputs: &SearchInputs{
+				SearchInputs: &run.SearchInputs{
 					Query:          qinfo,
 					UserSettings:   &schema.Settings{},
 					PatternType:    tt.patternType,

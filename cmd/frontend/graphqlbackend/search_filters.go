@@ -68,7 +68,7 @@ var commonFileFilters = []struct {
 }
 
 // Update internal state for the results in event.
-func (s *SearchFilters) Update(event SearchEvent) {
+func (s *SearchFilters) Update(event streaming.SearchEvent) {
 	// Initialize state on first call.
 	if s.filters == nil {
 		s.filters = make(streaming.Filters)

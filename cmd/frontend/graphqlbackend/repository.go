@@ -28,8 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type RepositoryResolverCache map[api.RepoName]*RepositoryResolver
-
 type RepositoryResolver struct {
 	hydration sync.Once
 	err       error
@@ -68,26 +66,6 @@ func NewRepositoryResolver(db dbutil.DB, repo *types.Repo) *RepositoryResolver {
 			ID:   id,
 		},
 	}
-}
-
-func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, error) {
-	var repoID api.RepoID
-	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
-		return nil, err
-	}
-	repo, err := database.Repos(r.db).Get(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-	return NewRepositoryResolver(r.db, repo), nil
-}
-
-func RepositoryByIDInt32(ctx context.Context, db dbutil.DB, repoID api.RepoID) (*RepositoryResolver, error) {
-	repo, err := database.Repos(db).Get(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-	return NewRepositoryResolver(db, repo), nil
 }
 
 func (r *RepositoryResolver) ID() graphql.ID {

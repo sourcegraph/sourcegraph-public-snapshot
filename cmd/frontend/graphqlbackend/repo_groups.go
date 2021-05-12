@@ -3,8 +3,8 @@ package graphqlbackend
 import (
 	"context"
 
-	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 )
 
 type repoGroup struct {
