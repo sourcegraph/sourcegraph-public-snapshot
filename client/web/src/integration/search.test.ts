@@ -746,6 +746,12 @@ describe('Search', () => {
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
         })
 
+        test('Disable dropdown if version context is active', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp&c=version-context-1')
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            expect(await isSearchContextDropdownDisabled()).toBeTruthy()
+        })
+
         test('Convert version context', async () => {
             testContext.overrideGraphQL({
                 ...testContextForSearchContexts,
