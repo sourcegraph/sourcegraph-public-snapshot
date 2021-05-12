@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -54,10 +56,15 @@ var (
 	}
 )
 
+const (
+	defaultConfigFile          = "sg.config.yaml"
+	defaultConfigOverwriteFile = "sg.config.overwrite.yaml"
+)
+
 var (
 	rootFlagSet         = flag.NewFlagSet("sg", flag.ExitOnError)
-	configFlag          = rootFlagSet.String("config", "sg.config.yaml", "configuration file")
-	overwriteConfigFlag = rootFlagSet.String("overwrite", "sg.config.overwrite.yaml", "configuration overwrites file that is gitignored and can be used to, for example, add credentials")
+	configFlag          = rootFlagSet.String("config", defaultConfigFile, "configuration file")
+	overwriteConfigFlag = rootFlagSet.String("overwrite", defaultConfigOverwriteFile, "configuration overwrites file that is gitignored and can be used to, for example, add credentials")
 
 	rootCommand = &ffcli.Command{
 		ShortUsage:  "sg [flags] <subcommand>",
@@ -114,7 +121,22 @@ func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 		return true, output.FancyLine{}
 	}
 
-	var err error
+	// Try to determine root of repository, so we can look for config there
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return false, output.Linef("", output.StyleWarning, "Failed to determine repository root location: %s", err)
+	}
+
+	// If the configFlag/overwriteConfigFlag flags have their default value, we
+	// take the value as relative to the root of the repository.
+	if confFile == defaultConfigFile {
+		confFile = filepath.Join(repoRoot, confFile)
+	}
+
+	if overwriteFile == defaultConfigOverwriteFile {
+		overwriteFile = filepath.Join(repoRoot, overwriteFile)
+	}
+
 	conf, err = ParseConfigFile(confFile)
 	if err != nil {
 		return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as configuration file:%s\n%s\n", output.StyleBold, confFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)

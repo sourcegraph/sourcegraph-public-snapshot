@@ -133,11 +133,19 @@ export function logEvent(event: string, eventProperties?: unknown): void {
             mutation LogEvent(
                 $event: String!
                 $userCookieID: String!
+                $firstSourceURL: String!
                 $url: String!
                 $source: EventSource!
                 $argument: String
             ) {
-                logEvent(event: $event, userCookieID: $userCookieID, url: $url, source: $source, argument: $argument) {
+                logEvent(
+                    event: $event
+                    userCookieID: $userCookieID
+                    firstSourceURL: $firstSourceURL
+                    url: $url
+                    source: $source
+                    argument: $argument
+                ) {
                     alwaysNil
                 }
             }
@@ -145,6 +153,7 @@ export function logEvent(event: string, eventProperties?: unknown): void {
         {
             event,
             userCookieID: eventLogger.getAnonymousUserID(),
+            firstSourceURL: eventLogger.getFirstSourceURL(),
             url: window.location.href,
             source: EventSource.WEB,
             argument: eventProperties ? JSON.stringify(eventProperties) : null,

@@ -158,6 +158,9 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps {
 
     /** CSS class name for the <input> element */
     inputClassName?: string
+
+    /** Placeholder text for the <input> element */
+    inputPlaceholder?: string
 }
 
 /**
@@ -611,7 +614,7 @@ export class FilteredConnection<
                                 <input
                                     className={classNames('form-control', this.props.inputClassName)}
                                     type="search"
-                                    placeholder={`Search ${this.props.pluralNoun}...`}
+                                    placeholder={this.props.inputPlaceholder || `Search ${this.props.pluralNoun}...`}
                                     name="query"
                                     value={this.state.query}
                                     onChange={this.onChange}

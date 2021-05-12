@@ -3,7 +3,7 @@
         // Make it full width in the current row.
         grid-column: 1 / -1;
         border-top: 1px solid var(--border-color-2);
-        @include media-breakpoint-down(xs) {
+        @media (--xs-breakpoint-down) {
             margin-top: 1rem;
             padding-bottom: 1rem;
         }
@@ -11,7 +11,7 @@
 
     &__state,
     &__information {
-        @include media-breakpoint-down(xs) {
+        @media (--xs-breakpoint-down) {
             grid-column: 1 / -1;
         }
     }

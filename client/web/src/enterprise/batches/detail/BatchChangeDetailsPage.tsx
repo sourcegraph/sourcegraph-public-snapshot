@@ -153,7 +153,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 diff={batchChange.diffStat}
                 className="mb-3"
             />
-            <Description history={history} description={batchChange.description} />
+            <Description description={batchChange.description} />
             <BatchChangeTabs
                 batchChange={batchChange}
                 changesetsCount={batchChange.changesetsStats.total - batchChange.changesetsStats.archived}

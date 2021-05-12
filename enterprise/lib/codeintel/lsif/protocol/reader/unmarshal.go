@@ -35,7 +35,11 @@ func unmarshalElement(interner *Interner, line []byte) (_ Element, err error) {
 	}
 
 	if element.Type == "edge" {
-		element.Payload, err = unmarshalEdge(interner, line)
+		if unmarshaler, ok := edgeUnmarshalers[element.Label]; ok {
+			element.Payload, err = unmarshaler(line)
+		} else {
+			element.Payload, err = unmarshalEdge(interner, line)
+		}
 	} else if element.Type == "vertex" {
 		if unmarshaler, ok := vertexUnmarshalers[element.Label]; ok {
 			element.Payload, err = unmarshaler(line)
@@ -116,6 +120,8 @@ func unmarshalEdgeFast(line []byte) (Edge, bool) {
 		Document: payload.Document,
 	}, true
 }
+
+var edgeUnmarshalers = map[string]func(line []byte) (interface{}, error){}
 
 var vertexUnmarshalers = map[string]func(line []byte) (interface{}, error){
 	"metaData":             unmarshalMetaData,

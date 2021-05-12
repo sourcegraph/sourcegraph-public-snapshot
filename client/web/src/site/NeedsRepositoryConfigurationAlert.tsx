@@ -22,7 +22,7 @@ export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<{ classN
         className={`alert alert-success d-flex align-items-center ${className}`}
     >
         <Link className="site-alert__link" to="/site-admin/external-services" onClick={onClickCTA}>
-            <CircleChevronRightIcon className="icon-inline site-alert__link-icon" />{' '}
+            <CircleChevronRightIcon className="redesign-d-none icon-inline site-alert__link-icon" />{' '}
             <span className="underline">Connect a code host</span>
         </Link>
         &nbsp;to connect repositories to Sourcegraph.

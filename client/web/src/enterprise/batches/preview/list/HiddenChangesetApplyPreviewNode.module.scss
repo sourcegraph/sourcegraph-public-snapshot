@@ -1,11 +1,11 @@
-@import 'branded/src/global-styles/breakpoints';
+@import 'wildcard/src/global-styles/breakpoints';
 
 .hidden-changeset-apply-preview-node {
     &__list-cell {
-        @include media-breakpoint-up(sm) {
+        @media (--sm-breakpoint-up) {
             padding: 0.5rem;
         }
-        @include media-breakpoint-down(xs) {
+        @media (--xs-breakpoint-down) {
             padding-top: 0.25rem;
             padding-bottom: 0.25rem;
         }
@@ -13,14 +13,14 @@
     &__current-state,
     &__action,
     &__information {
-        @include media-breakpoint-down(xs) {
+        @media (--xs-breakpoint-down) {
             // Make it full width in the current row.
             grid-column: 1 / -1;
         }
     }
     &__current-state {
         color: var(--icon-color);
-        @include media-breakpoint-up(sm) {
+        @media (--sm-breakpoint-up) {
             background-color: var(--oc-blue-0);
         }
     }
@@ -30,7 +30,7 @@
     .hidden-changeset-apply-preview-node {
         &__current-state {
             color: var(--body-color);
-            @include media-breakpoint-up(sm) {
+            @media (--sm-breakpoint-up) {
                 background-color: var(--oc-gray-7);
             }
         }

@@ -183,7 +183,7 @@ func TestLimitingSymbolResults(t *testing.T) {
 func mkSymbolFileMatchResolvers(db dbutil.DB, symbols ...[]*result.SymbolMatch) []*FileMatchResolver {
 	var resolvers []*FileMatchResolver
 	for _, s := range symbols {
-		resolvers = append(resolvers, mkFileMatchResolver(db, result.FileMatch{
+		resolvers = append(resolvers, mkResolverFromFileMatch(db, result.FileMatch{
 			Symbols: s,
 		}))
 	}

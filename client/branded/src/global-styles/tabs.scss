@@ -27,11 +27,6 @@
 .tablist-wrapper {
     border-bottom: 3px solid var(--border-color);
     align-items: center;
-    &__full-width {
-        display: flex;
-        justify-content: space-around;
-        flex: 1;
-    }
 }
 
 .theme-redesign {

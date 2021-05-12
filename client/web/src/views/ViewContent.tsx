@@ -94,7 +94,6 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = ({
                             <Markdown
                                 className="view-content__markdown mb-1"
                                 dangerousInnerHTML={renderMarkdown(content.value)}
-                                history={props.history}
                             />
                         ) : (
                             content.value
