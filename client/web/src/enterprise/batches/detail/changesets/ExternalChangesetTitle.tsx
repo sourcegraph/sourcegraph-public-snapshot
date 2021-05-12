@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React from 'react'
 
@@ -12,12 +11,7 @@ export const ExternalChangesetTitle: React.FunctionComponent<
         className?: string
     }
 > = ({ className, externalID, externalURL, title }) => (
-    <LinkOrSpan
-        to={externalURL?.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={classNames('mr-2', className)}
-    >
+    <LinkOrSpan to={externalURL?.url} target="_blank" rel="noopener noreferrer" className={className}>
         {title}
         {externalID && <> (#{externalID}) </>}
         {externalURL?.url && (
