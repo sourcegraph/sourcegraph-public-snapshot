@@ -7,9 +7,9 @@
 
 ## Overview
 
-There are some common patterns that we reuse all the time when writing [batch specs](batch_spec_yaml_reference.md). In this document we collect these pattern to make it easy for others to copy and reuse them.
+There are some common patterns that we reuse all the time when writing [batch specs](batch_spec_yaml_reference.md). In this document we collect these patterns to make it easy for others to copy and reuse them.
 
-Since most of the examples here make use of [batch spec templating](batch_spec_templating.md) make sure to also take a look at that page.
+Since most of the examples here make use of [batch spec templating](batch_spec_templating.md), be sure to also take a look at that page.
 
 ### Loop over search result paths in shell script
 
