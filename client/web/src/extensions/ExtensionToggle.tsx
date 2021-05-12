@@ -28,6 +28,9 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     onToggleError?: (revertedValue: OptimisticUpdateFailure<boolean>) => void
     /** Settings subject that the toggle should act upon */
     subject: SettingsSubject | null
+
+    /** Render text left of the toggle based on optimistic enablement state */
+    renderText?: (enabled: boolean) => JSX.Element
 }
 
 export interface OptimisticUpdateFailure<T> {
@@ -85,6 +88,7 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
     onToggleChange,
     onToggleError,
     subject,
+    renderText,
 }) => {
     const [optimisticEnabled, setOptimisticEnabled] = useState(enabled)
     const [askingForPermission, setAskingForPermission] = useState<boolean>(false)
@@ -166,6 +170,7 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
 
     return (
         <>
+            {renderText?.(optimisticEnabled)}
             {big ? <ToggleBig {...props} /> : <Toggle {...props} />}
             {askingForPermission && (
                 <ExtensionPermissionModal

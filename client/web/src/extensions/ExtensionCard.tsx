@@ -173,19 +173,20 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
         [startAnimationManager, endAnimationManager, feedbackManager, optimisticFailureManager]
     )
 
-    // Sync optimistic enabled state with ExtensionToggle so we can display text that reflects that state
-    const [optimisticEnabledForMe, setOptimisticEnabledForMe] = useState(enabled)
-    const [optimisticEnabledForAllUsers, setOptimisticEnabledForAllUsers] = useState(enabledForAllUsers)
+    const renderUserToggleText = useCallback(
+        (enabled: boolean) => (
+            <span className="text-muted">
+                {enabled ? 'Enabled' : 'Disabled'}
+                {authenticatedUser?.siteAdmin && ' for me'}
+            </span>
+        ),
+        [authenticatedUser?.siteAdmin]
+    )
 
-    // Three vertical sections:
-    // - icon w/ colored background
-    // - extension data: name, author, description, ratings + user count (future)
-    //   - limit to 2 lines for normal extensions, 3 lines for featured (pass in line limit prop, default is 2)
-    // - toggle(s) (<hr/> w/ border-color-2 on top)
-    //
-    // We are retaining "feedback":
-    // - on enabling, green flash behind card, tint the background
-    // - on disabling, floating alert above toggle
+    const renderAdminExtensionToggleText = useCallback(
+        (enabled: boolean) => <span className="text-muted">{enabled ? 'Enabled' : 'Not enabled'} for all users</span>,
+        []
+    )
 
     return (
         <div className="d-flex">
@@ -272,24 +273,20 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                     {/* Item 3: Toggle(s) */}
                     <div className="extension-card__toggles-section d-flex flex-column align-items-end py-2 mt-1">
                         <div className="px-1">
+                            {/* User toggle */}
                             {subject &&
                                 (subject.viewerCanAdminister && viewerSubject ? (
-                                    <>
-                                        <span className="text-muted">
-                                            {enabled ? 'Enabled' : 'Disabled'}
-                                            {authenticatedUser?.siteAdmin && ' for me'}
-                                        </span>
-                                        <ExtensionToggle
-                                            extensionID={extension.id}
-                                            enabled={enabled}
-                                            settingsCascade={settingsCascade}
-                                            platformContext={platformContext}
-                                            onToggleChange={onToggleChange}
-                                            onToggleError={onToggleError}
-                                            subject={viewerSubject}
-                                            className="mx-2"
-                                        />
-                                    </>
+                                    <ExtensionToggle
+                                        extensionID={extension.id}
+                                        enabled={enabled}
+                                        settingsCascade={settingsCascade}
+                                        platformContext={platformContext}
+                                        onToggleChange={onToggleChange}
+                                        onToggleError={onToggleError}
+                                        subject={viewerSubject}
+                                        className="mx-2"
+                                        renderText={renderUserToggleText}
+                                    />
                                 ) : (
                                     <ExtensionConfigurationState
                                         isAdded={isExtensionAdded(settingsCascade.final, extension.id)}
@@ -299,24 +296,20 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                                     />
                                 ))}
                         </div>
+                        {/* Site admin toggle */}
                         {authenticatedUser?.siteAdmin && siteSubject && (
                             <div className="px-1 mt-2">
-                                <>
-                                    {/* TODO(tj): make this optimistic as well*/}
-                                    <span className="text-muted">
-                                        {enabledForAllUsers ? 'Enabled' : 'Not enabled'} for all users
-                                    </span>
-                                    <ExtensionToggle
-                                        extensionID={extension.id}
-                                        enabled={enabledForAllUsers}
-                                        settingsCascade={settingsCascade}
-                                        platformContext={platformContext}
-                                        onToggleChange={onToggleChange}
-                                        onToggleError={onToggleError}
-                                        subject={siteSubject}
-                                        className="mx-2"
-                                    />
-                                </>
+                                <ExtensionToggle
+                                    extensionID={extension.id}
+                                    enabled={enabledForAllUsers}
+                                    settingsCascade={settingsCascade}
+                                    platformContext={platformContext}
+                                    onToggleChange={onToggleChange}
+                                    onToggleError={onToggleError}
+                                    subject={siteSubject}
+                                    className="mx-2"
+                                    renderText={renderAdminExtensionToggleText}
+                                />
                             </div>
                         )}
                     </div>
