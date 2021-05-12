@@ -122,6 +122,11 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
 
     return (
         <div className="file-match-children">
+            {/* No symbols or line matches means that this is a path match */}
+            {(!result.symbols || result.symbols.length === 0) && grouped.length === 0 && (
+                <small className="px-2 py-1">Path match</small>
+            )}
+
             {/* Symbols */}
             {(result.symbols || []).map((symbol: ISymbol) => (
                 <Link

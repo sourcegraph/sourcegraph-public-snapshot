@@ -5,10 +5,9 @@ import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { getRepoIcon } from '@sourcegraph/shared/src/util/getRepoIcon'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
-
-import { getRepoIcon } from '../search/results/streaming/getRepoIcon'
 
 import { SearchResultMatch } from './SearchResultMatch'
 
@@ -58,7 +57,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, history, 
     const renderBody = (): JSX.Element => {
         if (isRedesignEnabled && result.__typename === 'Repository') {
             return (
-                <div className="search-result-match">
+                <div className="search-result-match px-2 py-1">
                     <small>Repository name match</small>
                 </div>
             )

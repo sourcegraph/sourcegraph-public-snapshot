@@ -97,40 +97,37 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     const Icon = icon
     return (
         <div className="test-search-result result-container" data-testid="result-container">
-            {/* TODO: Fix accessibility issues.
-                Issue: https://github.com/sourcegraph/sourcegraph/issues/19272 */}
-            <div
-                className={'result-container__header' + (collapsible ? ' result-container__header--collapsible' : '')}
-                onClick={toggle}
-            >
+            <div className="result-container__header">
                 <Icon className="icon-inline" />
                 <div className="result-container__header-divider" />
                 <div
                     className={`result-container__header-title ${titleClassName || ''}`}
                     data-testid="result-container-header"
                 >
-                    {collapsible ? (
-                        // This is to ensure the onClick toggle handler doesn't get called
-                        // We should be able to remove this if we refactor to seperate the toggle to its own button
-                        <span onClick={blockExpandAndCollapse}>{title}</span>
-                    ) : (
-                        title
-                    )}
+                    {title}
                     {description && <span className="ml-2">{description}</span>}
                 </div>
                 {collapsible &&
                     (expanded ? (
-                        <small className="result-container__toggle-matches-container">
+                        <button
+                            type="button"
+                            className="result-container__toggle-matches-container btn btn-sm btn-link"
+                            onClick={toggle}
+                        >
                             {collapseLabel}
                             {collapseLabel && <ChevronUpIcon className="icon-inline" />}
                             {!collapseLabel && <ChevronDownIcon className="icon-inline" />}
-                        </small>
+                        </button>
                     ) : (
-                        <small className="result-container__toggle-matches-container">
+                        <button
+                            type="button"
+                            className="result-container__toggle-matches-container btn btn-sm btn-link"
+                            onClick={toggle}
+                        >
                             {expandLabel}
                             {expandLabel && <ChevronDownIcon className="icon-inline" />}
                             {!expandLabel && <ChevronRightIcon className="icon-inline" />}
-                        </small>
+                        </button>
                     ))}
             </div>
             {!expanded && collapsedChildren}

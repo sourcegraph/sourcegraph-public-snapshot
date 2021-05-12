@@ -5,7 +5,9 @@ import { AggregableBadge, Badge } from 'sourcegraph'
 
 import * as GQL from '../graphql/schema'
 import { SettingsCascadeProps } from '../settings/settings'
+import { getRepoIcon } from '../util/getRepoIcon'
 import { pluralize } from '../util/strings'
+import { useRedesignToggle } from '../util/useRedesignToggle'
 
 import { FetchFileParameters } from './CodeExcerpt'
 import { EventLogger, FileMatchChildren } from './FileMatchChildren'
@@ -85,6 +87,8 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
         }
     }, [])
 
+    const [isRedesignEnabled] = useRedesignToggle()
+
     const result = props.result
     const items: MatchItem[] = props.result.lineMatches.map(match => ({
         highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({ start, highlightLength })),
@@ -100,19 +104,26 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             ? { repoAtRevURL: result.revSpec.url, revDisplayName: result.revSpec.displayName }
             : { repoAtRevURL: result.repository.url, revDisplayName: '' }
 
-    const title = (
-        <RepoFileLink
-            repoName={result.repository.name}
-            repoURL={repoAtRevURL}
-            filePath={result.file.path}
-            fileURL={result.file.url}
-            repoDisplayName={
-                props.repoDisplayName
-                    ? `${props.repoDisplayName}${revDisplayName ? `@${revDisplayName}` : ''}`
-                    : undefined
-            }
-        />
-    )
+    const renderTitle = (): JSX.Element => {
+        const RepoIcon = getRepoIcon(result.repository.name)
+        return (
+            <>
+                {isRedesignEnabled && RepoIcon && <RepoIcon className="icon-inline text-muted" />}
+                <RepoFileLink
+                    repoName={result.repository.name}
+                    repoURL={repoAtRevURL}
+                    filePath={result.file.path}
+                    fileURL={result.file.url}
+                    repoDisplayName={
+                        props.repoDisplayName
+                            ? `${props.repoDisplayName}${revDisplayName ? `@${revDisplayName}` : ''}`
+                            : undefined
+                    }
+                    className={isRedesignEnabled ? 'ml-1' : ''}
+                />
+            </>
+        )
+    }
 
     const description =
         items.length > 0 ? (
@@ -143,7 +154,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             collapsible: true,
             defaultExpanded: props.expanded,
             icon: props.icon,
-            title,
+            title: renderTitle(),
             description,
             expandedChildren,
             allExpanded: props.allExpanded,
@@ -154,7 +165,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             collapsible: items.length > subsetMatches,
             defaultExpanded: props.expanded,
             icon: props.icon,
-            title,
+            title: renderTitle(),
             description,
             collapsedChildren: (
                 <FileMatchChildren

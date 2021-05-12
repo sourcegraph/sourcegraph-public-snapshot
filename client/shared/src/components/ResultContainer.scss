@@ -20,14 +20,11 @@
 
         background-color: $background-color;
 
-        &--collapsible {
-            cursor: pointer;
-        }
-
         &-title {
             flex: 1 1 auto;
             margin: 0 0.25rem;
             overflow: hidden;
+            display: flex;
         }
 
         &-divider {
