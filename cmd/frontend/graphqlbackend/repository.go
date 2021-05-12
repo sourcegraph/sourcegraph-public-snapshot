@@ -197,28 +197,36 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		refBytes, _, exitCode, err := git.ExecSafe(ctx, r.RepoName(), []string{"symbolic-ref", "HEAD"})
-		refName := string(bytes.TrimSpace(refBytes))
-
-		if err == nil && exitCode == 0 {
-			// Check that our repo is not empty
-			_, err = git.ResolveRevision(ctx, r.RepoName(), "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
-		}
-
-		// If we fail to get the default branch due to cloning or being empty, we return nothing.
+		refName, err := getDefaultBranchForRepo(ctx, r.RepoName())
 		if err != nil {
-			if vcs.IsCloneInProgress(err) || gitserver.IsRevisionNotFound(err) {
-				return nil, nil
-			}
 			return nil, err
 		}
-
 		return &GitRefResolver{repo: r, name: refName}, nil
 	}
 	r.defaultBranchOnce.Do(func() {
 		r.defaultBranch, r.defaultBranchErr = do()
 	})
 	return r.defaultBranch, r.defaultBranchErr
+}
+
+func getDefaultBranchForRepo(ctx context.Context, repoName api.RepoName) (string, error) {
+	refBytes, _, exitCode, err := git.ExecSafe(ctx, repoName, []string{"symbolic-ref", "HEAD"})
+	refName := string(bytes.TrimSpace(refBytes))
+
+	if err == nil && exitCode == 0 {
+		// Check that our repo is not empty
+		_, err = git.ResolveRevision(ctx, repoName, "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
+	}
+
+	// If we fail to get the default branch due to cloning or being empty, we return nothing.
+	if err != nil {
+		if vcs.IsCloneInProgress(err) || gitserver.IsRevisionNotFound(err) {
+			return "", nil
+		}
+		return "", err
+	}
+
+	return refName, nil
 }
 
 func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
