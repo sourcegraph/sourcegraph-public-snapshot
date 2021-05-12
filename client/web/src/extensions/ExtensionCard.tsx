@@ -18,6 +18,7 @@ import { AuthenticatedUser } from '../auth'
 import { isExtensionAdded } from './extension/extension'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
 import { ExtensionStatusBadge } from './extension/ExtensionStatusBadge'
+import headerColorStyles from './ExtensionHeader.module.scss'
 import { ExtensionToggle, OptimisticUpdateFailure } from './ExtensionToggle'
 import { DefaultIconEnabled, DefaultIcon, SourcegraphExtensionIcon } from './icons'
 
@@ -196,7 +197,12 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                 />
                 <div className="card-body p-0 extension-card__body d-flex flex-column position-relative">
                     {/* Section 1: Icon w/ background */}
-                    <div className="extension-card__background-section d-flex align-items-center">
+                    <div
+                        className={classNames(
+                            'extension-card__background-section d-flex align-items-center',
+                            manifest?.headerColor ? headerColorStyles[manifest.headerColor] : headerColorStyles.blue // Default color is blue
+                        )}
+                    >
                         {icon ? (
                             <img className="extension-card__icon" src={icon} alt="" />
                         ) : isSourcegraphExtension ? (

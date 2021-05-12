@@ -1,0 +1,61 @@
+.blue {
+    &::before {
+        background-color: var(--oc-indigo-3);
+    }
+}
+
+.yellow {
+    &::before {
+        background-color: var(--oc-yellow-5);
+    }
+}
+
+.orange {
+    &::before {
+        background-color: var(--oc-yellow-9);
+    }
+}
+
+.pink {
+    &::before {
+        background-color: var(--oc-pink-5);
+    }
+}
+
+.red {
+    &::before {
+        background-color: var(--oc-red-9);
+    }
+}
+
+.purple {
+    &::before {
+        background-color: var(--oc-grape-9);
+    }
+}
+
+.green {
+    &::before {
+        background-color: var(--oc-green-9);
+    }
+}
+
+.grey {
+    &::before {
+        background-color: var(--oc-gray-9);
+    }
+}
+
+:global(.theme-dark) {
+    .pink {
+        &::before {
+            background-color: var(--oc-pink-7);
+        }
+    }
+
+    .grey {
+        &::before {
+            background-color: var(--oc-gray-7);
+        }
+    }
+}
