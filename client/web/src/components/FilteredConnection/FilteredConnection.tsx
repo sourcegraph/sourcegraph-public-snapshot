@@ -27,77 +27,8 @@ import { ErrorMessage } from '../alerts'
 
 import { ConnectionNodes, ConnectionNodesState, ConnectionNodesDisplayProps, ConnectionProps } from './ConnectionNodes'
 import { Connection } from './ConnectionType'
-
-interface FilterProps {
-    /** All filters. */
-    filters: FilteredConnectionFilter[]
-
-    /** Called when a filter is selected. */
-    onDidSelectValue: (filter: FilteredConnectionFilter, value: FilterValue) => void
-
-    values: Map<string, FilterValue>
-}
-
-interface FilterState {}
-
-class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, FilterState> {
-    public render(): React.ReactFragment {
-        return (
-            <div className="filtered-connection-filter-control">
-                {this.props.filters.map(filter => (
-                    <div className="d-inline-flex flex-row radio-buttons" key={filter.id}>
-                        {filter.type === 'radio' &&
-                            filter.values.map(value => (
-                                <label key={value.value} className="radio-buttons__item" title={value.tooltip}>
-                                    <input
-                                        className="radio-buttons__input"
-                                        name={value.value}
-                                        type="radio"
-                                        onChange={event => {
-                                            this.onChange(filter, event.currentTarget.value)
-                                        }}
-                                        value={value.value}
-                                        checked={
-                                            this.props.values.get(filter.id) &&
-                                            this.props.values.get(filter.id)!.value === value.value
-                                        }
-                                    />{' '}
-                                    <small>
-                                        <div className="radio-buttons__label">{value.label}</div>
-                                    </small>
-                                </label>
-                            ))}
-                        {filter.type === 'select' && (
-                            <div className="d-inline-flex flex-row mr-3 align-items-baseline">
-                                <p className="text-xl-center text-nowrap mr-2">{filter.label}:</p>
-                                <select
-                                    className="form-control"
-                                    name={filter.id}
-                                    onChange={event => {
-                                        this.onChange(filter, event.currentTarget.value)
-                                    }}
-                                >
-                                    {filter.values.map(value => (
-                                        <option key={value.value} value={value.value} label={value.label} />
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-                    </div>
-                ))}
-                {this.props.children}
-            </div>
-        )
-    }
-
-    private onChange(filter: FilteredConnectionFilter, id: string): void {
-        const value = filter.values.find(value => value.value === id)
-        if (value === undefined) {
-            return
-        }
-        this.props.onDidSelectValue(filter, value)
-    }
-}
+import { FilterControl, Filter, FilterValue } from './FilterControl'
+import { getFilterFromURL, parseQueryInt } from './utils'
 
 /**
  * Fields that belong in FilteredConnectionProps and that don't depend on the type parameters. These are the fields
@@ -145,7 +76,7 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps {
      *
      * Filters are mutually exclusive.
      */
-    filters?: FilteredConnectionFilter[]
+    filters?: Filter[]
 
     /**
      * The filter to select by default. If not supplied, this defaults to the first
@@ -154,7 +85,7 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps {
     defaultFilter?: string
 
     /** Called when a filter is selected and on initial render. */
-    onValueSelect?: (filter: FilteredConnectionFilter, value: FilterValue) => void
+    onValueSelect?: (filter: Filter, value: FilterValue) => void
 
     /** CSS class name for the <input> element */
     inputClassName?: string
@@ -192,37 +123,10 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}, HP = {}>
 /**
  * The arguments for the Props.queryConnection function.
  */
-export interface FilteredConnectionQueryArguments {
+interface FilteredConnectionQueryArguments {
     first?: number
     after?: string
     query?: string
-}
-
-/**
- * A filter to display next to the filter input field.
- */
-export interface FilteredConnectionFilter {
-    /** The UI label for the filter. */
-    label: string
-
-    type: string
-
-    /**
-     * The URL string for this filter (conventionally the label, lowercased and without spaces and punctuation).
-     */
-    id: string
-
-    /** An optional tooltip to display for this filter. */
-    tooltip?: string
-
-    values: FilterValue[]
-}
-
-export interface FilterValue {
-    value: string
-    label: string
-    tooltip?: string
-    args: { [name: string]: string | number | boolean }
 }
 
 interface FilteredConnectionState<C extends Connection<N>, N> extends ConnectionNodesState {
@@ -621,13 +525,13 @@ export class FilteredConnection<
                             onSubmit={this.onSubmit}
                         >
                             {this.props.filters && (
-                                <FilteredConnectionFilterControl
+                                <FilterControl
                                     filters={this.props.filters}
                                     onDidSelectValue={this.onDidSelectValue}
                                     values={this.state.activeValues}
                                 >
                                     {this.props.additionalFilterElement}
-                                </FilteredConnectionFilterControl>
+                                </FilterControl>
                             )}
                             {!this.props.hideSearch && (
                                 <input
@@ -715,7 +619,7 @@ export class FilteredConnection<
         this.queryInputChanges.next(event.currentTarget.value)
     }
 
-    private onDidSelectValue = (filter: FilteredConnectionFilter, value: FilterValue): void => {
+    private onDidSelectValue = (filter: Filter, value: FilterValue): void => {
         if (this.props.filters === undefined) {
             return
         }
@@ -739,40 +643,4 @@ export class FilteredConnection<
         }
         return args
     }
-}
-
-function parseQueryInt(searchParameters: URLSearchParams, name: string): number | null {
-    const valueString = searchParameters.get(name)
-    if (valueString === null) {
-        return null
-    }
-    const valueNumber = parseInt(valueString, 10)
-    if (valueNumber > 0) {
-        return valueNumber
-    }
-    return null
-}
-
-function getFilterFromURL(
-    searchParameters: URLSearchParams,
-    filters: FilteredConnectionFilter[] | undefined
-): Map<string, FilterValue> {
-    const values: Map<string, FilterValue> = new Map<string, FilterValue>()
-
-    if (filters === undefined || filters.length === 0) {
-        return values
-    }
-    for (const filter of filters) {
-        const urlValue = searchParameters.get(filter.id)
-        if (urlValue !== null) {
-            const value = filter.values.find(value => value.value === urlValue)
-            if (value !== undefined) {
-                values.set(filter.id, value)
-                continue
-            }
-        }
-        // couldn't find a value, add default
-        values.set(filter.id, filter.values[0])
-    }
-    return values
 }
