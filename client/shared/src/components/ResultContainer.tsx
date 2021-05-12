@@ -122,30 +122,33 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                         {collapsible && <div className="result-container__header-divider" />}
                     </>
                 )}
-                {collapsible &&
-                    (expanded ? (
-                        <button
-                            type="button"
-                            className="result-container__toggle-matches-container btn btn-sm btn-link"
-                            onClick={toggle}
-                        >
-                            {collapseLabel && isRedesignEnabled && <ArrowCollapseUpIcon className="icon-inline mr-1" />}
-                            {collapseLabel}
-                            {collapseLabel && !isRedesignEnabled && <ChevronUpIcon className="icon-inline" />}
-                            {!collapseLabel && <ChevronDownIcon className="icon-inline" />}
-                        </button>
-                    ) : (
-                        <button
-                            type="button"
-                            className="result-container__toggle-matches-container btn btn-sm btn-link"
-                            onClick={toggle}
-                        >
-                            {expandLabel && isRedesignEnabled && <ArrowExpandDownIcon className="icon-inline mr-1" />}
-                            {expandLabel}
-                            {expandLabel && !isRedesignEnabled && <ChevronDownIcon className="icon-inline" />}
-                            {!expandLabel && <ChevronLeftIcon className="icon-inline" />}
-                        </button>
-                    ))}
+                {collapsible && (
+                    <button
+                        type="button"
+                        className="result-container__toggle-matches-container btn btn-sm btn-link px-1 py-0"
+                        onClick={toggle}
+                    >
+                        {expanded ? (
+                            <>
+                                {collapseLabel && isRedesignEnabled && (
+                                    <ArrowCollapseUpIcon className="icon-inline mr-1" />
+                                )}
+                                {collapseLabel}
+                                {collapseLabel && !isRedesignEnabled && <ChevronUpIcon className="icon-inline" />}
+                                {!collapseLabel && <ChevronDownIcon className="icon-inline" />}
+                            </>
+                        ) : (
+                            <>
+                                {expandLabel && isRedesignEnabled && (
+                                    <ArrowExpandDownIcon className="icon-inline mr-1" />
+                                )}
+                                {expandLabel}
+                                {expandLabel && !isRedesignEnabled && <ChevronDownIcon className="icon-inline" />}
+                                {!expandLabel && <ChevronLeftIcon className="icon-inline" />}
+                            </>
+                        )}
+                    </button>
+                )}
             </div>
             {!expanded && collapsedChildren}
             {expanded && expandedChildren}
