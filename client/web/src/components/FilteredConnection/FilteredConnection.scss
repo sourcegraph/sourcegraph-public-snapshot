@@ -10,9 +10,12 @@
         padding: 0;
     }
 
-    &--summary-container {
+    &__summary-container {
+        display: flex;
+        flex-direction: column;
+
         .theme-redesign & {
-            display: flex;
+            flex-direction: row;
             justify-content: space-between;
             align-items: center;
             border-top: solid 1px var(--border-color-2);
@@ -38,6 +41,10 @@
     &--compact &__loader {
         padding: var(--popover-item-padding-v) var(--popover-item-padding-h);
         flex: 0 0;
+
+        .theme-redesign & {
+            flex: 1;
+        }
     }
     &--compact &__error {
         border-radius: 0;

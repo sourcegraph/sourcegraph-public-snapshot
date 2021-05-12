@@ -20,7 +20,6 @@ import {
 } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorMessage } from '../alerts'
@@ -585,11 +584,6 @@ export class FilteredConnection<
                         emptyElement={this.props.emptyElement}
                         totalCountSummaryComponent={this.props.totalCountSummaryComponent}
                     />
-                )}
-                {this.state.loading && (
-                    <span className="filtered-connection__loader test-filtered-connection__loader">
-                        <LoadingSpinner className="icon-inline" />
-                    </span>
                 )}
             </div>
         )
