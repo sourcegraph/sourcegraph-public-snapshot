@@ -23,8 +23,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
-	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -35,7 +33,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -116,7 +117,7 @@ type SearchResultsResolver struct {
 
 	// cursor to return for paginated search requests, or nil if the request
 	// wasn't paginated.
-	cursor *searchCursor
+	cursor *run.SearchCursor
 
 	// cache for user settings. Ideally this should be set just once in the code path
 	// by an upstream resolver
@@ -478,8 +479,8 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 			}
 		}
 
-		r.Pagination = &searchPaginationInfo{
-			limit: stableResultCount,
+		r.Pagination = &run.SearchPaginationInfo{
+			Limit: stableResultCount,
 		}
 
 		// Pagination only works for file content searches, and will
@@ -1430,7 +1431,7 @@ func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParamete
 		tr.Finish()
 	}()
 
-	err = searchRepositories(ctx, args, limit, a)
+	err = run.SearchRepositories(ctx, args, limit, a)
 	return errors.Wrap(err, "repository search failed")
 }
 
@@ -1442,7 +1443,7 @@ func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParame
 		tr.Finish()
 	}()
 
-	err = searchSymbols(ctx, args, limit, a)
+	err = run.SearchSymbols(ctx, args, limit, a)
 	return errors.Wrap(err, "symbol search failed")
 }
 
@@ -1458,12 +1459,12 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults
 
 	if !isDefaultStructuralSearch {
-		return searchFilesInRepos(ctx, args, a)
+		return run.SearchFilesInRepos(ctx, args, a)
 	}
 
 	// For structural search with default limits we retry if we get no results.
 
-	fileMatches, stats, err := searchFilesInReposBatch(ctx, args)
+	fileMatches, stats, err := run.SearchFilesInReposBatch(ctx, args)
 
 	if len(fileMatches) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
@@ -1474,7 +1475,7 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 		argsCopy.PatternInfo = &patternCopy
 		args = &argsCopy
 
-		fileMatches, stats, err = searchFilesInReposBatch(ctx, args)
+		fileMatches, stats, err = run.SearchFilesInReposBatch(ctx, args)
 
 		if len(fileMatches) == 0 {
 			// Still no results? Give up.
@@ -1507,13 +1508,13 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 		return err
 	}
 
-	args, err := resolveCommitParameters(ctx, tp)
+	args, err := run.ResolveCommitParameters(ctx, tp)
 	if err != nil {
 		log15.Warn("doDiffSearch: error while resolving commit parameters", "error", err)
 		return nil
 	}
 
-	return searchCommitDiffsInRepos(ctx, a.db, args, a)
+	return run.SearchCommitDiffsInRepos(ctx, a.db, args, a)
 }
 
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) (err error) {
@@ -1528,20 +1529,13 @@ func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParamete
 		return err
 	}
 
-	args, err := resolveCommitParameters(ctx, tp)
+	args, err := run.ResolveCommitParameters(ctx, tp)
 	if err != nil {
 		log15.Warn("doCommitSearch: error while resolving commit parameters", "error", err)
 		return nil
 	}
 
-	return searchCommitLogInRepos(ctx, a.db, args, a)
-}
-
-func statsDeref(s *streaming.Stats) streaming.Stats {
-	if s == nil {
-		return streaming.Stats{}
-	}
-	return *s
+	return run.SearchCommitLogInRepos(ctx, a.db, args, a)
 }
 
 // isGlobalSearch returns true if the query does not contain repo, repogroup, or

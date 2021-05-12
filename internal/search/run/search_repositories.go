@@ -1,4 +1,4 @@
-package graphqlbackend
+package run
 
 import (
 	"context"
@@ -14,15 +14,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
-var mockSearchRepositories func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error)
+var MockSearchRepositories func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error)
 
-// searchRepositories searches for repositories by name.
+// SearchRepositories searches for repositories by name.
 //
 // For a repository to match a query, the repository's name must match all of the repo: patterns AND the
 // default patterns (i.e., the patterns that are not prefixed with any search field).
-func searchRepositories(ctx context.Context, args *search.TextParameters, limit int32, stream streaming.Sender) error {
-	if mockSearchRepositories != nil {
-		results, stats, err := mockSearchRepositories(args)
+func SearchRepositories(ctx context.Context, args *search.TextParameters, limit int32, stream streaming.Sender) error {
+	if MockSearchRepositories != nil {
+		results, stats, err := MockSearchRepositories(args)
 		stream.Send(streaming.SearchEvent{
 			Results: results,
 			Stats:   statsDeref(stats),
@@ -202,7 +202,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			newArgs.RepoPromise = (&search.Promise{}).Resolve(repos)
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
-			matches, _, err := searchFilesInReposBatch(ctx, &newArgs)
+			matches, _, err := SearchFilesInReposBatch(ctx, &newArgs)
 			if err != nil {
 				return nil, err
 			}
@@ -238,7 +238,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			newArgs.RepoPromise = rp
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
-			matches, _, err := searchFilesInReposBatch(ctx, &newArgs)
+			matches, _, err := SearchFilesInReposBatch(ctx, &newArgs)
 			if err != nil {
 				return nil, err
 			}

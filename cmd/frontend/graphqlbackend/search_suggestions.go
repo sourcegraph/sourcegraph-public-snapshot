@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
@@ -370,7 +371,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		defer cancel()
 
 		fileMatches, _, err := streaming.CollectStream(func(stream streaming.Sender) error {
-			return searchSymbols(ctx, &search.TextParameters{
+			return run.SearchSymbols(ctx, &search.TextParameters{
 				PatternInfo:  p,
 				RepoPromise:  (&search.Promise{}).Resolve(resolved.RepoRevs),
 				Query:        r.Query,

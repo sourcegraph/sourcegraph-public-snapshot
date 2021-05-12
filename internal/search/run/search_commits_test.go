@@ -1,9 +1,8 @@
-package graphqlbackend
+package run
 
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -106,10 +105,6 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	if !calledVCSRawLogDiffSearch {
 		t.Error("!calledVCSRawLogDiffSearch")
 	}
-}
-
-func (r *CommitSearchResultResolver) String() string {
-	return fmt.Sprintf("{commit: %+v diffPreview: %+v messagePreview: %+v}", r.Commit(), r.DiffPreview(), r.MessagePreview())
 }
 
 func TestExpandUsernamesToEmails(t *testing.T) {
@@ -298,7 +293,7 @@ func Benchmark_highlightMatches(b *testing.B) {
 // searchCommitsInRepo is a blocking version of searchCommitsInRepoStream.
 func searchCommitsInRepo(ctx context.Context, db dbutil.DB, op search.CommitParameters) (results []*result.CommitMatch, limitHit, timedOut bool, err error) {
 	var matches []result.Match
-	err = searchCommitsInRepoStream(ctx, db, op, streaming.MatchStreamFunc(func(event streaming.SearchEvent) {
+	err = SearchCommitsInRepoStream(ctx, db, op, streaming.MatchStreamFunc(func(event streaming.SearchEvent) {
 		matches = append(matches, event.Results...)
 		timedOut = timedOut || event.Stats.Status.Any(search.RepoStatusTimedout)
 		limitHit = limitHit || event.Stats.Status.Any(search.RepoStatusLimitHit)

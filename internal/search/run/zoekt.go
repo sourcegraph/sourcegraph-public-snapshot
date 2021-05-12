@@ -1,4 +1,4 @@
-package graphqlbackend
+package run
 
 import (
 	"context"

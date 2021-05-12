@@ -1,4 +1,4 @@
-package graphqlbackend
+package run
 
 import (
 	"context"
@@ -20,15 +20,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*result.FileMatch, stats *streaming.Stats, err error)
+var MockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*result.FileMatch, stats *streaming.Stats, err error)
 
-// searchSymbols searches the given repos in parallel for symbols matching the given search query
+// SearchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, args *search.TextParameters, limit int, stream streaming.Sender) (err error) {
-	if mockSearchSymbols != nil {
-		results, stats, err := mockSearchSymbols(ctx, args, limit)
+func SearchSymbols(ctx context.Context, args *search.TextParameters, limit int, stream streaming.Sender) (err error) {
+	if MockSearchSymbols != nil {
+		results, stats, err := MockSearchSymbols(ctx, args, limit)
 		stream.Send(streaming.SearchEvent{
 			Results: fileMatchesToMatches(results),
 			Stats:   statsDeref(stats),

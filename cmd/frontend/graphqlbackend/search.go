@@ -11,19 +11,17 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -103,7 +101,7 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	tr.LazyPrintf("parsing done")
 
 	// If the request is a paginated one, decode those arguments now.
-	var pagination *searchPaginationInfo
+	var pagination *run.SearchPaginationInfo
 	if args.First != nil {
 		pagination, err = processPaginationRequest(args, plan.ToParseTree())
 		if err != nil {
@@ -152,8 +150,8 @@ func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchIm
 	return NewSearchImplementer(ctx, r.db, args)
 }
 
-func processPaginationRequest(args *SearchArgs, q query.Q) (*searchPaginationInfo, error) {
-	var pagination *searchPaginationInfo
+func processPaginationRequest(args *SearchArgs, q query.Q) (*run.SearchPaginationInfo, error) {
+	var pagination *run.SearchPaginationInfo
 	if args.First != nil {
 		cursor, err := unmarshalSearchCursor(args.After)
 		if err != nil {
@@ -162,9 +160,9 @@ func processPaginationRequest(args *SearchArgs, q query.Q) (*searchPaginationInf
 		if *args.First < 0 || *args.First > maxSearchResultsPerPaginatedRequest {
 			return nil, fmt.Errorf("search: requested pagination 'first' value outside allowed range (0 - %d)", maxSearchResultsPerPaginatedRequest)
 		}
-		pagination = &searchPaginationInfo{
-			cursor: cursor,
-			limit:  *args.First,
+		pagination = &run.SearchPaginationInfo{
+			Cursor: cursor,
+			Limit:  *args.First,
 		}
 	} else if args.After != nil {
 		return nil, errors.New("search: paginated requests providing an 'after' cursor but no 'first' value is forbidden")
@@ -233,10 +231,10 @@ func getBoolPtr(b *bool, def bool) bool {
 
 // SearchInputs contains fields we set before kicking off search.
 type SearchInputs struct {
-	Plan           query.Plan            // the comprehensive query plan
-	Query          query.Q               // the current basic query being evaluated, one part of query.Plan
-	OriginalQuery  string                // the raw string of the original search query
-	Pagination     *searchPaginationInfo // pagination information, or nil if the request is not paginated.
+	Plan           query.Plan                // the comprehensive query plan
+	Query          query.Q                   // the current basic query being evaluated, one part of query.Plan
+	OriginalQuery  string                    // the raw string of the original search query
+	Pagination     *run.SearchPaginationInfo // pagination information, or nil if the request is not paginated.
 	PatternType    query.SearchType
 	VersionContext *string
 	UserSettings   *schema.Settings
@@ -469,7 +467,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		return nil, err
 	}
 
-	fileMatches, _, err := searchFilesInReposBatch(ctx, &args)
+	fileMatches, _, err := run.SearchFilesInReposBatch(ctx, &args)
 	if err != nil {
 		return nil, err
 	}
@@ -504,41 +502,6 @@ func (e *badRequestError) Error() string {
 
 func (e *badRequestError) Cause() error {
 	return e.err
-}
-
-// handleRepoSearchResult handles the limitHit and searchErr returned by a search function,
-// returning common as to reflect that new information. If searchErr is a fatal error,
-// it returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error, it returns a
-// nil error.
-func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (_ streaming.Stats, fatalErr error) {
-	var status search.RepoStatus
-	if limitHit {
-		status |= search.RepoStatusLimitHit
-	}
-
-	if vcs.IsRepoNotExist(searchErr) {
-		if vcs.IsCloneInProgress(searchErr) {
-			status |= search.RepoStatusCloning
-		} else {
-			status |= search.RepoStatusMissing
-		}
-	} else if gitserver.IsRevisionNotFound(searchErr) {
-		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
-			// If we didn't specify an input revision, then the repo is empty and can be ignored.
-		} else {
-			fatalErr = searchErr
-		}
-	} else if errcode.IsNotFound(searchErr) {
-		status |= search.RepoStatusMissing
-	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
-		status |= search.RepoStatusTimedout
-	} else if searchErr != nil {
-		fatalErr = searchErr
-	}
-	return streaming.Stats{
-		Status:     search.RepoStatusSingleton(repoRev.Repo.ID, status),
-		IsLimitHit: limitHit,
-	}, fatalErr
 }
 
 // getRepos is a wrapper around p.Get. It returns an error if the promise

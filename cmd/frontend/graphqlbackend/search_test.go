@@ -3,6 +3,9 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"strings"
 	"sync"
@@ -10,15 +13,20 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/zoekt"
+	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/keegancsmith/sqlf"
 
-	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -555,5 +563,209 @@ func TestGetReposWrongUnderlyingType(t *testing.T) {
 	_, err := getRepos(context.Background(), rp)
 	if err == nil {
 		t.Errorf("Expected error, got nil")
+	}
+}
+
+func BenchmarkSearchResults(b *testing.B) {
+	db := new(dbtesting.MockDB)
+
+	minimalRepos, _, zoektRepos := generateRepos(5000)
+	zoektFileMatches := generateZoektMatches(50)
+
+	z := &searchbackend.Zoekt{
+		Client: &searchbackend.FakeSearcher{
+			Repos:  zoektRepos,
+			Result: &zoekt.SearchResult{Files: zoektFileMatches},
+		},
+		DisableCache: true,
+	}
+
+	ctx := context.Background()
+
+	database.Mocks.Repos.List = func(_ context.Context, op database.ReposListOptions) ([]*types.Repo, error) {
+		return minimalRepos, nil
+	}
+	database.Mocks.Repos.Count = func(ctx context.Context, opt database.ReposListOptions) (int, error) {
+		return len(minimalRepos), nil
+	}
+	defer func() { database.Mocks = database.MockStores{} }()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for n := 0; n < b.N; n++ {
+		q, err := query.ParseLiteral(`print index:only count:350`)
+		if err != nil {
+			b.Fatal(err)
+		}
+		resolver := &searchResolver{
+			db: db,
+			SearchInputs: &SearchInputs{
+				Query:        q,
+				UserSettings: &schema.Settings{},
+			},
+			zoekt:    z,
+			reposMu:  &sync.Mutex{},
+			resolved: &searchrepos.Resolved{},
+		}
+		results, err := resolver.Results(ctx)
+		if err != nil {
+			b.Fatal("Results:", err)
+		}
+		if int(results.MatchCount()) != len(zoektFileMatches) {
+			b.Fatalf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
+		}
+	}
+}
+
+func BenchmarkIntegrationSearchResults(b *testing.B) {
+	db := dbtesting.GetDB(b)
+
+	ctx := context.Background()
+
+	_, repos, zoektRepos := generateRepos(5000)
+	zoektFileMatches := generateZoektMatches(50)
+
+	zoektClient, cleanup := zoektRPC(&searchbackend.FakeSearcher{
+		Repos:  zoektRepos,
+		Result: &zoekt.SearchResult{Files: zoektFileMatches},
+	})
+	defer cleanup()
+	z := &searchbackend.Zoekt{
+		Client:       &searchbackend.StreamSearchAdapter{zoektClient},
+		DisableCache: true,
+	}
+
+	rows := make([]*sqlf.Query, 0, len(repos))
+	for _, r := range repos {
+		rows = append(rows, sqlf.Sprintf(
+			"(%s, %s, %s, %s, %s, %s, %s)",
+			r.Name,
+			r.Description,
+			r.Fork,
+			true,
+			r.ExternalRepo.ServiceType,
+			r.ExternalRepo.ServiceID,
+			r.ExternalRepo.ID,
+		))
+	}
+
+	q := sqlf.Sprintf(`
+		INSERT INTO repo (
+			name,
+			description,
+			fork,
+			enabled,
+			external_service_type,
+			external_service_id,
+			external_id
+		)
+		VALUES %s`,
+		sqlf.Join(rows, ","),
+	)
+
+	_, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for n := 0; n < b.N; n++ {
+		q, err := query.ParseLiteral(`print index:only count:350`)
+		if err != nil {
+			b.Fatal(err)
+		}
+		resolver := &searchResolver{
+			db: db,
+			SearchInputs: &SearchInputs{
+				Query: q,
+			},
+			zoekt:    z,
+			reposMu:  &sync.Mutex{},
+			resolved: &searchrepos.Resolved{},
+		}
+		results, err := resolver.Results(ctx)
+		if err != nil {
+			b.Fatal("Results:", err)
+		}
+		if int(results.MatchCount()) != len(zoektFileMatches) {
+			b.Fatalf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
+		}
+	}
+}
+
+func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEntry) {
+	var reposWithIDs []*types.Repo
+	var repos []*types.Repo
+	var zoektRepos []*zoekt.RepoListEntry
+
+	for i := 1; i <= count; i++ {
+		name := fmt.Sprintf("repo-%d", i)
+
+		repoWithIDs := &types.Repo{
+			ID:   api.RepoID(i),
+			Name: api.RepoName(name),
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          name,
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com",
+			}}
+
+		reposWithIDs = append(reposWithIDs, repoWithIDs)
+
+		repos = append(repos, &types.Repo{
+
+			ID:           repoWithIDs.ID,
+			Name:         repoWithIDs.Name,
+			ExternalRepo: repoWithIDs.ExternalRepo,
+			URI:          fmt.Sprintf("https://github.com/foobar/%s", repoWithIDs.Name),
+			Description:  "this repositoriy contains a side project that I haven't maintained in 2 years",
+		})
+
+		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
+			Repository: zoekt.Repository{
+				Name:     name,
+				Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+			},
+		})
+	}
+	return reposWithIDs, repos, zoektRepos
+}
+
+func generateZoektMatches(count int) []zoekt.FileMatch {
+	var zoektFileMatches []zoekt.FileMatch
+	for i := 1; i <= count; i++ {
+		repoName := fmt.Sprintf("repo-%d", i)
+		fileName := fmt.Sprintf("foobar-%d.go", i)
+
+		zoektFileMatches = append(zoektFileMatches, zoekt.FileMatch{
+			Score:      5.0,
+			FileName:   fileName,
+			Repository: repoName, // Important: this needs to match a name in `repos`
+			Branches:   []string{"master"},
+			LineMatches: []zoekt.LineMatch{
+				{
+					Line: nil,
+				},
+			},
+			Checksum: []byte{0, 1, 2},
+		})
+	}
+	return zoektFileMatches
+}
+
+// zoektRPC starts zoekts rpc interface and returns a client to
+// searcher. Useful for capturing CPU/memory usage when benchmarking the zoekt
+// client.
+func zoektRPC(s zoekt.Searcher) (zoekt.Searcher, func()) {
+	mux := http.NewServeMux()
+	mux.Handle(zoektrpc.DefaultRPCPath, zoektrpc.Server(s))
+	ts := httptest.NewServer(mux)
+	cl := zoektrpc.Client(strings.TrimPrefix(ts.URL, "http://"))
+	return cl, func() {
+		cl.Close()
+		ts.Close()
 	}
 }

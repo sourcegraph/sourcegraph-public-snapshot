@@ -1,4 +1,4 @@
-package graphqlbackend
+package run
 
 import (
 	"context"
@@ -33,7 +33,7 @@ import (
 )
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
+	MockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -71,7 +71,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 			return nil, false, errors.New("Unexpected repo")
 		}
 	}
-	defer func() { mockSearchFilesInRepo = nil }()
+	defer func() { MockSearchFilesInRepo = nil }()
 
 	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
@@ -90,7 +90,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
-	matches, common, err := searchFilesInReposBatch(context.Background(), args)
+	matches, common, err := SearchFilesInReposBatch(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,14 +121,14 @@ func TestSearchFilesInRepos(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	_, _, err = searchFilesInReposBatch(context.Background(), args)
+	_, _, err = SearchFilesInReposBatch(context.Background(), args)
 	if !gitserver.IsRevisionNotFound(errors.Cause(err)) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
 }
 
 func TestSearchFilesInReposStream(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
+	MockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -159,7 +159,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 			return nil, false, errors.New("Unexpected repo")
 		}
 	}
-	defer func() { mockSearchFilesInRepo = nil }()
+	defer func() { MockSearchFilesInRepo = nil }()
 
 	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
@@ -178,7 +178,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	matches, _, err := searchFilesInReposBatch(context.Background(), args)
+	matches, _, err := SearchFilesInReposBatch(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,16 +203,8 @@ func assertReposStatus(t *testing.T, repoNames map[api.RepoID]string, got search
 	}
 }
 
-func mkStatusMap(m map[string]search.RepoStatus) search.RepoStatusMap {
-	var rsm search.RepoStatusMap
-	for name, status := range m {
-		rsm.Update(mkRepos(name)[0].ID, status)
-	}
-	return rsm
-}
-
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
+	MockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
@@ -227,7 +219,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 			panic("unexpected repo")
 		}
 	}
-	defer func() { mockSearchFilesInRepo = nil }()
+	defer func() { MockSearchFilesInRepo = nil }()
 
 	trueVal := true
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
@@ -255,7 +247,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
-	matches, _, err := searchFilesInReposBatch(context.Background(), args)
+	matches, _, err := SearchFilesInReposBatch(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}

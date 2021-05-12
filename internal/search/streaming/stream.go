@@ -2,6 +2,7 @@ package streaming
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"go.uber.org/atomic"
@@ -120,6 +121,7 @@ func CollectStream(search func(Sender) error) ([]result.Match, Stats, error) {
 		mu.Lock()
 		results = append(results, event.Results...)
 		stats.Update(&event.Stats)
+		fmt.Printf("Stats: %#v\n", &event.Stats.Status)
 		mu.Unlock()
 	}))
 
