@@ -65,22 +65,16 @@ export const ExtensionsQueryInputToolbar: React.FunctionComponent<Props> = ({
                     {enablementFilterToLabel[enablementFilter]}
                 </DropdownToggle>
                 <DropdownMenu right={true}>
-                    <DropdownItem
-                        // eslint-disable-next-line react/jsx-no-bind
-                        onClick={() => setEnablementFilter('all')}
-                        disabled={enablementFilter === 'all'}
-                    >
+                    <DropdownItem onClick={() => setEnablementFilter('all')} disabled={enablementFilter === 'all'}>
                         Show all
                     </DropdownItem>
                     <DropdownItem
-                        // eslint-disable-next-line react/jsx-no-bind
                         onClick={() => setEnablementFilter('enabled')}
                         disabled={enablementFilter === 'enabled'}
                     >
                         Show enabled extensions
                     </DropdownItem>
                     <DropdownItem
-                        // eslint-disable-next-line react/jsx-no-bind
                         onClick={() => setEnablementFilter('disabled')}
                         disabled={enablementFilter === 'disabled'}
                     >

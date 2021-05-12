@@ -83,7 +83,6 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
     }
 
     return (
-        /* eslint-disable react/jsx-no-bind */
         <svg aria-label="Pie chart" className="pie-chart" width={width} height={height}>
             <Group top={centerY + padding.top} left={centerX + padding.left}>
                 <Pie

@@ -24,7 +24,6 @@ export const UserSettingsTokensArea: React.FunctionComponent<Props> = outerProps
         setNewToken(undefined)
     }, [])
     return (
-        /* eslint-disable react/jsx-no-bind */
         <Switch>
             <Route
                 exact={true}
@@ -51,6 +50,5 @@ export const UserSettingsTokensArea: React.FunctionComponent<Props> = outerProps
             />
             <Route component={NotFoundPage} key="hardcoded-key" />
         </Switch>
-        /* eslint-enable react/jsx-no-bind */
     )
 }

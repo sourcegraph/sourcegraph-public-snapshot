@@ -6,6 +6,7 @@ import React, { useCallback, useState } from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { BatchSpecFields } from '../../../graphql-operations'
@@ -31,6 +32,8 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
 }) => {
     const batchChangeID = batchChange?.id
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
+    const [isRedesignEnabled] = useRedesignToggle()
+
     const onApply = useCallback(async () => {
         if (!confirm(`Are you sure you want to ${batchChangeID ? 'update' : 'create'} this batch change?`)) {
             return
@@ -51,11 +54,17 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
             setIsLoading(error)
         }
     }, [specID, setIsLoading, history, batchChangeID, telemetryService, toBeArchived])
+
     return (
         <>
-            <div className="alert alert-info p-3 mb-3 d-block d-md-flex align-items-center body-lead">
+            <div
+                className={classNames(
+                    'alert alert-info mb-3 d-block d-md-flex align-items-center body-lead',
+                    !isRedesignEnabled && 'p-3'
+                )}
+            >
                 <div className={classNames(styles.createUpdateBatchChangeAlertCopy, 'flex-grow-1 mr-3')}>
-                    <InfoCircleOutlineIcon className="icon-inline mr-2" />
+                    <InfoCircleOutlineIcon className="redesign-d-none icon-inline mr-2" />
                     {!batchChange && (
                         <>
                             Review the proposed changesets below. Click 'Apply spec' or run <code>src batch apply</code>{' '}

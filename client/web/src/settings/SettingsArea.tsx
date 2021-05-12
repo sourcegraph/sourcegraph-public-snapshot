@@ -166,7 +166,6 @@ export class SettingsArea extends React.Component<Props, State> {
                 <h2>{term} settings</h2>
                 {this.props.extraHeader}
                 <Switch>
-                    {/* eslint-disable react/jsx-no-bind */}
                     <Route
                         path={this.props.match.url}
                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
@@ -174,7 +173,6 @@ export class SettingsArea extends React.Component<Props, State> {
                         render={routeComponentProps => <SettingsPage {...routeComponentProps} {...transferProps} />}
                     />
                     <Route key="hardcoded-key" component={NotFoundPage} />
-                    {/* eslint-enable react/jsx-no-bind */}
                 </Switch>
             </div>
         )

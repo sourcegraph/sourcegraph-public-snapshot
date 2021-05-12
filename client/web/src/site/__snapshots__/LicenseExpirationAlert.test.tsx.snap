@@ -8,7 +8,7 @@ exports[`LicenseExpirationAlert.test.tsx expired 1`] = `
     className="dismissible-alert__content"
   >
     <svg
-      className="mdi-icon icon-inline mr-2 flex-shrink-0"
+      className="mdi-icon redesign-d-none icon-inline mr-2 flex-shrink-0"
       fill="currentColor"
       height={24}
       viewBox="0 0 24 24"
@@ -72,7 +72,7 @@ exports[`LicenseExpirationAlert.test.tsx expiring soon 1`] = `
     className="dismissible-alert__content"
   >
     <svg
-      className="mdi-icon icon-inline mr-2 flex-shrink-0"
+      className="mdi-icon redesign-d-none icon-inline mr-2 flex-shrink-0"
       fill="currentColor"
       height={24}
       viewBox="0 0 24 24"

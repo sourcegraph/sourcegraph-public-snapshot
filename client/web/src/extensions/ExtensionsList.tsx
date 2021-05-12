@@ -101,6 +101,11 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         settingsCascade.final
     )
 
+    // Settings subjects for extension toggle
+    const viewerSubject = settingsCascade.subjects?.find(settingsSubject => settingsSubject.subject.id === subject.id)
+        ?.subject
+    // TODO(card redesign): find Site subject for site admins, render site-wide toggle
+
     const categorySections = filteredCategoryIDs
         .filter(category => filteredCategories[category].length > 0)
         .map(category => (
@@ -111,6 +116,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                         <ExtensionCard
                             key={extensionId}
                             subject={subject}
+                            viewerSubject={viewerSubject}
                             node={extensions[extensionId]}
                             settingsCascade={settingsCascade}
                             platformContext={platformContext}

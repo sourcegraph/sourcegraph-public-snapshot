@@ -68,6 +68,9 @@ func TestParseIncludePattern(t *testing.T) {
 		`^github.com/(golang|go-.*)/oauth$`: {regexp: `^github.com/(golang|go-.*)/oauth$`},
 		`^github.com/(go.*lang|go)/oauth$`:  {regexp: `^github.com/(go.*lang|go)/oauth$`},
 
+		// https://github.com/sourcegraph/sourcegraph/issues/20389
+		`^github\.com/sourcegraph/(sourcegraph-atom|sourcegraph)$`: {exact: []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/sourcegraph-atom"}},
+
 		`(^github\.com/Microsoft/vscode$)|(^github\.com/sourcegraph/go-langserver$)`: {exact: []string{"github.com/Microsoft/vscode", "github.com/sourcegraph/go-langserver"}},
 
 		// Avoid DoS when there are too many possible matches to enumerate.

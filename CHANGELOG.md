@@ -26,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Default reviewers are now added to Bitbucket Server PRs opened by Batch Changes. [#20551](https://github.com/sourcegraph/sourcegraph/pull/20551)
 - Only site admins can now list users on an instance. [#20619](https://github.com/sourcegraph/sourcegraph/pull/20619)
 - Repository permissions can now be enabled for site admins via the `authz.enforceForSiteAdmins` setting. [#20674](https://github.com/sourcegraph/sourcegraph/pull/20674)
+- Site admins can no longer view user added code host configuration. [#20851](https://github.com/sourcegraph/sourcegraph/pull/20851)
 
 ### Fixed
 
@@ -34,6 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
 - An issue where duplicate results would render for certain `or`-expressions. [#20480](https://github.com/sourcegraph/sourcegraph/pull/20480)
 - Issue where the search query bar suggests that some `lang` values are not valid. [#20534](https://github.com/sourcegraph/sourcegraph/pull/20534)
 - Pull request event webhooks received from GitHub with unexpected actions no longer cause panics. [#20571](https://github.com/sourcegraph/sourcegraph/pull/20571)
+- Repository search patterns like `^repo/(prefix-suffix|prefix)$` now correctly match both `repo/prefix-suffix` and `repo/prefix`. [#20389](https://github.com/sourcegraph/sourcegraph/issues/20389)
 - Ephemeral storage requests and limits now match the default cache size to avoid Symbols pods being evicted. The symbols pod now requires 10GB of ephemeral space as a minimum to scheduled. [#2369](https://github.com/sourcegraph/deploy-sourcegraph/pull/2369)
 
 ### Removed

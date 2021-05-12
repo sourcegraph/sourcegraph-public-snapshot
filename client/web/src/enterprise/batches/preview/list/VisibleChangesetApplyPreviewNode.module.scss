@@ -1,4 +1,4 @@
-@import 'branded/src/global-styles/breakpoints';
+@import 'wildcard/src/global-styles/breakpoints';
 
 $changeset-backdrop: #f3faff;
 
@@ -7,29 +7,29 @@ $changeset-backdrop: #f3faff;
     &__action,
     &__information,
     &__show-details {
-        @include media-breakpoint-down(xs) {
+        @media (--xs-breakpoint-down) {
             // Make it full width in the current row.
             grid-column: 1 / -1;
         }
     }
     &__bg-expanded {
         background-color: $changeset-backdrop;
-        @include media-breakpoint-up(sm) {
+        @media (--sm-breakpoint-up) {
             border-top: 1px solid var(--border-color-2);
             padding: 1.5rem;
         }
     }
     &__status-cell {
         color: var(--muted);
-        @include media-breakpoint-up(sm) {
+        @media (--sm-breakpoint-up) {
             background-color: var(--oc-blue-0);
         }
     }
     &__list-cell {
-        @include media-breakpoint-up(sm) {
+        @media (--sm-breakpoint-up) {
             padding: 0.5rem;
         }
-        @include media-breakpoint-down(xs) {
+        @media (--xs-breakpoint-down) {
             padding-top: 0.25rem;
             padding-bottom: 0.25rem;
         }
@@ -57,7 +57,7 @@ $changeset-backdrop: #f3faff;
     .visible-changeset-apply-preview-node {
         &__status-cell {
             color: var(--body-color);
-            @include media-breakpoint-up(sm) {
+            @media (--sm-breakpoint-up) {
                 background-color: var(--oc-gray-7);
             }
         }

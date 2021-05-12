@@ -194,12 +194,14 @@ commands:
 
   web-standalone:
     cmd: yarn workspace @sourcegraph/web serve:dev
+    install: yarn --no-progress
     env:
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   enterprise-web-standalone:
     cmd: yarn workspace @sourcegraph/web serve:dev
+    install: yarn --no-progress
     env:
       ENTERPRISE: 1
       WEBPACK_SERVE_INDEX: true
@@ -351,7 +353,9 @@ commandsets:
 tests:
   # These can be run with `sg test [name]`
   backend:
-    cmd: go test ./...
+    cmd: go test
+    defaultArgs: ./...
+
   backend-integration:
     cmd: cd dev/gqltest && go test -long -base-url $BASE_URL -email $EMAIL -username $USERNAME -password $PASSWORD ./gqltest
     env:
@@ -360,8 +364,10 @@ tests:
       BASE_URL: "http://localhost:3080"
       EMAIL: "joe@sourcegraph.com"
       PASSWORD: "12345"
+
   frontend:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
+
   frontend-e2e:
     cmd: yarn run mocha ./client/web/src/end-to-end/end-to-end.test.ts
     env:

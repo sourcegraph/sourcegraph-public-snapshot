@@ -17,7 +17,6 @@ import { HierarchicalLocationsView } from './HierarchicalLocationsView'
 interface Props extends ExtensionsControllerProps, SettingsCascadeProps, VersionContextProps {
     panelView: PanelViewWithComponent
     repoName?: string
-    history: H.History
     location: H.Location
     isLightTheme: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -30,7 +29,7 @@ export const PanelView = React.memo<Props>(props => (
     <div className="panel__tabs-content panel__tabs-content--scroll">
         {props.panelView.content && (
             <div className="px-2 pt-2">
-                <Markdown dangerousInnerHTML={renderMarkdown(props.panelView.content)} history={props.history} />
+                <Markdown dangerousInnerHTML={renderMarkdown(props.panelView.content)} />
             </div>
         )}
         {props.panelView.reactElement}

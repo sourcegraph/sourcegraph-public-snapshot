@@ -1,6 +1,5 @@
 import { parseISO } from 'date-fns'
 import maxDate from 'date-fns/max'
-import * as H from 'history'
 import { isObject } from 'lodash'
 import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useMemo, useEffect } from 'react'
@@ -19,9 +18,7 @@ import { extensionIDPrefix, extensionsQuery, urlToExtensionsQuery, validCategori
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionReadme } from './RegistryExtensionReadme'
 
-interface Props extends Pick<ExtensionAreaRouteContext, 'extension' | 'telemetryService' | 'isLightTheme'> {
-    history: H.History
-}
+interface Props extends Pick<ExtensionAreaRouteContext, 'extension' | 'telemetryService' | 'isLightTheme'> {}
 
 const RegistryExtensionOverviewIcon: React.FunctionComponent<Pick<Props, 'extension' | 'isLightTheme'>> = ({
     extension,
@@ -66,7 +63,6 @@ const RegistryExtensionOverviewIcon: React.FunctionComponent<Pick<Props, 'extens
 export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
     telemetryService,
     extension,
-    history,
     isLightTheme,
 }) => {
     let repositoryURL: URL | undefined
@@ -101,7 +97,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
         <div className="registry-extension-overview-page d-flex flex-wrap">
             <PageTitle title={extension.id} />
             <div className="registry-extension-overview-page__readme mr-3">
-                <ExtensionReadme extension={extension} history={history} />
+                <ExtensionReadme extension={extension} />
             </div>
             <aside className="registry-extension-overview-page__sidebar">
                 {categories && (

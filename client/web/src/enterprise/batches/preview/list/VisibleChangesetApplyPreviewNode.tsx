@@ -345,10 +345,7 @@ const ExpandedSection: React.FunctionComponent<
                                     <del>{node.targets.changeset.currentSpec.description.title}</del>
                                 </h3>
                                 <del className="text-muted">
-                                    <Description
-                                        history={history}
-                                        description={node.targets.changeset.currentSpec.description.body}
-                                    />
+                                    <Description description={node.targets.changeset.currentSpec.description.body} />
                                 </del>
                             </>
                         )}
@@ -370,7 +367,7 @@ const ExpandedSection: React.FunctionComponent<
                             />
                         </small>
                     </h3>
-                    <Description history={history} description={node.targets.changesetSpec.description.body} />
+                    <Description description={node.targets.changesetSpec.description.body} />
                 </>
             )}
             {selectedTab === 'commits' && <GitBranchChangesetDescriptionInfo node={node} />}

@@ -196,15 +196,13 @@ export const Panel = React.memo<Props>(props => {
                               label: panelView.title,
                               id: panelView.id,
                               priority: panelView.priority,
-                              element: (
-                                  <PanelView {...props} panelView={panelView} history={history} location={location} />
-                              ),
+                              element: <PanelView {...props} panelView={panelView} location={location} />,
                               hasLocations: !!panelView.locationProvider,
                           })
                       )
                       .sort((a, b) => b.priority - a.priority)
                 : [],
-        [history, location, panelViews, props]
+        [location, panelViews, props]
     )
 
     useEffect(() => {

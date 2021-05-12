@@ -22,9 +22,12 @@ type Event struct {
 	EventName    string
 	UserID       int32
 	UserCookieID string
-	URL          string
-	Source       string
-	Argument     json.RawMessage
+	// FirstSourceURL is only measured for Cloud events; therefore, this only goes to the BigQuery database
+	// and does not go to the Postgres DB.
+	FirstSourceURL *string
+	URL            string
+	Source         string
+	Argument       json.RawMessage
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
@@ -56,6 +59,7 @@ func LogEvent(ctx context.Context, db dbutil.DB, args Event) error {
 type bigQueryEvent struct {
 	EventName       string `json:"name"`
 	AnonymousUserID string `json:"anonymous_user_id"`
+	FirstSourceURL  string `json:"first_source_url"`
 	UserID          int    `json:"user_id"`
 	URL             string `json:"url"`
 	Source          string `json:"source"`
@@ -72,10 +76,15 @@ func publishSourcegraphDotComEvent(args Event) error {
 	if pubSubDotComEventsTopicID == "" {
 		return nil
 	}
+	firstSourceURL := ""
+	if args.FirstSourceURL != nil {
+		firstSourceURL = *args.FirstSourceURL
+	}
 	event, err := json.Marshal(bigQueryEvent{
 		EventName:       args.EventName,
 		UserID:          int(args.UserID),
 		AnonymousUserID: args.UserCookieID,
+		FirstSourceURL:  firstSourceURL,
 		URL:             args.URL,
 		Source:          args.Source,
 		Timestamp:       time.Now().UTC().Format(time.RFC3339),

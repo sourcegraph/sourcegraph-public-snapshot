@@ -20,7 +20,7 @@ import { parseRepoURI, toPrettyBlobURL, toRepoURL } from '@sourcegraph/shared/sr
 
 export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
     <div className="file-locations__error alert alert-danger m-2">
-        <AlertCircleIcon className="icon-inline" /> Error getting locations: {upperFirst(error.message)}
+        <AlertCircleIcon className="redesign-d-none icon-inline" /> Error getting locations: {upperFirst(error.message)}
     </div>
 )
 

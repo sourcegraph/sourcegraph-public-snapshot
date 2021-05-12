@@ -64,6 +64,7 @@ import {
     fetchAutoDefinedSearchContexts,
     fetchSearchContexts,
     convertVersionContextToSearchContext,
+    fetchSearchContext,
 } from './search/backend'
 import { QueryState } from './search/helpers'
 import { aggregateStreamingSearch } from './search/stream'
@@ -466,7 +467,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             <ErrorBoundary location={null}>
                 <ShortcutProvider>
                     <BrowserRouter key={0}>
-                        {/* eslint-disable react/jsx-no-bind */}
                         <Route
                             path="/"
                             render={routeComponentProps => (
@@ -510,6 +510,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
                                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                                     fetchSearchContexts={fetchSearchContexts}
+                                    fetchSearchContext={fetchSearchContext}
                                     convertVersionContextToSearchContext={convertVersionContextToSearchContext}
                                     isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                                     defaultSearchContextSpec={this.state.defaultSearchContextSpec}
@@ -527,7 +528,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                 />
                             )}
                         />
-                        {/* eslint-enable react/jsx-no-bind */}
                     </BrowserRouter>
                     <Tooltip key={1} />
                     <Notifications

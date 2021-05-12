@@ -85,9 +85,7 @@ export function GlyphContent<Datum extends object>(props: GlyphContentProps<Datu
             to={linkURL}
             onPointerUp={onPointerUp}
             onClick={onClick}
-            /* eslint-disable-next-line react/jsx-no-bind */
             onFocus={() => linkURL && setFocusedDatum(currentDatum)}
-            /* eslint-disable-next-line react/jsx-no-bind */
             onBlur={() => linkURL && setFocusedDatum(null)}
             className="line-chart__glyph-link"
             role={linkURL ? 'link' : 'graphics-dataunit'}

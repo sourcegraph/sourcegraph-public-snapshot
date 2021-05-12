@@ -2,14 +2,9 @@ import * as H from 'history'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 
+import { Timestamp } from '../components/time/Timestamp'
 import { SearchContextFields } from '../graphql-operations'
-
-function getSearchContextRepositoriesDescription(searchContext: ISearchContext): string {
-    const numberRepos = searchContext.repositories.length
-    return searchContext.autoDefined ? 'Auto-defined' : `${numberRepos} repositor${numberRepos === 1 ? 'y' : 'ies'}`
-}
 
 export interface SearchContextNodeProps {
     node: SearchContextFields
@@ -19,12 +14,25 @@ export interface SearchContextNodeProps {
 
 export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> = ({
     node,
-    location,
 }: SearchContextNodeProps) => (
-    <div className="search-context-node card mb-1 p-3">
-        {node.autoDefined ? <div>{node.spec}</div> : <Link to={`${location.pathname}/${node.id}`}>{node.spec}</Link>}
-        <div>
-            {getSearchContextRepositoriesDescription(node as ISearchContext)} &middot; {node.description}
+    <div className="search-context-node py-3 d-flex align-items-center">
+        <div className="search-context-node__left flex-grow-1">
+            <div>
+                <Link to={`/contexts/${node.id}`}>
+                    <strong>{node.spec}</strong>
+                </Link>
+                {!node.public && <div className="badge badge-pill badge-secondary ml-1">Private</div>}
+            </div>
+
+            {node.description.length > 0 && (
+                <div className="text-muted search-context-node__left-description mt-1">{node.description}</div>
+            )}
+        </div>
+        <div className="search-context-node__right text-muted d-flex">
+            <div className="mr-2">{node.repositories.length} repositories</div>
+            <div>
+                Updated <Timestamp date={node.updatedAt} noAbout={true} />
+            </div>
         </div>
     </div>
 )
