@@ -648,7 +648,7 @@ func (e *ExternalServiceStore) maybeDecryptConfig(ctx context.Context, config st
 //
 // 🚨 SECURITY: The value of `es.Unrestricted` is disregarded and will always be
 // recalculated based on whether "authorization" field is presented in
-// `es.Config`. For Sourcegraph Cloud, the `es.Unrestricted` should always be
+// `es.Config`. For Sourcegraph Cloud, the `es.Unrestricted` will always be
 // false (i.e. enforce permissions).
 func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error) {
 	if Mocks.ExternalServices.Upsert != nil {
