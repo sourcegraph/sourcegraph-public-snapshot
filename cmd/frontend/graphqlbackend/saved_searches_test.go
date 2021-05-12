@@ -7,6 +7,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -23,7 +25,6 @@ func TestSavedSearches(t *testing.T) {
 	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true, ID: key}, nil
 	}
-
 	database.Mocks.SavedSearches.ListSavedSearchesByUserID = func(ctx context.Context, userID int32) ([]*types.SavedSearch, error) {
 		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", Notify: true, NotifySlack: false, UserID: &userID, OrgID: nil}}, nil
 	}
@@ -43,6 +44,95 @@ func TestSavedSearches(t *testing.T) {
 	}}}
 	if !reflect.DeepEqual(savedSearches, want) {
 		t.Errorf("got %v+, want %v+", savedSearches[0], want[0])
+	}
+}
+
+func TestSavedSearchByIDOwner(t *testing.T) {
+	ctx := context.Background()
+	db := new(dbtesting.MockDB)
+	defer resetMocks()
+
+	userID := int32(1)
+	ssID := marshalSavedSearchID(1)
+
+	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{SiteAdmin: false, ID: userID}, nil
+	}
+	database.Mocks.SavedSearches.GetByID = func(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error) {
+		return &api.SavedQuerySpecAndConfig{
+			Spec: api.SavedQueryIDSpec{},
+			Config: api.ConfigSavedQuery{
+				UserID:      &userID,
+				Description: "test query",
+				Query:       "test type:diff patternType:regexp",
+				Notify:      true,
+				NotifySlack: false,
+				OrgID:       nil,
+			},
+		}, nil
+	}
+
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: userID,
+	})
+
+	savedSearch, err := (&schemaResolver{db: db}).savedSearchByID(ctx, ssID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := &savedSearchResolver{
+		db: db,
+		s: types.SavedSearch{
+			ID:          userID,
+			Description: "test query",
+			Query:       "test type:diff patternType:regexp",
+			Notify:      true,
+			NotifySlack: false,
+			UserID:      &userID,
+			OrgID:       nil,
+		},
+	}
+
+	if !reflect.DeepEqual(savedSearch, want) {
+		t.Errorf("got %v+, want %v+", savedSearch, want)
+	}
+}
+
+func TestSavedSearchByIDNonOwner(t *testing.T) {
+	// Non owners, including site admins cannot view a user's saved searches
+	ctx := context.Background()
+	db := new(dbtesting.MockDB)
+	defer resetMocks()
+
+	userID := int32(1)
+	adminID := int32(2)
+	ssID := marshalSavedSearchID(1)
+
+	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{SiteAdmin: true, ID: adminID}, nil
+	}
+	database.Mocks.SavedSearches.GetByID = func(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error) {
+		return &api.SavedQuerySpecAndConfig{
+			Spec: api.SavedQueryIDSpec{},
+			Config: api.ConfigSavedQuery{
+				UserID:      &userID,
+				Description: "test query",
+				Query:       "test type:diff patternType:regexp",
+				Notify:      true,
+				NotifySlack: false,
+				OrgID:       nil,
+			},
+		}, nil
+	}
+
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: adminID,
+	})
+
+	_, err := (&schemaResolver{db: db}).savedSearchByID(ctx, ssID)
+	t.Log(err)
+	if err == nil {
+		t.Fatal("expected an error")
 	}
 }
 
