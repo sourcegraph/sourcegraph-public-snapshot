@@ -3,7 +3,6 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useEffect, useMemo, useContext, useState } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { PlatformContextProps } from '@sourcegraph/shared/out/src/platform/context'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
