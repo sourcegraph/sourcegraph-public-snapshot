@@ -59,27 +59,30 @@ func TestTickerGoBrrr(t *testing.T) {
 func TestTickerRateLimited(t *testing.T) {
 	t.Parallel()
 
-	// We'll set up a 100/sec rate limit, and then ensure we take at least 10 ms
-	// to take two messages without any other delays.
+	// We'll set up a 500/sec rate limit, and then ensure we take at least 2 ms
+	// between ticks without any other delays.
 	cfg, err := window.NewConfiguration(&[]*schema.BatchChangeRolloutWindow{
-		{Rate: "100/sec"},
+		{Rate: "500/sec"},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	ticker := newTicker(cfg.Schedule())
 
-	// We'll take two messages, which should be at least 10 ms apart.
+	// We'll take eleven ticks, which should take ten delay periods. Since the
+	// delay between ticks is 2 ms, this should be about 20 ms. We'll be happy
+	// with anything from 15 to 30, since we can't promise other things aren't
+	// happening at the same time.
 	now := time.Now()
-	c := <-ticker.C
-	c <- time.Duration(0)
-
-	c = <-ticker.C
-	have := time.Since(now)
-	if wantMin, wantMax := 9*time.Millisecond, 15*time.Millisecond; have < wantMin || have > wantMax {
-		t.Errorf("unexpectedly short delay between takes: have=%v want >=%v && <=%v", have, wantMin, wantMax)
+	for i := 0; i < 11; i++ {
+		c := <-ticker.C
+		c <- time.Duration(0)
 	}
-	c <- time.Duration(0)
+
+	have := time.Since(now)
+	if wantMin, wantMax := 15*time.Millisecond, 30*time.Millisecond; have < wantMin || have > wantMax {
+		t.Errorf("unexpected delay across a group of ticks: have=%v want >=%v && <=%v", have, wantMin, wantMax)
+	}
 
 	// Finally, let's stop the ticker
 	ticker.stop()
