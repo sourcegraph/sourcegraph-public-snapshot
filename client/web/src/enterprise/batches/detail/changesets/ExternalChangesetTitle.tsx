@@ -5,15 +5,20 @@ import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 
 import { ExternalChangesetFields } from '../../../../graphql-operations'
 
-export const ExternalChangesetTitle: React.FunctionComponent<
-    Pick<ExternalChangesetFields, 'externalID' | 'externalURL' | 'title'> & {
-        /** Optionally, any class names to forward as a prop to the inner `LinkOrSpan` */
-        className?: string
-    }
-> = ({ className, externalID, externalURL, title }) => (
+interface Props extends Pick<ExternalChangesetFields, 'externalID' | 'externalURL' | 'title'> {
+    /** Optionally, any class names to forward as a prop to the inner `LinkOrSpan` */
+    className?: string
+}
+
+export const ExternalChangesetTitle: React.FunctionComponent<Props> = ({
+    className,
+    externalID,
+    externalURL,
+    title,
+}) => (
     <LinkOrSpan to={externalURL?.url} target="_blank" rel="noopener noreferrer" className={className}>
         {title}
-        {externalID && <> (#{externalID}) </>}
+        {externalID && <> (#{externalID})</>}
         {externalURL?.url && (
             <>
                 {' '}
