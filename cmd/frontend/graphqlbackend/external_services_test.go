@@ -687,9 +687,6 @@ func TestExternalServices(t *testing.T) {
 		database.Mocks.ExternalServices = database.MockExternalServices{}
 	}()
 
-	marshalledID := MarshalUserID(0)
-	t.Log(marshalledID)
-
 	// NOTE: all these tests run as site admin
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		// Read all external services
