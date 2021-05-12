@@ -77,3 +77,10 @@ func (k Key) Less(other Key) bool {
 
 	return k.TypeRank < other.TypeRank
 }
+
+// Matches implements sort.Interface
+type Matches []Match
+
+func (m Matches) Len() int           { return len(m) }
+func (m Matches) Less(i, j int) bool { return m[i].Key().Less(m[j].Key()) }
+func (m Matches) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }

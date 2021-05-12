@@ -26,6 +26,7 @@ const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
+const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
 
 interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
@@ -124,6 +125,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/sign-up',
         render: props => <SignUpPage {...props} context={window.context} />,
+        exact: true,
+    },
+    {
+        path: '/post-sign-up',
+        render: props => <PostSignUpPage {...props} context={window.context} />,
         exact: true,
     },
     {

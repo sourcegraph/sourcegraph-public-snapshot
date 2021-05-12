@@ -438,7 +438,7 @@ describe('Search', () => {
                 )
             )
             expect(results).toEqual([
-                'github.com/sourcegraph/sourcegraph',
+                'sourcegraph/sourcegraph',
                 'sourcegraph/sourcegraph › stream.ts',
                 'sourcegraph/sourcegraph@abcd › stream.ts',
                 'sourcegraph/sourcegraph@test/branch › stream.ts',
@@ -596,6 +596,8 @@ describe('Search', () => {
                         spec: 'global',
                         description: '',
                         autoDefined: true,
+                        public: true,
+                        updatedAt: '2021-03-15T19:39:11Z',
                         repositories: [],
                     },
                     {
@@ -604,6 +606,8 @@ describe('Search', () => {
                         spec: '@test',
                         description: '',
                         autoDefined: true,
+                        public: true,
+                        updatedAt: '2021-03-15T19:39:11Z',
                         repositories: [],
                     },
                 ],

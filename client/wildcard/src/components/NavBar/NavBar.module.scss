@@ -1,4 +1,4 @@
-@import 'branded/src/global-styles/breakpoints.scss';
+@import '../../global-styles/breakpoints';
 
 .navbar {
     display: flex;
@@ -6,14 +6,14 @@
     height: 2.5rem;
     min-height: 40px;
     width: 100%;
-    border-bottom: 1px solid var(--color-bg-2);
+    border-bottom: 1px solid var(--border-color-2);
     background: var(--color-bg-1);
     padding: 0 1rem;
     align-items: center;
 }
 
 .menu-close {
-    @include media-breakpoint-down(sm) {
+    @media (--sm-breakpoint-down) {
         display: none !important;
     }
 }
@@ -21,7 +21,7 @@
     color: var(--icon-color);
     display: none;
     padding: 0;
-    @include media-breakpoint-down(sm) {
+    @media (--sm-breakpoint-down) {
         display: block;
     }
 }
@@ -45,7 +45,7 @@
     height: 100%;
     margin: 0;
     padding: 0;
-    @include media-breakpoint-down(sm) {
+    @media (--sm-breakpoint-down) {
         border-radius: 3px;
         border: 1px solid var(--border-color);
         width: 50%;

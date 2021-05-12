@@ -1,8 +1,8 @@
-@import 'branded/src/global-styles/breakpoints';
+@import 'wildcard/src/global-styles/breakpoints';
 
 .empty-preview-list-element {
     &__body {
-        @include media-breakpoint-down(xs) {
+        @media (--xs-breakpoint-down) {
             padding: 0 !important;
             padding-top: 0.5rem !important;
         }

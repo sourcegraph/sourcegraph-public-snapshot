@@ -1,4 +1,3 @@
-import * as H from 'history'
 import * as React from 'react'
 
 import { Progress, StreamingResultsState } from '../../../stream'
@@ -9,7 +8,6 @@ import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton
 export interface StreamingProgressProps {
     state: StreamingResultsState
     progress: Progress
-    history: H.History
     showTrace?: boolean
     onSearchAgain: (additionalFilters: string[]) => void
 }

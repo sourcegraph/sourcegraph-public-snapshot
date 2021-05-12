@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -165,6 +166,88 @@ func TestAuthzQueryConds(t *testing.T) {
 				t.Fatalf("Mismatch (-want +got):\n%s", diff)
 			}
 		})
+	}
+}
+
+func TestRepos_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+
+	// Add a single user who is NOT a site admin
+	alice, err := Users(db).Create(ctx, NewUser{
+		Email:                 "alice@example.com",
+		Username:              "alice",
+		Password:              "alice",
+		EmailVerificationCode: "alice",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = Users(db).SetIsSiteAdmin(ctx, alice.ID, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Add both a public and private repo
+	internalCtx := actor.WithInternalActor(ctx)
+	alicePublicRepo := mustCreate(internalCtx, t, db,
+		&types.Repo{
+			Name: "alice_public_repo",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "alice_public_repo",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		}, types.CloneStatusNotCloned,
+	)[0]
+	alicePrivateRepo := mustCreate(internalCtx, t, db,
+		&types.Repo{
+			Name:    "alice_private_repo",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "alice_private_repo",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		}, types.CloneStatusNotCloned,
+	)[0]
+
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	aliceExternalService := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+	}
+	err = ExternalServices(db).Create(ctx, confGet, aliceExternalService)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Set it up so that Alice added the repo via an external service
+	q := sqlf.Sprintf(`
+INSERT INTO external_service_repos (external_service_id, repo_id, user_id, clone_url)
+VALUES (%s, %s, NULLIF(%s, 0), '')
+`, aliceExternalService.ID, alicePrivateRepo.ID, aliceExternalService.NamespaceUserID)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Alice should be able to see both her public and private repos
+	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
+	repos, err := Repos(db).List(aliceCtx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRepos := []*types.Repo{alicePublicRepo, alicePrivateRepo}
+	if diff := cmp.Diff(wantRepos, repos, cmpopts.IgnoreFields(types.Repo{}, "Sources")); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 }
 

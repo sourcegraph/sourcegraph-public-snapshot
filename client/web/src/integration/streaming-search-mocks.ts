@@ -13,6 +13,7 @@ export const diffSearchStreamEvents: SearchEvent[] = [
                 url: '/gitlab.sgdev.org/sourcegraph/sourcegraph/-/commit/b6dd338737c090fdab31d324542bfdaa7ce9f766',
                 detail:
                     '[`b6dd338` one year ago](/gitlab.sgdev.org/sourcegraph/sourcegraph/-/commit/b6dd338737c090fdab31d324542bfdaa7ce9f766)',
+                repository: 'gitlab.sgdev.org/sourcegraph/sourcegraph',
                 content:
                     "```diff\nweb/src/regression/search.test.ts web/src/regression/search.test.ts\n@@ -434,0 +435,3 @@ describe('Search regression test suite', () => {\n+        test('Fork repos excluded by default', async () => {\n+            const urlQuery = buildSearchURLQuery('type:repo sgtest/mux', GQL.SearchPatternType.regexp, false)\n+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)\n@@ -434,0 +439,4 @@ describe('Search regression test suite', () => {\n+        })\n+        test('Forked repos included by by fork option', async () => {\n+            const urlQuery = buildSearchURLQuery('type:repo sgtest/mux fork:yes', GQL.SearchPatternType.regexp, false)\n+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)\n```",
                 ranges: [
@@ -48,6 +49,7 @@ export const commitSearchStreamEvents: SearchEvent[] = [
                 url: '/github.com/sourcegraph/sourcegraph/-/commit/f7d28599cad80e200913d9c4612618a73199bac1',
                 detail:
                     '[`f7d2859` 2 days ago](/github.com/sourcegraph/sourcegraph/-/commit/f7d28599cad80e200913d9c4612618a73199bac1)',
+                repository: 'github.com/sourcegraph/sourcegraph',
                 content:
                     '```COMMIT_EDITMSG\nsearch: Incorporate search blitz (#19567)\n\nIncorporates search blitz into sourcegraph/sourcegraph so it has access to the internal streaming client\n```',
                 ranges: [

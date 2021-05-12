@@ -95,6 +95,7 @@ require (
 	github.com/hashicorp/go-hclog v0.14.1 // indirect
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/hashicorp/go-retryablehttp v0.6.7 // indirect
+	github.com/hashicorp/golang-lru v0.5.4
 	github.com/hexops/autogold v1.3.0
 	github.com/honeycombio/libhoney-go v1.14.0
 	github.com/imdario/mergo v0.3.11 // indirect
@@ -188,7 +189,7 @@ require (
 	go.uber.org/automaxprocs v1.3.0
 	go.uber.org/ratelimit v0.2.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
-	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
+	golang.org/x/net v0.0.0-20210510120150-4163338589ed
 	golang.org/x/oauth2 v0.0.0-20210210192628-66670185b0cd
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210510120138-977fb7262007

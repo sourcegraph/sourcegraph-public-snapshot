@@ -4,10 +4,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -53,15 +56,41 @@ var (
 	}
 )
 
+const (
+	defaultConfigFile          = "sg.config.yaml"
+	defaultConfigOverwriteFile = "sg.config.overwrite.yaml"
+)
+
 var (
 	rootFlagSet         = flag.NewFlagSet("sg", flag.ExitOnError)
-	configFlag          = rootFlagSet.String("config", "sg.config.yaml", "configuration file")
-	overwriteConfigFlag = rootFlagSet.String("overwrite", "sg.config.overwrite.yaml", "configuration overwrites file that is gitignored and can be used to, for example, add credentials")
+	configFlag          = rootFlagSet.String("config", defaultConfigFile, "configuration file")
+	overwriteConfigFlag = rootFlagSet.String("overwrite", defaultConfigOverwriteFile, "configuration overwrites file that is gitignored and can be used to, for example, add credentials")
 
 	rootCommand = &ffcli.Command{
 		ShortUsage:  "sg [flags] <subcommand>",
 		FlagSet:     rootFlagSet,
 		Subcommands: []*ffcli.Command{runCommand, runSetCommand, startCommand, testCommand},
+		Exec: func(ctx context.Context, args []string) error {
+			return flag.ErrHelp
+		},
+		UsageFunc: func(c *ffcli.Command) string {
+			var out strings.Builder
+
+			printLogo(&out)
+
+			fmt.Fprintf(&out, "USAGE\n")
+			fmt.Fprintf(&out, "  sg <subcommand>\n")
+
+			fmt.Fprintf(&out, "\n")
+			fmt.Fprintf(&out, "AVAILABLE COMMANDS\n")
+			for _, sub := range c.Subcommands {
+				fmt.Fprintf(&out, "  %s\n", sub.Name)
+			}
+
+			fmt.Fprintf(&out, "\nRun 'sg <subcommand> -help' to get help output for each subcommand\n")
+
+			return out.String()
+		},
 	}
 )
 
@@ -92,7 +121,22 @@ func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 		return true, output.FancyLine{}
 	}
 
-	var err error
+	// Try to determine root of repository, so we can look for config there
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return false, output.Linef("", output.StyleWarning, "Failed to determine repository root location: %s", err)
+	}
+
+	// If the configFlag/overwriteConfigFlag flags have their default value, we
+	// take the value as relative to the root of the repository.
+	if confFile == defaultConfigFile {
+		confFile = filepath.Join(repoRoot, confFile)
+	}
+
+	if overwriteFile == defaultConfigOverwriteFile {
+		overwriteFile = filepath.Join(repoRoot, overwriteFile)
+	}
+
 	conf, err = ParseConfigFile(confFile)
 	if err != nil {
 		return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as configuration file:%s\n%s\n", output.StyleBold, confFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
@@ -145,18 +189,13 @@ func testExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	if len(args) != 1 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
-		return flag.ErrHelp
-	}
-
 	cmd, ok := conf.Tests[args[0]]
 	if !ok {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: test suite %q not found :(\n", args[0]))
 		return flag.ErrHelp
 	}
 
-	return runTest(ctx, cmd)
+	return runTest(ctx, cmd, args[1:])
 }
 
 func startExec(ctx context.Context, args []string) error {
@@ -271,4 +310,50 @@ func fileExists(path string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+var styleOrange = output.Fg256Color(202)
+
+func printLogo(out io.Writer) {
+	fmt.Fprintf(out, "%s", output.StyleLogo)
+	fmt.Fprintln(out, `          _____                    _____`)
+	fmt.Fprintln(out, `         /\    \                  /\    \`)
+	fmt.Fprintf(out, `        /%s::%s\    \                /%s::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `       /%s::::%s\    \              /%s::::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `      /%s::::::%s\    \            /%s::::::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `     /%s:::%s/\%s:::%s\    \          /%s:::%s/\%s:::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `    /%s:::%s/__\%s:::%s\    \        /%s:::%s/  \%s:::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `    \%s:::%s\   \%s:::%s\    \      /%s:::%s/    \%s:::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `  ___\%s:::%s\   \%s:::%s\    \    /%s:::%s/    / \%s:::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, ` /\   \%s:::%s\   \%s:::%s\    \  /%s:::%s/    /   \%s:::%s\ ___\`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `/%s::%s\   \%s:::%s\   \%s:::%s\____\/%s:::%s/____/  ___\%s:::%s|    |`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `\%s:::%s\   \%s:::%s\   \%s::%s/    /\%s:::%s\    \ /\  /%s:::%s|____|`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, ` \%s:::%s\   \%s:::%s\   \/____/  \%s:::%s\    /%s::%s\ \%s::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `  \%s:::%s\   \%s:::%s\    \       \%s:::%s\   \%s:::%s\ \/____/`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `   \%s:::%s\   \%s:::%s\____\       \%s:::%s\   \%s:::%s\____\`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `    \%s:::%s\  /%s:::%s/    /        \%s:::%s\  /%s:::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `     \%s:::%s\/%s:::%s/    /          \%s:::%s\/%s:::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `      \%s::::::%s/    /            \%s::::::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `       \%s::::%s/    /              \%s::::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintf(out, `        \%s::%s/    /                \%s::%s/____/`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, `         \/____/`)
+	fmt.Fprintf(out, "%s", output.StyleReset)
 }

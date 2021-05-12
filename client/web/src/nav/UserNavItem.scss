@@ -1,7 +1,23 @@
 .theme-redesign {
-    .user-nav-item__avatar {
-        height: 1.5rem;
-        width: 1.5rem;
+    .user-nav-item {
+        &__avatar {
+            height: 1.5rem;
+            width: 1.5rem;
+        }
+        &__dropdown-menu {
+            > .dropdown-item {
+                &:hover {
+                    background-color: var(--link-color);
+                    color: var(--light-text);
+                }
+            }
+            > .dropdown-header {
+                font-size: 0.75rem;
+            }
+            > .dropdown-divider {
+                border-top: 1px solid var(--border-color-2);
+            }
+        }
     }
 }
 

@@ -42,6 +42,7 @@ describe('UserNavItem', () => {
             mount(
                 <MemoryRouter>
                     <UserNavItem
+                        showRepositorySection={true}
                         isLightTheme={true}
                         onThemePreferenceChange={() => undefined}
                         themePreference={ThemePreference.Light}
