@@ -57,9 +57,13 @@ func run(ctx context.Context, cmds ...Command) error {
 
 	wg.Wait()
 
-	failure := <-failures
-	printCmdError(out, failure.cmdName, failure.err)
-	return failure
+	select {
+	case failure := <-failures:
+		printCmdError(out, failure.cmdName, failure.err)
+		return failure
+	default:
+		return nil
+	}
 }
 
 // failedRun is returned by run when a command failed to run and run exits
@@ -138,6 +142,7 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			c := exec.CommandContext(ctx, "bash", "-c", cmd.Install)
 			c.Dir = root
 			c.Env = makeEnv(conf.Env, cmd.Env)
+
 			cmdOut, err := c.CombinedOutput()
 			if err != nil {
 				if !startedOnce {
@@ -219,6 +224,9 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 
 			case err := <-errs:
 				// Exited on its own or errored
+				if err == nil {
+					out.WriteLine(output.Linef("", output.StyleSuccess, "%s%s exited without error%s", output.StyleBold, cmd.Name, output.StyleReset))
+				}
 				return err
 			}
 		}

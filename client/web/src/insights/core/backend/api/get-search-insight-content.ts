@@ -4,9 +4,7 @@ import { defer } from 'rxjs'
 import { retry } from 'rxjs/operators'
 import type { LineChartContent } from 'sourcegraph'
 
-import { ICommitSearchResult } from '@sourcegraph/shared/src/graphql/schema'
-
-import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from '../requests/fetch-search-insight.ignored'
+import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from '../requests/fetch-search-insight'
 import { SearchInsightSettings } from '../types'
 
 /**
@@ -103,8 +101,6 @@ async function determineCommitsToSearch(dates: Date[], repo: string): Promise<{ 
         return `repo:^${escapeRegExp(repo)}$ type:commit before:${before} count:1`
     })
 
-    console.log('searching commits for search live preview', commitQueries)
-
     const commitResults = await fetchSearchInsightCommits(commitQueries).toPromise()
 
     const commitOids = Object.entries(commitResults).map(([name, search], index) => {
@@ -118,7 +114,7 @@ async function determineCommitsToSearch(dates: Date[], repo: string): Promise<{ 
             throw new Error(`No result for ${commitQueries[index_]}`)
         }
 
-        const commit = (search?.results.results[0] as ICommitSearchResult).commit
+        const commit = (search?.results.results[0]).commit
 
         // Sanity check
         const commitDate = commit.committer && new Date(commit.committer.date)

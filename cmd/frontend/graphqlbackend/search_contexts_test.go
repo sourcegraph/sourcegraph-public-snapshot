@@ -72,17 +72,17 @@ func TestSearchContexts(t *testing.T) {
 		{
 			name:     "filtering by namespace",
 			args:     &listSearchContextsArgs{Query: &query, Namespace: &graphqlUserID, NamespaceFilterType: &namespaceFilter},
-			wantOpts: database.ListSearchContextsOptions{Name: query, NamespaceUserID: userID},
+			wantOpts: database.ListSearchContextsOptions{Name: query, NamespaceUserID: userID, OrderBy: database.SearchContextsOrderBySpec},
 		},
 		{
 			name:     "filtering by instance",
 			args:     &listSearchContextsArgs{Query: &query, NamespaceFilterType: &instanceFilter},
-			wantOpts: database.ListSearchContextsOptions{Name: query, NoNamespace: true},
+			wantOpts: database.ListSearchContextsOptions{Name: query, NoNamespace: true, OrderBy: database.SearchContextsOrderBySpec},
 		},
 		{
 			name:     "get all",
 			args:     &listSearchContextsArgs{Query: &query},
-			wantOpts: database.ListSearchContextsOptions{Name: query},
+			wantOpts: database.ListSearchContextsOptions{Name: query, OrderBy: database.SearchContextsOrderBySpec},
 		},
 		{
 			name:    "cannot filter by namespace with nil namespace",

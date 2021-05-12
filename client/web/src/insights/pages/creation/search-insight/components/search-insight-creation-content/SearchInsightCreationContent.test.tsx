@@ -129,7 +129,7 @@ describe('CreateInsightContent', () => {
                         name: 'First code insight series',
                         query: 'patternType:regex case:yes \\*\\sas\\sGQL',
                         // Open color value from our own css variables
-                        color: 'var(--oc-yellow-7)',
+                        stroke: 'var(--oc-yellow-7)',
                     },
                 ],
                 stepValue: '2',

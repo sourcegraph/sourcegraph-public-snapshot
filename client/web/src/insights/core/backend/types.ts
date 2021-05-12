@@ -55,8 +55,6 @@ export interface ApiService {
         subjectId: string,
         content: string
     ) => Observable<void>
-
     getSearchInsightContent: (insight: SearchInsightSettings) => Promise<sourcegraph.LineChartContent<any, string>>
-
     getLangStatsInsightContent: (insight: LangStatsInsightsSettings) => Promise<sourcegraph.PieChartContent<any>>
 }
