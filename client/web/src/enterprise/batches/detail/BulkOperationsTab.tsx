@@ -1,8 +1,9 @@
 import * as H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useCallback } from 'react'
-import { delay, repeatWhen } from 'rxjs/operators'
+import { delay, repeatWhen, tap } from 'rxjs/operators'
 
+import { dismissAlert } from '../../../components/DismissibleAlert'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
 import { BulkOperationFields, Scalars } from '../../../graphql-operations'
 
@@ -26,6 +27,12 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
     const query = useCallback(
         ({ first, after }: FilteredConnectionQueryArguments) =>
             queryBulkOperations({ batchChange: batchChangeID, after: after ?? null, first: first ?? null }).pipe(
+                tap(connection => {
+                    for (const node of connection.nodes) {
+                        // Hide alerts for bulk operations seen already.
+                        dismissAlert(`bulkOperation-${node.id}`)
+                    }
+                }),
                 repeatWhen(notifier => notifier.pipe(delay(2000)))
             ),
         [batchChangeID, queryBulkOperations]

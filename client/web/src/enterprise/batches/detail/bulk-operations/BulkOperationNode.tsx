@@ -32,7 +32,7 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
                         {node.state}
                     </p>
                 </div>
-                <div className="flex-grow-1" style={{ maxWidth: '200px' }}>
+                <div className="flex-grow-1 ml-3" style={{ maxWidth: '200px' }}>
                     <div>
                         <progress value={node.progress} className="w-100" max={1} />
                     </div>
