@@ -1,0 +1,42 @@
+.insight-card {
+    &__header {
+        display: flex;
+        align-items: center;
+        margin: -0.5rem -1rem 0.5rem -1rem;
+        padding: 0.5rem 1rem;
+
+        background-color: var(--oc-gray-0);
+        color: var(--header-icon-color);
+    }
+
+    &__header-content {
+        flex-grow: 1;
+    }
+
+    &__title {
+        margin-bottom: 0.25rem;
+    }
+
+    &__subtitle {
+        margin-bottom: 1rem;
+    }
+
+    &__header-content &__menu {
+        align-self: flex-start;
+    }
+
+    // Handle views with only a title
+    &__title,
+    &__subtitle {
+        flex-grow: 0;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    &__description {
+        // Place description at the bottom of view card
+        margin-top: auto;
+    }
+}

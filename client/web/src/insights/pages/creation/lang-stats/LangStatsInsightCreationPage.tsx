@@ -14,6 +14,7 @@ import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
 import { FORM_ERROR } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
+import { defaultFormattingOptions } from '../../../core/jsonc-settings'
 import { InsightTypeSuffix } from '../../../core/types'
 
 import {
@@ -23,12 +24,6 @@ import {
 import styles from './LangStatsInsightCreationPage.module.scss'
 
 const DEFAULT_FINAL_SETTINGS = {}
-
-const defaultFormattingOptions: jsonc.FormattingOptions = {
-    eol: '\n',
-    insertSpaces: true,
-    tabSize: 2,
-}
 
 export interface LangStatsInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,

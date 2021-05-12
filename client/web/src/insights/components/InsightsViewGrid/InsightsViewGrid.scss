@@ -26,35 +26,4 @@
         padding: 0.5rem 1rem;
         cursor: default;
     }
-
-    &__view-title {
-        margin-bottom: 0.25rem;
-    }
-
-    &__view-subtitle {
-        margin-bottom: 1rem;
-    }
-
-    // Handle views with only a title
-    &__view-title,
-    &__view-subtitle {
-        flex-grow: 0;
-
-        &:last-child {
-            margin-bottom: 0;
-        }
-    }
-
-    &__view-description {
-        // Place description at the bottom of view card
-        margin-top: auto;
-    }
-}
-
-.insight-description {
-    text-align: right;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    user-select: all;
 }
