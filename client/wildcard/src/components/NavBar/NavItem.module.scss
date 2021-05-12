@@ -32,7 +32,7 @@
         }
     }
     &:hover:not(.active) {
-        border-bottom: 2px solid var(--border-color);
+        border-bottom: 2px solid var(--border-color-2);
         .link-content {
             margin-bottom: -0.125rem;
         }

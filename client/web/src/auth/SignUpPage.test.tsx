@@ -41,6 +41,7 @@ describe('SignUpPage', () => {
                             context={{
                                 allowSignup: true,
                                 sourcegraphDotComMode: false,
+                                experimentalFeatures: { enablePostSignupFlow: false },
                                 authProviders,
                                 xhrHeaders: {},
                             }}
@@ -62,6 +63,7 @@ describe('SignUpPage', () => {
                             context={{
                                 allowSignup: true,
                                 sourcegraphDotComMode: true,
+                                experimentalFeatures: { enablePostSignupFlow: false },
                                 authProviders,
                                 xhrHeaders: {},
                             }}
@@ -91,6 +93,7 @@ describe('SignUpPage', () => {
                             context={{
                                 allowSignup: true,
                                 sourcegraphDotComMode: false,
+                                experimentalFeatures: { enablePostSignupFlow: false },
                                 authProviders,
                                 xhrHeaders: {},
                             }}

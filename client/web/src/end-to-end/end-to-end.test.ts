@@ -359,7 +359,7 @@ describe('e2e test suite', () => {
         })
 
         test('Search visibility:private|public', async () => {
-            const privateRepos = ['github.com/sourcegraph/e2e-test-private-repository']
+            const privateRepos = ['sourcegraph/e2e-test-private-repository']
 
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=type:repo+visibility:private')
             await driver.page.waitForFunction(() => document.querySelectorAll('.test-search-result').length >= 1)

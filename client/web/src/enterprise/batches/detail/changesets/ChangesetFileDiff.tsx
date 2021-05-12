@@ -148,7 +148,7 @@ function commitOIDForGitRevision(revision: GitRefSpecFields): string {
 
 const DiffRenderingNotSupportedAlert: React.FunctionComponent<{}> = () => (
     <div className="alert alert-info mb-0">
-        <InfoCircleOutlineIcon className="icon-inline" /> Diffs for processing, merged, closed and deleted changesets
-        are currently only available on the code host.
+        <InfoCircleOutlineIcon className="redesign-d-none icon-inline" /> Diffs for processing, merged, closed and
+        deleted changesets are currently only available on the code host.
     </div>
 )

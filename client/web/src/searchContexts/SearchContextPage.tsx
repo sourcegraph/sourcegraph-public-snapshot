@@ -21,13 +21,13 @@ import { SearchContextProps } from '../search'
 import styles from './SearchContextPage.module.scss'
 
 export interface SearchContextPageProps
-    extends RouteComponentProps<{ id: Scalars['ID'] }>,
+    extends Pick<RouteComponentProps<{ id: Scalars['ID'] }>, 'match'>,
         Pick<SearchContextProps, 'fetchSearchContext'> {}
 
 export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> = props => {
     const LOADING = 'loading' as const
 
-    const { match, history, fetchSearchContext } = props
+    const { match, fetchSearchContext } = props
 
     const searchContextOrError = useObservable(
         React.useMemo(
@@ -75,10 +75,7 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                 </span>
                             </div>
                             <div className="my-2">
-                                <Markdown
-                                    dangerousInnerHTML={renderMarkdown(searchContextOrError.description)}
-                                    history={history}
-                                />
+                                <Markdown dangerousInnerHTML={renderMarkdown(searchContextOrError.description)} />
                             </div>
                             {!searchContextOrError.autoDefined && (
                                 <>

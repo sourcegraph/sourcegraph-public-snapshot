@@ -110,7 +110,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                 viewerCanAdminister={spec.viewerCanAdminister}
                 telemetryService={telemetryService}
             />
-            <Description history={history} description={spec.description.description} />
+            <Description description={spec.description.description} />
             <PreviewList
                 batchSpecID={specID}
                 history={history}

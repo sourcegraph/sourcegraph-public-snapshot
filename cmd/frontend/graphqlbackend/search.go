@@ -48,7 +48,7 @@ type SearchArgs struct {
 	// allow us to stream out things like dynamic filters or take into account
 	// AND/OR. However, streaming is behind a feature flag for now, so this is
 	// to make it visible in the browser.
-	Stream MatchSender
+	Stream Sender
 
 	// For tests
 	Settings *schema.Settings
@@ -469,16 +469,21 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		return nil, err
 	}
 
-	fileResults, _, err := searchFilesInReposBatch(ctx, r.db, &args)
+	fileMatches, _, err := searchFilesInReposBatch(ctx, &args)
 	if err != nil {
 		return nil, err
 	}
 
 	var suggestions []SearchSuggestionResolver
-	for i, result := range fileResults {
-		assumedScore := len(fileResults) - i // Greater score is first, so we inverse the index.
+	for i, fm := range fileMatches {
+		assumedScore := len(fileMatches) - i // Greater score is first, so we inverse the index.
+		fmr := &FileMatchResolver{
+			FileMatch:    *fm,
+			db:           r.db,
+			RepoResolver: NewRepositoryResolver(r.db, fm.Repo.ToRepo()),
+		}
 		suggestions = append(suggestions, gitTreeSuggestionResolver{
-			gitTreeEntry: result.File(),
+			gitTreeEntry: fmr.File(),
 			score:        assumedScore,
 		})
 	}

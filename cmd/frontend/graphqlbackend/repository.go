@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -91,10 +90,6 @@ func RepositoryByIDInt32(ctx context.Context, db dbutil.DB, repoID api.RepoID) (
 	return NewRepositoryResolver(db, repo), nil
 }
 
-func (r *RepositoryResolver) toMatch() result.Match {
-	return &r.RepoMatch
-}
-
 func (r *RepositoryResolver) ID() graphql.ID {
 	return MarshalRepositoryID(r.IDInt32())
 }
@@ -108,18 +103,6 @@ func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("R
 func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)
 	return
-}
-
-func (r *RepositoryResolver) Select(path filter.SelectPath) SearchResultResolver {
-	match := r.RepoMatch.Select(path)
-
-	// Turn result type back into a resolver
-	switch v := match.(type) {
-	case *result.RepoMatch:
-		return NewRepositoryResolver(r.db, &types.Repo{Name: v.Name, ID: v.ID})
-	}
-
-	return nil
 }
 
 // repo makes sure the repo is hydrated before returning it.
@@ -335,7 +318,7 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	r.hydration.Do(func() {
 		// Repositories with an empty creation date were created using RepoName.ToRepo(),
 		// they only contain ID and name information.
-		if !r.innerRepo.CreatedAt.IsZero() {
+		if r.innerRepo != nil && !r.innerRepo.CreatedAt.IsZero() {
 			return
 		}
 
