@@ -7,7 +7,6 @@ import {
     ExternalChangesetFields,
     GitBranchChangesetDescriptionFields,
     ChangesetState,
-    ChangesetLabelFields,
 } from '../../../../graphql-operations'
 
 import { ChangesetLabel } from './ChangesetLabel'
@@ -40,9 +39,11 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
     return (
         <div className={classNames('d-flex flex-column', className)}>
             <div className="m-0">
-                <h3 className="m-0 d-md-inline-block">{changesetTitle}</h3>
+                <h3 className={classNames('m-0 d-md-inline-block', { 'mr-2': node.labels.length > 0 })}>
+                    {changesetTitle}
+                </h3>
                 {node.labels.length > 0 && (
-                    <span className="d-block d-md-inline-block ml-2">
+                    <span className="d-block d-md-inline-block mr-2">
                         {node.labels.map(label => (
                             <ChangesetLabel label={label} key={label.text} />
                         ))}
