@@ -1,12 +1,14 @@
 import GearIcon from 'mdi-react/GearIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useCallback, useEffect, useMemo, useContext } from 'react'
+import React, { useCallback, useEffect, useMemo, useContext, useState } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { PlatformContextProps } from '@sourcegraph/shared/out/src/platform/context'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard'
 
@@ -14,6 +16,7 @@ import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { Page } from '../../../components/Page'
 import { InsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
 import { InsightsApiContext } from '../../core/backend/api-provider'
+import { defaultFormattingOptions } from '../../core/jsonc-settings'
 
 import { useDeleteInsight } from './hooks/use-delete-insight'
 

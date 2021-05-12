@@ -1,0 +1,17 @@
+.menu {
+    &__panel {
+        display: flex;
+        flex-direction: column;
+        min-width: 8rem;
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        background-color: var(--color-bg-1);
+        border: 1px solid var(--border-color);
+    }
+
+    &__item-button {
+        width: 100%;
+        text-align: start;
+    }
+}
