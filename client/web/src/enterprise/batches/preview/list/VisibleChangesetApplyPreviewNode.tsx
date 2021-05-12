@@ -424,30 +424,50 @@ const ChangesetSpecFileDiffConnection: React.FunctionComponent<
 }
 
 const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFields }> = ({ spec }) => {
-    if (spec.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
-        return (
-            <ExternalChangesetTitle externalURL={spec.targets.changeset.externalURL as Maybe<{ url: string }>}>
-                {spec.targets.changeset.title}
-                {spec.targets.changeset.externalID && <> (#{spec.targets.changeset.externalID}) </>}
-            </ExternalChangesetTitle>
-        )
-    }
-    if (spec.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
-        return <h3>Import changeset #{spec.targets.changesetSpec.description.externalID}</h3>
-    }
+    // Identify the title and external ID/URL, if the changeset spec has them, depending on the type
+    let externalID: Maybe<string> = null
+    let externalURL: Maybe<{ url: string }> = null
+    let title: Maybe<string> = null
+
     if (spec.targets.__typename === 'VisibleApplyPreviewTargetsAttach') {
-        return <h3>{spec.targets.changesetSpec.description.title}</h3>
+        // An import changeset does not display a regular title
+        if (spec.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
+            return <h3>Import changeset #{spec.targets.changesetSpec.description.externalID}</h3>
+        }
+
+        title = spec.targets.changesetSpec.description.title
+    } else {
+        externalID = spec.targets.changeset.externalID
+        externalURL = spec.targets.changeset.externalURL
+        title = spec.targets.changeset.title
     }
 
-    // (default) spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate'
+    // For existing changesets, the title also may have been updated
+    const newTitle =
+        spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate' &&
+        spec.targets.changesetSpec.description.__typename !== 'ExistingChangesetReference' &&
+        spec.delta.titleChanged
+            ? spec.targets.changesetSpec.description.title
+            : null
+
     return (
-        <ExternalChangesetTitle
-            externalURL={spec.targets.changeset.externalURL}
-            newTitle={spec.targets.changesetSpec.description.title}
-        >
-            {spec.targets.changeset.title}
-            {spec.targets.changeset.externalID && <> (#{spec.targets.changeset.externalID}) </>}
-        </ExternalChangesetTitle>
+        <h3>
+            {newTitle ? (
+                <>
+                    <del>
+                        <ExternalChangesetTitle
+                            className="text-muted"
+                            externalID={externalID}
+                            externalURL={externalURL}
+                            title={title}
+                        />
+                    </del>
+                    {newTitle}
+                </>
+            ) : (
+                <ExternalChangesetTitle externalID={externalID} externalURL={externalURL} title={title} />
+            )}
+        </h3>
     )
 }
 

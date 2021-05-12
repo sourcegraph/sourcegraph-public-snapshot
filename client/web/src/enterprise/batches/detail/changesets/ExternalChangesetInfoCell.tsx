@@ -25,16 +25,21 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
     className,
 }) => {
     const changesetTitle =
-        isImporting(node) || importingFailed(node)
-            ? `Importing changeset ${node.externalID ? `#${node.externalID}` : ''}`
-            : `${node.title} ${node.externalID ? `(#${node.externalID})` : ''}`
+        isImporting(node) || importingFailed(node) ? (
+            `Importing changeset ${node.externalID ? `#${node.externalID}` : ''}`
+        ) : (
+            <ExternalChangesetTitle
+                className="m-0 d-block d-md-inline"
+                externalID={node.externalID}
+                externalURL={node.externalURL}
+                title={node.title}
+            />
+        )
 
     return (
         <div className={classNames('d-flex flex-column', className)}>
             <div className="m-0">
-                <ExternalChangesetTitle className="m-0 d-block d-md-inline" externalURL={node.externalURL}>
-                    {changesetTitle}
-                </ExternalChangesetTitle>
+                <h3 className="m-0">{changesetTitle}</h3>
                 {node.labels.length > 0 && (
                     <span className="d-block d-md-inline-block">
                         {node.labels.map(label => (
@@ -44,7 +49,7 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                 )}
             </div>
             <div>
-                <span className="mr-2 d-block d-mdinline-block">
+                <span className="mr-2 d-block d-md-inline-block">
                     <Link to={node.repository.url} target="_blank" rel="noopener noreferrer">
                         {node.repository.name}
                     </Link>{' '}
