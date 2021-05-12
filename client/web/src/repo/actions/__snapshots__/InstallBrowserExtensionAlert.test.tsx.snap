@@ -21,7 +21,7 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (Chrome) 1`] = `
       className="d-flex align-items-center"
     >
       <div
-        className="redesign-d-none position-relative  ml-3"
+        className="redesign-d-none position-relative"
       >
         <div
           className="install-browser-extension-alert__icon-flash"
@@ -31,7 +31,7 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (Chrome) 1`] = `
         />
       </div>
       <p
-        className="install-browser-extension-alert__text my-0"
+        className="install-browser-extension-alert__text my-0 mr-3"
       >
         <a
           className="alert-link"
@@ -89,7 +89,7 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (native integration) 1`] =
       className="d-flex align-items-center"
     >
       <div
-        className="redesign-d-none position-relative  ml-3"
+        className="redesign-d-none position-relative"
       >
         <div
           className="install-browser-extension-alert__icon-flash"
@@ -99,7 +99,7 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (native integration) 1`] =
         />
       </div>
       <p
-        className="install-browser-extension-alert__text my-0"
+        className="install-browser-extension-alert__text my-0 mr-3"
       >
         Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
         Bitbucket Server
@@ -161,7 +161,7 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (non-Chrome) 1`] = `
       className="d-flex align-items-center"
     >
       <div
-        className="redesign-d-none position-relative  ml-3"
+        className="redesign-d-none position-relative"
       >
         <div
           className="install-browser-extension-alert__icon-flash"
@@ -171,7 +171,7 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (non-Chrome) 1`] = `
         />
       </div>
       <p
-        className="install-browser-extension-alert__text my-0"
+        className="install-browser-extension-alert__text my-0 mr-3"
       >
         Get code intelligence
          
@@ -228,7 +228,7 @@ exports[`InstallBrowserExtensionAlert GITHUB (Chrome) 1`] = `
       className="d-flex align-items-center"
     >
       <div
-        className="redesign-d-none position-relative  ml-3"
+        className="redesign-d-none position-relative"
       >
         <div
           className="install-browser-extension-alert__icon-flash"
@@ -238,7 +238,7 @@ exports[`InstallBrowserExtensionAlert GITHUB (Chrome) 1`] = `
         />
       </div>
       <p
-        className="install-browser-extension-alert__text my-0"
+        className="install-browser-extension-alert__text my-0 mr-3"
       >
         <a
           className="alert-link"
@@ -296,7 +296,7 @@ exports[`InstallBrowserExtensionAlert GITHUB (native integration) 1`] = `
       className="d-flex align-items-center"
     >
       <div
-        className="redesign-d-none position-relative  ml-3"
+        className="redesign-d-none position-relative"
       >
         <div
           className="install-browser-extension-alert__icon-flash"
@@ -306,7 +306,7 @@ exports[`InstallBrowserExtensionAlert GITHUB (native integration) 1`] = `
         />
       </div>
       <p
-        className="install-browser-extension-alert__text my-0"
+        className="install-browser-extension-alert__text my-0 mr-3"
       >
         Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
         GitHub
@@ -368,7 +368,7 @@ exports[`InstallBrowserExtensionAlert GITHUB (non-Chrome) 1`] = `
       className="d-flex align-items-center"
     >
       <div
-        className="redesign-d-none position-relative  ml-3"
+        className="redesign-d-none position-relative"
       >
         <div
           className="install-browser-extension-alert__icon-flash"
@@ -378,7 +378,7 @@ exports[`InstallBrowserExtensionAlert GITHUB (non-Chrome) 1`] = `
         />
       </div>
       <p
-        className="install-browser-extension-alert__text my-0"
+        className="install-browser-extension-alert__text my-0 mr-3"
       >
         Get code intelligence
          
@@ -435,7 +435,7 @@ exports[`InstallBrowserExtensionAlert GITLAB (Chrome) 1`] = `
       className="d-flex align-items-center"
     >
       <div
-        className="redesign-d-none position-relative  ml-3"
+        className="redesign-d-none position-relative"
       >
         <div
           className="install-browser-extension-alert__icon-flash"
@@ -445,7 +445,7 @@ exports[`InstallBrowserExtensionAlert GITLAB (Chrome) 1`] = `
         />
       </div>
       <p
-        className="install-browser-extension-alert__text my-0"
+        className="install-browser-extension-alert__text my-0 mr-3"
       >
         <a
           className="alert-link"
@@ -503,7 +503,7 @@ exports[`InstallBrowserExtensionAlert GITLAB (native integration) 1`] = `
       className="d-flex align-items-center"
     >
       <div
-        className="redesign-d-none position-relative  ml-3"
+        className="redesign-d-none position-relative"
       >
         <div
           className="install-browser-extension-alert__icon-flash"
@@ -513,7 +513,7 @@ exports[`InstallBrowserExtensionAlert GITLAB (native integration) 1`] = `
         />
       </div>
       <p
-        className="install-browser-extension-alert__text my-0"
+        className="install-browser-extension-alert__text my-0 mr-3"
       >
         Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
         GitLab
@@ -575,7 +575,7 @@ exports[`InstallBrowserExtensionAlert GITLAB (non-Chrome) 1`] = `
       className="d-flex align-items-center"
     >
       <div
-        className="redesign-d-none position-relative  ml-3"
+        className="redesign-d-none position-relative"
       >
         <div
           className="install-browser-extension-alert__icon-flash"
@@ -585,7 +585,7 @@ exports[`InstallBrowserExtensionAlert GITLAB (non-Chrome) 1`] = `
         />
       </div>
       <p
-        className="install-browser-extension-alert__text my-0"
+        className="install-browser-extension-alert__text my-0 mr-3"
       >
         Get code intelligence
          
@@ -642,7 +642,7 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (Chrome) 1`] = `
       className="d-flex align-items-center"
     >
       <div
-        className="redesign-d-none position-relative  ml-3"
+        className="redesign-d-none position-relative"
       >
         <div
           className="install-browser-extension-alert__icon-flash"
@@ -681,7 +681,7 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (Chrome) 1`] = `
         </PhabricatorIcon>
       </div>
       <p
-        className="install-browser-extension-alert__text my-0"
+        className="install-browser-extension-alert__text my-0 mr-3"
       >
         <a
           className="alert-link"
@@ -736,7 +736,7 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (native integration) 1`] = `
       className="d-flex align-items-center"
     >
       <div
-        className="redesign-d-none position-relative  ml-3"
+        className="redesign-d-none position-relative"
       >
         <div
           className="install-browser-extension-alert__icon-flash"
@@ -775,7 +775,7 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (native integration) 1`] = `
         </PhabricatorIcon>
       </div>
       <p
-        className="install-browser-extension-alert__text my-0"
+        className="install-browser-extension-alert__text my-0 mr-3"
       >
         Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
         Phabricator
@@ -837,7 +837,7 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (non-Chrome) 1`] = `
       className="d-flex align-items-center"
     >
       <div
-        className="redesign-d-none position-relative  ml-3"
+        className="redesign-d-none position-relative"
       >
         <div
           className="install-browser-extension-alert__icon-flash"
@@ -876,7 +876,7 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (non-Chrome) 1`] = `
         </PhabricatorIcon>
       </div>
       <p
-        className="install-browser-extension-alert__text my-0"
+        className="install-browser-extension-alert__text my-0 mr-3"
       >
         Get code intelligence
          
