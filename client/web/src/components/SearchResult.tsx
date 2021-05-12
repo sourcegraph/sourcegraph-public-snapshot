@@ -57,7 +57,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, history, 
     const renderBody = (): JSX.Element => {
         if (isRedesignEnabled && result.__typename === 'Repository') {
             return (
-                <div className="search-result-match px-2 py-1">
+                <div className="search-result-match p-2">
                     <small>Repository name match</small>
                 </div>
             )
