@@ -51,9 +51,30 @@ const filters: Filter[] = [
         kind: 'repo',
     },
     {
-        label: 'sourcegraph/sourcegraph',
-        value: 'repo:^sourcegraph/sourcegraph$',
+        label: 'gitlab.com/sourcegraph/sourcegraph',
+        value: 'repo:^gitlab\\.com/sourcegraph/sourcegraph$',
         count: 201,
+        limitHit: true,
+        kind: 'repo',
+    },
+    {
+        label: 'github.com/microsoft/vscode',
+        value: 'repo:^github\\.com/microsoft/vscode$',
+        count: 10,
+        limitHit: true,
+        kind: 'repo',
+    },
+    {
+        label: 'bitbucket.com/test/test',
+        value: 'repo:^bitbucket\\.com/test/test$',
+        count: 10,
+        limitHit: true,
+        kind: 'repo',
+    },
+    {
+        label: 'gitlab.sgdev.org/example/test',
+        value: 'repo:^gitlab\\.sgdev\\.org/example/test$',
+        count: 10,
         limitHit: true,
         kind: 'repo',
     },
@@ -73,6 +94,7 @@ const filters: Filter[] = [
         limitHit: false,
         kind: 'lang',
     },
+
     {
         label: '-file:_test\\.go$',
         value: '-file:_test\\.go$',
@@ -80,6 +102,14 @@ const filters: Filter[] = [
         limitHit: false,
         kind: 'file',
     },
+
+    ...['typescript', 'javascript', 'c++', 'c', 'c#', 'python', 'ruby', 'haskell', 'java'].map(lang => ({
+        label: `lang:${lang}`,
+        value: `lang:${lang}`,
+        count: 10,
+        limitHit: true,
+        kind: 'lang',
+    })),
 ]
 
 add('empty sidebar', () => <WebStory>{() => <SearchSidebar {...defaultProps} />}</WebStory>)

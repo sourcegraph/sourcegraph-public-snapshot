@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import * as H from 'history'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -14,11 +13,12 @@ import {
     ChangesetStatusMerged,
 } from '../detail/changesets/ChangesetStatusCell'
 
+import styles from './BatchChangeNode.module.scss'
+
 export interface BatchChangeNodeProps {
     node: ListBatchChange
     /** Used for testing purposes. Sets the current date */
     now?: () => Date
-    history: H.History
     displayNamespace: boolean
 }
 
@@ -27,17 +27,20 @@ export interface BatchChangeNodeProps {
  */
 export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
     node,
-    history,
     now = () => new Date(),
     displayNamespace,
 }) => (
     <>
-        <span className="batch-change-node__separator" />
-        {!node.closedAt && <span className="batch-change-node__badge badge badge-success text-uppercase">Open</span>}
-        {node.closedAt && <span className="batch-change-node__badge badge badge-danger text-uppercase">Closed</span>}
-        <div className="batch-change-node__content">
+        <span className={styles.batchChangeNodeSeparator} />
+        {!node.closedAt && (
+            <span className={classNames(styles.batchChangeNodeBadge, 'badge badge-success text-uppercase')}>Open</span>
+        )}
+        {node.closedAt && (
+            <span className={classNames(styles.batchChangeNodeBadge, 'badge badge-danger text-uppercase')}>Closed</span>
+        )}
+        <div className={styles.batchChangeNodeContent}>
             <div className="m-0 d-md-flex d-block align-items-baseline">
-                <h3 className="m-0 d-md-inline-block d-block batch-change-node__title">
+                <h3 className={classNames(styles.batchChangeNodeTitle, 'm-0 d-md-inline-block d-block')}>
                     {displayNamespace && (
                         <div className="d-md-inline-block d-block">
                             <Link
@@ -62,7 +65,6 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                 dangerousInnerHTML={
                     node.description ? renderMarkdown(node.description, { plainText: true }) : 'No description'
                 }
-                history={history}
             />
         </div>
         <ChangesetStatusOpen

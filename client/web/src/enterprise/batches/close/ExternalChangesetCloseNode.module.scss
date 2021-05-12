@@ -1,0 +1,40 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.external-changeset-close-node {
+    &__statuses {
+        @media (--xs-breakpoint-down) {
+            // Use up remaining width of the row.
+            grid-column: 1 / -1;
+        }
+        @media (--sm-breakpoint-down) {
+            // Use up remaining width of the row.
+            grid-column: 2 / -1;
+        }
+    }
+
+    &__show-details {
+        @media (--xs-breakpoint-down) {
+            // Make it full width in the current row.
+            grid-column: 1 / -1;
+        }
+    }
+
+    &__information {
+        @media (--sm-breakpoint-down) {
+            // Use up remaining width of the row.
+            grid-column: 3 / -1;
+        }
+    }
+    &__action,
+    &__information {
+        @media (--xs-breakpoint-down) {
+            // Make it full width in the current row.
+            grid-column: 1 / -1;
+        }
+    }
+    &__expanded-section {
+        background-color: var(--oc-blue-0);
+        // Make it full width in the current row.
+        grid-column: 2 / -1;
+    }
+}

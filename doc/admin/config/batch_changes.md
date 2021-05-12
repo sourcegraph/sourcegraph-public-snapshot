@@ -72,7 +72,7 @@ To rate limit changeset publication to 3 per minute between 08:00 and 16:00 UTC 
 [
   {
     "rate": "unlimited"
-  }
+  },
   {
     "rate": "3/minute",
     "days": ["monday", "tuesday", "wednesday", "thursday", "friday"],

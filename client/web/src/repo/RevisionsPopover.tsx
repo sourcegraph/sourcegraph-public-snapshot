@@ -1,5 +1,7 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
+import classNames from 'classnames'
 import * as H from 'history'
+import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
@@ -119,6 +121,10 @@ const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodePr
             node={node}
             url={replaceRevisionInURL(location.pathname + location.search + location.hash, node.abbrevName)}
             ancestorIsLink={false}
+            className={classNames(
+                'connection-popover__node-link',
+                isCurrent && 'connection-popover__node-link--active'
+            )}
         >
             {isCurrent && (
                 <CircleChevronLeftIcon
@@ -151,7 +157,7 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, curr
                 <code className="revisions-popover-git-commit-node__oid" title={node.oid}>
                     {node.abbreviatedOID}
                 </code>
-                <span className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</span>
+                <small className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</small>
                 {isCurrent && (
                     <CircleChevronLeftIcon
                         className="icon-inline connection-popover__node-link-icon"
@@ -175,6 +181,9 @@ interface Props {
 
     history: H.History
     location: H.Location
+
+    /* Callback to dismiss the parent popover wrapper */
+    togglePopover: () => void
 }
 
 type RevisionsPopoverTabID = 'branches' | 'tags' | 'commits'
@@ -223,24 +232,30 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
         })
 
     return (
-        <Tabs defaultIndex={tabIndex} className="revisions-popover" onChange={handleTabsChange}>
-            <div className="tablist-wrapper w-100 align-items-center">
+        <Tabs defaultIndex={tabIndex} className="revisions-popover connection-popover" onChange={handleTabsChange}>
+            <div className="tablist-wrapper revisions-popover__tabs">
                 <TabList>
                     {TABS.map(({ label, id }) => (
-                        <Tab className="d-flex flex-1 justify-content-around" key={id} data-test-tab={id}>
-                            {label}
+                        <Tab key={id} data-test-tab={id}>
+                            <span className="tablist-wrapper--tab-label">{label}</span>
                         </Tab>
                     ))}
                 </TabList>
+                <button onClick={props.togglePopover} type="button" className="btn btn-icon" aria-label="Close">
+                    <CloseIcon className="icon-inline" />
+                </button>
             </div>
-            <TabPanels className="revisions-popover__tabs">
+            <TabPanels>
                 {TABS.map(tab => (
-                    <TabPanel className="" key={tab.id}>
+                    <TabPanel key={tab.id}>
                         {tab.type ? (
                             <FilteredConnection<GitRefFields, Omit<GitReferencePopoverNodeProps, 'node'>>
                                 key={tab.id}
                                 className="connection-popover__content"
                                 showMoreClassName="connection-popover__show-more"
+                                inputClassName="connection-popover__input"
+                                listClassName="connection-popover__nodes"
+                                inputPlaceholder="Find..."
                                 compact={true}
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
@@ -262,10 +277,12 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                             <FilteredConnection<GitCommitAncestorFields, Omit<GitCommitNodeProps, 'node'>>
                                 key={tab.id}
                                 className="connection-popover__content"
+                                inputClassName="connection-popover__input"
+                                listClassName="connection-popover__nodes"
+                                inputPlaceholder="Find..."
                                 compact={true}
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
-                                // eslint-disable-next-line react/jsx-no-bind
                                 queryConnection={queryRepositoryCommits}
                                 nodeComponent={GitCommitNode}
                                 nodeComponentProps={{

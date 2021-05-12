@@ -8,6 +8,12 @@
     flex: 1 1 auto;
     min-width: 12rem;
 
+    .theme-redesign & {
+        border-top-left-radius: 3px;
+        border-bottom-left-radius: 3px;
+        background-color: var(--color-bg-1);
+    }
+
     &:focus-within {
         .search-context-dropdown__separator {
             visibility: hidden;

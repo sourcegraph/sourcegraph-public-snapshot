@@ -205,7 +205,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             ) : (
                 <StreamingSearchResultsFilterBars {...props} results={results} />
             )}
-            <div className="search-results-list">
+            <div className={classNames('search-results-list', styles.streamingSearchResultsContainer)}>
                 <div className="d-lg-flex mb-2 align-items-end flex-wrap">
                     {!isRedesignEnabled && (
                         <SearchResultTypeTabs
@@ -227,7 +227,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                             <StreamingProgress
                                 progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
                                 state={results?.state || 'loading'}
-                                history={props.history}
                                 onSearchAgain={onSearchAgain}
                                 showTrace={!!trace}
                             />

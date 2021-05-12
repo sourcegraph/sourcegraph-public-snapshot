@@ -1,6 +1,7 @@
 package writer
 
 import (
+	"fmt"
 	"sync/atomic"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol"
@@ -67,9 +68,9 @@ func (e *Emitter) EmitDocumentSymbolEdge(resultV, docV uint64) uint64 {
 	return id
 }
 
-func (e *Emitter) EmitHoverResult(contents []protocol.MarkedString) uint64 {
+func (e *Emitter) EmitHoverResult(contents fmt.Stringer) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewHoverResult(id, protocol.MarkedStrings(contents)))
+	e.writer.Write(protocol.NewHoverResult(id, contents))
 	return id
 }
 

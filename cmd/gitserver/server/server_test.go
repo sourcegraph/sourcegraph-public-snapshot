@@ -10,7 +10,6 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -132,7 +131,7 @@ func TestRequest(t *testing.T) {
 	}
 	t.Cleanup(func() { repoCloned = origRepoCloned })
 
-	testGitRepoExists = func(ctx context.Context, remoteURL *url.URL) error {
+	testGitRepoExists = func(ctx context.Context, remoteURL *vcs.URL) error {
 		if remoteURL.String() == "https://github.com/nicksnyder/go-i18n.git" {
 			return nil
 		}

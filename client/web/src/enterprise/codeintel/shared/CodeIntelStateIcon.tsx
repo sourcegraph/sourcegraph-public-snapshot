@@ -16,15 +16,15 @@ export interface CodeIntelStateIconProps {
 
 export const CodeIntelStateIcon: FunctionComponent<CodeIntelStateIconProps> = ({ state, className }) =>
     state === LSIFUploadState.UPLOADING ? (
-        <FileUploadIcon className={className} />
+        <FileUploadIcon className={classNames('redesign-d-none', className)} />
     ) : state === LSIFUploadState.QUEUED || state === LSIFIndexState.QUEUED ? (
-        <TimerSandIcon className={className} />
+        <TimerSandIcon className={classNames('redesign-d-none', className)} />
     ) : state === LSIFUploadState.PROCESSING || state === LSIFIndexState.PROCESSING ? (
-        <LoadingSpinner className={className} />
+        <LoadingSpinner className={classNames('redesign-d-none', className)} />
     ) : state === LSIFUploadState.COMPLETED || state === LSIFIndexState.COMPLETED ? (
-        <CheckCircleIcon className={classNames('text-success', className)} />
+        <CheckCircleIcon className={classNames('redesign-d-none text-success', className)} />
     ) : state === LSIFUploadState.ERRORED || state === LSIFIndexState.ERRORED ? (
-        <ErrorIcon className={classNames('text-danger', className)} />
+        <ErrorIcon className={classNames('redesign-d-none text-danger', className)} />
     ) : (
         <></>
     )

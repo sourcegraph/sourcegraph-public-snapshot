@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -71,6 +72,8 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		Metrics: metrics,
 	})
 
+	repoStore := database.Repos(workerBaseStore.Handle().DB())
+
 	historicalEnqueuer := &historicalEnqueuer{
 		now:           time.Now,
 		sleep:         time.Sleep,
@@ -103,8 +106,8 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		},
 
 		allReposIterator: (&discovery.AllReposIterator{
-			DefaultRepoStore:      database.DefaultRepos(workerBaseStore.Handle().DB()),
-			RepoStore:             database.Repos(workerBaseStore.Handle().DB()),
+			DefaultRepoLister:     dbcache.NewDefaultRepoLister(repoStore),
+			RepoStore:             repoStore,
 			Clock:                 time.Now,
 			SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 

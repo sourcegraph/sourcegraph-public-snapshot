@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React from 'react'
 
@@ -6,6 +7,7 @@ import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 
+import styles from './HiddenChangesetApplyPreviewNode.module.scss'
 import { PreviewActions } from './PreviewActions'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
 
@@ -17,17 +19,30 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChan
     node,
 }) => (
     <>
-        <span className="hidden-changeset-apply-preview-node__list-cell d-none d-sm-block" />
+        <span className={classNames(styles.hiddenChangesetApplyPreviewNodeListCell, 'd-none d-sm-block')} />
         <HiddenChangesetApplyPreviewNodeStatusCell
             node={node}
-            className="hidden-changeset-apply-preview-node__list-cell d-block d-sm-flex hidden-changeset-apply-preview-node__current-state"
+            className={classNames(
+                styles.hiddenChangesetApplyPreviewNodeListCell,
+                styles.hiddenChangesetApplyPreviewNodeCurrentState,
+                'd-block d-sm-flex'
+            )}
         />
         <PreviewNodeIndicator node={node} />
         <PreviewActions
             node={node}
-            className="hidden-changeset-apply-preview-node__list-cell hidden-changeset-apply-preview-node__action"
+            className={classNames(
+                styles.hiddenChangesetApplyPreviewNodeListCell,
+                styles.hiddenChangesetApplyPreviewNodeAction
+            )}
         />
-        <div className="hidden-changeset-apply-preview-node__list-cell d-flex flex-column hidden-changeset-apply-preview-node__information">
+        <div
+            className={classNames(
+                styles.hiddenChangesetApplyPreviewNodeListCell,
+                styles.hiddenChangesetApplyPreviewNodeInformation,
+                ' d-flex flex-column'
+            )}
+        >
             <h3 className="text-muted">
                 {node.targets.__typename === 'HiddenApplyPreviewTargetsAttach' ||
                 node.targets.__typename === 'HiddenApplyPreviewTargetsUpdate' ? (

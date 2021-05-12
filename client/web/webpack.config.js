@@ -11,12 +11,24 @@ const webpack = require('webpack')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
+const { getCSSLoaders } = require('./dev/webpack/get-css-loaders')
+const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
+
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 logger.info('Using mode', mode)
 
 const isDevelopment = mode === 'development'
 const isProduction = mode === 'production'
 const devtool = isProduction ? 'source-map' : 'cheap-module-eval-source-map'
+
+const shouldServeIndexHTML = process.env.WEBPACK_SERVE_INDEX === 'true'
+if (shouldServeIndexHTML) {
+  logger.info('Serving index.html with HTMLWebpackPlugin')
+}
+const webServerEnvironmentVariables = {
+  WEBPACK_SERVE_INDEX: JSON.stringify(process.env.WEBPACK_SERVE_INDEX),
+  SOURCEGRAPH_API_URL: JSON.stringify(process.env.SOURCEGRAPH_API_URL),
+}
 
 const shouldAnalyze = process.env.WEBPACK_ANALYZER === '1'
 if (shouldAnalyze) {
@@ -40,29 +52,6 @@ const babelLoader = {
 
 const extensionHostWorker = /main\.worker\.ts$/
 
-/**
- * Generates array of CSS loaders both for regular CSS and CSS modules.
- * Useful to ensure that we use the same configuration for shared loaders: postcss-loader, sass-loader, etc.
- *
- * @param {import('webpack').RuleSetUseItem[]} loaders additional CSS loaders
- * @returns {import('webpack').RuleSetUseItem[]} array of CSS loaders
- */
-const getCSSLoaders = (...loaders) => [
-  // Use style-loader for local development as it is significantly faster.
-  isDevelopment ? 'style-loader' : MiniCssExtractPlugin.loader,
-  ...loaders,
-  'postcss-loader',
-  {
-    loader: 'sass-loader',
-    options: {
-      sassOptions: {
-        implementation: require('sass'),
-        includePaths: [nodeModulesPath, path.resolve(rootPath, 'client')],
-      },
-    },
-  },
-]
-
 /** @type {import('webpack').Configuration} */
 const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
@@ -74,7 +63,7 @@ const config = {
         sourceMap: true,
         terserOptions: {
           compress: {
-            // // Don't inline functions, which causes name collisions with uglify-es:
+            // Don't inline functions, which causes name collisions with uglify-es:
             // https://github.com/mishoo/UglifyJS2/issues/2842
             inline: 1,
           },
@@ -118,6 +107,7 @@ const config = {
     new webpack.DefinePlugin({
       'process.env': {
         NODE_ENV: JSON.stringify(mode),
+        ...(shouldServeIndexHTML && webServerEnvironmentVariables),
       },
     }),
     new MiniCssExtractPlugin({
@@ -147,6 +137,7 @@ const config = {
       // Only output files that are required to run the application
       filter: ({ isInitial }) => isInitial,
     }),
+    ...(shouldServeIndexHTML ? getHTMLWebpackPlugins() : []),
     ...(shouldAnalyze ? [new BundleAnalyzerPlugin()] : []),
   ],
   resolve: {
@@ -156,6 +147,7 @@ const config = {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
       // https://github.com/joshwnj/react-visibility-sensor/issues/148
       'react-visibility-sensor': path.resolve(rootPath, 'node_modules/react-visibility-sensor/visibility-sensor.js'),
+      'react-dom': '@hot-loader/react-dom',
     },
   },
   module: {
@@ -195,7 +187,7 @@ const config = {
         test: /\.(sass|scss)$/,
         // CSS Modules loaders are only applied when the file is explicitly named as CSS module stylesheet using the extension `.module.scss`.
         include: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders({
+        use: getCSSLoaders(rootPath, isDevelopment, {
           loader: 'css-loader',
           options: {
             sourceMap: isDevelopment,
@@ -210,7 +202,7 @@ const config = {
       {
         test: /\.(sass|scss)$/,
         exclude: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders({ loader: 'css-loader', options: { url: false } }),
+        use: getCSSLoaders(rootPath, isDevelopment, { loader: 'css-loader', options: { url: false } }),
       },
       {
         // CSS rule for monaco-editor and other external plain CSS (skip SASS and PostCSS for build perf)

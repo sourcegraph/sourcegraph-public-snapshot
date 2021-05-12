@@ -26,6 +26,7 @@ const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
+const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
 
 interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
@@ -127,6 +128,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
+        path: '/post-sign-up',
+        render: props => <PostSignUpPage {...props} context={window.context} />,
+        exact: true,
+    },
+    {
         path: '/settings',
         render: lazyComponent(() => import('./user/settings/RedirectToUserSettings'), 'RedirectToUserSettings'),
     },
@@ -191,8 +197,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/insights',
-        exact: true,
-        render: lazyComponent(() => import('./insights/pages/InsightsPage'), 'InsightsPage'),
+        render: lazyComponent(() => import('./insights/InsightsRouter'), 'InsightsRouter'),
         condition: props =>
             !isErrorLike(props.settingsCascade.final) &&
             !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
@@ -210,6 +215,19 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             !isErrorLike(props.settingsCascade.final) &&
             !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
             !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
+    },
+    {
+        path: '/contexts/convert-version-contexts',
+        render: lazyComponent(
+            () => import('./searchContexts/ConvertVersionContextsPage'),
+            'ConvertVersionContextsPage'
+        ),
+        exact: true,
+        condition: props =>
+            !isErrorLike(props.settingsCascade.final) &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement &&
+            !!props.authenticatedUser?.siteAdmin,
     },
     {
         path: '/contexts/:id',

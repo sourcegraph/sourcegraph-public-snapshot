@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -244,7 +245,7 @@ func repoIsLess(i, j types.RepoName) bool {
 //    top of the penalty we incur from the larger `count:` mentioned in point
 //    2 above (in the worst case scenario).
 //
-func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, pagination *searchPaginationInfo) (*searchCursor, []SearchResultResolver, *streaming.Stats, error) {
+func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, pagination *searchPaginationInfo) (*searchCursor, []result.Match, *streaming.Stats, error) {
 	repos, err := getRepos(ctx, args.RepoPromise)
 	if err != nil {
 		return nil, nil, nil, err
@@ -257,24 +258,18 @@ func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search
 		searchBucketMin:     10,
 		searchBucketMax:     1000,
 	}
-	return plan.execute(ctx, database.Repos(db), func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error) {
+	return plan.execute(ctx, database.Repos(db), func(batch []*search.RepositoryRevisions) ([]result.Match, *streaming.Stats, error) {
 		batchArgs := *args
 		batchArgs.RepoPromise = (&search.Promise{}).Resolve(batch)
-		fileResults, fileCommon, err := searchFilesInReposBatch(ctx, db, &batchArgs)
+		fileMatches, fileCommon, err := searchFilesInReposBatch(ctx, &batchArgs)
 		// Timeouts are reported through Stats so don't report an error for them
 		if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 			return nil, nil, err
 		}
-		// fileResults is not sorted so we must sort it now. fileCommon may or
-		// may not be sorted, but we do not rely on its order.
-		sort.Slice(fileResults, func(i, j int) bool {
-			return fileResults[i].FileMatch.Key().Less(fileResults[j].FileMatch.Key())
-		})
-		results := make([]SearchResultResolver, 0, len(fileResults))
-		for _, r := range fileResults {
-			results = append(results, r)
-		}
-		return results, &fileCommon, nil
+
+		matches := fileMatchesToMatches(fileMatches)
+		sort.Sort(result.Matches(matches))
+		return matches, &fileCommon, nil
 	})
 }
 
@@ -312,16 +307,16 @@ type repoPaginationPlan struct {
 //
 // A non-nil Stats must always be returned, even if an error is
 // returned.
-type executor func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *streaming.Stats, error)
+type executor func(batch []*search.RepositoryRevisions) ([]result.Match, *streaming.Stats, error)
 
-// repoOfResult is a helper function to resolve the repo associated with a result type.
-func repoOfResult(result SearchResultResolver) string {
-	switch r := result.(type) {
-	case *RepositoryResolver:
-		return r.Name()
-	case *FileMatchResolver:
+// repoOfMatch is a helper function to resolve the repo associated with a result type.
+func repoOfMatch(match result.Match) string {
+	switch r := match.(type) {
+	case *result.RepoMatch:
+		return string(r.Name)
+	case *result.FileMatch:
 		return string(r.Repo.Name)
-	case *CommitSearchResultResolver:
+	case *result.CommitMatch:
 		// Pagination does not support commit searches at the
 		// moment. Ideally we want to return the repo associated
 		// with a commit, but the commit result type does not
@@ -337,7 +332,7 @@ func repoOfResult(result SearchResultResolver) string {
 //
 // If the executor returns any error, the search will be cancelled and the error
 // returned.
-func (p *repoPaginationPlan) execute(ctx context.Context, repoStore *database.RepoStore, exec executor) (c *searchCursor, results []SearchResultResolver, common *streaming.Stats, err error) {
+func (p *repoPaginationPlan) execute(ctx context.Context, repoStore *database.RepoStore, exec executor) (c *searchCursor, results []result.Match, common *streaming.Stats, err error) {
 	// Determine how large the batches of repositories we will search over will be.
 	var totalRepos int
 	if p.mockNumTotalRepos != nil {
@@ -403,7 +398,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, repoStore *database.Re
 
 	if len(sliced.results) > 0 {
 		// First, identify what repository corresponds to the last result.
-		lastRepoConsumedName := repoOfResult(sliced.results[len(sliced.results)-1])
+		lastRepoConsumedName := repoOfMatch(sliced.results[len(sliced.results)-1])
 		var lastRepoConsumed types.RepoName
 		for _, repo := range p.repositories {
 			if string(repo.Repo.Name) == lastRepoConsumedName {
@@ -444,7 +439,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, repoStore *database.Re
 
 type slicedSearchResults struct {
 	// results is the new results, sliced.
-	results []SearchResultResolver
+	results []result.Match
 
 	// common is the new common results structure, updated to reflect the sliced results only.
 	common *streaming.Stats
@@ -465,10 +460,10 @@ type slicedSearchResults struct {
 // sliceSearchResults effectively slices results[offset:offset+limit] and
 // returns an updated Stats structure to reflect that, as well as
 // information about the slicing that was performed.
-func sliceSearchResults(results []SearchResultResolver, common *streaming.Stats, offset, limit int) (final slicedSearchResults) {
+func sliceSearchResults(results []result.Match, common *streaming.Stats, offset, limit int) (final slicedSearchResults) {
 	firstRepo := ""
 	if len(results[:offset]) > 0 {
-		firstRepo = repoOfResult(results[offset])
+		firstRepo = repoOfMatch(results[offset])
 	}
 	// First we handle the case of having few enough results that we do not
 	// need to slice anything.
@@ -476,7 +471,7 @@ func sliceSearchResults(results []SearchResultResolver, common *streaming.Stats,
 		results = results[offset:]
 		final.results = results
 		if len(final.results) > 0 {
-			lastResultRepo := repoOfResult(final.results[len(final.results)-1])
+			lastResultRepo := repoOfMatch(final.results[len(final.results)-1])
 			final.common = sliceSearchResultsCommon(common, firstRepo, lastResultRepo)
 		} else {
 			final.common = sliceSearchResultsCommon(common, firstRepo, "")
@@ -493,9 +488,9 @@ func sliceSearchResults(results []SearchResultResolver, common *streaming.Stats,
 	for _, r := range common.Repos {
 		reposByName[string(r.Name)] = r
 	}
-	resultsByRepo := map[types.RepoName][]SearchResultResolver{}
+	resultsByRepo := map[types.RepoName][]result.Match{}
 	for _, r := range results[:limit] {
-		repo := reposByName[repoOfResult(r)]
+		repo := reposByName[repoOfMatch(r)]
 		resultsByRepo[repo] = append(resultsByRepo[repo], r)
 	}
 
@@ -511,7 +506,7 @@ func sliceSearchResults(results []SearchResultResolver, common *streaming.Stats,
 	// resume fetching results starting at b3.
 	var lastResultRepo string
 	for _, r := range originalResults[:offset+limit] {
-		repo := repoOfResult(r)
+		repo := repoOfMatch(r)
 		if repo != lastResultRepo {
 			final.resultOffset = 0
 		} else {
@@ -519,7 +514,7 @@ func sliceSearchResults(results []SearchResultResolver, common *streaming.Stats,
 		}
 		lastResultRepo = repo
 	}
-	nextRepo := repoOfResult(results[limit])
+	nextRepo := repoOfMatch(results[limit])
 	if nextRepo != lastResultRepo {
 		final.resultOffset = 0
 	} else {
@@ -529,9 +524,9 @@ func sliceSearchResults(results []SearchResultResolver, common *streaming.Stats,
 	// Construct the new Stats structure for just the results
 	// we're returning.
 	seenRepos := map[string]struct{}{}
-	finalResults := make([]SearchResultResolver, 0, limit)
+	finalResults := make([]result.Match, 0, limit)
 	for _, r := range results[:limit] {
-		repoName := repoOfResult(r)
+		repoName := repoOfMatch(r)
 		if _, ok := seenRepos[repoName]; ok {
 			continue
 		}

@@ -92,69 +92,6 @@ mutation {
 	}
 }`,
 			}, {
-				name: "dotcom.productLicenses",
-				query: `
-{
-	dotcom {
-		productLicenses {
-			__typename
-		}
-	}
-}`,
-			}, {
-				name: "dotcom.createProductSubscription",
-				query: `
-mutation {
-	dotcom {
-		createProductSubscription(accountID: "VXNlcjox") {
-			id
-		}
-	}
-}`,
-			}, {
-				name: "dotcom.setProductSubscriptionBilling",
-				query: `
-mutation {
-	dotcom {
-		setProductSubscriptionBilling(id: "VXNlcjox") {
-			alwaysNil
-		}
-	}
-}`,
-			}, {
-				name: "dotcom.archiveProductSubscription",
-				query: `
-mutation {
-	dotcom {
-		archiveProductSubscription(id: "VXNlcjox") {
-			alwaysNil
-		}
-	}
-}`,
-			}, {
-				name: "dotcom.generateProductLicenseForSubscription",
-				query: `
-mutation {
-	dotcom {
-		generateProductLicenseForSubscription(
-			productSubscriptionID: "UHJvZHVjdFN1YnNjcmlwdGlvbjox"
-			license: {tags: [], userCount: 1, expiresAt: 1}
-		) {
-			id
-		}
-	}
-}`,
-			}, {
-				name: "dotcom.setUserBilling",
-				query: `
-mutation {
-	dotcom {
-		setUserBilling(user: "VXNlcjox", billingCustomerID: "404") {
-			alwaysNil
-		}
-	}
-}`,
-			}, {
 				name: "updateMirrorRepository",
 				query: `
 mutation {
@@ -426,6 +363,75 @@ mutation {
 	}
 }
 `,
+				},
+				gqlTest{
+					name: "dotcom.productLicenses",
+					query: `
+{
+	dotcom {
+		productLicenses {
+			__typename
+		}
+	}
+}`,
+				},
+				gqlTest{
+					name: "dotcom.createProductSubscription",
+					query: `
+mutation {
+	dotcom {
+		createProductSubscription(accountID: "VXNlcjox") {
+			id
+		}
+	}
+}`,
+				},
+				gqlTest{
+					name: "dotcom.setProductSubscriptionBilling",
+					query: `
+mutation {
+	dotcom {
+		setProductSubscriptionBilling(id: "VXNlcjox") {
+			alwaysNil
+		}
+	}
+}`,
+				},
+				gqlTest{
+					name: "dotcom.archiveProductSubscription",
+					query: `
+mutation {
+	dotcom {
+		archiveProductSubscription(id: "VXNlcjox") {
+			alwaysNil
+		}
+	}
+}`,
+				},
+				gqlTest{
+					name: "dotcom.generateProductLicenseForSubscription",
+					query: `
+mutation {
+	dotcom {
+		generateProductLicenseForSubscription(
+			productSubscriptionID: "UHJvZHVjdFN1YnNjcmlwdGlvbjox"
+			license: {tags: [], userCount: 1, expiresAt: 1}
+		) {
+			id
+		}
+	}
+}`,
+				},
+				gqlTest{
+					name: "dotcom.setUserBilling",
+					query: `
+mutation {
+	dotcom {
+		setUserBilling(user: "VXNlcjox", billingCustomerID: "404") {
+			alwaysNil
+		}
+	}
+}`,
 				},
 			)
 		}

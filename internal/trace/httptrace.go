@@ -120,7 +120,7 @@ func RequestSource(ctx context.Context) SourceType {
 	return v.(SourceType)
 }
 
-// Middleware captures and exports metrics to Prometheus, etc.
+// HTTPTraceMiddleware captures and exports metrics to Prometheus, etc.
 //
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.

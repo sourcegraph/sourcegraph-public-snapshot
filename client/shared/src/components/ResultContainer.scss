@@ -1,17 +1,17 @@
 .result-container {
-    position: relative;
-
     border: 0 solid var(--border-color);
     border-top-width: 1px;
     &:last-child {
         border-bottom-width: 1px;
     }
 
+    .theme-redesign & {
+        border: none;
+        margin-right: 1rem;
+    }
+
     &__header {
         padding: 0.5rem 0.5rem;
-
-        position: sticky;
-        top: 0;
 
         display: flex;
         align-items: center;
@@ -30,6 +30,14 @@
             overflow: hidden;
         }
 
+        &-divider {
+            .theme-redesign & {
+                border-right: 1px solid var(--border-color-2);
+                height: 1rem;
+                margin-left: 0.25rem;
+            }
+        }
+
         p {
             margin-bottom: 0;
         }
@@ -37,21 +45,18 @@
         &:not(:only-of-type) {
             border-bottom: 1px solid var(--border-color);
         }
+
+        .theme-redesign & {
+            background-color: transparent;
+            padding: 0.5rem 0;
+
+            &:not(:only-of-type) {
+                border-bottom: none;
+            }
+        }
     }
 
     &__toggle-matches-container {
         display: flex;
-    }
-
-    // Custom icons are <img src> URLs. We can't use .icon-inline for these, because CSS can't style
-    // SVGs included with <img src>. So, use CSS filters to make the icons light (in dark themes) and
-    // dark (in light themes).
-    .icon-inline__filtered {
-        .theme-dark & {
-            filter: contrast(0) saturate(700%) grayscale(100%) sepia(70%) hue-rotate(180deg) brightness(120%);
-        }
-        .theme-light & {
-            filter: brightness(0%);
-        }
     }
 }

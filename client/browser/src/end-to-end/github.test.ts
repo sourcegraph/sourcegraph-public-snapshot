@@ -69,7 +69,9 @@ describe('Sourcegraph browser extension on github.com', function () {
         },
     }
 
-    describe('Pull request pages', () => {
+    // Replace these unstable tests with integration tests with stubs:
+    // https://github.com/sourcegraph/sourcegraph/pull/20520#issuecomment-829726482
+    describe.skip('Pull request pages', () => {
         for (const diffType of ['unified', 'split']) {
             describe(`${startCase(diffType)} view`, () => {
                 for (const side of ['base', 'head'] as const) {

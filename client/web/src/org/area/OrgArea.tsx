@@ -252,7 +252,6 @@ export class OrgArea extends React.Component<Props> {
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>
                                 {this.props.orgAreaRoutes.map(
-                                    /* eslint-disable react/jsx-no-bind */
                                     ({ path, exact, render, condition = () => true }) =>
                                         condition(context) && (
                                             <Route
@@ -264,7 +263,6 @@ export class OrgArea extends React.Component<Props> {
                                                 }
                                             />
                                         )
-                                    /* eslint-enable react/jsx-no-bind */
                                 )}
                                 <Route key="hardcoded-key" component={NotFoundPage} />
                             </Switch>

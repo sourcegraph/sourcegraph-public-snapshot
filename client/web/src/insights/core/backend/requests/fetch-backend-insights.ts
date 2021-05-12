@@ -4,7 +4,12 @@ import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { requestGraphQL } from '../../../../backend/graphql'
-import { InsightFields, InsightsResult } from '../../../../graphql-operations'
+import {
+    InsightFields,
+    InsightsResult,
+    SubjectSettingsResult,
+    SubjectSettingsVariables,
+} from '../../../../graphql-operations'
 
 const insightFieldsFragment = gql`
     fragment InsightFields on Insight {
@@ -33,4 +38,20 @@ export function fetchBackendInsights(): Observable<InsightFields[]> {
         map(dataOrThrowErrors),
         map(data => data.insights?.nodes ?? [])
     )
+}
+
+export function fetchLatestSubjectSettings(id: string): Observable<SubjectSettingsResult> {
+    return requestGraphQL<SubjectSettingsResult, SubjectSettingsVariables>(
+        gql`
+            query SubjectSettings($id: ID!) {
+                settingsSubject(id: $id) {
+                    latestSettings {
+                        id
+                        contents
+                    }
+                }
+            }
+        `,
+        { id }
+    ).pipe(map(dataOrThrowErrors))
 }

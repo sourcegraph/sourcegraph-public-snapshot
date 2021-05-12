@@ -16,7 +16,13 @@ import { SearchContextMenu } from './SearchContextMenu'
 import { defaultTourOptions } from './tour-options'
 
 export interface SearchContextDropdownProps
-    extends Omit<SearchContextProps, 'showSearchContext'>,
+    extends Omit<
+            SearchContextProps,
+            | 'showSearchContext'
+            | 'convertVersionContextToSearchContext'
+            | 'isSearchContextSpecAvailable'
+            | 'fetchSearchContext'
+        >,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         VersionContextProps {

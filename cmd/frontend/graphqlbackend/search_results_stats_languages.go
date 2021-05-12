@@ -20,7 +20,7 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 		return nil, err
 	}
 
-	langs, err := searchResultsStatsLanguages(ctx, srr.SearchResults)
+	langs, err := searchResultsStatsLanguages(ctx, srr.Results())
 	if err != nil {
 		return nil, err
 	}
@@ -86,11 +86,11 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 				if filesMap[key].partialFiles == nil {
 					filesMap[key].partialFiles = map[string]uint64{}
 				}
-				filesMap[key].partialFiles[fileMatch.path()] += uint64(len(fileMatch.LineMatches()))
+				filesMap[key].partialFiles[fileMatch.Path] += uint64(len(fileMatch.LineMatches()))
 			} else {
 				// Count entire file.
 				filesMap[key].fullEntries = append(filesMap[key].fullEntries, &fileInfo{
-					path:  fileMatch.path(),
+					path:  fileMatch.Path,
 					isDir: fileMatch.File().IsDirectory(),
 				})
 			}

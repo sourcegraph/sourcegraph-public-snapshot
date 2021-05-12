@@ -15,4 +15,4 @@ Docs:
 - [How precise code intelligence queries are resolved](queries.md)
 - [How code intelligence extensions resolve hovers](extensions.md)
 - [How Sourcegraph auto-indexes source code](auto-indexing.md)
-
+- [Integration and load testing utilities for precise code intel: precise-code-intel-tester](https://github.com/sourcegraph/sourcegraph/tree/main/internal/cmd/precise-code-intel-tester)

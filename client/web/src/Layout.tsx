@@ -237,12 +237,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSignInOrUp =
         props.location.pathname === '/sign-in' ||
         props.location.pathname === '/sign-up' ||
-        props.location.pathname === '/password-reset'
+        props.location.pathname === '/password-reset' ||
+        props.location.pathname === '/post-sign-up'
 
     // TODO Change this behavior when we have global focus management system
     // Need to know this for disable autofocus on nav search input
-    // and preserve autofocus for first textarea at survey page
-    const isSurveyPage = routeMatch === '/survey/:score?'
+    // and preserve autofocus for first textarea at survey page, creation UI etc.
+    const isSearchAutoFocusRequired = routeMatch === '/survey/:score?' || routeMatch === '/insights'
 
     const authRequired = useObservable(authRequiredObservable)
 
@@ -281,14 +282,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             <GlobalAlerts
                 isSiteAdmin={!!props.authenticatedUser && props.authenticatedUser.siteAdmin}
                 settingsCascade={props.settingsCascade}
-                history={props.history}
             />
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
                     authRequired={!!authRequired}
-                    isSearchRelatedPage={isSearchRelatedPage}
+                    showSearchBox={isSearchRelatedPage && !isSearchHomepage && !isRepogroupPage}
                     variant={
                         hideGlobalSearchInput
                             ? 'no-search-input'
@@ -300,7 +300,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     }
                     hideNavLinks={false}
                     minimalNavLinks={minimalNavLinks}
-                    isSearchAutoFocusRequired={!isSurveyPage}
+                    isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isExtensionAlertAnimating={isExtensionAlertAnimating}
                 />
             )}
@@ -314,7 +314,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     }
                 >
                     <Switch>
-                        {/* eslint-disable react/jsx-no-bind */}
                         {props.routes.map(
                             ({ render, condition = () => true, ...route }) =>
                                 condition(context) && (
@@ -330,7 +329,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                                     />
                                 )
                         )}
-                        {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 </Suspense>
             </ErrorBoundary>

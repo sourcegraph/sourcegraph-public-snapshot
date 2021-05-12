@@ -39,7 +39,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     telemetryService: {} as any,
     hideNavLinks: true, // used because reactstrap Popover is incompatible with react-test-renderer
     isExtensionAlertAnimating: false,
-    isSearchRelatedPage: true,
+    showSearchBox: true,
     copyQueryButton: false,
     versionContext: undefined,
     setVersionContext: () => Promise.resolve(),

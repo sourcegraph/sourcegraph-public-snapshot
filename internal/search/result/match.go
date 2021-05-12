@@ -42,6 +42,9 @@ type Key struct {
 	// Repo is the name of the repo the match belongs to
 	Repo api.RepoName
 
+	// Rev is the revision associated with the repo if it exists
+	Rev string
+
 	// Commit is the commit hash of the commit the match belongs to.
 	// Empty if there is no commit associated with the match (e.g. RepoMatch)
 	Commit api.CommitID
@@ -60,6 +63,10 @@ func (k Key) Less(other Key) bool {
 		return k.Repo < other.Repo
 	}
 
+	if k.Rev != other.Rev {
+		return k.Rev < other.Rev
+	}
+
 	if k.Commit != other.Commit {
 		return k.Commit < other.Commit
 	}
@@ -70,3 +77,10 @@ func (k Key) Less(other Key) bool {
 
 	return k.TypeRank < other.TypeRank
 }
+
+// Matches implements sort.Interface
+type Matches []Match
+
+func (m Matches) Len() int           { return len(m) }
+func (m Matches) Less(i, j int) bool { return m[i].Key().Less(m[j].Key()) }
+func (m Matches) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }

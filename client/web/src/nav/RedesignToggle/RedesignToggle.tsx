@@ -13,7 +13,7 @@ export const RedesignToggle: React.FunctionComponent = () => {
 
     return (
         <div className="px-2 py-1">
-            <div className="d-flex align-items-center">
+            <div className="d-flex align-items-center justify-content-between">
                 <div className="mr-2">Redesign enabled</div>
                 <Toggle title="Redesign theme enabled" value={isRedesignEnabled} onToggle={handleRedesignToggle} />
             </div>

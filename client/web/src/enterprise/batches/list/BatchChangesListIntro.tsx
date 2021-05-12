@@ -1,9 +1,12 @@
+import classNames from 'classnames'
 import WarningIcon from 'mdi-react/WarningIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { SourcegraphIcon } from '../../../auth/icons'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
+
+import styles from './BatchChangesListIntro.module.scss'
 
 export interface BatchChangesListIntroProps {
     licensed: boolean | undefined
@@ -41,10 +44,10 @@ export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntr
 
 const BatchChangesChangelogAlert: React.FunctionComponent = () => (
     <DismissibleAlert
-        className="batch-changes-list-intro__alert"
+        className={styles.batchChangesListIntroAlert}
         partialStorageKey="batch-changes-list-intro-changelog-3.27"
     >
-        <div className="batch-changes-list-intro__card card h-100 p-2">
+        <div className={classNames(styles.batchChangesListIntroCard, 'card h-100 p-2')}>
             <div className="card-body">
                 <h4>New Batch Changes features in version 3.27</h4>
                 <ul className="text-muted mb-0 pl-3">
@@ -90,16 +93,11 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
 )
 
 const BatchChangesRenameAlert: React.FunctionComponent = () => (
-    // Unlike the other alerts in this file, the spacing below the alert is
-    // handled as padding within the element here to avoid extra margin being
-    // included once this alert is dismissed. (The other alerts in this file
-    // have margin that is used for more than just the alerts. Structural
-    // margin?)
     <DismissibleAlert
-        className="batch-changes-list-intro__alert pb-4"
+        className={classNames(styles.batchChangesListIntroAlert, 'mb-4')}
         partialStorageKey="batch-changes-list-intro-rename"
     >
-        <div className="batch-changes-list-intro__card card h-100 p-2">
+        <div className={classNames(styles.batchChangesListIntroCard, 'card h-100 p-2')}>
             <div className="card-body">
                 <h4>Campaigns is now Batch Changes</h4>
                 <p className="text-muted mb-0">
@@ -113,8 +111,8 @@ const BatchChangesRenameAlert: React.FunctionComponent = () => (
 )
 
 const BatchChangesUnlicensedAlert: React.FunctionComponent = () => (
-    <div className="batch-change-list-intro__alert">
-        <div className="batch-change-list-intro__card card p-2 h-100">
+    <div className={classNames(styles.batchChangesListIntroAlert, 'h-100')}>
+        <div className={classNames(styles.batchChangesListIntroCard, 'card p-2 h-100')}>
             <div className="card-body d-flex align-items-start">
                 {/* d-none d-sm-block ensure that we hide the icon on XS displays. */}
                 <SourcegraphIcon className="mr-3 col-2 mt-2 d-none d-sm-block" />

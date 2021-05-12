@@ -8,7 +8,7 @@ The Kubernetes manifests for a Sourcegraph on Kubernetes installation are in the
 
 ## Requirements
 
-- [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 1.users._
+- [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users._
 - [Kubernetes](https://kubernetes.io/) v1.15
   - Verify that you have enough capacity by following our [resource allocation guidelines](scale.md)
   - Sourcegraph requires an SSD backed storage class

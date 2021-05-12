@@ -32,7 +32,7 @@ func TestEncryptAuthenticator(t *testing.T) {
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
-				if _, err := encryptAuthenticator(ctx, tc.enc, tc.a); err == nil {
+				if _, err := EncryptAuthenticator(ctx, tc.enc, tc.a); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -57,7 +57,7 @@ func TestEncryptAuthenticator(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if have, err := encryptAuthenticator(ctx, enc, a); err != nil {
+		if have, err := EncryptAuthenticator(ctx, enc, a); err != nil {
 			t.Errorf("unexpected error: %v", err)
 		} else if diff := cmp.Diff(string(have), string(want)); diff != "" {
 			t.Errorf("unexpected byte slice (-have +want):\n%s", diff)
