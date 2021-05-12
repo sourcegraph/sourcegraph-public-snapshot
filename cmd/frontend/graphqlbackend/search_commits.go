@@ -39,10 +39,6 @@ type CommitSearchResultResolver struct {
 	gitCommitOnce     sync.Once
 }
 
-func (r *CommitSearchResultResolver) toMatch() result.Match {
-	return &r.CommitMatch
-}
-
 func (r *CommitSearchResultResolver) Commit() *GitCommitResolver {
 	r.gitCommitOnce.Do(func() {
 		if r.gitCommitResolver != nil {
@@ -100,10 +96,6 @@ func (r *CommitSearchResultResolver) Label() Markdown {
 
 func (r *CommitSearchResultResolver) URL() string {
 	return r.CommitMatch.URL().String()
-}
-
-func (r *CommitSearchResultResolver) Repository() string {
-	return string(r.CommitMatch.RepoName.Name)
 }
 
 func (r *CommitSearchResultResolver) Detail() Markdown {

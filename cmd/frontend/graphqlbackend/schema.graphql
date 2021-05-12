@@ -1207,6 +1207,14 @@ type Query {
         If namespaceFilterType is INSTANCE or not set, namespace should not be set.
         """
         namespace: ID
+        """
+        Sort field.
+        """
+        orderBy: SearchContextsOrderBy = SEARCH_CONTEXT_SPEC
+        """
+        Sort direction.
+        """
+        descending: Boolean = false
     ): SearchContextConnection!
     """
     (experimental) Determines whether the search context is within the set of search contexts available to the current user.
@@ -1787,11 +1795,6 @@ type CommitSearchResult implements GenericSearchResultInterface {
     The URL of the result.
     """
     url: String!
-    """
-    UNSTABLE: Full name of the repository the commit is based on. Will be removed when GraphQL search
-    is removed from the web UI. This is already accessible through `commit{ repository { name }}`.
-    """
-    repository: String!
     """
     A markdown string of that is rendered less prominently.
     """
@@ -2454,6 +2457,14 @@ type SearchContextRepositoryRevisions {
     The set of revisions to be searched.
     """
     revisions: [String!]!
+}
+
+"""
+SearchContextsOrderBy enumerates the ways a search contexts list can be ordered.
+"""
+enum SearchContextsOrderBy {
+    SEARCH_CONTEXT_SPEC
+    SEARCH_CONTEXT_UPDATED_AT
 }
 
 """
