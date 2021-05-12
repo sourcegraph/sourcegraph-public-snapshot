@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import * as H from 'history'
+import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
 import ArrowCollapseVerticalIcon from 'mdi-react/ArrowCollapseVerticalIcon'
+import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
 import ArrowExpandVerticalIcon from 'mdi-react/ArrowExpandVerticalIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
 import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
@@ -20,8 +22,6 @@ import { CodeMonitoringProps } from '../../code-monitoring'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { SearchPatternType } from '../../graphql-operations'
-import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
-import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
