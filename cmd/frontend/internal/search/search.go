@@ -287,7 +287,7 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan
 		PatternType:    strPtr(a.PatternType),
 		VersionContext: strPtr(a.VersionContext),
 
-		Stream: streaming.MatchStreamFunc(func(event streaming.SearchEvent) {
+		Stream: streaming.StreamFunc(func(event streaming.SearchEvent) {
 			eventsC <- event
 		}),
 	})

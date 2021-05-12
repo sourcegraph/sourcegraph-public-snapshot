@@ -72,7 +72,7 @@ func WithSelect(parent Sender, s filter.SelectPath) Sender {
 	var mux sync.Mutex
 	dedup := result.NewDeduper()
 
-	return MatchStreamFunc(func(e SearchEvent) {
+	return StreamFunc(func(e SearchEvent) {
 		mux.Lock()
 
 		selected := e.Results[:0]
@@ -102,9 +102,9 @@ func WithSelect(parent Sender, s filter.SelectPath) Sender {
 	})
 }
 
-type MatchStreamFunc func(SearchEvent)
+type StreamFunc func(SearchEvent)
 
-func (f MatchStreamFunc) Send(se SearchEvent) {
+func (f StreamFunc) Send(se SearchEvent) {
 	f(se)
 }
 
@@ -117,7 +117,7 @@ func CollectStream(search func(Sender) error) ([]result.Match, Stats, error) {
 		stats   Stats
 	)
 
-	err := search(MatchStreamFunc(func(event SearchEvent) {
+	err := search(StreamFunc(func(event SearchEvent) {
 		mu.Lock()
 		results = append(results, event.Results...)
 		stats.Update(&event.Stats)
