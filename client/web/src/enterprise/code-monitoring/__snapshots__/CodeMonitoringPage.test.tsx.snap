@@ -1589,6 +1589,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </AnchorLink>
                   </CodeMonitorNode>
                 </ul>
+                <ConnectionNodesSummary
+                  displayShowMoreButton={false}
+                  onShowMore={[Function]}
+                />
               </ConnectionNodes>
             </div>
           </FilteredConnection>
@@ -2261,6 +2265,10 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                     </AnchorLink>
                   </CodeMonitorNode>
                 </ul>
+                <ConnectionNodesSummary
+                  displayShowMoreButton={false}
+                  onShowMore={[Function]}
+                />
               </ConnectionNodes>
             </div>
           </FilteredConnection>
@@ -4139,28 +4147,50 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </AnchorLink>
                   </CodeMonitorNode>
                 </ul>
-                <p
-                  className="filtered-connection__summary"
-                  data-testid="summary"
+                <ConnectionNodesSummary
+                  displayShowMoreButton={true}
+                  onShowMore={[Function]}
+                  summary={
+                    <p
+                      className="filtered-connection__summary"
+                      data-testid="summary"
+                    >
+                      <small>
+                        <span>
+                          12
+                           
+                          code monitors
+                           
+                          total
+                        </span>
+                         
+                      </small>
+                    </p>
+                  }
                 >
-                  <small>
-                    <span>
-                      12
+                  <p
+                    className="filtered-connection__summary"
+                    data-testid="summary"
+                  >
+                    <small>
+                      <span>
+                        12
+                         
+                        code monitors
+                         
+                        total
+                      </span>
                        
-                      code monitors
-                       
-                      total
-                    </span>
-                     
-                  </small>
-                </p>
-                <button
-                  className="btn btn-secondary btn-sm filtered-connection__show-more"
-                  onClick={[Function]}
-                  type="button"
-                >
-                  Show more
-                </button>
+                    </small>
+                  </p>
+                  <button
+                    className="btn btn-sm btn-secondary filtered-connection__show-more"
+                    onClick={[Function]}
+                    type="button"
+                  >
+                    Show more
+                  </button>
+                </ConnectionNodesSummary>
               </ConnectionNodes>
             </div>
           </FilteredConnection>
