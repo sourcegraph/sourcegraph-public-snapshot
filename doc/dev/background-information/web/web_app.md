@@ -94,6 +94,7 @@ See [testing.md](../../how-to/testing.md).
 
 Basic commands for local development can be found [here](../../getting-started/quickstart_6_start_server.md).
 Commands specifically useful for the web team can be found in the root [package.json](https://github.com/sourcegraph/sourcegraph/blob/main/package.json).
+Also, check out the web app [README](../../../../client/web/README.md).
 
 1. Regenerate GraphQL schema, Typescript types for GraphQL operations, and start a development server for the web app.
 
@@ -107,20 +108,20 @@ Commands specifically useful for the web team can be found in the root [package.
    yarn unsafeDev-web
    ```
 
-3. Start all backend services and the web app with enterprise functionality.
+3. Start all backend services and the frontend server with enterprise functionality.
 
    ```sh
    ./enterprise/dev/start.sh
    ```
 
-4. Start a minimal set of backend services to power up the enterprise version of the web app with search functionality.
+4. Start the web server only and point it to any deployed API instance. See more info in the web app [README](../../../../client/web/README.md).
 
-   ```sh
-   yarn frontend:enterprise:search
-   ```
+  ```sh
+  sg run web-standalone
+  ```
 
-5. Same as the previous one, but search functionality won't work in the web app. The most lightweight option to get the web app backend up and running locally. Useful when frontend development work needs to be done in parts of the application, not dependent on search: e.g. settings styling, navbar updates, etc.
+  For enterprise version:
 
-   ```sh
-   yarn frontend:enterprise:minimal
-   ```
+  ```sh
+  sg run enterprise-web-standalone
+  ```

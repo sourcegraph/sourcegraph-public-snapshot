@@ -25,7 +25,6 @@
     "watch": "yarn gulpTask watch",
     "watch-webpack": "yarn gulpTask watchWebpack",
     "webpack": "yarn gulpTask webpack",
-
     "lint": "yarn run eslint && gulp unusedExports && yarn run stylelint",
     "eslint": "eslint --cache '**/*.[tj]s?(x)'",
     "stylelint": "stylelint 'src/**/*.scss' --quiet",
