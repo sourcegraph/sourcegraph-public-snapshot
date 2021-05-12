@@ -24,7 +24,7 @@ export const SupersedingBatchSpecAlert: React.FunctionComponent<SupersedingBatch
             partialStorageKey={`superseding-spec-${parseISO(spec.createdAt).getTime()}`}
         >
             <div className="d-flex align-items-center">
-                <div className="d-none d-md-block">
+                <div className="d-none d-md-block redesign-d-none">
                     <CreationIcon className="icon icon-inline mr-2" />
                 </div>
                 <div className="flex-grow-1">
