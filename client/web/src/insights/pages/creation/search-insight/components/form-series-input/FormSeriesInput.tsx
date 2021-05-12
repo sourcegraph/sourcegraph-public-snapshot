@@ -6,7 +6,7 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../../components/form/validators'
-import { DataSeries } from '../../types'
+import { DataSeries } from '../../../../../core/backend/types'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
 
 const requiredNameField = createRequiredValidator('Name is a required field for data series.')
@@ -48,7 +48,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
             onSubmit({
                 name: values.seriesName,
                 query: values.seriesQuery,
-                color: values.seriesColor,
+                stroke: values.seriesColor,
             }),
     })
 
