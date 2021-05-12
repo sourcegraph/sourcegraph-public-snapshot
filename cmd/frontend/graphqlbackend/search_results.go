@@ -1413,7 +1413,7 @@ func newAggregator(db dbutil.DB, stream streaming.Sender, inputs *run.SearchInpu
 	return &aggregator{
 		db:           db,
 		parentStream: stream,
-		alert: alertObserver{
+		alert: alert.Observer{
 			Inputs: inputs,
 		},
 	}
@@ -1426,7 +1426,7 @@ type aggregator struct {
 	mu      sync.Mutex
 	results []result.Match
 	stats   streaming.Stats
-	alert   alertObserver
+	alert   alert.Observer
 }
 
 // get finalises aggregation over the stream and returns the aggregated
@@ -1827,12 +1827,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		alert:         alert,
 	}
 	return &resultsResolver, err
-}
-
-// isContextError returns true if ctx.Err() is not nil or if err
-// is an error caused by context cancelation or timeout.
-func isContextError(ctx context.Context, err error) bool {
-	return ctx.Err() != nil || err == context.Canceled || err == context.DeadlineExceeded
 }
 
 // SearchResultResolver is a resolver for the GraphQL union type `SearchResult`.

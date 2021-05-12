@@ -2,22 +2,16 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"path"
 	"regexp"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 	"unicode"
 
-	"github.com/hashicorp/go-multierror"
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/alert"
@@ -25,7 +19,6 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
 type searchAlertResolver struct {
@@ -528,19 +521,6 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *alert.Alert
 	return buildAlert(proposedQueries, description)
 }
 
-func alertForStructuralSearchNotSet(queryString string) *alert.Alert {
-	return &alert.Alert{
-		PrometheusType: "structural_search_not_set",
-		Title:          "No results",
-		Description:    "It looks like you may have meant to run a structural search, but it is not toggled.",
-		ProposedQueries: []alert.ProposedQuery{{
-			Description: "Activate structural search",
-			Query:       queryString,
-			PatternType: query.SearchTypeStructural,
-		}},
-	}
-}
-
 type missingRepoRevsError struct {
 	Missing []*search.RepositoryRevisions
 }
@@ -656,91 +636,4 @@ func capFirst(s string) string {
 		}
 		return r
 	}, s)
-}
-
-func alertForError(err error, inputs *run.SearchInputs) *alert.Alert {
-	var aErr *alert.AlertableError
-
-	if errors.As(err, &aErr) {
-		return aErr.Alert
-	} else if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
-		return &alert.Alert{
-			PrometheusType: "structural_search_needs_more_memory",
-			Title:          "Structural search needs more memory",
-			Description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
-			Priority:       5,
-		}
-	} else if strings.Contains(err.Error(), "Out of memory") {
-		return &alert.Alert{
-			PrometheusType: "structural_search_needs_more_memory__give_searcher_more_memory",
-			Title:          "Structural search needs more memory",
-			Description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
-			Priority:       4,
-		}
-	}
-	return nil
-}
-
-type alertObserver struct {
-	// Inputs are used to generate alert messages based on the query.
-	Inputs *run.SearchInputs
-
-	// Update state.
-	hasResults bool
-
-	// Error state. Can be called concurrently.
-	mu    sync.Mutex
-	alert *alert.Alert
-	err   error
-}
-
-// Update AlertObserver's state based on event.
-func (o *alertObserver) Update(event streaming.SearchEvent) {
-	if len(event.Results) > 0 {
-		o.hasResults = true
-	}
-}
-
-func (o *alertObserver) Error(ctx context.Context, err error) {
-	// Timeouts are reported through Stats so don't report an error for them.
-	if err == nil || isContextError(ctx, err) {
-		return
-	}
-
-	// We can compute the alert outside of the critical section.
-	alert := alertForError(err, o.Inputs)
-
-	o.mu.Lock()
-	defer o.mu.Unlock()
-
-	// The error can be converted into an alert.
-	if alert != nil {
-		o.update(alert)
-		return
-	}
-
-	// Track the unexpected error for reporting when calling Done.
-	o.err = multierror.Append(o.err, err)
-}
-
-// update to alert if it is more important than our current alert.
-func (o *alertObserver) update(alert *alert.Alert) {
-	if o.alert == nil || alert.Priority > o.alert.Priority {
-		o.alert = alert
-	}
-}
-
-//  Done returns the highest priority alert and a multierror.Error containing
-//  all errors that could not be converted to alerts.
-func (o *alertObserver) Done(stats *streaming.Stats) (*alert.Alert, error) {
-	if !o.hasResults && o.Inputs.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.Inputs.OriginalQuery) {
-		o.update(alertForStructuralSearchNotSet(o.Inputs.OriginalQuery))
-	}
-
-	if o.hasResults && o.err != nil {
-		log15.Error("Errors during search", "error", o.err)
-		return o.alert, nil
-	}
-
-	return o.alert, o.err
 }
