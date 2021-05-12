@@ -12,7 +12,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -502,7 +501,7 @@ func (s *Server) serverContext() (context.Context, context.CancelFunc) {
 	}
 }
 
-func (s *Server) getRemoteURL(ctx context.Context, name api.RepoName) (*url.URL, error) {
+func (s *Server) getRemoteURL(ctx context.Context, name api.RepoName) (*vcs.URL, error) {
 	if s.GetRemoteURLFunc == nil {
 		return nil, errors.New("gitserver GetRemoteURLFunc is unset")
 	}
@@ -1445,7 +1444,7 @@ type urlRedactor struct {
 
 // newURLRedactor returns a new urlRedactor that redacts
 // credentials found in rawurl, and the rawurl itself.
-func newURLRedactor(parsedURL *url.URL) *urlRedactor {
+func newURLRedactor(parsedURL *vcs.URL) *urlRedactor {
 	var sensitive []string
 	pw, _ := parsedURL.User.Password()
 	u := parsedURL.User.Username()
@@ -1502,7 +1501,7 @@ func scanCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
 
 // testGitRepoExists is a test fixture that overrides the return value for
 // GitRepoSyncer.IsCloneable when it is set.
-var testGitRepoExists func(ctx context.Context, remoteURL *url.URL) error
+var testGitRepoExists func(ctx context.Context, remoteURL *vcs.URL) error
 
 var (
 	execRunning = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -1727,7 +1726,7 @@ func ensureHEAD(dir GitDir) {
 
 // setHEAD configures git repo defaults (such as what HEAD is) which are
 // needed for git commands to work.
-func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoName, remoteURL *url.URL) error {
+func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoName, remoteURL *vcs.URL) error {
 	// Verify that there is a HEAD file within the repo, and that it is of
 	// non-zero length.
 	ensureHEAD(dir)
