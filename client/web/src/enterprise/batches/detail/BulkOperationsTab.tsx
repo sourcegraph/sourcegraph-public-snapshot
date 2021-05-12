@@ -51,7 +51,7 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
             location={location}
             useURLQuery={true}
             listComponent="div"
-            // listClassName={classNames(styles.batchChangeChangesetsGridWithCheckboxes, 'mb-3')}
+            listClassName="mb-3"
             emptyElement={<EmptyBulkOperationsListElement />}
             noSummaryIfAllNodesVisible={true}
         />

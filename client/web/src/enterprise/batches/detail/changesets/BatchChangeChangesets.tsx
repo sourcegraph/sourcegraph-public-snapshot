@@ -290,7 +290,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     location={location}
                     useURLQuery={true}
                     listComponent="div"
-                    listClassName={classNames(styles.batchChangeChangesetsGridWithCheckboxes, 'mb-3')}
+                    listClassName={classNames(styles.batchChangeChangesetsGrid, 'mb-3')}
                     headComponent={BatchChangeChangesetsHeader}
                     headComponentProps={{
                         allSelected,
