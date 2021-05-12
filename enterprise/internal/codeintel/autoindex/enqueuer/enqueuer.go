@@ -11,22 +11,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type IndexEnqueuer struct {
 	dbStore          DBStore
 	gitserverClient  GitserverClient
+	repoUpdater      inference.RepoUpdaterClient
 	maxJobsPerCommit int
 	operations       *operations
 }
 
 const defaultMaxJobsPerCommit = 25
 
-func NewIndexEnqueuer(dbStore DBStore, gitClient GitserverClient, observationContext *observation.Context) *IndexEnqueuer {
+func NewIndexEnqueuer(dbStore DBStore, gitClient GitserverClient, repoUpdater inference.RepoUpdaterClient, observationContext *observation.Context) *IndexEnqueuer {
 	return &IndexEnqueuer{
 		dbStore:          dbStore,
 		gitserverClient:  gitClient,
+		repoUpdater:      repoUpdater,
 		maxJobsPerCommit: defaultMaxJobsPerCommit,
 		operations:       newOperations(observationContext),
 	}
@@ -38,6 +41,18 @@ func (s *IndexEnqueuer) QueueIndex(ctx context.Context, repositoryID int) error 
 
 func (s *IndexEnqueuer) ForceQueueIndex(ctx context.Context, repositoryID int) error {
 	return s.queueIndex(ctx, repositoryID, true)
+}
+
+func (s *IndexEnqueuer) QueueIndexesForPackages(ctx context.Context, packages []semantic.PackageReference) error {
+	for _, pkg := range packages {
+		for _, recognizer := range inference.Recognizers {
+			if err := s.queueIndexForPackage(ctx, recognizer, pkg.Package); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryID int) (_ *config.IndexConfiguration, err error) {
@@ -88,18 +103,44 @@ func (s *IndexEnqueuer) queueIndex(ctx context.Context, repositoryID int, force 
 	return s.queueIndexForCommit(ctx, repositoryID, commit, force, traceLog, false)
 }
 
-// sourcegraphRepositoryID is the repository id of sg/sg on Cloud
-const sourcegraphRepositoryID = 36809250
+func (s *IndexEnqueuer) queueIndexForPackage(ctx context.Context, recognizer inference.IndexJobRecognizer, pkg semantic.Package) (err error) {
+	ctx, endObservation := s.operations.QueueIndexForPackage.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.String("scheme", pkg.Scheme),
+			log.String("name", pkg.Name),
+			log.String("version", pkg.Version),
+		},
+	})
+	defer endObservation(1, observation.Args{})
 
-func (s *IndexEnqueuer) queueIndexForCommit(ctx context.Context, repositoryID int, commit string, force bool, traceLog observation.TraceLogger, noisy bool) (err error) {
-	if repositoryID == sourcegraphRepositoryID {
-		// Don't auto-index sg/sg; instead, we'll enqueue index jobs for all of the current commit's
-		// root go module dependencies. This is going to simulate what we _could_ do with dependency
-		// tracking for Go, though this particular implementations SUPER sketchy.
-		log15.Warn("Enqueueing dependencies of sourcegraph/sourcegraph for auto-indexing", "commit", commit)
-		return s.enqueueSourcegraphGoRootDependencies(ctx, repositoryID, commit)
+	repoID, commit, exists, err := recognizer.EnsurePackageRepo(ctx, pkg, s.repoUpdater, s.gitserverClient)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
 	}
 
+	isQueued, err := s.dbStore.IsQueued(ctx, repoID, commit)
+	if err != nil {
+		return err
+	}
+	if isQueued {
+		return nil
+	}
+
+	gitserverWrapper := inference.NewGitserverClientShim(repoID, commit, s.gitserverClient)
+	indexJobs, err := recognizer.InferPackageIndexJobs(ctx, pkg, gitserverWrapper)
+	if err != nil {
+		return err
+	}
+
+	indexes := convertInferredConfiguration(repoID, commit, indexJobs)
+
+	return s.queueIndexes(ctx, repoID, commit, indexes, false)
+}
+
+func (s *IndexEnqueuer) queueIndexForCommit(ctx context.Context, repositoryID int, commit string, force bool, traceLog observation.TraceLogger, noisy bool) (err error) {
 	if !force {
 		isQueued, err := s.dbStore.IsQueued(ctx, repositoryID, commit)
 		if err != nil {
@@ -125,6 +166,10 @@ func (s *IndexEnqueuer) queueIndexForCommit(ctx context.Context, repositoryID in
 	}
 	traceLog(log.Int("numIndexes", len(indexes)))
 
+	return s.queueIndexes(ctx, repositoryID, commit, indexes, noisy)
+}
+
+func (s *IndexEnqueuer) queueIndexes(ctx context.Context, repositoryID int, commit string, indexes []store.Index, noisy bool) (err error) {
 	tx, err := s.dbStore.Transact(ctx)
 	if err != nil {
 		return errors.Wrap(err, "dbstore.Transact")

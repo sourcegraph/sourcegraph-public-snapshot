@@ -9,6 +9,7 @@ import (
 
 type operations struct {
 	QueueIndex              *observation.Operation
+	QueueIndexForPackage    *observation.Operation
 	InferIndexConfiguration *observation.Operation
 }
 
@@ -30,6 +31,7 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	return &operations{
 		QueueIndex:              op("QueueIndex"),
+		QueueIndexForPackage:    op("QueueIndexForPackage"),
 		InferIndexConfiguration: op("InferIndexConfiguration"),
 	}
 }
