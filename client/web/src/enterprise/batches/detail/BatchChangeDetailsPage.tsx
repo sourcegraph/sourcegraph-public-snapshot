@@ -14,7 +14,6 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
-import { DismissibleAlert } from '../../../components/DismissibleAlert'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { BatchChangeFields, Scalars } from '../../../graphql-operations'
@@ -32,7 +31,6 @@ import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSecti
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 import { BatchChangeTabs } from './BatchChangeTabs'
-import { BulkOperationNode } from './bulk-operations/BulkOperationNode'
 import { BulkOperationsNotifications } from './BulkOperationsNotifications'
 import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 import { ClosedNotice } from './ClosedNotice'
@@ -93,7 +91,6 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
     }, [telemetryService])
 
     const createdAfter = useMemo(() => subDays(new Date(), 3).toISOString(), [])
-
     const batchChange: BatchChangeFields | null | undefined = useObservable(
         useMemo(
             () =>

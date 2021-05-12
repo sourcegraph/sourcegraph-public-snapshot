@@ -97,8 +97,9 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
         setAllAllSelected(false)
     }, [])
 
-    // Whether the given changeset is currently selected. Returns always true, if
-    // `allAllSelected` is true.
+    /**
+     * Whether the given changeset is currently selected. Returns always true, if `allAllSelected` is true.
+     */
     const changesetSelected = useCallback(
         (id: Scalars['ID']): boolean => allAllSelected || selectedChangesets.has(id),
         [allAllSelected, selectedChangesets]
@@ -125,6 +126,10 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
         }
     }, [allSelected, selectAll, deselectAll])
 
+    const onSelectAllAll = useCallback(() => {
+        setAllAllSelected(true)
+    }, [])
+
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
         state: null,
@@ -139,10 +144,6 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
         },
         [deselectAll, setChangesetFilters]
     )
-
-    const onSelectAllAll = useCallback(() => {
-        setAllAllSelected(true)
-    }, [])
 
     const [queryArguments, setQueryArguments] = useState<Omit<AllChangesetIDsVariables, 'after'>>()
 
