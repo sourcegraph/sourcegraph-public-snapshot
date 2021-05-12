@@ -28,8 +28,9 @@ type IndexJobRecognizer interface {
 	// and creates the proxy repo otherwise. The name of the repo is returned.
 	EnsurePackageRepo(ctx context.Context, pkg semantic.Package, repoUpdater RepoUpdaterClient, gitserver GitserverClient) (int, string, bool, error)
 
-	// InferPackageIndexJobs checks whether the package is proxied through gitserver,
-	// and creates the proxy repo otherwise. The name of the repo is returned.
+	// InferPackageIndexJobs returns a set of index jobs which are likely to be correct
+	// given a particular package. It's expected that EnsurePackageRepo is called prior to
+	// this function.
 	InferPackageIndexJobs(ctx context.Context, pkg semantic.Package, gitserver GitserverClientWrapper) ([]config.IndexJob, error)
 }
 
