@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 const lsifGoImage = "sourcegraph/lsif-go:latest"
@@ -76,9 +75,9 @@ var goSegmentBlockList = append([]string{
 	"vendor",
 }, segmentBlockList...)
 
-var versionPattern = lazyregexp.New(`^(.*)-(.+)-([a-f0-9]{12})$`)
+var versionPattern = lazyregexp.New(`^(.+)-([a-f0-9]{12})$`)
 
-func (lsifGoJobRecognizer) EnsurePackageRepo(ctx context.Context, pkg semantic.Package, repoUpdater RepoUpdaterClient) (int, string, bool, error) {
+func (lsifGoJobRecognizer) EnsurePackageRepo(ctx context.Context, pkg semantic.Package, repoUpdater RepoUpdaterClient, gitserver GitserverClient) (int, string, bool, error) {
 	if pkg.Scheme != "gomod" || !strings.HasPrefix(pkg.Name, "github.com/") {
 		return 0, "", false, nil
 	}
@@ -91,7 +90,7 @@ func (lsifGoJobRecognizer) EnsurePackageRepo(ctx context.Context, pkg semantic.P
 	}
 
 	if matches := versionPattern.FindStringSubmatch(versionString); len(matches) > 0 {
-		versionString = matches[3]
+		versionString = matches[2]
 	}
 
 	repoName := api.RepoName(pkg.Name)
@@ -105,7 +104,7 @@ func (lsifGoJobRecognizer) EnsurePackageRepo(ctx context.Context, pkg semantic.P
 		return 0, "", false, err
 	}
 
-	commit, err := git.ResolveRevision(ctx, api.RepoName(pkg.Name), versionString, git.ResolveRevisionOptions{})
+	commit, err := gitserver.ResolveRevision(ctx, int(repoUpdateResponse.ID), versionString)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			log15.Warn("Unknown revision", "repoName", repoName, "gitTagOrCommit", versionString)

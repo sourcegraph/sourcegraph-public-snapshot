@@ -113,7 +113,7 @@ func (s *IndexEnqueuer) queueIndexForPackage(ctx context.Context, recognizer inf
 	})
 	defer endObservation(1, observation.Args{})
 
-	repoID, commit, exists, err := recognizer.EnsurePackageRepo(ctx, pkg, s.repoUpdater)
+	repoID, commit, exists, err := recognizer.EnsurePackageRepo(ctx, pkg, s.repoUpdater, s.gitserverClient)
 	if err != nil {
 		return err
 	}
@@ -125,10 +125,10 @@ func (s *IndexEnqueuer) queueIndexForPackage(ctx context.Context, recognizer inf
 	if err != nil {
 		return err
 	}
-
 	if isQueued {
 		return nil
 	}
+
 	gitserverWrapper := inference.NewGitserverClientShim(repoID, commit, s.gitserverClient)
 	indexJobs, err := recognizer.InferPackageIndexJobs(ctx, pkg, gitserverWrapper)
 	if err != nil {

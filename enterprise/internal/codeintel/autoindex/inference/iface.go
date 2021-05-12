@@ -18,6 +18,7 @@ type GitserverClient interface {
 	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
 	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)
 	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
+	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
 }
 
 type GitserverClientShim struct {

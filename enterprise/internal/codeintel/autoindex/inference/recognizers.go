@@ -26,7 +26,7 @@ type IndexJobRecognizer interface {
 
 	// EnsurePackageRepo checks whether the package is proxied through gitserver,
 	// and creates the proxy repo otherwise. The name of the repo is returned.
-	EnsurePackageRepo(ctx context.Context, pkg semantic.Package, repoUpdater RepoUpdaterClient) (int, string, bool, error)
+	EnsurePackageRepo(ctx context.Context, pkg semantic.Package, repoUpdater RepoUpdaterClient, gitserver GitserverClient) (int, string, bool, error)
 
 	// InferPackageIndexJobs checks whether the package is proxied through gitserver,
 	// and creates the proxy repo otherwise. The name of the repo is returned.

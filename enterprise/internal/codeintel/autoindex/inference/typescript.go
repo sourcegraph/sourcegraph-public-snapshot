@@ -161,7 +161,7 @@ var tscSegmentBlockList = append([]string{
 	"node_modules",
 }, segmentBlockList...)
 
-func (lsifTscJobRecognizer) EnsurePackageRepo(ctx context.Context, pkg semantic.Package, repoUpdater RepoUpdaterClient) (int, string, bool, error) {
+func (lsifTscJobRecognizer) EnsurePackageRepo(ctx context.Context, pkg semantic.Package, repoUpdater RepoUpdaterClient, gitserver GitserverClient) (int, string, bool, error) {
 	return 0, "", false, nil
 }
 
