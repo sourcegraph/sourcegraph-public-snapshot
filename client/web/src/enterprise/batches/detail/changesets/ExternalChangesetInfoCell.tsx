@@ -49,7 +49,7 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                 )}
             </div>
             <div>
-                <span className="mr-2 d-block d-md-inline-block">
+                <span className="mr-2 d-block">
                     <Link to={node.repository.url} target="_blank" rel="noopener noreferrer">
                         {node.repository.name}
                     </Link>{' '}
