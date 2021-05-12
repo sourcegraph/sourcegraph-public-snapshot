@@ -228,7 +228,6 @@ func New(opts Opts, client api.Client, features batches.FeatureFlags) *executor 
 }
 
 func (x *executor) AddTask(task *Task) {
-	task.Archive = x.fetcher.Checkout(task.Repository, task.ArchivePathToFetch())
 	x.tasks = append(x.tasks, task)
 
 	x.statusesMu.Lock()
@@ -376,6 +375,9 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 		}
 		log.Close()
 	}()
+
+	// Now checkout the archive
+	task.Archive = x.fetcher.Checkout(task.Repository, task.ArchivePathToFetch())
 
 	// Set up our timeout.
 	runCtx, cancel := context.WithTimeout(ctx, x.timeout)
