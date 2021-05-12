@@ -1,7 +1,6 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 interface ConnectionNodesSummaryProps {
@@ -9,21 +8,13 @@ interface ConnectionNodesSummaryProps {
     displayShowMoreButton?: boolean
     onShowMore?: () => void
     showMoreClassName?: string
-    loading?: boolean
 }
-
-const Loading: React.FunctionComponent = () => (
-    <span className="filtered-connection__loader test-filtered-connection__loader">
-        <LoadingSpinner className="icon-inline" />
-    </span>
-)
 
 export const ConnectionNodesSummary: React.FunctionComponent<ConnectionNodesSummaryProps> = ({
     summary,
     displayShowMoreButton,
     showMoreClassName,
     onShowMore,
-    loading,
 }) => {
     const [isRedesignEnabled] = useRedesignToggle()
 
@@ -43,14 +34,8 @@ export const ConnectionNodesSummary: React.FunctionComponent<ConnectionNodesSumm
 
     return (
         <div className="filtered-connection__summary-container">
-            {loading ? (
-                <Loading />
-            ) : (
-                <>
-                    {summary}
-                    {showMoreButton}
-                </>
-            )}
+            {summary}
+            {showMoreButton}
         </div>
     )
 }

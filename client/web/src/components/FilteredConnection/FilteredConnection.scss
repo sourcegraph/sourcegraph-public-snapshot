@@ -1,3 +1,5 @@
+$summary-padding: 0.5rem 0.75rem;
+
 .filtered-connection-filter-control {
     display: flex;
     align-items: center;
@@ -19,7 +21,7 @@
             justify-content: space-between;
             align-items: center;
             border-top: solid 1px var(--border-color-2);
-            padding: 0.5rem 0.75rem;
+            padding: $summary-padding;
         }
     }
 
@@ -43,7 +45,7 @@
         flex: 0 0;
 
         .theme-redesign & {
-            flex: 1;
+            padding: $summary-padding;
         }
     }
     &--compact &__error {

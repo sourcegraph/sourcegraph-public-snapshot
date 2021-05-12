@@ -126,6 +126,7 @@ export class ConnectionNodes<C extends Connection<N>, N, NP = {}, HP = {}> exten
         }
 
         let summary: React.ReactFragment | undefined
+
         if (!this.props.noSummaryIfAllNodesVisible || this.props.connection.nodes.length === 0 || hasNextPage) {
             if (totalCount !== null && totalCount > 0) {
                 summary = TotalCountSummaryComponent ? (
