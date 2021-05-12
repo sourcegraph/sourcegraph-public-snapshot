@@ -191,7 +191,12 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 	return strconv.Itoa(int(count))
 }
 
-func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.alert }
+func (sr *SearchResultsResolver) Alert() *searchAlertResolver {
+	if sr.alert != nil {
+		return &searchAlertResolver{*sr.alert}
+	}
+	return nil
+}
 
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 	return int32(sr.elapsed.Milliseconds())
@@ -867,7 +872,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 	var status, alertType string
 	status = DetermineStatusForLogs(srr, err)
 	if srr != nil && srr.alert != nil {
-		alertType = srr.alert.PrometheusType()
+		alertType = srr.alert.prometheusType
 	}
 	requestSource := string(trace.RequestSource(ctx))
 	requestName := trace.GraphQLRequestName(ctx)

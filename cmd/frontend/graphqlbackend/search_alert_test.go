@@ -62,9 +62,9 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			got := tt.Alert.ProposedQueries()
-			if !reflect.DeepEqual((*got)[0].Query(), tt.Want) {
-				t.Errorf("got: %s, want: %s", (*got)[0].query, tt.Want)
+			got := tt.Alert.proposedQueries
+			if !reflect.DeepEqual(got[0].Query(), tt.Want) {
+				t.Errorf("got: %s, want: %s", got[0].query, tt.Want)
 			}
 		})
 	}

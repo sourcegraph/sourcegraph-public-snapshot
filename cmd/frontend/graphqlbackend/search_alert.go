@@ -27,6 +27,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
+type searchAlertResolver struct {
+	searchAlert
+}
+
+func (a searchAlertResolver) PrometheusType() string { return a.prometheusType }
+
+func (a searchAlertResolver) Title() string { return a.title }
+
+func (a searchAlertResolver) Description() *string {
+	if a.description == "" {
+		return nil
+	}
+	return &a.description
+}
+
+func (a searchAlertResolver) ProposedQueries() *[]*searchQueryDescription {
+	if len(a.proposedQueries) == 0 {
+		return nil
+	}
+	return &a.proposedQueries
+}
+
 type searchAlert struct {
 	prometheusType  string
 	title           string
@@ -34,24 +56,6 @@ type searchAlert struct {
 	proposedQueries []*searchQueryDescription
 	// The higher the priority the more important is the alert.
 	priority int
-}
-
-func (a searchAlert) PrometheusType() string { return a.prometheusType }
-
-func (a searchAlert) Title() string { return a.title }
-
-func (a searchAlert) Description() *string {
-	if a.description == "" {
-		return nil
-	}
-	return &a.description
-}
-
-func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
-	if len(a.proposedQueries) == 0 {
-		return nil
-	}
-	return &a.proposedQueries
 }
 
 func alertForCappedAndExpression() *searchAlert {
