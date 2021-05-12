@@ -180,7 +180,7 @@ const config = {
             include: monacoEditorPaths,
             // Make sure Storybook styles get handled by the Storybook config
             exclude: [storybookDirectory],
-            use: ['style-loader', { loader: 'css-loader', options: { url: false } }],
+            use: ['style-loader', { loader: 'css-loader' }],
         })
 
         config.module?.rules.unshift({
