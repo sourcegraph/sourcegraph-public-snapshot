@@ -97,7 +97,7 @@ func (m *siteCredentialMigrator) Down(ctx context.Context) error {
 			ForUpdate:     true,
 		})
 		if err != nil {
-			return errors.Wrap(err, "listing user credentials")
+			return errors.Wrap(err, "listing site credentials")
 		}
 		for _, cred := range credentials {
 			a, err := cred.Authenticator(ctx)
@@ -113,7 +113,7 @@ func (m *siteCredentialMigrator) Down(ctx context.Context) error {
 			cred.EncryptedCredential = raw
 			cred.EncryptionKeyID = ""
 			if err := tx.UpdateSiteCredential(ctx, cred); err != nil {
-				return errors.Wrapf(err, "upserting user credential %d", cred.ID)
+				return errors.Wrapf(err, "upserting site credential %d", cred.ID)
 			}
 		}
 
