@@ -438,7 +438,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
             </RepoHeaderContributionPortal>
             <ErrorBoundary location={props.location}>
                 <Switch>
-                    {/* eslint-disable react/jsx-no-bind */}
                     {[
                         '',
                         ...(rawRevision ? [`@${rawRevision}`] : []), // must exactly match how the revision was encoded in the URL
@@ -478,7 +477,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             )
                     )}
                     <Route key="hardcoded-key" component={RepoPageNotFound} />
-                    {/* eslint-enable react/jsx-no-bind */}
                 </Switch>
             </ErrorBoundary>
         </div>

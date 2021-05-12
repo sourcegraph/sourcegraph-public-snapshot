@@ -91,7 +91,6 @@ export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = prop
             />
             <Switch>
                 {props.routes.map(
-                    /* eslint-disable react/jsx-no-bind */
                     ({ path, exact, condition = () => true, render }) =>
                         condition(context) && (
                             <Route
@@ -101,7 +100,6 @@ export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = prop
                                 render={routeComponentProps => render({ ...context, ...routeComponentProps })}
                             />
                         )
-                    /* eslint-enable react/jsx-no-bind */
                 )}
                 <Route key="hardcoded-key" component={NotFoundPage} />
             </Switch>

@@ -265,7 +265,6 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                                 compact={true}
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
-                                // eslint-disable-next-line react/jsx-no-bind
                                 queryConnection={queryRepositoryCommits}
                                 nodeComponent={GitCommitNode}
                                 nodeComponentProps={{
