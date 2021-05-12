@@ -205,14 +205,7 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 	}
 	conds = append(conds, authzConds)
 
-	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(
-		ctx,
-		sqlf.Sprintf(`
-SELECT COUNT(*)
-FROM lsif_indexes_with_repository_name u
-JOIN repo ON repo.id = u.repository_id
-WHERE %s`, sqlf.Join(conds, " AND ")),
-	))
+	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(ctx, sqlf.Sprintf(getIndexesCountQuery, sqlf.Join(conds, " AND "))))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -228,6 +221,14 @@ WHERE %s`, sqlf.Join(conds, " AND ")),
 
 	return indexes, totalCount, nil
 }
+
+const getIndexesCountQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:GetIndexes
+SELECT COUNT(*)
+FROM lsif_indexes_with_repository_name u
+JOIN repo ON repo.id = u.repository_id
+WHERE %s
+`
 
 const getIndexesQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:GetIndexes
