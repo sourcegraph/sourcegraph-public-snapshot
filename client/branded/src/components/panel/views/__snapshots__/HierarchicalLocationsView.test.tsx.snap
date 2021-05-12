@@ -63,7 +63,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 />
               </div>
               <button
-                className="result-container__toggle-matches-container btn btn-sm btn-link"
+                className="result-container__toggle-matches-container btn btn-sm btn-link px-1 py-0"
                 onClick={[Function]}
                 type="button"
               >
@@ -293,7 +293,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 />
               </div>
               <button
-                className="result-container__toggle-matches-container btn btn-sm btn-link"
+                className="result-container__toggle-matches-container btn btn-sm btn-link px-1 py-0"
                 onClick={[Function]}
                 type="button"
               >
@@ -473,7 +473,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 />
               </div>
               <button
-                className="result-container__toggle-matches-container btn btn-sm btn-link"
+                className="result-container__toggle-matches-container btn btn-sm btn-link px-1 py-0"
                 onClick={[Function]}
                 type="button"
               >
