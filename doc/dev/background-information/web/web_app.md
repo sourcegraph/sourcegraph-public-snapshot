@@ -94,7 +94,7 @@ See [testing.md](../../how-to/testing.md).
 
 Basic commands for local development can be found [here](../../getting-started/quickstart_6_start_server.md).
 Commands specifically useful for the web team can be found in the root [package.json](https://github.com/sourcegraph/sourcegraph/blob/main/package.json).
-Also, check out the web app [README](../../../../client/web/README.md).
+Also, check out the web app [README](https://github.com/sourcegraph/sourcegraph/blob/main/client/web/README.md).
 
 1. Regenerate GraphQL schema, Typescript types for GraphQL operations, and start a development server for the web app.
 
@@ -114,7 +114,7 @@ Also, check out the web app [README](../../../../client/web/README.md).
    ./enterprise/dev/start.sh
    ```
 
-4. Start the web server only and point it to any deployed API instance. See more info in the web app [README](../../../../client/web/README.md).
+4. Start the web server only and point it to any deployed API instance. See more info in the web app [README](https://github.com/sourcegraph/sourcegraph/blob/main/client/web/README.md).
 
   ```sh
   sg run web-standalone
