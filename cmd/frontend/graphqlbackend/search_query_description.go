@@ -1,35 +1,36 @@
 package graphqlbackend
 
-import "github.com/sourcegraph/sourcegraph/internal/search/query"
+import (
+	"github.com/sourcegraph/sourcegraph/internal/search/alert"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+)
 
-// searchQueryDescription is a type for the SearchQueryDescription resolver used
+// searchQueryDescriptionResolver is a type for the SearchQueryDescription resolver used
 // by SearchAlert.
-type searchQueryDescription struct {
-	description string
-	query       string
-	patternType query.SearchType
+type searchQueryDescriptionResolver struct {
+	pq alert.ProposedQuery
 }
 
-func (q searchQueryDescription) Query() string {
-	if q.description != "Remove quotes" {
-		switch q.patternType {
+func (q searchQueryDescriptionResolver) Query() string {
+	if q.pq.Description != "Remove quotes" {
+		switch q.pq.PatternType {
 		case query.SearchTypeRegex:
-			return q.query + " patternType:regexp"
+			return q.pq.Query + " patternType:regexp"
 		case query.SearchTypeLiteral:
-			return q.query + " patternType:literal"
+			return q.pq.Query + " patternType:literal"
 		case query.SearchTypeStructural:
-			return q.query + " patternType:structural"
+			return q.pq.Query + " patternType:structural"
 		default:
 			panic("unreachable")
 		}
 	}
-	return q.query
+	return q.pq.Query
 }
 
-func (q searchQueryDescription) Description() *string {
-	if q.description == "" {
+func (q searchQueryDescriptionResolver) Description() *string {
+	if q.pq.Description == "" {
 		return nil
 	}
 
-	return &q.description
+	return &q.pq.Description
 }

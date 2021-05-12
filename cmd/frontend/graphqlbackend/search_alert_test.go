@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -25,19 +26,19 @@ import (
 func TestSearchPatternForSuggestion(t *testing.T) {
 	cases := []struct {
 		Name  string
-		Alert searchAlert
+		Alert alert.Alert
 		Want  string
 	}{
 		{
 			Name: "with_regex_suggestion",
-			Alert: searchAlert{
-				title:       "An alert for regex",
-				description: "An alert for regex",
-				proposedQueries: []*searchQueryDescription{
+			Alert: alert.Alert{
+				Title:       "An alert for regex",
+				Description: "An alert for regex",
+				ProposedQueries: []alert.ProposedQuery{
 					{
-						description: "Some query description",
-						query:       "repo:github.com/sourcegraph/sourcegraph",
-						patternType: query.SearchTypeRegex,
+						Description: "Some query description",
+						Query:       "repo:github.com/sourcegraph/sourcegraph",
+						PatternType: query.SearchTypeRegex,
 					},
 				},
 			},
@@ -45,14 +46,14 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 		},
 		{
 			Name: "with_structural_suggestion",
-			Alert: searchAlert{
-				title:       "An alert for structural",
-				description: "An alert for structural",
-				proposedQueries: []*searchQueryDescription{
+			Alert: alert.Alert{
+				Title:       "An alert for structural",
+				Description: "An alert for structural",
+				ProposedQueries: []alert.ProposedQuery{
 					{
-						description: "Some query description",
-						query:       "repo:github.com/sourcegraph/sourcegraph",
-						patternType: query.SearchTypeStructural,
+						Description: "Some query description",
+						Query:       "repo:github.com/sourcegraph/sourcegraph",
+						PatternType: query.SearchTypeStructural,
 					},
 				},
 			},
@@ -62,9 +63,9 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			got := tt.Alert.proposedQueries
-			if !reflect.DeepEqual(got[0].Query(), tt.Want) {
-				t.Errorf("got: %s, want: %s", got[0].query, tt.Want)
+			got := searchAlertResolver{tt.Alert}.ProposedQueries()
+			if !reflect.DeepEqual((*got)[0].Query(), tt.Want) {
+				t.Errorf("got: %s, want: %s", (*got)[0].Query(), tt.Want)
 			}
 		})
 	}
@@ -183,7 +184,7 @@ func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 
 	for _, test := range cases {
 		alert := alertForError(test.multiErr, &run.SearchInputs{})
-		haveAlertDescription := alert.description
+		haveAlertDescription := alert.Description
 		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
 			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
 		}
@@ -218,8 +219,8 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 		}
 		haveAlert := alertForError(multiErr, &run.SearchInputs{})
 
-		if haveAlert != nil && haveAlert.title != test.wantAlertTitle {
-			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.title, test.wantAlertTitle)
+		if haveAlert != nil && haveAlert.Title != test.wantAlertTitle {
+			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.Title, test.wantAlertTitle)
 		}
 
 	}
@@ -264,7 +265,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 		globbing  bool
 		repoRevs  int
 		query     string
-		wantAlert *searchAlert
+		wantAlert *alert.Alert
 
 		// simulates a timeout in alertForOverRepoLimit if "true"
 		cancelContext bool
@@ -274,11 +275,11 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			cancelContext: false,
 			repoRevs:      0,
 			query:         "foo",
-			wantAlert: &searchAlert{
-				prometheusType:  "over_repo_limit",
-				title:           "Too many matching repositories",
-				proposedQueries: nil,
-				description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+			wantAlert: &alert.Alert{
+				PrometheusType:  "over_repo_limit",
+				Title:           "Too many matching repositories",
+				ProposedQueries: nil,
+				Description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
 			},
 		},
 		{
@@ -286,17 +287,17 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			cancelContext: true,
 			repoRevs:      1,
 			query:         "foo",
-			wantAlert: &searchAlert{
-				prometheusType: "over_repo_limit",
-				title:          "Too many matching repositories",
-				proposedQueries: []*searchQueryDescription{
+			wantAlert: &alert.Alert{
+				PrometheusType: "over_repo_limit",
+				Title:          "Too many matching repositories",
+				ProposedQueries: []alert.ProposedQuery{
 					{
 						"in the repository a/repoName0",
 						"repo:^a/repoName0$ foo",
 						query.SearchType(0),
 					},
 				},
-				description: "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+				Description: "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
 			},
 		},
 		{
@@ -305,11 +306,11 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			cancelContext: false,
 			repoRevs:      1,
 			query:         "foo",
-			wantAlert: &searchAlert{
-				prometheusType:  "over_repo_limit",
-				title:           "Too many matching repositories",
-				proposedQueries: nil,
-				description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+			wantAlert: &alert.Alert{
+				PrometheusType:  "over_repo_limit",
+				Title:           "Too many matching repositories",
+				ProposedQueries: nil,
+				Description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
 			},
 		},
 		{
@@ -317,11 +318,11 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			cancelContext: false,
 			repoRevs:      1,
 			query:         "a or (b and c)",
-			wantAlert: &searchAlert{
-				prometheusType:  "over_repo_limit",
-				title:           "Too many matching repositories",
-				proposedQueries: nil,
-				description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+			wantAlert: &alert.Alert{
+				PrometheusType:  "over_repo_limit",
+				Title:           "Too many matching repositories",
+				ProposedQueries: nil,
+				Description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
 			},
 		},
 		{
@@ -329,17 +330,17 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			cancelContext: false,
 			repoRevs:      1,
 			query:         "foo",
-			wantAlert: &searchAlert{
-				prometheusType: "over_repo_limit",
-				title:          "Too many matching repositories",
-				proposedQueries: []*searchQueryDescription{
+			wantAlert: &alert.Alert{
+				PrometheusType: "over_repo_limit",
+				Title:          "Too many matching repositories",
+				ProposedQueries: []alert.ProposedQuery{
 					{
 						"in repositories under a (further filtering required)",
 						"repo:^a/ foo",
 						query.SearchType(0),
 					},
 				},
-				description: "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+				Description: "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
 			},
 		},
 	}
@@ -414,13 +415,13 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 	}()
 
 	searchQuery := "context:@user repo:r1 foo"
-	wantAlert := &searchAlert{
-		prometheusType: "no_resolved_repos__context_none_in_common",
-		title:          "No repositories found for your query within the context @user",
-		proposedQueries: []*searchQueryDescription{{
-			description: "search in the global context",
-			query:       "context:global repo:r1 foo",
-			patternType: query.SearchTypeRegex,
+	wantAlert := &alert.Alert{
+		PrometheusType: "no_resolved_repos__context_none_in_common",
+		Title:          "No repositories found for your query within the context @user",
+		ProposedQueries: []alert.ProposedQuery{{
+			Description: "search in the global context",
+			Query:       "context:global repo:r1 foo",
+			PatternType: query.SearchTypeRegex,
 		}},
 	}
 

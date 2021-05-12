@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -110,7 +111,7 @@ type SearchResultsResolver struct {
 	// limit is the maximum number of SearchResults to send back to the user.
 	limit int
 
-	alert *searchAlert
+	alert *alert.Alert
 
 	// The time it took to compute all results.
 	elapsed time.Duration
@@ -480,7 +481,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 		if count := r.Query.Count(); count != nil {
 			stableResultCount = int32(*count)
 			if stableResultCount > maxSearchResultsPerPaginatedRequest {
-				return alertForQuery(r.rawQuery(), fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)).wrap(r.db), nil
+				return wrapAlert(alertForQuery(r.rawQuery(), fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)), r.db), nil
 			}
 		}
 
@@ -673,7 +674,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 			case <-ctx.Done():
 				usedTime := time.Since(start)
 				suggestTime := longer(2, usedTime)
-				return alertForTimeout(usedTime, suggestTime, r).wrap(r.db), nil
+				return wrapAlert(alertForTimeout(usedTime, suggestTime, r), r.db), nil
 			default:
 			}
 
@@ -702,7 +703,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 		tryCount *= 2
 		if tryCount > maxTryCount {
 			// We've capped out what we're willing to do, throw alert.
-			return alertForCappedAndExpression().wrap(r.db), nil
+			return wrapAlert(alertForCappedAndExpression(), r.db), nil
 		}
 	}
 	result.IsLimitHit = !exhausted
@@ -872,7 +873,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 	var status, alertType string
 	status = DetermineStatusForLogs(srr, err)
 	if srr != nil && srr.alert != nil {
-		alertType = srr.alert.prometheusType
+		alertType = srr.alert.PrometheusType
 	}
 	requestSource := string(trace.RequestSource(ctx))
 	requestName := trace.GraphQLRequestName(ctx)
@@ -1043,7 +1044,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	if shouldShowAlert {
 		usedTime := time.Since(start)
 		suggestTime := longer(2, usedTime)
-		return alertForTimeout(usedTime, suggestTime, r).wrap(r.db), nil
+		return wrapAlert(alertForTimeout(usedTime, suggestTime, r), r.db), nil
 	}
 	return rr, err
 }
@@ -1309,7 +1310,7 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceT
 // determineRepos wraps resolveRepositories. It interprets the response and
 // error to see if an alert needs to be returned. Only one of the return
 // values will be non-nil.
-func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (*searchrepos.Resolved, *searchAlert, error) {
+func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (*searchrepos.Resolved, *alert.Alert, error) {
 	resolved, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		if errors.Is(err, authz.ErrStalePermissions{}) {
@@ -1400,7 +1401,7 @@ type aggregator struct {
 // get finalises aggregation over the stream and returns the aggregated
 // result. It should only be called once each do* function is finished
 // running.
-func (a *aggregator) get() ([]result.Match, streaming.Stats, *searchAlert, error) {
+func (a *aggregator) get() ([]result.Match, streaming.Stats, *alert.Alert, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	alert, err := a.alert.Done(&a.stats)

@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/alert"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -670,7 +671,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	type fields struct {
 		results             []result.Match
 		searchResultsCommon streaming.Stats
-		alert               *searchAlert
+		alert               *alert.Alert
 	}
 	tests := []struct {
 		name   string

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -164,7 +165,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	tr.LazyPrintf("results=%d %s", len(results), &common)
 
 	// Alert is a potential alert shown to the user.
-	var alert *searchAlert
+	var alert *alert.Alert
 
 	if len(resolved.MissingRepoRevs) > 0 {
 		alert = alertForMissingRepoRevs(resolved.MissingRepoRevs)

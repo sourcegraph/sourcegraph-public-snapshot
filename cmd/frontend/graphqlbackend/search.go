@@ -95,7 +95,7 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 		query.With(globbing, query.Globbing),
 	)
 	if err != nil {
-		return alertForQuery(args.Query, err).wrapSearchImplementer(db), nil
+		return wrapSearchImplementer(alertForQuery(args.Query, err), db), nil
 	}
 	tr.LazyPrintf("parsing done")
 

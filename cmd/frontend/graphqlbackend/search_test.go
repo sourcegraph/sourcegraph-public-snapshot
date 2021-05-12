@@ -354,8 +354,8 @@ func TestQuoteSuggestions(t *testing.T) {
 			t.Fatalf("error returned from query.ParseRegexp(%q) is nil", raw)
 		}
 		alert := alertForQuery(raw, err)
-		if !strings.Contains(alert.description, "regexp") {
-			t.Errorf("description is '%s', want it to contain 'regexp'", alert.description)
+		if !strings.Contains(alert.Description, "regexp") {
+			t.Errorf("description is '%s', want it to contain 'regexp'", alert.Description)
 		}
 	})
 }
