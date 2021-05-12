@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -476,7 +477,7 @@ func TestVersionContext(t *testing.T) {
 
 			resolver := searchResolver{
 				db: db,
-				SearchInputs: &SearchInputs{
+				SearchInputs: &run.SearchInputs{
 					Plan:           plan,
 					Query:          plan.ToParseTree(),
 					VersionContext: &tc.versionContext,
@@ -600,7 +601,7 @@ func BenchmarkSearchResults(b *testing.B) {
 		}
 		resolver := &searchResolver{
 			db: db,
-			SearchInputs: &SearchInputs{
+			SearchInputs: &run.SearchInputs{
 				Query:        q,
 				UserSettings: &schema.Settings{},
 			},
@@ -679,7 +680,7 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 		}
 		resolver := &searchResolver{
 			db: db,
-			SearchInputs: &SearchInputs{
+			SearchInputs: &run.SearchInputs{
 				Query: q,
 			},
 			zoekt:    z,

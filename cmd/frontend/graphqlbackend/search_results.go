@@ -381,7 +381,7 @@ var (
 // function may only be called after a search result is performed, because it
 // relies on the invariant that query and pattern error checking has already
 // been performed.
-func LogSearchLatency(ctx context.Context, db dbutil.DB, si *SearchInputs, durationMs int32) {
+func LogSearchLatency(ctx context.Context, db dbutil.DB, si *run.SearchInputs, durationMs int32) {
 	tr, ctx := trace.New(ctx, "LogSearchLatency", "")
 	defer func() {
 		tr.Finish()
@@ -1372,7 +1372,7 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	return nil
 }
 
-func newAggregator(db dbutil.DB, stream streaming.Sender, inputs *SearchInputs) *aggregator {
+func newAggregator(db dbutil.DB, stream streaming.Sender, inputs *run.SearchInputs) *aggregator {
 	return &aggregator{
 		db:           db,
 		parentStream: stream,

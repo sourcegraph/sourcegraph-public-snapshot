@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -27,6 +28,30 @@ type SearchInputs struct {
 
 	// DefaultLimit is the default limit to use if not specified in query.
 	DefaultLimit int
+}
+
+// MaxResults computes the limit for the query.
+func (inputs SearchInputs) MaxResults() int {
+	if inputs.Pagination != nil {
+		// Paginated search requests always consume an entire result set for a
+		// given repository, so we do not want any limit here. See
+		// search_pagination.go for details on why this is necessary .
+		return math.MaxInt32
+	}
+
+	if inputs.Query == nil {
+		return 0
+	}
+
+	if count := inputs.Query.Count(); count != nil {
+		return *count
+	}
+
+	if inputs.DefaultLimit != 0 {
+		return inputs.DefaultLimit
+	}
+
+	return defaultMaxSearchResults
 }
 
 // SearchPaginationInfo describes information around a paginated search

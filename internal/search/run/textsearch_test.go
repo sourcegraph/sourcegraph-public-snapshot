@@ -33,7 +33,7 @@ import (
 )
 
 func TestSearchFilesInRepos(t *testing.T) {
-	MockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -71,7 +71,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 			return nil, false, errors.New("Unexpected repo")
 		}
 	}
-	defer func() { MockSearchFilesInRepo = nil }()
+	defer func() { mockSearchFilesInRepo = nil }()
 
 	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
@@ -128,7 +128,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 }
 
 func TestSearchFilesInReposStream(t *testing.T) {
-	MockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -159,7 +159,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 			return nil, false, errors.New("Unexpected repo")
 		}
 	}
-	defer func() { MockSearchFilesInRepo = nil }()
+	defer func() { mockSearchFilesInRepo = nil }()
 
 	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
@@ -204,7 +204,7 @@ func assertReposStatus(t *testing.T, repoNames map[api.RepoID]string, got search
 }
 
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
-	MockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
@@ -219,7 +219,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 			panic("unexpected repo")
 		}
 	}
-	defer func() { MockSearchFilesInRepo = nil }()
+	defer func() { mockSearchFilesInRepo = nil }()
 
 	trueVal := true
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{

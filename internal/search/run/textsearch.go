@@ -31,11 +31,11 @@ const maxUnindexedRepoRevSearchesPerQuery = 200
 // A global limiter on number of concurrent searcher searches.
 var textSearchLimiter = mutablelimiter.New(32)
 
-var MockSearchFilesInRepo func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error)
+var mockSearchFilesInRepo func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error)
 
 func SearchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]*result.FileMatch, bool, error) {
-	if MockSearchFilesInRepo != nil {
-		return MockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
+	if mockSearchFilesInRepo != nil {
+		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
 
 	// Do not trigger a repo-updater lookup (e.g.,

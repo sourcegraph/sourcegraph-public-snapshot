@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
@@ -634,8 +635,8 @@ func (alertSearchImplementer) Suggestions(context.Context, *searchSuggestionsArg
 	return nil, nil
 }
 func (alertSearchImplementer) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
-func (alertSearchImplementer) Inputs() SearchInputs {
-	return SearchInputs{}
+func (alertSearchImplementer) Inputs() run.SearchInputs {
+	return run.SearchInputs{}
 }
 
 // capFirst capitalizes the first rune in the given string. It can be safely
@@ -651,7 +652,7 @@ func capFirst(s string) string {
 	}, s)
 }
 
-func alertForError(err error, inputs *SearchInputs) *searchAlert {
+func alertForError(err error, inputs *run.SearchInputs) *searchAlert {
 	var (
 		alert *searchAlert
 		rErr  *RepoLimitError
@@ -696,7 +697,7 @@ func alertForError(err error, inputs *SearchInputs) *searchAlert {
 
 type alertObserver struct {
 	// Inputs are used to generate alert messages based on the query.
-	Inputs *SearchInputs
+	Inputs *run.SearchInputs
 
 	// Update state.
 	hasResults bool

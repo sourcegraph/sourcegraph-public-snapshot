@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"sync"
 
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -58,7 +57,7 @@ type SearchImplementer interface {
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
 
-	Inputs() SearchInputs
+	Inputs() run.SearchInputs
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
@@ -126,7 +125,7 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 
 	return &searchResolver{
 		db: db,
-		SearchInputs: &SearchInputs{
+		SearchInputs: &run.SearchInputs{
 			Plan:           plan,
 			Query:          plan.ToParseTree(),
 			OriginalQuery:  args.Query,
@@ -229,23 +228,9 @@ func getBoolPtr(b *bool, def bool) bool {
 	return *b
 }
 
-// SearchInputs contains fields we set before kicking off search.
-type SearchInputs struct {
-	Plan           query.Plan                // the comprehensive query plan
-	Query          query.Q                   // the current basic query being evaluated, one part of query.Plan
-	OriginalQuery  string                    // the raw string of the original search query
-	Pagination     *run.SearchPaginationInfo // pagination information, or nil if the request is not paginated.
-	PatternType    query.SearchType
-	VersionContext *string
-	UserSettings   *schema.Settings
-
-	// DefaultLimit is the default limit to use if not specified in query.
-	DefaultLimit int
-}
-
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	*SearchInputs
+	*run.SearchInputs
 	db                  dbutil.DB
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
@@ -263,7 +248,7 @@ type searchResolver struct {
 	searcherURLs *endpoint.Map
 }
 
-func (r *searchResolver) Inputs() SearchInputs {
+func (r *searchResolver) Inputs() run.SearchInputs {
 	return *r.SearchInputs
 }
 
@@ -280,30 +265,6 @@ func (r *searchResolver) countIsSet() bool {
 const defaultMaxSearchResults = 30
 const defaultMaxSearchResultsStreaming = 500
 const maxSearchResultsPerPaginatedRequest = 5000
-
-// MaxResults computes the limit for the query.
-func (inputs SearchInputs) MaxResults() int {
-	if inputs.Pagination != nil {
-		// Paginated search requests always consume an entire result set for a
-		// given repository, so we do not want any limit here. See
-		// search_pagination.go for details on why this is necessary .
-		return math.MaxInt32
-	}
-
-	if inputs.Query == nil {
-		return 0
-	}
-
-	if count := inputs.Query.Count(); count != nil {
-		return *count
-	}
-
-	if inputs.DefaultLimit != 0 {
-		return inputs.DefaultLimit
-	}
-
-	return defaultMaxSearchResults
-}
 
 var mockDecodedViewerFinalSettings *schema.Settings
 

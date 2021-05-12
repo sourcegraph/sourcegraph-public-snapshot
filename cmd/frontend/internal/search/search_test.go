@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -134,7 +135,7 @@ func TestDisplayLimit(t *testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					mock.inputs = &graphqlbackend.SearchInputs{
+					mock.inputs = &run.SearchInputs{
 						Query: q,
 					}
 					return mock, nil
@@ -209,7 +210,7 @@ func mkRepoMatch(id int) *result.RepoMatch {
 type mockSearchResolver struct {
 	done   chan struct{}
 	c      streaming.Sender
-	inputs *graphqlbackend.SearchInputs
+	inputs *run.SearchInputs
 }
 
 func (h *mockSearchResolver) Results(ctx context.Context) (*graphqlbackend.SearchResultsResolver, error) {
@@ -227,9 +228,9 @@ func (h *mockSearchResolver) Close() {
 	close(h.done)
 }
 
-func (h *mockSearchResolver) Inputs() graphqlbackend.SearchInputs {
+func (h *mockSearchResolver) Inputs() run.SearchInputs {
 	if h.inputs == nil {
-		return graphqlbackend.SearchInputs{}
+		return run.SearchInputs{}
 	}
 	return *h.inputs
 }

@@ -564,7 +564,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	}
 	resolver := &searchResolver{
 		db: db,
-		SearchInputs: &SearchInputs{
+		SearchInputs: &run.SearchInputs{
 			Plan:         p,
 			Query:        p.ToParseTree(),
 			UserSettings: &schema.Settings{},
@@ -779,7 +779,7 @@ func TestGetExactFilePatterns(t *testing.T) {
 				t.Fatal(err)
 			}
 			r := searchResolver{
-				SearchInputs: &SearchInputs{
+				SearchInputs: &run.SearchInputs{
 					Plan:          plan,
 					Query:         plan.ToParseTree(),
 					OriginalQuery: tt.in,
@@ -988,7 +988,7 @@ func TestEvaluateAnd(t *testing.T) {
 			}
 			resolver := &searchResolver{
 				db: db,
-				SearchInputs: &SearchInputs{
+				SearchInputs: &run.SearchInputs{
 					Plan:         p,
 					Query:        p.ToParseTree(),
 					UserSettings: &schema.Settings{},
@@ -1046,7 +1046,7 @@ func TestSearchContext(t *testing.T) {
 			}
 
 			resolver := searchResolver{
-				SearchInputs: &SearchInputs{
+				SearchInputs: &run.SearchInputs{
 					Plan:         p,
 					Query:        p.ToParseTree(),
 					UserSettings: &schema.Settings{},
@@ -1305,7 +1305,7 @@ func TestIsGlobalSearch(t *testing.T) {
 			}
 
 			resolver := searchResolver{
-				SearchInputs: &SearchInputs{
+				SearchInputs: &run.SearchInputs{
 					Query:          qinfo,
 					UserSettings:   &schema.Settings{},
 					PatternType:    tt.patternType,
