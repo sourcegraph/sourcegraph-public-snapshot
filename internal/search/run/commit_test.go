@@ -12,6 +12,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -105,6 +106,11 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	if !calledVCSRawLogDiffSearch {
 		t.Error("!calledVCSRawLogDiffSearch")
 	}
+}
+
+func resetMocks() {
+	database.Mocks = database.MockStores{}
+	backend.Mocks = backend.MockServices{}
 }
 
 func TestExpandUsernamesToEmails(t *testing.T) {
