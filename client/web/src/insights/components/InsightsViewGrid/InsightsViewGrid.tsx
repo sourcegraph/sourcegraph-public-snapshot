@@ -15,16 +15,8 @@ import { InsightContentCard } from './components/insight-card/InsightContentCard
 // (WidthProvider only listens to window resize events)
 const ResponsiveGridLayout = WidthProvider(Responsive)
 
-export interface InsightsViewGridProps
-    extends Omit<ViewContentProps, 'viewContent' | 'viewID' | 'containerClassName'>,
-        TelemetryProps {
-    views: ViewInsightProviderResult[]
-    processingInsights: Record<string, boolean>
-    className?: string
-    onDelete?: (id: string) => void
-}
-
 const breakpointNames = ['xs', 'sm', 'md', 'lg'] as const
+
 type BreakpointName = typeof breakpointNames[number]
 
 /** Minimum size in px after which a breakpoint is active. */
@@ -60,8 +52,33 @@ const viewsToReactGridLayouts = (views: ViewInsightProviderResult[]): ReactGridL
     return reactGridLayouts
 }
 
+export interface InsightsViewGridProps
+    extends Omit<ViewContentProps, 'viewContent' | 'viewID' | 'containerClassName'>,
+        TelemetryProps {
+    /**
+     * All insights to display in a grid.
+     */
+    views: ViewInsightProviderResult[]
+
+    /**
+     * Map with insights on which the deletion was started.
+     * Used below to render deleting state.
+     */
+    processingInsights?: Record<string, boolean>
+
+    /** Custom classname for root element of the grid. */
+    className?: string
+
+    /** Delete handler which calls when a user clicks delete item in a insight menu. */
+    onDelete?: (id: string) => void
+}
+
+/**
+ * Renders insights drag and drop grid with all type of insights
+ * (backend, search based, lang stats)
+ */
 export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = props => {
-    const { onDelete = noop, processingInsights } = props
+    const { onDelete = noop, processingInsights = {} } = props
 
     const onResizeOrDragStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item) => {
@@ -104,7 +121,7 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
                         <InsightContentCard
                             {...props}
                             insight={view}
-                            isBeingDeleted={processingInsights[view.id]}
+                            deleting={processingInsights[view.id]}
                             containerClassName="insights-view-grid__item"
                             onDelete={onDelete}
                         />

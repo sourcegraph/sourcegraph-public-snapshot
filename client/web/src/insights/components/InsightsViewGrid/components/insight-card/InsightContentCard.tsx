@@ -18,17 +18,25 @@ import { InsightCardMenu } from './components/menu/InsightCardMenu'
 import styles from './InsightCard.module.scss'
 
 export interface InsightCardProps extends Omit<ViewContentProps, 'viewContent' | 'viewID'>, TelemetryProps {
+    /** Insight data (title, chart content) */
     insight: ViewInsightProviderResult
-    isBeingDeleted: boolean
+
+    /** Setting for showing deleting state. */
+    deleting: boolean
+
+    /** Deleting handler fires when the user clicks delete in the insight menu. */
     onDelete: (id: string) => void
 }
 
+/**
+ * Renders insight card content. Loading state, error state and insight itself.
+ */
 export const InsightContentCard: React.FunctionComponent<InsightCardProps> = props => {
     const {
         insight: { id, view, source },
         location,
         onDelete,
-        isBeingDeleted,
+        deleting,
     } = props
 
     // We support actions only over search and lang insights and not able to edit or delete
@@ -49,10 +57,10 @@ export const InsightContentCard: React.FunctionComponent<InsightCardProps> = pro
             }
             className="pt-0"
         >
-            {view === undefined || isBeingDeleted ? (
+            {view === undefined || deleting ? (
                 <>
                     <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
-                        <LoadingSpinner /> {isBeingDeleted ? 'Deleting code insight' : 'Loading code insight'}
+                        <LoadingSpinner /> {deleting ? 'Deleting code insight' : 'Loading code insight'}
                     </div>
                     <InsightDescription
                         className={styles.insightCardDescription}

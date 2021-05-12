@@ -10,6 +10,9 @@ export interface InsightCardMenuProps {
     onDelete: () => void
 }
 
+/**
+ * Renders context menu (three dots menu) for particular insight card.
+ */
 export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = props => {
     const { className, onDelete } = props
 
