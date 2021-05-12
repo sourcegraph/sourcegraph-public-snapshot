@@ -607,20 +607,20 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 			name:        "diff_search_warns_on_repos_greater_than_search_limit",
 			resultType:  "diff",
 			numRepoRevs: 51,
-			wantError:   &RepoLimitError{ResultType: "diff", Max: 50},
+			wantError:   repoLimitAlertErr("diff", 50),
 		},
 		{
 			name:        "commit_search_warns_on_repos_greater_than_search_limit",
 			resultType:  "commit",
 			numRepoRevs: 51,
-			wantError:   &RepoLimitError{ResultType: "commit", Max: 50},
+			wantError:   repoLimitAlertErr("commit", 50),
 		},
 		{
 			name:        "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
 			fields:      []query.Node{query.Parameter{Field: "after"}},
 			resultType:  "commit",
 			numRepoRevs: 20000,
-			wantError:   &TimeLimitError{ResultType: "commit", Max: 10000},
+			wantError:   timeLimitAlertErr("commit", 10000),
 		},
 		{
 			name:        "no_warning_when_commit_search_within_search_limit",

@@ -549,6 +549,12 @@ func (*missingRepoRevsError) Error() string {
 	return "missing repo revs"
 }
 
+func newMissingRepoRevsError(missing []*search.RepositoryRevisions) error {
+	a := alertForMissingRepoRevs(missing)
+	a.Priority = 6
+	return alert.Wrap(&missingRepoRevsError{missing}, a)
+}
+
 func alertForMissingRepoRevs(missingRepoRevs []*search.RepositoryRevisions) *alert.Alert {
 	var description string
 	if len(missingRepoRevs) == 1 {
@@ -653,16 +659,10 @@ func capFirst(s string) string {
 }
 
 func alertForError(err error, inputs *run.SearchInputs) *alert.Alert {
-	var (
-		rErr *RepoLimitError
-		tErr *TimeLimitError
-		mErr *missingRepoRevsError
-	)
+	var aErr *alert.AlertableError
 
-	if errors.As(err, &mErr) {
-		alert := alertForMissingRepoRevs(mErr.Missing)
-		alert.Priority = 6
-		return alert
+	if errors.As(err, &aErr) {
+		return aErr.Alert
 	} else if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
 		return &alert.Alert{
 			PrometheusType: "structural_search_needs_more_memory",
@@ -676,20 +676,6 @@ func alertForError(err error, inputs *run.SearchInputs) *alert.Alert {
 			Title:          "Structural search needs more memory",
 			Description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
 			Priority:       4,
-		}
-	} else if errors.As(err, &rErr) {
-		return &alert.Alert{
-			PrometheusType: "exceeded_diff_commit_search_limit",
-			Title:          fmt.Sprintf("Too many matching repositories for %s search to handle", rErr.ResultType),
-			Description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`, strings.Title(rErr.ResultType), rErr.Max),
-			Priority:       2,
-		}
-	} else if errors.As(err, &tErr) {
-		return &alert.Alert{
-			PrometheusType: "exceeded_diff_commit_with_time_search_limit",
-			Title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
-			Description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search.`, strings.Title(tErr.ResultType), tErr.Max),
-			Priority:       1,
 		}
 	}
 	return nil

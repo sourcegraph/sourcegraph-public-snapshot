@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -1354,6 +1355,36 @@ func (*TimeLimitError) Error() string {
 	return "time limit error"
 }
 
+func repoLimitAlertErr(resultType string, max int) error {
+	return &alert.AlertableError{
+		Alert: &alert.Alert{
+			PrometheusType: "exceeded_diff_commit_search_limit",
+			Title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
+			Description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`, strings.Title(resultType), max),
+			Priority:       2,
+		},
+		Err: &RepoLimitError{
+			ResultType: resultType,
+			Max:        max,
+		},
+	}
+}
+
+func timeLimitAlertErr(resultType string, max int) error {
+	return &alert.AlertableError{
+		Alert: &alert.Alert{
+			PrometheusType: "exceeded_diff_commit_with_time_search_limit",
+			Title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
+			Description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search.`, strings.Title(resultType), max),
+			Priority:       1,
+		},
+		Err: &TimeLimitError{
+			ResultType: resultType,
+			Max:        max,
+		},
+	}
+}
+
 func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameters, resultType string) error {
 	repos, err := getRepos(ctx, args.RepoPromise)
 	if err != nil {
@@ -1370,10 +1401,10 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 
 	limits := searchrepos.SearchLimits()
 	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
-		return &RepoLimitError{ResultType: resultType, Max: max}
+		return repoLimitAlertErr(resultType, max)
 	}
 	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(repos) > max {
-		return &TimeLimitError{ResultType: resultType, Max: max}
+		return timeLimitAlertErr(resultType, max)
 	}
 	return nil
 }
@@ -1691,7 +1722,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		return &SearchResultsResolver{db: r.db, alert: alertResult}, nil
 	}
 	if len(resolved.MissingRepoRevs) > 0 {
-		agg.error(ctx, &missingRepoRevsError{Missing: resolved.MissingRepoRevs})
+		agg.error(ctx, newMissingRepoRevsError(resolved.MissingRepoRevs))
 	}
 
 	// Send down our first bit of progress.
