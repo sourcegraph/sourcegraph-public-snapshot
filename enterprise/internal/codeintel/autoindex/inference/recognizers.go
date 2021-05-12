@@ -25,7 +25,7 @@ type IndexJobRecognizer interface {
 	Patterns() []*regexp.Regexp
 
 	// EnsurePackageRepo checks whether the package is proxied through gitserver,
-	// and creates the proxy repo otherwise. The name of the repo is returned.
+	// and creates the proxy repo otherwise. The repository ID and commit is returned.
 	EnsurePackageRepo(ctx context.Context, pkg semantic.Package, repoUpdater RepoUpdaterClient, gitserver GitserverClient) (int, string, bool, error)
 
 	// InferPackageIndexJobs returns a set of index jobs which are likely to be correct
