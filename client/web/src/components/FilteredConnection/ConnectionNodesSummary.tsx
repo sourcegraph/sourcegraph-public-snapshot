@@ -1,14 +1,14 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
-interface ListSummaryProps {
+interface ConnectionNodesSummaryProps {
     summary: React.ReactFragment | undefined
     displayShowMoreButton?: boolean
     onShowMore?: () => void
     showMoreClassName?: string
 }
 
-export const ConnectionNodesSummary: React.FunctionComponent<ListSummaryProps> = ({
+export const ConnectionNodesSummary: React.FunctionComponent<ConnectionNodesSummaryProps> = ({
     summary,
     displayShowMoreButton,
     showMoreClassName,

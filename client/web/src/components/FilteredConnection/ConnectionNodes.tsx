@@ -42,17 +42,6 @@ export interface ConnectionNodesState {
 
     connectionQuery?: string
 
-    /** The `PageInfo.endCursor` value from the previous request. */
-    after?: string
-
-    /**
-     * The number of results that were visible from previous requests. The initial request of
-     * a result set will load `visible` items, then will request `first` items on each subsequent
-     * request. This has the effect of loading the correct number of visible results when a URL
-     * is copied during pagination. This value is only useful with cursor-based paging.
-     */
-    visible?: number
-
     /**
      * Whether the connection is loading. It is not equivalent to connection === undefined because we preserve the
      * old data for ~250msec while loading to reduce jitter.
@@ -91,15 +80,6 @@ export interface ConnectionNodesDisplayProps {
 
     /** The component displayed when all nodes have been fetched. */
     totalCountSummaryComponent?: React.ComponentType<{ totalCount: number }>
-
-    // TODO: Move this to FilteredConnection
-    /**
-     * Set to true when the GraphQL response is expected to emit an `PageInfo.endCursor` value when
-     * there is a subsequent page of results. This will request the next page of results and append
-     * them onto the existing list of results instead of requesting twice as many results and
-     * replacing the existing results.
-     */
-    cursorPaging?: boolean
 }
 
 interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}, HP = {}>

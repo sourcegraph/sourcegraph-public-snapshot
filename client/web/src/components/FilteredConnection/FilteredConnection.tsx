@@ -179,6 +179,14 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}, HP = {}>
 
     /** Called when the queryConnection Observable emits. */
     onUpdate?: (value: C | ErrorLike | undefined, query: string) => void
+
+    /**
+     * Set to true when the GraphQL response is expected to emit an `PageInfo.endCursor` value when
+     * there is a subsequent page of results. This will request the next page of results and append
+     * them onto the existing list of results instead of requesting twice as many results and
+     * replacing the existing results.
+     */
+    cursorPaging?: boolean
 }
 
 /**
@@ -222,6 +230,17 @@ interface FilteredConnectionState<C extends Connection<N>, N> extends Connection
 
     /** The fetched connection data or an error (if an error occurred). */
     connectionOrError?: C | ErrorLike
+
+    /** The `PageInfo.endCursor` value from the previous request. */
+    after?: string
+
+    /**
+     * The number of results that were visible from previous requests. The initial request of
+     * a result set will load `visible` items, then will request `first` items on each subsequent
+     * request. This has the effect of loading the correct number of visible results when a URL
+     * is copied during pagination. This value is only useful with cursor-based paging.
+     */
+    visible?: number
 }
 
 /** The URL query parameter where the search query for FilteredConnection is stored. */
