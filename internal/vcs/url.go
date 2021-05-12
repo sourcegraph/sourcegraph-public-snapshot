@@ -74,7 +74,7 @@ func parseScheme(rawurl string) (*URL, error) {
 		return nil, fmt.Errorf("scheme %q is not a valid transport", u.Scheme)
 	}
 
-	return &URL{URL: *u}, nil
+	return &URL{format: formatStdlib, URL: *u}, nil
 }
 
 const (
@@ -108,22 +108,28 @@ func parseScp(rawurl string) (*URL, error) {
 	if len(m) > 3 {
 		rawquery = m[4]
 	}
-	return &URL{URL: url.URL{
-		User:     userinfo,
-		Host:     m[2],
-		Path:     m[3],
-		RawQuery: rawquery,
-	}}, nil
+	return &URL{
+		format: formatRsync,
+		URL: url.URL{
+			User:     userinfo,
+			Host:     m[2],
+			Path:     m[3],
+			RawQuery: rawquery,
+		},
+	}, nil
 }
 
 // parseLocal parses rawurl into a URL object with a "file"
 // scheme. This will effectively never return an error.
 func parseLocal(rawurl string) (*URL, error) {
-	return &URL{URL: url.URL{
-		Scheme: "file",
-		Host:   "",
-		Path:   rawurl,
-	}}, nil
+	return &URL{
+		format: formatLocal,
+		URL: url.URL{
+			Scheme: "file",
+			Host:   "",
+			Path:   rawurl,
+		},
+	}, nil
 }
 
 // URL wraps url.URL to provide rsync format compatible `String()` functionality.
@@ -133,13 +139,23 @@ func parseLocal(rawurl string) (*URL, error) {
 // if a scheme is specified, otherwise it uses a custom format built for compatibility
 type URL struct {
 	url.URL
+
+	format urlFormat
 }
+
+type urlFormat int
+
+const (
+	formatStdlib urlFormat = iota
+	formatRsync
+	formatLocal
+)
 
 // String will return standard url.URL.String() if the url has a .Scheme set, but if
 // not it will produce an rsync format URL, eg `git@foo.com:foo/bar.git`
 func (u *URL) String() string {
-	// if we have a non-empty scheme we use stdlib url.URL.String()
-	if u.Scheme != "" {
+	// only use custom String() implementation for rsync format URLs
+	if u.format != formatRsync {
 		return u.URL.String()
 	}
 	// otherwise attempt to marshal scp style URLs
