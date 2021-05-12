@@ -1,4 +1,3 @@
-import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -30,8 +29,7 @@ const PublishNewManifestAlert: React.FunctionComponent<{
 
 export const ExtensionReadme: React.FunctionComponent<{
     extension: ConfiguredRegistryExtension
-    history: H.History
-}> = ({ extension, history }) => {
+}> = ({ extension }) => {
     if (!extension.rawManifest) {
         return <ExtensionNoManifestAlert extension={extension} />
     }
@@ -63,7 +61,7 @@ export const ExtensionReadme: React.FunctionComponent<{
 
     try {
         const html = renderMarkdown(manifest.readme)
-        return <Markdown dangerousInnerHTML={html} history={history} />
+        return <Markdown dangerousInnerHTML={html} />
     } catch {
         return (
             <PublishNewManifestAlert

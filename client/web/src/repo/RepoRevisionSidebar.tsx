@@ -60,18 +60,13 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
             handlePosition="right"
             storageKey={SIZE_STORAGE_KEY}
             element={
-                <div
-                    className={classnames(
-                        'd-flex flex-1 border-right overflow-auto',
-                        isRedesignEnabled ? 'px-3' : 'bg-2 px-0'
-                    )}
-                >
+                <div className={classnames('d-flex w-100 border-right', !isRedesignEnabled && 'bg-2')}>
                     <Tabs
                         className="w-100 test-repo-revision-sidebar"
                         defaultIndex={tabIndex}
                         onChange={handleTabsChange}
                     >
-                        <div className="tablist-wrapper d-flex flex-1">
+                        <div className={classnames('tablist-wrapper d-flex flex-1', isRedesignEnabled && 'mx-3')}>
                             <TabList>
                                 <Tab data-test-tab="files">
                                     <span className="tablist-wrapper--tab-label">Files</span>
@@ -90,7 +85,13 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                 <ChevronDoubleLeftIcon className="icon-inline repo-revision-container__close-icon" />
                             </Button>
                         </div>
-                        <div aria-hidden={true} className="d-flex repo-revision-container__tabpanels explorer">
+                        <div
+                            aria-hidden={true}
+                            className={classnames(
+                                'd-flex repo-revision-container__tabpanels explorer overflow-auto',
+                                isRedesignEnabled && 'px-3'
+                            )}
+                        >
                             <TabPanels className="w-100">
                                 <TabPanel tabIndex={-1}>
                                     {tabIndex === 0 && (

@@ -7,20 +7,20 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
-var mockSearchRepositories func(args *search.TextParameters) ([]SearchResultResolver, *streaming.Stats, error)
+var mockSearchRepositories func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error)
 
 // searchRepositories searches for repositories by name.
 //
 // For a repository to match a query, the repository's name must match all of the repo: patterns AND the
 // default patterns (i.e., the patterns that are not prefixed with any search field).
-func searchRepositories(ctx context.Context, db dbutil.DB, args *search.TextParameters, limit int32, stream Sender) error {
+func searchRepositories(ctx context.Context, args *search.TextParameters, limit int32, stream Sender) error {
 	if mockSearchRepositories != nil {
 		results, stats, err := mockSearchRepositories(args)
 		stream.Send(SearchEvent{
@@ -88,39 +88,41 @@ func searchRepositories(ctx context.Context, db dbutil.DB, args *search.TextPara
 		for matched := range results {
 			repos = append(repos, matched...)
 		}
-		repos, err = reposToAdd(ctx, db, args, repos)
+		repos, err = reposToAdd(ctx, args, repos)
 		if err != nil {
 			return err
 		}
 		stream.Send(SearchEvent{
-			Results: repoRevsToSearchResultResolver(ctx, db, repos),
+			Results: repoRevsToRepoMatches(ctx, repos),
 		})
 		return nil
 	}
 
 	for repos := range results {
 		stream.Send(SearchEvent{
-			Results: repoRevsToSearchResultResolver(ctx, db, repos),
+			Results: repoRevsToRepoMatches(ctx, repos),
 		})
 	}
 
 	return nil
 }
 
-func repoRevsToSearchResultResolver(ctx context.Context, db dbutil.DB, repos []*search.RepositoryRevisions) []SearchResultResolver {
-	results := make([]SearchResultResolver, 0, len(repos))
+func repoRevsToRepoMatches(ctx context.Context, repos []*search.RepositoryRevisions) []result.Match {
+	matches := make([]result.Match, 0, len(repos))
 	for _, r := range repos {
 		revs, err := r.ExpandedRevSpecs(ctx)
 		if err != nil { // fallback to just return revspecs
 			revs = r.RevSpecs()
 		}
 		for _, rev := range revs {
-			rr := NewRepositoryResolver(db, r.Repo.ToRepo())
-			rr.RepoMatch.Rev = rev
-			results = append(results, rr)
+			matches = append(matches, &result.RepoMatch{
+				Name: r.Repo.Name,
+				ID:   r.Repo.ID,
+				Rev:  rev,
+			})
 		}
 	}
-	return results
+	return matches
 }
 
 func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions, results chan<- []*search.RepositoryRevisions) {
@@ -181,7 +183,7 @@ func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions, 
 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
-func reposToAdd(ctx context.Context, db dbutil.DB, args *search.TextParameters, repos []*search.RepositoryRevisions) ([]*search.RepositoryRevisions, error) {
+func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions) ([]*search.RepositoryRevisions, error) {
 	// matchCounts will contain the count of repohasfile patterns that matched.
 	// For negations, we will explicitly set this to -1 if it matches.
 	matchCounts := make(map[api.RepoID]int)
@@ -200,7 +202,7 @@ func reposToAdd(ctx context.Context, db dbutil.DB, args *search.TextParameters, 
 			newArgs.RepoPromise = (&search.Promise{}).Resolve(repos)
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
-			matches, _, err := searchFilesInReposBatch(ctx, db, &newArgs)
+			matches, _, err := searchFilesInReposBatch(ctx, &newArgs)
 			if err != nil {
 				return nil, err
 			}
@@ -236,7 +238,7 @@ func reposToAdd(ctx context.Context, db dbutil.DB, args *search.TextParameters, 
 			newArgs.RepoPromise = rp
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
-			matches, _, err := searchFilesInReposBatch(ctx, db, &newArgs)
+			matches, _, err := searchFilesInReposBatch(ctx, &newArgs)
 			if err != nil {
 				return nil, err
 			}

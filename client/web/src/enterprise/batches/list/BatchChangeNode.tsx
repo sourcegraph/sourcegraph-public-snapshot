@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import * as H from 'history'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -20,7 +19,6 @@ export interface BatchChangeNodeProps {
     node: ListBatchChange
     /** Used for testing purposes. Sets the current date */
     now?: () => Date
-    history: H.History
     displayNamespace: boolean
 }
 
@@ -29,7 +27,6 @@ export interface BatchChangeNodeProps {
  */
 export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
     node,
-    history,
     now = () => new Date(),
     displayNamespace,
 }) => (
@@ -68,7 +65,6 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                 dangerousInnerHTML={
                     node.description ? renderMarkdown(node.description, { plainText: true }) : 'No description'
                 }
-                history={history}
             />
         </div>
         <ChangesetStatusOpen

@@ -438,7 +438,7 @@ describe('Search', () => {
                 )
             )
             expect(results).toEqual([
-                'github.com/sourcegraph/sourcegraph',
+                'sourcegraph/sourcegraph',
                 'sourcegraph/sourcegraph › stream.ts',
                 'sourcegraph/sourcegraph@abcd › stream.ts',
                 'sourcegraph/sourcegraph@test/branch › stream.ts',
