@@ -7,7 +7,7 @@ import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
-import { createChangesetComments } from '../backend'
+import { createChangesetComments as _createChangesetComments } from '../backend'
 
 export interface CreateCommentModalProps {
     onCancel: () => void
@@ -16,7 +16,7 @@ export interface CreateCommentModalProps {
     changesetIDs: () => Promise<Scalars['ID'][]>
 
     /** For testing only. */
-    // createBatchChangesCredential?: typeof _createBatchChangesCredential
+    createChangesetComments?: typeof _createChangesetComments
 }
 
 export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps> = ({
@@ -24,14 +24,14 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
     afterCreate,
     batchChangeID,
     changesetIDs,
-    // createBatchChangesCredential = _createBatchChangesCredential,
+    createChangesetComments = _createChangesetComments,
 }) => {
-    const labelId = 'addCredential'
+    const labelId = 'create-comment-modal-id'
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
-    const [credential, setCredential] = useState<string>('')
+    const [commentBody, setCommentBody] = useState<string>('')
 
-    const onChangeCredential = useCallback<React.ChangeEventHandler<HTMLTextAreaElement>>(event => {
-        setCredential(event.target.value)
+    const onChangeInput = useCallback<React.ChangeEventHandler<HTMLTextAreaElement>>(event => {
+        setCommentBody(event.target.value)
     }, [])
 
     const onSubmit = useCallback<React.FormEventHandler>(
@@ -40,13 +40,13 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
             setIsLoading(true)
             try {
                 const ids = await changesetIDs()
-                await createChangesetComments(batchChangeID, ids, credential)
+                await createChangesetComments(batchChangeID, ids, commentBody)
                 afterCreate()
             } catch (error) {
                 setIsLoading(asError(error))
             }
         },
-        [afterCreate, batchChangeID, changesetIDs, credential]
+        [afterCreate, batchChangeID, changesetIDs, commentBody, createChangesetComments]
     )
 
     return (
@@ -56,7 +56,7 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
             aria-labelledby={labelId}
         >
             <div className="web-content">
-                <h3>Post a bulk comment on changesets</h3>
+                <h3 id={labelId}>Post a bulk comment on changesets</h3>
                 <p className="mb-4">Use this feature to create a bulk comment on all the selected code hosts.</p>
                 {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
                 <Form onSubmit={onSubmit}>
@@ -70,8 +70,8 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
                             required={true}
                             rows={8}
                             minLength={1}
-                            value={credential}
-                            onChange={onChangeCredential}
+                            value={commentBody}
+                            onChange={onChangeInput}
                         />
                     </div>
                     <div className="d-flex justify-content-end">
@@ -85,7 +85,7 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
                         </button>
                         <button
                             type="submit"
-                            disabled={isLoading === true || credential.length === 0}
+                            disabled={isLoading === true || commentBody.length === 0}
                             className="btn btn-primary"
                         >
                             {isLoading === true && <LoadingSpinner className="icon-inline" />}
