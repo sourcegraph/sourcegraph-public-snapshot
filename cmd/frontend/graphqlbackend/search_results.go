@@ -1817,7 +1817,6 @@ type SearchResultResolver interface {
 	ToRepository() (*RepositoryResolver, bool)
 	ToFileMatch() (*FileMatchResolver, bool)
 	ToCommitSearchResult() (*CommitSearchResultResolver, bool)
-	toMatch() result.Match
 
 	ResultCount() int32
 }
