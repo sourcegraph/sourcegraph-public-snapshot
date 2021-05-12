@@ -1,6 +1,6 @@
 .file-match-children {
     .theme-redesign & {
-        background-color: var(--color-bg-1);
+        background-color: var(--code-bg);
         border: 1px solid var(--border-color-2);
         border-radius: var(--border-radius);
         padding: 0.25rem 0;
@@ -12,6 +12,10 @@
         align-items: center;
         padding: 0.25rem 0.5rem;
         background-color: var(--body-bg);
+
+        .theme-redesign & {
+            background-color: var(--code-bg);
+        }
 
         &-clickable {
             cursor: pointer;
