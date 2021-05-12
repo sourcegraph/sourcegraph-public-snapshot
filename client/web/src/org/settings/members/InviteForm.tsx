@@ -184,14 +184,12 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                 </DismissibleAlert>
             )}
             {invited.map((invite, index) => (
-                /* eslint-disable react/jsx-no-bind */
                 <InvitedNotification
                     key={index}
                     {...invite}
                     className="alert alert-success invite-form__alert"
                     onDismiss={() => dismissNotification(index)}
                 />
-                /* eslint-enable react/jsx-no-bind */
             ))}
             {isErrorLike(loading) && <ErrorAlert className="invite-form__alert" error={loading} />}
         </div>

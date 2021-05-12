@@ -251,7 +251,6 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
     return (
         <div className="repo-revision-container">
             <Switch>
-                {/* eslint-disable react/jsx-no-bind */}
                 {props.routes.map(
                     ({ path, render, exact, condition = () => true }) =>
                         condition(context) && (

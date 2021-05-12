@@ -51,7 +51,6 @@ export const ViewsArea: React.FunctionComponent<Props> = ({ match, ...outerProps
 
     return (
         <div className="container mt-4">
-            {/* eslint-disable react/jsx-no-bind */}
             <Switch>
                 <Route path={match.url} exact={true}>
                     <div className="alert alert-info">No view specified in the URL.</div>
@@ -70,7 +69,6 @@ export const ViewsArea: React.FunctionComponent<Props> = ({ match, ...outerProps
                     )}
                 />
             </Switch>
-            {/* eslint-enable react/jsx-no-bind */}
         </div>
     )
 }
