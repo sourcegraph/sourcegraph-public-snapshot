@@ -262,7 +262,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     totalCount={totalChangesetCount}
                     isAllSelected={allSelected}
                     allAllSelected={allAllSelected}
-                    setAllSelected={onSelectAllAll}
+                    setAllAllSelected={onSelectAllAll}
                     queryArguments={queryArguments!}
                 />
             )}

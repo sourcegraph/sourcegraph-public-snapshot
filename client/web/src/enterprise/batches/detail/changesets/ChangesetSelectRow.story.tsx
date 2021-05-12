@@ -22,7 +22,7 @@ add('all states', () => (
                     allAllSelected={false}
                     batchChangeID="test-123"
                     isAllSelected={false}
-                    setAllSelected={() => undefined}
+                    setAllAllSelected={() => undefined}
                     totalCount={100}
                     queryArguments={{
                         batchChange: 'test-123',
@@ -42,7 +42,7 @@ add('all states', () => (
                     allAllSelected={false}
                     batchChangeID="test-123"
                     isAllSelected={false}
-                    setAllSelected={() => undefined}
+                    setAllAllSelected={() => undefined}
                     totalCount={100}
                     queryArguments={{
                         batchChange: 'test-123',
@@ -62,7 +62,7 @@ add('all states', () => (
                     allAllSelected={false}
                     batchChangeID="test-123"
                     isAllSelected={false}
-                    setAllSelected={() => undefined}
+                    setAllAllSelected={() => undefined}
                     totalCount={100}
                     queryArguments={{
                         batchChange: 'test-123',

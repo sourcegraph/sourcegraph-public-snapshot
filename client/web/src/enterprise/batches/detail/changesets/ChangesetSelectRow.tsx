@@ -82,7 +82,7 @@ export interface ChangesetSelectRowProps {
     isAllSelected: boolean
     totalCount: number
     allAllSelected: boolean
-    setAllSelected: () => void
+    setAllAllSelected: () => void
     queryArguments: Omit<AllChangesetIDsVariables, 'after'>
 }
 
@@ -97,7 +97,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
     isAllSelected,
     totalCount,
     allAllSelected,
-    setAllSelected,
+    setAllAllSelected: setAllSelected,
     queryArguments,
 }) => {
     const actions = useMemo(() => availableActions.filter(action => action.isAvailable(queryArguments)), [
