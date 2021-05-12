@@ -82,7 +82,7 @@ FROM search_contexts sc
 WHERE sc.deleted_at IS NULL AND (%s)
 `
 
-type SearchContextsOrderByOption int
+type SearchContextsOrderByOption uint8
 
 const (
 	SearchContextsOrderByID SearchContextsOrderByOption = iota
@@ -107,8 +107,8 @@ type ListSearchContextsOptions struct {
 	// NoNamespace matches search contexts without a namespace ("instance-level contexts").
 	// It ignores the NamespaceUserID and NamespaceOrgID options.
 	NoNamespace bool
-	// OrderBy specifies the ordering option for search contexts. If not provided (= 0), search contexts
-	// are sorted by id. SearchContextsOrderBySpec option sorts contexts by coallesced namespace names first
+	// OrderBy specifies the ordering option for search contexts. Search contexts are ordered using SearchContextsOrderByID by default.
+	// SearchContextsOrderBySpec option sorts contexts by coallesced namespace names first
 	// (user name and org name) and then by context name. SearchContextsOrderByUpdatedAt option sorts
 	// search contexts by their last update time (updated_at).
 	OrderBy SearchContextsOrderByOption
@@ -121,12 +121,15 @@ func getSearchContextOrderByClause(orderBy SearchContextsOrderByOption, descendi
 	if descending {
 		orderDirection = "DESC"
 	}
-	if orderBy == SearchContextsOrderBySpec {
+	switch orderBy {
+	case SearchContextsOrderBySpec:
 		return sqlf.Sprintf(fmt.Sprintf("COALESCE(u.username, o.name) %s, sc.name %s", orderDirection, orderDirection))
-	} else if orderBy == SearchContextsOrderByUpdatedAt {
+	case SearchContextsOrderByUpdatedAt:
 		return sqlf.Sprintf("sc.updated_at " + orderDirection)
+	case SearchContextsOrderByID:
+		return sqlf.Sprintf("sc.id " + orderDirection)
 	}
-	return sqlf.Sprintf("sc.id " + orderDirection)
+	panic("invalid SearchContextsOrderByOption option")
 }
 
 func getSearchContextNamespaceQueryConditions(namespaceUserID, namespaceOrgID int32) ([]*sqlf.Query, error) {
