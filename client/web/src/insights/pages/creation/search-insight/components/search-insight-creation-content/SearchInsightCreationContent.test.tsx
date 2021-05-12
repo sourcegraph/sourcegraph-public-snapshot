@@ -6,11 +6,11 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { FORM_ERROR } from '../../../../../components/form/hooks/useForm'
 
-import { SearchInsightCreationForm, CreationSearchInsightFormProps } from './SearchInsightCreationForm'
+import { SearchInsightCreationContent, SearchInsightCreationContentProps } from './SearchInsightCreationContent'
 
-describe('CreateInsightForm', () => {
-    const renderWithProps = (props: CreationSearchInsightFormProps): RenderResult =>
-        render(<SearchInsightCreationForm {...props} />)
+describe('CreateInsightContent', () => {
+    const renderWithProps = (props: SearchInsightCreationContentProps): RenderResult =>
+        render(<SearchInsightCreationContent {...props} />)
     const onSubmitMock = sinon.spy()
 
     beforeEach(() => onSubmitMock.resetHistory())
@@ -129,7 +129,7 @@ describe('CreateInsightForm', () => {
                         name: 'First code insight series',
                         query: 'patternType:regex case:yes \\*\\sas\\sGQL',
                         // Open color value from our own css variables
-                        color: 'var(--oc-yellow-7)',
+                        stroke: 'var(--oc-yellow-7)',
                     },
                 ],
                 stepValue: '2',
