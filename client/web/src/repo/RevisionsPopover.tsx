@@ -231,6 +231,20 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
             revision: props.currentRev || props.defaultBranch,
         })
 
+    const sharedPanelProps = {
+        className: 'connection-popover__content',
+        inputClassName: 'connection-popover__input',
+        listClassName: 'connection-popover__nodes',
+        showMoreClassName: 'connection-popover__show-more',
+        inputPlaceholder: 'Find...',
+        compact: true,
+        autoFocus: true,
+        history: props.history,
+        location: props.location,
+        noSummaryIfAllNodesVisible: true,
+        useURLQuery: false,
+    }
+
     return (
         <Tabs defaultIndex={tabIndex} className="revisions-popover connection-popover" onChange={handleTabsChange}>
             <div className="tablist-wrapper revisions-popover__tabs">
@@ -250,13 +264,9 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                     <TabPanel key={tab.id}>
                         {tab.type ? (
                             <FilteredConnection<GitRefFields, Omit<GitReferencePopoverNodeProps, 'node'>>
+                                {...sharedPanelProps}
                                 key={tab.id}
-                                className="connection-popover__content"
-                                showMoreClassName="connection-popover__show-more"
-                                inputClassName="connection-popover__input"
-                                listClassName="connection-popover__nodes"
-                                inputPlaceholder="Find..."
-                                compact={true}
+                                defaultFirst={50}
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
                                 queryConnection={tab.type === GitRefType.GIT_BRANCH ? queryGitBranches : queryGitTags}
@@ -266,21 +276,12 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                                     currentRevision: props.currentRev,
                                     location: props.location,
                                 }}
-                                defaultFirst={50}
-                                autoFocus={true}
-                                noSummaryIfAllNodesVisible={true}
-                                useURLQuery={false}
-                                history={props.history}
-                                location={props.location}
                             />
                         ) : (
                             <FilteredConnection<GitCommitAncestorFields, Omit<GitCommitNodeProps, 'node'>>
+                                {...sharedPanelProps}
                                 key={tab.id}
-                                className="connection-popover__content"
-                                inputClassName="connection-popover__input"
-                                listClassName="connection-popover__nodes"
-                                inputPlaceholder="Find..."
-                                compact={true}
+                                defaultFirst={15}
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
                                 queryConnection={queryRepositoryCommits}
@@ -289,12 +290,6 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                                     currentCommitID: props.currentCommitID,
                                     location: props.location,
                                 }}
-                                defaultFirst={15}
-                                autoFocus={true}
-                                history={props.history}
-                                location={props.location}
-                                noSummaryIfAllNodesVisible={true}
-                                useURLQuery={false}
                             />
                         )}
                     </TabPanel>

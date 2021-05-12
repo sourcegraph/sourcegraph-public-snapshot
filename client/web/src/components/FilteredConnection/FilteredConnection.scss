@@ -1,4 +1,5 @@
-$summary-padding: 0.5rem 0.75rem;
+$compact-summary-padding: 0.5rem 0.75rem;
+$compact-summary-divider: solid 1px var(--border-color-2);
 
 .filtered-connection-filter-control {
     display: flex;
@@ -10,19 +11,6 @@ $summary-padding: 0.5rem 0.75rem;
     &__nodes {
         list-style-type: none;
         padding: 0;
-    }
-
-    &__summary-container {
-        display: flex;
-        flex-direction: column;
-
-        .theme-redesign & {
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-            border-top: solid 1px var(--border-color-2);
-            padding: $summary-padding;
-        }
     }
 
     &--noncompact &__form {
@@ -45,7 +33,8 @@ $summary-padding: 0.5rem 0.75rem;
         flex: 0 0;
 
         .theme-redesign & {
-            padding: $summary-padding;
+            border-top: $compact-summary-divider;
+            padding: $compact-summary-padding;
         }
     }
     &--compact &__error {
@@ -54,6 +43,34 @@ $summary-padding: 0.5rem 0.75rem;
     &--compact &__nodes {
         flex: 1 1;
         overflow-y: auto;
+    }
+
+    &__summary-container {
+        display: flex;
+        flex-direction: column;
+
+        .theme-redesign & {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+    }
+    &--compact &__summary-container {
+        .theme-redesign & {
+            padding: $compact-summary-padding;
+            border-top: $compact-summary-divider;
+        }
+    }
+    &--noncompact &__summary-container {
+        .theme-redesign & {
+            margin-bottom: 1rem;
+        }
+    }
+
+    &__summary {
+        .theme-redesign & {
+            margin-bottom: 0;
+        }
     }
     &--compact &__summary {
         flex: 0 0;
