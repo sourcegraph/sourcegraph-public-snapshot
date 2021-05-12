@@ -20,7 +20,12 @@ import { ExtensionConfigurationState } from './extension/ExtensionConfigurationS
 import { ExtensionStatusBadge } from './extension/ExtensionStatusBadge'
 import headerColorStyles from './ExtensionHeader.module.scss'
 import { ExtensionToggle, OptimisticUpdateFailure } from './ExtensionToggle'
-import { DefaultIconEnabled, DefaultIcon, SourcegraphExtensionIcon } from './icons'
+import {
+    DefaultExtensionIcon,
+    DefaultSourcegraphExtensionIcon,
+    DefaultSourcegraphExtensionIconEnabled,
+    SourcegraphExtensionIcon,
+} from './icons'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'>, ThemeProps {
     node: Pick<
@@ -207,12 +212,16 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                             <img className="extension-card__icon" src={icon} alt="" />
                         ) : isSourcegraphExtension ? (
                             change === 'enabled' ? (
-                                <DefaultIconEnabled isLightTheme={isLightTheme} className="extension-card__icon" />
+                                <DefaultSourcegraphExtensionIconEnabled
+                                    isLightTheme={isLightTheme}
+                                    className="extension-card__icon"
+                                />
                             ) : (
-                                <DefaultIcon className="extension-card__icon" />
+                                <DefaultSourcegraphExtensionIcon className="extension-card__icon" />
                             )
-                        ) : // TODO: Default non-sourcegraph icons. rename SG defaults.
-                        null}
+                        ) : (
+                            <DefaultExtensionIcon className="extension-card__icon" />
+                        )}
                         {extension.registryExtension?.isWorkInProgress && (
                             <ExtensionStatusBadge
                                 viewerCanAdminister={extension.registryExtension.viewerCanAdminister}
