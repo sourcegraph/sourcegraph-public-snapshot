@@ -43,11 +43,11 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
     return (
         <div className="alert alert-info m-2 d-flex justify-content-between install-browser-extension-alert">
             <div className="d-flex align-items-center">
-                <div className="redesign-d-none position-relative  ml-3">
+                <div className="redesign-d-none position-relative">
                     <div className="install-browser-extension-alert__icon-flash" />
                     <Icon className="install-browser-extension-alert__icon" />
                 </div>
-                <p className="install-browser-extension-alert__text my-0">
+                <p className="install-browser-extension-alert__text my-0 mr-3">
                     {codeHostIntegrationMessaging === 'native-integration' ? (
                         <>
                             Sourcegraph's code intelligence will follow you to your code host. Your site admin set up
