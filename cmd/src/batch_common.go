@@ -201,7 +201,6 @@ type executeBatchSpecOpts struct {
 // Sourcegraph, including execution as needed and applying the resulting batch
 // spec if specified.
 func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) error {
-	batches.DebugOut = opts.out
 	svc := service.New(&service.Opts{
 		AllowUnsupported: opts.flags.allowUnsupported,
 		AllowIgnored:     opts.flags.allowIgnored,

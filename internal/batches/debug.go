@@ -1,9 +1,27 @@
+// +build debug
+
 package batches
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"log"
+	"os"
+	"path/filepath"
 )
 
-// DebugOut can be used to print debug messages in development to the TUI.
-// For that it needs to be set to an actual *output.Output.
-var DebugOut output.Writer = output.NoopWriter{}
+// In builds with the debug flag (i.e. `go build -tags debug -o src ./cmd/src`)
+// init() sets up the default logger to log to a file in ~/.sourcegraph.
+func init() {
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatalf("getting user home directory: %s", err)
+	}
+
+	fullPath := filepath.Join(homedir, ".sourcegraph", "src-cli.debug.log")
+
+	f, err := os.OpenFile(fullPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("setting debug log file failed: %s", err)
+	}
+
+	log.SetOutput(f)
+}

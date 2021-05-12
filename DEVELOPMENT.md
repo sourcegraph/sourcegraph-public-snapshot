@@ -78,3 +78,17 @@ To remove it and then force the upstream image on Docker Hub to be used again:
 ```sh
 docker rmi sourcegraph/src-batch-change-volume-workspace
 ```
+
+## Use `debug` build tag to debug batch changes functionality
+
+Since `src batch apply` and `src batch preview` start up a TUI that gets updated repeatedly it's nearly impossible to do printf-debugging by printing debug information - the TUI would hide those or overwrite them.
+
+To help with that you can compile your src binary (or run the tests) with the `debug` build flag:
+
+```
+go build -tags debug -o ~/src ./cmd/src
+```
+
+This will cause the `./internal/batches/debug.go` file to be included in the build. In that file the `log` default package logger is setup to log to `~/.sourcegraph/src-cli.debug.log`.
+
+That allows you to `tail -f ~/.sourcegraph/src-cli.debug.log` and use `log.Println()` in your code to debug.
