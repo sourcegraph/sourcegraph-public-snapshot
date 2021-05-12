@@ -673,6 +673,7 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 		PublicationState: &published,
 		// TODO: Do we want to allow this on imported changesets?
 		// OwnedByBatchChangeID: batchChangeID,
+		IncludeArchived: true,
 
 		// We only want to allow changesets the user has access to.
 		EnforceAuthz: true,
