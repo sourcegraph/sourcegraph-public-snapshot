@@ -33,6 +33,7 @@ import { BatchChangeInfoByline } from './BatchChangeInfoByline'
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 import { BatchChangeTabs } from './BatchChangeTabs'
 import { BulkOperationNode } from './bulk-operations/BulkOperationNode'
+import { BulkOperationsNotifications } from './BulkOperationsNotifications'
 import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
@@ -117,9 +118,6 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
         return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
 
-    const parameters = new URLSearchParams(location.search)
-    const isBulkTabOpen = parameters.get('tab') === 'bulkoperations'
-
     return (
         <>
             <PageTitle title={batchChange.name} />
@@ -151,16 +149,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 }
                 className="test-batch-change-details-page mb-3"
             />
-            {!isBulkTabOpen &&
-                batchChange.activeBulkOperations.nodes.map(node => (
-                    <DismissibleAlert
-                        key={node.id}
-                        className="alert alert-info"
-                        partialStorageKey={`bulkOperation-${node.id}`}
-                    >
-                        <BulkOperationNode node={node} key={node.id} />
-                    </DismissibleAlert>
-                ))}
+            <BulkOperationsNotifications location={location} bulkOperations={batchChange.activeBulkOperations} />
             <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
             <ClosedNotice closedAt={batchChange.closedAt} className="mb-3" />
             <UnpublishedNotice

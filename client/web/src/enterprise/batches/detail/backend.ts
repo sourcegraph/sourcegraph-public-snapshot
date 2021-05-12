@@ -126,10 +126,7 @@ const batchChangeFragment = gql`
         }
 
         activeBulkOperations: bulkOperations(first: 3, createdAfter: $createdAfter) {
-            totalCount
-            nodes {
-                ...BulkOperationFields
-            }
+            ...ActiveBulkOperationsConnectionFields
         }
 
         currentSpec {
@@ -138,6 +135,13 @@ const batchChangeFragment = gql`
                 createdAt
                 applyURL
             }
+        }
+    }
+
+    fragment ActiveBulkOperationsConnectionFields on BulkOperationConnection {
+        totalCount
+        nodes {
+            ...BulkOperationFields
         }
     }
 
