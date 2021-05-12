@@ -530,6 +530,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     <SearchResult
                         icon={SourceCommitIcon}
                         result={result}
+                        repoName={result.commit.repository.name}
                         isLightTheme={this.props.isLightTheme}
                         history={this.props.history}
                     />
@@ -539,6 +540,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     <SearchResult
                         icon={SourceRepositoryMultipleIcon}
                         result={result}
+                        repoName={result.name}
                         isLightTheme={this.props.isLightTheme}
                         history={this.props.history}
                     />

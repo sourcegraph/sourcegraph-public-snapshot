@@ -155,3 +155,101 @@ mutation DeleteSearchContext($id: ID!) {
 	}
 	return nil
 }
+
+type SearchContextsNamespaceFilterType string
+type SearchContextsOrderBy string
+
+const (
+	SearchContextsNamespaceFilterTypeInstance  SearchContextsNamespaceFilterType = "INSTANCE"
+	SearchContextsNamespaceFilterTypeNamespace SearchContextsNamespaceFilterType = "NAMESPACE"
+	SearchContextsOrderByUpdatedAt             SearchContextsOrderBy             = "SEARCH_CONTEXT_UPDATED_AT"
+	SearchContextsOrderBySpec                  SearchContextsOrderBy             = "SEARCH_CONTEXT_SPEC"
+)
+
+type ListSearchContextsOptions struct {
+	First               int32                              `json:"first"`
+	After               *string                            `json:"after"`
+	Query               *string                            `json:"query"`
+	NamespaceFilterType *SearchContextsNamespaceFilterType `json:"namespaceFilterType"`
+	Namespace           *string                            `json:"namespace"`
+	OrderBy             *SearchContextsOrderBy             `json:"orderBy"`
+	Descending          bool                               `json:"descending"`
+}
+
+type ListSearchContextsResult struct {
+	TotalCount int32 `json:"totalCount"`
+	PageInfo   struct {
+		HasNextPage bool    `json:"hasNextPage"`
+		EndCursor   *string `json:"endCursor"`
+	} `json:"pageInfo"`
+	Nodes []GetSearchContextResult `json:"nodes"`
+}
+
+// ListSearchContexts list search contexts filtered by the given options.
+func (c *Client) ListSearchContexts(options ListSearchContextsOptions) (*ListSearchContextsResult, error) {
+	const query = `
+query ListSearchContexts(
+	$first: Int!
+	$after: String
+	$query: String
+	$namespaceFilterType: SearchContextsNamespaceFilterType
+	$namespace: ID
+	$orderBy: SearchContextsOrderBy
+	$descending: Boolean
+) {
+	searchContexts(
+		first: $first
+		after: $after
+		query: $query
+		namespaceFilterType: $namespaceFilterType
+		namespace: $namespace
+		orderBy: $orderBy
+		descending: $descending
+	) {
+		nodes {
+			id
+			description
+			spec
+			autoDefined
+			repositories {
+				repository {
+					name
+				}
+				revisions
+			}
+		}
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		totalCount
+	}
+}`
+
+	orderBy := SearchContextsOrderBySpec
+	if options.OrderBy != nil {
+		orderBy = *options.OrderBy
+	}
+
+	variables := map[string]interface{}{
+		"first":               options.First,
+		"after":               options.After,
+		"query":               options.Query,
+		"namespaceFilterType": options.NamespaceFilterType,
+		"namespace":           options.Namespace,
+		"orderBy":             orderBy,
+		"descending":          options.Descending,
+	}
+
+	var resp struct {
+		Data struct {
+			SearchContexts ListSearchContextsResult `json:"searchContexts"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	return &resp.Data.SearchContexts, nil
+}

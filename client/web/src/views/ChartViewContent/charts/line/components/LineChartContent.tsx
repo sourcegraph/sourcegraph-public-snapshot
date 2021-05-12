@@ -320,7 +320,6 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                         yAccessor={accessors.y[line.dataKey]}
                                         // Don't have info about line in props. @visx/xychart doesn't expose this information
                                         // Move this arrow function in separate component when API of GlyphSeries will be fixed.
-                                        /* eslint-disable-next-line react/jsx-no-bind */
                                         renderGlyph={glyphProps => (
                                             <GlyphContent
                                                 {...glyphProps}

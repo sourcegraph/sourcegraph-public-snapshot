@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as React from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -29,6 +30,8 @@ interface GitReferenceNodeProps {
     ancestorIsLink?: boolean
 
     children?: React.ReactNode
+
+    className?: string
 }
 
 export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = ({
@@ -36,6 +39,7 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
     url,
     ancestorIsLink,
     children,
+    className,
 }) => {
     const mostRecentSig =
         node.target.commit &&
@@ -46,18 +50,22 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
     url = url !== undefined ? url : node.url
 
     return (
-        <LinkOrSpan key={node.id} className="git-ref-node list-group-item" to={!ancestorIsLink ? url : undefined}>
+        <LinkOrSpan
+            key={node.id}
+            className={classNames('git-ref-node list-group-item', className)}
+            to={!ancestorIsLink ? url : undefined}
+        >
             <span>
                 <code className="git-ref-tag-2">{node.displayName}</code>
                 {mostRecentSig && (
-                    <small className="text-muted pl-2">
+                    <small className="pl-2">
                         Updated <Timestamp date={mostRecentSig.date} />{' '}
                         {mostRecentSig.person && <>by {mostRecentSig.person.displayName}</>}
                     </small>
                 )}
             </span>
             {behindAhead && (
-                <small className="text-muted">
+                <small>
                     {numberWithCommas(behindAhead.behind)} behind, {numberWithCommas(behindAhead.ahead)} ahead
                 </small>
             )}

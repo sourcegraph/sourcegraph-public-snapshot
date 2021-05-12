@@ -196,7 +196,6 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                     <div className="alert alert-danger">Invalid comparison specifier</div>
                 ) : (
                     <Switch>
-                        {/* eslint-disable react/jsx-no-bind */}
                         <Route
                             path={`${this.props.match.url}`}
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
@@ -212,7 +211,6 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                             )}
                         />
                         <Route key="hardcoded-key" component={NotFoundPage} />
-                        {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 )}
                 {this.state.hoverOverlayProps && (

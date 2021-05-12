@@ -103,7 +103,6 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>
                                 {props.routes.map(
-                                    /* eslint-disable react/jsx-no-bind */
                                     ({ render, path, exact, condition = () => true }) =>
                                         condition(context) && (
                                             <Route
@@ -116,7 +115,6 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
                                                 }
                                             />
                                         )
-                                    /* eslint-enable react/jsx-no-bind */
                                 )}
                                 <Route component={NotFoundPage} />
                             </Switch>

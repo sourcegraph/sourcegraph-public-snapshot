@@ -6,7 +6,13 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 
 import { WebStory } from '../../../../components/WebStory'
 import { authUser } from '../../../../search/panels/utils'
+import { InsightsApiContext } from '../../../core/backend/api-provider'
+import { createMockInsightAPI } from '../../../core/backend/insights-api'
 
+import {
+    DEFAULT_MOCK_CHART_CONTENT,
+    getRandomDataForMock,
+} from './components/live-preview-chart/live-preview-mock-data'
 import { SearchInsightCreationPage, SearchInsightCreationPageProps } from './SearchInsightCreationPage'
 
 const { add } = storiesOf('web/insights/SearchInsightCreationPage', module)
@@ -26,11 +32,28 @@ const PLATFORM_CONTEXT: SearchInsightCreationPageProps['platformContext'] = {
 
 const history = createMemoryHistory()
 
+function sleep(delay: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, delay))
+}
+
+const mockAPI = createMockInsightAPI({
+    getSearchInsightContent: async () => {
+        await sleep(2000)
+
+        return {
+            ...DEFAULT_MOCK_CHART_CONTENT,
+            data: getRandomDataForMock(),
+        }
+    },
+})
+
 add('Page', () => (
-    <SearchInsightCreationPage
-        history={history}
-        platformContext={PLATFORM_CONTEXT}
-        settingsCascade={EMPTY_SETTINGS_CASCADE}
-        authenticatedUser={authUser}
-    />
+    <InsightsApiContext.Provider value={mockAPI}>
+        <SearchInsightCreationPage
+            history={history}
+            platformContext={PLATFORM_CONTEXT}
+            settingsCascade={EMPTY_SETTINGS_CASCADE}
+            authenticatedUser={authUser}
+        />
+    </InsightsApiContext.Provider>
 ))

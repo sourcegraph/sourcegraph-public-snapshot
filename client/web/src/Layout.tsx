@@ -314,7 +314,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     }
                 >
                     <Switch>
-                        {/* eslint-disable react/jsx-no-bind */}
                         {props.routes.map(
                             ({ render, condition = () => true, ...route }) =>
                                 condition(context) && (
@@ -330,7 +329,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                                     />
                                 )
                         )}
-                        {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 </Suspense>
             </ErrorBoundary>
