@@ -1360,7 +1360,7 @@ Indexes:
  deleted_at | timestamp with time zone |           |          | 
 Indexes:
     "repo_tags_pkey" PRIMARY KEY, btree (id)
-    "repo_tag" UNIQUE CONSTRAINT, btree (repo_id, tag, deleted_at)
+    "repo_tags_tag_unique_idx" UNIQUE, btree (repo_id, tag) WHERE deleted_at IS NULL
     "repo_tags_deleted_at_idx" btree (deleted_at)
     "repo_tags_tag_trgm" gin (lower(tag::text) gin_trgm_ops)
 Foreign-key constraints:
