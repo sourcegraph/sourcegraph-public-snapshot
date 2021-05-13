@@ -454,7 +454,7 @@ const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyP
         <h3>
             {newTitle ? (
                 <>
-                    <del>
+                    <del className="mr-1">
                         <ExternalChangesetTitle
                             className="text-muted"
                             externalID={externalID}
