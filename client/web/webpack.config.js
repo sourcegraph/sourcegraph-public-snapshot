@@ -141,7 +141,7 @@ const config = {
     ...(shouldAnalyze ? [new BundleAnalyzerPlugin()] : []),
   ],
   resolve: {
-    extensions: ['.mjs', '.ts', '.tsx', '.js'],
+    extensions: ['.mjs', '.ts', '.tsx', '.js', '.json'],
     mainFields: ['es2015', 'module', 'browser', 'main'],
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
