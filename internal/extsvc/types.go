@@ -82,6 +82,7 @@ const (
 	KindGitolite        = "GITOLITE"
 	KindPerforce        = "PERFORCE"
 	KindPhabricator     = "PHABRICATOR"
+	KindJvmPackages     = "JVMPACKAGES"
 	KindOther           = "OTHER"
 )
 
@@ -118,6 +119,9 @@ const (
 	// TypePhabricator is the (api.ExternalRepoSpec).ServiceType value for Phabricator projects.
 	TypePhabricator = "phabricator"
 
+	// TypeJvmPackages is the (api.ExternalRepoSpec).ServiceType value for Maven packages (Java/JVM ecosystem libraries).
+	TypeJvmPackages = "jvmPackages"
+
 	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	TypeOther = "other"
 )
@@ -142,6 +146,8 @@ func KindToType(kind string) string {
 		return TypePhabricator
 	case KindPerforce:
 		return TypePerforce
+	case KindJvmPackages:
+		return TypeJvmPackages
 	case KindOther:
 		return TypeOther
 	default:
@@ -169,6 +175,8 @@ func TypeToKind(t string) string {
 		return KindPerforce
 	case TypePhabricator:
 		return KindPhabricator
+	case TypeJvmPackages:
+		return KindJvmPackages
 	case TypeOther:
 		return KindOther
 	default:
@@ -180,6 +188,7 @@ var (
 	// Precompute these for use in ParseServiceType below since the constants are mixed case
 	bbsLower = strings.ToLower(TypeBitbucketServer)
 	bbcLower = strings.ToLower(TypeBitbucketCloud)
+	jvmLower = strings.ToLower(TypeJvmPackages)
 )
 
 // ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
@@ -202,6 +211,8 @@ func ParseServiceType(s string) (string, bool) {
 		return TypePerforce, true
 	case TypePhabricator:
 		return TypePhabricator, true
+	case jvmLower:
+		return TypeJvmPackages, true
 	case TypeOther:
 		return TypeOther, true
 	default:
@@ -229,6 +240,8 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindPerforce, true
 	case KindPhabricator:
 		return KindPhabricator, true
+	case KindJvmPackages:
+		return KindJvmPackages, true
 	case KindOther:
 		return KindOther, true
 	default:
@@ -268,6 +281,8 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 		cfg = &schema.PerforceConnection{}
 	case KindPhabricator:
 		cfg = &schema.PhabricatorConnection{}
+	case KindJvmPackages:
+		cfg = &schema.JvmPackagesConnection{}
 	case KindOther:
 		cfg = &schema.OtherExternalServiceConnection{}
 	default:
@@ -368,6 +383,14 @@ func GetLimitFromConfig(kind string, config interface{}) (rlc RateLimitConfig, e
 			rlc.IsDefault = false
 		}
 		rlc.BaseURL = c.P4Port
+	case *schema.JvmPackagesConnection:
+		// 2/s is the default limit we enforce
+		rlc.Limit = rate.Limit(5000.0 / 3600.0)
+		if c != nil && c.Maven.RateLimit != nil {
+			rlc.Limit = limitOrInf(c.Maven.RateLimit.Enabled, c.Maven.RateLimit.RequestsPerHour)
+			rlc.IsDefault = false
+		}
+		rlc.BaseURL = "maven"
 	default:
 		return rlc, ErrRateLimitUnsupported{codehostKind: kind}
 	}

@@ -93,6 +93,8 @@ func main() {
 				return "", err
 			}
 
+			log15.Info("GetRemoteURLFunc", "r", r)
+
 			for _, info := range r.Sources {
 				// build the clone url using the external service config instead of using
 				// the source CloneURL field
@@ -135,6 +137,26 @@ func main() {
 				return &server.PerforceDepotSyncer{
 					MaxChanges: int(c.MaxChanges),
 				}, nil
+			case extsvc.TypeJvmPackages:
+				var c schema.JvmPackagesConnection
+				for _, info := range r.Sources {
+					es, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
+					if err != nil {
+						return nil, errors.Wrap(err, "get external service")
+					}
+
+					normalized, err := jsonc.Parse(es.Config)
+					if err != nil {
+						return nil, errors.Wrap(err, "normalize JSON")
+					}
+
+					if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+						return nil, errors.Wrap(err, "unmarshal JSON")
+					}
+					break
+				}
+
+				return &server.JvmPackagesArtifactSyncer{Config: &c}, nil
 			}
 			return &server.GitRepoSyncer{}, nil
 		},

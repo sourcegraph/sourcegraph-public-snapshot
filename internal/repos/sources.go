@@ -72,6 +72,8 @@ func NewSource(svc *types.ExternalService, cf *httpcli.Factory) (Source, error) 
 		return NewAWSCodeCommitSource(svc, cf)
 	case extsvc.KindPerforce:
 		return NewPerforceSource(svc)
+	case extsvc.KindJvmPackages:
+		return NewJvmPackagesSource(svc)
 	case extsvc.KindOther:
 		return NewOtherSource(svc, cf)
 	default:
