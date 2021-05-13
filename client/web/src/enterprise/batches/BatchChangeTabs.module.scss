@@ -1,0 +1,17 @@
+// unsets the defaults; can probably go away with the redesign
+.batch-change-tabs {
+    .nav-link {
+        border-bottom: 0;
+    }
+    [data-reach-tab],
+    [data-reach-tab]:hover,
+    [data-reach-tab][data-selected] {
+        margin-bottom: -1px;
+        border-bottom: 0;
+        padding: 0;
+        font-size: 0.875rem;
+        font-weight: normal;
+        text-transform: none;
+        letter-spacing: normal;
+    }
+}
